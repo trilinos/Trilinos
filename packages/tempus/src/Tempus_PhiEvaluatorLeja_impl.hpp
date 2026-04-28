@@ -82,6 +82,8 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
       std::invalid_argument,
       "LinOpPhi: phi_order must be zero.");
 
+  Teuchos::TimeMonitor phitimer(*timerPhi_);
+
   const int expansionOrder = this->getExpansionOrder();
 
   // phi_k(L) * v is in range(L)
@@ -148,10 +150,13 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
       coeff_re = Scalar(coeff.real());
       // std::cout << "c,lp,shift,scale: " << coeff << " " << lp_sc.lp << " real " << shift << " " << scale << std::endl;
 
-      // copy vm_k to temp vector
-      Thyra::V_V(av.ptr(), *vm_k);
-      // vm_k = (L@vm_k - lp_re[k-1]*vm_k) / scale
-      Thyra::apply(*L, Thyra::NOTRANS, *av, vm_k.ptr(), 1/scale, -lp_re);
+      {
+        Teuchos::TimeMonitor linoptimer(*timerLinOp_);
+        // copy vm_k to temp vector
+        Thyra::V_V(av.ptr(), *vm_k);
+        // vm_k = (L@vm_k - lp_re[k-1]*vm_k) / scale
+        Thyra::apply(*L, Thyra::NOTRANS, *av, vm_k.ptr(), 1 / scale, -lp_re);
+      }
 
       // add vm_k*coeff to the final result
       Thyra::Vp_StV(v, coeff_re, *vm_k);
@@ -169,8 +174,11 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
       // copy vm_k to qm_k vector to save it
       Thyra::V_V(qm_k.ptr(), *vm_k);
 
-      // vm_k = (L@vm_k - lp_re*vm_k) / scale
-      Thyra::apply(*L, Thyra::NOTRANS, *qm_k, vm_k.ptr(), 1/scale, -lp_re);
+      {
+        Teuchos::TimeMonitor linoptimer(*timerLinOp_);
+        // vm_k = (L@vm_k - lp_re*vm_k) / scale
+        Thyra::apply(*L, Thyra::NOTRANS, *qm_k, vm_k.ptr(), 1 / scale, -lp_re);
+      }
 
       // add vm_k*coeff to the final result
       Thyra::Vp_StV(v, coeff_re, *vm_k);
@@ -192,11 +200,14 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
         //std::cout << "Norm d_k: " << norm_d_k << " v_k: " << norm_vm_k << std::endl;
         //std::cout << "c,lp: " << coeff << " " << std::conj(lp_sc.lp) << std::endl;
 
-        // copy vm_k to a new temp vector (don't overwrite qm_k)
-        Thyra::V_V(av.ptr(), *vm_k);
-        // vm_k = (L@vm_k - lp_re*vm_k) / scale + ((lp_im/scale)**2)*qm_k
-        Thyra::apply(*L, Thyra::NOTRANS, *av, vm_k.ptr(), 1/scale, -lp_re);
-        Thyra::Vp_StV(vm_k.ptr(), lp_im * lp_im, *qm_k);
+        {
+          Teuchos::TimeMonitor linoptimer(*timerLinOp_);
+          // copy vm_k to a new temp vector (don't overwrite qm_k)
+          Thyra::V_V(av.ptr(), *vm_k);
+          // vm_k = (L@vm_k - lp_re*vm_k) / scale + ((lp_im/scale)**2)*qm_k
+          Thyra::apply(*L, Thyra::NOTRANS, *av, vm_k.ptr(), 1/scale, -lp_re);
+          Thyra::Vp_StV(vm_k.ptr(), lp_im * lp_im, *qm_k);
+        }
 
         // add vm_k*coeff to the final result
         Thyra::Vp_StV(v, coeff_re, *vm_k);
@@ -383,6 +394,8 @@ void PhiEvaluatorLeja<Scalar>::setPhiEvaluatorValues(
 template <class Scalar>
 Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiffs(const int k, const Scalar cdt, const int exp_order)
 {
+  Teuchos::TimeMonitor ddtimer(*timerDD_);
+
   // ensure that we have enough Leja points
   if (exp_order > this->getExpansionOrder()) {
     setExpansionOrder(exp_order);
@@ -396,7 +409,7 @@ Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiff
     return getDividedDiffsRC(k, cdt, exp_order);
     break;
   case 2:
-    std::cout << "Calling dd_phi divided difference method" << std::endl;
+    std::cout << "Calling dd_phi H-facorization method" << std::endl;
     return getDividedDiffsPhi(k, cdt, exp_order);
     break;
   case 3:
