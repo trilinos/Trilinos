@@ -26,7 +26,7 @@
 #include "ROL_TrustRegionStep.hpp"
 #include "ROL_StatusTest.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
-#include "ROL_Bounds.hpp"
+#include "ROL_TpetraBoundConstraint.hpp"
 
 #include "../TOOLS/meshmanagerK.hpp"
 #include "../TOOLS/pdeconstraintK.hpp"
@@ -41,7 +41,7 @@ using DeviceT = Kokkos::HostSpace;
 
 int main(int argc, char *argv[]) {
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
-  int iprint     = argc - 1;
+  int iprint = argc - 1;
   ROL::Ptr<std::ostream> outStream;
   ROL::nullstream bhs; // outputs nothing
 
@@ -73,24 +73,20 @@ int main(int argc, char *argv[]) {
     auto con = ROL::makePtr<PDE_Constraint<RealT,DeviceT>>(pde,meshMgr,comm,*parlist,*outStream);
     auto assembler = con->getAssembler();
 
-    // Create state vector and set to zeroes
-    auto u_ptr = assembler->createStateVector(); u_ptr->randomize();
-    auto up    = ROL::makePtr<PDE_PrimalSimVector<RealT,DeviceT>>(u_ptr,pde,assembler);
-    // Create state vector and set to zeroes
-    auto p_ptr = assembler->createStateVector(); p_ptr->randomize();
-    auto pp    = ROL::makePtr<PDE_PrimalSimVector<RealT,DeviceT>>(p_ptr,pde,assembler);
-    // Create control vector and set to ones
-    auto z_ptr = assembler->createControlVector(); z_ptr->randomize();
-    auto zp    = ROL::makePtr<PDE_PrimalOptVector<RealT,DeviceT>>(z_ptr,pde,assembler);
-    // Create residual vector and set to zeros
-    auto r_ptr = assembler->createResidualVector(); r_ptr->putScalar(0.0);
-    auto rp    = ROL::makePtr<PDE_DualSimVector<RealT,DeviceT>>(r_ptr,pde,assembler);
-    // Create state direction vector and set to random
+    // Create state vectors
+    auto u_ptr  = assembler->createStateVector(); u_ptr->randomize();
+    auto p_ptr  = assembler->createStateVector(); p_ptr->randomize();
     auto du_ptr = assembler->createStateVector(); du_ptr->randomize();
-    auto dup    = ROL::makePtr<PDE_PrimalSimVector<RealT,DeviceT>>(du_ptr,pde,assembler);
-    // Create control direction vector and set to random
+    auto r_ptr  = assembler->createResidualVector(); r_ptr->putScalar(0.0);
+    auto up     = ROL::makePtr<PDE_PrimalSimVector<RealT,DeviceT>>(u_ptr,pde,assembler,*parlist);
+    auto pp     = ROL::makePtr<PDE_PrimalSimVector<RealT,DeviceT>>(p_ptr,pde,assembler,*parlist);
+    auto dup    = ROL::makePtr<PDE_PrimalSimVector<RealT,DeviceT>>(du_ptr,pde,assembler,*parlist);
+    auto rp     = ROL::makePtr<PDE_DualSimVector<RealT,DeviceT>>(r_ptr,pde,assembler,*parlist);
+    // Create control vectors
+    auto z_ptr  = assembler->createControlVector(); z_ptr->randomize();
     auto dz_ptr = assembler->createControlVector(); dz_ptr->randomize();
-    auto dzp    = ROL::makePtr<PDE_PrimalOptVector<RealT,DeviceT>>(dz_ptr,pde,assembler);
+    auto zp     = ROL::makePtr<PDE_PrimalOptVector<RealT,DeviceT>>(z_ptr,pde,assembler,*parlist);
+    auto dzp    = ROL::makePtr<PDE_PrimalOptVector<RealT,DeviceT>>(dz_ptr,pde,assembler,*parlist);
     // Create ROL SimOpt vectors
     ROL::Vector_SimOpt<RealT> x(up,zp);
     ROL::Vector_SimOpt<RealT> d(dup,dzp);
@@ -98,9 +94,7 @@ int main(int argc, char *argv[]) {
     // Initialize bound constraints.
     auto lo_ptr = assembler->createControlVector(); lo_ptr->putScalar(0.0);
     auto hi_ptr = assembler->createControlVector(); hi_ptr->putScalar(1.0);
-    auto lop = ROL::makePtr<PDE_PrimalOptVector<RealT,DeviceT>>(lo_ptr,pde,assembler);
-    auto hip = ROL::makePtr<PDE_PrimalOptVector<RealT,DeviceT>>(hi_ptr,pde,assembler);
-    auto bnd = ROL::makePtr<ROL::Bounds<RealT>>(lop,hip);
+    auto bnd = ROL::makePtr<ROL::TpetraBoundConstraint<RealT>>(lo_ptr,hi_ptr);
 
     // Initialize quadratic objective function
     std::vector<ROL::Ptr<QoI<RealT,DeviceT>>> qoi_vec(2,ROL::nullPtr);

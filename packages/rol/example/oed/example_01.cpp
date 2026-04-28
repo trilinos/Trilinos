@@ -20,6 +20,16 @@
 #include "ROL_OED_Factory.hpp"
 #include "ROL_OED_StdMomentOperator.hpp"
 
+#include "ROL_OED_HomObjectiveA.hpp"
+#include "ROL_OED_HomObjectiveC.hpp"
+#include "ROL_OED_HomObjectiveD.hpp"
+#include "ROL_OED_HomObjectiveI.hpp"
+
+#include "ROL_OED_HetObjectiveA.hpp"
+#include "ROL_OED_HetObjectiveC.hpp"
+#include "ROL_OED_HetObjectiveD.hpp"
+#include "ROL_OED_HetObjectiveI.hpp"
+
 #include "ROL_GlobalMPISession.hpp"
 
 #include <iostream>
@@ -32,7 +42,7 @@ private:
 public:
   PolynomialModel(unsigned deg = 2) : deg_(deg) {}
 
-  Real value(const std::vector<Real> &theta, Real &tol) {
+  Real value(const std::vector<Real> &theta, Real &tol) override {
     Real val(0), xpow(1);
     for (unsigned i = 0; i <= deg_; ++i) {
       val  += theta[i] * xpow;
@@ -41,7 +51,7 @@ public:
     return val;
   }
 
-  void gradient(std::vector<Real> &g, const std::vector<Real> &theta, Real &tol) {
+  void gradient(std::vector<Real> &g, const std::vector<Real> &theta, Real &tol) override {
     Real xpow(1);
     for (unsigned i = 0; i <= deg_; ++i) {
       g[i]  = xpow;
@@ -58,9 +68,11 @@ private:
 public:
   PolynomialNoise(Real alpha = Real(1)) : alpha_(alpha) {}
 
-  Real evaluate(const std::vector<Real> &x) const {
+  Real evaluate(const std::vector<Real> &x) const override {
     return std::exp(alpha_ * std::abs(x[0])) / std::exp(alpha_);
   }
+
+  bool isHomoscedastic() const override { return false; }
 };
 
 template<typename Real>
@@ -71,21 +83,21 @@ private:
 public:
   RegularizationOperator(Real alpha = Real(1)) : alpha_(alpha) {}
 
-  void apply(ROL::Vector<Real> &Px, const ROL::Vector<Real> &x, Real &tol) const {
+  void apply(ROL::Vector<Real> &Px, const ROL::Vector<Real> &x, Real &tol) const override {
     Px.set(x);
     Px.scale(alpha_);
   }
 
-  void applyInverse(ROL::Vector<Real> &Px, const ROL::Vector<Real> &x, Real &tol) const {
+  void applyInverse(ROL::Vector<Real> &Px, const ROL::Vector<Real> &x, Real &tol) const override {
     Px.set(x);
     Px.scale(static_cast<Real>(1)/alpha_);
   }
 
-  void applyAdjoint(ROL::Vector<Real> &Px, const ROL::Vector<Real> &x, Real &tol) const {
+  void applyAdjoint(ROL::Vector<Real> &Px, const ROL::Vector<Real> &x, Real &tol) const override {
     apply(Px,x,tol);
   }
 
-  void applyAdjointInverse(ROL::Vector<Real> &Px, const ROL::Vector<Real> &x, Real &tol) const {
+  void applyAdjointInverse(ROL::Vector<Real> &Px, const ROL::Vector<Real> &x, Real &tol) const override {
     applyInverse(Px,x,tol);
   }
 };
@@ -111,19 +123,19 @@ int main(int argc, char *argv[]) {
 
   try {
     std::string filename = "input.xml";
-    ROL::Ptr<ROL::ParameterList> parlist = ROL::getParametersFromXmlFile( filename );
+    auto parlist = ROL::getParametersFromXmlFile( filename );
 
     // Setup parameter vector and polynomial model
-    RealT alpha = parlist->sublist("Problem").get("Noise Decay Rate", 5.0);
-    int deg = parlist->sublist("Problem").get("Polynomial Degree", 5);
-    ROL::Ptr<ROL::Vector<RealT>>     theta = ROL::makePtr<ROL::StdVector<RealT>>(deg+1,1);
-    ROL::Ptr<ROL::Objective<RealT>>  model = ROL::makePtr<PolynomialModel<RealT>>(deg);
-    ROL::Ptr<ROL::OED::Noise<RealT>> noise = ROL::makePtr<PolynomialNoise<RealT>>(alpha);
+    const RealT alpha = parlist->sublist("Problem").get("Noise Decay Rate", 5.0);
+    const int deg = parlist->sublist("Problem").get("Polynomial Degree", 5);
+    auto theta = ROL::makePtr<ROL::StdVector<RealT>>(deg+1,1);
+    auto model = ROL::makePtr<PolynomialModel<RealT>>(deg);
+    auto noise = ROL::makePtr<PolynomialNoise<RealT>>(alpha);
 
     // Setup experiment sample generator
-    RealT lb = parlist->sublist("Problem").get("X Lower Bound", -1.0);
-    RealT ub = parlist->sublist("Problem").get("X Upper Bound",  1.0);
-    int nsamp = parlist->sublist("Problem").get("Number of Samples", 100);
+    const RealT lb = parlist->sublist("Problem").get("X Lower Bound", -1.0);
+    const RealT ub = parlist->sublist("Problem").get("X Upper Bound",  1.0);
+    const int nsamp = parlist->sublist("Problem").get("Number of Samples", 100);
     std::ofstream ptfile, wtfile;
     ptfile.open("points.txt");
     wtfile.open("weights.txt");
@@ -135,36 +147,36 @@ int main(int argc, char *argv[]) {
     }
     ptfile.close();
     wtfile.close();
-    ROL::Ptr<ROL::BatchManager<RealT>>
-      bman = ROL::makePtr<ROL::BatchManager<RealT>>();
-    ROL::Ptr<ROL::SampleGenerator<RealT>>
-      sampler = ROL::makePtr<ROL::UserInputGenerator<RealT>>("points.txt","weights.txt",nsamp,1,bman);
-    std::vector<std::vector<RealT>> bounds(1);
-    bounds[0].resize(2); bounds[0][0] = lb; bounds[0][1] = ub;
-    ROL::Ptr<ROL::SampleGenerator<RealT>>
-      isampler = ROL::makePtr<ROL::UserInputGenerator<RealT>>("pointsGL.txt","weightsGL.txt",11,1,bman);
+    auto bman = ROL::makePtr<ROL::BatchManager<RealT>>();
+    auto sampler = ROL::makePtr<ROL::UserInputGenerator<RealT>>("points.txt","weights.txt",nsamp,1,bman);
+    auto isampler = ROL::makePtr<ROL::UserInputGenerator<RealT>>("pointsGL.txt","weightsGL.txt",11,1,bman);
 
     // Setup factory
-    bool        homNoise = true;
-    std::string regType  = "Least Squares";
-    std::string ocType   = parlist->sublist("OED").get("Optimality Type","A");
-    ROL::OED::RegressionType type = ROL::OED::StringToRegressionType(regType);
-    ROL::Ptr<ROL::OED::StdMomentOperator<RealT>>
-      M = ROL::makePtr<ROL::OED::StdMomentOperator<RealT>>(type,homNoise,noise);
+    bool homNoise = true;
+    std::string regType = "Least Squares";
+    std::string ocType = parlist->sublist("OED").get("Optimality Type","A");
+    auto type = ROL::OED::StringToRegressionType(regType);
+    auto M = ROL::makePtr<ROL::OED::StdMomentOperator<RealT>>(type,(homNoise ? ROL::nullPtr : noise));
     bool addTik = parlist->sublist("Problem").get("Use Tikhonov",false);
     if (addTik) {
       RealT beta  = parlist->sublist("Problem").get("Tikhonov Parameter",1e-4);
-      ROL::Ptr<ROL::LinearOperator<RealT>>
-        P = ROL::makePtr<RegularizationOperator<RealT>>(beta);
+      auto P = ROL::makePtr<RegularizationOperator<RealT>>(beta);
       M->setPerturbation(P);
     }
-    ROL::Ptr<ROL::OED::Factory<RealT>>
-     factory = ROL::makePtr<ROL::OED::Factory<RealT>>(model,sampler,theta,M,*parlist);
+    auto factory = ROL::makePtr<ROL::OED::Factory<RealT>>(model,sampler,theta,M,*parlist);
     if (parlist->sublist("Problem").get("Use Budget Constraint",false)) {
-      ROL::Ptr<ROL::Vector<RealT>> cost = factory->getDesign()->clone();
+      auto cost = factory->createDesignVector();
       cost->setScalar(static_cast<RealT>(1));
       RealT budget = parlist->sublist("Problem").get("Budget",5.0);
-      factory->setBudgetConstraint(cost,budget);
+      bool useBudgetEquality = parlist->sublist("Problem").get("Use Budget Equality Constraint",false);
+      factory->setBudgetConstraint(cost,budget,useBudgetEquality);
+    }
+    if (parlist->sublist("Problem").get("Use Probability Scaling",false)) {
+      auto prob = factory->createDesignVector();
+      auto prob0 = ROL::dynamicPtrCast<ROL::StdVector<RealT>>(prob)->getVector();
+      for (unsigned i = 0u; i < prob0->size(); ++i)
+        (*prob0)[i] = static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX);
+      factory->setProbabilityVector(prob);
     }
     //if (ocType == "A" || ocType == "I")
     //  parlist->sublist("General").sublist("Polyhedral Projection").set("Type","Brents");
@@ -172,16 +184,109 @@ int main(int argc, char *argv[]) {
     //  parlist->sublist("General").sublist("Polyhedral Projection").set("Type","Dai-Fletcher");
     
     // Generate optimization problem
-    ROL::Ptr<ROL::Problem<RealT>> problem = factory->get(*parlist,sampler);
+    auto problem = factory->get(*parlist,sampler);
     problem->setProjectionAlgorithm(*parlist);
     problem->finalize(false,true,*outStream);
-    ROL::Ptr<ROL::Vector<RealT>> test = factory->getDesign()->clone();
+    auto test = factory->getDesign()->clone();
     test->randomize(1,2);
     problem->check(true,*outStream,test,0.1);
 
+    auto dir1 = test->clone();
+    auto dir2 = test->clone();
+    dir1->randomize(-1,1);
+    dir2->randomize(-1,1);
+
+    auto ts = ROL::makePtr<ROL::OED::TraceSampler<RealT>>(theta);
+    auto MA = M->clone();
+    MA->generateFactors(model,theta,sampler);
+    std::vector<RealT> wts(deg+1,1);
+    auto Aobj = ROL::makePtr<ROL::OED::Hom::ObjectiveA<RealT>>(MA,theta,ts,wts,true);
+    Aobj->checkGradient(*test,*dir1,true,*outStream);
+    Aobj->checkHessVec(*test,*dir1,true,*outStream);
+    Aobj->checkHessSym(*test,*dir1,*dir2,true,*outStream);
+
+    auto c  = theta->clone();
+    c->setScalar(static_cast<RealT>(1));
+    auto MC = M->clone();
+    MC->generateFactors(model,theta,sampler);
+    auto Cobj = ROL::makePtr<ROL::OED::Hom::ObjectiveC<RealT>>(MC,c,true);
+    Cobj->checkGradient(*test,*dir1,true,*outStream);
+    Cobj->checkHessVec(*test,*dir1,true,*outStream);
+    Cobj->checkHessSym(*test,*dir1,*dir2,true,*outStream);
+
+    auto MD = M->clone();
+    MD->generateFactors(model,theta,sampler);
+    auto Dobj = ROL::makePtr<ROL::OED::Hom::ObjectiveD<RealT>>(MD,theta,true);
+    Dobj->checkGradient(*test,*dir1,true,*outStream);
+    Dobj->checkHessVec(*test,*dir1,true,*outStream);
+    Dobj->checkHessSym(*test,*dir1,*dir2,true,*outStream);
+
+    auto MI = M->clone();
+    MI->generateFactors(model,theta,sampler);
+    auto FI = ROL::makePtr<ROL::OED::Factors<RealT>>(model,theta,sampler);
+    auto Itobj = ROL::makePtr<ROL::OED::Hom::ObjectiveI<RealT>>(MI,FI,sampler,true,false);
+    Itobj->checkGradient(*test,*dir1,true,*outStream);
+    Itobj->checkHessVec(*test,*dir1,true,*outStream);
+    Itobj->checkHessSym(*test,*dir1,*dir2,true,*outStream);
+    auto Ibobj = ROL::makePtr<ROL::OED::Hom::ObjectiveI<RealT>>(MI,FI,sampler,true,true);
+    Ibobj->checkGradient(*test,*dir1,true,*outStream);
+    Ibobj->checkHessVec(*test,*dir1,true,*outStream);
+    Ibobj->checkHessSym(*test,*dir1,*dir2,true,*outStream);
+
+    auto M0 = ROL::makePtr<ROL::OED::StdMomentOperator<RealT>>(type,noise);
+    if (addTik) {
+      RealT beta  = parlist->sublist("Problem").get("Tikhonov Parameter",1e-4);
+      auto P = ROL::makePtr<RegularizationOperator<RealT>>(beta);
+      M0->setPerturbation(P);
+    }
+    auto M1 = M0->clone();
+    M0->setMatrixNumber(0);
+    M1->setMatrixNumber(1);
+
+    auto MA0 = M0->clone();
+    auto MA1 = M1->clone();
+    MA0->generateFactors(model,theta,sampler);
+    MA1->generateFactors(model,theta,sampler);
+    auto AHobj = ROL::makePtr<ROL::OED::Het::ObjectiveA<RealT>>(MA0,MA1,theta,ts,wts,true);
+    AHobj->checkGradient(*test,*dir1,true,*outStream);
+    AHobj->checkHessVec(*test,*dir1,true,*outStream);
+    AHobj->checkHessSym(*test,*dir1,*dir2,true,*outStream);
+
+    auto MC0 = M0->clone();
+    auto MC1 = M1->clone();
+    MC0->generateFactors(model,theta,sampler);
+    MC1->generateFactors(model,theta,sampler);
+    auto CHobj = ROL::makePtr<ROL::OED::Het::ObjectiveC<RealT>>(MC0,MC1,c,true);
+    CHobj->checkGradient(*test,*dir1,true,*outStream);
+    CHobj->checkHessVec(*test,*dir1,true,*outStream);
+    CHobj->checkHessSym(*test,*dir1,*dir2,true,*outStream);
+
+    auto MD0 = M0->clone();
+    auto MD1 = M1->clone();
+    MD0->generateFactors(model,theta,sampler);
+    MD1->generateFactors(model,theta,sampler);
+    auto DHobj = ROL::makePtr<ROL::OED::Het::ObjectiveD<RealT>>(MC0,MC1,theta,true);
+    DHobj->checkGradient(*test,*dir1,true,*outStream);
+    DHobj->checkHessVec(*test,*dir1,true,*outStream);
+    DHobj->checkHessSym(*test,*dir1,*dir2,true,*outStream);
+
+    auto MI0 = M0->clone();
+    auto MI1 = M1->clone();
+    MI0->generateFactors(model,theta,sampler);
+    MI1->generateFactors(model,theta,sampler);
+    auto ItHobj = ROL::makePtr<ROL::OED::Het::ObjectiveI<RealT>>(MI0,MI1,FI,sampler,true,false);
+    ItHobj->checkGradient(*test,*dir1,true,*outStream);
+    ItHobj->checkHessVec(*test,*dir1,true,*outStream);
+    ItHobj->checkHessSym(*test,*dir1,*dir2,true,*outStream);
+    auto IbHobj = ROL::makePtr<ROL::OED::Het::ObjectiveI<RealT>>(MI0,MI1,FI,sampler,true,true);
+    IbHobj->checkGradient(*test,*dir1,true,*outStream);
+    IbHobj->checkHessVec(*test,*dir1,true,*outStream);
+    IbHobj->checkHessSym(*test,*dir1,*dir2,true,*outStream);
+
+
     // Setup ROL solver
     std::clock_t timer = std::clock();
-    ROL::Ptr<ROL::Solver<RealT>> solver = ROL::makePtr<ROL::Solver<RealT>>(problem,*parlist);
+    auto solver = ROL::makePtr<ROL::Solver<RealT>>(problem,*parlist);
     solver->solve(*outStream);
     *outStream << "  " << ocType << "-optimal design time:      "
                << static_cast<RealT>(std::clock()-timer)/static_cast<RealT>(CLOCKS_PER_SEC)

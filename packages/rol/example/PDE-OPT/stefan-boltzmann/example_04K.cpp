@@ -23,7 +23,6 @@
 //#include <fenv.h>
 //
 #include "ROL_Solver.hpp"
-#include "ROL_Bounds.hpp"
 #include "ROL_BoundConstraint_SimOpt.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 
@@ -31,6 +30,7 @@
 #include "../TOOLS/pdeconstraintK.hpp"
 #include "../TOOLS/pdeobjectiveK.hpp"
 #include "../TOOLS/pdevectorK.hpp"
+#include "../TOOLS/pdeboundsK.hpp"
 #include "pde_stoch_stefan_boltzmannK.hpp"
 #include "obj_stoch_stefan_boltzmannK.hpp"
 #include "mesh_stoch_stefan_boltzmannK.hpp"
@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
   //feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
-  int iprint     = argc - 1;
+  int iprint = argc - 1;
   ROL::Ptr<std::ostream> outStream;
   ROL::nullstream bhs; // outputs nothing
 
@@ -88,10 +88,10 @@ int main(int argc, char *argv[]) {
     auto r_ptr   = assembler->createResidualVector(); r_ptr->putScalar(0.0);
     auto zbc_ptr = assembler->createControlVector();  zbc_ptr->putScalar(280.0);
     auto zp_ptr  = ROL::makePtr<std::vector<RealT>>(controlDim,0.0);
-    auto up      = ROL::makePtr<PDE_PrimalSimVector<RealT,DeviceT>>(u_ptr,pde,assembler);
-    auto pp      = ROL::makePtr<PDE_PrimalSimVector<RealT,DeviceT>>(p_ptr,pde,assembler);
-    auto rp      = ROL::makePtr<PDE_DualSimVector<RealT,DeviceT>>(r_ptr,pde,assembler);
-    auto zbc     = ROL::makePtr<PDE_PrimalOptVector<RealT,DeviceT>>(zbc_ptr,pde,assembler);
+    auto up      = ROL::makePtr<PDE_PrimalSimVector<RealT,DeviceT>>(u_ptr,pde,assembler,*parlist);
+    auto pp      = ROL::makePtr<PDE_PrimalSimVector<RealT,DeviceT>>(p_ptr,pde,assembler,*parlist);
+    auto rp      = ROL::makePtr<PDE_DualSimVector<RealT,DeviceT>>(r_ptr,pde,assembler,*parlist);
+    auto zbc     = ROL::makePtr<PDE_PrimalOptVector<RealT,DeviceT>>(zbc_ptr,pde,assembler,*parlist);
     auto zparam  = ROL::makePtr<ROL::StdVector<RealT>>(zp_ptr);
     auto zp      = ROL::makePtr<PDE_OptVector<RealT>>(zbc, zparam);
     auto xp      = ROL::makePtr<ROL::Vector_SimOpt<RealT>>(up,zp);
@@ -118,8 +118,7 @@ int main(int argc, char *argv[]) {
     auto zhi_bc_ptr = assembler->createControlVector();
     zlo_bc_ptr->putScalar(static_cast<RealT>(lower_bc));
     zhi_bc_ptr->putScalar(static_cast<RealT>(upper_bc));
-    auto zlo_bc = ROL::makePtr<PDE_PrimalOptVector<RealT,DeviceT>>(zlo_bc_ptr,pde,assembler);
-    auto zhi_bc = ROL::makePtr<PDE_PrimalOptVector<RealT,DeviceT>>(zhi_bc_ptr,pde,assembler);
+    auto bnd_bc = ROL::makePtr<ROL::TpetraBoundConstraint<RealT>>(zlo_bc_ptr,zhi_bc_ptr);
     // Bounds for advection control
     RealT lower = parlist->sublist("Problem").get("Lower Advection Bound",-100.0);
     RealT upper = parlist->sublist("Problem").get("Upper Advection Bound", 100.0);
@@ -127,17 +126,14 @@ int main(int argc, char *argv[]) {
     auto zhi_param_ptr = ROL::makePtr<std::vector<RealT>>(controlDim,upper);
     auto zlo_adv = ROL::makePtr<ROL::StdVector<RealT>>(zlo_param_ptr);
     auto zhi_adv = ROL::makePtr<ROL::StdVector<RealT>>(zhi_param_ptr);
+    auto bnd_adv = ROL::makePtr<ROL::Bounds<RealT>>(zlo_adv,zhi_adv);
     // Combined bounds
-    auto zlop = ROL::makePtr<PDE_OptVector<RealT>>(zlo_bc, zlo_adv);
-    auto zhip = ROL::makePtr<PDE_OptVector<RealT>>(zhi_bc, zhi_adv);
-    auto zbnd = ROL::makePtr<ROL::Bounds<RealT>>(zlop,zhip);
     auto ulo_ptr = assembler->createStateVector();
     auto uhi_ptr = assembler->createStateVector();
     ulo_ptr->putScalar(ROL::ROL_NINF<RealT>()); uhi_ptr->putScalar(ROL::ROL_INF<RealT>());
-    auto ulop = ROL::makePtr<PDE_PrimalSimVector<RealT,DeviceT>>(ulo_ptr,pde,assembler,*parlist);
-    auto uhip = ROL::makePtr<PDE_PrimalSimVector<RealT,DeviceT>>(uhi_ptr,pde,assembler,*parlist);
-    auto ubnd = ROL::makePtr<ROL::Bounds<RealT>>(ulop,uhip);
-    auto bnd = ROL::makePtr<ROL::BoundConstraint_SimOpt<RealT> >(ubnd,zbnd);
+    auto ubnd = ROL::makePtr<ROL::TpetraBoundConstraint<RealT>>(ulo_ptr,uhi_ptr);
+    auto zbnd = ROL::makePtr<PDE_OptBounds<RealT>>(bnd_bc,zbc,bnd_adv,zparam);
+    auto bnd = ROL::makePtr<ROL::BoundConstraint_SimOpt<RealT>>(ubnd,zbnd);
 
     /*************************************************************************/
     /***************** BUILD OPTIMIZATION PROBLEM ****************************/

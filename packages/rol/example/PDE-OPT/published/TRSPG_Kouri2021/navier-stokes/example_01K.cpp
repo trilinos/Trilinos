@@ -23,8 +23,8 @@
 #include <algorithm>
 
 #include "ROL_TpetraMultiVector.hpp"
+#include "ROL_TpetraBoundConstraint.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
-#include "ROL_Bounds.hpp"
 #include "ROL_Solver.hpp"
 #include "ROL_SingletonVector.hpp"
 #include "ROL_ConstraintFromObjective.hpp"
@@ -109,9 +109,9 @@ int main(int argc, char *argv[]) {
     auto imul = ROL::makePtr<ROL::SingletonVector<RealT>>(0.0);
 
     // Build bound constraint
-    auto lp = zp->clone(); lp->setScalar(0.0);
-    auto hp = zp->clone(); hp->setScalar(1.0);
-    auto bnd = ROL::makePtr<ROL::Bounds<RealT>>(lp, hp);
+    auto lp = assembler->createControlVector(); lp->putScalar(0.0);
+    auto hp = assembler->createControlVector(); hp->putScalar(1.0);
+    auto bnd = ROL::makePtr<ROL::TpetraBoundConstraint<RealT>>(lp, hp);
     // Build optimization problem
     auto optProb = ROL::makePtr<ROL::Problem<RealT>>(robj, zp);
     optProb->addBoundConstraint(bnd);
