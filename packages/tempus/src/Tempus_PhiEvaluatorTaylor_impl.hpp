@@ -52,6 +52,8 @@ PhiEvaluatorTaylor<Scalar>::computeLinOpPhi(const int phi_order,
       std::invalid_argument,
       "LinOpPhi: phi_order must be nonnegative.");
 
+  Teuchos::TimeMonitor phitimer(*timerPhi_);
+
   const int expansionOrder = getExpansionOrder();
 
   // phi_k(L) * v is in range(L)
@@ -92,13 +94,15 @@ PhiEvaluatorTaylor<Scalar>::computeLinOpPhi(const int phi_order,
   // Iteratively compute d_k = (L^(k-phi_order) d_{k-1}) / (k!) and add to result
   for (k = phi_order + 1; k <= expansionOrder + phi_order; ++k)
   {
-    // next <- K * d_k
-    // TODO: do we need the temp vector?
-    Thyra::apply(*L, Thyra::NOTRANS, *d_k, next.ptr());
+    {
+      Teuchos::TimeMonitor linoptimer(*timerLinOp_);
+      // next <- K * d_k
+      // TODO: do we need the temp vector?
+      Thyra::apply(*L, Thyra::NOTRANS, *d_k, next.ptr());
 
-    // multiply the update by 1/k and store in d_k
-    Thyra::V_StV(d_k.ptr(), Scalar(1.) / Scalar(k), *next);
-
+      // multiply the update by 1/k and store in d_k
+      Thyra::V_StV(d_k.ptr(), Scalar(1.) / Scalar(k), *next);
+    }
     // add d_k to the final result
     Thyra::Vp_V(v, *d_k);
 
@@ -150,7 +154,7 @@ void PhiEvaluatorTaylor<Scalar>::setPhiEvaluatorValues(
   setExpansionOrder(pl->get<int>("Expansion Order", 10));
 
   // TODO: make this configurable?
-  this->useAtildeForSingleRHS_ = false;
+  this->useAtildeForSingleRHS_ = true;
 
   std::cout << "\nuseAtildeForSingleRHS_: " << this->useAtildeForSingleRHS_ << std::endl;
   std::cout << "Parameter List: " << *pl << std::endl;
