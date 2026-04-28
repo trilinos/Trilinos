@@ -16,6 +16,8 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SmootherBase.hpp"
 #include "MueLu_SmootherPrototype.hpp"
+#include <Xpetra_BlockedCrsMatrix.hpp>
+#include <Xpetra_BlockedMultiVector.hpp>
 
 // Helper functions to test if derived classes conforms to the SmootherBase and SmootherPrototype interfaces
 
@@ -165,6 +167,89 @@ void testDirectSolver(MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdin
 
   magnitude_type residualNorms = testApply_A125_X0_RandomRHS(smoother, out, success);
   TEST_EQUALITY(residualNorms < 100 * MT::eps(), true);
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void testDirectSolverBlocked(MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node>& smoother,
+                             Teuchos::FancyOStream& out, bool& success) {
+#include "MueLu_UseShortNames.hpp"
+
+  using ST             = Teuchos::ScalarTraits<SC>;
+  using magnitude_type = typename ST::magnitudeType;
+  using MT             = Teuchos::ScalarTraits<magnitude_type>;
+
+  // Build two diagonal blocks
+  Teuchos::RCP<Matrix> A00 = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(50);
+  Teuchos::RCP<Matrix> A11 = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(75);
+
+  std::vector<Teuchos::RCP<const Map>> maps;
+  maps.push_back(A00->getRangeMap());
+  maps.push_back(A11->getRangeMap());
+
+  // Full map for the blocked object
+  GO numGlobal = 125;
+  Teuchos::RCP<const Map> fullMap =
+      MapFactory::Build(Parameters::getLib(), numGlobal, 0, Parameters::getDefaultComm());
+
+  Teuchos::RCP<const Xpetra::MapExtractor<SC, LO, GO, NO>> rangeMapExtractor =
+      Xpetra::MapExtractorFactory<SC, LO, GO, NO>::Build(fullMap, maps, false);
+
+  Teuchos::RCP<const Xpetra::MapExtractor<SC, LO, GO, NO>> domainMapExtractor =
+      Xpetra::MapExtractorFactory<SC, LO, GO, NO>::Build(fullMap, maps, false);
+
+  Teuchos::RCP<Xpetra::BlockedCrsMatrix<SC, LO, GO, NO>> bA =
+      Teuchos::rcp(new Xpetra::BlockedCrsMatrix<SC, LO, GO, NO>(rangeMapExtractor, domainMapExtractor, 2));
+
+  bA->setMatrix(0, 0, A00);
+  bA->setMatrix(1, 1, A11);
+  bA->fillComplete();
+
+  Teuchos::RCP<Matrix> A = bA;
+  setupSmoother(A, smoother, out, success);
+
+  // Exact blocked solution
+  Teuchos::RCP<MultiVector> X0 = MultiVectorFactory::Build(A00->getDomainMap(), 1);
+  Teuchos::RCP<MultiVector> X1 = MultiVectorFactory::Build(A11->getDomainMap(), 1);
+  X0->setSeed(846930886);
+  X1->setSeed(846930887);
+  X0->randomize();
+  X1->randomize();
+
+  {
+    Array<magnitude_type> norms(1);
+    X0->norm2(norms);
+    X0->scale(ST::one() / norms[0]);
+    X1->norm2(norms);
+    X1->scale(ST::one() / norms[0]);
+  }
+
+  std::vector<Teuchos::RCP<MultiVector>> xBlocks(2);
+  xBlocks[0] = X0;
+  xBlocks[1] = X1;
+
+  Teuchos::RCP<Xpetra::BlockedMultiVector<SC, LO, GO, NO>> Xexact =
+      Teuchos::rcp(new Xpetra::BlockedMultiVector<SC, LO, GO, NO>(domainMapExtractor->getBlockedMap(), xBlocks));
+
+  // RHS = A * Xexact
+  Teuchos::RCP<MultiVector> RHSmerged    = MultiVectorFactory::Build(bA->getRangeMap(), 1);
+  Teuchos::RCP<MultiVector> XexactMerged = Xexact->Merge();
+  bA->apply(*XexactMerged, *RHSmerged, Teuchos::NO_TRANS, ST::one(), ST::zero());
+
+  Teuchos::RCP<Xpetra::BlockedMultiVector<SC, LO, GO, NO>> RHS =
+      Teuchos::rcp(new Xpetra::BlockedMultiVector<SC, LO, GO, NO>(rangeMapExtractor, RHSmerged));
+
+  // Initial guess
+  Teuchos::RCP<Xpetra::BlockedMultiVector<SC, LO, GO, NO>> X =
+      Teuchos::rcp(new Xpetra::BlockedMultiVector<SC, LO, GO, NO>(domainMapExtractor->getBlockedMap(), 1, true));
+
+  smoother.Apply(*X, *RHS);
+
+  Array<magnitude_type> residualNorms = Utilities::ResidualNorm(*bA, *X->Merge(), *RHS->Merge());
+  out << "||Blocked Residual|| = "
+      << std::setiosflags(std::ios::fixed) << std::setprecision(20)
+      << residualNorms[0] << std::endl;
+
+  TEST_EQUALITY(residualNorms[0] < 100 * MT::eps(), true);
 }
 
 }  // namespace Smoothers

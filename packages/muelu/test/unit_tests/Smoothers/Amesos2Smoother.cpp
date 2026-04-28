@@ -54,9 +54,30 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Amesos2Smoother, Apply_Correctness, Scalar, Lo
   }
 }
 
-#define MUELU_ETI_GROUP(SC, LO, GO, Node)                                           \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Amesos2Smoother, NotSetup, SC, LO, GO, Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Amesos2Smoother, Apply_Correctness, SC, LO, GO, Node)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Amesos2Smoother, Apply_Correctness_Blocked, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#include "MueLu_UseShortNames.hpp"
+  MUELU_TESTING_SET_OSTREAM;
+  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, NO);
+  out << "version: " << MueLu::Version() << std::endl;
+
+  MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
+    Teuchos::RCP<Amesos2Smoother> smoother;
+#ifdef HAVE_AMESOS2_KLU2
+    smoother = Teuchos::rcp(new Amesos2Smoother("Klu"));
+    testDirectSolverBlocked(*smoother, out, success);
+#endif
+
+#ifdef HAVE_AMESOS2_SUPERLU
+    smoother = Teuchos::rcp(new Amesos2Smoother("Superlu"));
+    testDirectSolverBlocked(*smoother, out, success);
+#endif
+  }
+}
+
+#define MUELU_ETI_GROUP(SC, LO, GO, Node)                                                    \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Amesos2Smoother, NotSetup, SC, LO, GO, Node)          \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Amesos2Smoother, Apply_Correctness, SC, LO, GO, Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Amesos2Smoother, Apply_Correctness_Blocked, SC, LO, GO, Node)
 
 #include <MueLu_ETI_4arg.hpp>
 
