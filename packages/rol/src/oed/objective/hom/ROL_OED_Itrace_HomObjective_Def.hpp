@@ -42,8 +42,8 @@ Itrace_Objective<Real>::Itrace_Objective( const Ptr<BilinearConstraint<Real>> &c
 
   int dim = weight_.size();
   Ptr<Vector<Real>> F = state->dual().clone(),
-                              g = state->dual().clone(),
-                              b = state->dual().clone();
+                    g = state->dual().clone(),
+                    b = state->dual().clone();
   b_.clear(); b_.resize(dim);
   for (int i = 0; i < dim; ++i) {
     b->zero();

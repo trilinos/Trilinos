@@ -34,8 +34,8 @@ void BilinearConstraint<Real>::computeG(Vector<Real> &g) {
 // C optimality
 template<typename Real>
 BilinearConstraint<Real>::BilinearConstraint(const Ptr<Factors<Real>>        &factors,
-                   const Ptr<MomentOperator<Real>> &M,
-                   const Ptr<Vector<Real>>    &c)
+                                             const Ptr<MomentOperator<Real>> &M,
+                                             const Ptr<Vector<Real>>         &c)
   : ProfiledClass<Real,std::string>("OED::BilinearConstraint"),
     factors_(factors), M_(M), type_("C"), g_(c->clone()),
     isPinit_(false) {
@@ -44,13 +44,13 @@ BilinearConstraint<Real>::BilinearConstraint(const Ptr<Factors<Real>>        &fa
 
 // A, D, I, and R optimality
 template<typename Real>
-BilinearConstraint<Real>::BilinearConstraint(const Ptr<Factors<Real>> &factors,
-                   const Ptr<MomentOperator<Real>> &M,
-                   const std::string               &type,
-                   const Ptr<TraceSampler<Real>>   &traceSampler)
+BilinearConstraint<Real>::BilinearConstraint(const Ptr<Factors<Real>>        &factors,
+                                             const Ptr<MomentOperator<Real>> &M,
+                                             const std::string               &type,
+                                             const Ptr<TraceSampler<Real>>   &traceSampler)
   : ProfiledClass<Real,std::string>("OED::BilinearConstraint"),
     factors_(factors), M_(M), traceSampler_(traceSampler),
-    type_(type), g_(factors_->get(0)->clone()),
+    type_(type), g_(factors_->createParameterVector(true)),
     isPinit_(false) {
   if (type_ != "A" && type_ != "D" && type_ != "I" && type_ != "R") {
     std::stringstream ss;

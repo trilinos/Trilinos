@@ -18,11 +18,11 @@ template <typename Real>
 class ScaledObjective : public Objective<Real> {
 private:
   const Ptr<Objective<Real>> obj_;
-  const Real scale_;
+  const Real scale_, shift_;
 
 public:
-  ScaledObjective(const Ptr<Objective<Real>> &obj, Real scale)
-    : obj_(obj), scale_(scale) {}
+  ScaledObjective(const Ptr<Objective<Real>> &obj, Real scale, Real shift = Real(0))
+    : obj_(obj), scale_(scale), shift_(shift) {}
 
   void update(const Vector<Real> &x, UpdateType type, int iter = -1) override;
   void setParameter(const std::vector<Real> &param) override;

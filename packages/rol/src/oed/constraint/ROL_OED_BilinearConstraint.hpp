@@ -78,6 +78,27 @@ public:
   void getTraceSample(Vector<Real> &g, const std::vector<Real> &param) const;
   // void sumAll(Real *in, Real *out, int size) const;
   Real logDeterminant(const Vector<Real> &z);
+  void summarize(std::ostream &stream, const Ptr<BatchManager<Real>> &bman = nullPtr) const override {
+    ProfiledClass<Real,std::string>::summarize(stream,bman);
+    if (M_ != nullPtr) {
+      stream << std::string(80,'-') << std::endl;
+      M_->summarize(stream,bman);
+    }
+    if (factors_ != nullPtr) {
+      stream << std::string(80,'-') << std::endl;
+      factors_->summarize(stream,bman);
+    }
+    if (traceSampler_ != nullPtr) {
+      stream << std::string(80,'-') << std::endl;
+      traceSampler_->summarize(stream,bman);
+    }
+  }
+  void reset() {
+    ProfiledClass<Real,std::string>::reset();
+    if (M_ != nullPtr) M_->reset();
+    if (factors_ != nullPtr) factors_->reset();
+    if (traceSampler_ != nullPtr) traceSampler_->reset();
+  }
 }; // class BilinearConstraint
 
 } // End OED Namespace
