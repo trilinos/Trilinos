@@ -8,6 +8,7 @@
 #define Tempus_PhiEvaluatorLeja_decl_hpp
 
 #include "Tempus_PhiEvaluator.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 
 #include <complex>
 
@@ -66,7 +67,19 @@ class PhiEvaluatorLeja
  public:
   /// Inherit Contructor
   PhiEvaluatorLeja<Scalar>(std::string name) : PhiEvaluator<Scalar>(name)
-  { }
+  {
+    std::stringstream ss;
+    ss << "Tempus::" << name + " Leja";
+
+    std::string ddLabel = ss.str() + ": dd_phi";
+    timerDD_ = Teuchos::TimeMonitor::getNewCounter(ddLabel);
+
+    std::string phiLabel = ss.str() + ": PhiLeja";
+    timerPhi_ = Teuchos::TimeMonitor::getNewCounter(phiLabel);
+
+    std::string linOpLabel = ss.str() + ": LinOp";
+    timerLinOp_ = Teuchos::TimeMonitor::getNewCounter(linOpLabel);
+  }
   PhiEvaluatorLeja<Scalar>() : PhiEvaluatorLeja<Scalar>("Phi Evaluator")
   { }
 
@@ -117,6 +130,8 @@ class PhiEvaluatorLeja
   Scalar leja_a_;
   Scalar leja_b_;
   Scalar leja_c_;
+
+  Teuchos::RCP<Teuchos::Time> timerDD_, timerLinOp_, timerPhi_;
 
   /// Initialize the Leja points
   void initLejaPointsBase();
