@@ -561,12 +561,6 @@ namespace BaskerNS
         }
         METIS_1DARRAY metis_perm_i  (BASKER_KOKKOS_NOINIT("metis_perm_k"),   n_interior);
         METIS_1DARRAY metis_iperm_i (BASKER_KOKKOS_NOINIT("metis_iperm_k"),  n_interior);
-#ifdef MERGE_SCHUR_TO_TOP_SEPARATOR
-        timer_metis.reset();
-        METIS_NodeNDP(n_interior, &(metis_rowptr(0)), &(metis_colidx(0)), vwgt,
-                      num_leaves, options, &(metis_perm_i(0)), &(metis_iperm_i(0)), &(metis_sep_sizes(0)));
-        time_metis += timer_metis.seconds();
-#else
         METIS_1DARRAY metis_sizes_i (BASKER_KOKKOS_NOINIT("metis_isizes_k"), num_doms-1);
         timer_metis.reset();
         if (num_leaves/2 > 1) {
@@ -580,7 +574,6 @@ namespace BaskerNS
           metis_sizes_i(0) = n_interior;
         }
         time_metis += timer_metis.seconds();
-#endif
 
         // add schur complement to top separator
         /*{
@@ -601,13 +594,6 @@ namespace BaskerNS
           }
         }
         for (idx_t j=0; j<metis_size; j++) metis_perm_k(metis_iperm_k(j)) = j;
-#ifdef MERGE_SCHUR_TO_TOP_SEPARATOR
-        for (int i=0; i<2*num_leaves-1; i++) {
-          printf( " + metis_size[%d] = %d\n",i,metis_sep_sizes(i) );
-        }
-        metis_sep_sizes[2*num_leaves-2] += n_schur;
-        printf( "   -> metis_size[%d] = %d\n",2*num_leaves-2,metis_sep_sizes(2*num_leaves-2) );
-#else
         if(Options.verbose == BASKER_TRUE) {
           printf( "\n Output from METIS with %d subdomains\n",num_leaves/2 );
           for (int i=0; i<num_leaves-1; i++) {
@@ -640,7 +626,6 @@ namespace BaskerNS
           }
           printf("\n");
 	}
-#endif
       } else {
         // Calling METIS on Original matrix
         //  Copy graph into metis_rowptr/metis_colidx, while removing diagonals
