@@ -7,5 +7,10 @@
 // *****************************************************************************
 // @HEADER
 
-#include "Thyra_TpetraEuclideanScalarProd_decl.hpp"
-#include "Thyra_TpetraEuclideanScalarProd_def.hpp"
+#ifndef THYRATPETRAADAPTERS_CONFIG_H
+#define THYRATPETRAADAPTERS_CONFIG_H
+
+/* Define if explicit (template) instantiation is enabled. */
+#cmakedefine HAVE_THYRATPETRAADAPTERS_EXPLICIT_INSTANTIATION
+
+#endif

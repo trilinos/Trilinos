@@ -282,8 +282,28 @@ TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TpetraVectorSpace()
   // uninitialized state.
 }
 
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node>::~TpetraVectorSpace() = default;
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+tpetraVectorSpace(
+  const RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > &tpetraMap
+  )
+{
+  RCP<TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node> > vs =
+    TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node>::create();
+  vs->initialize(tpetraMap);
+  return vs;
+}
 
 } // end namespace Thyra
 
+#define THYRATPETRAADAPTERS_TPETRAVECTORSPACE_INSTANT(S, LO, GO, N)            \
+  template class Thyra::TpetraVectorSpace<S, LO, GO, N>;                       \
+                                                                               \
+  template Teuchos::RCP<Thyra::TpetraVectorSpace<S, LO, GO, N>>                \
+  Thyra::tpetraVectorSpace(const Thyra::RCP<const Tpetra::Map<LO, GO, N>> &);
 
 #endif // THYRA_TPETRA_VECTOR_SPACE_HPP

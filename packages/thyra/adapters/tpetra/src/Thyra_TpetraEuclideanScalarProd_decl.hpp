@@ -55,12 +55,8 @@ private:
  * \relates TpetraEuclideanScalarProd
  */
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-inline
 RCP<const TpetraEuclideanScalarProd<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-tpetraEuclideanScalarProd()
-{
-  return  Teuchos::rcp(new TpetraEuclideanScalarProd<Scalar,LocalOrdinal,GlobalOrdinal,Node>);
-}
+tpetraEuclideanScalarProd();
 
 
 } // end namespace Thyra

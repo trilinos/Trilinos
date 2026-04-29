@@ -30,6 +30,7 @@
 #include "Teko_SIMPLEPreconditionerFactory.hpp"
 
 #include "Thyra_TpetraLinearOp.hpp"
+#include "Thyra_TpetraVector.hpp"
 #include "Thyra_TpetraVectorSpace.hpp"
 
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
