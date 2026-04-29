@@ -113,33 +113,33 @@ TEUCHOS_UNIT_TEST(PhiEvaluator, Leja_SinCos)
   // we do not test imaginary Leja dds, not needed, and not provied by all implementations
 
   // test large ellipse and runtime
-  const int exp_order_high = 300;
-  leja_a                   = -1000.0;
-  leja_c                   = 50.0;
+  const int expansion_order_high = 300;
+  leja_a                         = -1000.0;
+  leja_c                         = 50.0;
   // test dt scaling: scale Leja ellipse in one case, use dt as argument in another
   double dt                = 0.5;
 
   phiEvaluator->setLejaEllipse(leja_a, leja_b, leja_c);
-  phiEvaluator->setExpansionOrder(exp_order_high);
+  phiEvaluator->setExpansionOrder(expansion_order_high);
   phiEvaluatorLejaTay->setLejaEllipse(dt*leja_a, dt*leja_b, dt*leja_c);
-  phiEvaluatorLejaTay->setExpansionOrder(exp_order_high);
+  phiEvaluatorLejaTay->setExpansionOrder(expansion_order_high);
 
   // update for new ellipse
   auto tic = std::chrono::steady_clock::now();
-  lp_dd = phiEvaluator->getDividedDiffs(0, dt, exp_order_high);
+  lp_dd = phiEvaluator->getDividedDiffs(0, dt, expansion_order_high);
   auto toc = std::chrono::steady_clock::now();
   auto walltime_dd_phi = std::chrono::duration_cast<std::chrono::microseconds>(toc - tic);
 
   // check divided difference calculation against taylor series impl
   tic = std::chrono::steady_clock::now();
-  auto lp_dd_tay = phiEvaluatorLejaTay->getDividedDiffs(0, 1.0, exp_order_high);
+  auto lp_dd_tay = phiEvaluatorLejaTay->getDividedDiffs(0, 1.0, expansion_order_high);
   toc = std::chrono::steady_clock::now();
   auto walltime_dd_tay = std::chrono::duration_cast<std::chrono::microseconds>(toc - tic);
   std::cout << "walltime dd_phi: " << walltime_dd_phi.count()
             << " μs walltime dd_tay: " << walltime_dd_tay.count() << " μs" << std::endl;
 
   TEST_COMPARE_FLOATING_ARRAYS(lp_dd, lp_dd_tay, 1e-11);
-  // for (int k = 0; k < exp_order_high; k++)
+  // for (int k = 0; k < lejaOrder_high; k++)
   // {
   //  TEST_FLOATING_EQUALITY(lp_dd[k].real(), lp_dd_tay[k].real(), 1e-11);
   //  std::cout << "k: " << k  << " dd_phi_k: " << lp_dd[k].real() << " dd_taylor_k: " << lp_dd_tay[k].real() << std::endl;

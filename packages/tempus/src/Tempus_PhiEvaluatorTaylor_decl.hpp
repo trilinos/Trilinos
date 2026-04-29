@@ -26,7 +26,9 @@ class PhiEvaluatorTaylor
   : virtual public PhiEvaluator<Scalar> {
  public:
   /// Inherit Contructor
-  PhiEvaluatorTaylor<Scalar>(std::string name) : PhiEvaluator<Scalar>(name)
+  PhiEvaluatorTaylor<Scalar>(std::string name)
+    : PhiEvaluator<Scalar>(name),
+      expansionOrder_(0)
   {
     std::stringstream ss;
     ss << "Tempus::" << name ;
@@ -50,7 +52,7 @@ class PhiEvaluatorTaylor
   void setPhiEvaluatorValues(Teuchos::RCP<Teuchos::ParameterList> pl) override;
 
   /// Set the polynomial expansion order
-  void setExpansionOrder(int order) { expansionOrder_ = order; }
+  void setExpansionOrder(const int expansionOrder) { expansionOrder_ = expansionOrder; }
 
   /// Get the polynomial expansion order
   int getExpansionOrder() const { return expansionOrder_; }

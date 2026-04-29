@@ -49,7 +49,7 @@ PhiEvaluatorLeja<Scalar>::getValidParameters() const
 
   pl->set<int>(
       "Leja DD Method", 1,
-      "DD Method to use. 0 for Recurrence. 1 for Taylor Series. 2 for DD_phi");
+      "DD Method to use. 0 for Recurrence. 1 for Taylor Series. 2 for DD_phi. 3 for Taylor Real.");
 
   pl->set<double>(
       "leja_tol", 1.0e-18,
@@ -74,8 +74,7 @@ template <class Scalar>
 Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int phi_order,
                      const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> L,
                      const Teuchos::Ptr<Thyra::VectorBase<Scalar>> v,
-                     const Scalar cdt
-                     )
+                     const Scalar cdt)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
       phi_order != 0,
@@ -83,8 +82,6 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
       "LinOpPhi: phi_order must be zero.");
 
   Teuchos::TimeMonitor phitimer(*timerPhi_);
-
-  const int expansionOrder = this->getExpansionOrder();
 
   // phi_k(L) * v is in range(L)
   const auto rangeSpace = L->range();
@@ -94,9 +91,10 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
   // scale the Leja ellipse by the provided (fractional) timestep
   const Scalar scale = cdt * std::get<0>(transform_params);
 
-  // Get divided differences, we need one more than the polynomial order
-  auto lp_dd = getDividedDiffs(phi_order, cdt, expansionOrder+1);
-  TEUCHOS_ASSERT(lp_dd.size() == expansionOrder+1);
+  // Get lejaOrder divided differences, we need one more than the expansion order (polynomial order)
+  const int lejaOrder = this->getExpansionOrder() + 1;
+  auto lp_dd = getDividedDiffs(phi_order, cdt, lejaOrder);
+  TEUCHOS_ASSERT(lp_dd.size() == lejaOrder);
 
   //std::cout << "DD: " << std::endl;
   //for (const auto& dd : lp_dd) {
@@ -131,7 +129,7 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
   // leja point index k starts at 1
   int k = 1;
   // leja polynomial term index lp_k starts at 0
-  for (int lp_k = 0; k < lp_dd.size() && lp_k < lejaPointsBase_.size(); k++, lp_k++)
+  for (int lp_k = 0; k < lejaOrder && lp_k < lejaPointsBase_.size(); k++, lp_k++)
   {
     // print the update vector vm_k
     //v->describe(*this->getOStream(), Teuchos::VERB_EXTREME);
@@ -217,9 +215,10 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
       }
     }
     else {
-      // TODO: ERROR
+      // We do not support non-conjugate complex Leja points
       TEUCHOS_ASSERT(false);
     }
+
     // TODO: refine this and make dependent on Scalar type
     const Scalar cutoff = 1e22;
     if (overflow > cutoff)
@@ -229,10 +228,8 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
       break;
     }
 
-    // terminate if the update drops below likely significance
-    //if (norm_vm_k < overflow / this->leja_tol_)
     // terminate if the update drops below user tol
-    if (k >= expansionOrder || norm_d_k < this->leja_tol_)
+    if (k >= lejaOrder || norm_d_k < this->leja_tol_)
     {
       sStatus.achievedTol = norm_d_k;
       sStatus.solveStatus = Thyra::SOLVE_STATUS_CONVERGED;
@@ -254,18 +251,22 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
 }
 
 template <class Scalar>
-void PhiEvaluatorLeja<Scalar>::initLejaPointsBase()
+void PhiEvaluatorLeja<Scalar>::initLejaPointsBase(const int lejaOrder)
 {
-  const int exp_order = this->getExpansionOrder();
+  // always have two points at least
+  int maxLejaOrder = std::max(2, lejaOrder);
 
-  // The maximum number of Leja points is: exp_order + 1, but due to conjugacy, we technically need less points stored:
-  // For real Leja points given as the real part of the points below,
-  //    this is perfect, since every conjugate Leja point maps to a single real point
-  // For imaginary Leja points given as the imaginary part,
-  //    this mostly correct but sufficient for exp_order + 1 > 2, since the first two points map both to 0
-  // For conjugate Leja points, we only need 2 + exp_order / 2,
-  //    this still works since it is an upper bound
-  const int maxLejaOrder = std::max(2, exp_order + 1);
+  if (lejaOrder < 0)
+  {
+    // The maximum number of Leja points is: lejaOrder + 1, but due to conjugacy, we technically need less points stored:
+    // For real Leja points given as the real part of the points below,
+    //    this is perfect, since every conjugate Leja point maps to a single real point
+    // For imaginary Leja points given as the imaginary part,
+    //    this mostly correct but sufficient for lejaOrder + 1 > 2, since the first two points map both to 0
+    // For conjugate Leja points, we only need 2 + lejaOrder / 2,
+    //    this still works since it is an upper bound
+    maxLejaOrder = std::max(2, this->getExpansionOrder() + 1);
+  }
 
   lejaPointsBase_ = Teuchos::arcp<LejaPoint>(maxLejaOrder);
 
@@ -326,20 +327,20 @@ constexpr LejaPoint PhiEvaluatorLeja<Scalar>::transformLejaPoint(const LejaPoint
 }
 
 template <class Scalar>
-void PhiEvaluatorLeja<Scalar>::setExpansionOrder(int order)
+void PhiEvaluatorLeja<Scalar>::setExpansionOrder(const int expansionOrder)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
-      order <= 0,
+      expansionOrder <= 0,
       std::invalid_argument,
       "setExpansionOrder: order must be positive.");
 
-  expansionOrder_ = order;
+  expansionOrder_ = expansionOrder;
 
   initLejaPointsBase();
 }
 
 template <class Scalar>
-void PhiEvaluatorLeja<Scalar>::setLejaEllipse(Scalar a, Scalar b, Scalar c)
+void PhiEvaluatorLeja<Scalar>::setLejaEllipse(const Scalar a, const Scalar b, const Scalar c)
 {
   TEUCHOS_ASSERT(a <= b);
   TEUCHOS_ASSERT(c >= 0.0);
@@ -392,39 +393,34 @@ void PhiEvaluatorLeja<Scalar>::setPhiEvaluatorValues(
 }
 
 template <class Scalar>
-Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiffs(const int k, const Scalar cdt, const int exp_order)
+Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiffs(const int k, const Scalar cdt, const int lejaOrder)
 {
   Teuchos::TimeMonitor ddtimer(*timerDD_);
 
   // ensure that we have enough Leja points
-  if (exp_order > this->getExpansionOrder()+1) {
-    setExpansionOrder(exp_order);
-    initLejaPointsBase();
+  if (lejaOrder > lejaPointsBase_.size()) {
+    initLejaPointsBase(lejaOrder);
   }
 
   switch (ddMethod_)
   {
   case 0:
-    std::cout << "Calling dd_phi recurrence method" << std::endl;
-    return getDividedDiffsRC(k, cdt, exp_order);
-    break;
-  case 2:
-    std::cout << "Calling dd_phi H-facorization method" << std::endl;
-    return getDividedDiffsPhi(k, cdt, exp_order);
-    break;
-  case 3:
-    std::cout << "Calling dd_phi real taylor series method" << std::endl;
-    return getDividedDiffsTSR(k, cdt, exp_order);
+    return getDividedDiffsRC(k, cdt, lejaOrder);
     break;
   case 1:
+    return getDividedDiffsTS(k, cdt, lejaOrder);
+    break;
+  case 2:
+    return getDividedDiffsPhi(k, cdt, lejaOrder);
+    break;
+  case 3:
   default:
-    std::cout << "Calling dd_phi taylor series method" << std::endl;
-    return getDividedDiffsTS(k, cdt, exp_order);
+    return getDividedDiffsTSR(k, cdt, lejaOrder);
   }
 }
 
 template <class Scalar>
-Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiffsRC(const int phi_order, const Scalar cdt, const int exp_order)
+Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiffsRC(const int phi_order, const Scalar cdt, const int lejaOrder)
 {
   TEUCHOS_ASSERT(phi_order == 0);
 
@@ -434,18 +430,18 @@ Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiff
   const Scalar scale = cdt * std::get<0>(transform_params);
   // TODO: as long as leja points use double, shift and scale should too
 
-  Teuchos::ArrayRCP<std::complex<double>> x = Teuchos::arcp<std::complex<double>>(exp_order);
-  Teuchos::ArrayRCP<std::complex<double>> d_x = Teuchos::arcp<std::complex<double>>(exp_order);
+  Teuchos::ArrayRCP<std::complex<double>> x = Teuchos::arcp<std::complex<double>>(lejaOrder);
+  Teuchos::ArrayRCP<std::complex<double>> d_x = Teuchos::arcp<std::complex<double>>(lejaOrder);
 
   // initialize list of Leja points and function values
-  for (int idx = 0, lp_idx = 0; idx < exp_order && lp_idx < lejaPointsBase_.size(); idx++, lp_idx++)
+  for (int idx = 0, lp_idx = 0; idx < lejaOrder && lp_idx < lejaPointsBase_.size(); idx++, lp_idx++)
   {
     const LejaPoint lp = transformLejaPoint(lejaPointsBase_[lp_idx], transform_params);
     if (lp.lpt == LPCONJ)
     {
       x[idx] = lp.lp;
       d_x[idx] = std::exp(scale * x[idx]);
-      if (++idx < exp_order)
+      if (++idx < lejaOrder)
       {
         x[idx] = std::conj(lp.lp);
         d_x[idx] = std::exp(scale * x[idx]);
@@ -458,10 +454,10 @@ Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiff
     }
   }
 
-  for (int idx = 0; idx < exp_order-1; idx++)
+  for (int idx = 0; idx < lejaOrder-1; idx++)
   {
     // Compute the next set of divided differences
-    for (int idy = idx+1; idy < exp_order; idy++)
+    for (int idy = idx+1; idy < lejaOrder; idy++)
     {
       d_x[idy] = (d_x[idy] - d_x[idx]) / (x[idy] - x[idx]);
     }
@@ -472,7 +468,7 @@ Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiff
 
 template <class Scalar>
 Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiffsPhi(
-    const int phi_order, const Scalar cdt, const int exp_order)
+    const int phi_order, const Scalar cdt, const int lejaOrder)
 {
   // Compute Newton divided differences of phi_{phi_order} at the Leja points using
   // the Zivcovich (2019) H-factorization + scaling-and-squaring method.
@@ -484,7 +480,7 @@ Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiff
 #ifdef HAVE_TEUCHOS_COMPLEX
   using cplx = std::complex<double>;
 
-  const int n_leja  = exp_order;                   // number of output coefficients
+  const int n_leja  = lejaOrder;                   // number of output coefficients
   const int n_total = phi_order + n_leja;          // total interpolation points
   const int p       = 30;                          // Taylor truncation terms
   const int cap_n   = n_total - 1 + p;             // Taylor degree N in the paper
@@ -634,17 +630,17 @@ Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiff
 #else
   std::cout << "WARNING: getDividedDiffsPhi requires Trilinos configured with Trilinos_ENABLE_COMPLEX=ON" << std::endl;
   std::cout << "WARNING: falling back to getDividedDiffsTSR." << std::endl;
-  return getDividedDiffsTSR(phi_order, cdt, exp_order);
+  return getDividedDiffsTSR(phi_order, cdt, lejaOrder);
 #endif
 }
 
 template <class Scalar>
-Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiffsTS(const int phi_order, const Scalar cdt, const int exp_order)
+Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiffsTS(const int phi_order, const Scalar cdt, const int lejaOrder)
 {
   TEUCHOS_ASSERT(phi_order == 0);
 
 #ifdef HAVE_TEUCHOS_COMPLEX
-  int m = exp_order;
+  int m = lejaOrder;
   Teuchos::ArrayRCP<std::complex<double>> out = Teuchos::arcp<std::complex<double>>(m);
 
   // get scale and transform parameters
@@ -750,17 +746,17 @@ Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiff
 #else
   std::cout << "WARNING: getDividedDiffsTS requires Trilinos configured with Trilinos_ENABLE_COMPLEX=ON" << std::endl;
   std::cout << "WARNING: falling back to getDividedDiffsTSR." << std::endl;
-  return getDividedDiffsTSR(phi_order, cdt, exp_order);
+  return getDividedDiffsTSR(phi_order, cdt, lejaOrder);
 #endif
   return out;
 }
 
 template <class Scalar>
-Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiffsTSR(const int phi_order, const Scalar cdt, const int exp_order)
+Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiffsTSR(const int phi_order, const Scalar cdt, const int lejaOrder)
 {
   TEUCHOS_ASSERT(phi_order == 0);
 
-  const int m = exp_order;
+  const int m = lejaOrder;
 
   //TODO: still need a complex output for compatibility although result is real
   Teuchos::ArrayRCP<std::complex<double>> out = Teuchos::arcp<std::complex<double>>(m);

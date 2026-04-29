@@ -66,7 +66,13 @@ class PhiEvaluatorLeja
   : virtual public PhiEvaluator<Scalar> {
  public:
   /// Inherit Contructor
-  PhiEvaluatorLeja<Scalar>(std::string name) : PhiEvaluator<Scalar>(name)
+  PhiEvaluatorLeja<Scalar>(std::string name)
+    : PhiEvaluator<Scalar>(name),
+      ddMethod_(0),
+      leja_tol_(1.0e-6),
+      leja_a_(-1.0),
+      leja_b_(0.0),
+      leja_c_(1.0)
   {
     std::stringstream ss;
     ss << "Tempus::" << name;
@@ -103,16 +109,16 @@ class PhiEvaluatorLeja
   constexpr LejaPoint transformLejaPoint(const LejaPoint& lp_base, const std::tuple<const Scalar, const Scalar, const Scalar>& scale_params);
 
   /// Set the polynomial expansion order
-  void setExpansionOrder(int order);
+  void setExpansionOrder(const int expansionOrder);
 
   /// Update the Leja ellipse parameters
-  void setLejaEllipse(Scalar a, Scalar b, Scalar c);
+  void setLejaEllipse(const Scalar a, const Scalar b, const Scalar c);
 
   /// Get shifted and scaled leja point (z_i)
   LejaPoint getLpSc(const int lp_idx);
 
   /// Compute divided differences
-  Teuchos::ArrayRCP<std::complex<double>> getDividedDiffs(const int phi_order, const Scalar cdt, const int exp_order);
+  Teuchos::ArrayRCP<std::complex<double>> getDividedDiffs(const int phi_order, const Scalar cdt, const int lejaOrder);
 
   /// Get the polynomial expansion order
   int getExpansionOrder() const { return expansionOrder_; }
@@ -122,8 +128,9 @@ class PhiEvaluatorLeja
 					     const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> L,
 					     const Teuchos::Ptr<Thyra::VectorBase<Scalar>> v,
                const Scalar cdt=1.0
-					     ) override;
- private:
+	) override;
+
+private:
   int expansionOrder_;
   int ddMethod_;
   Scalar leja_tol_;
@@ -133,23 +140,23 @@ class PhiEvaluatorLeja
 
   Teuchos::RCP<Teuchos::Time> timerDD_, timerLinOp_, timerPhi_;
 
-  /// Initialize the Leja points
-  void initLejaPointsBase();
+  /// Initialize lejaOrder Leja points (for negative lejaOrder, deduce the number of points from expansionOrder_)
+  void initLejaPointsBase(const int lejaOrder = -1);
 
   /// Computes the divided differences via taylor series
-  Teuchos::ArrayRCP<std::complex<double>> getDividedDiffsTS(const int phi_order, const Scalar cdt, const int exp_order);
+  Teuchos::ArrayRCP<std::complex<double>> getDividedDiffsTS(const int phi_order, const Scalar cdt, const int lejaOrder);
 
   /// Computes the divided differences via taylor series
-  Teuchos::ArrayRCP<std::complex<double>> getDividedDiffsTSR(const int phi_order, const Scalar cdt, const int exp_order);
+  Teuchos::ArrayRCP<std::complex<double>> getDividedDiffsTSR(const int phi_order, const Scalar cdt, const int lejaOrder);
 
   /// Computes the divided differences via recurrence relation
-  Teuchos::ArrayRCP<std::complex<double>> getDividedDiffsRC(const int phi_order, const Scalar cdt, const int exp_order);
+  Teuchos::ArrayRCP<std::complex<double>> getDividedDiffsRC(const int phi_order, const Scalar cdt, const int lejaOrder);
 
   /// Computes divided differences of phi_k via the Zivcovich (2019) dd_phi method.
   /// Ref: F. Zivcovich. "Fast and accurate computation of divided differences for analytic
   /// functions, with an application to the exponential function."
   /// Dolomites Research Notes on Approximation. 12. 2019.
-  Teuchos::ArrayRCP<std::complex<double>> getDividedDiffsPhi(const int phi_order, const Scalar cdt, const int exp_order);
+  Teuchos::ArrayRCP<std::complex<double>> getDividedDiffsPhi(const int phi_order, const Scalar cdt, const int lejaOrder);
 
   /// Storage for the base Leja points
   Teuchos::ArrayRCP<LejaPoint> lejaPointsBase_;
