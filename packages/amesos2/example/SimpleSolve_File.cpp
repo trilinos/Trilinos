@@ -258,14 +258,11 @@ int main(int argc, char *argv[]) {
       Teuchos::ParameterList& shylubasker_params = amesos2_params.sublist("ShyLUBasker");
       dense_schur = (shylubasker_params.isParameter("GetDenseSchur") ? shylubasker_params.get<int>("GetDenseSchur") : 0);
       if (dense_schur != 0 && myRank == 0) {
-        LO indexBase = 0;
-        #ifdef HAVE_MPI
-        RCP<const Teuchos::Comm<LO> > SerialComm = rcp(new Teuchos::MpiComm<LO>(MPI_COMM_SELF));
-        #else
         RCP<const Teuchos::Comm<LO> > SerialComm = rcp(new Teuchos::SerialComm<int>());
-        #endif  // HAVE_MPI
+        const LO indexBase = 0;
         RCP<const MAP> SerialMap (new MAP (nrows, indexBase, SerialComm));
 
+        // row IDs for schur comp
         if (schur_filename != "") {
           if( verbose && myRank == 0) std::cout << "Reading Schur_Part from " << schur_filename << std::endl;
           SchurPart = IDReader::readDenseFile (schur_filename, SerialComm, SerialMap);
@@ -276,7 +273,7 @@ int main(int argc, char *argv[]) {
         Teuchos::ArrayRCP<const LO> schurPart = SchurPart->getData(0);
         shylubasker_params.set("SchurPart", schurPart.getRawPtr());
 
-        // storage for output Schur
+        // storage for output schur comp
         for (int i=0; i<nrows; i++) if (schurPart[i] == 1) n2 ++;
         schurOut.resize(n2*n2);
         shylubasker_params.set("SchurOut", schurOut.getRawPtr());

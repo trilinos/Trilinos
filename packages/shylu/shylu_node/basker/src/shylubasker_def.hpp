@@ -2044,16 +2044,7 @@ namespace BaskerNS
     #else
     check_value = 1;
     #endif
-    // TODO: can we have nthreads = num leaves (not 2x num-leaves, where half of them are empty)
-    /*if (Options.dense_schur != 0) {
-      if (nthreads > 2*check_value) {
-        if(Options.verbose == BASKER_TRUE) {
-          printf("Basker SetThreads Assert: Number of thread not available (%d > 2*%d). Resetting to %d.",
-                  int(nthreads), int(check_value), int(2*check_value));
-        }
-        nthreads = 2*check_value;
-      }
-    } else*/ if(nthreads > check_value) {
+    if(nthreads > check_value) {
       if(Options.verbose == BASKER_TRUE) {
         printf("Basker SetThreads Assert: Number of thread not available (%d > %d). Resetting to %d.",
                 int(nthreads), int(check_value), int(check_value));
