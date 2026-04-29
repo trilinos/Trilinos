@@ -138,13 +138,13 @@ jobs:
             ${{ inputs.dashboard-build-name && '--dashboard-build-name ' || '' }}${{ inputs.dashboard-build-name }} \
             --ctest-driver ${TRILINOS_DIR}/cmake/SimpleTesting/cmake/ctest-driver.cmake \
             --ctest-drop-site ${{ inputs.ctest-drop-site }} \
-            --pullrequest-cdash-track ${{ inputs.cdash-track }} \
+            --pullrequest-cdash-track "${{ inputs.cdash-track }}" \
             --filename-subprojects ./package_subproject_list.cmake \
             --filename-packageenables ./packageEnables.cmake \
             ${num_concurrent_tests} \
             ${max_cores_allowed} \
             ${slots_per_gpu} \
-            ${{ inputs.extra-pr-driver-args }}
+            "${{ inputs.extra-pr-driver-args }}"
       - name: Filtered build error logs
         if: success() || failure()
         shell: bash -l {0}
