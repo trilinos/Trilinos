@@ -21,6 +21,7 @@
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_RCPNode.hpp"
 #include "Thyra_LinearOpBase_decl.hpp"
+#include "Thyra_OperatorVectorTypes.hpp"
 #include "Thyra_SolveSupportTypes.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_VectorStdOps_decl.hpp"
@@ -76,6 +77,10 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
                      const Teuchos::Ptr<Thyra::VectorBase<Scalar>> v,
                      const Scalar cdt)
 {
+  // use ScalarTraits instead of std::abs (magnitude, returns a magnitudeType)
+  using ST = typename Teuchos::ScalarTraits<Scalar>;
+  using magScalar = typename ST::magnitudeType;
+
   TEUCHOS_TEST_FOR_EXCEPTION(
       phi_order != 0,
       std::invalid_argument,
@@ -87,9 +92,9 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
   const auto rangeSpace = L->range();
 
   // get scale and transform parameters
-  std::tuple<Scalar, Scalar, Scalar> transform_params = getScaleFromBase();
+  std::tuple<double, double, double> transform_params = getScaleFromBase();
   // scale the Leja ellipse by the provided (fractional) timestep
-  const Scalar scale = cdt * std::get<0>(transform_params);
+  const Scalar scale = cdt * Scalar(std::get<0>(transform_params));
 
   // Get lejaOrder divided differences, we need one more than the expansion order (polynomial order)
   const int lejaOrder = this->getExpansionOrder() + 1;
@@ -110,20 +115,18 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
   Teuchos::RCP<Thyra::VectorBase<Scalar>> av = Thyra::createMember(rangeSpace);
 
   // 0th term of the leja polynomial
-  auto coeff = lp_dd[0];
-  Scalar coeff_re = Scalar(coeff.real());
-
-  //std::cout << "c[0]: " << coeff_re << std::endl;
+  Scalar coeff = lp_dd[0];
+  //std::cout << "c[0]: " << coeff << std::endl;
 
   Thyra::V_V(vm_k.ptr(), *v);
-  Thyra::V_StV(v, coeff_re, *vm_k);
+  Thyra::V_StV(v, coeff, *vm_k);
 
   // storage for error est
-  Scalar norm_vm_k = Thyra::norm_inf(*vm_k);
+  magScalar norm_vm_k = Thyra::norm_inf(*vm_k);
   // norm of the update
-  Scalar norm_d_k = std::abs(coeff_re) * norm_vm_k;
+  magScalar norm_d_k = ST::magnitude(coeff) * norm_vm_k;
   // upper bound on solution size
-  Scalar overflow = norm_d_k;
+  magScalar overflow = norm_d_k;
   Thyra::SolveStatus<Scalar> sStatus;
 
   // leja point index k starts at 1
@@ -145,7 +148,6 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
     if (lp.lpt == LpType::LPREAL) {
       // extract divided diff
       coeff = lp_dd[k];
-      coeff_re = Scalar(coeff.real());
       // std::cout << "c,lp,shift,scale: " << coeff << " " << lp_sc.lp << " real " << shift << " " << scale << std::endl;
 
       {
@@ -157,16 +159,15 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
       }
 
       // add vm_k*coeff to the final result
-      Thyra::Vp_StV(v, coeff_re, *vm_k);
+      Thyra::Vp_StV(v, coeff, *vm_k);
 
       norm_vm_k = Thyra::norm_inf(*vm_k);
-      norm_d_k = std::abs(coeff_re) * norm_vm_k;
+      norm_d_k = ST::magnitude(coeff) * norm_vm_k;
       overflow += norm_d_k;
     }
     else if (lp.lpt == LpType::LPCONJ) {
       // extract divided diff
       coeff = lp_dd[k];
-      coeff_re = Scalar(coeff.real());
       //std::cout << "c,lp,shift,scale: " << coeff << " " << lp_sc.lp << " " << shift << " " << scale << std::endl;
 
       // copy vm_k to qm_k vector to save it
@@ -179,9 +180,9 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
       }
 
       // add vm_k*coeff to the final result
-      Thyra::Vp_StV(v, coeff_re, *vm_k);
+      Thyra::Vp_StV(v, coeff, *vm_k);
       norm_vm_k = Thyra::norm_inf(*vm_k);
-      norm_d_k = std::abs(coeff_re) * norm_vm_k;
+      norm_d_k = ST::magnitude(coeff) * norm_vm_k;
       overflow += norm_d_k;
 
       // increment polynomial degree, but keep Leja point and handle conjugate pair
@@ -193,7 +194,6 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
       {
         // conjugate update
         coeff = lp_dd[k];
-        coeff_re = Scalar(coeff.real());
 
         //std::cout << "Norm d_k: " << norm_d_k << " v_k: " << norm_vm_k << std::endl;
         //std::cout << "c,lp: " << coeff << " " << std::conj(lp_sc.lp) << std::endl;
@@ -208,9 +208,9 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
         }
 
         // add vm_k*coeff to the final result
-        Thyra::Vp_StV(v, coeff_re, *vm_k);
+        Thyra::Vp_StV(v, coeff, *vm_k);
         norm_vm_k = Thyra::norm_inf(*vm_k);
-        norm_d_k = std::abs(coeff_re) * norm_vm_k;
+        norm_d_k = ST::magnitude(coeff) * norm_vm_k;
         overflow += norm_d_k;
       }
     }
@@ -299,29 +299,35 @@ void PhiEvaluatorLeja<Scalar>::initLejaPointsBase(const int lejaOrder)
 }
 
 template <class Scalar>
-constexpr std::tuple<Scalar, Scalar, Scalar> PhiEvaluatorLeja<Scalar>::getScaleFromBase()
+constexpr std::tuple<double, double, double> PhiEvaluatorLeja<Scalar>::getScaleFromBase()
 {
   // real half axis
-  const Scalar scale_re = (leja_b_ - leja_a_) / 2.0;
+  const double scale_re = (leja_b_ - leja_a_) / 2.0;
   // imag half axis
-  const Scalar scale_im = leja_c_;
-  // leja ellipse shift and scale parameters
-  const Scalar scale = (scale_im + scale_re) / 2.0;
-  const Scalar shift = (leja_a_ + leja_b_) / 2.0;
-  return std::make_tuple(scale, shift/scale, scale_re/scale);
+  const double scale_im = leja_c_;
+  // Leja ellipse shift and scale parameters
+  const double scale = (scale_im + scale_re) / 2.0;
+  const double shift = (leja_a_ + leja_b_) / 2.0;
+
+  // normalize the transform parameters for later convenience
+  const double sc_shift = shift/scale;
+  const double sc_anis = scale_re/scale; // in [0, 2] interval
+
+  return std::make_tuple(scale, sc_shift, sc_anis);
 }
 
 template <class Scalar>
 constexpr LejaPoint PhiEvaluatorLeja<Scalar>::transformLejaPoint(const LejaPoint& lp_base,
-                                                                 const std::tuple<const Scalar, const Scalar, const Scalar>& scale_params)
+                                                                 const std::tuple<const double, const double, const double>& scale_params)
 {
+  // copy base Leja point
   LejaPoint scaled_lp = lp_base;
-  double* re_im_lp = reinterpret_cast<double*>(&scaled_lp.lp);
 
-  const Scalar sc_shift = std::get<1>(scale_params), sc_anis = std::get<2>(scale_params);
+  const double sc_shift = std::get<1>(scale_params), sc_anis = std::get<2>(scale_params);
 
-  re_im_lp[0] = sc_anis * re_im_lp[0] + sc_shift; // Transform real part
-  re_im_lp[1] = (2.0 - sc_anis) * re_im_lp[1];    // Transform imaginary part
+  // apply normalized transform, not scaling
+  scaled_lp.lp.real(sc_anis * scaled_lp.lp.real() + sc_shift);
+  scaled_lp.lp.imag((2.0 - sc_anis) * scaled_lp.lp.imag());
 
   return scaled_lp;
 }
@@ -340,7 +346,7 @@ void PhiEvaluatorLeja<Scalar>::setExpansionOrder(const int expansionOrder)
 }
 
 template <class Scalar>
-void PhiEvaluatorLeja<Scalar>::setLejaEllipse(const Scalar a, const Scalar b, const Scalar c)
+void PhiEvaluatorLeja<Scalar>::setLejaEllipse(const double a, const double b, const double c)
 {
   TEUCHOS_ASSERT(a <= b);
   TEUCHOS_ASSERT(c >= 0.0);
@@ -350,13 +356,19 @@ void PhiEvaluatorLeja<Scalar>::setLejaEllipse(const Scalar a, const Scalar b, co
 }
 
 template <class Scalar>
+void PhiEvaluatorLeja<Scalar>::setDivideDifferenceMethod(const int ddMethod)
+{
+  ddMethod_ = ddMethod;
+}
+
+template <class Scalar>
 LejaPoint PhiEvaluatorLeja<Scalar>::getLpSc(const int lp_idx)
 {
   TEUCHOS_ASSERT(lp_idx < lejaPointsBase_.size());
 
   // get scale and transform parameters
-  std::tuple<Scalar, Scalar, Scalar> transform_params = getScaleFromBase();
-  const Scalar scale = std::get<0>(transform_params);
+  std::tuple<double, double, double> transform_params = getScaleFromBase();
+  const double scale = std::get<0>(transform_params);
 
   // transform but do not scale Leja point
   const LejaPoint lp = transformLejaPoint(lejaPointsBase_[lp_idx], transform_params);
@@ -375,7 +387,7 @@ void PhiEvaluatorLeja<Scalar>::setPhiEvaluatorValues(
   //pl->validateParametersAndSetDefaults(*getValidParameters());
 
   leja_tol_ = pl->get<double>("leja_tol", 1.0e-18);
-  ddMethod_ = pl->get<int>("Leja DD Method", 1);
+  setDivideDifferenceMethod(pl->get<int>("Leja DD Method", 2));
   setExpansionOrder(pl->get<int>("Expansion Order", 300));
 
   // TODO: has to be set to true, only matrix exponential is implemented
@@ -393,7 +405,7 @@ void PhiEvaluatorLeja<Scalar>::setPhiEvaluatorValues(
 }
 
 template <class Scalar>
-Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiffs(const int k, const Scalar cdt, const int lejaOrder)
+Teuchos::ArrayRCP<Scalar> PhiEvaluatorLeja<Scalar>::getDividedDiffs(const int k, const Scalar cdt, const int lejaOrder)
 {
   Teuchos::TimeMonitor ddtimer(*timerDD_);
 
@@ -420,15 +432,15 @@ Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiff
 }
 
 template <class Scalar>
-Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiffsRC(const int phi_order, const Scalar cdt, const int lejaOrder)
+Teuchos::ArrayRCP<Scalar> PhiEvaluatorLeja<Scalar>::getDividedDiffsRC(const int phi_order, const Scalar cdt, const int lejaOrder)
 {
   TEUCHOS_ASSERT(phi_order == 0);
 
   // get scale and transform parameters
-  std::tuple<Scalar, Scalar, Scalar> transform_params = getScaleFromBase();
+  std::tuple<double, double, double> transform_params = getScaleFromBase();
   // scale the Leja ellipse by the provided (fractional) timestep
-  const Scalar scale = cdt * std::get<0>(transform_params);
-  // TODO: as long as leja points use double, shift and scale should too
+  const double scale = (double)cdt * std::get<0>(transform_params);
+  // since leja points use double, shift should too for this method
 
   Teuchos::ArrayRCP<std::complex<double>> x = Teuchos::arcp<std::complex<double>>(lejaOrder);
   Teuchos::ArrayRCP<std::complex<double>> d_x = Teuchos::arcp<std::complex<double>>(lejaOrder);
@@ -463,11 +475,16 @@ Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiff
     }
   }
 
-  return d_x;
+  // read out real part and convert to desired Scalar type
+  Teuchos::ArrayRCP<Scalar> dd_phi = Teuchos::arcp<Scalar>(lejaOrder);
+  for (int idx = 0; idx < lejaOrder - 1; idx++)
+    dd_phi[idx] = Scalar(d_x[idx].real());
+
+  return dd_phi;
 }
 
 template <class Scalar>
-Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiffsPhi(
+Teuchos::ArrayRCP<Scalar> PhiEvaluatorLeja<Scalar>::getDividedDiffsPhi(
     const int phi_order, const Scalar cdt, const int lejaOrder)
 {
   // Compute Newton divided differences of phi_{phi_order} at the Leja points using
@@ -486,18 +503,20 @@ Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiff
   const int cap_n   = n_total - 1 + p;             // Taylor degree N in the paper
 
   // get scale and transform parameters
-  std::tuple<Scalar, Scalar, Scalar> transform_params = getScaleFromBase();
+  std::tuple<double, double, double> transform_params = getScaleFromBase();
   // scale the Leja ellipse by the provided (fractional) timestep
-  const Scalar scale = cdt * std::get<0>(transform_params);
+  const double scale = (double)cdt * std::get<0>(transform_params);
 
   // build z[0..n_total]
   //  in contrast to Zivcovich we only shift the Leja points, but not scale them.
   //  this avoids over and underflow, since the original leja points are of roghly unit size
   // z[0..phi_order]         = 0  (leading zeros encode the phi_k recurrence)
   // z[phi_order..n_total]     = shift/scale + lp[i], expanding LPCONJ pairs to (lp, conj(lp))
-  std::vector<cplx> z(n_total, cplx(0.0, 0.0));
+  Teuchos::ArrayRCP<cplx> z = Teuchos::arcp<cplx>(n_total);
   {
-    int z_idx = phi_order;
+    int z_idx = 0;
+    for ( ; z_idx < phi_order; z_idx++)
+      z[z_idx] = cplx(0.0);
     for (int lp_idx = 0; lp_idx < lejaPointsBase_.size() && z_idx < n_total; ++lp_idx)
     {
       const LejaPoint lp = transformLejaPoint(lejaPointsBase_[lp_idx], transform_params);
@@ -514,6 +533,8 @@ Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiff
         z[z_idx++] = cplx(lp.lp.real(), 0.0);
       }
     }
+    // ensure we did not run out of points in lejaPointsBase_
+    TEUCHOS_ASSERT(z_idx == n_total);
   }
 
   // for optimal alignment around center, shift again by mean mu, will be corrected at the end
@@ -556,7 +577,8 @@ Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiff
 
   // seed dd[0..cap_n]: dd[kk] = scale^kk / (kk! * s^kk)
   //  the factor scale^kk is added to correct for the scaling difference (this mitigates underflow if scale and s are large)
-  std::vector<cplx> dd(cap_n + 1, cplx(0.0, 0.0));
+  Teuchos::ArrayRCP<cplx> dd = Teuchos::arcp<cplx>(cap_n + 1);
+  std::fill(dd.begin(), dd.end(), cplx(0.0, 0.0));
   dd[0] = cplx(1.0, 0.0);
   // avoid overflow but tolerate underflow
   double running_fraction = 1.0;
@@ -616,17 +638,19 @@ Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiff
   }
 
   // out[i] = exp(mu) * dd_row[phi_order + i]
-  Teuchos::ArrayRCP<cplx> out = Teuchos::arcp<cplx>(n_leja);
+  // use only the real part and convert to Scalar
+  Teuchos::ArrayRCP<Scalar> dd_phi = Teuchos::arcp<Scalar>(n_leja);
   const cplx exp_mu = std::exp(mu);
   // std::cout << "final dd:  ";
   for (int i = 0; i < n_leja; ++i)
   {
-    out[i]   = exp_mu * dd_row(0, phi_order + i);
-    // std::cout << out[i] << ", ";
+    const cplx dd_i = exp_mu * dd_row(0, phi_order + i);
+    dd_phi[i] = Scalar(dd_i.real());
+    // std::cout << dd_i << ", ";
   }
   // std::cout << std::endl;
 
-  return out;
+  return dd_phi;
 #else
   std::cout << "WARNING: getDividedDiffsPhi requires Trilinos configured with Trilinos_ENABLE_COMPLEX=ON" << std::endl;
   std::cout << "WARNING: falling back to getDividedDiffsTSR." << std::endl;
@@ -635,42 +659,41 @@ Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiff
 }
 
 template <class Scalar>
-Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiffsTS(const int phi_order, const Scalar cdt, const int lejaOrder)
+Teuchos::ArrayRCP<Scalar> PhiEvaluatorLeja<Scalar>::getDividedDiffsTS(const int phi_order, const Scalar cdt, const int lejaOrder)
 {
   TEUCHOS_ASSERT(phi_order == 0);
 
 #ifdef HAVE_TEUCHOS_COMPLEX
-  int m = lejaOrder;
-  Teuchos::ArrayRCP<std::complex<double>> out = Teuchos::arcp<std::complex<double>>(m);
+  using cplx = std::complex<double>;
 
   // get scale and transform parameters
-  std::tuple<Scalar, Scalar, Scalar> transform_params = getScaleFromBase();
+  std::tuple<double, double, double> transform_params = getScaleFromBase();
   // scale the Leja ellipse by the provided (fractional) timestep
-  const Scalar scale = cdt * std::get<0>(transform_params);
+  const double scale = (double)cdt * std::get<0>(transform_params);
 
   // build the shifted and scaled Hm matrix
-  Teuchos::SerialDenseMatrix<int, std::complex<double>> Hm(m, m);
+  Teuchos::SerialDenseMatrix<int, cplx> Hm(lejaOrder, lejaOrder);
   // diagonal elements are the leja points
   int dd_idx = 0;
   int lp_idx = 0;
-  while (dd_idx < m) {
+  while (dd_idx < lejaOrder) {
     const LejaPoint lp = transformLejaPoint(lejaPointsBase_[lp_idx], transform_params);
 
     // conj lp case
     if (lp.lpt == LPCONJ) {
-      if (dd_idx == m) break;
+      if (dd_idx == lejaOrder) break;
       Hm(dd_idx, dd_idx) = scale * lp.lp;
-      if (dd_idx+1 < m) Hm(dd_idx+1, dd_idx) = scale;
+      if (dd_idx+1 < lejaOrder) Hm(dd_idx+1, dd_idx) = scale;
       dd_idx += 1;
-      if (dd_idx == m) break;
+      if (dd_idx == lejaOrder) break;
       Hm(dd_idx, dd_idx) = scale * std::conj(lp.lp);
-      if (dd_idx+1 < m) Hm(dd_idx+1, dd_idx) = scale;
+      if (dd_idx+1 < lejaOrder) Hm(dd_idx+1, dd_idx) = scale;
       dd_idx += 1;
     }
     else {
-      if (dd_idx == m) break;
+      if (dd_idx == lejaOrder) break;
       Hm(dd_idx, dd_idx) = scale * lp.lp;
-      if (dd_idx+1 < m) Hm(dd_idx+1, dd_idx) = scale;
+      if (dd_idx+1 < lejaOrder) Hm(dd_idx+1, dd_idx) = scale;
       dd_idx += 1;
     }
     lp_idx += 1;
@@ -686,14 +709,14 @@ Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiff
   //Hm.print(std::cout);
 
   // compute diagonal mean
-  std::complex<double> diag_sum = std::complex(0.0, 0.0);
-  for (int i=0; i < m; ++i) {
+  cplx diag_sum = cplx(0.0, 0.0);
+  for (int i=0; i < lejaOrder; ++i) {
     diag_sum += Hm(i, i);
   }
-  std::complex<double> mu = diag_sum / double(m);
+  cplx mu = diag_sum / double(lejaOrder);
 
   // shift diagonal to zero mean
-  for (int i=0; i < m; ++i) {
+  for (int i=0; i < lejaOrder; ++i) {
     Hm(i, i) -= mu;
   }
 
@@ -706,19 +729,19 @@ Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiff
 
   // compute phi_0(Hm) by Taylor series
   //copy Hm to A
-  Teuchos::SerialDenseMatrix<int, std::complex<double>> A(Teuchos::Copy, Hm);
+  Teuchos::SerialDenseMatrix<int, cplx> A(Teuchos::Copy, Hm);
 
-  Teuchos::SerialDenseMatrix<int, std::complex<double>> Ts(m, m);
+  Teuchos::SerialDenseMatrix<int, cplx> Ts(lejaOrder, lejaOrder);
   Ts = 0.;
 
-  for (int i=0; i < m; ++i) {
+  for (int i=0; i < lejaOrder; ++i) {
     Ts(i, i) = std::complex(1.0, 0.0);
   }
 
   // Ts = I/(p!) + Hm^1/(1+p)! + Hm^2/(2+p)! ...
   int ts_order = 17;
 
-  Teuchos::SerialDenseMatrix<int, std::complex<double>> Mtmp(m, m);
+  Teuchos::SerialDenseMatrix<int, cplx> Mtmp(lejaOrder, lejaOrder);
   Mtmp = 0.;
 
   for (int k = 1; k < ts_order; ++k) {
@@ -740,66 +763,67 @@ Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiff
   }
 
   // unshift and extract first column
-  for (int i=0; i < m; ++i) {
-    out[i] = std::exp(mu) * Ts(i, 0);
+  // use only the real part and convert to Scalar
+  Teuchos::ArrayRCP<Scalar> dd_phi = Teuchos::arcp<Scalar>(lejaOrder);
+  const cplx exp_mu = std::exp(mu);
+  for (int i = 0; i < lejaOrder; ++i)
+  {
+    const cplx dd_i = exp_mu * Ts(i, 0);
+    dd_phi[i] = Scalar(dd_i.real());
   }
+  return dd_phi;
 #else
   std::cout << "WARNING: getDividedDiffsTS requires Trilinos configured with Trilinos_ENABLE_COMPLEX=ON" << std::endl;
   std::cout << "WARNING: falling back to getDividedDiffsTSR." << std::endl;
   return getDividedDiffsTSR(phi_order, cdt, lejaOrder);
 #endif
-  return out;
 }
 
 template <class Scalar>
-Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiffsTSR(const int phi_order, const Scalar cdt, const int lejaOrder)
+Teuchos::ArrayRCP<Scalar> PhiEvaluatorLeja<Scalar>::getDividedDiffsTSR(const int phi_order, const Scalar cdt, const int lejaOrder)
 {
   TEUCHOS_ASSERT(phi_order == 0);
 
-  const int m = lejaOrder;
-
-  //TODO: still need a complex output for compatibility although result is real
-  Teuchos::ArrayRCP<std::complex<double>> out = Teuchos::arcp<std::complex<double>>(m);
-
   // get scale and transform parameters
-  std::tuple<Scalar, Scalar, Scalar> transform_params = getScaleFromBase();
+  std::tuple<double, double, double> transform_params = getScaleFromBase();
   // scale the Leja ellipse by the provided (fractional) timestep
-  const Scalar scale = cdt * std::get<0>(transform_params);
+  const Scalar scale = cdt * Scalar(std::get<0>(transform_params));
 
   // build the shifted and scaled Hm matrix
-  Teuchos::SerialDenseMatrix<int, Scalar> Hm(m, m);
+  Teuchos::SerialDenseMatrix<int, Scalar> Hm(lejaOrder, lejaOrder);
   // diagonal elements are the leja points
 
-  for (int lp_idx = 0, dd_idx = 0; lp_idx < lejaPointsBase_.size() && dd_idx < m; lp_idx++, dd_idx++) {
+  for (int lp_idx = 0, dd_idx = 0; lp_idx < lejaPointsBase_.size() && dd_idx < lejaOrder; lp_idx++, dd_idx++) {
     const LejaPoint lp = transformLejaPoint(lejaPointsBase_[lp_idx], transform_params);
+    Scalar lp_real = Scalar(lp.lp.real()), lp_imag = Scalar(lp.lp.imag());
     // conj lp case
     if (lp.lpt == LPCONJ) {
-      Hm(dd_idx, dd_idx) = scale * lp.lp.real();
-      if (dd_idx + 1 < m) Hm(dd_idx + 1, dd_idx) = scale;
+      Hm(dd_idx, dd_idx) = scale * lp_real;
+      if (dd_idx + 1 < lejaOrder) Hm(dd_idx + 1, dd_idx) = scale;
 
-      if (++dd_idx < m) {
-        Hm(dd_idx - 1, dd_idx) = - scale * lp.lp.imag() * lp.lp.imag();
-        Hm(dd_idx, dd_idx) = scale * lp.lp.real();
-        if (dd_idx + 1 < m)
+      if (++dd_idx < lejaOrder) {
+        Hm(dd_idx - 1, dd_idx) = - scale * lp_imag * lp_imag;
+        Hm(dd_idx, dd_idx) = scale * lp_real;
+        if (dd_idx + 1 < lejaOrder)
           Hm(dd_idx + 1, dd_idx) = scale;
       }
     }
     else {
-      Hm(dd_idx, dd_idx) = scale * lp.lp.real();
-      if (dd_idx + 1 < m)
+      Hm(dd_idx, dd_idx) = scale * lp_real;
+      if (dd_idx + 1 < lejaOrder)
         Hm(dd_idx + 1, dd_idx) = scale;
     }
   }
 
   // compute diagonal mean
   Scalar diag_sum = 0;
-  for (int i = 0; i < m; ++i) {
+  for (int i = 0; i < lejaOrder; ++i) {
     diag_sum += Hm(i, i);
   }
-  double mu = diag_sum / double(m);
+  double mu = diag_sum / double(lejaOrder);
 
   // shift diagonal to zero mean
-  for (int i = 0; i < m; ++i) {
+  for (int i = 0; i < lejaOrder; ++i) {
     Hm(i, i) -= mu;
   }
 
@@ -814,10 +838,10 @@ Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiff
   //copy Hm to A
   Teuchos::SerialDenseMatrix<int, Scalar> A(Teuchos::Copy, Hm);
 
-  Teuchos::SerialDenseMatrix<int, Scalar> Ts(m, m);
+  Teuchos::SerialDenseMatrix<int, Scalar> Ts(lejaOrder, lejaOrder);
   Ts = 0.;
 
-  for (int i = 0; i < m; ++i) {
+  for (int i = 0; i < lejaOrder; ++i) {
     Ts(i, i) = 1.0;
   }
 
@@ -830,7 +854,7 @@ Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiff
   //std::cout << "n_sq: " << n_sq << std::endl;
   //std::cout << "h_scale: " << h_scale << std::endl;
 
-  Teuchos::SerialDenseMatrix<int, Scalar> Mtmp(m, m);
+  Teuchos::SerialDenseMatrix<int, Scalar> Mtmp(lejaOrder, lejaOrder);
   Mtmp = 0.;
 
   for (int k = 1; k < ts_order; ++k) {
@@ -852,11 +876,14 @@ Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiff
   }
 
   // unshift and extract first column
-  for (int i = 0; i < m; ++i) {
-    out[i] = std::exp(mu) * Ts(i, 0);
+  // even for a complex Scalar type, this method produces a real result
+  Teuchos::ArrayRCP<Scalar> dd_phi = Teuchos::arcp<Scalar>(lejaOrder);
+  const Scalar exp_mu = std::exp(mu); // TDOD Teuchos abs
+  for (int i = 0; i < lejaOrder; ++i)
+  {
+    dd_phi[i] = exp_mu * Ts(i, 0);
   }
-
-  return out;
+  return dd_phi;
 }
 
 
