@@ -444,10 +444,10 @@ namespace Amesos2 {
         std::conditional_t<std::is_same_v<mat_scalar,view_scalar_t>,
           same_scalar_helper_kokkos_view<Matrix,KV_S,KV_GO,KV_GS,Op>,
           diff_scalar_helper_kokkos_view<Matrix,KV_S,KV_GO,KV_GS,Op> >::do_get(mat,
-                                                                                     nzvals, indices,
-                                                                                     pointers, nnz,
-                                                                                     map,
-                                                                                     distribution, ordering);
+                                                                               nzvals, indices,
+                                                                               pointers, nnz,
+                                                                               map,
+                                                                               distribution, ordering);
       }
     };
 
