@@ -236,15 +236,16 @@ PhiEvaluator<Scalar>::computePhis(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> 
 				  const Scalar cdt,
 				  const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> Mrhs_B)
 {
-  const int max_phi_order = Mrhs_B.size() - 1;
+  const int max_phi_order = Mrhs_B.size();
+  std::cout << "PhiEvaluator::computePhis() called with max_phi_order = " << max_phi_order << std::endl;
 
   TEUCHOS_TEST_FOR_EXCEPTION(
       max_phi_order < 0,
       std::invalid_argument,
       "Error - PhiEvaluator::computePhis() list of rhs must have at least one entry.");
 
-  // support max_phi_order == 0 by calling the non-extended solver
-  if (max_phi_order == 0)
+  // support max_phi_order == 1 by calling the non-extended solver
+  if (max_phi_order == 1)
   {
     return computePhi(x, 0, cdt, Mrhs_B[0]);
   }
@@ -254,12 +255,12 @@ PhiEvaluator<Scalar>::computePhis(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> 
   this->phiLinSolv_->computeMassMatrix(*inArgs_lin_);
   this->phiLinSolv_->computeJacobian(*inArgs_lin_);
 
-  std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> rhs_B(max_phi_order+1);
+  std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> rhs_B(max_phi_order);
 
   // Invert the mass matrix out of the right hand sides
   // TODO: This might be more efficient to do on the combined MultiVector that will be assembled in buildb
   //       However, if Mrhs_B is sparse, it may not.
-  for (int ii = 0; ii < max_phi_order+1; ii++)
+  for (int ii = 0; ii < max_phi_order; ii++)
   {
     if (Mrhs_B[ii] != Teuchos::null)
     {
@@ -270,6 +271,8 @@ PhiEvaluator<Scalar>::computePhis(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> 
       rhs_B[ii] = rhs_b;
     }
   }
+
+  std::cout << "Solve Mass is done" << std::endl;
 
   // Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   // rhs_b->describe(*out, Teuchos::VERB_EXTREME);
@@ -287,7 +290,9 @@ PhiEvaluator<Scalar>::computePhis(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> 
 
   // Build extended matrix
   this->phiLinSolv_->buildK(max_phi_order);
+  std::cout << "buildK is done" << std::endl;
   this->phiLinSolv_->buildb(rhs_B);
+  std::cout << "buildb is done" << std::endl;
   const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> Atilde = this->phiLinSolv_->buildATilde(cdt);
 
   // Build initial vector and compute matrix exponential in place
@@ -474,7 +479,7 @@ void PhiLinearSolver<Scalar>::buildK(const Thyra::Ordinal p)
 template <class Scalar>
 void PhiLinearSolver<Scalar>::buildb(const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> rhs_B)
 {
-  int p = rhs_B.size() - 1;
+  int p = rhs_B.size();
 
   TEUCHOS_TEST_FOR_EXCEPTION(
       p < 1,
@@ -496,10 +501,10 @@ void PhiLinearSolver<Scalar>::buildb(const std::vector<Teuchos::RCP<const Thyra:
   // TODO: This needs to be updated for higher order support
   for (int k = 0; k < p; k++)
   {
-    if (rhs_B[p-k] != Teuchos::null)
+    if (rhs_B[p-k-1] != Teuchos::null)
     {
       auto col = b_Np->col(k);
-      Thyra::assign(col.ptr(), *rhs_B[p-k]);
+      Thyra::assign(col.ptr(), *rhs_B[p-k-1]);
     }
   }
   // Store b
