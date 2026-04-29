@@ -269,6 +269,12 @@ void KernelWrappers<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::K
   // FIXME: Right now, this is a cut-and-paste of the serial kernel
   typedef Tpetra::KokkosCompat::KokkosSYCLWrapperNode Node;
 
+  // By default, if A*B results in an entry that is not supported by the graph of C, we throw.
+  // This option allows to override this behavior and silently ignores such entries.
+  bool throwOnInsert = true;
+  if (!params.is_null() && params->isType<bool>("MM Throw For Non-Existent Entries"))
+    throwOnInsert = params->get<bool>("MM Throw For Non-Existent Entries");
+
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
   using Teuchos::TimeMonitor;
@@ -386,11 +392,13 @@ void KernelWrappers<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::K
           LO Bkj = Bcolind[j];
           LO Cij = Bcol2Ccol[Bkj];
 
-          TEUCHOS_TEST_FOR_EXCEPTION(c_status[Cij] < OLD_ip || c_status[Cij] >= CSR_ip,
-                                     std::runtime_error, "Trying to insert a new entry (" << i << "," << Cij << ") into a static graph "
-                                                                                          << "(c_status = " << c_status[Cij] << " of [" << OLD_ip << "," << CSR_ip << "))");
-
-          Cvals[c_status[Cij]] += Aval * Bvals[j];
+          const bool badInsert = c_status[Cij] < OLD_ip || c_status[Cij] >= CSR_ip;
+          if (!badInsert)
+            Cvals[c_status[Cij]] += Aval * Bvals[j];
+          else if (throwOnInsert)
+            TEUCHOS_TEST_FOR_EXCEPTION(badInsert,
+                                       std::runtime_error, "Trying to insert a new entry (" << i << "," << Cij << ") into a static graph "
+                                                                                            << "(c_status = " << c_status[Cij] << " of [" << OLD_ip << "," << CSR_ip << "))");
         }
 
       } else {
@@ -400,11 +408,13 @@ void KernelWrappers<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::K
           LO Ikj = Icolind[j];
           LO Cij = Icol2Ccol[Ikj];
 
-          TEUCHOS_TEST_FOR_EXCEPTION(c_status[Cij] < OLD_ip || c_status[Cij] >= CSR_ip,
-                                     std::runtime_error, "Trying to insert a new entry (" << i << "," << Cij << ") into a static graph "
-                                                                                          << "(c_status = " << c_status[Cij] << " of [" << OLD_ip << "," << CSR_ip << "))");
-
-          Cvals[c_status[Cij]] += Aval * Ivals[j];
+          const bool badInsert = c_status[Cij] < OLD_ip || c_status[Cij] >= CSR_ip;
+          if (!badInsert)
+            Cvals[c_status[Cij]] += Aval * Ivals[j];
+          else if (throwOnInsert)
+            TEUCHOS_TEST_FOR_EXCEPTION(badInsert,
+                                       std::runtime_error, "Trying to insert a new entry (" << i << "," << Cij << ") into a static graph "
+                                                                                            << "(c_status = " << c_status[Cij] << " of [" << OLD_ip << "," << CSR_ip << "))");
         }
       }
     }
