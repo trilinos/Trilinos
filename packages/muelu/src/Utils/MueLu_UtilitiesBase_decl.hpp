@@ -32,6 +32,7 @@
 #include <Xpetra_Map_fwd.hpp>
 #include <Xpetra_MapFactory_fwd.hpp>
 #include <Xpetra_Matrix_fwd.hpp>
+#include <Xpetra_MatrixFactory_fwd.hpp>
 #include <Xpetra_MultiVector_fwd.hpp>
 #include <Xpetra_MultiVectorFactory_fwd.hpp>
 #include <Xpetra_Operator_fwd.hpp>
@@ -74,7 +75,7 @@ class UtilitiesBase {
 
     NOTE -- it's assumed that A has been fillComplete'd.
   */
-  static RCP<CrsMatrixWrap> GetThresholdedMatrix(const RCP<Matrix>& Ain, const Magnitude threshold, const bool keepDiagonal = true, const GlobalOrdinal expectedNNZperRow = -1);
+  static RCP<Matrix> GetThresholdedMatrix(const RCP<Matrix>& Ain, const Magnitude threshold, const bool keepDiagonal = true);
 
   /*! @brief Threshold a graph
 
@@ -82,7 +83,7 @@ class UtilitiesBase {
 
     NOTE -- it's assumed that A has been fillComplete'd.
   */
-  static RCP<Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>> GetThresholdedGraph(const RCP<Matrix>& A, const Magnitude threshold, const GlobalOrdinal expectedNNZperRow = -1);
+  static RCP<Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>> GetThresholdedGraph(const RCP<Matrix>& A, const Magnitude threshold);
 
   /*! @brief Extract Matrix Diagonal
 

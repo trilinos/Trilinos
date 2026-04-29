@@ -322,6 +322,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(InverseApproximationFactory, InverseSpaiConstr
     invapproxFact->Build(level);
 
     RCP<Matrix> Ainv = level.Get<RCP<Matrix> >("Ainv", invapproxFact.get());
+    rcp_const_cast<CrsGraph>(Ainv->getCrsGraph())->computeGlobalConstants();
     TEST_EQUALITY(Ainv.is_null(), false);
     TEST_EQUALITY(Ainv->getGlobalNumEntries(), 115760);
     // 8.31688788510637e+06

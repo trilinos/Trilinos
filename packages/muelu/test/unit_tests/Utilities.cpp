@@ -550,7 +550,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities, GetThresholdedMatrix, Scalar, Local
   RCP<Matrix> Ain = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read("TestMatrices/filter.mm", lib, comm);
 
   RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> Aout =
-      MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetThresholdedMatrix(Ain, 1e-5, true, -1);
+      MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetThresholdedMatrix(Ain, 1e-5, true);
+
+  rcp_const_cast<CrsGraph>(Aout->getCrsGraph())->computeGlobalConstants();
 
   TEST_EQUALITY(Aout->getCrsGraph()->getGlobalNumEntries(), Teuchos::as<size_t>(13));
   TEST_FLOATING_EQUALITY(Aout->getFrobeniusNorm(), Teuchos::as<magnitude_type>(7.549834435270750), 1e2 * Teuchos::ScalarTraits<Scalar>::eps());
@@ -576,7 +578,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities, GetThresholdedGraph, Scalar, LocalO
   RCP<Matrix> A = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read("TestMatrices/filter.mm", lib, comm);
 
   RCP<Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>> graph =
-      MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetThresholdedGraph(A, 1e-5, -1);
+      MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetThresholdedGraph(A, 1e-5);
+  rcp_const_cast<CrsGraph>(graph)->computeGlobalConstants();
 
   TEST_EQUALITY(graph->getGlobalNumEntries(), Teuchos::as<size_t>(13));
 }
