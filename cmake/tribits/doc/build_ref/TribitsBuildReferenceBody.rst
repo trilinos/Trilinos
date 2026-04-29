@@ -2693,12 +2693,76 @@ NOTES:
 Enabling support for coverage testing
 -------------------------------------
 
-To turn on support for coverage testing set::
+TriBITS supports two coverage-testing workflows:
 
-  -D <Project>_ENABLE_COVERAGE_TESTING=ON 
+* Classic GCC GCov coverage, enabled with ``<Project>_ENABLE_COVERAGE_TESTING``;
+* Newer LLVM source-based coverage, supported through
+  ``<Project>_ENABLE_LLVM_COVERAGE_TESTING`` and explicit LLVM compiler flags.
 
-This will set compile and link options -fprofile-arcs -ftest-coverage for GCC.
-Use 'make dashboard' (see below) to submit coverage results to CDash
+Only one of these TriBITS coverage modes may be enabled at a time.  Configuring
+with both ``<Project>_ENABLE_COVERAGE_TESTING=ON`` and
+``<Project>_ENABLE_LLVM_COVERAGE_TESTING=ON`` is an error.
+
+
+Enabling classic GCC GCov coverage testing
+++++++++++++++++++++++++++++++++++++++++++
+
+To turn on support for classic GCC GCov coverage testing set::
+
+  -D <Project>_ENABLE_COVERAGE_TESTING=ON
+
+This will set compile and link options ``-fprofile-arcs -ftest-coverage`` for
+GCC.  Use 'make dashboard' (see below) to submit coverage results to CDash.
+
+WARNING: TriBITS support for automatically setting compiler options like this is
+deprecated.
+
+
+Enabling LLVM source-based coverage testing
++++++++++++++++++++++++++++++++++++++++++++
+
+For LLVM source-based coverage builds, the C and C++ code must be compiled
+with the LLVM instrumentation options ``-fprofile-instr-generate`` and
+``-fcoverage-mapping``.  For example, configure with::
+
+  -D CMAKE_C_FLAGS="-fprofile-instr-generate -fcoverage-mapping" \
+  -D CMAKE_CXX_FLAGS="-fprofile-instr-generate -fcoverage-mapping" \
+  -D <Project>_ENABLE_LLVM_COVERAGE_TESTING=ON
+
+Some platforms may also need to link shared libraries with the LLVM linker by
+configuring with::
+
+  -D CMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld"
+
+The option ``<Project>_ENABLE_LLVM_COVERAGE_TESTING`` causes TriBITS to set a
+unique ``LLVM_PROFILE_FILE`` environment variable for every TriBITS-added CTest
+test.  This option can be set explicitly with::
+
+  -D <Project>_ENABLE_LLVM_COVERAGE_TESTING=ON
+
+This option defaults to ``ON`` when ``CTEST_TEST_COVERAGE_TOOL`` is set to
+``LLVM-COV`` and defaults to ``OFF`` otherwise.  When enabled, TriBITS sets the
+per-test environment variable to a path in that test's binary directory with
+the full test name and LLVM's ``%p`` process-id pattern in the filename, such
+as::
+
+  LLVM_PROFILE_FILE=<test-binary-dir>/<fullTestName>_%p.profraw
+
+This is useful when running LLVM-instrumented tests in parallel with commands
+like ``ctest -j<N>``.  Without a unique ``LLVM_PROFILE_FILE`` value, multiple
+tests or test processes may write to the same default raw profile file.  With
+this option enabled, each test gets distinct ``*.profraw`` files that can be
+merged into ``*.profdata`` files for later use with ``llvm-cov``.
+
+NOTE: TriBITS sets the per-test environment variable but does not clean up old
+LLVM coverage output.  Before running the tests again, manually remove any
+stale ``*.profdata`` files that would otherwise be reused or confused with
+the new coverage results.
+
+CMake/CTest are expected to eventually add native support for
+``CTEST_TEST_COVERAGE_TOOL=LLVM-COV``.  Once that support is available in a
+new-enough CMake/CTest version, TriBITS will automatically adjust to use the
+native CMake/CTest LLVM coverage support.
 
 
 Viewing configure options and documentation
@@ -4407,14 +4471,20 @@ and submit to CDash as described below.  But to take full advantage of the
 all-at-once mode and to have results displayed on CDash broken down
 package-by-package, one must be submitting to a newer CDash version 3.0+.
 
-For submitting line coverage results, configure with::
+For submitting classic GCC GCov line coverage results, configure with::
 
   -D<Project>_ENABLE_COVERAGE_TESTING=ON
 
 and the environment variable ``CTEST_DO_COVERAGE_TESTING=TRUE`` is
 automatically set by the target ``dashboard`` so you don't have to set this
 yourself.  Then, when you run the ``dashboard`` target, it will automatically
-submit coverage results to CDash as well.
+submit coverage results to CDash as well.  For more details on available
+coverage modes, see `Enabling support for coverage testing`_.
+
+NOTE: A future version of CMake/CTest/CDash will provide native support for the
+newer LLVM source-based coverage mentioned above (see
+``<Project>_ENABLE_LLVM_COVERAGE_TESTING`` above).  Until then, coverage results
+using LLVM source-based coverage cannot be submitted to a CDash project.
 
 Doing memory checking running the enabled tests with Valgrind requires that
 you set ``CTEST_DO_MEMORY_TESTING=TRUE`` with the ``env`` command when running

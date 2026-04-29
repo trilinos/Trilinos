@@ -158,7 +158,19 @@ def getExtraCommandOutputFileName():
 
 
 def getHostname():
-  return getCmndOutput("hostname", True)
+  hostname = ""
+  try:
+    hostname = getCmndOutput("hostname", True)
+  except Exception:
+    pass
+  if hostname == "":
+    try:
+      if os.path.exists("/etc/hostname"):
+        with open("/etc/hostname", "r") as f:
+          hostname = f.read().strip()
+    except Exception:
+      pass
+  return hostname
 
 
 def getEmailAddressesSpaceString(emailAddressesCommasStr):
@@ -1436,7 +1448,7 @@ def runBuildTestCase(inOptions, tribitsGitRepos, buildTestCase, timings):
     if inOptions.useNinja:
       cmakeBaseOptions.append("-GNinja")
     if inOptions.extraCmakeOptions:
-      cmakeBaseOptions.extend(commandLineOptionsToList(inOptions.extraCmakeOptions))
+      cmakeBaseOptions.extend(inOptions.extraCmakeOptions.split(','))
     cmakeBaseOptions.append(cmakeScopedDefine(projectName,
     "TRIBITS_DIR:PATH", inOptions.tribitsDir))
     cmakeBaseOptions.append(cmakeScopedDefine(projectName,

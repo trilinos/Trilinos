@@ -9,6 +9,7 @@
 
 include(TribitsDefineStandardCompileVars)
 include(DualScopePrependCmndlineArgs)
+include(MessageWrapper)
 include(PrintVar)
 
 #
@@ -121,6 +122,17 @@ function(tribits_setup_basic_compile_link_flags)
   #
   # Set up coverage testing options
   #
+
+  assert_defined(${PROJECT_NAME}_ENABLE_COVERAGE_TESTING)
+  assert_defined(${PROJECT_NAME}_ENABLE_LLVM_COVERAGE_TESTING)
+  if (${PROJECT_NAME}_ENABLE_COVERAGE_TESTING
+      AND ${PROJECT_NAME}_ENABLE_LLVM_COVERAGE_TESTING)
+    message_wrapper(FATAL_ERROR
+      "Error, ${PROJECT_NAME}_ENABLE_COVERAGE_TESTING=ON and"
+      " ${PROJECT_NAME}_ENABLE_LLVM_COVERAGE_TESTING=ON are not allowed"
+      " at the same time.  Enable only one coverage testing mode.")
+    return()
+  endif()
 
   if (${PROJECT_NAME}_ENABLE_COVERAGE_TESTING)
     set(COVERAGE_OPTIONS "-fprofile-arcs -ftest-coverage")

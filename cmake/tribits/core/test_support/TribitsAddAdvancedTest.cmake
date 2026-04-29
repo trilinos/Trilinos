@@ -1478,6 +1478,8 @@ function(tribits_add_advanced_test TEST_NAME_IN)
 
     tribits_private_add_test_set_environment(${TEST_NAME})
 
+    tribits_private_add_test_set_llvm_profile_file_environment(${TEST_NAME})
+
     if (TPL_ENABLE_MPI AND HAS_AT_LEAST_ONE_EXEC)
       set(MAX_NUM_MPI_PROCS_USED_TO_PRINT  ${MAX_NUM_MPI_PROCS_USED})
     else()

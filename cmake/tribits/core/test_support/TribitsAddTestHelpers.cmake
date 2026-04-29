@@ -729,6 +729,19 @@ endfunction()
 
 
 #
+# Set a unique LLVM_PROFILE_FILE var for the test 
+#
+function(tribits_private_add_test_set_llvm_profile_file_environment  TEST_NAME_IN)
+
+  if (${PROJECT_NAME}_ENABLE_LLVM_COVERAGE_TESTING)
+    tribits_set_test_property(${TEST_NAME_IN} APPEND PROPERTY ENVIRONMENT
+      "LLVM_PROFILE_FILE=${CMAKE_CURRENT_BINARY_DIR}/${TEST_NAME_IN}_%p.profraw")
+  endif()
+
+endfunction()
+
+
+#
 # Set the environment for a test already added
 #
 function(tribits_private_add_test_set_environment  TEST_NAME_IN)
@@ -880,6 +893,8 @@ function(tribits_private_add_test_post_process_added_test  TEST_NAME_IN
      ${NUM_PROCS_USED_IN})
 
   tribits_private_add_test_add_label_and_keywords(${TEST_NAME_IN})
+
+  tribits_private_add_test_set_llvm_profile_file_environment(${TEST_NAME_IN})
 
   tribits_private_add_test_print_added(${TEST_NAME_IN}
     "${CATEGORIES_IN}"  "${NUM_PROCS_USED_IN}"  "${PROCESSORS_USED}"

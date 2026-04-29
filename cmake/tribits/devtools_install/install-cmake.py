@@ -155,7 +155,7 @@ argument '--cmake-version=master'.
     createDir(self.cmakeBuildBaseDir, True, True)
 
     # Look for an already installed CMake
-    if self.inOptions.cmakeNativeConfig is not "off":
+    if self.inOptions.cmakeNativeConfig != "off":
       cmakeCmd = self.which("cmake")
     else:
       # Configuring NOT with CMake was explicitly requested
@@ -176,7 +176,7 @@ argument '--cmake-version=master'.
         " -DCMAKE_INSTALL_PREFIX="+self.inOptions.installDir
         )
 
-    elif self.inOptions.cmakeNativeConfig is "on":
+    elif self.inOptions.cmakeNativeConfig == "on":
       # Configuring CMake with CMake was explicitly requested but
       # the CMake executable was not found in PATH
       raise Exception("Could not find 'cmake' in PATH and --use-native-cmake-config=on!")

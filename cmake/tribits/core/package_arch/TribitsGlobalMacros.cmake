@@ -771,6 +771,17 @@ macro(tribits_define_global_options_and_define_extra_repos)
   advanced_set( ${PROJECT_NAME}_ENABLE_COVERAGE_TESTING OFF
     CACHE BOOL "Enable support for coverage testing by setting needed compiler/linker options." )
 
+  if ("${${PROJECT_NAME}_ENABLE_LLVM_COVERAGE_TESTING_DEFAULT}" STREQUAL "")
+    if ("${CTEST_TEST_COVERAGE_TOOL}" STREQUAL "LLVM-COV")
+      set(${PROJECT_NAME}_ENABLE_LLVM_COVERAGE_TESTING_DEFAULT ON)
+    else()
+      set(${PROJECT_NAME}_ENABLE_LLVM_COVERAGE_TESTING_DEFAULT OFF)
+    endif()
+  endif()
+  advanced_set( ${PROJECT_NAME}_ENABLE_LLVM_COVERAGE_TESTING
+    ${${PROJECT_NAME}_ENABLE_LLVM_COVERAGE_TESTING_DEFAULT}
+    CACHE BOOL "Set LLVM_PROFILE_FILE for every TriBITS-added CTest test to a unique per-test .profraw file.  Defaults to ON for LLVM source-based coverage builds." )
+
   advanced_set( ${PROJECT_NAME}_ENABLE_CHECKED_STL OFF
     CACHE BOOL "Turn on checked STL checking (e.g. -D_GLIBCXX_DEBUG) or not." )
 

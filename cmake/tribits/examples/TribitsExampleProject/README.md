@@ -45,7 +45,7 @@ building e.g. `TribitsExampleApp`
 
 The layout of a TriBITS project is described in:
 
-* https://tribits.org/doc/TribitsUsersGuide.html#tribits-project-structure
+* https://tribitspub.github.io/TriBITS/users_guide/index.html#tribits-project-structure
 
 Otherwise, this example TriBITS project is simple enough that it should be
 enough to get started as a template.

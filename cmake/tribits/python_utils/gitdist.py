@@ -583,25 +583,28 @@ treat the current directory as the base git repository (as if there was a
 usual.  You have the ability to change this behavior by setting the
 GITDIST_MOVE_TO_BASE_DIR environment variable.
 
-To describe the behavior for the differ net options, consider the following set
+To describe the behavior for the different options, consider the following set
 of nested git repositories and directories:
 
     BaseRepo/
       .git
-      .gitdist
+      .gitdist   # contains ".", "ExtraRepo", and "ExtraRepo/NestedRepo"
       ...
       ExtraRepo/
         .git
-        .gitdist
+        .gitdist # contains "." and "NestedRepo"
         ...
-        path/
+        NestedRepo/
+          .git
           ...
-          to/
+          path/
             ...
-            some/
+            to/
               ...
-              directory/
+              some/
                 ...
+                directory/
+                  ...
 
 
 The valid settings for GITDIST_MOVE_TO_BASE_DIR include:
@@ -615,17 +618,23 @@ The valid settings for GITDIST_MOVE_TO_BASE_DIR include:
 
     In this case, gitdist will start moving up the directory tree until it
     finds a .gitdist[.default] file, and then run in the directory where it
-    finds it.  In the above example, if you are in
-    BaseRepo/ExtraRepo/path/to/some/directory/ when you run gitdist, it will
-    move up to ExtraRepo to execute the command you give it from there.
+    finds it.  If you are under a nested git repo before gitdist finds that
+    file, then the .gitdist[.default] file must list that nested git repo.
+    In the above example, if you are in
+    BaseRepo/ExtraRepo/NestedRepo/path/to/some/directory/ when you run
+    gitdist, it will move up to ExtraRepo to execute the command you give it
+    from there because ExtraRepo/.gitdist lists "NestedRepo".
 
   EXTREME_BASE:
 
     In this case, gitdist will continue moving up the directory tree until it
-    finds the outer-most repository containing a .gitdist[.default] file, and
-    then run in that directory.  Given the directory tree above, if you were
-    in BaseRepo/ExtraRepo/path/to/some/directory, it will move up to BaseRepo
-    to execute the command you give it.
+    finds the upstream-most .gitdist[.default] file that lists the nested git
+    repo you are currently under.  Given the directory tree above, if you were
+    in BaseRepo/ExtraRepo/NestedRepo/path/to/some/directory, gitdist would
+    move up to BaseRepo because BaseRepo/.gitdist lists
+    "ExtraRepo/NestedRepo".  If an outer directory has a .gitdist[.default]
+    file but that file does not list the nested git repo path, gitdist ignores
+    that outer file instead of crossing into an unrelated outer meta-project.
 
 With either of the settings above, when gitdist is finished running, it will
 leave you in the same directory you were in when you executed command in the
@@ -1143,6 +1152,85 @@ def parseGitdistFile(gitdistfile):
   return (reposFullList, defaultBranchDict)
 
 
+def getGitdistFileForDir(dirPath):
+  gitdistFile = os.path.join(dirPath, ".gitdist")
+  if os.path.isfile(gitdistFile):
+    return gitdistFile
+  gitdistDefaultFile = os.path.join(dirPath, ".gitdist.default")
+  if os.path.isfile(gitdistDefaultFile):
+    return gitdistDefaultFile
+  return None
+
+
+def dirContainsGitRepo(dirPath):
+  return os.path.exists(os.path.join(dirPath, ".git"))
+
+
+def gitdistFileListsRepo(gitdistFile, repoPath):
+  reposFullList, defaultBranchDict = parseGitdistFile(gitdistFile)
+  return repoPath in reposFullList
+
+
+def getLogicalCurrentWorkingDir():
+  pwd = os.environ.get("PWD")
+  if pwd:
+    try:
+      if os.path.samefile(pwd, os.getcwd()):
+        return pwd
+    except OSError:
+      pass
+  return os.getcwd()
+
+
+def getEnclosingGitRepoDirFromPath(currentPath):
+  while 1:
+    if dirContainsGitRepo(currentPath):
+      return currentPath
+    gitdistFile = getGitdistFileForDir(currentPath)
+    if gitdistFile and gitdistFileListsRepo(gitdistFile, "."):
+      return None
+    parentPath, currentDir = os.path.split(currentPath)
+    if currentDir == "":
+      return None
+    currentPath = parentPath
+
+
+def gitdistFileAppliesToRepo(gitdistFile, gitdistDir, enclosingGitRepoDir):
+  if not enclosingGitRepoDir:
+    return True
+  repoPath = os.path.relpath(enclosingGitRepoDir, gitdistDir)
+  return gitdistFileListsRepo(gitdistFile, repoPath)
+
+
+def getBaseDirFromPath(currentPath, findExtremeBase):
+  enclosingGitRepoDir = getEnclosingGitRepoDirFromPath(currentPath)
+  foundBaseDir = None
+
+  while 1:
+    gitdistFile = getGitdistFileForDir(currentPath)
+    if gitdistFile and gitdistFileAppliesToRepo(gitdistFile, currentPath,
+      enclosingGitRepoDir):
+      foundBaseDir = currentPath
+      if not enclosingGitRepoDir:
+        enclosingGitRepoDir = currentPath
+      if not findExtremeBase:
+        break
+    parentPath, currentDir = os.path.split(currentPath)
+    if currentDir == "":
+      break
+    currentPath = parentPath
+
+  return foundBaseDir
+
+
+def getImmediateBaseDirFromPath(currentPath):
+  return getBaseDirFromPath(currentPath, False)
+
+
+def getExtremeBaseDirFromPath(currentPath):
+  return getBaseDirFromPath(currentPath, True)
+
+
 # Get the commandline options
 def getCommandlineOps():
 
@@ -1152,6 +1240,7 @@ def getCommandlineOps():
 
   distHelpArgName = "--dist-help" # Must match --dist-help before --help!
   helpArgName = "--help"
+  shortHelpArgName = "-h"
   withGitArgName = "--dist-use-git"
   reposArgName = "--dist-repos"
   notReposArgName = "--dist-not-repos"
@@ -1164,7 +1253,7 @@ def getCommandlineOps():
   legendName = "--dist-legend"
   shortName = "--dist-short"
 
-  nativeArgNames = [ distHelpArgName, helpArgName, withGitArgName, \
+  nativeArgNames = [ distHelpArgName, helpArgName, shortHelpArgName, withGitArgName, \
     reposArgName, notReposArgName, \
     versionFileName, versionFile2Name, noColorArgName, debugArgName, noOptName, \
     modifiedOnlyName, legendName, shortName ]
@@ -1370,38 +1459,14 @@ def getCommandlineOps():
     None
   elif moveToBaseDir == "EXTREME_BASE":
     # Run gitdist in the most base dir where .gitdist[.default] exists
-    drive, currentPath = os.path.splitdrive(os.getcwd())
-    pathList = []
-    while 1:
-      currentPath, currentDir = os.path.split(currentPath)
-      if currentDir != "":
-        pathList.append(currentDir)
-      else:
-        if currentPath != "":
-          pathList.append(currentPath)
-        break
-    pathList.reverse()
-    newPath = drive+pathList[0]
-    for directory in pathList:
-      newPath = os.path.join(newPath, directory)
-      if ((os.path.isfile(os.path.join(newPath, ".gitdist"))) or
-        (os.path.isfile(os.path.join(newPath, ".gitdist.default")))):
-        break
-    os.chdir(newPath)
+    newPath = getExtremeBaseDirFromPath(getLogicalCurrentWorkingDir())
+    if newPath:
+      os.chdir(newPath)
   elif moveToBaseDir == "IMMEDIATE_BASE":
     # Run gitdist in the immediate base dir where .gitdist[.default] exists
-    currentPath = os.getcwd()
-    foundIt = False
-    while 1:
-      if ((os.path.isfile(os.path.join(currentPath, ".gitdist"))) or
-        (os.path.isfile(os.path.join(currentPath, ".gitdist.default")))):
-        foundIt = True
-        break
-      currentPath, currentDir = os.path.split(currentPath)
-      if currentDir == "":
-        break
-    if foundIt:
-      os.chdir(currentPath)
+    newPath = getImmediateBaseDirFromPath(getLogicalCurrentWorkingDir())
+    if newPath:
+      os.chdir(newPath)
   else:
     print(
       "Error, env var GITDIST_MOVE_TO_BASE_DIR='"+moveToBaseDir+"' is invalid!"

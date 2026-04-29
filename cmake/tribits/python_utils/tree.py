@@ -22,6 +22,12 @@ def tree(dir, padding, options, depth, top_level=False):
     else:
       depth = depth - 1
 
+  dir_basename = basename(abspath(dir))
+
+  # Skip this directory entirely if it is in the exclude set
+  if dir_basename in options.exclude_set:
+    return
+
   print_files = options.printFiles
   print_compact = options.printCompact
 
@@ -31,12 +37,12 @@ def tree(dir, padding, options, depth, top_level=False):
   else:
     verticalLineChar = '|'
     fileDirPrefix = '+-'
-    
+
   init_prefix = padding[:-1]
   if top_level: init_prefix += '  '
   else: init_prefix += fileDirPrefix
 
-  print(init_prefix + basename(abspath(dir)) + '/')
+  print(init_prefix + dir_basename + '/')
 
   padding = padding + ' '
 
@@ -48,7 +54,9 @@ def tree(dir, padding, options, depth, top_level=False):
     files = [x for x in raw_listdir if isdir(dir + sep + x)]
   files.sort()
   for file in files:
-    if (file[0] == '.') and (options.hideHiddenFiles):
+    if (file[0] == '.') and (options.noHiddenFiles):
+      continue
+    if file in options.exclude_set:
       continue
     if not print_compact:
       print(padding + verticalLineChar)
@@ -73,29 +81,35 @@ def main():
   clp = OptionParser(usage=usageHelp)
 
   clp.add_option(
-    "-f", dest="printFiles", action="store_true",
-    help="Show files in addition to just directoires.",
+    "--show-files","-f", dest="printFiles", action="store_true",
+    help="Show files in addition to just directories.",
     default=False )
 
   clp.add_option(
-    "-c", dest="printCompact", action="store_true",
+    "--compact","-c", dest="printCompact", action="store_true",
     help="Make output more compact.",
     default=False )
 
   clp.add_option(
-    "-x", dest="noDirectorySep", action="store_true",
+    "--remove-dir-sep", "-r", dest="noDirectorySep", action="store_true",
     help="Remove the directory separators and continuation lines.",
     default=False )
 
   clp.add_option(
-    "-n", dest="hideHiddenFiles", action="store_true",
+    "--no-hidden-files", "-n", dest="noHiddenFiles", action="store_true",
     help="Hide hidden files.",
     default=False )
 
   clp.add_option(
-    "--depth", dest="depth", type="int", default=None,
+    "--exclude", "-x", dest="exclude", action="append", default=None,
+    help="Exclude one or more directory or file names. May be given multiple"
+      +" times or as a comma-separated list (e.g. -x .git -x build -x tmp)."
+      + " Matches exact basenames.")
+
+  clp.add_option(
+    "--depth", "-d", dest="depth", type="int", default=None,
     help="Depth (integer) to recurse into.  Default = '' or unbounded.")
-  
+
   (options, args) = clp.parse_args()
 
   if len(args) != 1:
@@ -107,6 +121,18 @@ def main():
     print("ERROR: \'" + path + "\' is not a directory!")
     print("See --help!")
     exit(1)
+
+  # Build exclude set supporting multiple uses and comma-separated lists
+  exclude_set = set()
+  if options.exclude:
+    for exc_entry in options.exclude:
+      if exc_entry is None:
+        continue
+      for item in exc_entry.split(','):
+        item_stripped = item.strip()
+        if item_stripped:
+          exclude_set.add(item_stripped)
+  options.exclude_set = exclude_set
 
   depth = options.depth
   tree(path, ' ', options, depth, True)
