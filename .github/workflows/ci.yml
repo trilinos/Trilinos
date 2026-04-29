@@ -126,6 +126,15 @@ jobs:
             slots_per_gpu=""
           fi
 
+          extra_inputs='${{ inputs.extra-pr-driver-args }}'
+          if [ -n "$extra_inputs" ]
+          then
+            extra_pr_driver_args=$extra_inputs
+          else
+            extra_pr_driver_args=""
+          fi
+          echo "ex: ${extra_pr_driver_args}"
+
           python3 ${TRILINOS_DIR}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
             --genconfig-build-name ${{ inputs.genconfig-string }} \
             ${{ inputs.target-branch && '--target-branch-name ' || '' }}${{ inputs.target-branch }} \
@@ -144,7 +153,7 @@ jobs:
             ${num_concurrent_tests} \
             ${max_cores_allowed} \
             ${slots_per_gpu} \
-            "${{ inputs.extra-pr-driver-args }}"
+            "${extra_pr_driver_args}"
       - name: Filtered build error logs
         if: success() || failure()
         shell: bash -l {0}
