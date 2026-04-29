@@ -930,3 +930,16 @@ jobs:
       - name: Write Summary
         if: ${{ !cancelled() }}
         uses: ./.github/workflows/actions/summary
+
+  ramses:
+    uses: ./.github/workflows/ci.yml
+    with:
+      target-runner-labels: "['self-hosted', 'clang-19.1.6-openmpi-4.1.6', '20251204']"
+      genconfig-string: "rhel8_gcc-openmpi-openmp_release_static_no-kokkos-arch_no-asan_no-complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_ramses"
+      cdash-track: "Pull Request (Non-blocking)"
+      dashboard-build-name: ${AT2_IMAGE}_release_static_ramses
+      max-cores-allowed: 29
+      num-concurrent-tests: 16
+      slots-per-gpu: 8
+      extra-pr-driver-args: "--extra-configure-args=-C ${GITHUB_WORKSPACE}/packages/framework/cmake-fragments/ramses/gcc-mpi-openmp.cmake"
+
