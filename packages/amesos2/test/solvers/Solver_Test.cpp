@@ -1252,8 +1252,8 @@ bool do_kokkos_test_with_types(const string& mm_file,
   typedef KokkosSparse::CrsMatrix<Scalar,LocalOrdinal,device_t> MAT;
   typedef Kokkos::View<Scalar**, Kokkos::LayoutLeft, device_t> view_t;
 
-  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
-  if (comm->getRank() != 0) return true; // only root calls Amesos2
+  // each MPI will solve independent system
+  RCP<const Teuchos::Comm<int> > comm =  Teuchos::rcp(new Teuchos::SerialComm<int>());
 
   // Kokkos adapter doesn't support the distributed modes.
   // We just load to the root rank which allows something like SuperLU to
