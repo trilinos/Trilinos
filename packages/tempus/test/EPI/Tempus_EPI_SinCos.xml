@@ -61,6 +61,7 @@
       <ParameterList name="PhiEvaluator">
         <Parameter name="PhiEvaluator Type" type="string" value="Leja"/>
         <Parameter name="Expansion Order" type="int" value="30"/>
+        <Parameter name="Leja DD Method" type="int" value="2"/>
         <Parameter name="leja_a" type="double" value="-1.0e-2"/>
         <Parameter name="leja_c" type="double" value="1.0"/>
       </ParameterList>
