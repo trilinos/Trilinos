@@ -178,73 +178,112 @@ void testDirectSolverBlocked(MueLu::SmootherPrototype<Scalar, LocalOrdinal, Glob
   using magnitude_type = typename ST::magnitudeType;
   using MT             = Teuchos::ScalarTraits<magnitude_type>;
 
-  // Build two diagonal blocks
-  Teuchos::RCP<Matrix> A00 = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(50);
-  Teuchos::RCP<Matrix> A11 = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(75);
+  const GO n0 = 50;
+  const GO n1 = 75;
+  const GO n  = n0 + n1;
 
-  std::vector<Teuchos::RCP<const Map>> maps;
-  maps.push_back(A00->getRangeMap());
-  maps.push_back(A11->getRangeMap());
+  auto comm = Parameters::getDefaultComm();
 
-  // Full map for the blocked object
-  GO numGlobal = 125;
-  Teuchos::RCP<const Map> fullMap =
-      MapFactory::Build(Parameters::getLib(), numGlobal, 0, Parameters::getDefaultComm());
+  // Full map
+  RCP<const Map> fullMap = MapFactory::Build(Parameters::getLib(), n, 0, comm);
 
-  Teuchos::RCP<const Xpetra::MapExtractor<SC, LO, GO, NO>> rangeMapExtractor =
+  // Build disjoint submaps from full GIDs
+  Teuchos::Array<GO> gids0, gids1;
+  const Teuchos::ArrayView<const GO> myGids = fullMap->getLocalElementList();
+
+  for (size_t k = 0; k < (size_t)myGids.size(); ++k) {
+    if (myGids[k] < n0)
+      gids0.push_back(myGids[k]);
+    else
+      gids1.push_back(myGids[k]);
+  }
+
+  RCP<const Map> map0 = MapFactory::Build(Parameters::getLib(),
+                                          Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+                                          gids0(), 0, comm);
+
+  RCP<const Map> map1 = MapFactory::Build(Parameters::getLib(),
+                                          Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+                                          gids1(), 0, comm);
+
+  std::vector<RCP<const Map>> maps(2);
+  maps[0] = map0;
+  maps[1] = map1;
+
+  RCP<const Xpetra::MapExtractor<SC, LO, GO, NO>> rangeMapExtractor =
       Xpetra::MapExtractorFactory<SC, LO, GO, NO>::Build(fullMap, maps, false);
 
-  Teuchos::RCP<const Xpetra::MapExtractor<SC, LO, GO, NO>> domainMapExtractor =
+  RCP<const Xpetra::MapExtractor<SC, LO, GO, NO>> domainMapExtractor =
       Xpetra::MapExtractorFactory<SC, LO, GO, NO>::Build(fullMap, maps, false);
 
-  Teuchos::RCP<Xpetra::BlockedCrsMatrix<SC, LO, GO, NO>> bA =
-      Teuchos::rcp(new Xpetra::BlockedCrsMatrix<SC, LO, GO, NO>(rangeMapExtractor, domainMapExtractor, 2));
+  // Build simple diagonal matrices on the submaps
+  RCP<CrsMatrixWrap> A00, A11;
+  {
+    RCP<CrsMatrix> crs0 = CrsMatrixFactory::Build(map0, 1);
+    for (size_t l = 0; l < (size_t)map0->getLocalNumElements(); ++l) {
+      GO gid = map0->getGlobalElement(l);
+      crs0->insertGlobalValues(gid, Teuchos::tuple<GO>(gid), Teuchos::tuple<SC>(ST::one()));
+    }
+    crs0->fillComplete(map0, map0);
+    A00 = rcp(new CrsMatrixWrap(crs0));
+  }
+  {
+    RCP<CrsMatrix> crs1 = CrsMatrixFactory::Build(map1, 1);
+    for (size_t l = 0; l < (size_t)map1->getLocalNumElements(); ++l) {
+      GO gid = map1->getGlobalElement(l);
+      crs1->insertGlobalValues(gid, Teuchos::tuple<GO>(gid), Teuchos::tuple<SC>(ST::one()));
+    }
+    crs1->fillComplete(map1, map1);
+    A11 = rcp(new CrsMatrixWrap(crs1));
+  }
+
+  // Build 2x2 blocked matrix with only diagonal blocks
+  RCP<Xpetra::BlockedCrsMatrix<SC, LO, GO, NO>> bA =
+      rcp(new Xpetra::BlockedCrsMatrix<SC, LO, GO, NO>(rangeMapExtractor, domainMapExtractor, 2));
 
   bA->setMatrix(0, 0, A00);
   bA->setMatrix(1, 1, A11);
   bA->fillComplete();
 
-  Teuchos::RCP<Matrix> A = bA;
+  RCP<Matrix> A = bA;
   setupSmoother(A, smoother, out, success);
 
   // Exact blocked solution
-  Teuchos::RCP<MultiVector> X0 = MultiVectorFactory::Build(A00->getDomainMap(), 1);
-  Teuchos::RCP<MultiVector> X1 = MultiVectorFactory::Build(A11->getDomainMap(), 1);
+  RCP<MultiVector> X0 = MultiVectorFactory::Build(map0, 1);
+  RCP<MultiVector> X1 = MultiVectorFactory::Build(map1, 1);
   X0->setSeed(846930886);
   X1->setSeed(846930887);
   X0->randomize();
   X1->randomize();
 
   {
-    Array<magnitude_type> norms(1);
+    Teuchos::Array<magnitude_type> norms(1);
     X0->norm2(norms);
-    X0->scale(ST::one() / norms[0]);
+    if (norms[0] != MT::zero()) X0->scale(ST::one() / norms[0]);
     X1->norm2(norms);
-    X1->scale(ST::one() / norms[0]);
+    if (norms[0] != MT::zero()) X1->scale(ST::one() / norms[0]);
   }
 
-  std::vector<Teuchos::RCP<MultiVector>> xBlocks(2);
+  std::vector<RCP<MultiVector>> xBlocks(2);
   xBlocks[0] = X0;
   xBlocks[1] = X1;
 
-  Teuchos::RCP<Xpetra::BlockedMultiVector<SC, LO, GO, NO>> Xexact =
-      Teuchos::rcp(new Xpetra::BlockedMultiVector<SC, LO, GO, NO>(domainMapExtractor->getBlockedMap(), xBlocks));
+  RCP<Xpetra::BlockedMultiVector<SC, LO, GO, NO>> Xexact =
+      rcp(new Xpetra::BlockedMultiVector<SC, LO, GO, NO>(domainMapExtractor->getBlockedMap(), xBlocks));
 
-  // RHS = A * Xexact
-  Teuchos::RCP<MultiVector> RHSmerged    = MultiVectorFactory::Build(bA->getRangeMap(), 1);
-  Teuchos::RCP<MultiVector> XexactMerged = Xexact->Merge();
-  bA->apply(*XexactMerged, *RHSmerged, Teuchos::NO_TRANS, ST::one(), ST::zero());
+  // For identity block matrix, RHS = Xexact
+  RCP<MultiVector> RHSmerged = Xexact->Merge();
 
-  Teuchos::RCP<Xpetra::BlockedMultiVector<SC, LO, GO, NO>> RHS =
-      Teuchos::rcp(new Xpetra::BlockedMultiVector<SC, LO, GO, NO>(rangeMapExtractor, RHSmerged));
+  RCP<Xpetra::BlockedMultiVector<SC, LO, GO, NO>> RHS =
+      rcp(new Xpetra::BlockedMultiVector<SC, LO, GO, NO>(rangeMapExtractor, RHSmerged));
 
   // Initial guess
-  Teuchos::RCP<Xpetra::BlockedMultiVector<SC, LO, GO, NO>> X =
-      Teuchos::rcp(new Xpetra::BlockedMultiVector<SC, LO, GO, NO>(domainMapExtractor->getBlockedMap(), 1, true));
+  RCP<Xpetra::BlockedMultiVector<SC, LO, GO, NO>> X =
+      rcp(new Xpetra::BlockedMultiVector<SC, LO, GO, NO>(domainMapExtractor->getBlockedMap(), 1, true));
 
   smoother.Apply(*X, *RHS);
 
-  Array<magnitude_type> residualNorms = Utilities::ResidualNorm(*bA, *X->Merge(), *RHS->Merge());
+  Teuchos::Array<magnitude_type> residualNorms = Utilities::ResidualNorm(*bA, *X->Merge(), *RHS->Merge());
   out << "||Blocked Residual|| = "
       << std::setiosflags(std::ios::fixed) << std::setprecision(20)
       << residualNorms[0] << std::endl;
