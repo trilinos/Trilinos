@@ -164,17 +164,29 @@ void StepperEPI<Scalar>::takeStep(
  
       // Setup TimeDerivative
       timeDer = Teuchos::rcp(new StepperEPITimeDerivative<Scalar>(
-        Scalar(0.0),xOld));
+        1/dt,xOld));
       auto p = Teuchos::rcp(new ImplicitODEParameters<Scalar>(
           timeDer, dt, Scalar(0.0), Scalar(1.0)));
 
 
       // TODO: Transition away from using implicit solver methods and use ModelEvaluator directly
       RCP<Thyra::VectorBase<Scalar> > Mf = x->clone_v();
+      RCP<Thyra::VectorBase<Scalar> > Mf_dt = x->clone_v();
+      RCP<Thyra::VectorBase<Scalar> > dt_Mf_deriv = x->clone_v();
       // std::cout << "xO[0,1] = " << Thyra::get_ele(*xOld, 0) << " " << Thyra::get_ele(*xOld, 1) << std::endl;
       // std::cout << "x[0,1]  = " << Thyra::get_ele(*x, 0) << " " << Thyra::get_ele(*x, 1) << std::endl;
       // std::cout << "f[0,1]  = " << Thyra::get_ele(*Mf, 0) << " " << Thyra::get_ele(*Mf, 1) << std::endl;
       this->evaluateImplicitODE(Mf, x, xDot, time, p);
+      this->evaluateImplicitODE(Mf_dt, x, xDot, time + Scalar(0.0001), p);
+      Thyra::V_StVpStV(dt_Mf_deriv.ptr(),dt/dt,*Mf,-dt/dt,*Mf_dt);
+      std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> Mrhs_B(2);
+      Mrhs_B[0] = Mf;
+      Mrhs_B[1] = dt_Mf_deriv;
+
+      std::cout << "Mrhs_B[0] = " << Thyra::get_ele(*Mrhs_B[0], 0) << " " << Thyra::get_ele(*Mrhs_B[0], 1) << " " << Thyra::get_ele(*Mrhs_B[0], 2) << std::endl;
+      std::cout << "Mrhs_B[1] = " << Thyra::get_ele(*Mrhs_B[1], 0) << " " << Thyra::get_ele(*Mrhs_B[1], 1) << " " << Thyra::get_ele(*Mrhs_B[1], 2) << std::endl;
+      std::cout << "Mf[0,1]  = " << Thyra::get_ele(*Mf, 0) << " " << Thyra::get_ele(*Mf, 1) << " " << Thyra::get_ele(*Mf, 2) << std::endl;
+      std::cout << "Mf_dt[0,1]  = " << Thyra::get_ele(*Mf_dt, 0) << " " << Thyra::get_ele(*Mf_dt, 1) << " " << Thyra::get_ele(*Mf_dt, 2) << std::endl;
       // f = M*xDot in here
       // std::cout << "xO[0,1] = " << Thyra::get_ele(*xOld, 0) << " " << Thyra::get_ele(*xOld, 1) << std::endl;
       // std::cout << "x[0,1]  = " << Thyra::get_ele(*x, 0) << " " << Thyra::get_ele(*x, 1) << std::endl;
@@ -211,7 +223,7 @@ void StepperEPI<Scalar>::takeStep(
       // TODO: Avoid using hard coded EPI2 (p=2) and adjust the logic for general p.
       // TODO: right now, we have p=1 for EPI2, since we do not compute dF/dt yet
       // (correct only for autonomous problems)
-      sStatus = phiEvaluator_->computePhi(vphi.ptr(), 1, dt, Mf);
+      sStatus = phiEvaluator_->computePhis(vphi.ptr(), dt, Mrhs_B);
 
       //   std::cout << "xO[0,1] = " << Thyra::get_ele(*xOld, 0) << " " << Thyra::get_ele(*xOld, 1) << std::endl;
       // std::cout << "x[0,1]  = " << Thyra::get_ele(*x, 0) << " " << Thyra::get_ele(*x, 1) << std::endl;
