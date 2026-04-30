@@ -115,9 +115,11 @@ TEUCHOS_UNIT_TEST(PhiEvaluator, Leja_SinCos)
 
   // update for new ellipse
   std::ostringstream ss;
+  Teuchos::RCP<Teuchos::Time> localTimer;
   ss << "running baseline dd_phi method " << dd_method << " with dt=" << dt;
+  localTimer = Teuchos::TimeMonitor::getNewCounter(ss.str());
   {
-    TEMPUS_FUNC_TIME_MONITOR(ss.str());
+    Teuchos::TimeMonitor localTimeMonitor(*localTimer);
     lp_dd = phiEvaluator->getDividedDiffs(0, dt, expansion_order_high);
   }
 
@@ -128,10 +130,13 @@ TEUCHOS_UNIT_TEST(PhiEvaluator, Leja_SinCos)
     phiEvaluator->setLejaEllipse(dt * leja_a, dt * leja_b, dt * leja_c);
     phiEvaluator->setDivideDifferenceMethod(dd_m);
     Teuchos::ArrayRCP<double> lp_dd_alt;
+
+    Teuchos::RCP<Teuchos::Time> localTimer2;
     ss.str("");
     ss << "running dd_phi method " << dd_m << " with dt=1, and scaled ellipse";
+    localTimer2 = Teuchos::TimeMonitor::getNewCounter(ss.str());
     {
-      TEMPUS_FUNC_TIME_MONITOR(ss.str());
+      Teuchos::TimeMonitor localTimeMonitor(*localTimer2);
       lp_dd_alt = phiEvaluator->getDividedDiffs(0, 1.0, expansion_order_high);
     }
 
