@@ -820,7 +820,7 @@ Teuchos::ArrayRCP<Scalar> PhiEvaluatorLeja<Scalar>::getDividedDiffsTSR(const int
   for (int i = 0; i < lejaOrder; ++i) {
     diag_sum += Hm(i, i);
   }
-  double mu = diag_sum / double(lejaOrder);
+  Scalar mu = diag_sum / Scalar(lejaOrder);
 
   // shift diagonal to zero mean
   for (int i = 0; i < lejaOrder; ++i) {
@@ -832,7 +832,7 @@ Teuchos::ArrayRCP<Scalar> PhiEvaluatorLeja<Scalar>::getDividedDiffsTSR(const int
   int n_sq       = std::max(int(std::ceil(std::log2(s_scale) - 1.)), 1);
 
   double h_scale = 1.0 / std::pow(2.0, n_sq);
-  Hm.scale(h_scale);
+  Hm.scale(Scalar(h_scale));
 
   // compute phi_0(Hm) by Taylor series
   //copy Hm to A
@@ -862,7 +862,7 @@ Teuchos::ArrayRCP<Scalar> PhiEvaluatorLeja<Scalar>::getDividedDiffsTSR(const int
     // A = Hm^k/(k)!
 
     // Compute next A = Hm^(k+1)/(k+1)!
-    double scale = 1. / (k+1);
+    Scalar scale = Scalar(1. / (k+1));
     Mtmp.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, scale, Hm, A, 0.0);
     A = Mtmp;
   }
@@ -878,7 +878,7 @@ Teuchos::ArrayRCP<Scalar> PhiEvaluatorLeja<Scalar>::getDividedDiffsTSR(const int
   // unshift and extract first column
   // even for a complex Scalar type, this method produces a real result
   Teuchos::ArrayRCP<Scalar> dd_phi = Teuchos::arcp<Scalar>(lejaOrder);
-  const Scalar exp_mu = std::exp(mu); // TDOD Teuchos abs
+  const Scalar exp_mu = std::exp(mu); // TODO: is there a Teuchos exp
   for (int i = 0; i < lejaOrder; ++i)
   {
     dd_phi[i] = exp_mu * Ts(i, 0);
