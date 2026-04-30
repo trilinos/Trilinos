@@ -6,8 +6,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // *****************************************************************************
 //@HEADER
-#include "Tempus_PhiEvaluatorLeja_decl.hpp"
-#include "Tempus_PhiEvaluatorTaylor_decl.hpp"
+#include "Tempus_PhiEvaluatorLeja.hpp"
+#include "Tempus_PhiEvaluatorTaylor.hpp"
 #include "Teuchos_LocalTestingHelpers.hpp"
 #include "Teuchos_TestingHelpers.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
@@ -25,6 +25,9 @@
 #include "Thyra_VectorStdOps_decl.hpp"
 
 #include <cmath>
+#include <chrono>
+#include <ctime>
+#include <sstream>
 
 namespace Tempus_Test {
 
@@ -52,7 +55,12 @@ TEUCHOS_UNIT_TEST(PhiEvaluator, Leja_SinCos)
   // auto model_tay = rcp(new SinCosModel<double>(scm_pl));
 
   // Setup the PhiEvaluator
+  const int expansion_order = 20;
   RCP<ParameterList> phi_pl = sublist(pList, "PhiEvaluator");
+  // use the H-factorization method by default
+  const int dd_method = 2;
+  phi_pl->set("Leja DD Method", dd_method);
+  phi_pl->set("Expansion Order", expansion_order);
   auto phiEvaluator = Tempus::createPhiEvaluatorLeja<double>(phi_pl);
   phiEvaluator->setModel(model);
   phiEvaluator->initialize();
@@ -83,25 +91,75 @@ TEUCHOS_UNIT_TEST(PhiEvaluator, Leja_SinCos)
   TEST_FLOATING_EQUALITY(lp.lp.imag(), leja_c, 1e-6);
 
   // Check the first divided diffs
-  const int exp_order = 4;
-  auto lp_dd = phiEvaluator->getDividedDiffs(0, 1.0, exp_order);
+  Teuchos::ArrayRCP<double> lp_dd = phiEvaluator->getDividedDiffs(0, 1.0, expansion_order);
   // the first divided diff is: y(x_0) == exp(0.0) == 1.0
   // the second divided diff is: (y(x_1) - y(x_0) / x_1 - x_0)) == (exp(-1.0) - 1.0) / (-1.0 - 0.0)
   std::cout << "lp_dd 0: " << lp_dd[0] << std::endl;
   std::cout << "lp_dd 1: " << lp_dd[1] << std::endl;
-  TEST_FLOATING_EQUALITY(lp_dd[0].real(), std::exp(leja_b), 1e-8);
-  // TEST_FLOATING_EQUALITY(lp_dd[0].imag(), 0.0, 1e-8);
-  TEST_FLOATING_EQUALITY(lp_dd[1].real(), 0.316060279414, 1e-8);
-  // TEST_FLOATING_EQUALITY(lp_dd[1].imag(), 0.0, 1e-8);
-  TEST_FLOATING_EQUALITY(lp_dd[2].real(), 0.075829495185, 1e-8);
-  // TEST_FLOATING_EQUALITY(lp_dd[2].imag(), 0.012636995600793, 1e-8);
-  TEST_FLOATING_EQUALITY(lp_dd[3].real(), 0.01263699560, 1e-8);
-  // TEST_FLOATING_EQUALITY(lp_dd[3].imag(), 0.0, 1e-8);
-  //TODO, do not test imaginary Leja dds, not needed
+  std::cout << "lp_dd 2: " << lp_dd[2] << std::endl;
+  std::cout << "lp_dd 3: " << lp_dd[3] << std::endl;
+  TEST_FLOATING_EQUALITY(lp_dd[0], std::exp(leja_b), 1e-8);
+  TEST_FLOATING_EQUALITY(lp_dd[1], 0.316060279414, 1e-8);
+  TEST_FLOATING_EQUALITY(lp_dd[2], 0.075829495185, 1e-8);
+  TEST_FLOATING_EQUALITY(lp_dd[3], 0.01263699560, 1e-8);
+
+  // test large ellipse and runtime
+  const int expansion_order_high = 300;
+  leja_a                         = -600.0;
+  leja_c                         = 300.0;
+  // test dt scaling: scale Leja ellipse in one case, use dt as argument in another
+  double dt                = 0.5;
+
+  phiEvaluator->setLejaEllipse(leja_a, leja_b, leja_c);
+  phiEvaluator->setExpansionOrder(expansion_order_high);
+
+  // update for new ellipse
+  std::ostringstream ss;
+  Teuchos::RCP<Teuchos::Time> localTimer;
+  ss << "running baseline dd_phi method " << dd_method << " with dt=" << dt;
+  localTimer = Teuchos::TimeMonitor::getNewCounter(ss.str());
+  {
+    Teuchos::TimeMonitor localTimeMonitor(*localTimer);
+    lp_dd = phiEvaluator->getDividedDiffs(0, dt, expansion_order_high);
+  }
+
+  // print the entire dd array
+  //std::cout << "LP_DD: " << lp_dd() << std::endl;
+  std::cout << "First 10 dd: " << lp_dd(lp_dd.lowerOffset(), 10) << std::endl;
+  std::cout << "Last 10 dd: " << lp_dd(lp_dd.upperOffset()-10, 10) << std::endl;
+
+  for (int dd_m = 0; dd_m <= 3; dd_m++)
+  {
+    // check divided difference calculation against other versions
+
+    phiEvaluator->setLejaEllipse(dt * leja_a, dt * leja_b, dt * leja_c);
+    phiEvaluator->setDivideDifferenceMethod(dd_m);
+    Teuchos::ArrayRCP<double> lp_dd_alt;
+
+    Teuchos::RCP<Teuchos::Time> localTimer2;
+    ss.str("");
+    ss << "running dd_phi method " << dd_m << " with dt=1, and scaled ellipse";
+    localTimer2 = Teuchos::TimeMonitor::getNewCounter(ss.str());
+    {
+      Teuchos::TimeMonitor localTimeMonitor(*localTimer2);
+      lp_dd_alt = phiEvaluator->getDividedDiffs(0, 1.0, expansion_order_high);
+    }
+
+    if (dd_m == 0)
+    {
+      // compare only first 90 entries due to instability of recurrence relation
+      TEST_COMPARE_FLOATING_ARRAYS(lp_dd.view(lp_dd.lowerOffset(), 90), lp_dd_alt.view(lp_dd.lowerOffset(), 90), 1e-10);
+    }
+    else
+    {
+      TEST_COMPARE_FLOATING_ARRAYS(lp_dd, lp_dd_alt, 1e-10);
+    }
+  }
 
   leja_a = -1.0e-18;
   leja_c = 1.0;
   phiEvaluator->setLejaEllipse(leja_a, leja_b, leja_c);
+  phiEvaluator->setExpansionOrder(expansion_order);
 
   // compute exp(dt*A)*v using PhiEvaluatorLeja
   // make a digonal linop from SinCosModel
@@ -121,7 +179,7 @@ TEUCHOS_UNIT_TEST(PhiEvaluator, Leja_SinCos)
   inArgs.set_x(v);
   inArgs.set_x_dot(xdot_init);
   inArgs.set_t(0.0);
-  double dt = 1.0;
+  dt = 1.0;
   phiEvaluator->setLinearizationPoint(inArgs);
   phiEvaluator->computePhi(vend.ptr(), 0, dt, v);
 
@@ -140,6 +198,8 @@ TEUCHOS_UNIT_TEST(PhiEvaluator, Leja_SinCos)
   std::vector<double> sol = {-std::cos(dt), std::sin(dt)};
   TEST_FLOATING_EQUALITY(sol[0], Thyra::get_ele(*vend, 0), 1e-6);
   TEST_FLOATING_EQUALITY(sol[1], Thyra::get_ele(*vend, 1), 1e-6);
+
+  Teuchos::TimeMonitor::summarize();
 }
 
 }  // namespace Tempus_Test
