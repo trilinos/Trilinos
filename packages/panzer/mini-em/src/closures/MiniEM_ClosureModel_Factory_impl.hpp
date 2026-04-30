@@ -33,6 +33,7 @@
 #include "MiniEM_PiecewiseConstant.hpp"
 #include "MiniEM_TensorConductivity.hpp"
 #include "MiniEM_VariableTensorConductivity.hpp"
+#include "MiniEM_RTC.hpp"
 
 // ********************************************************************
 // ********************************************************************
@@ -170,6 +171,15 @@ buildClosureModels(const std::string& model_id,
         std::string DoF = plist.get<std::string>("DoF Name");
 	RCP< Evaluator<panzer::Traits> > e =
 	  rcp(new mini_em::PiecewiseConstant<EvalT,panzer::Traits>(key,*ir,fl,value0,value1,xl,xr,yl,yr,zl,zr,DoF));
+	evaluators->push_back(e);
+
+        found = true;
+      }
+      if(type=="RTC") {
+        std::string funBody = plist.get<std::string>("body");
+        std::string DoF = plist.get<std::string>("DoF Name");
+	RCP< Evaluator<panzer::Traits> > e =
+	  rcp(new mini_em::RTC<EvalT,panzer::Traits>(key,*ir,fl, funBody, DoF));
 	evaluators->push_back(e);
 
         found = true;
