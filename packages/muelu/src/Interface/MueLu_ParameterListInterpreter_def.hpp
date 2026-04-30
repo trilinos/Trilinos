@@ -91,6 +91,8 @@
 #include "MueLu_IntrepidPCoarsenFactory.hpp"
 #endif
 
+#include "MueLu_Behavior.hpp"
+
 #include <unordered_set>
 
 namespace MueLu {
@@ -2780,9 +2782,8 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupO
     if ((blockSize_ != 1) || (dofOffset_ != 0))
       A.SetFixedBlockSize(blockSize_, dofOffset_);
 
-#ifdef HAVE_MUELU_DEBUG
-    MatrixUtils::checkLocalRowMapMatchesColMap(A);
-#endif  // HAVE_MUELU_DEBUG
+    if (Behavior::debug())
+      MatrixUtils::checkLocalRowMapMatchesColMap(A);
 
   } catch (std::bad_cast&) {
     this->GetOStream(Warnings0) << "Skipping setting block size as the operator is not a matrix" << std::endl;

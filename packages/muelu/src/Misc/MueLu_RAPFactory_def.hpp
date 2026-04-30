@@ -23,6 +23,7 @@
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_PerfUtils.hpp"
+#include "MueLu_Behavior.hpp"
 
 namespace MueLu {
 
@@ -301,9 +302,8 @@ void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fineLev
     }
   }
 
-#ifdef HAVE_MUELU_DEBUG
-  MatrixUtils::checkLocalRowMapMatchesColMap(*Ac);
-#endif  // HAVE_MUELU_DEBUG
+  if (Behavior::debug())
+    MatrixUtils::checkLocalRowMapMatchesColMap(*Ac);
 
   if (transferFacts_.begin() != transferFacts_.end()) {
     SubFactoryMonitor m(*this, "Projections", coarseLevel);
