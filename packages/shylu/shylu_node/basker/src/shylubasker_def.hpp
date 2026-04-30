@@ -2044,6 +2044,7 @@ namespace BaskerNS
     #else
     check_value = 1;
     #endif
+    if(Options.verbose == BASKER_TRUE) printf( "Basker SetThreads: Checking user-requested %d threads against availalbe %d cores\n", int(nthreads), int(check_value) );
     if(nthreads > check_value) {
       if(Options.verbose == BASKER_TRUE) {
         printf("Basker SetThreads Assert: Number of thread not available (%d > %d). Resetting to %d.",
@@ -2051,6 +2052,7 @@ namespace BaskerNS
       }
       nthreads = check_value;
     }
+    BASKER_ASSERT((Options.dense_schur == 0 || nthreads > 1), "Basker SetThreads Assert: Partial Factorization requires at least two threads.");
 
     // Finally, set the internal number of threads used by ShyLU-Basker.
     num_threads = nthreads;

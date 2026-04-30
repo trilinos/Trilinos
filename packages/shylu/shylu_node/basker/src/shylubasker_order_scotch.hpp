@@ -500,9 +500,9 @@ namespace BaskerNS
       }
     }
     // -------------------------------------------------- //
-    // TODO : !!! Remove Schur part !!!
     Int level = 0;
     bool use_nodeNDP = Options.use_nodeNDP;
+    // dense-schur (partial factorization requires at least two threads (i.e., num_levels > 0)
     if (use_nodeNDP && num_levels > 0) {
       if (METIS_OK != METIS_SetDefaultOptions(options)) {
         std::cout << std::endl << " > METIS_SetDefaultOptions failed < " << std::endl << std::endl;
