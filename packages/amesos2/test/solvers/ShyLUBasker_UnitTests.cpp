@@ -266,7 +266,6 @@ namespace {
     typedef ScalarTraits<SCALAR> ST;
     typedef MultiVector<SCALAR,LO,GO,Node> MV;
     typedef typename ST::magnitudeType Mag;
-    //typedef ScalarTraits<Mag> MT;
     const size_t numVecs = 1;
 
     RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
@@ -358,7 +357,6 @@ namespace {
     typedef ScalarTraits<SCALAR> ST;
     typedef MultiVector<SCALAR,LO,GO,Node> MV;
     typedef typename ST::magnitudeType Mag;
-    //typedef ScalarTraits<Mag> MT;
     const size_t numVecs = 1;
 
     RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
@@ -459,8 +457,6 @@ namespace {
     typedef CrsMatrix<SCALAR,LO,GO,Node> MAT;
     typedef ScalarTraits<SCALAR> ST;
     typedef MultiVector<SCALAR,LO,GO,Node> MV;
-    typedef typename ST::magnitudeType Mag;
-    //typedef ScalarTraits<Mag> MT;
     const size_t numVecs = 1;
 
     RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
@@ -586,7 +582,6 @@ namespace {
     typedef ScalarTraits<SCALAR> ST;
     typedef MultiVector<SCALAR,LO,GO,Node> MV;
     typedef typename ST::magnitudeType Mag;
-    //typedef ScalarTraits<Mag> MT;
     const size_t numVecs = 1;
 
     RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
@@ -907,7 +902,6 @@ namespace {
     typedef ScalarTraits<cmplx> ST;
     typedef MultiVector<cmplx,LO,GO,Node> MV;
     typedef typename ST::magnitudeType Mag;
-    //typedef ScalarTraits<Mag> MT;
 
     RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
     size_t myRank = comm->getRank();
@@ -994,7 +988,6 @@ namespace {
     typedef ScalarTraits<cmplx> ST;
     typedef MultiVector<cmplx,LO,GO,Node> MV;
     typedef typename ST::magnitudeType Mag;
-    //typedef ScalarTraits<Mag> MT;
     const size_t numVecs = 7;
 
     RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
@@ -1058,7 +1051,6 @@ namespace {
     typedef ScalarTraits<cmplx> ST;
     typedef MultiVector<cmplx,LO,GO,Node> MV;
     typedef typename ST::magnitudeType Mag;
-    //typedef ScalarTraits<Mag> MT;
     const size_t numVecs = 7;
 
     RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
