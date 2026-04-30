@@ -1,11 +1,11 @@
 <ParameterList name="MueLu">
 
   <!--
-    For 3D elasticity, these are the recommended settings for MueLu.
+    For 2D elasticity, these are the recommended settings for MueLu.
   -->
 
   <!-- ===========  GENERAL ================ -->
-    <Parameter        name="problem: type"                        type="string"   value="Elasticity-3D"/>
+    <Parameter        name="problem: type"                        type="string"   value="Elasticity-2D"/>
 
     <Parameter        name="verbosity"                            type="string"   value="high"/>
 
@@ -18,7 +18,7 @@
 
     <!-- start of default values for general options (can be omitted) -->
     <Parameter        name="max levels"                	          type="int"      value="10"/>
-    <Parameter        name="number of equations"                  type="int"      value="3"/>
+    <Parameter        name="number of equations"                  type="int"      value="2"/>
     <Parameter        name="sa: use filtered matrix"              type="bool"     value="true"/>
     <!-- end of default values -->
 
