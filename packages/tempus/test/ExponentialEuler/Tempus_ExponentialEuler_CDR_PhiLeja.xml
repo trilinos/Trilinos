@@ -1,14 +1,10 @@
-<ParameterList name="ForwardEuler_SinCos">
-  <ParameterList name="SinCosModel">
-    <Parameter name="Accept model parameters"    type="bool" value="false"/>
-    <Parameter name="Provide nominal values"     type="bool" value="true"/>
-    <Parameter name="Coeff a" type="double" value="0.0"/>
-    <!--<Parameter name="Coeff f" type="double" value="1.5707963267948966"/>-->
-    <Parameter name="Coeff f" type="double" value="1.0"/>
-    <Parameter name="Coeff L" type="double" value="1.0"/>
-    <Parameter name="IC x0"   type="double" value="0.0"/>
-    <Parameter name="IC x1"   type="double" value="1.0"/>
-    <Parameter name="IC t0"   type="double" value="0.0"/>
+<ParameterList name="ExponentialEuler_CDR">
+  <ParameterList name="CDR Model">
+    <Parameter name="num elements" type="int" value="100"/>
+    <Parameter name="left end" type="double" value="0.0"/>
+    <Parameter name="right end" type="double" value="1.0"/>
+    <Parameter name="a (convection)" type="double" value="0.1"/>
+    <Parameter name="k (source)" type="double" value="0.0"/>
   </ParameterList>
   <ParameterList name="Tempus">
     <Parameter name="Integrator Name" type="string" value="Demo Integrator"/>
@@ -24,12 +20,12 @@
       </ParameterList>
       <ParameterList name="Time Step Control">
         <Parameter name="Initial Time"           type="double" value="0.0"/>
-        <Parameter name="Final Time"             type="double" value="1.0"/>
+        <Parameter name="Final Time"             type="double" value=".1"/>
         <Parameter name="Initial Time Index"     type="int"    value="0"/>
-        <Parameter name="Final Time Index"       type="int"    value="10000"/>
-        <Parameter name="Minimum Time Step"      type="double" value="0.00001"/>
-        <Parameter name="Initial Time Step"      type="double" value="1."/>
-        <Parameter name="Maximum Time Step"      type="double" value="1."/>
+        <Parameter name="Final Time Index"       type="int"    value="1000000"/>
+        <Parameter name="Minimum Time Step"      type="double" value="0.0000001"/>
+        <Parameter name="Initial Time Step"      type="double" value="0.001"/>
+        <Parameter name="Maximum Time Step"      type="double" value="0.001"/>
         <Parameter name="Maximum Absolute Error" type="double" value="1.0e-8"/>
         <Parameter name="Maximum Relative Error" type="double" value="1.0e-8"/>
         <Parameter name="Output Time List"       type="string" value=""/>
@@ -38,34 +34,31 @@
         <Parameter name="Output Index Interval"  type="int"    value="1000"/>
         <Parameter name="Maximum Number of Stepper Failures" type="int" value="10"/>
         <Parameter name="Maximum Number of Consecutive Stepper Failures" type="int" value="5"/>
-        <ParameterList name="Time Step Control Strategy">
-           <Parameter name="Strategy Type" type="string" value="Constant"/>
-           <Parameter name="Time Step" type="double" value="1.0"/>
-        </ParameterList>
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="Demo Stepper">
-      <Parameter name="Stepper Type" type="string" value="EPI"/>
-      <Parameter name="Use FSAL" type="bool" value="false"/>
-      <Parameter name="Initial Condition Consistency" type="string" value="Consistent"/>
-      <Parameter name="Initial Condition Consistency Check" type="bool" value="false"/>
 
-      <!--
+      <Parameter name="Stepper Type"   type="string" value="Exponential Euler"/>
+      <Parameter name="Use FSAL"       type="bool" value="false"/>
+      <Parameter name="Initial Condition Consistency" type="string" value="Consistent"/>
+      <Parameter name="Initial Condition Consistency Check" type="bool" value="1"/>
+
       <ParameterList name="PhiEvaluator">
-        <Parameter name="PhiEvaluator Type" type="string" value="Taylor"/>
-        <Parameter name="Expansion Order" type="int" value="20"/>
+	      <Parameter name="PhiEvaluator Type" type="string" value="Leja"/>
+	      <Parameter name="Expansion Order" type="int" value="60"/>
+        <Parameter name="Leja DD Method" type="int" value="2"/>
+        <Parameter name="leja_tol" type="double" value="1.e-11"/>
+        <Parameter name="leja_a" type="double" value="-50000.0"/>
+        <Parameter name="leja_b" type="double" value="0.0"/>
+        <Parameter name="leja_c" type="double" value="1000.0"/>
+	      <Parameter name="Lump Mass Matrix" type="bool" value="1"/>
       </ParameterList>
+      <!--
+      "DD Method to use. 0 for Recurrence. 1 for Taylor Series. 2 for DD_phi. 3 for Taylor Real.");
       -->
 
-      <ParameterList name="PhiEvaluator">
-        <Parameter name="PhiEvaluator Type" type="string" value="Leja"/>
-        <Parameter name="Expansion Order" type="int" value="30"/>
-        <Parameter name="Leja DD Method" type="int" value="2"/>
-        <Parameter name="leja_a" type="double" value="-1.0e-2"/>
-        <Parameter name="leja_c" type="double" value="1.0"/>
-      </ParameterList>
-
+      <Parameter name="Zero Initial Guess" type="bool" value="0"/>
       <Parameter name="Solver Name"    type="string" value="Demo Solver"/>
       <Parameter name="Predictor Stepper Type" type="string" value="None"/>
 
@@ -116,10 +109,11 @@
               <Parameter name="Maximum Iterations" type="int" value="10"/>
             </ParameterList>
           </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
     </ParameterList>
 
   </ParameterList>
 
-</ParameterList>
-</ParameterList>
 </ParameterList>

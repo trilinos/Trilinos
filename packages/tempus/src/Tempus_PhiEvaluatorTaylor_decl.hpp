@@ -9,6 +9,7 @@
 
 #include "Tempus_PhiEvaluator.hpp"
 #include "Thyra_ProductVectorBase.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 
 
 namespace Tempus {
@@ -25,7 +26,24 @@ class PhiEvaluatorTaylor
   : virtual public PhiEvaluator<Scalar> {
  public:
   /// Inherit Contructor
-  using PhiEvaluator<Scalar>::PhiEvaluator;
+  PhiEvaluatorTaylor<Scalar>(std::string name)
+    : PhiEvaluator<Scalar>(name),
+      expansionOrder_(0)
+  {
+#ifdef TEMPUS_TEUCHOS_TIME_MONITOR
+    std::stringstream ss;
+    ss << "Tempus::" << name ;
+
+    std::string phiLabel = ss.str() + ": PhiEval";
+    timerPhi_ = Teuchos::TimeMonitor::getNewCounter(phiLabel);
+
+    std::string linOpLabel = ss.str() + ": LinOp";
+    timerLinOp_ = Teuchos::TimeMonitor::getNewCounter(linOpLabel);
+#endif
+  }
+  PhiEvaluatorTaylor<Scalar>() : PhiEvaluatorTaylor<Scalar>("PhiEvaluatorTaylor")
+  { }
+
 
   /// \name Basic PhiEvaluatorTaylor Methods
 
@@ -36,7 +54,7 @@ class PhiEvaluatorTaylor
   void setPhiEvaluatorValues(Teuchos::RCP<Teuchos::ParameterList> pl) override;
 
   /// Set the polynomial expansion order
-  void setExpansionOrder(int order) { expansionOrder_ = order; }
+  void setExpansionOrder(const int expansionOrder) { expansionOrder_ = expansionOrder; }
 
   /// Get the polynomial expansion order
   int getExpansionOrder() const { return expansionOrder_; }
@@ -50,6 +68,10 @@ class PhiEvaluatorTaylor
 
  private:
   int expansionOrder_;
+
+#ifdef TEMPUS_TEUCHOS_TIME_MONITOR
+  Teuchos::RCP<Teuchos::Time> timerLinOp_, timerPhi_;
+#endif
 };
 
 /// Nonmember constructor from a ParameterList
