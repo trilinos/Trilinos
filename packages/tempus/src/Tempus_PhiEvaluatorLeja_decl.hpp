@@ -74,6 +74,7 @@ class PhiEvaluatorLeja
       leja_b_(0.0),
       leja_c_(1.0)
   {
+#ifdef TEMPUS_TEUCHOS_TIME_MONITOR
     std::stringstream ss;
     ss << "Tempus::" << name;
 
@@ -84,6 +85,7 @@ class PhiEvaluatorLeja
     timerLinOp_ = Teuchos::TimeMonitor::getNewCounter(linOpLabel);
     std::string ddLabel = ss.str() + ": dd_phi";
     timerDD_ = Teuchos::TimeMonitor::getNewCounter(ddLabel);
+#endif
   }
   PhiEvaluatorLeja<Scalar>() : PhiEvaluatorLeja<Scalar>("PhiEvaluatorLeja")
   { }
@@ -143,7 +145,9 @@ private:
   double leja_b_;
   double leja_c_;
 
+#ifdef TEMPUS_TEUCHOS_TIME_MONITOR
   Teuchos::RCP<Teuchos::Time> timerDD_, timerLinOp_, timerPhi_;
+#endif
 
   /// allows to check at runtime for compelex Scalar type
   static const bool isComplex = Teuchos::ScalarTraits<Scalar>::isComplex;

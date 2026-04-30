@@ -86,7 +86,9 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
       std::invalid_argument,
       "LinOpPhi: phi_order must be zero.");
 
+#ifdef TEMPUS_TEUCHOS_TIME_MONITOR
   Teuchos::TimeMonitor phitimer(*timerPhi_);
+#endif
 
   // phi_k(L) * v is in range(L)
   const auto rangeSpace = L->range();
@@ -151,7 +153,9 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
       // std::cout << "c,lp,shift,scale: " << coeff << " " << lp_sc.lp << " real " << shift << " " << scale << std::endl;
 
       {
+#ifdef TEMPUS_TEUCHOS_TIME_MONITOR
         Teuchos::TimeMonitor linoptimer(*timerLinOp_);
+#endif
         // copy vm_k to temp vector
         Thyra::V_V(av.ptr(), *vm_k);
         // vm_k = (L@vm_k - lp_re[k-1]*vm_k) / scale
@@ -174,7 +178,9 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
       Thyra::V_V(qm_k.ptr(), *vm_k);
 
       {
+#ifdef TEMPUS_TEUCHOS_TIME_MONITOR
         Teuchos::TimeMonitor linoptimer(*timerLinOp_);
+#endif
         // vm_k = (L@vm_k - lp_re*vm_k) / scale
         Thyra::apply(*L, Thyra::NOTRANS, *qm_k, vm_k.ptr(), 1 / scale, -lp_re);
       }
@@ -199,7 +205,9 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
         //std::cout << "c,lp: " << coeff << " " << std::conj(lp_sc.lp) << std::endl;
 
         {
+#ifdef TEMPUS_TEUCHOS_TIME_MONITOR
           Teuchos::TimeMonitor linoptimer(*timerLinOp_);
+#endif
           // copy vm_k to a new temp vector (don't overwrite qm_k)
           Thyra::V_V(av.ptr(), *vm_k);
           // vm_k = (L@vm_k - lp_re*vm_k) / scale + ((lp_im/scale)**2)*qm_k
@@ -407,7 +415,9 @@ void PhiEvaluatorLeja<Scalar>::setPhiEvaluatorValues(
 template <class Scalar>
 Teuchos::ArrayRCP<Scalar> PhiEvaluatorLeja<Scalar>::getDividedDiffs(const int k, const Scalar cdt, const int lejaOrder)
 {
+#ifdef TEMPUS_TEUCHOS_TIME_MONITOR
   Teuchos::TimeMonitor ddtimer(*timerDD_);
+#endif
 
   // ensure that we have enough Leja points
   if (lejaOrder > lejaPointsBase_.size()) {
