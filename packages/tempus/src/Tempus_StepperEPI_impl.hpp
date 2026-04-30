@@ -173,12 +173,13 @@ void StepperEPI<Scalar>::takeStep(
       RCP<Thyra::VectorBase<Scalar> > Mf = x->clone_v();
       RCP<Thyra::VectorBase<Scalar> > Mf_dt = x->clone_v();
       RCP<Thyra::VectorBase<Scalar> > dt_Mf_deriv = x->clone_v();
+      
       // std::cout << "xO[0,1] = " << Thyra::get_ele(*xOld, 0) << " " << Thyra::get_ele(*xOld, 1) << std::endl;
       // std::cout << "x[0,1]  = " << Thyra::get_ele(*x, 0) << " " << Thyra::get_ele(*x, 1) << std::endl;
       // std::cout << "f[0,1]  = " << Thyra::get_ele(*Mf, 0) << " " << Thyra::get_ele(*Mf, 1) << std::endl;
       this->evaluateImplicitODE(Mf, x, xDot, time, p);
-      this->evaluateImplicitODE(Mf_dt, x, xDot, time + Scalar(0.0001), p);
-      Thyra::V_StVpStV(dt_Mf_deriv.ptr(),dt/0.0001,*Mf,-dt/0.0001,*Mf_dt);
+      this->evaluateImplicitODE(Mf_dt, x, xDot, time + dt*temporal_finite_difference_eps_, p);
+      Thyra::V_StVpStV(dt_Mf_deriv.ptr(),dt/(dt*temporal_finite_difference_eps_),*Mf,-dt/(dt*temporal_finite_difference_eps_),*Mf_dt);
       std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> Mrhs_B(3);
       Mrhs_B[0] = Teuchos::null;
       Mrhs_B[1] = Mf;
@@ -313,6 +314,8 @@ void StepperEPI<Scalar>::setStepperExponentialValues(
     Teuchos::RCP<Teuchos::ParameterList> pl)
 {
   Teuchos::RCP<Teuchos::ParameterList> phiPL = Teuchos::null;
+
+  temporal_finite_difference_eps_ = pl->get<double>("Epsilon for RHS finite difference", 1e-4);
 
   if (pl != Teuchos::null) {
     // TODO read in the pl for the exponential solver
