@@ -105,6 +105,12 @@ namespace Intrepid2 {
                  Kokkos::subview(input,  cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL())
                : Kokkos::subview(input,        Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
 
+      if (orts(cell).isAlignedToReference())
+      {
+        // identity
+        return;
+      }
+      
       // edge transformation
       ordinal_type existEdgeDofs = 0;
       if (numEdges > 0) {

@@ -16,6 +16,9 @@
 #define IFPACK2_INST(CLASSNAME, S, LO, GO, NO) \
   template class CLASSNAME<Tpetra::CrsMatrix<S, LO, GO, NO> >;
 
+#define IFPACK2_INST_ROWMATRIX(CLASSNAME, S, LO, GO, NO) \
+  template class CLASSNAME<Tpetra::RowMatrix<S, LO, GO, NO> >;
+
 #define IFPACK2_INST_GRAPH(CLASSNAME, LO, GO) \
   template class CLASSNAME<Tpetra::CrsGraph<LO, GO> >;
 

@@ -9,7 +9,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM mpi
   PASS_REGULAR_EXPRESSION "TEST PASSED"
   )
-  
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Test_FE_Projection
   SOURCES test_fe_projection.cpp ../cartesian_topology/CartesianConnManager.cpp

@@ -1,4 +1,4 @@
-SET(LIB_REQUIRED_DEP_PACKAGES Shards Intrepid2 TeuchosCore TeuchosComm Tpetra Phalanx PanzerCore)
+SET(LIB_REQUIRED_DEP_PACKAGES Shards Intrepid2 TeuchosCore TeuchosComm Tpetra Phalanx PanzerCore Belos Ifpack2 Stratimikos Thyra ThyraTpetraAdapters)
 SET(LIB_OPTIONAL_DEP_PACKAGES)
 SET(TEST_REQUIRED_DEP_PACKAGES)
 SET(TEST_OPTIONAL_DEP_PACKAGES)

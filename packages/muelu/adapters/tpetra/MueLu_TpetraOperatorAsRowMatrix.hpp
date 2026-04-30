@@ -133,7 +133,7 @@ class TpetraOperatorAsRowMatrix : public Tpetra::RowMatrix<Scalar, LocalOrdinal,
   }
 
   size_t getLocalNumEntries() const {
-    throw MueLu::Exceptions::RuntimeError("Not implemented.");
+    return 0;
   }
 
   size_t getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const {
