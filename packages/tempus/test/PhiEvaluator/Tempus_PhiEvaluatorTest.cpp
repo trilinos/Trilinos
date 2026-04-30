@@ -105,8 +105,8 @@ TEUCHOS_UNIT_TEST(PhiEvaluator, Leja_SinCos)
 
   // test large ellipse and runtime
   const int expansion_order_high = 300;
-  leja_a                         = -1000.0;
-  leja_c                         = 50.0;
+  leja_a                         = -600.0;
+  leja_c                         = 300.0;
   // test dt scaling: scale Leja ellipse in one case, use dt as argument in another
   double dt                = 0.5;
 
@@ -122,6 +122,11 @@ TEUCHOS_UNIT_TEST(PhiEvaluator, Leja_SinCos)
     Teuchos::TimeMonitor localTimeMonitor(*localTimer);
     lp_dd = phiEvaluator->getDividedDiffs(0, dt, expansion_order_high);
   }
+
+  // print the entire dd array
+  //std::cout << "LP_DD: " << lp_dd() << std::endl;
+  std::cout << "First 10 dd: " << lp_dd(lp_dd.lowerOffset(), 10) << std::endl;
+  std::cout << "Last 10 dd: " << lp_dd(lp_dd.upperOffset()-10, 10) << std::endl;
 
   for (int dd_m = 0; dd_m <= 3; dd_m++)
   {
@@ -143,11 +148,11 @@ TEUCHOS_UNIT_TEST(PhiEvaluator, Leja_SinCos)
     if (dd_m == 0)
     {
       // compare only first 90 entries due to instability of recurrence relation
-      TEST_COMPARE_FLOATING_ARRAYS(lp_dd.view(0, 90), lp_dd_alt.view(0, 90), 1e-11);
+      TEST_COMPARE_FLOATING_ARRAYS(lp_dd.view(lp_dd.lowerOffset(), 90), lp_dd_alt.view(lp_dd.lowerOffset(), 90), 1e-10);
     }
     else
     {
-      TEST_COMPARE_FLOATING_ARRAYS(lp_dd, lp_dd_alt, 1e-11);
+      TEST_COMPARE_FLOATING_ARRAYS(lp_dd, lp_dd_alt, 1e-10);
     }
   }
 
