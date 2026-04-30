@@ -17,6 +17,7 @@
 #include "Galeri_MultiVectorTraits.hpp"
 #include "Galeri_MatrixTraits.hpp"
 #include "Galeri_XpetraUtils.hpp"
+#include "Tpetra_Access.hpp"
 
 namespace Galeri {
 
@@ -264,24 +265,27 @@ Elasticity2DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, MultiVecto
   // as we cannot construct a single DOF map in Problem, we repeat the coords
   this->Coords_ = MultiVectorTraits<Map, RealValuedMultiVector>::Build(this->Map_, nDim_);
 
-  typedef typename RealValuedMultiVector::scalar_type real_type;
-
-  Teuchos::ArrayRCP<real_type> x = this->Coords_->getDataNonConst(0);
-  Teuchos::ArrayRCP<real_type> y = this->Coords_->getDataNonConst(1);
-
-  Teuchos::ArrayView<const GO> GIDs = this->Map_->getLocalElementList();
-
   // NOTE: coordinates vector local ordering is consistent with that of the
   // matrix map, as it is constructed by going through GIDs and translating
   // those.
-  const typename KAT::magnitudeType hx = KAT::magnitude(stretch[0]),
-                                    hy = KAT::magnitude(stretch[1]);
-  for (GO p = 0; p < GIDs.size(); p += 2) {  // FIXME: we assume that DOF for the same node are label consequently
-    GlobalOrdinal ind = GIDs[p] >> 1;
-    size_t i = ind % nx_, j = ind / nx_;
+  {
+    const typename KAT::magnitudeType hx = KAT::magnitude(stretch[0]);
+    const typename KAT::magnitudeType hy = KAT::magnitude(stretch[1]);
+    auto nx                              = nx_;
+    auto gids                            = this->Map_->getMyGlobalIndicesDevice();
+    auto lclCoords                       = this->Coords_->getLocalViewDevice(Tpetra::Access::OverwriteAll);
+    Kokkos::parallel_for(
+        "Galeri::Elasticity2DProblem::BuildCoords",
+        Kokkos::RangePolicy<typename Map::node_type::execution_space>(0, gids.extent(0) / 2),
+        KOKKOS_LAMBDA(const LocalOrdinal pp) {
+          auto p   = 2 * pp;
+          auto ind = gids(p) >> 1;
+          size_t i = ind % nx;
+          size_t j = ind / nx;
 
-    x[p] = x[p + 1] = (i + 1) * hx;
-    y[p] = y[p + 1] = (j + 1) * hy;
+          lclCoords(p, 0) = lclCoords(p + 1, 0) = (i + 1) * hx;
+          lclCoords(p, 1) = lclCoords(p + 1, 1) = (j + 1) * hy;
+        });
   }
 
   return this->Coords_;
@@ -292,39 +296,38 @@ RCP<MultiVector> Elasticity2DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, M
   const int numVectors = 3;
   this->Nullspace_     = MultiVectorTraits<Map, MultiVector>::Build(this->Map_, numVectors);
 
-  typedef typename RealValuedMultiVector::scalar_type real_type;
-
   if (this->Coords_ == Teuchos::null)
     BuildCoords();
 
-  // Teuchos::ArrayView<const GO> GIDs = this->Map_->getLocalElementList();
-
-  size_t numDofs                 = this->Map_->getLocalNumElements();
-  Teuchos::ArrayRCP<real_type> x = this->Coords_->getDataNonConst(0);
-  Teuchos::ArrayRCP<real_type> y = this->Coords_->getDataNonConst(1);
-
-  auto one = KAT::one();
-
-  // NOTE: nullspace local ordering is consistent with that of the matrix
-  // map, as it inherits ordering from coordinates, which is consistent.
-
-  // Translations
-  Teuchos::ArrayRCP<SC> T0 = this->Nullspace_->getDataNonConst(0), T1 = this->Nullspace_->getDataNonConst(1);
-  for (size_t i = 0; i < numDofs; i += nDim_) {
-    T0[i]     = one;
-    T1[i + 1] = one;
-  }
-
   // Calculate center
-  real_type cx = this->Coords_->getVector(0)->meanValue();
-  real_type cy = this->Coords_->getVector(1)->meanValue();
+  auto cx = this->Coords_->getVector(0)->meanValue();
+  auto cy = this->Coords_->getVector(1)->meanValue();
 
-  // Rotations
-  Teuchos::ArrayRCP<SC> R0 = this->Nullspace_->getDataNonConst(2);
-  for (size_t i = 0; i < numDofs; i += nDim_) {
-    // Rotate in Y-Z Plane (around Z axis): [ -y; x]
-    R0[i + 0] = -(y[i] - cy);
-    R0[i + 1] = (x[i] - cx);
+  {
+    auto numDofs = this->Map_->getLocalNumElements();
+
+    auto lclCoords    = this->Coords_->getLocalViewDevice(Tpetra::Access::ReadOnly);
+    auto lclNullspace = this->Nullspace_->getLocalViewDevice(Tpetra::Access::ReadWrite);
+
+    auto one = KAT::one();
+
+    // NOTE: nullspace local ordering is consistent with that of the matrix
+    // map, as it inherits ordering from coordinates, which is consistent.
+
+    Kokkos::parallel_for(
+        "Galeri::Elasticity2DProblem::BuildNullspace",
+        Kokkos::RangePolicy<typename Map::node_type::execution_space>(0, numDofs / 2),
+        KOKKOS_LAMBDA(const LocalOrdinal ii) {
+          auto i = 2 * ii;
+
+          // Translations
+          lclNullspace(i, 0)     = one;
+          lclNullspace(i + 1, 1) = one;
+
+          // Rotations
+          lclNullspace(i, 2)     = -(lclCoords(i, 1) - cy);
+          lclNullspace(i + 1, 2) = (lclCoords(i, 0) - cx);
+        });
   }
 
   // Equalize norms of all vectors to that of the first one
