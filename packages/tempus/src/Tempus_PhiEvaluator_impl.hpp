@@ -237,7 +237,6 @@ PhiEvaluator<Scalar>::computePhis(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> 
 				  const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> Mrhs_B)
 {
   const int max_phi_order = Mrhs_B.size() - 1;
-  std::cout << "PhiEvaluator::computePhis() called with max_phi_order = " << max_phi_order << std::endl;
 
   TEUCHOS_TEST_FOR_EXCEPTION(
       max_phi_order < 0,
@@ -272,8 +271,6 @@ PhiEvaluator<Scalar>::computePhis(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> 
     }
   }
 
-  std::cout << "Solve Mass is done" << std::endl;
-
   // Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   // rhs_b->describe(*out, Teuchos::VERB_EXTREME);
   // Mrhs_b->describe(*out, Teuchos::VERB_EXTREME);
@@ -290,9 +287,7 @@ PhiEvaluator<Scalar>::computePhis(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> 
 
   // Build extended matrix
   this->phiLinSolv_->buildK(max_phi_order);
-  std::cout << "buildK is done" << std::endl;
   this->phiLinSolv_->buildb(rhs_B);
-  std::cout << "buildb is done" << std::endl;
   const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> Atilde = this->phiLinSolv_->buildATilde(cdt);
 
   // Build initial vector and compute matrix exponential in place
