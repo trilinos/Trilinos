@@ -52,7 +52,9 @@ PhiEvaluatorTaylor<Scalar>::computeLinOpPhi(const int phi_order,
       std::invalid_argument,
       "LinOpPhi: phi_order must be nonnegative.");
 
+#ifdef TEMPUS_TEUCHOS_TIME_MONITOR
   Teuchos::TimeMonitor phitimer(*timerPhi_);
+#endif
 
   const int expansionOrder = getExpansionOrder();
 
@@ -95,7 +97,9 @@ PhiEvaluatorTaylor<Scalar>::computeLinOpPhi(const int phi_order,
   for (k = phi_order + 1; k <= expansionOrder + phi_order; ++k)
   {
     {
+#ifdef TEMPUS_TEUCHOS_TIME_MONITOR
       Teuchos::TimeMonitor linoptimer(*timerLinOp_);
+#endif
       // next <- K * d_k
       // TODO: do we need the temp vector?
       Thyra::apply(*L, Thyra::NOTRANS, *d_k, next.ptr());

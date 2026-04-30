@@ -30,6 +30,7 @@ class PhiEvaluatorTaylor
     : PhiEvaluator<Scalar>(name),
       expansionOrder_(0)
   {
+#ifdef TEMPUS_TEUCHOS_TIME_MONITOR
     std::stringstream ss;
     ss << "Tempus::" << name ;
 
@@ -38,6 +39,7 @@ class PhiEvaluatorTaylor
 
     std::string linOpLabel = ss.str() + ": LinOp";
     timerLinOp_ = Teuchos::TimeMonitor::getNewCounter(linOpLabel);
+#endif
   }
   PhiEvaluatorTaylor<Scalar>() : PhiEvaluatorTaylor<Scalar>("PhiEvaluatorTaylor")
   { }
@@ -67,7 +69,9 @@ class PhiEvaluatorTaylor
  private:
   int expansionOrder_;
 
+#ifdef TEMPUS_TEUCHOS_TIME_MONITOR
   Teuchos::RCP<Teuchos::Time> timerLinOp_, timerPhi_;
+#endif
 };
 
 /// Nonmember constructor from a ParameterList
