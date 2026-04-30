@@ -41,6 +41,10 @@ on:
         required: false
         type: number
         default: -1
+      skip-create-packageenables:
+        required: false
+        type: boolean
+        default: false
       extra-pr-driver-args:
         description: 'Extra arguments to be used when calling PullRequestLinuxDriverTest.py'
         required: false
@@ -126,6 +130,13 @@ jobs:
             slots_per_gpu=""
           fi
 
+          if [ "$inputs.skip-create-packageenables" == "true" ]
+          then
+            skip_create_packageenables="--skip-create-packageenables"
+          else
+            skip_create_packageenabels=""
+          fi
+
           extra_inputs='${{ inputs.extra-pr-driver-args }}'
           if [ -n "$extra_inputs" ]
           then
@@ -133,7 +144,6 @@ jobs:
           else
             extra_pr_driver_args=""
           fi
-          echo "ex: ${extra_pr_driver_args}"
 
           python3 ${TRILINOS_DIR}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
             --genconfig-build-name ${{ inputs.genconfig-string }} \
@@ -153,6 +163,7 @@ jobs:
             ${num_concurrent_tests} \
             ${max_cores_allowed} \
             ${slots_per_gpu} \
+            ${skip_create_packageenables} \
             "${extra_pr_driver_args}"
       - name: Filtered build error logs
         if: success() || failure()

@@ -941,5 +941,6 @@ jobs:
       max-cores-allowed: 29
       num-concurrent-tests: 16
       slots-per-gpu: 8
-      extra-pr-driver-args: '--skip-create-packageenables --extra-configure-args="-C ${GITHUB_WORKSPACE}/packages/framework/cmake-fragments/ramses/gcc-mpi-openmp.cmake"'
+      skip-create-packageenables: true
+      extra-pr-driver-args: '--extra-configure-args="-C ${GITHUB_WORKSPACE}/packages/framework/cmake-fragments/ramses/gcc-mpi-openmp.cmake"'
 
