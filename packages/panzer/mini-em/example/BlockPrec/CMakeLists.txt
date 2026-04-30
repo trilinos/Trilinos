@@ -88,6 +88,7 @@ TRIBITS_ADD_TEST(
    POSTFIX_AND_ARGS_11 "order1_barriers"            --solver=MueLu --numTimeSteps=1 --linAlgebra=Tpetra --barriers
    POSTFIX_AND_ARGS_12 "order1_maxwell1_unsmoothed" --solver=Maxwell1-RS --numTimeSteps=1 --linAlgebra=Tpetra
    POSTFIX_AND_ARGS_13 "order1_maxwell1_smoothed"   --solver=Maxwell1-SA-RS --numTimeSteps=1 --linAlgebra=Tpetra
+   POSTFIX_AND_ARGS_14 "order1_maxwell1_emin"       --solver=Maxwell1-Emin --numTimeSteps=1 --linAlgebra=Tpetra
    NUM_MPI_PROCS 4
    )
 
