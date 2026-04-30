@@ -2040,7 +2040,7 @@ namespace BaskerNS
     //Next test if Kokkos has that many threads!
     //This is a common mistake in mpi-based apps
     #ifdef KOKKOS_ENABLE_OPENMP
-    check_value = Kokkos::OpenMP::impl_max_hardware_threads();
+    check_value = Kokkos::OpenMP().concurrency();
     #else
     check_value = 1;
     #endif

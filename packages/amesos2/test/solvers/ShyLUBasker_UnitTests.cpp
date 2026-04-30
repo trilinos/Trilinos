@@ -407,11 +407,10 @@ namespace {
     Xhat->randomize();
 
     #ifdef KOKKOS_ENABLE_OPENMP
-    int check_value = Kokkos::OpenMP::impl_max_hardware_threads();
+    int check_value = Kokkos::OpenMP().concurrency();
     #else
     int check_value = 1;
     #endif
-
     if (check_value > 1) {
       // Create ShyLU-Basker solver
       RCP<Amesos2::Solver<MAT,MV> > solver
@@ -451,9 +450,133 @@ namespace {
       TEST_COMPARE_FLOATING_ARRAYS( xhatnorms, xnorms, 0.005 );
     } else {
       if (myRank==0) printf( " Skipping partial-factorization test because (check_value = %d)\n",check_value );
-      Array<Mag> xnorms(numVecs);
-      X->norm2(xnorms());
-      TEST_COMPARE_FLOATING_ARRAYS( xnorms, xnorms, 0.005 );
+      TEST_ASSERT( true );
+    }
+  }
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ShyLUBasker, Partial2, SCALAR, LO, GO )
+  {
+    typedef CrsMatrix<SCALAR,LO,GO,Node> MAT;
+    typedef ScalarTraits<SCALAR> ST;
+    typedef MultiVector<SCALAR,LO,GO,Node> MV;
+    typedef typename ST::magnitudeType Mag;
+    //typedef ScalarTraits<Mag> MT;
+    const size_t numVecs = 1;
+
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
+    const size_t myRank = comm->getRank();
+    const size_t numRanks = comm->getSize();
+    if (myRank==0) {
+      std::cout << std::endl
+                << " >> UnitTest for ShyLUBasker::Solve with Scalar = "
+                << ST::name() << " <<" << std::endl << std::endl;
+    }
+
+    // Construct matrix
+    const SCALAR one  = ST::one();
+    const SCALAR mone = -one;
+    const SCALAR two  = one + one;
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    const size_t numLocal = 10;
+    const size_t numGlobal = numLocal*numRanks;
+    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm) );
+    RCP<MAT> A = rcp( new MAT(map, 3) );
+    GO base = numLocal*myRank;
+    for( size_t i = 0; i < numLocal; ++i ){
+      if (base+i > 0) {
+        A->insertGlobalValues(base+i,tuple<GO>(base+i-1),tuple<SCALAR>(mone));
+      }
+      A->insertGlobalValues(base+i,tuple<GO>(base+i),tuple<SCALAR>(two));
+      if (base+i < numGlobal-1) {
+        A->insertGlobalValues(base+i,tuple<GO>(base+i+1),tuple<SCALAR>(mone));
+      }
+    }
+    A->fillComplete();
+
+    RCP<const Map<LO,GO,Node> > dmnmap = A->getDomainMap();
+    RCP<const Map<LO,GO,Node> > rngmap = A->getRangeMap();
+
+    RCP<MV> X = rcp(new MV(dmnmap,numVecs));
+    RCP<MV> B = rcp(new MV(rngmap,numVecs));
+    RCP<MV> Xhat = rcp(new MV(dmnmap,numVecs));
+    X->setObjectLabel("X");
+    B->setObjectLabel("B");
+    Xhat->setObjectLabel("Xhat");
+    X->randomize();
+
+    A->apply(*X,*B);            // no transpose
+
+    Xhat->randomize();
+
+    #ifdef KOKKOS_ENABLE_OPENMP
+    int check_value = Kokkos::OpenMP().concurrency();
+    #else
+    int check_value = 1;
+    #endif
+    if (check_value > 1) {
+      // Create ShyLU-Basker solver
+      RCP<Amesos2::Solver<MAT,MV> > solver
+        = Amesos2::create<MAT,MV>("ShyLUBasker", A, Xhat, B );
+
+      // Parameters
+      Teuchos::ParameterList amesos2_paramlist;
+      amesos2_paramlist.setName("Amesos2");
+      Teuchos::ParameterList & shylubasker_paramlist = amesos2_paramlist.sublist("ShyLUBasker");
+      // partial factorization currently requires at least two threads
+      shylubasker_paramlist.set("num_threads", 2, "Number of threads");
+      shylubasker_paramlist.set("GetDenseSchur", 2, "Partial Factorization");
+      // Schur part has odd row IDs
+      Teuchos::Array<LO> schurPart(numGlobal);
+      for( size_t i = 0; i < numGlobal; i++) {
+        if (i%2 == 0) schurPart[i] = 0;
+        if (i%2 == 1) schurPart[i] = 1;
+      }
+      const size_t numSchur = numGlobal/2;
+      Teuchos::Array<SCALAR> schurOut(numSchur*numSchur);
+      shylubasker_paramlist.set("SchurPart", (const LO*)schurPart.getRawPtr());
+      shylubasker_paramlist.set("SchurOut", (SCALAR*)schurOut.getRawPtr());
+      shylubasker_paramlist.set("verbose", true);
+      solver->setParameters(Teuchos::rcpFromRef(amesos2_paramlist));
+
+      // Solve A*Xhat = B for Xhat using the Bakser solver
+      solver->symbolicFactorization();
+      solver->numericFactorization();
+
+      // Check result of solve
+      const SCALAR zero = ST::zero();
+      const SCALAR half  = one / two;
+      Teuchos::Array<SCALAR> schur(numSchur*numSchur, zero);
+      if (myRank == 0) {
+        for( size_t i = 0; i < numSchur; ++i ){
+          if (i > 0) {
+            schur[i-1 + i*numSchur] = -half;
+          }
+          if (i == numSchur-1) {
+            schur[i + i*numSchur] = one+half;
+          } else {
+            schur[i + i*numSchur] = one;
+          }
+          if (base+i < numSchur-1) {
+            schur[i+1 + i*numSchur] = -half;
+          }
+        }
+        printf("[\n");
+        for( size_t i = 0; i < numSchur; ++i ){
+          for( size_t j = 0; j < numSchur; ++j ) printf("%e ",schurOut[i+j*numSchur]);
+          printf("\n");
+        }
+        printf("];\n");
+        printf("[\n");
+        for( size_t i = 0; i < numSchur; ++i ){
+          for( size_t j = 0; j < numSchur; ++j ) printf("%e ",schur[i+j*numSchur]);
+          printf("\n");
+        }
+        printf("];\n");
+      }
+      TEST_COMPARE_FLOATING_ARRAYS( schurOut, schur, 0.005 );
+    } else {
+      if (myRank==0) printf( " Skipping partial-factorization 2 test because (check_value = %d)\n",check_value );
+      TEST_ASSERT( true );
     }
   }
 
@@ -1031,7 +1154,8 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( ShyLUBasker, NumericFactorization, SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( ShyLUBasker, Solve, SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( ShyLUBasker, SolveTrans, SCALAR, LO, GO ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( ShyLUBasker, Partial1, SCALAR, LO, GO )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( ShyLUBasker, Partial1, SCALAR, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( ShyLUBasker, Partial2, SCALAR, LO, GO )
 
 #define UNIT_TEST_GROUP_ORDINAL_ORDINAL( LO, GO )     \
   UNIT_TEST_GROUP_ORDINAL_FLOAT(LO, GO)               \
