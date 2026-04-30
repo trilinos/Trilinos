@@ -184,10 +184,6 @@ void StepperEPI<Scalar>::takeStep(
       Mrhs_B[1] = Mf;
       Mrhs_B[2] = dt_Mf_deriv;
 
-      std::cout << "Mrhs_B[0] = " << Thyra::get_ele(*Mrhs_B[1], 0) << " " << Thyra::get_ele(*Mrhs_B[1], 1) << " " << Thyra::get_ele(*Mrhs_B[1], 2) << std::endl;
-      std::cout << "Mrhs_B[1] = " << Thyra::get_ele(*Mrhs_B[2], 0) << " " << Thyra::get_ele(*Mrhs_B[2], 1) << " " << Thyra::get_ele(*Mrhs_B[2], 2) << std::endl;
-      std::cout << "Mf[0,1]  = " << Thyra::get_ele(*Mf, 0) << " " << Thyra::get_ele(*Mf, 1) << " " << Thyra::get_ele(*Mf, 2) << std::endl;
-      std::cout << "Mf_dt[0,1]  = " << Thyra::get_ele(*Mf_dt, 0) << " " << Thyra::get_ele(*Mf_dt, 1) << " " << Thyra::get_ele(*Mf_dt, 2) << std::endl;
       // f = M*xDot in here
       // std::cout << "xO[0,1] = " << Thyra::get_ele(*xOld, 0) << " " << Thyra::get_ele(*xOld, 1) << std::endl;
       // std::cout << "x[0,1]  = " << Thyra::get_ele(*x, 0) << " " << Thyra::get_ele(*x, 1) << std::endl;
