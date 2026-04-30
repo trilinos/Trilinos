@@ -58,7 +58,7 @@ void FlatOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   auto params                                                       = Teuchos::rcp(new Teuchos::ParameterList());
   params->set("MM Throw For Non-Existent Entries", false);
 
-  AP = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*mat_, false, *tempMat_, false, AP, GetOStream(Runtime0), true, true, "", params);
+  AP = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*mat_, false, *tempMat_, false, AP, GetOStream(Statistics2), true, true, "", params);
 
   Kokkos::deep_copy(Kokkos::subview(Y.getLocalViewDevice(Tpetra::Access::OverwriteAll), Kokkos::ALL(), 0),
                     AP->getLocalMatrixDevice().values);
