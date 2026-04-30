@@ -289,27 +289,29 @@ Elasticity3DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, MultiVecto
   // as we cannot construct a single DOF map in Problem, we repeat the coords
   this->Coords_ = MultiVectorTraits<Map, RealValuedMultiVector>::Build(this->Map_, nDim_);
 
-  typedef typename RealValuedMultiVector::scalar_type real_type;
+  {
+    const typename KAT::magnitudeType hx = KAT::magnitude(stretch[0]);
+    const typename KAT::magnitudeType hy = KAT::magnitude(stretch[1]);
+    const typename KAT::magnitudeType hz = KAT::magnitude(stretch[2]);
+    auto nx                              = nx_;
+    auto ny                              = ny_;
+    auto gids                            = this->Map_->getMyGlobalIndicesDevice();
+    auto lclCoords                       = this->Coords_->getLocalViewDevice(Tpetra::Access::OverwriteAll);
+    Kokkos::parallel_for(
+        "Galeri::Elasticity3DProblem::BuildCoords",
+        Kokkos::RangePolicy<typename Map::node_type::execution_space>(0, gids.extent(0) / 3),
+        KOKKOS_LAMBDA(const LocalOrdinal pp) {
+          // FIXME: we assume that DOF for the same node are label consequently
+          auto p   = 3 * pp;
+          auto ind = gids(p) / 3;
+          size_t i = ind % nx;
+          size_t k = ind / (nx * ny);
+          size_t j = (ind - k * nx * ny) / nx;
 
-  Teuchos::ArrayRCP<real_type> x = this->Coords_->getDataNonConst(0);
-  Teuchos::ArrayRCP<real_type> y = this->Coords_->getDataNonConst(1);
-  Teuchos::ArrayRCP<real_type> z = this->Coords_->getDataNonConst(2);
-
-  Teuchos::ArrayView<const GO> GIDs = this->Map_->getLocalElementList();
-
-  // NOTE: coordinates vector local ordering is consistent with that of the
-  // matrix map, as it is constructed by going through GIDs and translating
-  // those.
-  const typename KAT::magnitudeType hx = KAT::magnitude(stretch[0]),
-                                    hy = KAT::magnitude(stretch[1]),
-                                    hz = KAT::magnitude(stretch[2]);
-  for (GO p = 0; p < GIDs.size(); p += 3) {  // FIXME: we assume that DOF for the same node are label consequently
-    GlobalOrdinal ind = GIDs[p] / 3;
-    size_t i = ind % nx_, k = ind / (nx_ * ny_), j = (ind - k * nx_ * ny_) / nx_;
-
-    x[p] = x[p + 1] = x[p + 2] = (i + 1) * hx;
-    y[p] = y[p + 1] = y[p + 2] = (j + 1) * hy;
-    z[p] = z[p + 1] = z[p + 2] = (k + 1) * hz;
+          lclCoords(p, 0) = lclCoords(p + 1, 0) = lclCoords(p + 2, 0) = (i + 1) * hx;
+          lclCoords(p, 1) = lclCoords(p + 1, 1) = lclCoords(p + 2, 1) = (j + 1) * hy;
+          lclCoords(p, 2) = lclCoords(p + 1, 2) = lclCoords(p + 2, 2) = (k + 1) * hz;
+        });
   }
 
   return this->Coords_;
@@ -317,55 +319,51 @@ Elasticity3DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, MultiVecto
 
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
 RCP<MultiVector> Elasticity3DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, MultiVector>::BuildNullspace() {
-  typedef typename RealValuedMultiVector::scalar_type real_type;
-
   const int numVectors = 6;
   this->Nullspace_     = MultiVectorTraits<Map, MultiVector>::Build(this->Map_, numVectors);
 
   if (this->Coords_ == Teuchos::null)
     BuildCoords();
 
-  // Teuchos::ArrayView<const GO> GIDs = this->Map_->getLocalElementList();
-
-  size_t numDofs                 = this->Map_->getLocalNumElements();
-  Teuchos::ArrayRCP<real_type> x = this->Coords_->getDataNonConst(0);
-  Teuchos::ArrayRCP<real_type> y = this->Coords_->getDataNonConst(1);
-  Teuchos::ArrayRCP<real_type> z = this->Coords_->getDataNonConst(2);
-
-  auto one = KAT::one();
-
-  // NOTE: nullspace local ordering is consistent with that of the matrix
-  // map, as it inherits ordering from coordinates, which is consistent.
+  // Calculate center
+  auto cx = this->Coords_->getVector(0)->meanValue();
+  auto cy = this->Coords_->getVector(1)->meanValue();
+  auto cz = this->Coords_->getVector(2)->meanValue();
 
   {
-    // Translations
-    Teuchos::ArrayRCP<SC> T0 = this->Nullspace_->getDataNonConst(0), T1 = this->Nullspace_->getDataNonConst(1), T2 = this->Nullspace_->getDataNonConst(2);
-    for (size_t i = 0; i < numDofs; i += nDim_) {
-      T0[i]     = one;
-      T1[i + 1] = one;
-      T2[i + 2] = one;
-    }
+    auto numDofs = this->Map_->getLocalNumElements();
 
-    // Calculate center
-    real_type cx = this->Coords_->getVector(0)->meanValue();
-    real_type cy = this->Coords_->getVector(1)->meanValue();
-    real_type cz = this->Coords_->getVector(2)->meanValue();
+    auto lclCoords    = this->Coords_->getLocalViewDevice(Tpetra::Access::ReadOnly);
+    auto lclNullspace = this->Nullspace_->getLocalViewDevice(Tpetra::Access::ReadWrite);
 
-    // Rotations
-    Teuchos::ArrayRCP<SC> R0 = this->Nullspace_->getDataNonConst(3), R1 = this->Nullspace_->getDataNonConst(4), R2 = this->Nullspace_->getDataNonConst(5);
-    for (size_t i = 0; i < numDofs; i += nDim_) {
-      // Rotate in Y-Z Plane (around Z axis): [ -y; x]
-      R0[i + 0] = -(y[i] - cy);
-      R0[i + 1] = (x[i] - cx);
+    auto one = KAT::one();
 
-      // Rotate in Y-Z Plane (around Z axis): [ -z; y]
-      R1[i + 1] = -(z[i] - cz);
-      R1[i + 2] = (y[i] - cy);
+    // NOTE: nullspace local ordering is consistent with that of the matrix
+    // map, as it inherits ordering from coordinates, which is consistent.
 
-      // Rotate in Y-Z Plane (around Z axis): [ z; -x]
-      R2[i + 0] = (z[i] - cz);
-      R2[i + 2] = -(x[i] - cx);
-    }
+    Kokkos::parallel_for(
+        "Galeri::Elasticity3DProblem::BuildNullspace",
+        Kokkos::RangePolicy<typename Map::node_type::execution_space>(0, numDofs / 3),
+        KOKKOS_LAMBDA(const LocalOrdinal ii) {
+          auto i = 3 * ii;
+          // Translations
+          lclNullspace(i, 0)     = one;
+          lclNullspace(i + 1, 1) = one;
+          lclNullspace(i + 2, 2) = one;
+
+          // Rotations
+          // Rotate in Y-Z Plane (around Z axis): [ -y; x]
+          lclNullspace(i, 3)     = -(lclCoords(i, 1) - cy);
+          lclNullspace(i + 1, 3) = (lclCoords(i, 0) - cx);
+
+          // Rotate in Y-Z Plane (around Z axis): [ -z; y]
+          lclNullspace(i + 1, 4) = -(lclCoords(i, 2) - cz);
+          lclNullspace(i + 2, 4) = (lclCoords(i, 1) - cy);
+
+          // Rotate in Y-Z Plane (around Z axis): [ z; -x]
+          lclNullspace(i, 5)     = (lclCoords(i, 2) - cz);
+          lclNullspace(i + 2, 5) = -(lclCoords(i, 0) - cx);
+        });
   }
 
   // Equalize norms of all vectors to that of the first one
