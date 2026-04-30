@@ -8,6 +8,7 @@
 #define Tempus_PhiEvaluatorLeja_decl_hpp
 
 #include "Tempus_PhiEvaluator.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 
 #include <complex>
 
@@ -23,11 +24,11 @@ enum LpType {
  * Leja point container
  */
 struct LejaPoint {
-  // TODO: how does std::complex<double> interact with Scalar. Leja points are always complex.
-  //       Template this on the Scalar tye and get the appropriate complex Scalar types?
-
   // A Leja point is based on a point on the complex plane.
+  // It is always a complex double, regardless of Scalar type.
+  // Supporting complex float might be possible, but may not be beneficial, since operations on Leja points are cheap.
   std::complex<double> lp;
+
   // LPREAL means that lp is supposed to be real, any imaginary component must be disregarded.
   // LPCPLX means that lp is complex.
   // LPCONJ means that lp is complex, and represents a conjugate pair, both lp and std::conj(lp).
@@ -65,9 +66,28 @@ class PhiEvaluatorLeja
   : virtual public PhiEvaluator<Scalar> {
  public:
   /// Inherit Contructor
-  PhiEvaluatorLeja<Scalar>(std::string name) : PhiEvaluator<Scalar>(name)
-  { }
-  PhiEvaluatorLeja<Scalar>() : PhiEvaluatorLeja<Scalar>("Phi Evaluator")
+  PhiEvaluatorLeja<Scalar>(std::string name)
+    : PhiEvaluator<Scalar>(name),
+      ddMethod_(0),
+      leja_tol_(1.0e-6),
+      leja_a_(-1.0),
+      leja_b_(0.0),
+      leja_c_(1.0)
+  {
+#ifdef TEMPUS_TEUCHOS_TIME_MONITOR
+    std::stringstream ss;
+    ss << "Tempus::" << name;
+
+    // set up timers for overall Phi-evaluation, divided differences, and Linop-vector applications
+    std::string phiLabel = ss.str() + ": PhiEval";
+    timerPhi_ = Teuchos::TimeMonitor::getNewCounter(phiLabel);
+    std::string linOpLabel = ss.str() + ": LinOp";
+    timerLinOp_ = Teuchos::TimeMonitor::getNewCounter(linOpLabel);
+    std::string ddLabel = ss.str() + ": dd_phi";
+    timerDD_ = Teuchos::TimeMonitor::getNewCounter(ddLabel);
+#endif
+  }
+  PhiEvaluatorLeja<Scalar>() : PhiEvaluatorLeja<Scalar>("PhiEvaluatorLeja")
   { }
 
   /// \name Basic PhiEvaluatorLeja Methods
@@ -83,20 +103,27 @@ class PhiEvaluatorLeja
   /// Set the parameters from a ParameterList
   void setPhiEvaluatorValues(Teuchos::RCP<Teuchos::ParameterList> pl) override;
 
-  /// compute the shift and scale parameters from ellipse a,b,c bounds
-  std::tuple<Scalar, Scalar> getShiftScale();
+  /// compute the scale, normalized shift and normalized anisotropy parameters from ellipse a,b,c bounds
+  /// we use double here, to avoid issues with complex Scalar types
+  constexpr std::tuple<double, double, double> getScaleFromBase();
+
+  // transform base LejaPoint to shifted anisotropic transformed Leja point (not scaled)
+  constexpr LejaPoint transformLejaPoint(const LejaPoint& lp_base, const std::tuple<const double, const double, const double>& scale_params);
 
   /// Set the polynomial expansion order
-  void setExpansionOrder(int order);
+  void setExpansionOrder(const int expansionOrder);
 
   /// Update the Leja ellipse parameters
-  void setLejaEllipse(Scalar a, Scalar b, Scalar c);
+  void setLejaEllipse(const double a, const double b, const double c);
+
+  /// Set the divided difference method
+  void setDivideDifferenceMethod(const int ddMethod);
 
   /// Get shifted and scaled leja point (z_i)
-  LejaPoint getLpSc(int i);
+  LejaPoint getLpSc(const int lp_idx);
 
   /// Compute divided differences
-  Teuchos::ArrayRCP<std::complex<double>> getDividedDiffs(const int phi_order, const Scalar cdt, const int exp_order);
+  Teuchos::ArrayRCP<Scalar> getDividedDiffs(const int phi_order, const Scalar cdt, const int lejaOrder);
 
   /// Get the polynomial expansion order
   int getExpansionOrder() const { return expansionOrder_; }
@@ -106,32 +133,45 @@ class PhiEvaluatorLeja
 					     const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> L,
 					     const Teuchos::Ptr<Thyra::VectorBase<Scalar>> v,
                const Scalar cdt=1.0
-					     ) override;
- private:
+	) override;
+
+private:
   int expansionOrder_;
   int ddMethod_;
-  Scalar leja_tol_;
-  Scalar leja_a_;
-  Scalar leja_b_;
-  Scalar leja_c_;
 
-  /// Initialize the Leja points
-  void initLejaPointsBase();
+  // those are read as double from the input file regardless of scalar type
+  double leja_tol_;
+  double leja_a_;
+  double leja_b_;
+  double leja_c_;
+
+#ifdef TEMPUS_TEUCHOS_TIME_MONITOR
+  Teuchos::RCP<Teuchos::Time> timerDD_, timerLinOp_, timerPhi_;
+#endif
+
+  /// allows to check at runtime for compelex Scalar type
+  static const bool isComplex = Teuchos::ScalarTraits<Scalar>::isComplex;
+
+  /// Initialize lejaOrder Leja points (for negative lejaOrder, deduce the number of points from expansionOrder_)
+  void initLejaPointsBase(const int lejaOrder = -1);
 
   /// Computes the divided differences via taylor series
-  Teuchos::ArrayRCP<std::complex<double>> getDividedDiffsTS(const int phi_order, const Scalar cdt, const int exp_order);
+  Teuchos::ArrayRCP<Scalar> getDividedDiffsTS(const int phi_order, const Scalar cdt, const int lejaOrder);
 
   /// Computes the divided differences via taylor series
-  Teuchos::ArrayRCP<std::complex<double>> getDividedDiffsTSR(const int phi_order, const Scalar cdt, const int exp_order);
+  Teuchos::ArrayRCP<Scalar> getDividedDiffsTSR(const int phi_order, const Scalar cdt, const int lejaOrder);
 
   /// Computes the divided differences via recurrence relation
-  Teuchos::ArrayRCP<std::complex<double>> getDividedDiffsRC(const int phi_order, const Scalar cdt, const int exp_order);
+  Teuchos::ArrayRCP<Scalar> getDividedDiffsRC(const int phi_order, const Scalar cdt, const int lejaOrder);
+
+  /// Computes divided differences of phi_k via the Zivcovich (2019) dd_phi method.
+  /// Ref: F. Zivcovich. "Fast and accurate computation of divided differences for analytic
+  /// functions, with an application to the exponential function."
+  /// Dolomites Research Notes on Approximation. 12. 2019.
+  Teuchos::ArrayRCP<Scalar> getDividedDiffsPhi(const int phi_order, const Scalar cdt, const int lejaOrder);
 
   /// Storage for the base Leja points
   Teuchos::ArrayRCP<LejaPoint> lejaPointsBase_;
-
-  /// Storage for the Leja points
-  Teuchos::ArrayRCP<LejaPoint> lp_;
 };
 
 /// Nonmember constructor from a ParameterList
