@@ -38,6 +38,7 @@
 
 #include <KokkosKernels_Handle.hpp>
 #include <KokkosGraph_RCM.hpp>
+#include "MueLu_Behavior.hpp"
 
 namespace MueLu {
 
@@ -1245,9 +1246,8 @@ void UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   LocalOrdinal numRows    = A.getLocalNumRows();
   LocalOrdinal numVectors = RHS.getNumVectors();
   TEUCHOS_ASSERT_EQUALITY(numVectors, Teuchos::as<LocalOrdinal>(InitialGuess.getNumVectors()));
-#ifdef MUELU_DEBUG
-  TEUCHOS_ASSERT(RHS.getMap()->isCompatible(InitialGuess.getMap()));
-#endif
+  if (Behavior::debug())
+    TEUCHOS_ASSERT(RHS.getMap()->isCompatible(*InitialGuess.getMap()));
 
   auto lclRHS          = RHS.getLocalViewDevice(Tpetra::Access::ReadOnly);
   auto lclInitialGuess = InitialGuess.getLocalViewDevice(Tpetra::Access::ReadWrite);
