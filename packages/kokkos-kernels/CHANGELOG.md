@@ -1,5 +1,15 @@
 # Change Log
 
+## [5.1.1](https://github.com/kokkos/kokkos-kernels/tree/5.1.1)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/5.1.0...5.1.1)
+
+### Bug Fixes
+- Fix max vector_length usage in graph coarsening [\#3012](https://github.com/kokkos/kokkos-kernels/pull/3012), [\#3018](https://github.com/kokkos/kokkos-kernels/pull/3018)
+- LAPACK SVD test - adjust tolerance around 0 [\#3008](https://github.com/kokkos/kokkos-kernels/pull/3008)
+- Fix a few -Wformat warnings with int64_t ordinals [\#3027](https://github.com/kokkos/kokkos-kernels/pull/3027)
+- Benchmark - parILUt: call libraries initialize first [\#3022](https://github.com/kokkos/kokkos-kernels/pull/3022)
+- Improve matrix market and batched sparse file readers to handle bad I/O [\#3032](https://github.com/kokkos/kokkos-kernels/pull/3032)
+
 ## [5.1.0](https://github.com/kokkos/kokkos-kernels/tree/5.1.0)
 [Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/5.0.2...5.1.0)
 
