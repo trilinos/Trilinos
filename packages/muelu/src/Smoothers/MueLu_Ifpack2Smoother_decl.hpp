@@ -177,9 +177,6 @@ class Ifpack2Smoother : public SmootherPrototype<Scalar, LocalOrdinal, GlobalOrd
   Scalar SetupChebyshevEigenvalues(Level& currentLevel, const std::string& matrixName, const std::string& label, Teuchos::ParameterList& paramList) const;
 
  private:
-  //!
-  bool constructionSuccessful_;
-
   //! ifpack2-specific key phrase that denote smoother type
   std::string type_;
 
