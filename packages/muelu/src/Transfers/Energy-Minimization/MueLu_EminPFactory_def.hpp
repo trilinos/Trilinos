@@ -265,9 +265,6 @@ void EminPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fine
       RCP<const StridedMap> dMap = StridedMapFactory::Build(X->GetPattern()->getDomainMap(), stridingInfo);
 
       P->CreateView("stridedMaps", A->getRowMap("stridedMaps"), dMap);
-
-    } else {
-      P->CreateView("stridedMaps", P->getRangeMap(), P->getDomainMap());
     }
   }
 

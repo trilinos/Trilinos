@@ -131,6 +131,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
 
       // Reset (potentially) cached value of the estimate
       A->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
+      if (A->IsView("stridedMaps")) A->RemoveView("stridedMaps");
 
       std::string xmlFile;
       std::string outFile;
