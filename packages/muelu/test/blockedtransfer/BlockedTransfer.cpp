@@ -38,6 +38,7 @@
 // Galeri
 #include <Galeri_XpetraParameters.hpp>
 #include <Galeri_XpetraProblemFactory.hpp>
+#include <Galeri_MatrixTraits.hpp>
 
 // MueLu
 #include "MueLu_ConfigDefs.hpp"
