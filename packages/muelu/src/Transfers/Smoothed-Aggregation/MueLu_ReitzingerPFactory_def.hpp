@@ -406,194 +406,198 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
     D0H = MatrixFactory::Build(lclD0H, D0H_rowmap, colMap, Z->getDomainMap(), D0H_rowmap);
   }
 
-  // Create the Pe matrix, but with the extra entries.  From ML's notes:
-  /* The general idea is that the matrix                              */
-  /*                        T_h P_n T_H^*                             */
-  /* is almost Pe. If we make sure that P_n contains 1's and -1's, the*/
-  /* matrix triple product will yield a matrix with +/- 1 and +/- 2's.*/
-  /* If we remove all the 1's and divide the 2's by 2. we arrive at Pe*/
-
-  RCP<Matrix> D0_Pn_D0HT;
-  {
-    SubFactoryMonitor m2(*this, "Generate Pe (pre-fix)", coarseLevel);
-#if 0
-    {
-      // If you're concerned about processor / rank mismatches, this debugging code might help
-      int rank =  D0->getRowMap()->getComm()->getRank();
-      int fine_level = fineLevel.GetLevelID();
-      printf("[%d] Level %d Checkpoint #2 Pn = %d/%d/%d/%d D0c = %d/%d/%d/%d D0 = %d/%d/%d/%d\n",rank,fine_level,
-             Pn->getRangeMap()->getComm()->getSize(),
-             Pn->getRowMap()->getComm()->getSize(),
-             Pn->getColMap()->getComm()->getSize(),
-             Pn->getDomainMap()->getComm()->getSize(),
-             D0H->getRangeMap()->getComm()->getSize(),
-             D0H->getRowMap()->getComm()->getSize(),
-             D0H->getColMap()->getComm()->getSize(),
-             D0H->getDomainMap()->getComm()->getSize(),
-             D0->getRangeMap()->getComm()->getSize(),
-             D0->getRowMap()->getComm()->getSize(),
-             D0->getColMap()->getComm()->getSize(),
-             D0->getDomainMap()->getComm()->getSize());
-      fflush(stdout);
-      D0->getRowMap()->getComm()->barrier();
-    }
-#endif
-    RCP<Matrix> dummy;
-    RCP<Matrix> Pn_D0cT = XMM::Multiply(*Pn, false, *D0H, true, dummy, out0, true, true, "Pn*D0c'", mm_params);
-
-    // We don't want this guy getting accidently used later
-    if (!mm_params.is_null()) mm_params->remove("importer", false);
-
-    D0_Pn_D0HT = XMM::Multiply(*D0, false, *Pn_D0cT, false, dummy, out0, true, true, "D0*(Pn*D0c')", mm_params);
-
-    // TODO: Something like this *might* work.  But this specifically, doesn't
-    // Pe = XMM::Multiply(*D0_Pn_nonghosted,false,*D0H,true,dummy,out0,true,true,"(D0*Pn)*D0c'",mm_params);
-  }
-
+  const bool needToBuildPe = (coarseLevel.IsRequested("P", this) ||
+                              coarseLevel.IsRequested("Ptent", this));
   RCP<Matrix> Pe;
-  {
-    auto lcl_D0_Pn               = D0_Pn->getLocalMatrixDevice();
-    auto lcl_D0_Pn_D0HT          = D0_Pn_D0HT->getLocalMatrixDevice();
-    auto lcl_isDirichletFineEdge = isDirichletFineEdge->getLocalViewDevice(Tpetra::Access::ReadOnly);
+  if (needToBuildPe) {
+    // Create the Pe matrix, but with the extra entries.  From ML's notes:
+    /* The general idea is that the matrix                              */
+    /*                        T_h P_n T_H^*                             */
+    /* is almost Pe. If we make sure that P_n contains 1's and -1's, the*/
+    /* matrix triple product will yield a matrix with +/- 1 and +/- 2's.*/
+    /* If we remove all the 1's and divide the 2's by 2. we arrive at Pe*/
 
-    auto lcl_colmap_D0_Pn_D0HT = D0_Pn_D0HT->getColMap()->getLocalMap();
-
-    const auto half = one_impl_scalar / (one_impl_scalar + one_impl_scalar);
-
-    // overallocate by 1 to allow for easier counting
-    rowptr_type Pe_rowptr("Pe_rowptr", numFineEdges + 2);
-
-    // count entries per row
-    Kokkos::parallel_for(
-        "Pe_count_entries", Kokkos::RangePolicy<execution_space>(0, numFineEdges), KOKKOS_LAMBDA(const LocalOrdinal fineEdge) {
-          if (lcl_isDirichletFineEdge(fineEdge, 0) != one_LO) {
-            // regular fine edge
-            auto row = lcl_D0_Pn_D0HT.rowConst(fineEdge);
-            for (int k = 0; k < row.length; ++k) {
-              auto val = row.value(k);
-              // filter out entries +-1 and 0
-              if (!((ATS::magnitude(val - one_impl_scalar) < eps_mag) || (ATS::magnitude(val + one_impl_scalar) < eps_mag) || (ATS::magnitude(val) < eps_mag))) {
-                // add entry (fineEdge, clid) -> val/2.
-                ++Pe_rowptr(fineEdge + 2);
-              }
-            }
-          } else {
-            // Dirichlet interior fine edge
-            ++Pe_rowptr(fineEdge + 2);
-          }
-        });
-
-    // prefix sum
-    LocalOrdinal Pe_nnz;
-    Kokkos::parallel_scan(
-        "Pe_prefix_sum", Kokkos::RangePolicy<execution_space>(0, numFineEdges + 2), KOKKOS_LAMBDA(const LocalOrdinal rlid, LocalOrdinal& nnz, const bool update) {
-          nnz += Pe_rowptr(rlid);
-          if (update) {
-            Pe_rowptr(rlid) = nnz;
-          }
-        },
-        Pe_nnz);
-
-    // allocate view for indices and values
-    colidx_type Pe_colidx("Pe_colidx", Pe_nnz);
-    values_type Pe_values("Pe_values", Pe_nnz);
-
-    // We build the mapping from coarse nodes lids wrt column map of D0_Pn to coarse edge gids.
-    RCP<GOVector> map_coarseNodes_colMap_D0_Pn_to_coarseEdges;
+    RCP<Matrix> D0_Pn_D0HT;
     {
-      auto map_coarseEdges_rowMap_D0H_to_coarseEdges = Xpetra::VectorFactory<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node>::Build(D0H->getRowMap());
+      SubFactoryMonitor m2(*this, "Generate Pe (pre-fix)", coarseLevel);
+#if 0
       {
-        auto lcl_map_coarseEdges_rowMap_D0H_to_coarseEdges = map_coarseEdges_rowMap_D0H_to_coarseEdges->getLocalViewDevice(Tpetra::Access::OverwriteAll);
-        auto lclMap                                        = D0H->getRowMap()->getLocalMap();
-        Kokkos::parallel_for(
-            Kokkos::RangePolicy<execution_space>(numCoarseRegularEdges, numCoarseEdges), KOKKOS_LAMBDA(const LocalOrdinal coarseEdge) {
-              lcl_map_coarseEdges_rowMap_D0H_to_coarseEdges(coarseEdge, 0) = lclMap.getGlobalElement(coarseEdge);
-            });
+        // If you're concerned about processor / rank mismatches, this debugging code might help
+        int rank =  D0->getRowMap()->getComm()->getRank();
+        int fine_level = fineLevel.GetLevelID();
+        printf("[%d] Level %d Checkpoint #2 Pn = %d/%d/%d/%d D0c = %d/%d/%d/%d D0 = %d/%d/%d/%d\n",rank,fine_level,
+               Pn->getRangeMap()->getComm()->getSize(),
+               Pn->getRowMap()->getComm()->getSize(),
+               Pn->getColMap()->getComm()->getSize(),
+               Pn->getDomainMap()->getComm()->getSize(),
+               D0H->getRangeMap()->getComm()->getSize(),
+               D0H->getRowMap()->getComm()->getSize(),
+               D0H->getColMap()->getComm()->getSize(),
+               D0H->getDomainMap()->getComm()->getSize(),
+               D0->getRangeMap()->getComm()->getSize(),
+               D0->getRowMap()->getComm()->getSize(),
+               D0->getColMap()->getComm()->getSize(),
+               D0->getDomainMap()->getComm()->getSize());
+        fflush(stdout);
+        D0->getRowMap()->getComm()->barrier();
       }
-      auto map_coarseNodes_domainMap_D0_Pn_to_coarseEdges = Xpetra::VectorFactory<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node>::Build(D0H->getDomainMap());
-      {
-        // We want to do a transpose apply using D0H on vectors with Scalar=GlobalOrdinal.
-        // Something like this could work and would not require any memory allocations, but it requires
-        // "convert" to be ETI'd for all possible scalar types.
+#endif
+      RCP<Matrix> dummy;
+      RCP<Matrix> Pn_D0cT = XMM::Multiply(*Pn, false, *D0H, true, dummy, out0, true, true, "Pn*D0c'", mm_params);
 
-        // toTpetra(D0H)->template convert<GlobalOrdinal>()->apply(*toTpetra(map_coarseEdges_rowMap_D0H_to_coarseEdges), *toTpetra(map_coarseNodes_domainMap_D0_Pn_to_coarseEdges), Teuchos::TRANS);
+      // We don't want this guy getting accidently used later
+      if (!mm_params.is_null()) mm_params->remove("importer", false);
 
-        using GOMatrix             = Tpetra::CrsMatrix<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node>;
-        using go_local_matrix_type = typename GOMatrix::local_matrix_device_type;
+      D0_Pn_D0HT = XMM::Multiply(*D0, false, *Pn_D0cT, false, dummy, out0, true, true, "D0*(Pn*D0c')", mm_params);
 
-        auto lclGraph = D0H->getCrsGraph()->getLocalGraphDevice();
-        typename go_local_matrix_type::values_type::non_const_type ones("ones_GlobalOrdinal", D0H->getLocalNumEntries());
-        const auto one_GO = KokkosKernels::ArithTraits<typename go_local_matrix_type::values_type::value_type>::one();
-        Kokkos::deep_copy(ones, one_GO);
-
-        go_local_matrix_type lclMatrix("D0H_GlobalOrdinal", D0H->getLocalMatrixDevice().numCols(), ones, lclGraph);
-
-        auto D0H_GlobalOrdinal = GOMatrix(lclMatrix, toTpetra(D0H->getRowMap()), toTpetra(D0H->getColMap()), toTpetra(D0H->getDomainMap()), toTpetra(D0H->getRangeMap()));
-        D0H_GlobalOrdinal.apply(*toTpetra(map_coarseEdges_rowMap_D0H_to_coarseEdges), *toTpetra(map_coarseNodes_domainMap_D0_Pn_to_coarseEdges), Teuchos::TRANS);
-      }
-
-      auto importer = D0_Pn->getCrsGraph()->getImporter();
-      if (!importer.is_null()) {
-        map_coarseNodes_colMap_D0_Pn_to_coarseEdges = Xpetra::VectorFactory<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node>::Build(D0_Pn->getColMap());
-        map_coarseNodes_colMap_D0_Pn_to_coarseEdges->doImport(*map_coarseNodes_domainMap_D0_Pn_to_coarseEdges, *importer, Xpetra::INSERT);
-      } else {
-        map_coarseNodes_colMap_D0_Pn_to_coarseEdges = map_coarseNodes_domainMap_D0_Pn_to_coarseEdges;
-      }
+      // TODO: Something like this *might* work.  But this specifically, doesn't
+      // Pe = XMM::Multiply(*D0_Pn_nonghosted,false,*D0H,true,dummy,out0,true,true,"(D0*Pn)*D0c'",mm_params);
     }
-    {
-      auto lcl_map_coarseNodes_colMap_D0_Pn_to_coarseEdges = map_coarseNodes_colMap_D0_Pn_to_coarseEdges->getLocalViewDevice(Tpetra::Access::ReadOnly);
 
-      // fill
+    {
+      auto lcl_D0_Pn               = D0_Pn->getLocalMatrixDevice();
+      auto lcl_D0_Pn_D0HT          = D0_Pn_D0HT->getLocalMatrixDevice();
+      auto lcl_isDirichletFineEdge = isDirichletFineEdge->getLocalViewDevice(Tpetra::Access::ReadOnly);
+
+      auto lcl_colmap_D0_Pn_D0HT = D0_Pn_D0HT->getColMap()->getLocalMap();
+
+      const auto half = one_impl_scalar / (one_impl_scalar + one_impl_scalar);
+
+      // overallocate by 1 to allow for easier counting
+      rowptr_type Pe_rowptr("Pe_rowptr", numFineEdges + 2);
+
+      // count entries per row
       Kokkos::parallel_for(
-          "Pe_fill", Kokkos::RangePolicy<execution_space>(0, numFineEdges), KOKKOS_LAMBDA(const LocalOrdinal fineEdge_lid) {
-            if (lcl_isDirichletFineEdge(fineEdge_lid, 0) != one_LO) {
+          "Pe_count_entries", Kokkos::RangePolicy<execution_space>(0, numFineEdges), KOKKOS_LAMBDA(const LocalOrdinal fineEdge) {
+            if (lcl_isDirichletFineEdge(fineEdge, 0) != one_LO) {
               // regular fine edge
-              auto row = lcl_D0_Pn_D0HT.rowConst(fineEdge_lid);
+              auto row = lcl_D0_Pn_D0HT.rowConst(fineEdge);
               for (int k = 0; k < row.length; ++k) {
                 auto val = row.value(k);
+                // filter out entries +-1 and 0
                 if (!((ATS::magnitude(val - one_impl_scalar) < eps_mag) || (ATS::magnitude(val + one_impl_scalar) < eps_mag) || (ATS::magnitude(val) < eps_mag))) {
-                  auto clid = row.colidx(k);
-                  // add entry (fineEdge_lid, clid) -> val/2.
-                  auto offset       = Pe_rowptr(fineEdge_lid + 1);
-                  Pe_colidx(offset) = clid;
-                  Pe_values(offset) = val * half;
-                  ++Pe_rowptr(fineEdge_lid + 1);
+                  // add entry (fineEdge, clid) -> val/2.
+                  ++Pe_rowptr(fineEdge + 2);
                 }
               }
             } else {
               // Dirichlet interior fine edge
-              // Only one nonzero entry in row of D0_Pn: (fineEdge_lid, coarseNode_lid_D0_Pn) -> val_D0_Pn
-              for (auto offset_D0_Pn = lcl_D0_Pn.graph.row_map(fineEdge_lid); offset_D0_Pn < lcl_D0_Pn.graph.row_map(fineEdge_lid + 1); ++offset_D0_Pn) {
-                LocalOrdinal coarseNode_lid_D0_Pn = lcl_D0_Pn.graph.entries(offset_D0_Pn);
-                impl_scalar_type val_D0_Pn        = lcl_D0_Pn.values(offset_D0_Pn);
-                if (ATS::magnitude(val_D0_Pn) > eps_mag) {
-                  GlobalOrdinal coarseEdge_gid = lcl_map_coarseNodes_colMap_D0_Pn_to_coarseEdges(coarseNode_lid_D0_Pn, 0);
-
-                  auto coarseEdge_lid_D0_Pn_D0HT = lcl_colmap_D0_Pn_D0HT.getLocalElement(coarseEdge_gid);
-
-                  // We rely on the fact that all coarse interior edges have been created with value 1.
-                  const auto val_D0H = one_impl_scalar;
-
-                  // add entry (fineEdge_lid, coarseEdge) -> val_D0_Pn/val_D0H to edge prolongator
-                  auto offset_Pe       = Pe_rowptr(fineEdge_lid + 1);
-                  Pe_colidx(offset_Pe) = coarseEdge_lid_D0_Pn_D0HT;
-                  Pe_values(offset_Pe) = val_D0_Pn / val_D0H;
-                  ++Pe_rowptr(fineEdge_lid + 1);
-                  break;
-                }
-              }
+              ++Pe_rowptr(fineEdge + 2);
             }
           });
+
+      // prefix sum
+      LocalOrdinal Pe_nnz;
+      Kokkos::parallel_scan(
+          "Pe_prefix_sum", Kokkos::RangePolicy<execution_space>(0, numFineEdges + 2), KOKKOS_LAMBDA(const LocalOrdinal rlid, LocalOrdinal& nnz, const bool update) {
+            nnz += Pe_rowptr(rlid);
+            if (update) {
+              Pe_rowptr(rlid) = nnz;
+            }
+          },
+          Pe_nnz);
+
+      // allocate view for indices and values
+      colidx_type Pe_colidx("Pe_colidx", Pe_nnz);
+      values_type Pe_values("Pe_values", Pe_nnz);
+
+      // We build the mapping from coarse nodes lids wrt column map of D0_Pn to coarse edge gids.
+      RCP<GOVector> map_coarseNodes_colMap_D0_Pn_to_coarseEdges;
+      {
+        auto map_coarseEdges_rowMap_D0H_to_coarseEdges = Xpetra::VectorFactory<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node>::Build(D0H->getRowMap());
+        {
+          auto lcl_map_coarseEdges_rowMap_D0H_to_coarseEdges = map_coarseEdges_rowMap_D0H_to_coarseEdges->getLocalViewDevice(Tpetra::Access::OverwriteAll);
+          auto lclMap                                        = D0H->getRowMap()->getLocalMap();
+          Kokkos::parallel_for(
+              Kokkos::RangePolicy<execution_space>(numCoarseRegularEdges, numCoarseEdges), KOKKOS_LAMBDA(const LocalOrdinal coarseEdge) {
+                lcl_map_coarseEdges_rowMap_D0H_to_coarseEdges(coarseEdge, 0) = lclMap.getGlobalElement(coarseEdge);
+              });
+        }
+        auto map_coarseNodes_domainMap_D0_Pn_to_coarseEdges = Xpetra::VectorFactory<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node>::Build(D0H->getDomainMap());
+        {
+          // We want to do a transpose apply using D0H on vectors with Scalar=GlobalOrdinal.
+          // Something like this could work and would not require any memory allocations, but it requires
+          // "convert" to be ETI'd for all possible scalar types.
+
+          // toTpetra(D0H)->template convert<GlobalOrdinal>()->apply(*toTpetra(map_coarseEdges_rowMap_D0H_to_coarseEdges), *toTpetra(map_coarseNodes_domainMap_D0_Pn_to_coarseEdges), Teuchos::TRANS);
+
+          using GOMatrix             = Tpetra::CrsMatrix<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node>;
+          using go_local_matrix_type = typename GOMatrix::local_matrix_device_type;
+
+          auto lclGraph = D0H->getCrsGraph()->getLocalGraphDevice();
+          typename go_local_matrix_type::values_type::non_const_type ones("ones_GlobalOrdinal", D0H->getLocalNumEntries());
+          const auto one_GO = KokkosKernels::ArithTraits<typename go_local_matrix_type::values_type::value_type>::one();
+          Kokkos::deep_copy(ones, one_GO);
+
+          go_local_matrix_type lclMatrix("D0H_GlobalOrdinal", D0H->getLocalMatrixDevice().numCols(), ones, lclGraph);
+
+          auto D0H_GlobalOrdinal = GOMatrix(lclMatrix, toTpetra(D0H->getRowMap()), toTpetra(D0H->getColMap()), toTpetra(D0H->getDomainMap()), toTpetra(D0H->getRangeMap()));
+          D0H_GlobalOrdinal.apply(*toTpetra(map_coarseEdges_rowMap_D0H_to_coarseEdges), *toTpetra(map_coarseNodes_domainMap_D0_Pn_to_coarseEdges), Teuchos::TRANS);
+        }
+
+        auto importer = D0_Pn->getCrsGraph()->getImporter();
+        if (!importer.is_null()) {
+          map_coarseNodes_colMap_D0_Pn_to_coarseEdges = Xpetra::VectorFactory<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node>::Build(D0_Pn->getColMap());
+          map_coarseNodes_colMap_D0_Pn_to_coarseEdges->doImport(*map_coarseNodes_domainMap_D0_Pn_to_coarseEdges, *importer, Xpetra::INSERT);
+        } else {
+          map_coarseNodes_colMap_D0_Pn_to_coarseEdges = map_coarseNodes_domainMap_D0_Pn_to_coarseEdges;
+        }
+      }
+      {
+        auto lcl_map_coarseNodes_colMap_D0_Pn_to_coarseEdges = map_coarseNodes_colMap_D0_Pn_to_coarseEdges->getLocalViewDevice(Tpetra::Access::ReadOnly);
+
+        // fill
+        Kokkos::parallel_for(
+            "Pe_fill", Kokkos::RangePolicy<execution_space>(0, numFineEdges), KOKKOS_LAMBDA(const LocalOrdinal fineEdge_lid) {
+              if (lcl_isDirichletFineEdge(fineEdge_lid, 0) != one_LO) {
+                // regular fine edge
+                auto row = lcl_D0_Pn_D0HT.rowConst(fineEdge_lid);
+                for (int k = 0; k < row.length; ++k) {
+                  auto val = row.value(k);
+                  if (!((ATS::magnitude(val - one_impl_scalar) < eps_mag) || (ATS::magnitude(val + one_impl_scalar) < eps_mag) || (ATS::magnitude(val) < eps_mag))) {
+                    auto clid = row.colidx(k);
+                    // add entry (fineEdge_lid, clid) -> val/2.
+                    auto offset       = Pe_rowptr(fineEdge_lid + 1);
+                    Pe_colidx(offset) = clid;
+                    Pe_values(offset) = val * half;
+                    ++Pe_rowptr(fineEdge_lid + 1);
+                  }
+                }
+              } else {
+                // Dirichlet interior fine edge
+                // Only one nonzero entry in row of D0_Pn: (fineEdge_lid, coarseNode_lid_D0_Pn) -> val_D0_Pn
+                for (auto offset_D0_Pn = lcl_D0_Pn.graph.row_map(fineEdge_lid); offset_D0_Pn < lcl_D0_Pn.graph.row_map(fineEdge_lid + 1); ++offset_D0_Pn) {
+                  LocalOrdinal coarseNode_lid_D0_Pn = lcl_D0_Pn.graph.entries(offset_D0_Pn);
+                  impl_scalar_type val_D0_Pn        = lcl_D0_Pn.values(offset_D0_Pn);
+                  if (ATS::magnitude(val_D0_Pn) > eps_mag) {
+                    GlobalOrdinal coarseEdge_gid = lcl_map_coarseNodes_colMap_D0_Pn_to_coarseEdges(coarseNode_lid_D0_Pn, 0);
+
+                    auto coarseEdge_lid_D0_Pn_D0HT = lcl_colmap_D0_Pn_D0HT.getLocalElement(coarseEdge_gid);
+
+                    // We rely on the fact that all coarse interior edges have been created with value 1.
+                    const auto val_D0H = one_impl_scalar;
+
+                    // add entry (fineEdge_lid, coarseEdge) -> val_D0_Pn/val_D0H to edge prolongator
+                    auto offset_Pe       = Pe_rowptr(fineEdge_lid + 1);
+                    Pe_colidx(offset_Pe) = coarseEdge_lid_D0_Pn_D0HT;
+                    Pe_values(offset_Pe) = val_D0_Pn / val_D0H;
+                    ++Pe_rowptr(fineEdge_lid + 1);
+                    break;
+                  }
+                }
+              }
+            });
+      }
+      auto lclPe = local_matrix_type("Pe", numFineEdges, D0_Pn_D0HT->getColMap()->getLocalNumElements(), Pe_nnz, Pe_values, Kokkos::subview(Pe_rowptr, Kokkos::make_pair((decltype(numFineEdges))0, numFineEdges + 1)), Pe_colidx);
+
+      // Construct distributed matrix
+      Pe = MatrixFactory::Build(lclPe, D0->getRowMap(), D0_Pn_D0HT->getColMap(), D0H->getRangeMap(), D0->getRangeMap());
     }
-    auto lclPe = local_matrix_type("Pe", numFineEdges, D0_Pn_D0HT->getColMap()->getLocalNumElements(), Pe_nnz, Pe_values, Kokkos::subview(Pe_rowptr, Kokkos::make_pair((decltype(numFineEdges))0, numFineEdges + 1)), Pe_colidx);
 
-    // Construct distributed matrix
-    Pe = MatrixFactory::Build(lclPe, D0->getRowMap(), D0_Pn_D0HT->getColMap(), D0H->getRangeMap(), D0->getRangeMap());
-  }
-
-  if (Behavior::debug()) {
-    /* Check commuting property */
-    CheckCommutingProperty(*Pe, *D0H, *D0, *Pn);
+    if (Behavior::debug()) {
+      /* Check commuting property */
+      CheckCommutingProperty(*Pe, *D0H, *D0, *Pn);
+    }
   }
 
   /*  If we're repartitioning here, we need to cut down the communicators */
@@ -611,9 +615,12 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
 
     Set(coarseLevel, "InPlaceMap", newMap);
   }
+
   /* Set output on the level */
-  Set(coarseLevel, "P", Pe);
-  Set(coarseLevel, "Ptent", Pe);
+  if (coarseLevel.IsRequested("P", this))
+    Set(coarseLevel, "P", Pe);
+  if (coarseLevel.IsRequested("Ptent", this))
+    Set(coarseLevel, "Ptent", Pe);
 
   Set(coarseLevel, "D0", D0H);
 
