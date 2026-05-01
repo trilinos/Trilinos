@@ -40,6 +40,7 @@ class Projection {
 
  private:
   Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> localMap_;
+  Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tempMV_;
 };
 
 /*!
