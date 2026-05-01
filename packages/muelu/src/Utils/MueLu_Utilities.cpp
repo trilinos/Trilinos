@@ -220,7 +220,8 @@ Teuchos::RCP<const Teuchos::Comm<int> > GenerateNodeComm(RCP<const Teuchos::Comm
   int len;
   MPI_Get_processor_name(hostname, &len);
   struct hostent* host = gethostbyname(hostname);
-  int myaddr           = (int)inet_addr(inet_ntoa(*(struct in_addr*)host->h_addr));
+  TEUCHOS_TEST_FOR_EXCEPTION(host == nullptr, std::runtime_error, "Unable to retrieve host information.");
+  int myaddr = (int)inet_addr(inet_ntoa(*(struct in_addr*)host->h_addr));
 
   // All-to-all exchange of address integers
   std::vector<int> addressList(numRanks);
