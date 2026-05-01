@@ -353,5 +353,6 @@ IF(${PACKAGE_NAME}_ENABLE_Experimental)
   )
 ENDIF()
 
+ADD_SUBDIRECTORY(emin_matrices)
 ADD_SUBDIRECTORY(ParameterList/FactoryFactory/)
 ADD_SUBDIRECTORY(ParameterList/ParameterListInterpreter/)
