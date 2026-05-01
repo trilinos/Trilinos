@@ -823,9 +823,9 @@ mult_test_results jacobi_test(
   typedef typename Matrix_t::node_type NT;
   typedef Vector<SC, LO, GO, NT> Vector_t;
   typedef Map<LO, GO, NT> Map_t;
-  RCP<const Map_t> map = A->getRowMap();
-  SC one               = Teuchos::ScalarTraits<SC>::one();
-  SC omega             = Teuchos::ScalarTraits<SC>::one();
+  RCP<const Map_t> map                                    = A->getRowMap();
+  SC one                                                  = Teuchos::ScalarTraits<SC>::one();
+  typename Teuchos::ScalarTraits<SC>::magnitudeType omega = Teuchos::ScalarTraits<SC>::magnitude(one);
   Vector_t Dinv(B->getRowMap());
   Dinv.putScalar(1.0);
 
@@ -858,7 +858,7 @@ mult_test_results jacobi_test(
 #endif
   // Fallback
   if (!done) {
-    Dinv.putScalar(omega);
+    Dinv.putScalar(omega * one);
     RCP<Matrix_t> AB = rcp(new Matrix_t(B->getRowMap(), 0));
 
     Tpetra::MatrixMatrix::Multiply(*A, false, *B, false, *AB);
@@ -906,9 +906,8 @@ mult_test_results jacobi_reuse_test(
   rightScaling->randomize();
   rightScaling->norm2(norms);
   rightScaling->scale(1.0 / norms[0]);
-  SC one = Teuchos::ScalarTraits<SC>::one();
-
-  SC omega = one;
+  SC one                                                  = Teuchos::ScalarTraits<SC>::one();
+  typename Teuchos::ScalarTraits<SC>::magnitudeType omega = Teuchos::ScalarTraits<SC>::magnitude(one);
   Vector_t Dinv(B->getRowMap());
   Dinv.putScalar(1.0);
 

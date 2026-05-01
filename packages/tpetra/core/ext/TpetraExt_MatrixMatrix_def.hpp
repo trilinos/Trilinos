@@ -330,7 +330,7 @@ template <class Scalar,
           class LocalOrdinal,
           class GlobalOrdinal,
           class Node>
-void Jacobi(Scalar omega,
+void Jacobi(typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega,
             const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Dinv,
             const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
             const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
@@ -2367,7 +2367,7 @@ template <class Scalar,
           class GlobalOrdinal,
           class Node>
 void jacobi_A_B_newmatrix(
-    Scalar omega,
+    typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega,
     const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Dinv,
     CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
     CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
@@ -2528,7 +2528,7 @@ template <class Scalar,
           class GlobalOrdinal,
           class Node,
           class LocalOrdinalViewType>
-void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalOrdinalViewType>::jacobi_A_B_newmatrix_kernel_wrapper(Scalar omega,
+void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalOrdinalViewType>::jacobi_A_B_newmatrix_kernel_wrapper(typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega,
                                                                                                                            const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Dinv,
                                                                                                                            CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
                                                                                                                            CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
@@ -2761,7 +2761,7 @@ template <class Scalar,
           class GlobalOrdinal,
           class Node>
 void jacobi_A_B_reuse(
-    Scalar omega,
+    typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega,
     const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Dinv,
     CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
     CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
@@ -2861,7 +2861,7 @@ template <class Scalar,
           class GlobalOrdinal,
           class Node,
           class LocalOrdinalViewType>
-void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalOrdinalViewType>::jacobi_A_B_reuse_kernel_wrapper(Scalar omega,
+void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalOrdinalViewType>::jacobi_A_B_reuse_kernel_wrapper(typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega,
                                                                                                                        const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Dinv,
                                                                                                                        CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
                                                                                                                        CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
@@ -3703,7 +3703,7 @@ namespace Tpetra {
       const std::string& label);                                                                                                      \
                                                                                                                                       \
   template void MatrixMatrix::Jacobi(                                                                                                 \
-      SCALAR omega,                                                                                                                   \
+      typename Teuchos::ScalarTraits<SCALAR>::magnitudeType omega,                                                                    \
       const Vector<SCALAR, LO, GO, NODE>& Dinv,                                                                                       \
       const CrsMatrix<SCALAR, LO, GO, NODE>& A,                                                                                       \
       const CrsMatrix<SCALAR, LO, GO, NODE>& B,                                                                                       \

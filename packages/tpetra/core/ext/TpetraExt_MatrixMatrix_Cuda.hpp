@@ -51,7 +51,7 @@ template <class Scalar,
           class LocalOrdinal,
           class GlobalOrdinal, class LocalOrdinalViewType>
 struct KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosCudaWrapperNode, LocalOrdinalViewType> {
-  static inline void jacobi_A_B_newmatrix_kernel_wrapper(Scalar omega,
+  static inline void jacobi_A_B_newmatrix_kernel_wrapper(typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega,
                                                          const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosCudaWrapperNode>& Dinv,
                                                          CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosCudaWrapperNode>& Aview,
                                                          CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosCudaWrapperNode>& Bview,
@@ -64,7 +64,7 @@ struct KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat
                                                          const std::string& label                           = std::string(),
                                                          const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
-  static inline void jacobi_A_B_reuse_kernel_wrapper(Scalar omega,
+  static inline void jacobi_A_B_reuse_kernel_wrapper(typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega,
                                                      const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosCudaWrapperNode>& Dinv,
                                                      CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosCudaWrapperNode>& Aview,
                                                      CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosCudaWrapperNode>& Bview,
@@ -77,7 +77,7 @@ struct KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat
                                                      const std::string& label                           = std::string(),
                                                      const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
-  static inline void jacobi_A_B_newmatrix_KokkosKernels(Scalar omega,
+  static inline void jacobi_A_B_newmatrix_KokkosKernels(typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega,
                                                         const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosCudaWrapperNode>& Dinv,
                                                         CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosCudaWrapperNode>& Aview,
                                                         CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosCudaWrapperNode>& Bview,
@@ -434,7 +434,7 @@ template <class Scalar,
           class LocalOrdinal,
           class GlobalOrdinal,
           class LocalOrdinalViewType>
-void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosCudaWrapperNode, LocalOrdinalViewType>::jacobi_A_B_newmatrix_kernel_wrapper(Scalar omega,
+void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosCudaWrapperNode, LocalOrdinalViewType>::jacobi_A_B_newmatrix_kernel_wrapper(typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega,
                                                                                                                                                                   const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosCudaWrapperNode>& Dinv,
                                                                                                                                                                   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosCudaWrapperNode>& Aview,
                                                                                                                                                                   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosCudaWrapperNode>& Bview,
@@ -487,7 +487,7 @@ template <class Scalar,
           class LocalOrdinal,
           class GlobalOrdinal,
           class LocalOrdinalViewType>
-void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosCudaWrapperNode, LocalOrdinalViewType>::jacobi_A_B_reuse_kernel_wrapper(Scalar omega,
+void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosCudaWrapperNode, LocalOrdinalViewType>::jacobi_A_B_reuse_kernel_wrapper(typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega,
                                                                                                                                                               const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosCudaWrapperNode>& Dinv,
                                                                                                                                                               CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosCudaWrapperNode>& Aview,
                                                                                                                                                               CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosCudaWrapperNode>& Bview,
@@ -656,7 +656,7 @@ template <class Scalar,
           class LocalOrdinal,
           class GlobalOrdinal,
           class LocalOrdinalViewType>
-void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosCudaWrapperNode, LocalOrdinalViewType>::jacobi_A_B_newmatrix_KokkosKernels(Scalar omega,
+void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosCudaWrapperNode, LocalOrdinalViewType>::jacobi_A_B_newmatrix_KokkosKernels(typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega,
                                                                                                                                                                  const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosCudaWrapperNode>& Dinv,
                                                                                                                                                                  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosCudaWrapperNode>& Aview,
                                                                                                                                                                  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosCudaWrapperNode>& Bview,
@@ -696,9 +696,9 @@ void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::
   using graph_t        = typename matrix_t::StaticCrsGraphType;
   using lno_view_t     = typename graph_t::row_map_type::non_const_type;
   using int_view_t     = Kokkos::View<int*,
-                                  typename lno_view_t::array_layout,
-                                  typename lno_view_t::memory_space,
-                                  typename lno_view_t::memory_traits>;
+                                      typename lno_view_t::array_layout,
+                                      typename lno_view_t::memory_space,
+                                      typename lno_view_t::memory_traits>;
   using c_lno_view_t   = typename graph_t::row_map_type::const_type;
   using lno_nnz_view_t = typename graph_t::entries_type::non_const_type;
   using scalar_view_t  = typename matrix_t::values_type::non_const_type;
@@ -749,6 +749,8 @@ void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::
       irph.shouldUseIntRowptrs() &&
       Aview.origMatrix->getApplyHelper()->shouldUseIntRowptrs();
 
+  const Scalar jacobiOmega = omega * Teuchos::ScalarTraits<Scalar>::one();
+
   if (useIntRowptrs) {
     int_handle_t kh;
     kh.create_spgemm_handle(alg_enum);
@@ -780,7 +782,7 @@ void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::
                                               Aint.graph.row_map, Aint.graph.entries, Amat.values, false,
                                               Bint.graph.row_map, Bint.graph.entries, Bint.values, false,
                                               int_row_mapC, entriesC, valuesC,
-                                              omega, Dinv.getLocalViewDevice(Access::ReadOnly));
+                                              jacobiOmega, Dinv.getLocalViewDevice(Access::ReadOnly));
     // transfer the integer rowptrs back to the correct rowptr type
     Kokkos::parallel_for(
         int_row_mapC.size(), KOKKOS_LAMBDA(int i) { row_mapC(i) = int_row_mapC(i); });
@@ -809,7 +811,7 @@ void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::
                                               Amat.graph.row_map, Amat.graph.entries, Amat.values, false,
                                               Bmerged.graph.row_map, Bmerged.graph.entries, Bmerged.values, false,
                                               row_mapC, entriesC, valuesC,
-                                              omega, Dinv.getLocalViewDevice(Access::ReadOnly));
+                                              jacobiOmega, Dinv.getLocalViewDevice(Access::ReadOnly));
     kh.destroy_spgemm_handle();
   }
 
