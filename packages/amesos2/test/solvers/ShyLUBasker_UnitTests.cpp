@@ -454,19 +454,23 @@ namespace {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ShyLUBasker, Partial2, SCALAR, LO, GO )
   {
-    typedef CrsMatrix<SCALAR,LO,GO,Node> MAT;
     typedef ScalarTraits<SCALAR> ST;
-    typedef MultiVector<SCALAR,LO,GO,Node> MV;
-    const size_t numVecs = 1;
 
     RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
     const size_t myRank = comm->getRank();
-    const size_t numRanks = comm->getSize();
     if (myRank==0) {
       std::cout << std::endl
                 << " >> UnitTest for ShyLUBasker::Solve with Scalar = "
                 << ST::name() << " <<" << std::endl << std::endl;
     }
+    #if !defined(HAVE_AMESOS2_METIS)
+    if (myRank==0) printf( " Skipping partial-factorization 2 test because no METIS\n" );
+    TEST_ASSERT( true );
+    #else
+    typedef CrsMatrix<SCALAR,LO,GO,Node> MAT;
+    typedef MultiVector<SCALAR,LO,GO,Node> MV;
+    const size_t numRanks = comm->getSize();
+    const size_t numVecs = 1;
 
     // Construct matrix
     const SCALAR one  = ST::one();
@@ -574,6 +578,7 @@ namespace {
       if (myRank==0) printf( " Skipping partial-factorization 2 test because (check_value = %d)\n",check_value );
       TEST_ASSERT( true );
     }
+    #endif
   }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ShyLUBasker, SolveTrans, SCALAR, LO, GO )

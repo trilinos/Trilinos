@@ -416,10 +416,15 @@ namespace BaskerNS
       if (Options.dense_schur != 0)
       {
         if(Options.verbose == BASKER_TRUE) {
-          printf("Basker: Forcing to perform ND factorization of one BTF block for partial factorization\n");
+          printf("Basker: Forcing to perform ND factorization of one BTF block for partial factorization %d\n",Options.dense_schur);
         }
         break_work_size = 0.0;
         break_block_size = 0.0;
+        #if !defined (HAVE_SHYLU_NODEBASKER_METIS)
+        if (Options.dense_schur == 2) {
+          BASKER_ASSERT(1==0, "Basker: partial factorization requires METIS.");
+        }
+        #endif
       }
       if(Options.verbose == BASKER_TRUE) {
         printf("Basker: Break size for workspace and size: %d and %d with %d threads (total work estimate = %f)\n",
