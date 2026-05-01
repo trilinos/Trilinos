@@ -159,6 +159,8 @@ private:
 
   Teuchos::RCP<Teuchos::ParameterList> phiEvaluatorPL_;
 
+  Scalar temporal_finite_difference_eps_;
+
 };
 
 /** \brief Time-derivative interface for Backward Euler.

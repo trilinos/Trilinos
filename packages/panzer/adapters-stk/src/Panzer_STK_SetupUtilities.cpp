@@ -292,7 +292,7 @@ buildBCWorksets(const panzer_stk::STK_Interface & mesh,
   try {
      // grab local entities on this side
      // ...catch any failure...primarily wrong side set and element block info
-     mesh.getMySides(sidesetID,eblockID,sideEntities);
+     mesh.getAllSides(sidesetID,eblockID,sideEntities);
   } 
   catch(STK_Interface::SidesetException & e) {
      std::stringstream ss;
