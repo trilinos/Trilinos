@@ -21,7 +21,7 @@
 namespace MueLu {
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-RigidBodyModeFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~RigidBodyModeFactory() {}
+RigidBodyModeFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~RigidBodyModeFactory() = default;
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void RigidBodyModeFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &currentLevel) const {

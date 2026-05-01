@@ -30,7 +30,7 @@ class FactoryBase : public virtual BaseClass {
     : id_(FactoryBase::GenerateUniqueId()) {}
 
   //! Destructor.
-  virtual ~FactoryBase() {}
+  virtual ~FactoryBase();
   //@}
 
   //@{
