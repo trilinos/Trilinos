@@ -13,6 +13,7 @@
 #include <string>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>
+#include <Teuchos_ScalarTraits.hpp>
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_BlockCrsMatrix.hpp"
@@ -312,7 +313,7 @@ void Add(
     In a parallel setting, A and B need not have matching distributions,
     but C needs to have the same row-map as A.
 
-  @param omega Input, scalar multiplier for Dinverse A
+  @param omega Input, real-valued multiplier (\c Teuchos::ScalarTraits<Scalar>::magnitudeType ) for Dinverse A
   @param Dinv Input, Vector representing a diagonal matrix, must match A->getRowMap()
   @param A Input, must already have had 'fillComplete()' called.
   @param B Input, must already have had 'fillComplete()' called.
@@ -335,7 +336,7 @@ template <class Scalar,
           class LocalOrdinal,
           class GlobalOrdinal,
           class Node>
-void Jacobi(Scalar omega,
+void Jacobi(typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega,
             const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Dinv,
             const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
             const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
@@ -408,7 +409,7 @@ template <class Scalar,
           class GlobalOrdinal,
           class Node>
 void jacobi_A_B_newmatrix(
-    Scalar omega,
+    typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega,
     const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Dinv,
     CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
     CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
@@ -421,7 +422,7 @@ template <class Scalar,
           class GlobalOrdinal,
           class Node>
 void jacobi_A_B_reuse(
-    Scalar omega,
+    typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega,
     const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Dinv,
     CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
     CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
@@ -501,7 +502,7 @@ template <class Scalar,
           class Node,
           class LocalOrdinalViewType>
 struct KernelWrappers2 {
-  static inline void jacobi_A_B_newmatrix_kernel_wrapper(Scalar omega,
+  static inline void jacobi_A_B_newmatrix_kernel_wrapper(typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega,
                                                          const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Dinv,
                                                          CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
                                                          CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
@@ -514,7 +515,7 @@ struct KernelWrappers2 {
                                                          const std::string& label                           = std::string(),
                                                          const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
-  static inline void jacobi_A_B_reuse_kernel_wrapper(Scalar omega,
+  static inline void jacobi_A_B_reuse_kernel_wrapper(typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega,
                                                      const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Dinv,
                                                      CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
                                                      CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,

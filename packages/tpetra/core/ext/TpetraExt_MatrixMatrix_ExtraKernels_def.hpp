@@ -432,7 +432,7 @@ template <class Scalar,
           class LocalOrdinal,
           class GlobalOrdinal,
           class LocalOrdinalViewType>
-void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(Scalar omega,
+void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega,
                                                    const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& Dinv,
                                                    CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& Aview,
                                                    CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& Bview,
@@ -679,7 +679,7 @@ template <class Scalar,
           class LocalOrdinal,
           class GlobalOrdinal,
           class LocalOrdinalViewType>
-void jacobi_A_B_reuse_LowThreadGustavsonKernel(Scalar omega,
+void jacobi_A_B_reuse_LowThreadGustavsonKernel(typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega,
                                                const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& Dinv,
                                                CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& Aview,
                                                CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& Bview,
@@ -942,7 +942,7 @@ void copy_out_from_thread_memory(const OutColindType& thread_total_nnz,
 
 /*********************************************************************************************************/
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalOrdinalViewType>
-void jacobi_A_B_newmatrix_MultiplyScaleAddKernel(Scalar omega,
+void jacobi_A_B_newmatrix_MultiplyScaleAddKernel(typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega,
                                                  const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Dinv,
                                                  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
                                                  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
@@ -988,8 +988,9 @@ void jacobi_A_B_newmatrix_MultiplyScaleAddKernel(Scalar omega,
     jparams = *params;
     jparams.set("label", label + std::string(" MSAK Add"));
   }
-  Scalar one = Teuchos::ScalarTraits<Scalar>::one();
-  Tpetra::MatrixMatrix::add(one, false, *Bview.origMatrix, Scalar(-omega), false, *AB, C, AB->getDomainMap(), AB->getRangeMap(), Teuchos::rcp(&jparams, false));
+  Scalar one                        = Teuchos::ScalarTraits<Scalar>::one();
+  const Scalar negJacobiCoefficient = (-omega) * one;
+  Tpetra::MatrixMatrix::add(one, false, *Bview.origMatrix, negJacobiCoefficient, false, *AB, C, AB->getDomainMap(), AB->getRangeMap(), Teuchos::rcp(&jparams, false));
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   MM2 = Teuchos::null;
 #endif
