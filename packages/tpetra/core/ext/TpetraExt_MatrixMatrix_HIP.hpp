@@ -673,9 +673,9 @@ void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::
   using graph_t        = typename matrix_t::StaticCrsGraphType;
   using lno_view_t     = typename graph_t::row_map_type::non_const_type;
   using int_view_t     = Kokkos::View<int*,
-                                      typename lno_view_t::array_layout,
-                                      typename lno_view_t::memory_space,
-                                      typename lno_view_t::memory_traits>;
+                                  typename lno_view_t::array_layout,
+                                  typename lno_view_t::memory_space,
+                                  typename lno_view_t::memory_traits>;
   using c_lno_view_t   = typename graph_t::row_map_type::const_type;
   using lno_nnz_view_t = typename graph_t::entries_type::non_const_type;
   using scalar_view_t  = typename matrix_t::values_type::non_const_type;

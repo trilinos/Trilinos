@@ -549,8 +549,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
           }
           comm->barrier();
         }  // end random exp loop
-      }  // end repeat
-    }  // end ! my_experiments.empty()
+      }    // end repeat
+    }      // end ! my_experiments.empty()
 
     if (printTimings) {
       TimeMonitor::summarize(A->getRowMap()->getComm().ptr(), std::cout, false, true, false, Teuchos::Union, "", true);
