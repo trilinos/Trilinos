@@ -312,6 +312,14 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
   // z_: Q applied to right-hand side of the least squares system
   Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > R_;
   Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > z_;
+
+  // Cached output of getCurrentUpdate(): a domain-Map MV with
+  // blockSize_ columns, holding V*y.  Allocated once and reused
+  // across solves with matching map and column count, to avoid the
+  // multi-millisecond cudaMalloc that would otherwise fire on every
+  // solve when the GPU memory pool can't satisfy the request from a
+  // freed slab.
+  mutable Teuchos::RCP<MV> currentUpdate_;
 };
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -368,8 +376,13 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
       return;
     }
 
-    if (blockSize!=blockSize_ || numBlocks!=numBlocks_)
+    if (blockSize!=blockSize_ || numBlocks!=numBlocks_) {
       stateStorageInitialized_ = false;
+      // Cached update MV depends on V_'s map and on blockSize_; drop
+      // it on any state-storage change so the next getCurrentUpdate()
+      // re-clones it against the fresh V_.
+      currentUpdate_ = Teuchos::null;
+    }
 
     blockSize_ = blockSize;
     numBlocks_ = numBlocks;
@@ -493,7 +506,15 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
       const ScalarType one  = SCT::one();
       const ScalarType zero = SCT::zero();
       Teuchos::BLAS<int,ScalarType> blas;
-      currentUpdate = MVT::Clone( *V_, blockSize_ );
+      // Reuse the cached update MV when its shape matches; otherwise
+      // (re)allocate.  The map of V_ doesn't change after setStateSize,
+      // so as long as the column count matches we can avoid a fresh
+      // cudaMalloc on every solve.
+      if (currentUpdate_.is_null() ||
+          MVT::GetNumberVecs(*currentUpdate_) != blockSize_) {
+        currentUpdate_ = MVT::Clone( *V_, blockSize_ );
+      }
+      currentUpdate = currentUpdate_;
       //
       //  Make a view and then copy the RHS of the least squares problem.  DON'T OVERWRITE IT!
       //

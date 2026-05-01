@@ -510,6 +510,17 @@ namespace Belos {
     //! Scratch vector for use in apply()
     mutable Teuchos::RCP<MV> Y_temp_;
 
+    //! Cached output buffer for the non-in-place branch of
+    //! updateSolution() (updateLP = false).  Reused across calls
+    //! when its column count matches the requested update; otherwise
+    //! re-Cloned.  Eliminates a per-call cudaMalloc of a domain-Map
+    //! MV when the status test computes an explicit residual.
+    mutable Teuchos::RCP<MV> cachedNewSoln_;
+    //! Cached buffer for the right-preconditioner-applied update.
+    //! Same caching logic; only allocated when there is a right
+    //! preconditioner.
+    mutable Teuchos::RCP<MV> cachedRightPrecUpdate_;
+
     //! Timers
     mutable Teuchos::RCP<Teuchos::Time> timerOp_, timerPrec_;
 
@@ -731,44 +742,52 @@ namespace Belos {
       }
     else // the update vector is NOT null.
       { 
+	const int updateNumVecs = MVT::GetNumberVecs (*update);
+	auto ensureBuffer = [&updateNumVecs, &update] (RCP<MV>& buf) {
+	  if (buf.is_null () ||
+	      MVT::GetNumberVecs (*buf) != updateNumVecs) {
+	    buf = MVT::Clone (*update, updateNumVecs);
+	  }
+	};
 	if (updateLP) // The caller wants us to update the linear problem.
-	  { 
-	    if (RP_.is_null()) 
+	  {
+	    if (RP_.is_null())
 	      { // There is no right preconditioner.
 		// curX_ := curX_ + scale * update.
-		MVT::MvAddMv( 1.0, *curX_, scale, *update, *curX_ ); 
+		MVT::MvAddMv( 1.0, *curX_, scale, *update, *curX_ );
 	      }
-	    else 
+	    else
 	      { // There is indeed a right preconditioner, so apply it
-		// before computing the new solution.
-		RCP<MV> rightPrecUpdate = 
-		  MVT::Clone (*update, MVT::GetNumberVecs (*update));
-                applyRightPrec( *update, *rightPrecUpdate ); 
+		// before computing the new solution.  Reuse the cached
+		// rightPrecUpdate buffer across calls.
+		ensureBuffer (cachedRightPrecUpdate_);
+		applyRightPrec( *update, *cachedRightPrecUpdate_ );
 		// curX_ := curX_ + scale * rightPrecUpdate.
-		MVT::MvAddMv( 1.0, *curX_, scale, *rightPrecUpdate, *curX_ ); 
-	      } 
-	    solutionUpdated_ = true; 
+		MVT::MvAddMv( 1.0, *curX_, scale, *cachedRightPrecUpdate_, *curX_ );
+	      }
+	    solutionUpdated_ = true;
 	    newSoln = curX_;
 	  }
-	else 
+	else
 	  { // Rather than updating our stored current solution curX_,
 	    // we make a copy and compute the new solution in the
-	    // copy, without modifying curX_.
-	    newSoln = MVT::Clone (*update, MVT::GetNumberVecs (*update));
+	    // copy, without modifying curX_.  Cache the copy across
+	    // calls to avoid a per-call cudaMalloc.
+	    ensureBuffer (cachedNewSoln_);
+	    newSoln = cachedNewSoln_;
 	    if (RP_.is_null())
 	      { // There is no right preconditioner.
 		// newSoln := curX_ + scale * update.
-		MVT::MvAddMv( 1.0, *curX_, scale, *update, *newSoln ); 
+		MVT::MvAddMv( 1.0, *curX_, scale, *update, *newSoln );
 	      }
-	    else 
+	    else
 	      { // There is indeed a right preconditioner, so apply it
 		// before computing the new solution.
-		RCP<MV> rightPrecUpdate = 
-		  MVT::Clone (*update, MVT::GetNumberVecs (*update));
-                applyRightPrec( *update, *rightPrecUpdate ); 
+		ensureBuffer (cachedRightPrecUpdate_);
+		applyRightPrec( *update, *cachedRightPrecUpdate_ );
 		// newSoln := curX_ + scale * rightPrecUpdate.
-		MVT::MvAddMv( 1.0, *curX_, scale, *rightPrecUpdate, *newSoln ); 
-	      } 
+		MVT::MvAddMv( 1.0, *curX_, scale, *cachedRightPrecUpdate_, *newSoln );
+	      }
 	  }
       }
     return newSoln;
