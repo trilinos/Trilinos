@@ -1,5 +1,27 @@
 ###############################################################################
 #                                                                             #
+# Trilinos Release 16.2.1 Release Notes                          May 12, 2026 #
+#                                                                             #
+###############################################################################
+
+This is a patch release with no new features.
+
+
+Kokkos, KokkosKernels:
+
+  - Inclusion of version 4.7.4 of Kokkos and Kokkos Kernels
+    https://github.com/trilinos/Trilinos/pull/15142
+
+
+Amesos2, Belos, Panzer, STK, Stokhos, Stratimikos, TrilinosCouplings, Tpetra, Gtest:
+
+  - Bug fixes. See
+    https://github.com/trilinos/Trilinos/issues/14866
+    for more details.
+
+
+###############################################################################
+#                                                                             #
 # Trilinos Release 16.2 Release Notes                       November 24, 2025 #
 #                                                                             #
 ###############################################################################
