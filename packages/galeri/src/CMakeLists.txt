@@ -39,8 +39,6 @@ APPEND_SET(HEADERS
 
   Galeri_XpetraUtils.hpp
   Galeri_Problem.hpp
-
-  Galeri_XpetraMaps.hpp
   )
 
 APPEND_SET(SOURCES
@@ -67,6 +65,7 @@ IF(Galeri_ENABLE_EXPLICIT_INSTANTIATION)
 
   GLOBAL_SET(GALERI_ETI_LO_GO_CLASSES
     XpetraCartesian
+    XpetraMaps
     )
 
   GLOBAL_SET(GALERI_ETI_GO_CLASSES
