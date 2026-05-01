@@ -59,7 +59,6 @@ FIND_PACKAGE(catalyst)
 
 IF (catalyst_FOUND)
     # Tell TriBITS that we found Catalyst2 and there no need to look any further!
-    GET_TARGET_PROPERTY(_Catalyst2_INCLUDE_DIRS catalyst::catalyst_headers INTERFACE_INCLUDE_DIRECTORIES)
     GET_TARGET_PROPERTY(_Catalyst2_LIBRARY_LOCATION catalyst::catalyst LOCATION)
     GET_FILENAME_COMPONENT(Catalyst2_LIBRARY_DIRS ${_Catalyst2_LIBRARY_LOCATION} DIRECTORY)
 
@@ -67,8 +66,29 @@ IF (catalyst_FOUND)
 SET(DOCSTR "List of semi-colon separated paths to look for the TPL Catalyst2")
 
 GET_TARGET_PROPERTY(Catalyst2_LOCATION catalyst::catalyst LOCATION)
+GET_TARGET_PROPERTY(_Catalyst2_INCLUDE_DIRS catalyst::catalyst_headers INTERFACE_INCLUDE_DIRECTORIES)
+SET(_Catalyst2_LIBRARIES ${Catalyst2_LOCATION})
+SET(_Catalyst2_LIBRARY_DIRS ${Catalyst2_LIBRARY_DIRS})
 
-SET(TPL_Catalyst2_LIBRARIES ${Catalyst2_LOCATION} CACHE PATH ${DOCSTR})
+GET_TARGET_PROPERTY(_Catalyst2_LINK_LIBS catalyst::catalyst INTERFACE_LINK_LIBRARIES)
+IF(_Catalyst2_LINK_LIBS)
+  FOREACH(_lib IN LISTS _Catalyst2_LINK_LIBS)
+    IF(_lib MATCHES "conduit::conduit" AND TARGET ${_lib})
+      GET_TARGET_PROPERTY(_lib_location ${_lib} LOCATION)
+      IF(_lib_location)
+        LIST(APPEND _Catalyst2_LIBRARIES ${_lib_location})
+        GET_FILENAME_COMPONENT(_lib_dir ${_lib_location} DIRECTORY)
+        LIST(APPEND _Catalyst2_LIBRARY_DIRS ${_lib_dir})
+      ENDIF()
+      GET_TARGET_PROPERTY(_lib_includes ${_lib} INTERFACE_INCLUDE_DIRECTORIES)
+      IF(_lib_includes)
+        LIST(APPEND _Catalyst2_INCLUDE_DIRS ${_lib_includes})
+      ENDIF()
+    ENDIF()
+  ENDFOREACH()
+ENDIF()
+
+SET(TPL_Catalyst2_LIBRARIES ${_Catalyst2_LIBRARIES} CACHE PATH ${DOCSTR})
 SET(TPL_Catalyst2_INCLUDE_DIRS ${_Catalyst2_INCLUDE_DIRS} CACHE PATH ${DOCSTR})
 SET(TPL_Catalyst2_LIBRARY_DIRS ${_Catalyst2_LIBRARY_DIRS} CACHE PATH ${DOCSTR})
 
