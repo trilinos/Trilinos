@@ -650,7 +650,11 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
         );
     Teuchos::OSTab tab1(outUsed,1,"BELOS");
     tmpPL->set("Output Stream", outUsed);
-    iterativeSolver_->setParameters(tmpPL);
+    static bool init=false;
+    if (!init) {
+      iterativeSolver_->setParameters(tmpPL);
+      init = !nonnull(solveCriteria);
+    }
     if (nonnull(generalSolveCriteriaBelosStatusTest)) {
       iterativeSolver_->setUserConvStatusTest(generalSolveCriteriaBelosStatusTest);
     }
