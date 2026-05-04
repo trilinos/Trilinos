@@ -47,6 +47,9 @@
 #include <KokkosKernels_Handle.hpp>
 #include <KokkosGraph_RCM.hpp>
 #include "MueLu_Behavior.hpp"
+#include <MueLu_Level.hpp>
+#include <MueLu_FactoryManager.hpp>
+#include <MueLu_InverseApproximationFactory.hpp>
 
 namespace MueLu {
 
@@ -2057,6 +2060,30 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   RCP<Matrix> NewMatrix = Xpetra::MatrixFactory<SC, LO, GO, NO>::Build(original->getCrsGraph(), new_values);
   TEUCHOS_TEST_FOR_EXCEPTION(NewMatrix.is_null(), Exceptions::RuntimeError, "ReplaceNonZerosWithOnes: MatrixFactory::Build() did not return matrix");
   NewMatrix->fillComplete(original->getDomainMap(), original->getRangeMap());
+  return NewMatrix;
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
+UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SPAI(const RCP<Matrix>& M) {
+  // Create Minv via sparse apprximate inverse
+
+  Level miniLevel;
+  Teuchos::RCP<MueLu::FactoryManager<SC, LO, GO, NO>> factoryHandler = Teuchos::rcp(new MueLu::FactoryManager<SC, LO, GO, NO>());
+  miniLevel.SetFactoryManager(factoryHandler);
+  miniLevel.SetLevelID(0);
+#ifdef HAVE_MUELU_TIMER_SYNCHRONIZATION
+  miniLevel.SetComm(M->getRowMap()->getComm());
+#endif
+  miniLevel.Set("A", M);
+
+  auto invapproxFact = rcp(new InverseApproximationFactory());
+  invapproxFact->SetFactory("A", MueLu::NoFactory::getRCP());
+  invapproxFact->SetParameter("inverse: approximation type", Teuchos::ParameterEntry(std::string("sparseapproxinverse")));
+  miniLevel.Request("Ainv", invapproxFact.get());
+  invapproxFact->Build(miniLevel);
+  RCP<Matrix> NewMatrix = miniLevel.Get<RCP<Matrix>>("Ainv", invapproxFact.get());
+  TEUCHOS_TEST_FOR_EXCEPTION(NewMatrix.is_null(), Exceptions::RuntimeError, "SPAI: MatrixFactory::Build() did not return matrix");
   return NewMatrix;
 }
 
