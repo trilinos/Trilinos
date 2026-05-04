@@ -85,8 +85,10 @@ class Maxwell1 : public VerboseObject, public Xpetra::Operator<Scalar, LocalOrdi
            Teuchos::ParameterList& List,
            bool ComputePrec = true)
     : mode_(MODE_STANDARD) {
-    RCP<Matrix> Kn_Matrix;
-    initialize(D0_Matrix, Kn_Matrix, Nullspace, Coords, Teuchos::null, List);
+    RCP<Matrix> Kn_Matrix       = Teuchos::null;
+    RCP<Matrix> CurlCurl_Matrix = Teuchos::null;
+    RCP<MultiVector> Material   = Teuchos::null;
+    initialize(D0_Matrix, Kn_Matrix, Nullspace, Coords, CurlCurl_Matrix, Material, List);
     resetMatrix(SM_Matrix, ComputePrec);
   }
 
@@ -107,7 +109,9 @@ class Maxwell1 : public VerboseObject, public Xpetra::Operator<Scalar, LocalOrdi
            Teuchos::ParameterList& List,
            bool ComputePrec = true)
     : mode_(MODE_STANDARD) {
-    initialize(D0_Matrix, Kn_Matrix, Nullspace, Coords, Teuchos::null, List);
+    RCP<Matrix> CurlCurl_Matrix = Teuchos::null;
+    RCP<MultiVector> Material   = Teuchos::null;
+    initialize(D0_Matrix, Kn_Matrix, Nullspace, Coords, CurlCurl_Matrix, Material, List);
     resetMatrix(SM_Matrix, ComputePrec);
   }
 
@@ -129,7 +133,32 @@ class Maxwell1 : public VerboseObject, public Xpetra::Operator<Scalar, LocalOrdi
            Teuchos::ParameterList& List,
            bool ComputePrec = true)
     : mode_(MODE_STANDARD) {
-    initialize(D0_Matrix, Kn_Matrix, Nullspace, Coords, Material, List);
+    RCP<Matrix> CurlCurl_Matrix = Teuchos::null;
+    initialize(D0_Matrix, Kn_Matrix, Nullspace, Coords, CurlCurl_Matrix, Material, List);
+    resetMatrix(SM_Matrix, ComputePrec);
+  }
+
+  /** Constructor with Jacobian and nodal matrix
+   *
+   * \param[in] SM_Matrix Jacobian
+   * \param[in] CurlCurl_Matrix CurlCurl matrix
+   * \param[in] D0_Matrix Discrete Gradient
+   * \param[in] Kn_Matrix Nodal Laplacian
+   * \param[in] Coords Nodal coordinates
+   * \param[in] List Parameter list
+   * \param[in] ComputePrec If true, compute the preconditioner immediately
+   */
+  Maxwell1(const Teuchos::RCP<Matrix>& SM_Matrix,
+           const Teuchos::RCP<Matrix>& D0_Matrix,
+           const Teuchos::RCP<Matrix>& Kn_Matrix,
+           const Teuchos::RCP<MultiVector>& Nullspace,
+           const Teuchos::RCP<RealValuedMultiVector>& Coords,
+           const Teuchos::RCP<Matrix>& CurlCurl_Matrix,
+           const Teuchos::RCP<MultiVector>& Material,
+           Teuchos::ParameterList& List,
+           bool ComputePrec = true)
+    : mode_(MODE_STANDARD) {
+    initialize(D0_Matrix, Kn_Matrix, Nullspace, Coords, CurlCurl_Matrix, Material, List);
     resetMatrix(SM_Matrix, ComputePrec);
   }
 
@@ -151,7 +180,9 @@ class Maxwell1 : public VerboseObject, public Xpetra::Operator<Scalar, LocalOrdi
            Teuchos::ParameterList& List, const Teuchos::RCP<Matrix>& GmhdA_Matrix,
            bool ComputePrec = true)
     : mode_(MODE_GMHD_STANDARD) {
-    initialize(D0_Matrix, Kn_Matrix, Nullspace, Coords, Teuchos::null, List);
+    RCP<Matrix> CurlCurl_Matrix = Teuchos::null;
+    RCP<MultiVector> Material   = Teuchos::null;
+    initialize(D0_Matrix, Kn_Matrix, Nullspace, Coords, CurlCurl_Matrix, Material, List);
     resetMatrix(SM_Matrix, ComputePrec);
     GmhdA_Matrix_  = GmhdA_Matrix;
     HierarchyGmhd_ = rcp(new Hierarchy("HierarchyGmhd"));
@@ -170,12 +201,16 @@ class Maxwell1 : public VerboseObject, public Xpetra::Operator<Scalar, LocalOrdi
     : mode_(MODE_STANDARD) {
     RCP<MultiVector> Nullspace        = List.get<RCP<MultiVector> >("Nullspace", Teuchos::null);
     RCP<RealValuedMultiVector> Coords = List.get<RCP<RealValuedMultiVector> >("Coordinates", Teuchos::null);
+    RCP<MultiVector> Material         = List.get<RCP<MultiVector> >("Material", Teuchos::null);
     RCP<Matrix> D0_Matrix             = List.get<RCP<Matrix> >("D0");
     RCP<Matrix> Kn_Matrix;
     if (List.isType<RCP<Matrix> >("Kn"))
       Kn_Matrix = List.get<RCP<Matrix> >("Kn");
+    RCP<Matrix> CurlCurl_Matrix;
+    if (List.isType<RCP<Matrix> >("CurlCurl"))
+      CurlCurl_Matrix = List.get<RCP<Matrix> >("CurlCurl");
 
-    initialize(D0_Matrix, Kn_Matrix, Nullspace, Coords, Teuchos::null, List);
+    initialize(D0_Matrix, Kn_Matrix, Nullspace, Coords, CurlCurl_Matrix, Material, List);
 
     if (SM_Matrix != Teuchos::null)
       resetMatrix(SM_Matrix, ComputePrec);
@@ -246,6 +281,7 @@ class Maxwell1 : public VerboseObject, public Xpetra::Operator<Scalar, LocalOrdi
                   const Teuchos::RCP<Matrix>& Kn_Matrix,
                   const Teuchos::RCP<MultiVector>& Nullspace,
                   const Teuchos::RCP<RealValuedMultiVector>& Coords,
+                  const Teuchos::RCP<Matrix>& CurlCurl_Matrix,
                   const Teuchos::RCP<MultiVector>& Material,
                   Teuchos::ParameterList& List);
 

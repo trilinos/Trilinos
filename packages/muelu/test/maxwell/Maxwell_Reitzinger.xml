@@ -4,7 +4,8 @@
 
   <ParameterList name="maxwell1: 11list">
     <Parameter name="multigrid algorithm" type="string" value="smoothed reitzinger"/>
-
+    <Parameter name="sa: damping factor" type="double" value="0.66"/>
+    
     <Parameter name="coarse: type" type="string" value="Klu"/>
 
     <Parameter name="smoother: type" type="string" value="HIPTMAIR"/>
@@ -26,7 +27,7 @@
 
 
   <ParameterList name="maxwell1: 22list">
-    <Parameter name="multigrid algorithm" type="string"  value="unsmoothed"/>
+    <Parameter name="multigrid algorithm" type="string"  value="sa"/>
     <Parameter name="aggregation: deterministic" type="bool" value="true"/>
     <Parameter name="use kokkos refactor" type="bool" value="false"/>
     <Parameter name="aggregation: drop tol" type="double" value="0.0"/>
