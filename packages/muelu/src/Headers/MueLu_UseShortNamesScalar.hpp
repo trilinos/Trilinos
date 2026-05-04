@@ -113,6 +113,9 @@ using DirectSolver [[maybe_unused]] = MueLu::DirectSolver<Scalar, LocalOrdinal, 
 #ifdef MUELU_DROPNEGATIVEENTRIESFACTORY_SHORT
 using DropNegativeEntriesFactory [[maybe_unused]] = MueLu::DropNegativeEntriesFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
+#ifdef MUELU_EDGEPROLONGATORPATTERNFACTORY_SHORT
+using EdgeProlongatorPatternFactory [[maybe_unused]] = MueLu::EdgeProlongatorPatternFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+#endif
 #ifdef MUELU_EMINPFACTORY_SHORT
 using EminPFactory [[maybe_unused]] = MueLu::EminPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
@@ -343,6 +346,9 @@ using SmootherPrototype [[maybe_unused]] = MueLu::SmootherPrototype<Scalar, Loca
 #endif
 #ifdef MUELU_SMOOVECCOALESCEDROPFACTORY_SHORT
 using SmooVecCoalesceDropFactory [[maybe_unused]] = MueLu::SmooVecCoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+#endif
+#ifdef MUELU_SPARSECONSTRAINT_SHORT
+using SparseConstraint [[maybe_unused]] = MueLu::SparseConstraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
 #ifdef MUELU_STRATIMIKOSSMOOTHER_SHORT
 using StratimikosSmoother [[maybe_unused]] = MueLu::StratimikosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
