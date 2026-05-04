@@ -79,6 +79,7 @@
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
 #include "MueLu_SemiCoarsenPFactory_kokkos.hpp"
 #include "MueLu_TentativePFactory_kokkos.hpp"
+#include "Teuchos_Assert.hpp"
 
 #ifdef HAVE_MUELU_MATLAB
 #include "../matlab/src/MueLu_MatlabSmoother_decl.hpp"
@@ -712,6 +713,12 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   // === Repartitioning ===
   UpdateFactoryManager_Repartition(paramList, defaultList, manager, levelID, keeps, nullSpaceFactory);
 
+  // === Auxiliary mass matrix for MinvA ===
+  auto socMatrix = set_var_2list<std::string>(paramList, defaultList, "aggregation: strength-of-connection: matrix");
+  if (socMatrix == "MinvA") {
+    UpdateFactoryManager_MatrixTransfer("M", paramList, defaultList, manager, levelID, keeps);
+  }
+
   // === Lower precision transfers ===
   UpdateFactoryManager_LowPrecision(paramList, defaultList, manager, levelID, keeps);
 
@@ -1228,6 +1235,12 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       }
     }
 
+    if (useKokkos_ && (levelID > 0)) {
+      if (dropParams.isParameter("aggregation: strength-of-connection: matrix") && dropParams.get<std::string>("aggregation: strength-of-connection: matrix") == "MinvA") {
+        dropFactory->SetFactory("M", this->GetFactoryManager(levelID - 1)->GetFactory("M"));
+      }
+    }
+
     dropFactory->SetParameterList(dropParams);
   }
   manager.SetFactory("Graph", dropFactory);
@@ -1657,8 +1670,19 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   if (levelID == 0)
     manager.SetFactory(VarName, NoFactory::getRCP());
   else if (levelID > 0) {
-    auto RAP  = rcp_const_cast<RAPFactory>(rcp_dynamic_cast<const RAPFactory>(manager.GetFactory("A")));
-    auto RAPs = rcp_const_cast<RAPShiftFactory>(rcp_dynamic_cast<const RAPShiftFactory>(manager.GetFactory("A")));
+    auto Afact   = manager.GetFactory("A");
+    auto RebalAc = rcp_const_cast<RebalanceAcFactory>(rcp_dynamic_cast<const RebalanceAcFactory>(Afact));
+    RCP<RAPFactory> RAP;
+    RCP<RAPShiftFactory> RAPs;
+    if (!RebalAc.is_null()) {
+      auto Afact2 = RebalAc->GetFactory("A");
+      RAP         = rcp_const_cast<RAPFactory>(rcp_dynamic_cast<const RAPFactory>(Afact2));
+      RAPs        = rcp_const_cast<RAPShiftFactory>(rcp_dynamic_cast<const RAPShiftFactory>(Afact2));
+    } else {
+      RAP  = rcp_const_cast<RAPFactory>(rcp_dynamic_cast<const RAPFactory>(Afact));
+      RAPs = rcp_const_cast<RAPShiftFactory>(rcp_dynamic_cast<const RAPShiftFactory>(Afact));
+    }
+
     if (!RAP.is_null() || !RAPs.is_null()) {
       RCP<Factory> mtf = rcp(new MatrixTransferFactory());
 
@@ -1667,14 +1691,17 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       transferParameters.set("transpose: use implicit", this->implicitTranspose_);
       mtf->SetParameterList(transferParameters);
 
-      mtf->SetFactory("P", manager.GetFactory("P"));
-      if (!this->implicitTranspose_)
-        mtf->SetFactory("R", manager.GetFactory("R"));
-
-      if (!RAP.is_null())
+      if (!RAP.is_null()) {
+        mtf->SetFactory("P", RAP->GetFactory("P"));
+        if (!this->implicitTranspose_)
+          mtf->SetFactory("R", RAP->GetFactory("R"));
         RAP->AddTransferFactory(mtf);
-      else
+      } else {
+        mtf->SetFactory("P", RAPs->GetFactory("P"));
+        if (!this->implicitTranspose_)
+          mtf->SetFactory("R", RAPs->GetFactory("R"));
         RAPs->AddTransferFactory(mtf);
+      }
 
       auto enableRepart = set_var_2list<bool>(paramList, defaultList, "repartition: enable");
       if (!enableRepart) {
@@ -1682,19 +1709,24 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       } else {
         auto rebalFact = rcp(new RebalanceAcFactory());
         Teuchos::ParameterList rebalParams;
-        rebalParams.set("repartition: use subcommunicators in place", true);
         rebalParams.set("Matrix name", VarName);
+        auto useSubCommInPlace = set_var_2list<bool>(paramList, defaultList, "repartition: use subcommunicators in place");
+        rebalParams.set("repartition: use subcommunicators in place", useSubCommInPlace);
+        if (useSubCommInPlace) {
+          auto inPlaceMapFact = manager.GetFactory("InPlaceMap");
+          rebalFact->SetFactory("InPlaceMap", inPlaceMapFact);
+        } else {
+          TEUCHOS_ASSERT(!RebalAc.is_null());
+          RCP<const FactoryBase> importerFact;
+          importerFact = RebalAc->GetFactory("Importer");
+          rebalFact->SetFactory("Importer", importerFact);
+          RebalAc->AddRebalanceFactory(rebalFact);
+        }
+
         rebalFact->SetParameterList(rebalParams);
         rebalFact->SetFactory("A", mtf);
-        auto inPlaceMapFact = manager.GetFactory("InPlaceMap");
-        rebalFact->SetFactory("InPlaceMap", inPlaceMapFact);
 
         manager.SetFactory(VarName, rebalFact);
-
-        if (!RAP.is_null())
-          RAP->AddTransferFactory(manager.GetFactory(VarName));
-        else
-          RAPs->AddTransferFactory(manager.GetFactory(VarName));
       }
     }
   }
