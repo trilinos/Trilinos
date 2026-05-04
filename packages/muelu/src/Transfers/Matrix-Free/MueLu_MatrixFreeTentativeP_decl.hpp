@@ -27,7 +27,7 @@
 namespace MueLu {
 
 /*!
-  @class MatrixFreeTentativeP class.
+  @class MatrixFreeTentativeP
   @brief Matrix-free tentative restrictor operator.
 */
 // template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

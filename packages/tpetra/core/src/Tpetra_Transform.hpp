@@ -10,7 +10,7 @@
 #ifndef TPETRA_TRANSFORM_HPP
 #define TPETRA_TRANSFORM_HPP
 
-/// \file Tpetra_Tranform.hpp
+/// \file Tpetra_Transform.hpp
 /// \brief Declaration of the Tpetra::Transform class
 
 #include <Teuchos_RCP.hpp>

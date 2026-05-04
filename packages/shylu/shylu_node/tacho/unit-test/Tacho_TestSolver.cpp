@@ -69,7 +69,8 @@ int generate2dLaplace(const int nx, CrsMatrixBaseTypeHost &A) {
 // main test driver
 template <typename value_type>
 int driver(const std::string file, const std::string method_name, const int variant, const int nrhs,
-           const bool store_transpose = false, const bool single_solve = true, const bool single_setup = true) {
+           const bool store_transpose = false, const bool single_solve = true, const bool single_setup = true,
+           const bool team_on_user_stream = false) {
   int nx = 100;
   int method = 1; // 1 - Chol, 2 - LDL, 3 - SymLU
   if (method_name == "ldl-nopiv")
@@ -135,8 +136,12 @@ int driver(const std::string file, const std::string method_name, const int vari
       std::cout << "  > Using explicit transpose " << std::endl;
       solver.storeExplicitTranspose(true);
     }
-    /// test "shift diag" code path
-    solver.shiftDiagonal();
+    if (team_on_user_stream) {
+      /// one-stream
+      std::cout << " Using user stream-0 for team/batched kernels" << std::endl;
+      solver.setLevelSetOptionNumStreams(1, team_on_user_stream);
+    }
+    std::cout << std::endl;
 
     /// levelset options
     ///  forcing to have a few device factor/solve tasks
@@ -147,13 +152,16 @@ int driver(const std::string file, const std::string method_name, const int vari
     auto values_on_device = Kokkos::create_mirror_view(typename device_type::memory_space(), A.Values());
 
     int num_setups = (single_setup ? 1 : 2); // number of symbolic calls
+    DenseMultiVectorType b("b", A.NumRows(), 1), // rhs multivector
+      x("x", A.NumRows(), 1),                    // solution multivector
+      t("t", A.NumRows(), 1);                    // temp workspace (store permuted rhs)
     for (int s = 0; s < num_setups; s++) {
       /// initialize
       r_val = solver.analyze(A.NumRows(), A.RowPtr(), A.Cols());
       if(r_val == 0) {
         r_val = solver.initialize();
       }
-      int num_solves = (single_solve ? 1 : 5); // number of numeric + solve calls
+      int num_solves = 5; // number of numeric + solve calls
       for (int step = 0; step < num_solves && r_val == 0; step++) {
         if (step > 0) {
           // perturb the first element (diagonal if Laplace), on host
@@ -161,11 +169,20 @@ int driver(const std::string file, const std::string method_name, const int vari
         }
         // copy A to device
         Kokkos::deep_copy(values_on_device, A.Values());
+        if (step%2 == 0) {
+          /// > test "shift diag" code path
+          solver.shiftDiagonal(1);
+          solver.useDefaultPivotTolerance(0);
+        } else {
+          /// > test "replace tiny pivot" code path
+          solver.shiftDiagonal(0);
+          solver.useDefaultPivotTolerance(1);
+        }
         /// do numerical factorization
         if (single_solve) {
           r_val = solver.factorize(values_on_device);
         } else {
-          if (step%2 == 1) {
+          if (single_solve || step%2 == 1) {
             // User-specified method
             r_val = solver.factorize(values_on_device);
           } else {
@@ -174,12 +191,15 @@ int driver(const std::string file, const std::string method_name, const int vari
           }
         }
         typename Tacho::ArithTraits<value_type>::mag_type shift = solver.currentShift();
-        std::cout << "  > Diagonal entries shifted by " << shift << std::endl;
+        std::cout << "  > Diagonal entries shifted by " << shift << std::endl << std::endl;
 
         /// solve
-        DenseMultiVectorType b("b", A.NumRows(), nrhs), // rhs multivector
-          x("x", A.NumRows(), nrhs),                    // solution multivector
-          t("t", A.NumRows(), nrhs);                    // temp workspace (store permuted rhs)
+        if (step == 1) {
+          // first solve with one RHS, and then with "nrhs" for the rest
+          Kokkos::resize(b, A.NumRows(), nrhs); // rhs multivector
+          Kokkos::resize(x, A.NumRows(), nrhs); // solution multivector
+          Kokkos::resize(t, A.NumRows(), nrhs); // temp workspace (store permuted rhs)
+        }
         if(r_val == 0) {
           const value_type zero(0.0);
           const value_type one (1.0);
@@ -230,6 +250,10 @@ TEST( Solver, Chol ) {
   EXPECT_EQ(driver<double>(file, "chol", 2, 5), 0);
   EXPECT_EQ(driver<double>(file, "chol", 3, 5), 0);
   EXPECT_EQ(driver<double>(file, "chol", 3, 5, true), 0);
+  // > one-stream
+  EXPECT_EQ(driver<double>(file, "chol", 0, 1, false, true, true, true), 0);
+  EXPECT_EQ(driver<double>(file, "chol", 1, 1, false, true, true, true), 0);
+  EXPECT_EQ(driver<double>(file, "chol", 2, 1, false, true, true, true), 0);
   #if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_SYCL)
   // > sequential path
   EXPECT_EQ(driver<double>(file, "chol", -1, 1), 0);
@@ -259,6 +283,10 @@ TEST( Solver, LU ) {
   EXPECT_EQ(driver<double>(file, "lu", 2, 5, false, false), 0);
   EXPECT_EQ(driver<double>(file, "lu", 3, 5, false, false), 0);
   EXPECT_EQ(driver<double>(file, "lu", 3, 5, false, false, false), 0); // multiple symbolic calls
+  // > one-stream
+  EXPECT_EQ(driver<double>(file, "lu", 0, 1, false, true, true, true), 0);
+  EXPECT_EQ(driver<double>(file, "lu", 1, 1, false, true, true, true), 0);
+  EXPECT_EQ(driver<double>(file, "lu", 2, 1, false, true, true, true), 0);
   #if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_SYCL)
   // > sequential path
   EXPECT_EQ(driver<double>(file, "lu", -1, 1), 0);
@@ -287,6 +315,10 @@ TEST( Solver, LDL ) {
   EXPECT_EQ(driver<double>(file, "ldl", 1, 5, false, false), 0);
   EXPECT_EQ(driver<double>(file, "ldl", 2, 5, false, false), 0);
   EXPECT_EQ(driver<double>(file, "ldl", 3, 5, false, false), 0);
+  // > one-stream
+  EXPECT_EQ(driver<double>(file, "ldl", 0, 1, false, true, true, true), 0);
+  EXPECT_EQ(driver<double>(file, "ldl", 1, 1, false, true, true, true), 0);
+  EXPECT_EQ(driver<double>(file, "ldl", 2, 1, false, true, true, true), 0);
   #if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_SYCL)
   // > sequential path
   EXPECT_EQ(driver<double>(file, "ldl", -1, 1), 0);

@@ -72,20 +72,23 @@ void solve(const ROL::Ptr<ROL::OED::Factory<Real>>      &factory,
   bool usePD = list.sublist("OED").sublist("R-Optimality").get("Use Primal-Dual Algorithm",false);
   if (type=="R" && usePD) {
     ROL::PrimalDualRisk<Real> solver(problem,osampler,list);
-    if (checkDeriv) {
-      factory->check(stream);
-      //solver.check(stream);
-      factory->reset();
-    }
+    // Commented out because check uses random vectors that do not respect bounds
+    //if (checkDeriv) {
+    //  //factory->check(stream);
+    //  //solver.check(stream);
+    //  problem->check(true,stream);
+    //  factory->reset();
+    //}
     solver.run(stream);
   }
   else {
     ROL::Solver<Real> solver(problem,list);
-    if (checkDeriv) {
-      factory->check(stream);
-      problem->check(true,stream);
-      factory->reset();
-    }
+    // Commented out because check uses random vectors that do not respect bounds
+    //if (checkDeriv) {
+    //  //factory->check(stream);
+    //  problem->check(true,stream);
+    //  factory->reset();
+    //}
     solver.solve(stream);
   }
   stream << "  " << dtype << "-optimal design time:      "
@@ -228,7 +231,7 @@ int main(int argc, char *argv[]) {
     regType  = parlist->sublist("Problem").get("Regression Type","Least Squares"); 
     auto type    = ROL::OED::StringToRegressionType(regType);
     auto noise   = ROL::makePtr<Helmholtz_Noise<RealT>>();
-    auto cov     = ROL::makePtr<ROL::OED::StdMomentOperator<RealT>>(type,homNoise,noise);
+    auto cov     = ROL::makePtr<ROL::OED::StdMomentOperator<RealT>>(type,homNoise ? ROL::nullPtr : noise);
     auto factory = ROL::makePtr<ROL::OED::Factory<RealT>>(model,dsampler,theta,ovec,cov,*parlist);
     obman->barrier();
 

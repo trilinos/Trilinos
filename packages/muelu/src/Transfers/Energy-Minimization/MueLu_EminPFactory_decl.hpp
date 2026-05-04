@@ -27,7 +27,7 @@
 namespace MueLu {
 
 /*!
-  @class EminPFactory class.
+  @class EminPFactory
   @brief Factory for building Energy Minimization prolongators.
   @ingroup MueLuTransferClasses
   */

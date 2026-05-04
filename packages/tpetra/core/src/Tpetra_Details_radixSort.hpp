@@ -27,6 +27,7 @@ namespace Details {
 /// \param values [in/out] Input array of values to permute (must have same number of elements as keys)
 /// \param valuesAux [in] Scratch space (double buffer) for values (must be allocated to same size as values)
 /// \param n [in] Length of all 4 input arrays keys, keysAux, values and valuesAux.
+/// \param upperBound [in] Upper bound on key values (used for determining sort depth).
 template <typename KeyType, typename ValueType, typename IndexType>
 KOKKOS_INLINE_FUNCTION void
 radixSortKeysAndValues(KeyType* keys, KeyType* keysAux, ValueType* values, ValueType* valuesAux, IndexType n, IndexType upperBound) {

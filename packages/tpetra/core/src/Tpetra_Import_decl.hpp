@@ -158,6 +158,8 @@ class Import : public ::Tpetra::Details::Transfer<LocalOrdinal, GlobalOrdinal, N
   /// \param remotePIDs [in] Owning PIDs corresponding to the remoteGIDs.
   /// If this information is available one can reduce the cost of the Import
   /// constructor.
+  ///
+  /// \param plist [in/out] Optional list of parameters.
   Import(const Teuchos::RCP<const map_type>& source,
          const Teuchos::RCP<const map_type>& target,
          Teuchos::Array<int>& remotePIDs,
@@ -207,6 +209,8 @@ class Import : public ::Tpetra::Details::Transfer<LocalOrdinal, GlobalOrdinal, N
   ///   this constructor reserves the right to reorder the target
   ///   Map indices on each process, for better communication
   ///   performance.
+  /// \param plist [in] Optional list of parameters.
+  /// \param out [in] Optional output stream for debugging.
   Import(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& sourceMap,
          const GlobalOrdinal targetMapRemoteOrPermuteGlobalIndices[],
          const int targetMapRemoteOrPermuteProcessRanks[],

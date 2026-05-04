@@ -34,7 +34,7 @@ namespace MueLu {
 class Level;
 
 /*!
-  @class AggregationExportFactory class.
+  @class AggregationExportFactory
   @brief Factory to export aggregation info or visualize aggregates using VTK
 
   Note, that some routines only work for 1 dof per node.

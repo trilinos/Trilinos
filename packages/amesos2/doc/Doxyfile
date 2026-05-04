@@ -594,8 +594,8 @@ INCLUDE_FILE_PATTERNS  =
 # or name=definition (no spaces). If the definition and the = are
 # omitted =1 is assumed.
 
-PREDEFINED             = DOXYGEN_SHOULD_SKIP_THIS HAVE_AMESOS2_EPETRA \
-                         HAVE_AMESOS2_EPETRAEXT HAVE_AMESOS2_SUPERLU \
+PREDEFINED             = DOXYGEN_SHOULD_SKIP_THIS \
+                         HAVE_AMESOS2_SUPERLU \
 			 HAVE_AMESOS2_SUPERLUMT HAVE_AMESOS2_SUPERLUDIST \
 			 HAVE_AMESOS2_KLU2
 

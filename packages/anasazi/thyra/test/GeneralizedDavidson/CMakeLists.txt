@@ -1,8 +1,8 @@
 
 
-IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_ThyraEpetraAdapters)
+IF(${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapters)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    GeneralizedDavidsonThyra_test
+    Thyra_GeneralizedDavidson_test
     SOURCES cxx_main.cpp
     ARGS --verbose
     COMM serial mpi

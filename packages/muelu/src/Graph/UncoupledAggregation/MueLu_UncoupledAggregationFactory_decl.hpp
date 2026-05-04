@@ -36,7 +36,7 @@
 namespace MueLu {
 
 /*!
-    @class UncoupledAggregationFactory class.
+    @class UncoupledAggregationFactory
     @brief Factory for building uncoupled aggregates.
 
     Factory for creating uncoupled aggregates from the amalgamated graph of A. The uncoupled aggregation method

@@ -84,20 +84,6 @@ void LinearSolverFactory<SC, LO, GO, NT>::
                              "Factory is null!  This "
                              "should never happen!  Please report this bug to the Ifpack2 developers.");
 
-  // #ifdef HAVE_IFPACK2_DEBUG
-  //   {
-  //     using std::cerr;
-  //     using std::endl;
-  //     using Teuchos::TypeNameTraits;
-  //     cerr << "Registering Ifpack2 LinearSolverFactory for"
-  //          << " SC = " << TypeNameTraits<SC>::name ()
-  //          << ", LO = " << TypeNameTraits<LO>::name ()
-  //          << ", GO = " << TypeNameTraits<GO>::name ()
-  //          << ", NT = " << TypeNameTraits<NT>::name ()
-  //          << ", and mag_type = " << TypeNameTraits<mag_type>::name ()
-  //          << endl;
-  //   }
-  // #endif // HAVE_IFPACK2_DEBUG
   Trilinos::Details::registerLinearSolverFactory<MV, OP, mag_type>("Ifpack2", factoryBase);
 }
 

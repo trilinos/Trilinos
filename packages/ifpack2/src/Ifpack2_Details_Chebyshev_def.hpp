@@ -22,6 +22,7 @@
 #include "Ifpack2_Details_Chebyshev_Weights.hpp"
 // #include "Ifpack2_Details_ScaledDampedResidual.hpp"
 #include "Ifpack2_Details_ChebyshevKernel.hpp"
+#include "Ifpack2_Details_Behavior.hpp"
 #include "KokkosKernels_ArithTraits.hpp"
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_oblackholestream.hpp"
@@ -1351,11 +1352,7 @@ void Chebyshev<ScalarType, MV>::
                     const ST eigRatio,
                     const V& D_inv) {
   using std::endl;
-#ifdef HAVE_IFPACK2_DEBUG
-  const bool debug = debug_;
-#else
-  const bool debug = false;
-#endif
+  const bool debug = Ifpack2::Details::Behavior::debug() ? debug_ : false;
 
   if (debug) {
     *out_ << " \\|B\\|_{\\infty} = " << maxNormInf(B) << endl;

@@ -45,6 +45,18 @@ public:
   void hessVec_21( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &u, const Vector<Real> &z, Real &tol ) override;
   void hessVec_22( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &u, const Vector<Real> &z, Real &tol ) override;
   void setParameter( const std::vector<Real> &param ) override;
+  void summarize(std::ostream &stream,
+           const Ptr<BatchManager<Real>> &bman = nullPtr) const {
+    ProfiledClass<Real,std::string>::summarize(stream,bman);
+    if (M_ != nullPtr) {
+      stream << std::string(80,'-') << std::endl;
+      M_->summarize(stream,bman);
+    }
+  }
+  void reset() {
+    ProfiledClass<Real,std::string>::reset();
+    if (M_ != nullPtr) M_->reset();
+  }
 
 }; // class QuadraticObjective
 

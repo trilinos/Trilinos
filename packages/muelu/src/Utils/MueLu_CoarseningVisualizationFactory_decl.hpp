@@ -22,7 +22,7 @@ namespace MueLu {
 class Level;
 
 /*!
-  @class CoarseningVisualizationFactory class.
+  @class CoarseningVisualizationFactory
   @brief Factory to visualize coarsening information using prolongation operators
 
   @ingroup MueLuVisualizationClasses

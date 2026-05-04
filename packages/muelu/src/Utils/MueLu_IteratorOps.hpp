@@ -12,6 +12,8 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
+#include "Teuchos_ScalarTraits.hpp"
+
 #include "Xpetra_Matrix.hpp"
 #include "Xpetra_MatrixMatrix.hpp"
 #include "Xpetra_CrsMatrixWrap.hpp"
@@ -28,10 +30,9 @@
 namespace MueLu {
 
 // General implementation
-// Epetra variant throws
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void Jacobi(
-    Scalar omega,
+    typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega,
     const Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Dinv,
     const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
     const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
@@ -71,7 +72,8 @@ void Jacobi(
   // transfer striding information
   RCP<Xpetra::Matrix<SC, LO, GO, NO> > rcpA = Teuchos::rcp_const_cast<Xpetra::Matrix<SC, LO, GO, NO> >(Teuchos::rcpFromRef(A));
   RCP<Xpetra::Matrix<SC, LO, GO, NO> > rcpB = Teuchos::rcp_const_cast<Xpetra::Matrix<SC, LO, GO, NO> >(Teuchos::rcpFromRef(B));
-  C.CreateView("stridedMaps", rcpA, false, rcpB, false);  // TODO use references instead of RCPs
+  if (A.IsView("stridedMaps") || B.IsView("stridedMaps"))
+    C.CreateView("stridedMaps", rcpA, false, rcpB, false);  // TODO use references instead of RCPs
 }  // end Jacobi
 
 /*!
@@ -85,7 +87,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 class IteratorOps {
  public:
   static RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
-  Jacobi(Scalar omega, const Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Dinv, const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A, const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B, RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > C_in, Teuchos::FancyOStream& fos, const std::string& label, RCP<ParameterList>& params) {
+  Jacobi(typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega, const Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Dinv, const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A, const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B, RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > C_in, Teuchos::FancyOStream& fos, const std::string& label, RCP<ParameterList>& params) {
     TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete(), MueLu::Exceptions::RuntimeError, "A is not fill-completed");
     TEUCHOS_TEST_FOR_EXCEPTION(!B.isFillComplete(), MueLu::Exceptions::RuntimeError, "B is not fill-completed");
 
@@ -98,7 +100,8 @@ class IteratorOps {
     }
 
     MueLu::Jacobi<Scalar, LocalOrdinal, GlobalOrdinal, Node>(omega, Dinv, A, B, *C, true, true, label, params);
-    C->CreateView("stridedMaps", rcpFromRef(A), false, rcpFromRef(B), false);
+    if (A.IsView("stridedMaps") || B.IsView("stridedMaps"))
+      C->CreateView("stridedMaps", rcpFromRef(A), false, rcpFromRef(B), false);
 
     return C;
   }

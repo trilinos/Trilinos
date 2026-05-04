@@ -164,7 +164,7 @@ class RowGraph : virtual public Teuchos::Describable,
   /// \param numColInds [out] Number of indices in the row on the
   ///   calling process.
   ///
-  /// \pre <tt>getRowMap()->isNodeGlobalElement(gblRow)<tt> is <tt>true</tt>.
+  /// \pre <tt>getRowMap()->isNodeGlobalElement(gblRow)</tt> is <tt>true</tt>.
   /// \pre <tt>gblColInds.size() >= getNumEntriesInGlobalRow(gblRow)</tt> is <tt>true</tt>.
 
   virtual void
@@ -186,7 +186,7 @@ class RowGraph : virtual public Teuchos::Describable,
   ///   calling process.
   ///
   /// \pre <tt>hasColMap()</tt> is <tt>true</tt>.
-  /// \pre <tt>getRowMap()->isNodeLocalElement(lclRow)<tt> is <tt>true</tt>.
+  /// \pre <tt>getRowMap()->isNodeLocalElement(lclRow)</tt> is <tt>true</tt>.
   /// \pre <tt>lclColInds.size() >= getNumEntriesInLocalRow(lclRow)</tt> is <tt>true</tt>.
   virtual void
   getLocalRowCopy(LocalOrdinal lclRow,

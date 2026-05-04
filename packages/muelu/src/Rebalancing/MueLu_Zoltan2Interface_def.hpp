@@ -27,6 +27,7 @@
 #include "MueLu_Level.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_Monitor.hpp"
+#include "MueLu_Behavior.hpp"
 
 namespace MueLu {
 
@@ -162,15 +163,15 @@ Zoltan2Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ComputeDecompositio
     // Check that the number of local coordinates is consistent with the #rows in A
     TEUCHOS_TEST_FOR_EXCEPTION(rowMap->getLocalNumElements() / blkSize != coords->getLocalLength(), Exceptions::Incompatible,
                                "Coordinate vector length (" + toString(coords->getLocalLength()) << " is incompatible with number of block rows in A (" + toString(rowMap->getLocalNumElements() / blkSize) + "The vector length should be the same as the number of mesh points.");
-#ifdef HAVE_MUELU_DEBUG
-    GO indexBase = rowMap->getIndexBase();
-    // Make sure that logical blocks in row map coincide with logical nodes in coordinates map
-    ArrayView<const GO> rowElements    = rowMap->getLocalElementList();
-    ArrayView<const GO> coordsElements = map->getLocalElementList();
-    for (LO i = 0; i < Teuchos::as<LO>(numElements); i++)
-      TEUCHOS_TEST_FOR_EXCEPTION((coordsElements[i] - indexBase) * blkSize + indexBase != rowElements[i * blkSize],
-                                 Exceptions::RuntimeError, "i = " << i << ", coords GID = " << coordsElements[i] << ", row GID = " << rowElements[i * blkSize] << ", blkSize = " << blkSize << std::endl);
-#endif
+    if (Behavior::debug()) {
+      GO indexBase = rowMap->getIndexBase();
+      // Make sure that logical blocks in row map coincide with logical nodes in coordinates map
+      ArrayView<const GO> rowElements    = rowMap->getLocalElementList();
+      ArrayView<const GO> coordsElements = map->getLocalElementList();
+      for (LO i = 0; i < Teuchos::as<LO>(numElements); i++)
+        TEUCHOS_TEST_FOR_EXCEPTION((coordsElements[i] - indexBase) * blkSize + indexBase != rowElements[i * blkSize],
+                                   Exceptions::RuntimeError, "i = " << i << ", coords GID = " << coordsElements[i] << ", row GID = " << rowElements[i * blkSize] << ", blkSize = " << blkSize << std::endl);
+    }
 
     typedef Zoltan2::XpetraMultiVectorAdapter<RealValuedMultiVector> InputAdapterType;
     typedef Zoltan2::PartitioningProblem<InputAdapterType> ProblemType;

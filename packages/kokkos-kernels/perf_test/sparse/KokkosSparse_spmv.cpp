@@ -82,9 +82,9 @@ int test_crs_matrix_singlevec(Ordinal numRows, Ordinal numCols, int test, const 
       "MinBandwidth(GB/s) MaxBandwidth(GB/s) AveGFlop MinGFlop MaxGFlop "
       "aveTime(ms) maxTime(ms) minTime(ms) numErrors\n");
   printf(
-      "%i %i %i %6.2lf ( %6.2lf %6.2lf %6.2lf ) ( %6.3lf %6.3lf %6.3lf ) ( "
+      "%zd %zd %zd %6.2lf ( %6.2lf %6.2lf %6.2lf ) ( %6.3lf %6.3lf %6.3lf ) ( "
       "%6.3lf %6.3lf %6.3lf ) %i RESULT\n",
-      test_data.nnz, numRows, numCols, problem_size,
+      (size_t)test_data.nnz, (size_t)numRows, (size_t)numCols, problem_size,
       (matrix_size + vector_readwrite) / test_data.ave_time * loop / 1024,
       (matrix_size + vector_readwrite) / test_data.max_time / 1024,
       (matrix_size + vector_readwrite) / test_data.min_time / 1024,

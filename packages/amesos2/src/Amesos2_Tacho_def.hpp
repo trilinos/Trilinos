@@ -34,6 +34,7 @@ TachoSolver<Matrix,Vector>::TachoSolver(
   data_.pivot_pert = false; // Pertub small pivot
   data_.diag_shift = false; // Shift diagonal
   data_.verbose    = false; // verbose
+  data_.team_on_user_stream  = false; // use user stream-0 for team/batched kernels
   data_.small_problem_threshold_size = 1024;
 }
 
@@ -77,14 +78,11 @@ TachoSolver<Matrix,Vector>::symbolicFactorization_impl()
       this->matrixA_->returnColInd_kokkos_view(host_cols_view_);
     }
 
-    if (data_.diag_shift) {
-      data_.solver.shiftDiagonal();
-    }
     data_.solver.setSolutionMethod(data_.method);
     data_.solver.setLevelSetOptionAlgorithmVariant(data_.variant);
     data_.solver.setSmallProblemThresholdsize(data_.small_problem_threshold_size);
     data_.solver.setVerbose(data_.verbose);
-    data_.solver.setLevelSetOptionNumStreams(data_.streams);
+    data_.solver.setLevelSetOptionNumStreams(data_.streams, data_.team_on_user_stream);
     // TODO: Confirm param options
     // data_.solver.setMaxNumberOfSuperblocks(data_.max_num_superblocks);
 
@@ -117,6 +115,9 @@ TachoSolver<Matrix,Vector>::numericFactorization_impl()
      device_value_type_array device_nzvals_temp;
      this->matrixA_->returnValues_kokkos_view(device_nzvals_temp);
      Kokkos::deep_copy(device_nzvals_view_, device_nzvals_temp);
+    }
+    if (data_.diag_shift) {
+      data_.solver.shiftDiagonal();
     }
     if (data_.pivot_pert) {
       data_.solver.useDefaultPivotTolerance();
@@ -245,6 +246,8 @@ TachoSolver<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Param
   data_.verbose = parameterList->get<bool> ("verbose", false);
   // # of streams
   data_.streams = parameterList->get<int> ("num-streams", 1);
+  // use user stream-0 for batched kernels
+  data_.team_on_user_stream = parameterList->get<bool> ("team-on-user-stream", false);
   // DoFs / node
   data_.dofs_per_node = parameterList->get<int> ("dofs-per-node", 1);
   // Perturb tiny pivots
@@ -273,6 +276,7 @@ TachoSolver<Matrix,Vector>::getValidParameters_impl() const
     pl->set("dofs-per-node", 1, "DoFs per node");
     pl->set("perturb-pivot", false, "Perturb tiny pivots");
     pl->set("shift-diag", false, "Shift diagonal entries");
+    pl->set("team-on-user-stream", false, "Use user stream-0 for team/batched kernels");
 
     // TODO: Confirm param options
     // pl->set("kokkos-threads", 1, "Number of threads");
@@ -376,6 +380,7 @@ TachoSolver<Matrix,Vector>::describe_impl(Teuchos::FancyOStream &out,
   out << " > dofs-per-node = " << data_.dofs_per_node << std::endl;
   out << " > perturb-pivo  = " << (data_.pivot_pert ? "YES" : "NO") << std::endl;
   out << " > shift-diag    = " << (data_.diag_shift ? "YES" : "NO") << std::endl;
+  out << " > team-on-user-stream  = " << (data_.team_on_user_stream ? "YES" : "NO") << std::endl;
   out << " > small problem threshold size = " << data_.small_problem_threshold_size << std::endl;
   out << std::endl;
 }

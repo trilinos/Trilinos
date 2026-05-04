@@ -154,7 +154,7 @@ class DropFilter : virtual public Ifpack2::Details::RowMatrix<MatrixType> {
 
   //! Extract a list of entries in a specified global row of this matrix. Put into pre-allocated storage.
   /*!
-    \param DropRow - (In) Global row number for which indices are desired.
+    \param GlobalRow - (In) Global row number for which indices are desired.
     \param Indices - (Out) Global column indices corresponding to values.
     \param Values - (Out) Matrix values.
     \param NumEntries - (Out) Number of indices.
@@ -171,10 +171,10 @@ class DropFilter : virtual public Ifpack2::Details::RowMatrix<MatrixType> {
 
   //! Extract a list of entries in a specified local row of the graph. Put into storage allocated by calling routine.
   /*!
-    \param DropRow - (In) Drop row number for which indices are desired.
-    \param Indices - (Out) Drop column indices corresponding to values.
-    \param Values - (Out) Matrix values.
-    \param NumIndices - (Out) Number of indices.
+    \param DropRow [in] Local row number for which indices are desired.
+    \param Indices [out] Local column indices corresponding to values.
+    \param Values [out] Matrix values.
+    \param NumEntries [out] Number of indices.
 
     Note: A std::runtime_error exception is thrown if either \c Indices or \c Values is not large enough to hold the data associated
     with row \c DropRow. If \c DropRow is not valid for this node, then \c Indices and \c Values are unchanged and \c NumIndices is
@@ -189,13 +189,13 @@ class DropFilter : virtual public Ifpack2::Details::RowMatrix<MatrixType> {
   //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
   /*!
     \param GlobalRow - (In) Global row number for which indices are desired.
-    \param Indices   - (Out) Global column indices corresponding to values.
-    \param Values    - (Out) Row values
-    \pre <tt>isDroplyIndexed() == false</tt>
-    \post <tt>indices.size() == getNumEntriesInGlobalRow(GlobalRow)</tt>
+    \param indices   - (Out) Global column indices corresponding to values.
+    \param values    - (Out) Row values
+      \pre <tt>isLocallyIndexed() == false</tt>
+      \post <tt>indices.size() == getNumEntriesInGlobalRow(GlobalRow)</tt>
 
-    Note: If \c GlobalRow does not belong to this node, then \c indices is set to null.
-  */
+      Note: If \c GlobalRow does not belong to this node, then \c indices is set to null.
+    */
   virtual void
   getGlobalRowView(GlobalOrdinal GlobalRow,
                    global_inds_host_view_type &indices,
@@ -203,14 +203,14 @@ class DropFilter : virtual public Ifpack2::Details::RowMatrix<MatrixType> {
 
   //! Extract a const, non-persisting view of local indices in a specified row of the matrix.
   /*!
-    \param DropRow - (In) Drop row number for which indices are desired.
-    \param Indices  - (Out) Global column indices corresponding to values.
-    \param Values   - (Out) Row values
-    \pre <tt>isGloballyIndexed() == false</tt>
-    \post <tt>indices.size() == getNumEntriesInDropRow(DropRow)</tt>
+    \param LocalRow - (In) Local row number for which indices are desired.
+    \param indices  - (Out) Local column indices corresponding to values.
+    \param values   - (Out) Row values
+      \pre <tt>isGloballyIndexed() == false</tt>
+      \post <tt>indices.size() == getNumEntriesInLocalRow(LocalRow)</tt>
 
-    Note: If \c DropRow does not belong to this node, then \c indices is set to null.
-  */
+      Note: If \c LocalRow does not belong to this node, then \c indices is set to null.
+    */
   virtual void
   getLocalRowView(LocalOrdinal LocalRow,
                   local_inds_host_view_type &indices,

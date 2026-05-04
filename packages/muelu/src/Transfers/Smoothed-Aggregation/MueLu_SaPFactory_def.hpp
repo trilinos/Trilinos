@@ -202,8 +202,8 @@ void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLe
         TEUCHOS_TEST_FOR_EXCEPTION(invDiag.is_null(), Exceptions::RuntimeError, "SaPFactory: diagonal reciprocal is null.");
       }
 
-      SC omega = dampingFactor / lambdaMax;
-      TEUCHOS_TEST_FOR_EXCEPTION(!std::isfinite(Teuchos::ScalarTraits<SC>::magnitude(omega)), Exceptions::RuntimeError, "Prolongator damping factor needs to be finite.");
+      MT omega = Teuchos::ScalarTraits<SC>::magnitude(dampingFactor) / Teuchos::ScalarTraits<SC>::magnitude(lambdaMax);
+      TEUCHOS_TEST_FOR_EXCEPTION(!std::isfinite(omega), Exceptions::RuntimeError, "Prolongator damping factor needs to be finite.");
 
       {
         SubFactoryMonitor m3(*this, "MueLu::IteratorOps::Jacobi", coarseLevel);

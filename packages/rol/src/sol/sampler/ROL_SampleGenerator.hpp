@@ -72,14 +72,24 @@ public:
   }
 
   virtual int numMySamples(void) const {
+    ROL_TEST_FOR_EXCEPTION( weights_.size() == 0, std::invalid_argument,
+      ">>> ERROR (ROL::SampleGenerator::numMySamples): No samples exist!");
     return weights_.size();
   }
 
   virtual std::vector<Real> getMyPoint(const int i) const {
+    ROL_TEST_FOR_EXCEPTION( numMySamples() == 0, std::invalid_argument,
+      ">>> ERROR (ROL::SampleGenerator::getMyPoint): No samples exist!");
+    ROL_TEST_FOR_EXCEPTION( i < 0 || i >= numMySamples(), std::invalid_argument,
+      ">>> ERROR (ROL::SampleGenerator::getMyPoint): Sample index out of range!");
     return points_[i];
   }
 
   virtual Real getMyWeight(const int i) const {
+    ROL_TEST_FOR_EXCEPTION( numMySamples() == 0, std::invalid_argument,
+      ">>> ERROR (ROL::SampleGenerator::getMyWeight): No samples exist!");
+    ROL_TEST_FOR_EXCEPTION( i < 0 || i >= numMySamples(), std::invalid_argument,
+      ">>> ERROR (ROL::SampleGenerator::getMyWeight): Sample index out range!");
     return weights_[i];
   }
 

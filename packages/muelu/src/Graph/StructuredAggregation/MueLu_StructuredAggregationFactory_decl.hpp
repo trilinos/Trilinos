@@ -24,7 +24,7 @@
 namespace MueLu {
 
 /*!
-    @class StructuredAggregationFactory class.
+    @class StructuredAggregationFactory
     @brief Factory for building aggregates on structured grids.
 
     Factory for creating aggregates from grid structure of the problem. The structured aggregation

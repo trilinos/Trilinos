@@ -28,7 +28,7 @@
 namespace MueLu {
 
 /*!
-  @class ClassicalMapFactory class.
+  @class ClassicalMapFactory
   @brief Factory for generating F/C-splitting and a coarse level map. Used by ClassicalPFactory.
 
   @ingroup MueLuTransferClasses

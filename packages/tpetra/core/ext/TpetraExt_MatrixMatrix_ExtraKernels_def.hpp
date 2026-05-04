@@ -263,7 +263,7 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
   // Sort & set values
   if (params.is_null() || params->get("sort entries", true)) {
     // Tpetra's SpGEMM results in almost sorted matrices. Use shell sort.
-    Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC, ::KokkosSparse::SortAlgorithm::SHELL);
+    Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC);
   }
   C.setAllValues(row_mapC, entriesC, valuesC);
 }
@@ -283,6 +283,12 @@ void mult_A_B_reuse_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOrdina
                                              Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode> > Cimport,
                                              const std::string& label,
                                              const Teuchos::RCP<Teuchos::ParameterList>& params) {
+  // By default, if A*B results in an entry that is not supported by the graph of C, we throw.
+  // This option allows to override this behavior and silently ignores such entries.
+  bool throwOnInsert = true;
+  if (!params.is_null() && params->isType<bool>("MM Throw For Non-Existent Entries"))
+    throwOnInsert = params->get<bool>("MM Throw For Non-Existent Entries");
+
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
   using Teuchos::TimeMonitor;
@@ -390,11 +396,13 @@ void mult_A_B_reuse_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOrdina
             LO Bkj = Bcolind(j);
             LO Cij = Bcol2Ccol(Bkj);
 
-            TEUCHOS_TEST_FOR_EXCEPTION(c_status[Cij] < OLD_ip || c_status[Cij] >= CSR_ip,
-                                       std::runtime_error, "Trying to insert a new entry (" << i << "," << Cij << ") into a static graph "
-                                                                                            << "(c_status = " << c_status[Cij] << " of [" << OLD_ip << "," << CSR_ip << "))");
-
-            Cvals(c_status[Cij]) += Aval * Bvals(j);
+            const bool badInsert = c_status[Cij] < OLD_ip || c_status[Cij] >= CSR_ip;
+            if (!badInsert)
+              Cvals(c_status[Cij]) += Aval * Bvals(j);
+            else if (throwOnInsert)
+              TEUCHOS_TEST_FOR_EXCEPTION(badInsert,
+                                         std::runtime_error, "Trying to insert a new entry (" << i << "," << Cij << ") into a static graph "
+                                                                                              << "(c_status = " << c_status[Cij] << " of [" << OLD_ip << "," << CSR_ip << "))");
           }
         } else {
           // Remote matrix
@@ -403,11 +411,13 @@ void mult_A_B_reuse_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOrdina
             LO Ikj = Icolind(j);
             LO Cij = Icol2Ccol(Ikj);
 
-            TEUCHOS_TEST_FOR_EXCEPTION(c_status[Cij] < OLD_ip || c_status[Cij] >= CSR_ip,
-                                       std::runtime_error, "Trying to insert a new entry (" << i << "," << Cij << ") into a static graph "
-                                                                                            << "(c_status = " << c_status[Cij] << " of [" << OLD_ip << "," << CSR_ip << "))");
-
-            Cvals(c_status[Cij]) += Aval * Ivals(j);
+            const bool badInsert = c_status[Cij] < OLD_ip || c_status[Cij] >= CSR_ip;
+            if (!badInsert)
+              Cvals(c_status[Cij]) += Aval * Ivals(j);
+            else if (throwOnInsert)
+              TEUCHOS_TEST_FOR_EXCEPTION(badInsert,
+                                         std::runtime_error, "Trying to insert a new entry (" << i << "," << Cij << ") into a static graph "
+                                                                                              << "(c_status = " << c_status[Cij] << " of [" << OLD_ip << "," << CSR_ip << "))");
           }
         }
       }
@@ -422,7 +432,7 @@ template <class Scalar,
           class LocalOrdinal,
           class GlobalOrdinal,
           class LocalOrdinalViewType>
-void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(Scalar omega,
+void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega,
                                                    const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& Dinv,
                                                    CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& Aview,
                                                    CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& Bview,
@@ -659,7 +669,7 @@ void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(Scalar omega,
   // Sort & set values
   if (params.is_null() || params->get("sort entries", true)) {
     // Tpetra's SpGEMM results in almost sorted matrices. Use shell sort.
-    Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC, ::KokkosSparse::SortAlgorithm::SHELL);
+    Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC);
   }
   C.setAllValues(row_mapC, entriesC, valuesC);
 }
@@ -669,7 +679,7 @@ template <class Scalar,
           class LocalOrdinal,
           class GlobalOrdinal,
           class LocalOrdinalViewType>
-void jacobi_A_B_reuse_LowThreadGustavsonKernel(Scalar omega,
+void jacobi_A_B_reuse_LowThreadGustavsonKernel(typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega,
                                                const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& Dinv,
                                                CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& Aview,
                                                CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& Bview,
@@ -932,7 +942,7 @@ void copy_out_from_thread_memory(const OutColindType& thread_total_nnz,
 
 /*********************************************************************************************************/
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalOrdinalViewType>
-void jacobi_A_B_newmatrix_MultiplyScaleAddKernel(Scalar omega,
+void jacobi_A_B_newmatrix_MultiplyScaleAddKernel(typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega,
                                                  const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Dinv,
                                                  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
                                                  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
@@ -978,8 +988,9 @@ void jacobi_A_B_newmatrix_MultiplyScaleAddKernel(Scalar omega,
     jparams = *params;
     jparams.set("label", label + std::string(" MSAK Add"));
   }
-  Scalar one = Teuchos::ScalarTraits<Scalar>::one();
-  Tpetra::MatrixMatrix::add(one, false, *Bview.origMatrix, Scalar(-omega), false, *AB, C, AB->getDomainMap(), AB->getRangeMap(), Teuchos::rcp(&jparams, false));
+  Scalar one                        = Teuchos::ScalarTraits<Scalar>::one();
+  const Scalar negJacobiCoefficient = (-omega) * one;
+  Tpetra::MatrixMatrix::add(one, false, *Bview.origMatrix, negJacobiCoefficient, false, *AB, C, AB->getDomainMap(), AB->getRangeMap(), Teuchos::rcp(&jparams, false));
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   MM2 = Teuchos::null;
 #endif
@@ -1226,7 +1237,7 @@ static inline void mult_R_A_P_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct
 
   // Final sort & set of CRS arrays
   // Tpetra's SpGEMM results in almost sorted matrices. Use shell sort.
-  Import_Util::sortCrsEntries(rowmapAc, entriesAc, valuesAc, ::KokkosSparse::SortAlgorithm::SHELL);
+  Import_Util::sortCrsEntries(rowmapAc, entriesAc, valuesAc);
   // mfh 27 Sep 2016: This just sets pointers.
   Ac.setAllValues(rowmapAc, entriesAc, valuesAc);
 

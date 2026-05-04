@@ -148,6 +148,33 @@ subview(const DynRankView<D, Kokkos::LayoutContiguous<LayoutSrc, StrideSrc>,
   }
 }
 
+// Helper function to create a mapping for subdynrankview that avoids calling SubT::layout()
+// (which doesn't work correctly for LayoutContiguous<LayoutStride> and is slated for removal)
+template<class MapT, class SubT, size_t ... Idx>
+KOKKOS_INLINE_FUNCTION MapT
+create_subdynrankview_mapping(const SubT& sub, std::index_sequence<Idx...>) {
+  using return_layout_t = typename MapT::layout_type;
+  using exts_t = typename MapT::extents_type;
+  using idx_t = typename MapT::index_type;
+  const exts_t extents((Idx<SubT::rank() ? sub.extent(Idx):1)...);
+  if constexpr (std::is_same_v<return_layout_t, layout_stride>)
+  {
+    idx_t strides[7] = {(Idx<SubT::rank() ? sub.stride(Idx):1)...};
+    return MapT(mdspan_non_standard_tag(), extents, strides);
+  } else if constexpr(std::is_same_v<return_layout_t, Kokkos::Experimental::layout_left_padded<Kokkos::dynamic_extent> > ||
+                      std::is_same_v<return_layout_t, Kokkos::Experimental::layout_right_padded<Kokkos::dynamic_extent> >)
+  {
+    idx_t stride = 1;
+    if constexpr (SubT::rank() > 1) {
+      if constexpr(std::is_same_v<return_layout_t, Kokkos::Experimental::layout_left_padded<Kokkos::dynamic_extent> >)
+        stride = sub.stride(1);
+      else
+        stride = sub.stride(SubT::rank()-2);
+    }
+    return MapT(extents, stride);
+  }
+}
+
 template <class T, class LayoutSrc, unsigned StrideSrc, class... DRVArgs,
           class SubArg0 = int, class SubArg1 = int, class SubArg2 = int,
           class SubArg3 = int, class SubArg4 = int, class SubArg5 = int,
@@ -175,18 +202,11 @@ subdynrankview(const DynRankView<T, LayoutContiguous<LayoutSrc, StrideSrc>,
                                     // StrideSrc>,
       typename sub_t::device_type, typename sub_t::memory_traits>;
 
-  auto layout = sub.layout().base_layout();
-  for (int i = new_rank; i < 8; i++)
-    layout.dimension[i] = 1;
-  if constexpr (std::is_same_v<decltype(layout), LayoutStride>)
-    for (int i = new_rank; i < 8; i++)
-      layout.stride[i] = 1;
-
+  using return_map_t = typename return_type::mapping_type;
   return return_type{
       typename return_type::view_type(
           sub.data_handle(),
-          Impl::mapping_from_array_layout<typename return_type::mapping_type>(
-              layout),
+          create_subdynrankview_mapping<return_map_t>(sub, std::make_index_sequence<7>()),
           sub.accessor()),
       new_rank};
 }
@@ -615,30 +635,6 @@ void deep_copy_view(const Kokkos::View<DstArgs...> &dst, const SrcT &src) {
   Kokkos::fence();
 }
 
-template <size_t ... Idx, class SrcT, class... SrcArgs>
-void resize_view(std::index_sequence<Idx...>,
-                 Kokkos::View<SrcT, SrcArgs...> &src,
-                 const size_t n0 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
-                 const size_t n1 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
-                 const size_t n2 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
-                 const size_t n3 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
-                 const size_t n4 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
-                 const size_t n5 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
-                 const size_t n6 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
-                 const size_t n7 = KOKKOS_IMPL_CTOR_DEFAULT_ARG) {
-  using view_t = Kokkos::View<SrcT, SrcArgs...>;
-  const size_t new_extents[8] = {n0, n1, n2, n3, n4, n5, n6, n7};
-  bool size_mismatch = ((new_extents[Idx] != src.extent(Idx)) || ... || false);
-  if (size_mismatch) {
-    using exec_space = typename view_t::execution_space;
-    auto dst = view_t(src.label(), new_extents[Idx]..., static_cast<size_t>(src.accessor().fad_size() + 1));
-    Kokkos::fence();
-    Sacado::Impl::deep_copy(exec_space(), Kokkos::subview(dst, Kokkos::pair(0lu, Kokkos::min(new_extents[Idx], src.extent(Idx)))...),
-                                          Kokkos::subview(src, Kokkos::pair(0lu, Kokkos::min(new_extents[Idx], src.extent(Idx)))...));
-    Kokkos::fence();
-    src = dst;
-  }
-}
 } // namespace Impl
 } // namespace Sacado
 
@@ -693,6 +689,44 @@ void deep_copy(const Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT> ******,
                SrcT val) {
   Sacado::Impl::deep_copy_view(src, val);
 }
+
+} // namespace Kokkos
+#endif // SACADO_VIEW_CUDA_HIERARCHICAL
+
+// Overloads of resize are required for all layouts, not just hierarchical
+
+namespace Sacado {
+namespace Impl {
+
+template <size_t ... Idx, class SrcT, class... SrcArgs>
+void resize_view(std::index_sequence<Idx...>,
+                 Kokkos::View<SrcT, SrcArgs...> &src,
+                 const size_t n0 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+                 const size_t n1 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+                 const size_t n2 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+                 const size_t n3 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+                 const size_t n4 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+                 const size_t n5 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+                 const size_t n6 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+                 const size_t n7 = KOKKOS_IMPL_CTOR_DEFAULT_ARG) {
+  using view_t = Kokkos::View<SrcT, SrcArgs...>;
+  const size_t new_extents[8] = {n0, n1, n2, n3, n4, n5, n6, n7};
+  bool size_mismatch = ((new_extents[Idx] != src.extent(Idx)) || ... || false);
+  if (size_mismatch) {
+    using exec_space = typename view_t::execution_space;
+    auto dst = view_t(src.label(), new_extents[Idx]..., static_cast<size_t>(src.accessor().fad_size() + 1));
+    Kokkos::fence();
+    Sacado::Impl::deep_copy(exec_space(), Kokkos::subview(dst, Kokkos::pair(0lu, Kokkos::min(new_extents[Idx], src.extent(Idx)))...),
+                                          Kokkos::subview(src, Kokkos::pair(0lu, Kokkos::min(new_extents[Idx], src.extent(Idx)))...));
+    Kokkos::fence();
+    src = dst;
+  }
+}
+
+}
+}
+
+namespace Kokkos {
 
 template <class SrcT, class... SrcArgs>
 void resize(Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT>, SrcArgs...> &src,
@@ -797,4 +831,3 @@ void resize(
   Sacado::Impl::resize_view(std::make_index_sequence<7>(), src, n0, n1, n2, n3, n4, n5, n6, n7);
 }
 } // namespace Kokkos
-#endif // SACADO_VIEW_CUDA_HIERARCHICAL

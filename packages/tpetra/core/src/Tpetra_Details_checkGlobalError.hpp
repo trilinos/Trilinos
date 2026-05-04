@@ -7,7 +7,7 @@
 // *****************************************************************************
 // @HEADER
 
-/// \file Tpetra_Details_globalError.hpp
+/// \file Tpetra_Details_checkGlobalError.hpp
 /// \brief Declaration of a function that reports a global error.
 ///
 /// \warning This is an implementation detail of Tpetra.  Users may

@@ -36,6 +36,8 @@ public:
   /** \brief Construct to uninitialized. */
   TpetraVector();
 
+  ~TpetraVector();
+
   /** \brief Initialize. */
   void initialize(
     const RCP<const TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &tpetraVectorSpace,
@@ -238,18 +240,10 @@ private:
  * \relates TpetraVector
  */
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-inline
 RCP<TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
 tpetraVector(
   const RCP<const TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &tpetraVectorSpace,
-  const RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &tpetraVector
-  )
-{
-  RCP<TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > v =
-    Teuchos::rcp(new TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>);
-  v->initialize(tpetraVectorSpace, tpetraVector);
-  return v;
-}
+  const RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &tpetraVector);
 
 
 /** \brief Nonmember constructor for TpetraVector.
@@ -257,18 +251,10 @@ tpetraVector(
  * \relates TpetraVector
  */
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-inline
 RCP<const TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
 constTpetraVector(
   const RCP<const TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &tpetraVectorSpace,
-  const RCP<const Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &tpetraVector
-  )
-{
-  RCP<TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > v =
-    Teuchos::rcp(new TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>);
-  v->constInitialize(tpetraVectorSpace, tpetraVector);
-  return v;
-}
+  const RCP<const Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &tpetraVector);
 
 
 } // end namespace Thyra

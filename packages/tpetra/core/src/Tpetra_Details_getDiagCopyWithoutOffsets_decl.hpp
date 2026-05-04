@@ -74,6 +74,7 @@ struct CrsMatrixGetDiagCopyFunctor {
   /// \brief Operator for Kokkos::parallel_for.
   ///
   /// \param lclRowInd [in] Index of current (local) row of the sparse matrix.
+  /// \param errCount [out] Error count accumulator.
   KOKKOS_FUNCTION void
   operator()(const LO& lclRowInd, value_type& errCount) const {
     const LO INV = Tpetra::Details::OrdinalTraits<LO>::invalid();

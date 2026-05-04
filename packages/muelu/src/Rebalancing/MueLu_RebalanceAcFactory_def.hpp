@@ -100,7 +100,8 @@ void RebalanceAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level 
       }
 
       if (!rebalancedAc.is_null()) {
-        rebalancedAc->SetFixedBlockSize(originalAc->GetFixedBlockSize());
+        if (originalAc->IsFixedBlockSizeSet())
+          rebalancedAc->SetFixedBlockSize(originalAc->GetFixedBlockSize());
         std::ostringstream oss;
         oss << "A_" << coarseLevel.GetLevelID();
         rebalancedAc->setObjectLabel(oss.str());

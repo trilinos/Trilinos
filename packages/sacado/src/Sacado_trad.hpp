@@ -361,7 +361,9 @@ T1(atanh)
 T1(cos)
 T1(cosh)
 T1(exp)
+T1(expm1)
 T1(log)
+T1(log1p)
 T1(log10)
 T1(sin)
 T1(sinh)
@@ -495,7 +497,9 @@ F r f <>(D,Ai);
         T1(R,cos)
         T1(R,cosh)
         T1(R,exp)
+        T1(R,expm1)
         T1(R,log)
+        T1(R,log1p)
         T1(R,log10)
         T2(R,pow)
         T1(R,sin)
@@ -807,7 +811,9 @@ T1(atanh)
 T1(cos)
 T1(cosh)
 T1(exp)
+T1(expm1)
 T1(log)
+T1(log1p)
 T1(log10)
 T1(sin)
 T1(sinh)
@@ -2440,10 +2446,26 @@ exp(const Base< ADvari<Double> > &vv) {
 
  template<typename Double>
  ADvari<Double>&
+expm1(const Base< ADvari<Double> > &vv) {
+   const ADvari<Double>& v = vv.derived();
+   Double x = v.Val;
+   return *(new ADvar1s<Double>(std::expm1(x), std::exp(x), &v));
+ }
+
+ template<typename Double>
+ ADvari<Double>&
 log(const Base< ADvari<Double> > &vv) {
    const ADvari<Double>& v = vv.derived();
    Double x = v.Val;
    return *(new ADvar1s<Double>(std::log(x), 1. / x, &v));
+ }
+
+ template<typename Double>
+ ADvari<Double>&
+log1p(const Base< ADvari<Double> > &vv) {
+   const ADvari<Double>& v = vv.derived();
+   Double x = v.Val;
+   return *(new ADvar1s<Double>(std::log1p(x), 1. / (1.+x), &v));
  }
 
  template<typename Double>
@@ -2675,7 +2697,9 @@ T1(atanh)
 T1(cos)
 T1(cosh)
 T1(exp)
+T1(expm1)
 T1(log)
+T1(log1p)
 T1(log10)
 T1(sin)
 T1(sinh)

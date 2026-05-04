@@ -213,6 +213,33 @@ class TrilinosPRConfigurationStandardTest(TestCase):
                                "generatedPRFragment.cmake"))
 
 
+    def test_AddressSanitizer_enabled(self):
+        """
+        Test that AddressSanitizer option gets propagated correctly.
+        """
+        print("")
+        args = self.dummy_args()
+        args.genconfig_build_name = "rhel8_sems-gnu-openmpi_release_static_no-kokkos-arch_asan_no-complex_no-fpic_mpi_no-pt_no-rdc_no-package-enables"
+        pr_config = trilinosprhelpers.TrilinosPRConfigurationStandard(args)
+
+        # prepare step
+        ret = pr_config.prepare_test()
+        self.assertEqual(ret, 0)
+        self.mock_cpu_count.assert_called()
+
+        # execute step
+        ret = pr_config.execute_test()
+        self.mock_chdir.assert_called_once()
+        self.mock_subprocess_check_call.assert_called()
+        self.assertEqual(ret, 0)
+        self.assertTrue(Path(os.path.join(args.workspace_dir,
+                                          "generatedPRFragment.cmake")).is_file())
+        os.unlink(os.path.join(args.workspace_dir,
+                               "generatedPRFragment.cmake"))
+
+        self.assertIn("-DENABLE_ASAN:BOOL=ON", self.mock_subprocess_check_call.call_args_list[-1][0][0])
+
+
     def test_TrilinosPRConfigurationStandardDryRun(self):
         """
         Test the Standard Configuration

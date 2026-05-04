@@ -15,7 +15,7 @@
 namespace MueLu {
 
 /*!
-  @class InterfaceAggregationFactory class.
+  @class InterfaceAggregationFactory
   @brief Factory for building aggregates for Lagrange multipliers in surface-coupled problems.
 
   ## Context, assumptions, and use cases ##

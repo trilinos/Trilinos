@@ -821,9 +821,16 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
             const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
   //! Create a fill-complete CrsMatrix from all the things it needs.
-  ///   \param lclMatrix [in] In almost all cases the local matrix
-  ///     must be sorted on input, but if it isn't sorted,
-  ///     "sorted" must be set to false in params.
+  /// \param lclMatrix [in] In almost all cases the local matrix
+  ///   must be sorted on input, but if it isn't sorted,
+  ///   "sorted" must be set to false in params.
+  /// \param rowMap [in] Row map.
+  /// \param colMap [in] Column map.
+  /// \param domainMap [in] Domain map.
+  /// \param rangeMap [in] Range map.
+  /// \param importer [in] Import.
+  /// \param exporter [in] Export.
+  /// \param params [in/out] Optional list of parameters.
   CrsMatrix(const local_matrix_device_type& lclMatrix,
             const Teuchos::RCP<const map_type>& rowMap,
             const Teuchos::RCP<const map_type>& colMap,
@@ -1051,6 +1058,7 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   /// \param inds [in] Global column indices of that row to modify.
   /// \param newVals [in] For each k, replace the value in rowVals
   ///   corresponding to local column index inds[k] with newVals[k].
+  /// \param numElts [in] Number of elements to replace.
   virtual LocalOrdinal
   replaceGlobalValuesImpl(impl_scalar_type rowVals[],
                           const crs_graph_type& graph,
@@ -1140,6 +1148,7 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   /// \param inds [in] Local column indices of that row to modify.
   /// \param newVals [in] For each k, replace the value in rowVals
   ///   corresponding to local column index inds[k] with newVals[k].
+  /// \param numElts [in] Number of elements to replace.
   virtual LocalOrdinal
   replaceLocalValuesImpl(impl_scalar_type rowVals[],
                          const crs_graph_type& graph,
@@ -1155,9 +1164,9 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   /// \param localRow [in] local index of the row in which to
   ///   replace the entries.  This row <i>must</i> be owned by the
   ///   calling process.
-  /// \param cols [in] Local indices of the columns in which to
+  /// \param inputInds [in] Local indices of the columns in which to
   ///   replace the entries.
-  /// \param vals [in] Values to use for replacing the entries.
+  /// \param inputVals [in] Values to use for replacing the entries.
   ///
   /// For local row index \c localRow and local column indices
   /// <tt>cols</tt>, do <tt>A(localRow, cols(k)) = vals(k)</tt>.
@@ -1251,6 +1260,8 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   /// \param inds [in] Global column indices of that row to modify.
   /// \param newVals [in] For each k, increment the value in rowVals
   ///   corresponding to global column index inds[k] by newVals[k].
+  /// \param numElts [in] Number of elements in the inds and newVals arrays.
+  /// \param atomic [in] Whether to use atomic updates.
   ///
   /// \return The number of valid input column indices.  In case of
   ///   error other than one or more invalid column indices, this
@@ -1349,6 +1360,7 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   /// \param inds [in] Local column indices of that row to modify.
   /// \param newVals [in] For each k, increment the value in rowVals
   ///   corresponding to local column index inds[k] by newVals[k].
+  /// \param numElts [in] Number of elements to sum into.
   /// \param atomic [in] Whether to use atomic updates (+=) when
   ///   incrementing values.
   virtual LocalOrdinal
@@ -1386,9 +1398,9 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   ///
   /// \param localRow [in] Local index of a row.  This row
   ///   <i>must</i> be owned by the calling process.
-  /// \param cols [in] Local indices of the columns whose entries we
+  /// \param inputInds [in] Local indices of the columns whose entries we
   ///   want to modify.
-  /// \param vals [in] Values corresponding to the above column
+  /// \param inputVals [in] Values corresponding to the above column
   ///   indices.  <tt>vals(k)</tt> corresponds to <tt>cols(k)</tt>.
   /// \param atomic [in] Whether to use atomic updates.
   ///
@@ -1650,7 +1662,7 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   ///                                   const impl_scalar_type&)>.
   ///
   /// \param lclRow [in] (Local) index of the row to modify.
-  ///   This row <i>must</t> be owned by the calling process.  (This
+  ///   This row <i>must</i> be owned by the calling process.  (This
   ///   is a stricter requirement than for sumIntoGlobalValues.)
   /// \param inputInds [in] (Local) indices in the row to modify.
   ///   Indices not in the row on the calling process, and their
@@ -1736,7 +1748,7 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   ///   in which the current matrix's row's values live.
   ///
   /// \param gblRow [in] (Global) index of the row to modify.  This
-  ///   row <i>must</t> be owned by the calling process.  (This is a
+  ///   row <i>must</i> be owned by the calling process.  (This is a
   ///   stricter requirement than for sumIntoGlobalValues.)
   /// \param inputInds [in] (Global) indices in the row to modify.
   ///   Indices not in the row on the calling process, and their
@@ -1826,7 +1838,7 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   /// The input argument might be used directly (shallow copy), or
   /// it might be (deep) copied.
   ///
-  /// \param ptr [in/out] Kokkos sparse local matrix
+  /// \param localMatrix [in] Kokkos sparse local matrix.
   ///   This is in/out because the matrix reserves the right to take this argument by
   ///   shallow copy.  Any method that changes the matrix's values
   ///   may then change this.
@@ -2290,7 +2302,7 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
 
   /// \brief Number of global elements in the row map of this matrix.
   ///
-  /// This is <it>not</it> the number of rows in the matrix as a
+  /// This is <i>not</i> the number of rows in the matrix as a
   /// mathematical object.  This method returns the global sum of
   /// the number of local elements in the row map on each processor,
   /// which is the row map's getGlobalNumElements().  Since the row
@@ -2844,6 +2856,13 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   //@{
 
   /// \brief Compute a sparse matrix-MultiVector multiply.
+  ///
+  /// \param X [in] Input MultiVector.
+  /// \param Y [in/out] Output MultiVector.
+  /// \param mode [in] Whether to apply the transpose (Teuchos::NO_TRANS,
+  ///   Teuchos::TRANS, Teuchos::CONJ_TRANS).
+  /// \param alpha [in] Scaling factor for the result.
+  /// \param beta [in] Scaling factor for Y before adding the result.
   ///
   /// This method computes <tt>Y := beta*Y + alpha*Op(A)*X</tt>,
   /// where <tt>Op(A)</tt> is either \f$A\f$, \f$A^T\f$ (the
@@ -3824,6 +3843,11 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
                        const bool force = false) const;
 
   //! Special case of apply() for <tt>mode == Teuchos::NO_TRANS</tt>.
+  ///
+  /// \param X_in [in] Input MultiVector.
+  /// \param Y_in [in/out] Output MultiVector.
+  /// \param alpha [in] Scaling factor for the result.
+  /// \param beta [in] Scaling factor for Y before adding the result.
   void
   applyNonTranspose(const MV& X_in,
                     MV& Y_in,
@@ -3831,6 +3855,13 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
                     Scalar beta) const;
 
   //! Special case of apply() for <tt>mode != Teuchos::NO_TRANS</tt>.
+  ///
+  /// \param X_in [in] Input MultiVector.
+  /// \param Y_in [in/out] Output MultiVector.
+  /// \param mode [in] Whether to apply the transpose (Teuchos::TRANS,
+  ///   or Teuchos::CONJ_TRANS).
+  /// \param alpha [in] Scaling factor for the result.
+  /// \param beta [in] Scaling factor for Y before adding the result.
   void
   applyTranspose(const MV& X_in,
                  MV& Y_in,

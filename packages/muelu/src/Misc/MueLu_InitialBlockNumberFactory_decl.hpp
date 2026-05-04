@@ -21,7 +21,7 @@
 namespace MueLu {
 
 /*!
-  @class InitialBlockNumberFactory class.
+  @class InitialBlockNumberFactory
   @brief Class for generating an initial LocalOrdinal-type BlockNumber vector, based on an input paraemter for interleaved dofs.
 
 

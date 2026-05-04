@@ -39,7 +39,7 @@
 namespace MueLu {
 
 /*!
-    @class HybridAggregationFactory class.
+    @class HybridAggregationFactory
     @brief Factory for building aggregates on meshes partly structured and partly unstructured.
 
     Factory for creating aggregates from partly structured grids. The hybrid aggregation method

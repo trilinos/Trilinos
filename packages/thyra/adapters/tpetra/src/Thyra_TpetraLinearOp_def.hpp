@@ -13,10 +13,9 @@
 #include "Thyra_TpetraLinearOp_decl.hpp"
 #include "Kokkos_Core.hpp"
 #include "Thyra_TpetraVectorSpace.hpp"
+#include "Thyra_TpetraThyraWrappers.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
-
-#include "Tpetra_CrsMatrix.hpp"
 
 #ifdef HAVE_THYRA_TPETRA_EPETRA
 #  include "Thyra_EpetraThyraWrappers.hpp"
@@ -104,9 +103,11 @@ convertToTeuchosTransMode(const Thyra::EOpTransp transp)
 
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TpetraLinearOp()
-{}
+TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TpetraLinearOp() = default;
 
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::~TpetraLinearOp() = default;
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::initialize(
@@ -443,7 +444,50 @@ void TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::initializeImpl(
 }
 
 
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<TpetraLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+tpetraLinearOp(
+  const RCP<const VectorSpaceBase<Scalar> > &rangeSpace,
+  const RCP<const VectorSpaceBase<Scalar> > &domainSpace,
+  const RCP<Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &tpetraOperator
+  )
+{
+  const RCP<TpetraLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node> > op =
+    Teuchos::rcp(new TpetraLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node>);
+  op->initialize(rangeSpace, domainSpace, tpetraOperator);
+  return op;
+}
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<const TpetraLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+constTpetraLinearOp(
+  const RCP<const VectorSpaceBase<Scalar> > &rangeSpace,
+  const RCP<const VectorSpaceBase<Scalar> > &domainSpace,
+  const RCP<const Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &tpetraOperator
+  )
+{
+  const RCP<TpetraLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node> > op =
+    Teuchos::rcp(new TpetraLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node>);
+  op->constInitialize(rangeSpace, domainSpace, tpetraOperator);
+  return op;
+}
+
+
 } // namespace Thyra
 
+#define THYRATPETRAADAPTERS_TPETRALINEAROP_INSTANT(S, LO, GO, N)               \
+  template class Thyra::TpetraLinearOp<S, LO, GO, N>;                          \
+                                                                               \
+  template Teuchos::RCP<Thyra::TpetraLinearOp<S, LO, GO, N>>                   \
+  Thyra::tpetraLinearOp(const Teuchos::RCP<const Thyra::VectorSpaceBase<S>> &, \
+                        const Teuchos::RCP<const Thyra::VectorSpaceBase<S>> &, \
+                        const Teuchos::RCP<Tpetra::Operator<S, LO, GO, N>> &); \
+                                                                               \
+  template Teuchos::RCP<const Thyra::TpetraLinearOp<S, LO, GO, N>>             \
+  Thyra::constTpetraLinearOp(                                                  \
+      const Teuchos::RCP<const Thyra::VectorSpaceBase<S>> &,                   \
+      const Teuchos::RCP<const Thyra::VectorSpaceBase<S>> &,                   \
+      const Teuchos::RCP<const Tpetra::Operator<S, LO, GO, N>> &);
 
 #endif  // THYRA_TPETRA_LINEAR_OP_HPP

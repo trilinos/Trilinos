@@ -18,7 +18,7 @@ namespace Tpetra {
 namespace Details {
 
 /// \brief <tt> A(lclRow, lclColsInds[sortPerm[j]]) += vals[sortPerm[j]]</tt>,
-///   for all j in </tt>0 .. eltDim-1</tt>.
+///   for all j in <tt>0 .. eltDim-1</tt>.
 ///
 /// In the row of the matrix A with the local row index lclRow, find
 /// entries with column indices lclColInds, and sum into those entries
@@ -138,7 +138,7 @@ KOKKOS_FUNCTION
 }
 
 /// \brief <tt> A(lclRow, lclColsInds[sortPerm[j]]) = vals[sortPerm[j]]</tt>,
-///   for all j in </tt>0 .. eltDim-1</tt>.
+///   for all j in <tt>0 .. eltDim-1</tt>.
 ///
 /// In the row of the matrix A with the local row index lclRow, find
 /// entries with column indices lclColInds, and replace those entries
@@ -260,7 +260,7 @@ KOKKOS_FUNCTION
 
 /// \brief <tt>A(lids[j], lids[j]) += lhs(j,j)</tt> and
 ///   <tt>x(lids[j]) += rhs(j)</tt>,
-///   for all j in </tt>0 .. eltDim-1</tt>.
+///   for all j in <tt>0 .. eltDim-1</tt>.
 ///
 /// Assume the following:
 /// <ul>

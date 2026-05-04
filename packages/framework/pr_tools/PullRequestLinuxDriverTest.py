@@ -44,7 +44,7 @@ def parse_args():
                           dest="target_branch_name",
                           action='store',
                           help='Branch to merge into',
-                          required=True)
+                          required=False)
 
     required.add_argument('--genconfig-build-name',
                           dest="genconfig_build_name",
@@ -56,7 +56,7 @@ def parse_args():
                           dest="pullrequest_number",
                           action='store',
                           help='The github PR number',
-                          required=True)
+                          required=False)
 
     required.add_argument('--source-dir',
                           dest="source_dir",

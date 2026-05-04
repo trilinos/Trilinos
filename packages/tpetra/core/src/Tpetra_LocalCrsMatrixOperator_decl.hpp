@@ -66,6 +66,14 @@ class LocalCrsMatrixOperator : public LocalOperator<MultiVectorScalar, Device> {
   LocalCrsMatrixOperator(const std::shared_ptr<local_matrix_device_type>& A, const ordinal_view_type& A_ordinal_rowptrs);
   ~LocalCrsMatrixOperator() override = default;
 
+  /// \brief Compute <tt>Y := beta*Y + alpha*Op(A)*X</tt>.
+  ///
+  /// \param X [in] Input MultiVector.
+  /// \param Y [in/out] Output MultiVector.
+  /// \param mode [in] Whether to apply the transpose (Teuchos::NO_TRANS,
+  ///   Teuchos::TRANS, Teuchos::CONJ_TRANS).
+  /// \param alpha [in] Scaling factor for the result.
+  /// \param beta [in] Scaling factor for Y before adding the result.
   void
   apply(Kokkos::View<const mv_scalar_type**, array_layout,
                      device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
@@ -77,6 +85,15 @@ class LocalCrsMatrixOperator : public LocalOperator<MultiVectorScalar, Device> {
         const mv_scalar_type alpha,
         const mv_scalar_type beta) const override;
 
+  /// \brief Compute <tt>Y := beta*Y + alpha*Op(A)*X</tt>, with a hint
+  ///   to use an SPMV algorithm for imbalanced rows.
+  ///
+  /// \param X [in] Input MultiVector.
+  /// \param Y [in/out] Output MultiVector.
+  /// \param mode [in] Whether to apply the transpose (Teuchos::NO_TRANS,
+  ///   Teuchos::TRANS, Teuchos::CONJ_TRANS).
+  /// \param alpha [in] Scaling factor for the result.
+  /// \param beta [in] Scaling factor for Y before adding the result.
   void
   applyImbalancedRows(
       Kokkos::View<const mv_scalar_type**, array_layout,

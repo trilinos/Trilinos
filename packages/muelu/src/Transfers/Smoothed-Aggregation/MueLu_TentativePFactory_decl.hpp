@@ -40,7 +40,7 @@
 namespace MueLu {
 
 /*!
-  @class TentativePFactory class.
+  @class TentativePFactory
   @brief Factory for building tentative prolongator.
 
   Factory for creating tentative prolongator.   Nullspace vectors are split across aggregates so that they

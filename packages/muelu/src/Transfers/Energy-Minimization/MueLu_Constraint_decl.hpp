@@ -82,7 +82,7 @@ class Constraint
 #include "MueLu_UseShortNames.hpp"
  public:
   /*!
-    @class Constraint class.
+    @class Constraint
     @brief Class which contains the constraint space details
     */
 

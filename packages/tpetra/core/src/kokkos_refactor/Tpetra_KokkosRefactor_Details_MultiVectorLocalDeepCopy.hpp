@@ -62,7 +62,7 @@ void copyConvertResolvingPossibleAliasing(const DstViewType& dst,
 /// <li> <tt>Tpetra::deep_copy</tt> </li>
 /// <li> <tt>Tpetra::MultiVector::assign</tt> </li>
 /// <li> <tt>Tpetra::MultiVector::createCopy</tt> </li>
-/// <li> <tt>The two-argument MultiVector copy constructor with
+/// <li> The two-argument MultiVector copy constructor with
 ///          <tt>Teuchos::Copy</tt> as the second argument </li>
 /// </ul>
 ///

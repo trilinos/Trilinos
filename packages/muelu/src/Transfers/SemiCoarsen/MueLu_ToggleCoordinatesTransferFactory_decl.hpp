@@ -18,7 +18,7 @@
 namespace MueLu {
 
 /*!
-  @class ToggleCoordinatesTransferFactory class.
+  @class ToggleCoordinatesTransferFactory
   @brief Class for transferring coordinates from a finer level to a coarser one
 
 */

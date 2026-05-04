@@ -22,7 +22,7 @@
 namespace MueLu {
 
 /*!
-  @class CoordinatesTransferFactory class.
+  @class CoordinatesTransferFactory
   @brief Class for transferring coordinates from a finer level to a coarser one
 
     This is separate from MultiVectorTransferFactory which potentially can be used for scalar problems.

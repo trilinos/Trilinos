@@ -571,9 +571,8 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
 
       // Preconditioner control options
       bool useAMGX = mueluList.isParameter("use external multigrid package") && (mueluList.get<std::string>("use external multigrid package") == "amgx");
-      bool useML   = mueluList.isParameter("use external multigrid package") && (mueluList.get<std::string>("use external multigrid package") == "ml");
 #ifdef HAVE_MPI
-      if (provideNodeComm && !useAMGX && !useML) {
+      if (provideNodeComm && !useAMGX) {
         Teuchos::ParameterList& userParamList = mueluList.sublist("user data");
         userParamList.set("Node Comm", nodeComm);
       }
@@ -603,7 +602,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
         RCP<Operator> Prec;
         // Build the preconditioner numRebuilds+1 times
         if (solvePreconditioned) {
-          PreconditionerSetup(A, coordinates, nullspace, material, blocknumber, mueluList, profileSetup, useAMGX, useML, setNullSpace, numRebuilds, H, Prec, performSacrificeSetup);
+          PreconditionerSetup(A, coordinates, nullspace, material, blocknumber, mueluList, profileSetup, useAMGX, setNullSpace, numRebuilds, H, Prec, performSacrificeSetup);
         }
         comm->barrier();
         tm = Teuchos::null;
@@ -628,7 +627,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
         // =========================================================================
         // Solve the system numResolves+1 times
         try {
-          SystemSolve(A, X, B, H, Prec, out2, solveType, belosType, profileSolve, useAMGX, useML, cacheSize, numResolves, scaleResidualHist, solvePreconditioned, maxIts, tol, computeCondEst, enforceBoundaryConditionsOnInitialGuess, performSacrificeSolve);
+          SystemSolve(A, X, B, H, Prec, out2, solveType, belosType, profileSolve, useAMGX, cacheSize, numResolves, scaleResidualHist, solvePreconditioned, maxIts, tol, computeCondEst, enforceBoundaryConditionsOnInitialGuess, performSacrificeSolve);
 
           comm->barrier();
         } catch (const std::exception& e) {

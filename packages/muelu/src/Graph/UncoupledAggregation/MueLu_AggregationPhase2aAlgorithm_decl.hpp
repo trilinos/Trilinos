@@ -21,7 +21,7 @@
 
 namespace MueLu {
 /*!
-  @class AggregationPhase2aAlgorithm class.
+  @class AggregationPhase2aAlgorithm
   @brief Among unaggregated points, see if we can make a reasonable size aggregate out of it.
   @ingroup Aggregation
 

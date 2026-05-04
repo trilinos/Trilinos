@@ -45,7 +45,7 @@
 namespace MueLu {
 
 /*!
-  @class FactoryManager class.
+  @class FactoryManager
   @brief This class specifies the default factory that should generate some data on a Level if the data does not exist and
   the generating factory has not been specified.
 

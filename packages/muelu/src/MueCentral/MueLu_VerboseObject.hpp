@@ -19,7 +19,7 @@
 namespace MueLu {
 
 /*!
-  @class VerboseObject class.
+  @class VerboseObject
   @brief Verbose class for MueLu classes
 
   This class is inspired by BelosOutputManager but:

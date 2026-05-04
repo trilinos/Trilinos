@@ -22,6 +22,7 @@
 
 #include "MueLu_Level.hpp"
 #include "MueLu_Monitor.hpp"
+#include "MueLu_Behavior.hpp"
 
 namespace MueLu {
 
@@ -107,40 +108,40 @@ void LocalOrdinalTransferFactory<LocalOrdinal, GlobalOrdinal, Node>::BuildFC(Lev
     }
   }
 
-#ifdef HAVE_MUELU_DEBUG
-  size_t error_count = 0;
-  {
-    RCP<LocalOrdinalVector> coarseTVghosted;
-    RCP<const Import> importer = P->getImporter();
-    if (!importer.is_null()) {
-      coarseTVghosted = LocalOrdinalVectorFactory::Build(P->getColMap(), 1);
-      coarseTVghosted->doImport(*coarseTV, *importer, Xpetra::INSERT);
-    } else {
-      coarseTVghosted = coarseTV;
-    }
-    ArrayRCP<LO> coarseDataGhosted = coarseTVghosted->getDataNonConst(0);
-    for (LO col = 0; col < (LO)P->getColMap()->getLocalNumElements(); col++) {
-      if (coarseDataGhosted[col] == LO_INVALID)
-        error_count++;
-    }
-    for (LO row = 0; row < (LO)P->getLocalNumRows(); row++) {
-      LO fineNumber = fineData[row];
-      ArrayView<const LO> indices;
-      P->getLocalRowView(row, indices);
-      for (LO j = 0; j < (LO)indices.size(); j++) {
-        if (coarseDataGhosted[indices[j]] != fineNumber)
+  if (Behavior::debug()) {
+    size_t error_count = 0;
+    {
+      RCP<LocalOrdinalVector> coarseTVghosted;
+      RCP<const Import> importer = P->getImporter();
+      if (!importer.is_null()) {
+        coarseTVghosted = LocalOrdinalVectorFactory::Build(P->getColMap(), 1);
+        coarseTVghosted->doImport(*coarseTV, *importer, Xpetra::INSERT);
+      } else {
+        coarseTVghosted = coarseTV;
+      }
+      ArrayRCP<LO> coarseDataGhosted = coarseTVghosted->getDataNonConst(0);
+      for (LO col = 0; col < (LO)P->getColMap()->getLocalNumElements(); col++) {
+        if (coarseDataGhosted[col] == LO_INVALID)
           error_count++;
       }
+      for (LO row = 0; row < (LO)P->getLocalNumRows(); row++) {
+        LO fineNumber = fineData[row];
+        ArrayView<const LO> indices;
+        P->getLocalRowView(row, indices);
+        for (LO j = 0; j < (LO)indices.size(); j++) {
+          if (coarseDataGhosted[indices[j]] != fineNumber)
+            error_count++;
+        }
+      }
+    }
+
+    // Error checking:  All nodes in an aggregate must share a local ordinal
+    if (error_count > 0) {
+      std::ostringstream ofs;
+      ofs << "LocalOrdinalTransferFactory(" << TransferVecName_ << "): ERROR:  Each coarse dof must have a unique LO value.  We had " << std::to_string(error_count) << " unknowns that did not match.";
+      throw std::runtime_error(ofs.str());
     }
   }
-
-  // Error checking:  All nodes in an aggregate must share a local ordinal
-  if (error_count > 0) {
-    std::ostringstream ofs;
-    ofs << "LocalOrdinalTransferFactory(" << TransferVecName_ << "): ERROR:  Each coarse dof must have a unique LO value.  We had " << std::to_string(error_count) << " unknowns that did not match.";
-    throw std::runtime_error(ofs.str());
-  }
-#endif
 
   Set<RCP<LocalOrdinalVector> >(coarseLevel, TransferVecName_, coarseTV);
 }

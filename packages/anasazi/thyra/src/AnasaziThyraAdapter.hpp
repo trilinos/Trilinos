@@ -288,7 +288,11 @@ namespace Anasazi {
         \c i-th columns of \c A and \c mv, i.e.\f$b[i] = A[i]^Tmv[i]\f$.
      */
     static void MvDot( const TMVB & mv, const TMVB & A, std::vector<ScalarType> &b )
-    { Thyra::dots(mv,A,Teuchos::arrayViewFromVector( b )); }
+    { 
+      int n = mv.domain()->dim();
+      Teuchos::ArrayView<ScalarType> av (b);
+      Thyra::dots(mv, A, av( 0, n )); 
+    }
 
     /*! \brief Scale each element of the vectors in \c *this with \c alpha.
      */

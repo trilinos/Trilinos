@@ -27,7 +27,7 @@
 namespace MueLu {
 
 /*!
-  @class SaPFactory class.
+  @class SaPFactory
   @brief Factory for building Smoothed Aggregation prolongators.
   @ingroup MueLuTransferClasses
 

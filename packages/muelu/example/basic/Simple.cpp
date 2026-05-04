@@ -187,7 +187,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   // =========================================================================
   // Preconditioner construction
   // =========================================================================
-  bool useML = paramList.isParameter("use external multigrid package") && (paramList.get<std::string>("use external multigrid package") == "ml");
   out << "*********** MueLu ParameterList ***********" << std::endl;
   out << paramList;
   out << "*******************************************" << std::endl;
@@ -197,7 +196,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   {
     comm->barrier();
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 2 - MueLu Setup")));
-    PreconditionerSetup(A, coordinates, nullspace, material, blocknumber, paramList, false, false, useML, false, 0, H, Prec);
+    PreconditionerSetup(A, coordinates, nullspace, material, blocknumber, paramList, false, false, false, 0, H, Prec);
     comm->barrier();
     tm = Teuchos::null;
   }
@@ -207,7 +206,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   // =========================================================================
   {
     comm->barrier();
-    SystemSolve(A, X, B, H, Prec, out, solveType, belosType, false, false, useML, cacheSize, 0, scaleResidualHist, solvePreconditioned, maxIts, tol, computeCondEst, enforceBoundaryConditionsOnInitialGuess, performSacrifice);
+    SystemSolve(A, X, B, H, Prec, out, solveType, belosType, false, false, cacheSize, 0, scaleResidualHist, solvePreconditioned, maxIts, tol, computeCondEst, enforceBoundaryConditionsOnInitialGuess, performSacrifice);
     comm->barrier();
   }
 

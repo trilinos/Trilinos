@@ -5,21 +5,11 @@ TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../test/unit_tests
 # Executables
 #
 
-IF((${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
-   OR (${PACKAGE_NAME}_ENABLE_Epetra
-       AND ${PACKAGE_NAME}_ENABLE_EpetraExt
-       AND ${PACKAGE_NAME}_ENABLE_Ifpack
-       AND ${PACKAGE_NAME}_ENABLE_Amesos
-      )
+TRIBITS_ADD_EXECUTABLE(
+  LevelWrap
+  SOURCES LevelWrap.cpp
+  COMM serial mpi
 )
-
-  TRIBITS_ADD_EXECUTABLE(
-    LevelWrap
-    SOURCES LevelWrap.cpp
-    COMM serial mpi
-  )
-
-ENDIF()
 
 #
 # Tests
@@ -27,12 +17,4 @@ ENDIF()
 
 INCLUDE(XpetraAddTest)
 
-IF(${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
-  XPETRA_ADD_TEST_TPETRA(LevelWrap 4)
-ENDIF()
-IF(${PACKAGE_NAME}_ENABLE_Epetra
-   AND ${PACKAGE_NAME}_ENABLE_Ifpack
-   AND ${PACKAGE_NAME}_ENABLE_Amesos
-)
-  XPETRA_ADD_TEST_EPETRA(LevelWrap 4)
-ENDIF()
+XPETRA_ADD_TEST_TPETRA(LevelWrap 4)

@@ -7,267 +7,228 @@
 // *****************************************************************************
 // @HEADER
 //
-//  This test is for the SIRTR/IRTR solvers using the Thyra interface
-//  The Thyra objects will be extracted from Epetra objects using the
-//  Epetra-Thyra interface.
-//  Therefore, this test should yield identical results compared against
-//  the Epetra-only IRTR solver test.
-//
+// This test is for RTR solving a standard (Ax=xl) Hermitian
+// eigenvalue problem where the operator (A) is the 1D finite-differenced Laplacian
+// operator.
+
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziTypes.hpp"
 
-#include "AnasaziEpetraAdapter.hpp"
-#include "Epetra_CrsMatrix.h"
-
+#include "AnasaziTpetraAdapter.hpp"
 #include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziRTRSolMgr.hpp"
-#include "Teuchos_CommandLineProcessor.hpp"
-#include "Teuchos_StandardCatchMacros.hpp"
-#ifdef HAVE_ANASAZI_MPI
-#include "Epetra_MpiComm.h"
-#include <mpi.h>
-#else
-#include "Epetra_SerialComm.h"
-#endif
+#include <Teuchos_CommandLineProcessor.hpp>
 
 #include "AnasaziThyraAdapter.hpp"
-#include "Thyra_EpetraThyraWrappers.hpp"
-#include "Thyra_EpetraLinearOp.hpp"
+#include "Thyra_TpetraThyraWrappers.hpp"
+#include "Thyra_TpetraLinearOp.hpp"
 
-#include "ModeLaplace1DQ1.h"
+#include <Tpetra_Core.hpp>
+#include <Tpetra_CrsMatrix.hpp>
 
-using namespace Teuchos;
-
-int main(int argc, char *argv[]) 
+int main(int argc, char *argv[])
 {
-
-  using Teuchos::rcp_implicit_cast;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::tuple;
   using std::cout;
   using std::endl;
 
-  bool boolret;
-  int MyPID;
+  typedef double                              ST;
+  typedef Teuchos::ScalarTraits<ST>          SCT;
+  typedef SCT::magnitudeType                  MT;
+  typedef Thyra::MultiVectorBase<ST>          MV;
+  typedef Thyra::LinearOpBase<ST>             OP;
+  typedef Tpetra::MultiVector<ST>            tMV;
+  typedef tMV::global_ordinal_type            GO;
+  typedef tMV::local_ordinal_type             LO;
+  typedef tMV::node_type                    Node;
+  typedef Anasazi::MultiVecTraits<ST,MV>     MVT;
+  typedef Anasazi::OperatorTraits<ST,MV,OP>  OPT;
+  const ST ONE  = SCT::one();
 
-#ifdef HAVE_ANASAZI_MPI
-  // Initialize MPI
-  MPI_Init(&argc,&argv);
-  Epetra_MpiComm Comm(MPI_COMM_WORLD);
-#else
-  Epetra_SerialComm Comm;
-#endif
-  MyPID = Comm.MyPID();
+  Tpetra::ScopeGuard tpetraScope (&argc,&argv);
+  {
 
-  bool testFailed = false;
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
+
+  const int MyPID = comm->getRank ();
+  const int NumImages = comm->getSize ();
+
+  bool testFailed;
   bool verbose = false;
   bool debug = false;
-  std::string filename("mhd1280b.cua");
-  std::string which("LR");
   bool skinny = true;
+  std::string which("LR");
+  int nev = 4;
+  int blockSize = 4;
+  MT tol = 1.0e-6;
 
-  bool success = true;
-  try {
+  Teuchos::CommandLineProcessor cmdp(false,true);
+  cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+  cmdp.setOption("skinny","hefty",&skinny,"Use a skinny (low-mem) or hefty (higher-mem) implementation of IRTR.");
+  cmdp.setOption("debug","nodebug",&debug,"Print debugging information.");
+  cmdp.setOption("sort",&which,"Targetted eigenvalues (SR or LR).");
+  cmdp.setOption("nev",&nev,"Number of eigenvalues to compute.");
+  cmdp.setOption("blockSize",&blockSize,"Block size for the algorithm.");
+  cmdp.setOption("tol",&tol,"Tolerance for convergence.");
+  if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
+    return -1;
+  }
+  if (debug) verbose = true;
+  if (blockSize < nev) {
+    blockSize = nev;
+  }
 
-    CommandLineProcessor cmdp(false,true);
-    cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
-    cmdp.setOption("debug","nodebug",&debug,"Print debugging information.");
-    cmdp.setOption("sort",&which,"Targetted eigenvalues (SR or LR).");
-    cmdp.setOption("skinny","hefty",&skinny,"Use a skinny (low-mem) or hefty (higher-mem) implementation of IRTR.");
-    if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
-#ifdef HAVE_ANASAZI_MPI
-      MPI_Finalize();
-#endif
-      return -1;
-    }
+  if (MyPID == 0) {
+    cout << Anasazi::Anasazi_Version() << endl << endl;
+  }
 
-    typedef double ScalarType;
-    typedef ScalarTraits<ScalarType>                   SCT;
-    typedef SCT::magnitudeType               MagnitudeType;
-    typedef Thyra::MultiVectorBase<double>              MV;
-    typedef Thyra::LinearOpBase<double>                 OP;
-    typedef Anasazi::MultiVecTraits<ScalarType,MV>     MVT;
-    typedef Anasazi::OperatorTraits<ScalarType,MV,OP>  OPT;
-    const ScalarType ONE  = SCT::one();
+  // -- Set finite difference grid
+  const int ROWS_PER_PROC = 10;
+  int dim = ROWS_PER_PROC * NumImages;
 
-    if (verbose && MyPID == 0) {
-      cout << Anasazi::Anasazi_Version() << endl << endl;
-    }
-
-    //  Problem information
-    int space_dim = 1;
-    std::vector<double> brick_dim( space_dim );
-    brick_dim[0] = 1.0;
-    std::vector<int> elements( space_dim );
-    elements[0] = 100;
-
-    // Create problem
-    RCP<ModalProblem> testCase = rcp( new ModeLaplace1DQ1(Comm, brick_dim[0], elements[0]) );
-    //
-    // Get the stiffness and mass matrices
-    RCP<Epetra_CrsMatrix> K = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getStiffness()), false );
-    RCP<Epetra_CrsMatrix> M = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getMass()), false );
-    //
-    // Create the initial vectors
-    int blockSize = 5;
-    //
-    // Get a pointer to the Epetra_Map
-    RCP<const Epetra_Map> Map =  rcp( &K->OperatorDomainMap(), false );
-    //
-    // create an epetra multivector
-    RCP<Epetra_MultiVector> ivec = 
-      rcp( new Epetra_MultiVector(K->OperatorDomainMap(), blockSize) );
-    ivec->Random();
-
-    // create a Thyra::VectorSpaceBase
-    RCP<const Thyra::VectorSpaceBase<double> > epetra_vs = 
-      Thyra::create_VectorSpace(Map);
-
-    // create a MultiVectorBase (from the Epetra_MultiVector)
-    RCP<Thyra::MultiVectorBase<double> > thyra_ivec = 
-      Thyra::create_MultiVector(ivec, epetra_vs);
-
-    // Create Thyra LinearOpBase objects from the Epetra_Operator objects
-    RCP<const Thyra::LinearOpBase<double> > thyra_K = 
-      Thyra::epetraLinearOp(K);
-    RCP<const Thyra::LinearOpBase<double> > thyra_M = 
-      Thyra::epetraLinearOp(M);
-
-    // Create eigenproblem
-    const int nev = 5;
-    RCP<Anasazi::BasicEigenproblem<ScalarType,MV,OP> > problem =
-      rcp( new Anasazi::BasicEigenproblem<ScalarType,MV,OP>(thyra_K,thyra_M,thyra_ivec) );
-    //
-    // Inform the eigenproblem that the operator K is symmetric
-    problem->setHermitian(true);
-    //
-    // Set the number of eigenvalues requested
-    problem->setNEV( nev );
-    //
-    // Inform the eigenproblem that you are done passing it information
-    boolret = problem->setProblem();
-    if (boolret != true) {
-      if (verbose && MyPID == 0) {
-        cout << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << endl
-          << "End Result: TEST FAILED" << endl;	
-      }
-#ifdef HAVE_ANASAZI_MPI
-      MPI_Finalize() ;
-#endif
-      return -1;
-    }
-
-
-    // Set verbosity level
-    int verbosity = Anasazi::Errors + Anasazi::Warnings;
-    if (verbose) {
-      verbosity += Anasazi::FinalSummary + Anasazi::TimingDetails;
-    }
-    if (debug) {
-      verbosity += Anasazi::Debug;
-    }
-
-
-    // Eigensolver parameters
-    int maxIters = 450;
-    MagnitudeType tol = 1.0e-6;
-    //
-    // Create parameter list to pass into the solver manager
-    ParameterList MyPL;
-    MyPL.set( "Verbosity", verbosity );
-    MyPL.set( "Which", which );
-    MyPL.set( "Block Size", blockSize );
-    MyPL.set( "Maximum Iterations", maxIters );
-    MyPL.set( "Convergence Tolerance", tol );
-    MyPL.set( "Skinny Solver", skinny);
-    //
-    // Create the solver manager
-    Anasazi::RTRSolMgr<ScalarType,MV,OP> MySolverMan(problem, MyPL);
-    // 
-    // Check that the parameters were all consumed
-    if (MyPL.getEntryPtr("Verbosity")->isUsed() == false ||
-        MyPL.getEntryPtr("Which")->isUsed() == false ||
-        MyPL.getEntryPtr("Block Size")->isUsed() == false ||
-        MyPL.getEntryPtr("Maximum Iterations")->isUsed() == false ||
-        MyPL.getEntryPtr("Convergence Tolerance")->isUsed() == false ||
-        MyPL.getEntryPtr("Skinny Solver")->isUsed() == false) {
-      if (verbose && MyPID==0) {
-        cout << "Failure! Unused parameters: " << endl;
-        MyPL.unused(cout);
-      }
-    }
-
-
-    // Solve the problem to the specified tolerances or length
-    Anasazi::ReturnType returnCode = MySolverMan.solve();
-    if (returnCode != Anasazi::Converged) {
-      testFailed = true;
-    }
-
-    // Get the eigenvalues and eigenvectors from the eigenproblem
-    Anasazi::Eigensolution<ScalarType,MV> sol = problem->getSolution();
-    std::vector<Anasazi::Value<ScalarType> > evals = sol.Evals;
-    RCP<MV> evecs = sol.Evecs;
-    int numev = sol.numVecs;
-
-    if (numev > 0) {
-
-      std::ostringstream os;
-      os.setf(std::ios::scientific, std::ios::floatfield);
-      os.precision(6);
-
-      // Compute the direct residual
-      std::vector<ScalarType> normV( numev );
-      SerialDenseMatrix<int,ScalarType> T(numev,numev);
-      for (int i=0; i<numev; i++) {
-        T(i,i) = evals[i].realpart;
-      }
-      RCP<MV> Mvecs = MVT::Clone( *evecs, numev ),
-        Kvecs = MVT::Clone( *evecs, numev );
-      OPT::Apply( *thyra_K, *evecs, *Kvecs );
-      OPT::Apply( *thyra_M, *evecs, *Mvecs );
-      MVT::MvTimesMatAddMv( -ONE, *Mvecs, T, ONE, *Kvecs );
-      // compute M-norm of residuals
-      OPT::Apply( *thyra_M, *Kvecs, *Mvecs );
-      MVT::MvDot( *Mvecs, *Kvecs, normV );
-
-      os << "Direct residual norms computed in LOBPCGThyra_test.exe" << endl
-        << std::setw(20) << "Eigenvalue" << std::setw(20) << "Residual(M)" << endl
-        << "----------------------------------------" << endl;
-      for (int i=0; i<numev; i++) {
-        if ( SCT::magnitude(evals[i].realpart) != SCT::zero() ) {
-          normV[i] = SCT::magnitude( SCT::squareroot( normV[i] ) / evals[i].realpart );
-        }
-        else {
-          normV[i] = SCT::magnitude( SCT::squareroot( normV[i] ) );
-        }
-        os << std::setw(20) << evals[i].realpart << std::setw(20) << normV[i] << endl;
-        if ( normV[i] > tol ) {
-          testFailed = true;
-        }
-      }
-      if (verbose && MyPID==0) {
-        cout << endl << os.str() << endl;
-      }
-
+  // create map
+  Teuchos::RCP<const Tpetra::Map<LO,GO,Node> > Map = rcp (new Tpetra::Map<LO,GO,Node> (dim,ROWS_PER_PROC,0,comm));
+  Teuchos::RCP<Tpetra::CrsMatrix<ST,LO,GO,Node> > A = rcp (new Tpetra::CrsMatrix<ST,LO,GO,Node> (Map, 4));
+  int base = MyPID*ROWS_PER_PROC;
+  if (MyPID != NumImages-1) {
+    for (int i=0; i<ROWS_PER_PROC; ++i) {
+      A->insertGlobalValues(static_cast<GO>(base+i  ), tuple<GO>(base+i  ), tuple<ST>( 2));
+      A->insertGlobalValues(static_cast<GO>(base+i  ), tuple<GO>(base+i+1), tuple<ST>(-1));
+      A->insertGlobalValues(static_cast<GO>(base+i+1), tuple<GO>(base+i  ), tuple<ST>(-1));
+      A->insertGlobalValues(static_cast<GO>(base+i+1), tuple<GO>(base+i+1), tuple<ST>( 2));
     }
   }
-  TEUCHOS_STANDARD_CATCH_STATEMENTS(true,cout,success);
+  else {
+    for (int i=0; i<ROWS_PER_PROC-1; ++i) {
+      A->insertGlobalValues(static_cast<GO>(base+i  ), tuple<GO>(base+i  ), tuple<ST>( 2));
+      A->insertGlobalValues(static_cast<GO>(base+i  ), tuple<GO>(base+i+1), tuple<ST>(-1));
+      A->insertGlobalValues(static_cast<GO>(base+i+1), tuple<GO>(base+i  ), tuple<ST>(-1));
+      A->insertGlobalValues(static_cast<GO>(base+i+1), tuple<GO>(base+i+1), tuple<ST>( 2));
+    }
+  }
+  A->fillComplete();
 
-#ifdef HAVE_ANASAZI_MPI
-  MPI_Finalize() ;
-#endif
+  // first, create a Thyra::VectorSpaceBase from an Tpetra::Map using the Tpetra-Thyra wrappers
+  Teuchos::RCP<const Thyra::VectorSpaceBase<ST> > domain_space = Thyra::createVectorSpace<ST>(A->getDomainMap());
+  Teuchos::RCP<const Thyra::VectorSpaceBase<ST> > range_space = Thyra::createVectorSpace<ST>(A->getRangeMap());
 
-  if (testFailed || success==false) {
-    if (verbose && MyPID==0) {
-      cout << "End Result: TEST FAILED" << endl;	
+  // then, create a Thyra::MultiVectorBase from the Thyra::VectorSpaceBase using Thyra creational functions
+  Teuchos::RCP<Thyra::MultiVectorBase<ST> > thyra_ivec = Thyra::createMembers(domain_space,blockSize);
+
+  // randomize the vector
+  Thyra::randomize(-ONE, ONE, Teuchos::outArg (*thyra_ivec));
+
+  // then, create a Thyra::LinearOpBase from the Tpetra::CrsMatrix using the Tpetra-Thyra wrappers
+  Teuchos::RCP<const Thyra::LinearOpBase<ST> > thyra_op = Thyra::tpetraLinearOp<ST,LO,GO,Node>(range_space, domain_space, A);
+
+  // Create eigenproblem
+  RCP<Anasazi::BasicEigenproblem<ST,MV,OP> > problem =
+    rcp (new Anasazi::BasicEigenproblem<ST,MV,OP> (thyra_op, thyra_ivec));
+  //
+  // Inform the eigenproblem that the operator K is symmetric
+  problem->setHermitian (true);
+  //
+  // Set the number of eigenvalues requested
+  problem->setNEV (nev);
+  //
+  // Inform the eigenproblem that you are done passing it information
+  bool boolret = problem->setProblem ();
+  if (! boolret) {
+    if (MyPID == 0) {
+      cout << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << endl
+           << "End Result: TEST FAILED" << endl;
+    }
+    return -1;
+  }
+
+  // Set verbosity level
+  int verbosity = Anasazi::Errors + Anasazi::Warnings + Anasazi::FinalSummary + Anasazi::TimingDetails;
+  if (verbose) {
+    verbosity += Anasazi::IterationDetails;
+  }
+  if (debug) {
+    verbosity += Anasazi::Debug;
+  }
+
+  // Eigensolver parameters
+  int maxIters = 450;
+  //
+  // Create parameter list to pass into the solver manager
+  Teuchos::ParameterList MyPL;
+  MyPL.set( "Skinny Solver", skinny);
+  MyPL.set( "Verbosity", verbosity );
+  MyPL.set( "Which", which );
+  MyPL.set( "Block Size", blockSize );
+  MyPL.set( "Maximum Iterations", maxIters );
+  MyPL.set( "Convergence Tolerance", tol );
+  //
+  // Create the solver manager
+  Anasazi::RTRSolMgr<ST,MV,OP> MySolverMgr(problem, MyPL);
+
+  // Solve the problem to the specified tolerances or length
+  Anasazi::ReturnType returnCode = MySolverMgr.solve();
+  testFailed = false;
+  if (returnCode != Anasazi::Converged) {
+    testFailed = true;
+  }
+
+  // Get the eigenvalues and eigenvectors from the eigenproblem
+  Anasazi::Eigensolution<ST,MV> sol = problem->getSolution();
+  RCP<MV> evecs = sol.Evecs;
+  int numev = sol.numVecs;
+
+  if (numev > 0) {
+    std::ostringstream os;
+    os.setf(std::ios::scientific, std::ios::floatfield);
+    os.precision(6);
+
+    // Compute the direct residual
+    std::vector<MT> normV( numev );
+    Teuchos::SerialDenseMatrix<int,ST> T (numev, numev);
+    for (int i = 0; i < numev; ++i) {
+      T(i,i) = sol.Evals[i].realpart;
+    }
+    RCP<MV> Kvecs = MVT::Clone( *evecs, numev );
+
+    OPT::Apply( *thyra_op, *evecs, *Kvecs );
+
+    MVT::MvTimesMatAddMv( -ONE, *evecs, T, ONE, *Kvecs );
+    MVT::MvNorm( *Kvecs, normV );
+
+    os << "Direct residual norms computed in Thyra_RTR_lap_test.exe" << endl
+       << std::setw(20) << "Eigenvalue" << std::setw(20) << "Residual  " << endl
+       << "----------------------------------------" << endl;
+    for (int i=0; i<numev; i++) {
+      if ( SCT::magnitude(sol.Evals[i].realpart) != SCT::zero() ) {
+        normV[i] = SCT::magnitude(normV[i]/sol.Evals[i].realpart);
+      }
+      os << std::setw(20) << sol.Evals[i].realpart << std::setw(20) << normV[i] << endl;
+      if ( normV[i] > tol ) {
+        testFailed = true;
+      }
+    }
+    if (MyPID==0) {
+      cout << endl << os.str() << endl;
+    }
+  }
+
+  if (testFailed) {
+    if (MyPID==0) {
+      cout << "End Result: TEST FAILED" << endl;
     }
     return -1;
   }
   //
   // Default return value
   //
-  if (verbose && MyPID==0) {
+  if (MyPID==0) {
     cout << "End Result: TEST PASSED" << endl;
   }
+ 
+  }  // end Tpetra::ScopeGuard 
+
   return 0;
 
 }

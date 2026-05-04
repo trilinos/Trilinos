@@ -79,7 +79,7 @@ class Diagonal : virtual public Ifpack2::Preconditioner<typename MatrixType::sca
 
   /// \brief Constructor that takes a Tpetra::RowMatrix.
   ///
-  /// \param A_in [in] The input matrix.
+  /// \param A [in] The input matrix.
   Diagonal(const Teuchos::RCP<const row_matrix_type>& A);
 
   /// \brief Constructor that takes a Tpetra::CrsMatrix.

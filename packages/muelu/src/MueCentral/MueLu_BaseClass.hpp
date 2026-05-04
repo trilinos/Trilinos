@@ -17,7 +17,7 @@
 namespace MueLu {
 
 /*!
-   @class BaseClass class.
+   @class BaseClass
    @brief Base class for MueLu classes
 
    @ingroup MueLuBaseClasses

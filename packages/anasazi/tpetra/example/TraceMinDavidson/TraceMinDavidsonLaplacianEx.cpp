@@ -156,7 +156,7 @@ int main(int argc, char *argv[]) {
   MyPL.set("Saddle Solver Type", "Block Diagonal Preconditioned Minres");
 
   //
-  // Create an Epetra_MultiVector for an initial vector to start the solver.
+  // Create an Tpetra::MultiVector for an initial vector to start the solver.
   // Note:  This needs to have the same number of columns as the blocksize.
   //
   RCP<TMV> ivec = Teuchos::rcp( new TMV(K->getRowMap(), blockSize) );

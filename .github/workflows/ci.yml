@@ -17,7 +17,7 @@ on:
         description: 'Max cores allowed that is detected on the system.'
         required: false
         type: number
-        default: 12
+        default: -1
       ctest-drop-site:
         required: false
         type: string
@@ -40,16 +40,11 @@ on:
         description: 'On a GPU machine, this is number of slots allowed per GPU. (e.g. 4 allows 4 MPI ranks per GPU)'
         required: false
         type: number
-        default: 0
+        default: -1
       extra-pr-driver-args:
         description: 'Extra arguments to be used when calling PullRequestLinuxDriverTest.py'
         required: false
         type: string
-
-# Cancels any in progress 'workflows' associated with this workflow ref
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
 
 jobs:
   build-test:
@@ -109,24 +104,46 @@ jobs:
 
           echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}"
           type python
+
+          if [ "${{ inputs.num-concurrent-tests }}" != "-1" ]
+          then
+            num_concurrent_tests="--num-concurrent-tests ${{ inputs.num-concurrent-tests }}"
+          else
+            num_concurrent_tests=""
+          fi
+
+          if [ "${{ inputs.max-cores-allowed }}" != "-1" ]
+          then
+            max_cores_allowed="--max-cores-allowed ${{ inputs.max-cores-allowed }}"
+          else
+            max_cores_allowed=""
+          fi
+
+          if [ "${{ inputs.slots-per-gpu }}" != "-1" ]
+          then
+            slots_per_gpu="--slots-per-gpu ${{ inputs.slots-per-gpu }}"
+          else
+            slots_per_gpu=""
+          fi
+
           python3 ${TRILINOS_DIR}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
-            --target-branch-name ${{ inputs.target-branch }} \
             --genconfig-build-name ${{ inputs.genconfig-string }} \
-            --pullrequest-number ${{ github.event.pull_request.number }} \
+            ${{ inputs.target-branch && '--target-branch-name ' || '' }}${{ inputs.target-branch }} \
+            ${{ github.event.pull_request && '--pullrequest-number ' || '' }}${{ github.event.pull_request.number }} \
             --pullrequest-env-config-file ${TRILINOS_DIR}/packages/framework/pr_tools/trilinos_pr.ini \
             --pullrequest-gen-config-file ${TRILINOS_DIR}/packages/framework/GenConfig/src/gen-config.ini \
             --workspace-dir ${TRILINOS_DIR}/../ \
             --source-dir ${TRILINOS_DIR} \
             --build-dir ${BUILD_DIR} \
-            --dashboard-build-name=${{ inputs.dashboard-build-name }} \
+            ${{ inputs.dashboard-build-name && '--dashboard-build-name ' || '' }}${{ inputs.dashboard-build-name }} \
             --ctest-driver ${TRILINOS_DIR}/cmake/SimpleTesting/cmake/ctest-driver.cmake \
             --ctest-drop-site ${{ inputs.ctest-drop-site }} \
             --pullrequest-cdash-track ${{ inputs.cdash-track }} \
             --filename-subprojects ./package_subproject_list.cmake \
             --filename-packageenables ./packageEnables.cmake \
-            --max-cores-allowed=${{ inputs.max-cores-allowed }} \
-            --num-concurrent-tests=${{ inputs.num-concurrent-tests }} \
-            --slots-per-gpu=${{ inputs.slots-per-gpu }} \
+            ${num_concurrent_tests} \
+            ${max_cores_allowed} \
+            ${slots_per_gpu} \
             ${{ inputs.extra-pr-driver-args }}
       - name: Filtered build error logs
         if: success() || failure()
@@ -148,7 +165,7 @@ jobs:
           cp ./genconfig_build_name.txt /home/runner/artifacts/
       - name: Upload artifacts
         if: success() || failure()
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         env:
           NODE_USE_SYSTEM_CA: 1
         with:

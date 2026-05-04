@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export NP=30
+
 clean_trilinos() {
     cmake --build $TRILINOS_BUILD_DIR --target clean
 }
@@ -15,7 +17,7 @@ configure_trilinos() {
 }
 
 build_trilinos() {
-    cmake --build $TRILINOS_BUILD_DIR $* -- -j 30
+    cmake --build $TRILINOS_BUILD_DIR $* -- -j $NP
 }
 
 test_trilinos() {
@@ -24,7 +26,7 @@ test_trilinos() {
 
 install_trilinos() {
     rm -rf ${TRILINOS_INSTALL_DIR}/*
-    cmake --build $TRILINOS_BUILD_DIR --target install $* -- -j 30
+    cmake --build $TRILINOS_BUILD_DIR --target install $* -- -j $NP
 }
 
 reproduce_build() {
@@ -34,30 +36,46 @@ reproduce_build() {
     test_trilinos
 }
 
+help() {
+    echo ""
+    echo "The Trilinos source repository is ${TRILINOS_DIR}"
+    echo "The build directory is            ${TRILINOS_BUILD_DIR}"
+    echo "The install directory is          ${TRILINOS_INSTALL_DIR}"
+    echo ""
+    echo "Available commands:"
+    echo " clean_trilinos     -- cleans up CMake files and allows to configure from scratch"
+    echo " get_dependencies   -- installs GenConfig dependencies"
+    echo " configure_trilinos -- configures Trilinos using CMake"
+    echo " build_trilinos     -- build Trilinos"
+    echo " test_trilinos      -- runs tests"
+    echo " install_trilinos   -- installs Trilinos"
+    echo " reproduce_build    -- installs dependencies, configures, builds and tests"
+    echo " help               -- display this help message"
+    echo ""
+    echo "Normally, this is what you want to do:"
+    echo " reproduce_build"
+    echo ""
+    echo "To display what these functions do, run e.g."
+    echo " declare -f configure_trilinos"
+    echo ""
+    echo "The Trilinos source directory is mapped from the host system. This means that code changes"
+    echo "can be made directly on the host. The build and install directories do not persist past the"
+    echo "lifetime of the container."
+    echo ""
+    echo "The build parallelism can be configured using the environment variable \"NP\"."
+    echo ""
+}
+
 export -f clean_trilinos
 export -f get_dependencies
 export -f configure_trilinos
 export -f build_trilinos
 export -f test_trilinos
 export -f install_trilinos
+export -f reproduce_build
+export -f help
 
 mkdir -p ${TRILINOS_BUILD_DIR}
 mkdir -p ${TRILINOS_INSTALL_DIR}
 
-echo ""
-echo "The Trilinos source repository is ${TRILINOS_DIR}"
-echo "The build directory is            ${TRILINOS_BUILD_DIR}"
-echo "The install directory is          ${TRILINOS_INSTALL_DIR}"
-echo ""
-echo "Available commands:"
-echo " clean_trilinos     -- cleans up CMake files and allows to configure from scratch"
-echo " get_dependencies   -- installs GenConfig dependencies"
-echo " configure_trilinos -- configures Trilinos using CMake"
-echo " build_trilinos     -- build Trilinos"
-echo " test_trilinos      -- runs tests"
-echo " install_trilinos   -- installs Trilinos"
-echo " reproduce_build    -- installs dependencies, configures, builds and tests"
-echo ""
-echo "Normally, this is what you want to do:"
-echo " reproduce_build"
-echo ""
+help

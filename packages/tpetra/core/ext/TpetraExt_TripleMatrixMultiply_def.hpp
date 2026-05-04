@@ -1082,8 +1082,7 @@ void KernelWrappers3<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalOrdinalView
 
   // Final sort & set of CRS arrays
   if (params.is_null() || params->get("sort entries", true))
-    Import_Util::sortCrsEntries(Crowptr_dev, Ccolind_dev, Cvals_dev,
-                                ::KokkosSparse::SortAlgorithm::DEFAULT);
+    Import_Util::sortCrsEntries(Crowptr_dev, Ccolind_dev, Cvals_dev);
   Ac.setAllValues(Crowptr_dev, Ccolind_dev, Cvals_dev);
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
@@ -1674,8 +1673,7 @@ void KernelWrappers3MMM<Scalar, LocalOrdinal, GlobalOrdinal, Node>::mult_PT_A_P_
   //
   // TODO (mfh 27 Sep 2016) Will the thread-parallel "local" sparse
   // matrix-matrix multiply routine sort the entries for us?
-  Import_Util::sortCrsEntries(Acrowptr_RCP(), Accolind_RCP(), Acvals_RCP(),
-                              ::KokkosSparse::SortAlgorithm::SHELL);
+  Import_Util::sortCrsEntries(Acrowptr_RCP(), Accolind_RCP(), Acvals_RCP());
 
   // mfh 27 Sep 2016: This just sets pointers.
   Ac.setAllValues(Acrowptr_RCP, Accolind_RCP, Acvals_RCP);

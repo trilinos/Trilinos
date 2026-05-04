@@ -30,7 +30,7 @@
 namespace MueLu {
 
 /*!
-  @class SchurComplementFactory class.
+  @class SchurComplementFactory
   @brief Factory for building the Schur Complement for a 2x2 block matrix.
 
   ## Context, assumptions, and use cases ##

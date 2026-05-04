@@ -47,7 +47,7 @@ namespace Intrepid2 {
 #endif
 
     constexpr bool is_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(cellCenter)::memory_space>::accessible;
     static_assert(is_accessible, "CellTools<DeviceType>::getReferenceCellCenter(..): output view's memory space is not compatible with DeviceType");
 
@@ -83,7 +83,7 @@ namespace Intrepid2 {
 #endif
 
     constexpr bool is_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(cellVertex)::memory_space>::accessible;
     static_assert(is_accessible, "CellTools<DeviceType>::getReferenceVertex(..): output view's memory space is not compatible with DeviceType");
 
@@ -151,7 +151,7 @@ namespace Intrepid2 {
 #endif
 
     constexpr bool is_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(cellNode)::memory_space>::accessible;
     static_assert(is_accessible, "CellTools<DeviceType>::getReferenceNode(..): output view's memory space is not compatible with DeviceType");
 
@@ -228,7 +228,7 @@ namespace Intrepid2 {
 
 #endif
     constexpr bool is_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(refEdgeTangent)::memory_space>::accessible;
     static_assert(is_accessible, "CellTools<DeviceType>::getReferenceEdgeTangent(..): output view's memory space is not compatible with DeviceType");
 
@@ -267,7 +267,7 @@ namespace Intrepid2 {
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceFaceTangents): dim0 (spatial dim) must match that of parent cell");  
 #endif
     constexpr bool is_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(refFaceTanU)::memory_space>::accessible;
     static_assert(is_accessible, "CellTools<DeviceType>::getReferenceFaceTangents(..): output views' memory spaces are not compatible with DeviceType");
 
@@ -304,7 +304,7 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION( sideOrd < 0 || sideOrd >= static_cast<ordinal_type>(parentCell.getSubcellCount(parentCell.getDimension() - 1)), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceSideNormal): side ordinal out of bounds");    
 #endif 
-    constexpr bool is_accessible = Kokkos::Impl::MemorySpaceAccess<
+    constexpr bool is_accessible = Kokkos::SpaceAccessibility<
         MemSpaceType,
         typename decltype(refSideNormal)::memory_space>::accessible;
     static_assert(is_accessible, "CellTools<DeviceType>::getReferenceSideNormal(..): output view's memory space is not compatible with DeviceType");
@@ -348,7 +348,7 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION( refFaceNormal.extent(0) != parentCell.getDimension(), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceFaceNormal): dim0 (spatial dim) must match that of parent cell");  
 #endif
-    constexpr bool is_accessible = Kokkos::Impl::MemorySpaceAccess<
+    constexpr bool is_accessible = Kokkos::SpaceAccessibility<
         MemSpaceType,
         typename decltype(refFaceNormal)::memory_space>::accessible;
     static_assert(is_accessible, "CellTools<DeviceType>::getReferenceFaceNormal(..): output view's memory space is not compatible with DeviceType");
@@ -400,9 +400,9 @@ namespace Intrepid2 {
     }
 #endif
     constexpr bool are_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(edgeTangents)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(worksetJacobians)::memory_space>::accessible;
     static_assert(are_accessible, "CellTools<DeviceType>::getPhysicalEdgeTangents(..): input/output views' memory spaces are not compatible with DeviceType");
 
@@ -484,11 +484,11 @@ namespace Intrepid2 {
     }
 #endif
     constexpr bool are_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(edgeTangents)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(worksetJacobians)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(worksetEdgeOrds)::memory_space>::accessible;
     static_assert(are_accessible, "CellTools<DeviceType>::getPhysicalEdgeTangents(..): input/output views' memory spaces are not compatible with DeviceType");
 
@@ -553,9 +553,9 @@ namespace Intrepid2 {
     }      
 #endif
     constexpr bool are_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(faceTanU)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(worksetJacobians)::memory_space>::accessible;
     static_assert(are_accessible, "CellTools<DeviceType>::getPhysicalFaceTangents(..): input/output views' memory spaces are not compatible with DeviceType");
 
@@ -652,11 +652,11 @@ namespace Intrepid2 {
     }      
 #endif
     constexpr bool are_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(faceTanU)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(worksetJacobians)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(worksetFaceOrds)::memory_space>::accessible;
     static_assert(are_accessible, "CellTools<DeviceType>::getPhysicalFaceTangents(..): input/output views' memory spaces are not compatible with DeviceType");
 
@@ -724,9 +724,9 @@ namespace Intrepid2 {
                                   ">>> ERROR (Intrepid2::CellTools::getPhysicalSideNormals): side ordinal out of bounds");  
 #endif  
     constexpr bool are_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(sideNormals)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(worksetJacobians)::memory_space>::accessible;
     static_assert(are_accessible, "CellTools<DeviceType>::getPhysicalSideNormals(..): input/output views' memory spaces are not compatible with DeviceType");
 
@@ -766,11 +766,11 @@ namespace Intrepid2 {
                                   ">>> ERROR (Intrepid2::CellTools::getPhysicalSideNormals): two or three-dimensional parent cell required");
 #endif
     constexpr bool are_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(sideNormals)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(worksetJacobians)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(worksetSideOrds)::memory_space>::accessible;
     static_assert(are_accessible, "CellTools<DeviceType>::getPhysicalSideNormals(..): input/output views' memory spaces are not compatible with DeviceType");
 
@@ -827,9 +827,9 @@ namespace Intrepid2 {
     }        
 #endif
     constexpr bool are_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(faceNormals)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(worksetJacobians)::memory_space>::accessible;
     static_assert(are_accessible, "CellTools<DeviceType>::getPhysicalFaceNormals(..): input/output views' memory spaces are not compatible with DeviceType");
 
@@ -890,11 +890,11 @@ namespace Intrepid2 {
     }
 #endif
     constexpr bool are_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(faceNormals)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(worksetJacobians)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(worksetFaceOrds)::memory_space>::accessible;
     static_assert(are_accessible, "CellTools<DeviceType>::getPhysicalFaceNormals(..): input/output views' memory spaces are not compatible with DeviceType");
 

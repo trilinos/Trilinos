@@ -27,7 +27,7 @@
 namespace MueLu {
 
 /*!
-  @class GenericRFactory class.
+  @class GenericRFactory
   @brief Factory for building restriction operators using a prolongator factory
 */
 

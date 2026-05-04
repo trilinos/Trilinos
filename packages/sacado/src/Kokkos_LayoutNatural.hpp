@@ -64,21 +64,6 @@ struct inner_layout< LayoutNatural<Layout> > {
 
 } // namespace Kokkos
 
-// Make LayoutNatural<Layout> equivalent to Layout
-namespace std {
-
-  template <class Layout>
-  struct is_same< Kokkos::LayoutNatural<Layout>, Layout> {
-    static const bool value = true;
-  };
-
-  template <class Layout>
-  struct is_same< Layout, Kokkos::LayoutNatural<Layout> > {
-    static const bool value = true;
-  };
-
-}
-
 #include "View/Kokkos_ViewMapping.hpp"
 
 namespace Kokkos {

@@ -19,7 +19,7 @@
 namespace MueLu {
 
 /*!
-  @class ConstraintFactory class.
+  @class ConstraintFactory
   @brief Factory for building the constraint operator
 
   Factory for creating the constraint operator.

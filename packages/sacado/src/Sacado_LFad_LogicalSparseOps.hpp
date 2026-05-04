@@ -98,9 +98,15 @@ FAD_UNARYOP_MACRO(operator-,
 FAD_UNARYOP_MACRO(exp,
                   ExpOp,
                   std::exp(expr.val()))
+FAD_UNARYOP_MACRO(expm1,
+                  ExpM1Op,
+                  std::expm1(expr.val()))
 FAD_UNARYOP_MACRO(log,
                   LogOp,
                   std::log(expr.val()))
+FAD_UNARYOP_MACRO(log1p,
+                  Log1POp,
+                  std::log1p(expr.val()))
 FAD_UNARYOP_MACRO(log10,
                   Log10Op,
                   std::log10(expr.val()))

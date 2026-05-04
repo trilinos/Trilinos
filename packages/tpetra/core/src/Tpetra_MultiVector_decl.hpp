@@ -474,7 +474,7 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   ///
   /// \param map [in] The Map describing the distribution of rows of
   ///   the multivector.
-  /// \param view [in] A view of column-major dense matrix data.
+  /// \param A [in] A view of column-major dense matrix data.
   ///   The calling process will make a deep copy of this data.
   /// \param LDA [in] The leading dimension (a.k.a. "stride") of the
   ///   column-major input data.
@@ -527,7 +527,7 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   ///   and returns a MultiVector that views those data.
   ///
   /// \param map [in] Map describing the distribution of rows.
-  /// \param view [in] Kokkos::View of the data to view.
+  /// \param d_view [in] Kokkos::View of the data to view.
   ///
   /// Q: What's the difference between this constructor (that takes
   /// a Kokkos::View), and the constructor above that takes a
@@ -576,7 +576,7 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   ///
   /// \param map [in] Map describing the distribution of rows.
   /// \param view [in] View of the data (shallow copy).
-  /// \param origView [in] The </i>original</i> view of the data.
+  /// \param origView [in] The <i>original</i> view of the data.
   ///
   /// The original view keeps the "original" dimensions.  Doing so
   /// lets us safely construct a column Map view of a (domain Map
@@ -668,7 +668,7 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   ///
   /// \param map [in] Map describing the distribution of rows.
   /// \param view [in] View of the data (shallow copy).
-  /// \param origView [in] The </i>original</i> view of the data.
+  /// \param origView [in] The <i>original</i> view of the data.
   /// \param whichVectors [in] Which columns (vectors) to view.
   ///
   /// The original view keeps the "original" dimensions.  Doing so
@@ -695,7 +695,7 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   /// \param X [in] The MultiVector to view.
   /// \param subMap [in] The row Map for the new MultiVector.  This
   ///   must be a subset Map of the input MultiVector's row Map.
-  /// \param offset [in] The local row offset at which to start the view.
+  /// \param rowOffset [in] The local row offset at which to start the view.
   ///
   /// Suppose that you have a MultiVector X, and you want to view X,
   /// on all processes in X's (MPI) communicator, as split into two
@@ -874,7 +874,7 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   /// that one thread might win; it's that the value might get
   /// messed up.)
   ///
-  /// \param gblRow [in] Global row index of the entry to modify.
+  /// \param globalRow [in] Global row index of the entry to modify.
   ///   This <i>must</i> be a valid global row index on the calling
   ///   process with respect to the MultiVector's Map.
   /// \param col [in] Column index of the entry to modify.
@@ -1575,7 +1575,7 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   /// \post <tt>dots(j) == (this->getVector[j])->dot (* (A.getVector[j]))</tt>
   void
   dot(const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
-      const Kokkos::View<dot_type*, Kokkos::HostSpace>& norms) const;
+      const Kokkos::View<dot_type*, Kokkos::HostSpace>& dots) const;
 
   template <class ViewType>
   void
@@ -2157,7 +2157,7 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   convert() const;
 
   // \brief Checks to see if the local length, number of vectors and size of Scalar type match
-  /// \param src [in] MultiVector
+  /// \param vec [in] MultiVector
   ///
   /// \pre <tt> ! vec.getMap ().is_null () && ! this->getMap ().is_null () </tt>
   /// \pre <tt> vec.getMap ()->isCompatible (* (this->getMap ()) </tt>

@@ -108,9 +108,9 @@ class CooMatrixImpl {
   ///
   /// This works like multiple calls to sumIntoGlobalValue.
   ///
-  /// \param gblRowInd [in] Global row indices of the entries to insert.
-  /// \param gblColInd [in] Global column indices of the entries to insert.
-  /// \param val [in] Values of the matrix entries to insert / sum.
+  /// \param gblRowInds [in] Global row indices of the entries to insert.
+  /// \param gblColInds [in] Global column indices of the entries to insert.
+  /// \param vals [in] Values of the matrix entries to insert / sum.
   /// \param numEnt [in] Number of entries to insert.
   void
   sumIntoGlobalValues(const GO gblRowInds[],
@@ -210,6 +210,7 @@ class CooMatrixImpl {
   ///   needed for the row.  Must be an int for MPI's sake.
   /// \param gblRow [in] Global index of the row to pack.
   /// \param comm [in] Communicator for packing.
+  /// \param errStrm [out] Optional output stream for error messages.
   ///
   /// \return Error code; MPI_SUCESSS (0) if no error.
   int countPackRow(int& numPackets,
@@ -589,9 +590,9 @@ class CooMatrix : public ::Tpetra::DistObject<char, LO, GO, NT> {
   ///
   /// This works like multiple calls to sumIntoGlobalValue.
   ///
-  /// \param gblRowInd [in] Global row indices of the entries to insert.
-  /// \param gblColInd [in] Global column indices of the entries to insert.
-  /// \param val [in] Values of the matrix entries to insert / sum.
+  /// \param gblRowInds [in] Global row indices of the entries to insert.
+  /// \param gblColInds [in] Global column indices of the entries to insert.
+  /// \param vals [in] Values of the matrix entries to insert / sum.
   /// \param numEnt [in] Number of entries to insert.
   void
   sumIntoGlobalValues(const GO gblRowInds[],

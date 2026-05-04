@@ -534,6 +534,7 @@ void std_sort3(
  *   elements than the first array.  If the first array has N
  *   elements, then the permutation will only be applied to the
  *   first N elements of the second array.
+ * @param stableSort [in] Whether to use stable sort.
  */
 template <class IT1, class IT2>
 void sort2(const IT1& first1, const IT1& last1, const IT2& first2, const bool stableSort = false) {
@@ -632,6 +633,7 @@ void reverse_sort(View& view, const size_t& size) {
  * @param last1 A random access iterator pointing to the end (exclusive) of the first array.
  * @param first2 A random access iterator pointing to the beginning of the second array.
  * @param first3 A random access iterator pointing to the beginning of the third array.
+ * @param stableSort [in] Whether to use stable sort.
  */
 template <class IT1, class IT2, class IT3>
 void sort3(const IT1& first1, const IT1& last1, const IT2& first2,
@@ -843,8 +845,6 @@ void merge2(IT1& indResultOut, IT2& valResultOut,
 ///   the value type.  For addition, use std::plus with template
 ///   parameter equal to the value type.
 ///
-/// \return Number of (key,value) pairs in the merged sequence.
-///
 /// \warning For now, this function requires that the two input
 ///   sequences be made unique by key.  Later, we plan to relax that
 ///   requirement.
@@ -1015,9 +1015,6 @@ std::string dualViewStatusToString(const DualViewType& dv, const char name[]) {
 }
 
 /// \brief Print min(x.size(), maxNumToPrint) entries of x.
-///
-/// \return void, because returning std::ostream& won't work
-///   if \c out is an std::ostringstream.
 template <class ArrayType>
 void verbosePrintArray(std::ostream& out,
                        const ArrayType& x,

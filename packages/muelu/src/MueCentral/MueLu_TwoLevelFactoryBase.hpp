@@ -20,7 +20,7 @@
 namespace MueLu {
 
 /*!
-  @class TwoLevelFactoryBase class.
+  @class TwoLevelFactoryBase
   @brief Base class for factories that use two levels (fineLevel and coarseLevel).
 
   Examples of such factories are R, P, and A_coarse.

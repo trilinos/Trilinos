@@ -22,7 +22,7 @@
 #include <algorithm>
 
 #include "ROL_Solver.hpp"
-#include "ROL_Bounds.hpp"
+#include "ROL_TpetraBoundConstraint.hpp"
 
 #include "../TOOLS/meshmanagerK.hpp"
 #include "../TOOLS/pdeobjectiveK.hpp"
@@ -111,8 +111,8 @@ int main(int argc, char *argv[]) {
     auto u_ptr = assembler->createStateVector();
     auto du_ptr = assembler->createStateVector();
     u_ptr->randomize(); du_ptr->randomize();
-    auto up  = ROL::makePtr<PDE_PrimalSimVector<RealT,DeviceT>>(u_ptr,pde,assembler);
-    auto dup = ROL::makePtr<PDE_PrimalSimVector<RealT,DeviceT>>(du_ptr,pde,assembler);
+    auto up  = ROL::makePtr<PDE_PrimalSimVector<RealT,DeviceT>>(u_ptr,pde,assembler,*parlist);
+    auto dup = ROL::makePtr<PDE_PrimalSimVector<RealT,DeviceT>>(du_ptr,pde,assembler,*parlist);
 
     // Build bound constraints
     auto lo_ptr = assembler->createStateVector();
@@ -122,9 +122,7 @@ int main(int argc, char *argv[]) {
                              pde->getCellNodes(),
                              assembler->getDofManager()->getCellDofs(),
                              assembler->getCellIds());
-    auto lop = ROL::makePtr<PDE_PrimalSimVector<RealT,DeviceT>>(lo_ptr,pde,assembler);
-    auto hip = ROL::makePtr<PDE_PrimalSimVector<RealT,DeviceT>>(hi_ptr,pde,assembler);
-    auto bnd = ROL::makePtr<ROL::Bounds<RealT>>(lop,hip);
+    auto bnd = ROL::makePtr<ROL::TpetraBoundConstraint<RealT>>(lo_ptr,hi_ptr);
 
     // Run derivative checks
     obj->checkGradient(*up,*dup,true,*outStream);

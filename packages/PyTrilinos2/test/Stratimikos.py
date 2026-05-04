@@ -252,6 +252,8 @@ def main():
 
 
 if __name__ == "__main__":
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
     # initialize kokkos
     defaultNode = Tpetra.Map.defaults['Node']
     if defaultNode in ('cuda', 'cuda_uvm', 'hip', 'hip_managed'):

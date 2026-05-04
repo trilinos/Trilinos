@@ -110,10 +110,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BelosAdapters, XpetraOp_XpetraMV, Scalar, Loca
 
   Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
 
-#if !defined(HAVE_MUELU_IFPACK2) or !defined(HAVE_MUELU_AMESOS2)
-  MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
-#endif
-
   RCP<TestProblem<SC, LO, GO, NO> > p = rcp(new TestProblem<SC, LO, GO, NO>(lib));
 
   typedef MultiVector MV;

@@ -18,7 +18,7 @@
 namespace MueLu {
 
 /*!
-  @class UnsmooshFactory class.
+  @class UnsmooshFactory
   @brief Factory for building "unsmooshed" transfer operators from transfer operators associated with a scalar helper problem (built by the VariableDofLaplacianFactory)
 
   The output prolongation operator P is compatible to the input matrix A. The input prolongation matrix P is supposed to be built by the VariableDofLaplacianFactory with 1 DOF per node.

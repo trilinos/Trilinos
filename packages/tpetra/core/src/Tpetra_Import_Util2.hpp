@@ -75,24 +75,26 @@ namespace Import_Util {
 template <typename Scalar, typename Ordinal>
 void sortCrsEntries(const Teuchos::ArrayView<size_t>& CRS_rowptr,
                     const Teuchos::ArrayView<Ordinal>& CRS_colind,
-                    const Teuchos::ArrayView<Scalar>& CRS_vals,
-                    const ::KokkosSparse::SortAlgorithm option = ::KokkosSparse::SortAlgorithm::DEFAULT);
+                    const Teuchos::ArrayView<Scalar>& CRS_vals);
 
 template <typename Ordinal>
 void sortCrsEntries(const Teuchos::ArrayView<size_t>& CRS_rowptr,
-                    const Teuchos::ArrayView<Ordinal>& CRS_colind,
-                    const ::KokkosSparse::SortAlgorithm option = ::KokkosSparse::SortAlgorithm::DEFAULT);
+                    const Teuchos::ArrayView<Ordinal>& CRS_colind);
 
 template <typename rowptr_array_type, typename colind_array_type, typename vals_array_type>
 void sortCrsEntries(const rowptr_array_type& CRS_rowptr,
                     const colind_array_type& CRS_colind,
-                    const vals_array_type& CRS_vals,
-                    const ::KokkosSparse::SortAlgorithm option = ::KokkosSparse::SortAlgorithm::DEFAULT);
+                    const vals_array_type& CRS_vals);
 
 template <typename rowptr_array_type, typename colind_array_type>
 void sortCrsEntries(const rowptr_array_type& CRS_rowptr,
-                    const colind_array_type& CRS_colind,
-                    const ::KokkosSparse::SortAlgorithm option = ::KokkosSparse::SortAlgorithm::DEFAULT);
+                    const colind_array_type& CRS_colind);
+
+template <typename local_crs_matrix>
+void sortCrsMatrix(local_crs_matrix& lclMatrix);
+
+template <typename local_crs_graph>
+void sortCrsGraph(local_crs_graph& lclGraph);
 
 /// \brief Sort and merge the entries of the (raw CSR) matrix by
 ///   column index within each row.
@@ -460,37 +462,59 @@ void reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdina
 template <typename Scalar, typename Ordinal>
 void sortCrsEntries(const Teuchos::ArrayView<size_t>& CRS_rowptr,
                     const Teuchos::ArrayView<Ordinal>& CRS_colind,
-                    const Teuchos::ArrayView<Scalar>& CRS_vals,
-                    const ::KokkosSparse::SortAlgorithm option) {
+                    const Teuchos::ArrayView<Scalar>& CRS_vals) {
   auto rowptr_k = Kokkos::View<size_t*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>(CRS_rowptr.data(), CRS_rowptr.size());
   auto colind_k = Kokkos::View<Ordinal*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>(CRS_colind.data(), CRS_colind.size());
   auto vals_k   = Kokkos::View<Scalar*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>(CRS_vals.data(), CRS_vals.size());
-  sortCrsEntries(rowptr_k, colind_k, vals_k, option);
+  sortCrsEntries(rowptr_k, colind_k, vals_k);
 }
 
 template <typename Ordinal>
 void sortCrsEntries(const Teuchos::ArrayView<size_t>& CRS_rowptr,
-                    const Teuchos::ArrayView<Ordinal>& CRS_colind,
-                    const ::KokkosSparse::SortAlgorithm option) {
+                    const Teuchos::ArrayView<Ordinal>& CRS_colind) {
   auto rowptr_k = Kokkos::View<size_t*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>(CRS_rowptr.data(), CRS_rowptr.size());
   auto colind_k = Kokkos::View<Ordinal*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>(CRS_colind.data(), CRS_colind.size());
-  sortCrsEntries(rowptr_k, colind_k, option);
+  sortCrsEntries(rowptr_k, colind_k);
 }
 
 template <typename rowptr_array_type, typename colind_array_type, typename vals_array_type>
 void sortCrsEntries(const rowptr_array_type& CRS_rowptr,
                     const colind_array_type& CRS_colind,
-                    const vals_array_type& CRS_vals,
-                    const ::KokkosSparse::SortAlgorithm option) {
+                    const vals_array_type& CRS_vals) {
+  KokkosSparse::SortAlgorithm option = KokkosSparse::SortAlgorithm::DEFAULT;
+  static constexpr bool is_cpu       = std::is_same_v<typename rowptr_array_type::memory_space, Kokkos::HostSpace>;
+  if constexpr (is_cpu)
+    option = KokkosSparse::SortAlgorithm::SHELL;
   KokkosSparse::sort_crs_matrix(CRS_rowptr, CRS_colind, CRS_vals,
                                 KokkosKernels::ArithTraits<typename colind_array_type::non_const_value_type>::max(),
                                 option);
 }
 
+template <typename local_crs_matrix>
+void sortCrsMatrix(local_crs_matrix& lclMatrix) {
+  KokkosSparse::SortAlgorithm option = KokkosSparse::SortAlgorithm::DEFAULT;
+  static constexpr bool is_cpu       = std::is_same_v<typename local_crs_matrix::device_type::memory_space, Kokkos::HostSpace>;
+  if constexpr (is_cpu)
+    option = KokkosSparse::SortAlgorithm::SHELL;
+  KokkosSparse::sort_crs_matrix(lclMatrix, option);
+}
+
+template <typename local_crs_graph>
+void sortCrsGraph(local_crs_graph& lclGraph) {
+  KokkosSparse::SortAlgorithm option = KokkosSparse::SortAlgorithm::DEFAULT;
+  static constexpr bool is_cpu       = std::is_same_v<typename local_crs_graph::device_type::memory_space, Kokkos::HostSpace>;
+  if constexpr (is_cpu)
+    option = KokkosSparse::SortAlgorithm::SHELL;
+  KokkosSparse::sort_crs_graph(lclGraph, KokkosKernels::ArithTraits<typename local_crs_graph::entries_type::non_const_value_type>::max(), option);
+}
+
 template <typename rowptr_array_type, typename colind_array_type>
 void sortCrsEntries(const rowptr_array_type& CRS_rowptr,
-                    const colind_array_type& CRS_colind,
-                    const ::KokkosSparse::SortAlgorithm option) {
+                    const colind_array_type& CRS_colind) {
+  KokkosSparse::SortAlgorithm option = KokkosSparse::SortAlgorithm::DEFAULT;
+  static constexpr bool is_cpu       = std::is_same_v<typename rowptr_array_type::memory_space, Kokkos::HostSpace>;
+  if constexpr (is_cpu)
+    option = KokkosSparse::SortAlgorithm::SHELL;
   KokkosSparse::sort_crs_graph(CRS_rowptr, CRS_colind,
                                KokkosKernels::ArithTraits<typename colind_array_type::non_const_value_type>::max(),
                                option);
@@ -804,12 +828,6 @@ void lowCommunicationMakeColMapAndReindexSerial(const Teuchos::ArrayView<const s
         std::runtime_error, prefix << "Local ID count test failed.");
   }
 
-  // Make column Map
-  req->wait();
-  colMap = rcp(new map_type(numGlobalCols, ColIndices, domainMap.getIndexBase(),
-                            domainMap.getComm(),
-                            params));
-
   // Low-cost reindex of the matrix
   for (size_t i = 0; i < numMyRows; ++i) {
     for (size_t j = rowptr[i]; j < rowptr[i + 1]; ++j) {
@@ -826,6 +844,12 @@ void lowCommunicationMakeColMapAndReindexSerial(const Teuchos::ArrayView<const s
       }
     }
   }
+
+  // Make column Map
+  req->wait();
+  colMap = rcp(new map_type(numGlobalCols, ColIndices, domainMap.getIndexBase(),
+                            domainMap.getComm(),
+                            params));
 }
 
 template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>

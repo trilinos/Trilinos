@@ -217,9 +217,8 @@ class Amesos2Wrapper : virtual public Ifpack2::Preconditioner<typename MatrixTyp
   /// \param Y [out] Output multivector; result of the solve.
   /// \param mode [in] Whether to solve with the original matrix, its
   ///   transpose, or its conjugate transpose.
-  /// \param alpha [in] Scaling factor for the result of applying the
-  ///   preconditioner.
-  /// \param alpha [in] Scaling factor for Y.
+  /// \param alpha [in] Scaling factor for the result of applying the preconditioner.
+  /// \param beta [in] Scaling factor for Y.
   void
   apply(const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& X,
         Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& Y,

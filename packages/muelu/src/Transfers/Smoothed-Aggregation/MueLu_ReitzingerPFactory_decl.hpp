@@ -27,7 +27,7 @@
 namespace MueLu {
 
 /*!
-  @class ReitzingerPFactory class.
+  @class ReitzingerPFactory
   @brief Factory for building tentative prolongator.
 
   Factory for creating Reitzinger and Schoebel tentative prolongator for Maxwell's equations.

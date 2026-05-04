@@ -32,7 +32,7 @@ class DenseConstraint
 #include "MueLu_UseShortNames.hpp"
  public:
   /*!
-    @class Dense constraint class.
+    @class DenseConstraint
     @brief Class which contains the constraint space details
     */
 
