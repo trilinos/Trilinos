@@ -79,12 +79,14 @@ void MatrixLoad(Teuchos::RCP<const Teuchos::Comm<int> >& comm, Xpetra::Underlyin
                 const std::string& coordFile,
                 const std::string& coordMapFile, const std::string& nullFile,
                 const std::string& materialFile, const std::string& blockNumberFile,
+                const std::string& massFile,
                 Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& map,
                 Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& A,
                 Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LocalOrdinal, GlobalOrdinal, Node> >& coordinates,
                 Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& nullspace,
                 Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& material,
                 Teuchos::RCP<Xpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> >& blocknumber,
+                Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& mass,
                 Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& X,
                 Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& B,
                 const int numVectors,
@@ -289,6 +291,18 @@ void MatrixLoad(Teuchos::RCP<const Teuchos::Comm<int> >& comm, Xpetra::Underlyin
   if (!blockNumberFile.empty()) {
     RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 1g - Read block number")));
     blocknumber         = Xpetra::IO<SC, LO, GO, Node>::ReadMultiVectorLO(blockNumberFile, map)->getVectorNonConst(0);
+    comm->barrier();
+  }
+
+  if (!massFile.empty()) {
+    RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 1f - Read mass")));
+    mass                = Xpetra::IO<SC, LO, GO, Node>::Read(massFile, initialMap);
+    if (importer) {
+      Teuchos::ParameterList XpetraList;
+      auto targetMap = importer->getTargetMap();
+      auto newMatrix = MatrixFactory::Build(mass, *importer, *importer, targetMap, targetMap, rcp(&XpetraList, false));
+      mass.swap(newMatrix);
+    }
     comm->barrier();
   }
 

@@ -791,7 +791,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
     clp.setOption("report_error_norms", "noreport_error_norms", &report_error_norms, "Report L2 norms for the solution");
 
     std::ostringstream galeriStream;
-    std::string rhsFile, coordFile, coordMapFile, nullFile, materialFile, blockNumberFile;  // unused
+    std::string rhsFile, coordFile, coordMapFile, nullFile, materialFile, blockNumberFile, massFile;  // unused
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
     typedef Xpetra::MultiVector<real_type, LO, GO, NO> RealValuedMultiVector;
     RCP<RealValuedMultiVector> coordinates;
@@ -799,6 +799,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
     RCP<LOVector> blocknumber;
     RCP<Matrix> A;
     RCP<const Map> map;
+    RCP<Matrix> mass;
 
     switch (clp.parse(argc, argv)) {
       case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED: return EXIT_SUCCESS;
@@ -808,7 +809,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
     }
 
     // Load the matrix off disk (or generate it via Galeri), assuming only one right hand side is loaded.
-    MatrixLoad<SC, LO, GO, NO>(comm, lib, binaryFormat, matrixFile, rhsFile, rowMapFile, colMapFile, domainMapFile, rangeMapFile, coordFile, coordMapFile, nullFile, materialFile, blockNumberFile, map, A, coordinates, nullspace, material, blocknumber, x, b, 1, galeriParameters, xpetraParameters, galeriStream);
+    MatrixLoad<SC, LO, GO, NO>(comm, lib, binaryFormat, matrixFile, rhsFile, rowMapFile, colMapFile, domainMapFile, rangeMapFile, coordFile, coordMapFile, nullFile, materialFile, blockNumberFile, massFile, map, A, coordinates, nullspace, material, blocknumber, mass, x, b, 1, galeriParameters, xpetraParameters, galeriStream);
 
     if (do_kk && comm->getSize() > 1) {
       out << "KK was requested, but this kernel this cannot be run on more than one rank. Disabling..." << endl;

@@ -109,6 +109,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     clp.setOption("blocknumber", &blockNumberFile, "block number data file");
     std::string materialFile;
     clp.setOption("material", &materialFile, "material data file");
+    std::string massFile;
+    clp.setOption("mass", &massFile, "mass matrix data file");
     int numVectors = 1;
     clp.setOption("multivector", &numVectors, "number of rhs to solve simultaneously");
     int numSolves = 1;
@@ -158,6 +160,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     RCP<TpMultiVector> nullspace;
     RCP<TpMultiVector> material;
     RCP<TpLOVector> blocknumber;
+    RCP<const TpMatrix> mass;
     RCP<TpMultiVector> X;
     RCP<const TpMultiVector> B;
 
@@ -171,11 +174,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       RCP<MultiVector> xpetraNullspace;
       RCP<MultiVector> xpetraMaterial;
       RCP<LOVector> xpetraBlocknumber;
+      RCP<Matrix> xpetraMass;
       RCP<MultiVector> xpetraX;
       RCP<MultiVector> xpetraB;
 
       std::ostringstream galeriStream;
-      MatrixLoad<SC, LocalOrdinal, GlobalOrdinal, Node>(comm, lib, binaryFormat, matrixFile, rhsFile, rowMapFile, colMapFile, domainMapFile, rangeMapFile, coordFile, coordMapFile, nullFile, materialFile, blockNumberFile, xpetraMap, xpetraA, xpetraCoordinates, xpetraNullspace, xpetraMaterial, xpetraBlocknumber, xpetraX, xpetraB, numVectors, matrixParameters, xpetraParameters, galeriStream);
+      MatrixLoad<SC, LocalOrdinal, GlobalOrdinal, Node>(comm, lib, binaryFormat, matrixFile, rhsFile, rowMapFile, colMapFile, domainMapFile, rangeMapFile, coordFile, coordMapFile, nullFile, materialFile, blockNumberFile, massFile, xpetraMap, xpetraA, xpetraCoordinates, xpetraNullspace, xpetraMaterial, xpetraBlocknumber, xpetraMass, xpetraX, xpetraB, numVectors, matrixParameters, xpetraParameters, galeriStream);
       out << galeriStream.str();
 
       A   = toTpetra(xpetraA);
@@ -188,6 +192,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
         material = toTpetra(xpetraMaterial);
       if (!xpetraBlocknumber.is_null())
         blocknumber = toTpetra(xpetraBlocknumber);
+      if (!xpetraMass.is_null())
+        mass = toTpetra(xpetraMass);
       X = toTpetra(xpetraX);
       B = toTpetra(xpetraB);
 
