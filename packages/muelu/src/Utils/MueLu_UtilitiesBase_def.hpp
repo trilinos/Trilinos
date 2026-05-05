@@ -940,14 +940,14 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Scalar
 UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     PowerMethod(const Matrix& A, bool scaleByDiag,
-                LocalOrdinal niters, typename Teuchos::ScalarTraits<Scalar>::magnitudeType tolerance, bool verbose, unsigned int seed) {
+                LocalOrdinal niters, typename Teuchos::ScalarTraits<Scalar>::magnitudeType tolerance, typename Teuchos::ScalarTraits<Scalar>::magnitudeType diagonalReplacementTolerance, bool verbose, unsigned int seed) {
   TEUCHOS_TEST_FOR_EXCEPTION(!(A.getRangeMap()->isSameAs(*(A.getDomainMap()))), Exceptions::Incompatible,
                              "Utils::PowerMethod: operator must have domain and range maps that are equivalent.");
 
   // power iteration
   RCP<Vector> diagInvVec;
   if (scaleByDiag) {
-    diagInvVec = GetMatrixDiagonalInverse(A);
+    diagInvVec = GetMatrixDiagonalInverse(A, diagonalReplacementTolerance);
   }
 
   Scalar lambda = PowerMethod(A, diagInvVec, niters, tolerance, verbose, seed);

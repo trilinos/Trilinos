@@ -195,13 +195,14 @@ class UtilitiesBase {
     @param scaleByDiag if true, estimate the largest eigenvalue of \f$ D^; A \f$.
     @param niters maximum number of iterations
     @param tolerance stopping tolerance
+    @param diagonalReplacementTolernace tolernace for assuming the diagonal is zero
     @verbose if true, print iteration information
     @seed  seed for randomizing initial guess
 
     (Shamelessly grabbed from tpetra/examples.)
   */
   static Scalar PowerMethod(const Matrix& A, bool scaleByDiag = true,
-                            LocalOrdinal niters = 10, Magnitude tolerance = 1e-2, bool verbose = false, unsigned int seed = 123);
+                            LocalOrdinal niters = 10, Magnitude tolerance = 1e-2, Magnitude diagonalReplacementTol = Teuchos::ScalarTraits<Scalar>::eps() * 100, bool verbose = false, unsigned int seed = 123);
 
   /*! @brief Power method.
 

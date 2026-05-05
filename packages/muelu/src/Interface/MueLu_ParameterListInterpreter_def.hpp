@@ -2208,6 +2208,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   test_and_set_param_2list<bool>(paramList, defaultList, "sa: calculate eigenvalue estimate", Pparams);
   test_and_set_param_2list<double>(paramList, defaultList, "sa: max eigenvalue", Pparams);
   test_and_set_param_2list<int>(paramList, defaultList, "sa: eigenvalue estimate num iterations", Pparams);
+  test_and_set_param_2list<double>(paramList, defaultList, "sa: diagonal replacement tolerance", Pparams);
   test_and_set_param_2list<bool>(paramList, defaultList, "sa: use rowsumabs diagonal scaling", Pparams);
   test_and_set_param_2list<double>(paramList, defaultList, "sa: rowsumabs diagonal replacement tolerance", Pparams);
   test_and_set_param_2list<double>(paramList, defaultList, "sa: rowsumabs diagonal replacement value", Pparams);

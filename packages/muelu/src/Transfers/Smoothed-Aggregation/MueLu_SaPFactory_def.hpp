@@ -47,6 +47,7 @@ RCP<const ParameterList> SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   SET_VALID_ENTRY("sa: enforce constraints");
   SET_VALID_ENTRY("tentative: calculate qr");
   SET_VALID_ENTRY("sa: max eigenvalue");
+  SET_VALID_ENTRY("sa: diagonal replacement tolerance");
   SET_VALID_ENTRY("sa: rowsumabs diagonal replacement tolerance");
   SET_VALID_ENTRY("sa: rowsumabs diagonal replacement value");
   SET_VALID_ENTRY("sa: rowsumabs replace single entry row with zero");
@@ -154,8 +155,11 @@ void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLe
   const bool doQRStep                      = pL.get<bool>("tentative: calculate qr");
   const bool enforceConstraints            = pL.get<bool>("sa: enforce constraints");
   const MT userDefinedMaxEigen             = as<MT>(pL.get<double>("sa: max eigenvalue"));
-  double dTol                              = pL.get<double>("sa: rowsumabs diagonal replacement tolerance");
-  const MT diagonalReplacementTolerance    = (dTol == as<double>(-1) ? Teuchos::ScalarTraits<MT>::eps() * 100 : as<MT>(pL.get<double>("sa: rowsumabs diagonal replacement tolerance")));
+  double dTol                              = pL.get<double>("sa: diagonal replacement tolerance");
+  double dTol_rs                           = pL.get<double>("sa: rowsumabs diagonal replacement tolerance");
+  const MT diagonalReplacementTolerance    = (dTol == as<double>(-1) ? Teuchos::ScalarTraits<MT>::eps() * 100 : as<MT>(pL.get<double>("sa: diagonal replacement tolerance")));
+  const MT diagonalReplacementTolerance_rs = (dTol_rs == as<double>(-1) ? Teuchos::ScalarTraits<MT>::eps() * 100 : as<MT>(pL.get<double>("sa: rowsumabs diagonal replacement tolerance")));
+
   const SC diagonalReplacementValue        = as<SC>(pL.get<double>("sa: rowsumabs diagonal replacement value"));
   const bool replaceSingleEntryRowWithZero = pL.get<bool>("sa: rowsumabs replace single entry row with zero");
   const bool useAutomaticDiagTol           = pL.get<bool>("sa: rowsumabs use automatic diagonal tolerance");
@@ -180,7 +184,7 @@ void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLe
           if (useAbsValueRowSum) {
             const bool returnReciprocal = true;
             invDiag                     = Utilities::GetLumpedMatrixDiagonal(*A, returnReciprocal,
-                                                                             diagonalReplacementTolerance,
+                                                                             diagonalReplacementTolerance_rs,
                                                                              diagonalReplacementValue,
                                                                              replaceSingleEntryRowWithZero,
                                                                              useAutomaticDiagTol);
@@ -188,7 +192,7 @@ void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLe
                                        "SaPFactory: eigenvalue estimate: diagonal reciprocal is null.");
             lambdaMax = Utilities::PowerMethod(*A, invDiag, maxEigenIterations, stopTol);
           } else
-            lambdaMax = Utilities::PowerMethod(*A, true, maxEigenIterations, stopTol);
+            lambdaMax = Utilities::PowerMethod(*A, true, maxEigenIterations, stopTol, diagonalReplacementTolerance);
           A->SetMaxEigenvalueEstimate(lambdaMax);
         } else {
           GetOStream(Statistics1) << "Using cached max eigenvalue estimate" << std::endl;
@@ -208,7 +212,7 @@ void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLe
           GetOStream(Runtime0) << "Using rowsumabs diagonal" << std::endl;
           const bool returnReciprocal = true;
           invDiag                     = Utilities::GetLumpedMatrixDiagonal(*A, returnReciprocal,
-                                                                           diagonalReplacementTolerance,
+                                                                           diagonalReplacementTolerance_rs,
                                                                            diagonalReplacementValue,
                                                                            replaceSingleEntryRowWithZero,
                                                                            useAutomaticDiagTol);
@@ -292,7 +296,7 @@ void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLe
           if (useAbsValueRowSum) {
             const bool returnReciprocal = true;
             invDiag                     = Utilities::GetLumpedMatrixDiagonal(*CurlCurl, returnReciprocal,
-                                                                             diagonalReplacementTolerance,
+                                                                             diagonalReplacementTolerance_rs,
                                                                              diagonalReplacementValue,
                                                                              replaceSingleEntryRowWithZero,
                                                                              useAutomaticDiagTol);
@@ -300,7 +304,7 @@ void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLe
                                        "SaPFactory: eigenvalue estimate: diagonal reciprocal is null.");
             lambdaMax = Utilities::PowerMethod(*CurlCurl, invDiag, maxEigenIterations, stopTol);
           } else
-            lambdaMax = Utilities::PowerMethod(*CurlCurl, true, maxEigenIterations, stopTol);
+            lambdaMax = Utilities::PowerMethod(*CurlCurl, true, maxEigenIterations, stopTol, diagonalReplacementTolerance);
           CurlCurl->SetMaxEigenvalueEstimate(lambdaMax);
         } else {
           GetOStream(Statistics1) << "Using cached max eigenvalue estimate" << std::endl;
@@ -316,7 +320,7 @@ void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLe
         GetOStream(Runtime0) << "Using rowsumabs diagonal" << std::endl;
         const bool returnReciprocal = true;
         invDiag                     = Utilities::GetLumpedMatrixDiagonal(*CurlCurl, returnReciprocal,
-                                                                         diagonalReplacementTolerance,
+                                                                         diagonalReplacementTolerance_rs,
                                                                          diagonalReplacementValue,
                                                                          replaceSingleEntryRowWithZero,
                                                                          useAutomaticDiagTol);
