@@ -65,16 +65,11 @@ namespace Intrepid2 {
 
           Kokkos::DynRankView<PointValueType,DeviceType> ConstructWithLabelPointView(inputPoints, npts, ndim);
 
-          using ScalarType = typename ScalarTraits<PointValueType>::scalar_type;
-          Kokkos::View<ScalarType**,DeviceType> inputPointsViewToUseRandom("inputPoints", npts, ndim);
-
-          // random values between (0,1)
-          Kokkos::Random_XorShift64_Pool<DeviceType> random(20251125);
-          Kokkos::fill_random(inputPointsViewToUseRandom, random, 0.0, 1.0);
-
-          auto policy = Kokkos::MDRangePolicy<DeviceSpaceType,Kokkos::Rank<2>>({0,0},{npts,ndim});
-          Kokkos::parallel_for("initialize view", policy, KOKKOS_LAMBDA (const int &i, const int &j) {inputPoints(i,j) = inputPointsViewToUseRandom(i,j);});
-          
+          { //randomly initialize inputPoints including derivatives for fad types
+            auto inputPointsViewToUseRandom = as_scalar_1d_view(inputPoints);          
+            Kokkos::Random_XorShift64_Pool<DeviceType> random(20260504); // random values between (0,1)
+            Kokkos::fill_random(inputPointsViewToUseRandom, random, 0.0, 1.0);
+          }           
 
           *outStream << "Order: " << order << ": Computing values and curls for " << ncells << " cells and " << npts << " points using team-level getValues function" <<std::endl;
 
