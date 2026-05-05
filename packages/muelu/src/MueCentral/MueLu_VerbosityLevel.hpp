@@ -60,7 +60,7 @@ enum MsgType {
   //
   None   = 0,
   Low    = Errors | Warnings0 | Statistics0,
-  Medium = Errors | Warnings0 | Runtime0 | Parameters0 | Statistics0 | Statistics1 | Timings0,
+  Medium = Errors | Warnings0 | Runtime0 | Parameters0 | Statistics0 | Timings0,
   High   = Errors | Warnings | Runtime | Parameters | Statistics0 | Statistics1 | Timings,
 #ifdef HAVE_MUELU_DEBUG
   Extreme = Errors | Warnings | Runtime | Parameters | Statistics | Timings | External | Developer | Debug,
