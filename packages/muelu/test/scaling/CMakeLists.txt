@@ -125,6 +125,10 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(
     scaling-ml.xml
     scaling-with-rerun.xml
     scaling-withglobalconstants.xml
+    scaling.extreme.xml
+    scaling.low.xml
+    scaling.medium.xml
+    scaling.none.xml
     scaling.xml
     scaling.yaml
     scaling_apex.xml
@@ -410,6 +414,18 @@ TRIBITS_ADD_TEST(
   POSTFIX_AND_ARGS_1 "Repeat" --linAlgebra=Tpetra --reruns=3 --stacked-timer
   NUM_MPI_PROCS 4
   COMM mpi # HAVE_MPI required
+)
+
+TRIBITS_ADD_TEST(
+  Driver
+  NAME "Verbosity"
+  POSTFIX_AND_ARGS_0 "None" --xml=scaling.none.xml
+  POSTFIX_AND_ARGS_1 "Low" --xml=scaling.low.xml
+  POSTFIX_AND_ARGS_2 "Medium" --xml=scaling.medium.xml
+  POSTFIX_AND_ARGS_3 "Extreme" --xml=scaling.extreme.xml
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "Belos converged"
 )
 
 IF(${PACKAGE_NAME}_ENABLE_Zoltan)
