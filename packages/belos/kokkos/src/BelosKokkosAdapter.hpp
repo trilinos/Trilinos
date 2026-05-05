@@ -30,6 +30,51 @@
 #define BELOS_KOKKOS_ADAPTER_HPP
 namespace Belos {
 
+template<class SerialDenseMatrixType, class KokkosViewMatrixType >
+void copySerialDenseMatrix(const SerialDenseMatrixType& B, const KokkosViewMatrixType& KMat, const bool& KMat_to_B) {
+  using ScalarType = typename KokkosViewMatrixType::value_type;
+  using UMHostViewMatrixType =
+        Kokkos::View<ScalarType**,Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using UMHostViewMatrixType2 =
+        Kokkos::View<ScalarType**,Kokkos::LayoutStride, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  if (B.numRows() == B.stride()) {
+    UMHostViewMatrixType umB_h(B.values(), KMat.extent(0), KMat.extent(1));
+    if (KMat_to_B) {
+      Kokkos::deep_copy(umB_h, KMat);
+    }
+    else {
+      Kokkos::deep_copy(KMat, umB_h);
+    }
+  }
+  else {
+    Kokkos::LayoutStride layout(KMat.extent(0), 1, KMat.extent(1), B.stride());
+    UMHostViewMatrixType2 umB_h(B.values(), layout);   
+    constexpr bool KokkosExecCanAccessB = Kokkos::SpaceAccessibility<typename KokkosViewMatrixType::device_type::execution_space,
+                                                                     typename UMHostViewMatrixType2::device_type::memory_space>::accessible;
+    constexpr bool BExecCanAccessKokkos = Kokkos::SpaceAccessibility<typename UMHostViewMatrixType2::device_type::execution_space,
+                                                                     typename KokkosViewMatrixType::device_type::memory_space>::accessible;
+    if (!KokkosExecCanAccessB && !BExecCanAccessKokkos) {
+      Kokkos::View<ScalarType**,Kokkos::LayoutLeft, Kokkos::HostSpace> tmp_h(Kokkos::view_alloc(Kokkos::WithoutInitializing,"tmp_h"), KMat.extent(0), KMat.extent(1));
+      if (KMat_to_B) {
+        Kokkos::deep_copy(tmp_h, KMat);
+        Kokkos::deep_copy(umB_h, tmp_h);
+      }
+      else {
+        Kokkos::deep_copy(tmp_h, umB_h);
+        Kokkos::deep_copy(KMat, tmp_h);
+      }
+    }
+    else {
+      if (KMat_to_B) {
+        Kokkos::deep_copy(umB_h, KMat);
+      }
+      else {
+        Kokkos::deep_copy(KMat, umB_h);
+      }
+    }
+  }
+}
+
 //Forward class declaration of KokkosCrsOperator:
 template<class ScalarType, class OrdinalType, class Device>
 class KokkosCrsOperator;
@@ -60,10 +105,6 @@ public:
         Kokkos::View<ScalarType*,Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
   using UMHostConstViewVectorType =
         Kokkos::View<const ScalarType*,Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
-  using UMHostViewMatrixType =
-        Kokkos::View<ScalarType**,Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
-  using UMHostConstViewMatrixType =
-        Kokkos::View<const ScalarType**,Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
 protected:
   ViewMatrixType myView;
@@ -409,10 +450,9 @@ public:
       ConstViewVectorType Asub = Kokkos::subview(A_vec->GetInternalViewConst(), Kokkos::ALL, 0);
       KokkosBlas::axpby(scal1, Asub, beta, mysub);
     }
-    else{
-      UMHostConstViewMatrixType mat_h(B.values(), A_vec->GetInternalViewConst().extent(1), myView.extent(1));
+    else {
       ViewMatrixType mat_d(Kokkos::view_alloc(Kokkos::WithoutInitializing,"mat"), A_vec->GetInternalViewConst().extent(1), myView.extent(1));
-      Kokkos::deep_copy(mat_d, mat_h);
+      copySerialDenseMatrix(B, mat_d, false);
       if( myView.extent(1) == 1 ){ // B has only 1 col
           ConstViewVectorType Bsub = Kokkos::subview(mat_d, Kokkos::ALL, 0);
           ViewVectorType mysub = Kokkos::subview(myView, Kokkos::ALL, 0);
@@ -480,11 +520,10 @@ public:
    //     B(i,0) = soln(i);
    //   }
    // }
-    else{
-      UMHostViewMatrixType soln_h(B.values(), A_vec->GetInternalViewConst().extent(1), myView.extent(1));
+    else {
       ViewMatrixType soln_d(Kokkos::view_alloc(Kokkos::WithoutInitializing,"mat"), A_vec->GetInternalViewConst().extent(1), myView.extent(1));
       KokkosBlas::gemm("C", "N", alpha, A_vec->GetInternalViewConst(), myView, ScalarType(0.0), soln_d);
-      Kokkos::deep_copy(soln_h, soln_d);
+      copySerialDenseMatrix(B, soln_d, true);
     }
   }
 
