@@ -258,11 +258,9 @@ namespace Intrepid2 {
   template<typename DT, typename OT, typename PT>
   void 
   Basis_HCURL_TET_I1_FEM<DT,OT,PT>::getScratchSpaceSize(       
-                                    ordinal_type& perTeamSpaceSize,
                                     ordinal_type& perThreadSpaceSize,
                               const PointViewType inputPoints,
                               const EOperator operatorType) const {
-    perTeamSpaceSize = 0;
     perThreadSpaceSize = 0;
   }
 
@@ -274,14 +272,14 @@ namespace Intrepid2 {
       const PointViewType  inputPoints,
       const EOperator operatorType,
       const typename Kokkos::TeamPolicy<typename DT::execution_space>::member_type& team_member,
-      const typename DT::execution_space::scratch_memory_space & scratchStorage, 
+      const int threadScratchLevel, 
       const ordinal_type subcellDim,
       const ordinal_type subcellOrdinal) const {
 
       INTREPID2_TEST_FOR_ABORT( !((subcellDim == -1) && (subcellOrdinal == -1)),
         ">>> ERROR: (Intrepid2::Basis_HCURL_TET_I1_FEM::getValues), The capability of selecting subsets of basis functions has not been implemented yet.");
 
-      (void) scratchStorage; //avoid unused variable warning
+      (void) threadScratchLevel; //avoid unused variable warning
 
       const int numPoints = inputPoints.extent(0);
 

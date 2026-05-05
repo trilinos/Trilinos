@@ -562,13 +562,11 @@ Basis_HCURL_TET_In_FEM( const ordinal_type order,
 template<typename DT, typename OT, typename PT>
 void 
 Basis_HCURL_TET_In_FEM<DT,OT,PT>::getScratchSpaceSize(        
-                                  ordinal_type& perTeamSpaceSize,
-                                  ordinal_type& perThreadSpaceSize,
+                                      ordinal_type& perThreadSpaceSize,
                             const PointViewType inputPoints,
                             const EOperator operatorType) const {
   using ScalarType = typename ScalarTraits<typename PointViewType::value_type>::scalar_type;
   using ScratchViewType = Kokkos::DynRankView<ScalarType, typename DT::execution_space::scratch_memory_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
-  perTeamSpaceSize = 0;
   ordinal_type scalarWorkViewExtent = (operatorType == OPERATOR_VALUE) ? this->basisCardinality_ : 7*this->basisCardinality_;
   perThreadSpaceSize = ScratchViewType::shmem_size(scalarWorkViewExtent*get_dimension_scalar(inputPoints));
 }
@@ -581,7 +579,7 @@ Basis_HCURL_TET_In_FEM<DT,OT,PT>::getValues(
     const PointViewType  inputPoints,
     const EOperator operatorType,
     const typename Kokkos::TeamPolicy<typename DT::execution_space>::member_type& team_member,
-    const typename DT::execution_space::scratch_memory_space & scratchStorage, 
+    const int threadScratchLevel, 
     const ordinal_type subcellDim,
     const ordinal_type subcellOrdinal) const {
 
@@ -593,8 +591,8 @@ Basis_HCURL_TET_In_FEM<DT,OT,PT>::getValues(
     using WorkViewType = Kokkos::DynRankView< ScalarType,typename DT::execution_space::scratch_memory_space,Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
     ordinal_type scalarSizePerPoint = (operatorType == OPERATOR_VALUE) ? this->basisCardinality_ : 7*this->basisCardinality_;
     ordinal_type sizePerPoint = scalarSizePerPoint*get_dimension_scalar(inputPoints);
-    int scratch_level = 1;
-    WorkViewType  work(team_member.thread_scratch(scratch_level), sizePerPoint);
+    
+    WorkViewType  work(team_member.thread_scratch(threadScratchLevel), sizePerPoint);
     using range_type = Kokkos::pair<ordinal_type,ordinal_type>;
     
     switch(operatorType) {

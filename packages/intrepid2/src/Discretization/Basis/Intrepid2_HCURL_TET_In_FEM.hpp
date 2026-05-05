@@ -217,8 +217,7 @@ class Basis_HCURL_TET_In_FEM
   }
 
     virtual void 
-    getScratchSpaceSize(      ordinal_type& perTeamSpaceSize,
-                              ordinal_type& perThreadSpaceSize,
+    getScratchSpaceSize(      ordinal_type& perThreadSpaceSize,
                         const PointViewType inputPointsconst,
                         const EOperator operatorType = OPERATOR_VALUE) const override;
 
@@ -229,7 +228,7 @@ class Basis_HCURL_TET_In_FEM
       const PointViewType  inputPoints,
       const EOperator operatorType,
       const typename Kokkos::TeamPolicy<typename DeviceType::execution_space>::member_type& team_member,
-      const typename DeviceType::execution_space::scratch_memory_space & scratchStorage, 
+      const int threadScratchLevel, 
       const ordinal_type subcellDim = -1,
       const ordinal_type subcellOrdinal = -1) const override;
 

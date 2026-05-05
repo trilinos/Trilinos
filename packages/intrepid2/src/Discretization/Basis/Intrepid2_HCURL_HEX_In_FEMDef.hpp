@@ -589,13 +589,11 @@ namespace Intrepid2 {
   template<typename DT, typename OT, typename PT>
   void 
   Basis_HCURL_HEX_In_FEM<DT,OT,PT>::getScratchSpaceSize(        
-                                    ordinal_type& perTeamSpaceSize,
                                     ordinal_type& perThreadSpaceSize,
                               const PointViewType inputPoints,
                               const EOperator operatorType) const {
     using ScalarType = typename ScalarTraits<typename PointViewType::value_type>::scalar_type;
     using ScratchViewType = Kokkos::DynRankView<ScalarType, typename DT::execution_space::scratch_memory_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
-    perTeamSpaceSize = 0;
     ordinal_type scalarWorkViewExtent = (operatorType == OPERATOR_VALUE) ? 
                                       3*this->vinvLine_.extent(0)+this->vinvBubble_.extent(0):
                                       5*this->vinvLine_.extent(0)+this->vinvBubble_.extent(0);
@@ -610,7 +608,7 @@ namespace Intrepid2 {
       const PointViewType  inputPoints,
       const EOperator operatorType,
       const typename Kokkos::TeamPolicy<typename DT::execution_space>::member_type& team_member,
-      const typename DT::execution_space::scratch_memory_space & scratchStorage, 
+      const int threadScratchLevel, 
       const ordinal_type subcellDim,
       const ordinal_type subcellOrdinal) const {
 
@@ -624,8 +622,8 @@ namespace Intrepid2 {
                                       3*this->vinvLine_.extent(0)+this->vinvBubble_.extent(0):
                                       5*this->vinvLine_.extent(0)+this->vinvBubble_.extent(0);
       ordinal_type sizePerPoint = scalarSizePerPoint*get_dimension_scalar(inputPoints);
-      int scratch_level = 1;
-      WorkViewType  work(team_member.thread_scratch(scratch_level), sizePerPoint);
+      
+      WorkViewType  work(team_member.thread_scratch(threadScratchLevel), sizePerPoint);
       using range_type = Kokkos::pair<ordinal_type,ordinal_type>;
       
       switch(operatorType) {

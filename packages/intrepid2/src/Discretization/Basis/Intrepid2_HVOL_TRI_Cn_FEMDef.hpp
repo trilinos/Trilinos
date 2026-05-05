@@ -302,13 +302,11 @@ Basis_HVOL_TRI_Cn_FEM( const ordinal_type order,
   template<typename DT, typename OT, typename PT>
   void 
   Basis_HVOL_TRI_Cn_FEM<DT,OT,PT>::getScratchSpaceSize(        
-                                    ordinal_type& perTeamSpaceSize,
                                     ordinal_type& perThreadSpaceSize,
                               const PointViewType inputPoints,
                               const EOperator operatorType) const {
     using ScalarType = typename ScalarTraits<typename PointViewType::value_type>::scalar_type;
     using ScratchViewType = Kokkos::DynRankView<ScalarType, typename DT::execution_space::scratch_memory_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
-    perTeamSpaceSize = 0;
     perThreadSpaceSize = ScratchViewType::shmem_size(this->vinv_.extent(0)*get_dimension_scalar(inputPoints));
   }
 
@@ -320,7 +318,7 @@ Basis_HVOL_TRI_Cn_FEM( const ordinal_type order,
       const PointViewType  inputPoints,
       const EOperator operatorType,
       const typename Kokkos::TeamPolicy<typename DT::execution_space>::member_type& team_member,
-      const typename DT::execution_space::scratch_memory_space & scratchStorage, 
+      const int threadScratchLevel, 
       const ordinal_type subcellDim,
       const ordinal_type subcellOrdinal) const {
       
@@ -331,8 +329,8 @@ Basis_HVOL_TRI_Cn_FEM( const ordinal_type order,
       using ScalarType = typename ScalarTraits<typename PointViewType::value_type>::scalar_type;
       using WorkViewType = Kokkos::DynRankView< ScalarType,typename DT::execution_space::scratch_memory_space,Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
       auto sizePerPoint = this->vinv_.extent(0)*get_dimension_scalar(inputPoints);
-      int scratch_level = 1;
-      WorkViewType  work(team_member.thread_scratch(scratch_level), sizePerPoint);
+      
+      WorkViewType  work(team_member.thread_scratch(threadScratchLevel), sizePerPoint);
       using range_type = Kokkos::pair<ordinal_type,ordinal_type>;
       switch(operatorType) {
         case OPERATOR_VALUE:

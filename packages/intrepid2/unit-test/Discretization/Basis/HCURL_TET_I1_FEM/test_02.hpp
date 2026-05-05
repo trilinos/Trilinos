@@ -87,13 +87,13 @@ namespace Intrepid2 {
           { //compute values
             auto functor = KOKKOS_LAMBDA (typename Kokkos::TeamPolicy<DeviceSpaceType>::member_type team_member) {
                 auto valsACell = Kokkos::subview(outputValuesA, team_member.league_rank(), Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
-                basisRawPtr_device->getValues(valsACell, inputPoints, OPERATOR_VALUE, team_member, team_member.team_scratch(scratch_space_level));
+                basisRawPtr_device->getValues(valsACell, inputPoints, OPERATOR_VALUE, team_member, scratch_space_level);
             };              
             
             //Get the required size of the scratch space per team and per thread.
-            int perThreadSpaceSize(0), perTeamSpaceSize(0);
-            basisPtr->getScratchSpaceSize(perTeamSpaceSize,perThreadSpaceSize,inputPoints, OPERATOR_VALUE);
-            teamPolicy.set_scratch_size(scratch_space_level, Kokkos::PerTeam(perTeamSpaceSize), Kokkos::PerThread(perThreadSpaceSize));
+            int perThreadSpaceSize(0);
+            basisPtr->getScratchSpaceSize(perThreadSpaceSize,inputPoints, OPERATOR_VALUE);
+            teamPolicy.set_scratch_size(scratch_space_level, Kokkos::PerThread(perThreadSpaceSize));
 
             Kokkos::parallel_for (teamPolicy,functor);
           }
@@ -101,13 +101,13 @@ namespace Intrepid2 {
           { //compute curls
             auto functor = KOKKOS_LAMBDA (typename Kokkos::TeamPolicy<DeviceSpaceType>::member_type team_member) {
                 auto curlsACell = Kokkos::subview(outputCurlsA, team_member.league_rank(), Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
-                basisRawPtr_device->getValues(curlsACell, inputPoints, OPERATOR_CURL, team_member, team_member.team_scratch(scratch_space_level));
+                basisRawPtr_device->getValues(curlsACell, inputPoints, OPERATOR_CURL, team_member, scratch_space_level);
             };              
             
             //Get the required size of the scratch space per team and per thread.
-            int perThreadSpaceSize(0), perTeamSpaceSize(0);
-            basisPtr->getScratchSpaceSize(perTeamSpaceSize,perThreadSpaceSize,inputPoints, OPERATOR_CURL);
-            teamPolicy.set_scratch_size(scratch_space_level, Kokkos::PerTeam(perTeamSpaceSize), Kokkos::PerThread(perThreadSpaceSize));
+            int perThreadSpaceSize(0);
+            basisPtr->getScratchSpaceSize(perThreadSpaceSize,inputPoints, OPERATOR_CURL);
+            teamPolicy.set_scratch_size(scratch_space_level, Kokkos::PerThread(perThreadSpaceSize));
 
             Kokkos::parallel_for (teamPolicy,functor);
           }

@@ -160,9 +160,8 @@ namespace Intrepid2 {
     }
 
     virtual void 
-    getScratchSpaceSize(      ordinal_type& perTeamSpaceSize,
-                              ordinal_type& perThreadSpaceSize,
-                        const PointViewType inputPointsconst,
+    getScratchSpaceSize(      ordinal_type& perThreadSpaceSize,
+                        PointViewType inputPointsconst,
                         const EOperator operatorType = OPERATOR_VALUE) const override;
 
     KOKKOS_INLINE_FUNCTION
@@ -172,7 +171,7 @@ namespace Intrepid2 {
       const PointViewType  inputPoints,
       const EOperator operatorType,
       const typename Kokkos::TeamPolicy<typename DeviceType::execution_space>::member_type& team_member,
-      const typename DeviceType::execution_space::scratch_memory_space & scratchStorage, 
+      const int threadScratchLevel, 
       const ordinal_type subcellDim = -1,
       const ordinal_type subcellOrdinal = -1) const override;
 
