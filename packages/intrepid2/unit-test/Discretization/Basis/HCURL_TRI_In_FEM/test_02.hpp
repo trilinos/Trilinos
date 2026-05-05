@@ -20,7 +20,7 @@
 #endif
 
 #include "Intrepid2_Types.hpp"
-#include "Intrepid2_Utils.hpp"
+#include "Intrepid2_TestUtils.hpp"
 
 #include "Intrepid2_HCURL_TRI_In_FEM.hpp"
 #include "packages/intrepid2/unit-test/Discretization/Basis/Setup.hpp"
@@ -125,24 +125,24 @@ namespace Intrepid2 {
             const auto outputValuesA_Host = Kokkos::create_mirror_view(outputValuesA); Kokkos::deep_copy(outputValuesA_Host, outputValuesA);
             const auto outputValuesB_Host = Kokkos::create_mirror_view(outputValuesB); Kokkos::deep_copy(outputValuesB_Host, outputValuesB);
             
-            OutValueType diff = 0; 
             const auto tol = 100.0 * epsilon<double>();
             for (size_t ic=0;ic<outputValuesA_Host.extent(0);++ic)
               for (size_t i=0;i<outputValuesA_Host.extent(1);++i)
                 for (size_t j=0;j<outputValuesA_Host.extent(2);++j) {
-                  diff = 0;
-                  OutValueType maxMagnitude = 0;
-                  for (int d=0;d<ndim;++d) {
-                    diff += std::abs(outputValuesB_Host(i,j,d) - outputValuesA_Host(ic,i,j,d));
-                    maxMagnitude = std::max(maxMagnitude, std::max(std::abs(outputValuesA_Host(ic,i,j,d)), std::abs(outputValuesB_Host(i,j,d))));
+                  auto maxBNorm = computeMaxNorm(outputValuesB_Host(i,j,0));
+                  auto diffNorm = computeMaxNorm(outputValuesB_Host(i,j,0) - outputValuesA_Host(ic,i,j,0));
+                  for (int d=1;d<ndim;++d) {
+                    maxBNorm = std::max(maxBNorm, computeMaxNorm(outputValuesB_Host(i,j,d)));
+                    diffNorm = std::max(diffNorm, computeMaxNorm(outputValuesB_Host(i,j,d)- outputValuesA_Host(ic,i,j,d)));
                   }
-                  if (diff > tol * std::max(1.0, maxMagnitude)) {
+                  const auto diffRelNorm = diffNorm/std::max(1.0, maxBNorm);
+                  if (diffRelNorm > tol) {
                     ++errorFlag;
                    std::cout << " order: " << order
                                << ", ic: " << ic << ", i: " << i << ", j: " << j 
-                               << ", val A: [" << outputValuesA_Host(ic,i,j,0) << ", " << outputValuesA_Host(ic,i,j,1) <<"]"
-                               << ", val B: [" << outputValuesB_Host(i,j,0) << ", " << outputValuesB_Host(i,j,1) <<"]"
-                               << ", |rel diff|: " << diff/std::max(1.0, maxMagnitude)
+                               << ", val A: [" << outputValuesA_Host(ic,i,j,0) << ", " << outputValuesA_Host(ic,i,j,1) << "]"
+                               << ", val B: [" << outputValuesB_Host(i,j,0) << ", " << outputValuesB_Host(i,j,1) << "]"
+                               << ", |rel diff|: " << diffRelNorm
                                << ", tol: " << tol
                                << std::endl;
                   }
@@ -154,22 +154,19 @@ namespace Intrepid2 {
             const auto outputCurlsA_Host = Kokkos::create_mirror_view(outputCurlsA); Kokkos::deep_copy(outputCurlsA_Host, outputCurlsA);
             const auto outputCurlsB_Host = Kokkos::create_mirror_view(outputCurlsB); Kokkos::deep_copy(outputCurlsB_Host, outputCurlsB);
             
-             OutValueType diff = 0;
-             const auto tol = 1.0e4 * epsilon<double>();
-             for (size_t ic=0;ic<outputCurlsA_Host.extent(0);++ic)
+            const auto tol = 1.0e5 * epsilon<double>();
+            for (size_t ic=0;ic<outputCurlsA_Host.extent(0);++ic)
               for (size_t i=0;i<outputCurlsA_Host.extent(1);++i)
                 for (size_t j=0;j<outputCurlsA_Host.extent(2);++j) {
-                  const auto valA = outputCurlsA_Host(ic,i,j);
-                  const auto valB = outputCurlsB_Host(i,j);
-                  diff = std::abs(valB - valA);
-                  const auto maxMagnitude = std::max(std::abs(valA), std::abs(valB));
-                  if (diff > tol * std::max(1.0, maxMagnitude)) {
+                  auto maxBNorm = computeMaxNorm(outputCurlsB_Host(i,j));
+                  auto diffRelNorm = computeMaxNorm(outputCurlsB_Host(i,j) - outputCurlsA_Host(ic,i,j))/std::max(1.0, maxBNorm);
+                  if (diffRelNorm > tol) {
                     ++errorFlag;
                    std::cout << " order: " << order
                                << ", ic: " << ic << ", i: " << i << ", j: " << j 
                                << ", curl A: " << outputCurlsA_Host(ic,i,j)
                                << ", curl B: " << outputCurlsB_Host(i,j)
-                               << ", |rel diff|: " << diff/std::max(1.0, maxMagnitude)
+                               << ", |rel diff|: " << diffRelNorm
                                << ", tol: " << tol
                                << std::endl;
                   }

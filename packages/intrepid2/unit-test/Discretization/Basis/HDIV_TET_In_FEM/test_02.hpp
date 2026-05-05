@@ -20,7 +20,7 @@
 #endif
 
 #include "Intrepid2_Types.hpp"
-#include "Intrepid2_Utils.hpp"
+#include "Intrepid2_TestUtils.hpp"
 
 #include "Intrepid2_HDIV_TET_In_FEM.hpp"
 #include "packages/intrepid2/unit-test/Discretization/Basis/Setup.hpp"
@@ -125,24 +125,24 @@ namespace Intrepid2 {
             const auto outputValuesA_Host = Kokkos::create_mirror_view(outputValuesA); Kokkos::deep_copy(outputValuesA_Host, outputValuesA);
             const auto outputValuesB_Host = Kokkos::create_mirror_view(outputValuesB); Kokkos::deep_copy(outputValuesB_Host, outputValuesB);
             
-            OutValueType diff = 0; 
             const auto tol = 100.0 * epsilon<double>();
             for (size_t ic=0;ic<outputValuesA_Host.extent(0);++ic)
               for (size_t i=0;i<outputValuesA_Host.extent(1);++i)
                 for (size_t j=0;j<outputValuesA_Host.extent(2);++j) {
-                  diff = 0;
-                  OutValueType maxMagnitude = 0;
-                  for (int d=0;d<ndim;++d) {
-                    diff += std::abs(outputValuesB_Host(i,j,d) - outputValuesA_Host(ic,i,j,d));
-                    maxMagnitude = std::max(maxMagnitude, std::max(std::abs(outputValuesA_Host(ic,i,j,d)), std::abs(outputValuesB_Host(i,j,d))));
-                  }
-                  if (diff > tol * std::max(1.0, maxMagnitude)) {
+                auto maxBNorm = computeMaxNorm(outputValuesB_Host(i,j,0));
+                auto diffNorm = computeMaxNorm(outputValuesB_Host(i,j,0) - outputValuesA_Host(ic,i,j,0));
+                for (int d=1;d<ndim;++d) {
+                  maxBNorm = std::max(maxBNorm, computeMaxNorm(outputValuesB_Host(i,j,d)));
+                  diffNorm = std::max(diffNorm, computeMaxNorm(outputValuesB_Host(i,j,d)- outputValuesA_Host(ic,i,j,d)));
+                }
+                const auto diffRelNorm = diffNorm/std::max(1.0, maxBNorm);
+                if (diffRelNorm > tol) {
                     ++errorFlag;
                     std::cout << " order: " << order
                               << ", ic: " << ic << ", i: " << i << ", j: " << j 
                               << ", val A: [" << outputValuesA_Host(ic,i,j,0) << ", " << outputValuesA_Host(ic,i,j,1) << ", " << outputValuesA_Host(ic,i,j,2) << "]"
                               << ", val B: [" << outputValuesB_Host(i,j,0) << ", " << outputValuesB_Host(i,j,1) << ", " << outputValuesB_Host(i,j,2) << "]"
-                              << ", |diff|: " << diff
+                              << ", |rel diff|: " << diffRelNorm
                               << ", tol: " << tol
                               << std::endl;
                   }
@@ -154,25 +154,23 @@ namespace Intrepid2 {
             const auto outputDivergencesA_Host = Kokkos::create_mirror_view(outputDivergencesA); Kokkos::deep_copy(outputDivergencesA_Host, outputDivergencesA);
             const auto outputDivergencesB_Host = Kokkos::create_mirror_view(outputDivergencesB); Kokkos::deep_copy(outputDivergencesB_Host, outputDivergencesB);
             
-            OutValueType diff = 0;
-            //Note, the PR intel 2021 serial build shows substantially higher errors (possibly due to operation rearrangements). 
-            auto tol = 1e6*epsilon<double>();
+            auto tol = 100.0*epsilon<double>();
             for (size_t ic=0;ic<outputDivergencesA_Host.extent(0);++ic)
               for (size_t i=0;i<outputDivergencesA_Host.extent(1);++i)
                 for (size_t j=0;j<outputDivergencesA_Host.extent(2);++j) {
                   const auto valA = outputDivergencesA_Host(ic,i,j);
                   const auto valB = outputDivergencesB_Host(i,j);
-                  diff = std::abs(valB - valA);
-                  const auto maxMagnitude = std::max(std::abs(valA), std::abs(valB));
-                  if (diff > tol * std::max(1.0, maxMagnitude)) {
+                  const auto maxBNorm = computeMaxNorm(valB);
+                  const auto diffRelNorm = computeMaxNorm(valB - valA)/std::max(1.0, maxBNorm);
+                  if (diffRelNorm > tol) {
                     ++errorFlag;
-                   std::cout << " order: " << order
-                               << ", ic: " << ic << ", i: " << i << ", j: " << j 
-                               << ", divergence A: " << outputDivergencesA_Host(ic,i,j) 
-                               << ", divergence B: " << outputDivergencesB_Host(i,j) 
-                               << ", |rel diff|: " << diff/std::max(1.0, maxMagnitude)
-                               << ", tol: " << tol
-                               << std::endl;
+                   std::cout  << " order: " << order
+                              << ", ic: " << ic << ", i: " << i << ", j: " << j 
+                              << ", divergence A: " << valA
+                              << ", divergence B: " << valB
+                              << ", |rel diff|: " << diffRelNorm
+                              << ", tol: " << tol
+                              << std::endl;
                   }
                 }
           }

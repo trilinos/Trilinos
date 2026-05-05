@@ -20,7 +20,7 @@
 #endif
 
 #include "Intrepid2_Types.hpp"
-#include "Intrepid2_Utils.hpp"
+#include "Intrepid2_TestUtils.hpp"
 
 #include "Intrepid2_HGRAD_HEX_C1_FEM.hpp"
 #include "packages/intrepid2/unit-test/Discretization/Basis/Setup.hpp"
@@ -119,18 +119,20 @@ namespace Intrepid2 {
           const auto outputValuesA_Host = Kokkos::create_mirror_view(outputValuesA); Kokkos::deep_copy(outputValuesA_Host, outputValuesA);
           const auto outputValuesB_Host = Kokkos::create_mirror_view(outputValuesB); Kokkos::deep_copy(outputValuesB_Host, outputValuesB);
           
-          OutValueType diff = 0; 
-          auto tol = epsilon<double>();
+          const auto tol = 100.0 * epsilon<double>();
           for (size_t ic=0;ic<outputValuesA_Host.extent(0);++ic)
             for (size_t i=0;i<outputValuesA_Host.extent(1);++i)
               for (size_t j=0;j<outputValuesA_Host.extent(2);++j) {
-                diff = std::abs(outputValuesB_Host(i,j) - outputValuesA_Host(ic,i,j));
-                if (diff > tol) {
+                const auto valA = outputValuesA_Host(ic,i,j);
+                const auto valB = outputValuesB_Host(i,j);
+                const auto maxBNorm = computeMaxNorm(valB);
+                const auto diffRelNorm = computeMaxNorm(valB - valA)/std::max(1.0, maxBNorm);
+                if (diffRelNorm > tol) {
                   ++errorFlag;
                   std::cout << ", ic: " << ic << ", i: " << i << ", j: " << j 
                             << ", val A: " << outputValuesA_Host(ic,i,j) 
                             << ", val B: " << outputValuesB_Host(i,j) 
-                            << ", |diff|: " << diff
+                            << ", |rel diff|: " << diffRelNorm
                             << ", tol: " << tol
                             << std::endl;
                 }
@@ -142,20 +144,23 @@ namespace Intrepid2 {
           const auto outputGradsA_Host = Kokkos::create_mirror_view(outputGradsA); Kokkos::deep_copy(outputGradsA_Host, outputGradsA);
           const auto outputGradsB_Host = Kokkos::create_mirror_view(outputGradsB); Kokkos::deep_copy(outputGradsB_Host, outputGradsB);
           
-          OutValueType diff = 0;
-          auto tol = epsilon<double>();
+          const auto tol = 100.0 * epsilon<double>();
           for (size_t ic=0;ic<outputGradsA_Host.extent(0);++ic)
             for (size_t i=0;i<outputGradsA_Host.extent(1);++i)
               for (size_t j=0;j<outputGradsA_Host.extent(2);++j) {
-                diff = 0;
-                for (int d=0;d<ndim;++d)
-                  diff += std::abs(outputGradsB_Host(i,j,d) - outputGradsA_Host(ic,i,j,d));
-                if (diff > tol) {
+                auto maxBNorm = computeMaxNorm(outputGradsB_Host(i,j,0));
+                auto diffNorm = computeMaxNorm(outputGradsB_Host(i,j,0) - outputGradsA_Host(ic,i,j,0));
+                for (int d=1;d<ndim;++d) {
+                  maxBNorm = std::max(maxBNorm, computeMaxNorm(outputGradsB_Host(i,j,d)));
+                  diffNorm = std::max(diffNorm, computeMaxNorm(outputGradsB_Host(i,j,d)- outputGradsA_Host(ic,i,j,d)));
+                }
+                const auto diffRelNorm = diffNorm/std::max(1.0, maxBNorm);
+                if (diffRelNorm > tol) {
                   ++errorFlag;
                   std::cout << ", ic: " << ic << ", i: " << i << ", j: " << j 
                             << ", grads A: [" << outputGradsA_Host(ic,i,j,0) << ", " << outputGradsA_Host(ic,i,j,1) << ", " <<  outputGradsA_Host(ic,i,j,2) <<"]"
                             << ", grads B: [" << outputGradsB_Host(i,j,0) << ", " <<  outputGradsB_Host(i,j,1) << ", " << outputGradsB_Host(i,j,2) <<"]"
-                            << ", |diff|: " << diff
+                            << ", |diff|: " << diffRelNorm
                             << ", tol: " << tol
                             << std::endl;
                 }

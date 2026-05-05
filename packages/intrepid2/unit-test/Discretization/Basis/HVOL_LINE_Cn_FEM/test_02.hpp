@@ -20,7 +20,7 @@
 #endif
 
 #include "Intrepid2_Types.hpp"
-#include "Intrepid2_Utils.hpp"
+#include "Intrepid2_TestUtils.hpp"
 
 #include "Intrepid2_HVOL_LINE_Cn_FEM.hpp"
 #include "packages/intrepid2/unit-test/Discretization/Basis/Setup.hpp"
@@ -104,22 +104,21 @@ namespace Intrepid2 {
             const auto outputValuesA_Host = Kokkos::create_mirror_view(outputValuesA); Kokkos::deep_copy(outputValuesA_Host, outputValuesA);
             const auto outputValuesB_Host = Kokkos::create_mirror_view(outputValuesB); Kokkos::deep_copy(outputValuesB_Host, outputValuesB);
             
-            OutValueType diff = 0; 
             const auto tol = 100.0 * epsilon<double>();
             for (size_t ic=0;ic<outputValuesA_Host.extent(0);++ic)
               for (size_t i=0;i<outputValuesA_Host.extent(1);++i)
                 for (size_t j=0;j<outputValuesA_Host.extent(2);++j) {
                   const auto valA = outputValuesA_Host(ic,i,j);
                   const auto valB = outputValuesB_Host(i,j);
-                  diff = std::abs(valB - valA);
-                  const auto maxMagnitude = std::max(std::abs(valA), std::abs(valB));
-                  if (diff > tol * std::max(1.0, maxMagnitude)) {
+                  const auto maxBNorm = computeMaxNorm(valB);
+                  const auto diffRelNorm = computeMaxNorm(valB - valA)/std::max(1.0, maxBNorm);
+                  if (diffRelNorm > tol) {
                     ++errorFlag;
                    std::cout << " order: " << order
                                << ", ic: " << ic << ", i: " << i << ", j: " << j 
                                << ", val A: " << outputValuesA_Host(ic,i,j) 
                                << ", val B: " << outputValuesB_Host(i,j) 
-                               << ", |rel diff|: " << diff/std::max(1.0, maxMagnitude)
+                               << ", |rel diff|: " << diffRelNorm
                                << ", tol: " << tol
                                << std::endl;
                   }
