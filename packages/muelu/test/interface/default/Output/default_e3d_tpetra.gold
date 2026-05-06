@@ -2,6 +2,9 @@ Clearing old data (if any)
 
 Level 0
 Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
+chebyshev: ratio eigenvalue (computed) = 20
+chebyshev: max eigenvalue (calculated by Ifpack2) = 1.94867
+"Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>, boost factor: 1.1, algorithm: first}, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
 smoother -> 
  chebyshev: ratio eigenvalue = 20
  timer for apply = 0
@@ -14,6 +17,8 @@ Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 algorithm = "classical" classical algorithm = "default": threshold = 0, blocksize = 3
+Detected 0 agglomerated Dirichlet nodes
+Number of dropped entries in amalgamated matrix graph: 0/9997 (0%)
 lightweight wrap = 1
 Filtered matrix is not being constructed as no filtering is being done
 Build (MueLu::TentativePFactory)
@@ -22,11 +27,33 @@ BuildAggregatesNonKokkos (Phase - (Dirichlet))
 BuildAggregatesNonKokkos (Phase 1 (main))
 BuildAggregatesNonKokkos (Phase 2a (secondary))
 BuildAggregatesNonKokkos (Phase 2b (expansion))
+Algo "Phase - (Dirichlet)"
+  aggregated : 0 (phase), 0/3333 [0.00%] (total)
+  remaining  : 3333
+  aggregates : 0 (phase), 0 (total)
+Algo "Phase 1 (main)"
+  aggregated : 3332 (phase), 3332/3333 [99.97%] (total)
+  remaining  : 1
+  aggregates : 1111 (phase), 1111 (total)
+Algo "Phase 2a (secondary)"
+  aggregated : 0 (phase), 3332/3333 [99.97%] (total)
+  remaining  : 1
+  aggregates : 0 (phase), 1111 (total)
+Algo "Phase 2b (expansion)"
+  aggregated : 1 (phase), 3333/3333 [100.00%] (total)
+  remaining  : 0
+  aggregates : 0 (phase), 1111 (total)
+Algo "Phase 3 (cleanup)" [skipped since no nodes are left to aggregate]
+  aggregated : 0 (phase), 3333/3333 [100.00%] (total)
+  remaining  : 0
+  aggregates : 0 (phase), 1111 (total)
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
+Using cached max eigenvalue estimate
+Prolongator damping factor = 0.682516 (|1.33 / 1.94867|)
 matrixmatrix: kernel params -> 
  [empty list]
 Transpose P (MueLu::TransPFactory)
@@ -36,6 +63,9 @@ Computing Ac (MueLu::RAPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
 Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
+chebyshev: ratio eigenvalue (computed) = 20
+chebyshev: max eigenvalue (calculated by Ifpack2) = 2.19586
+"Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>, boost factor: 1.1, algorithm: first}, Global matrix dimensions: [3333, 3333], Global nnz: 23319}
 smoother -> 
  chebyshev: ratio eigenvalue = 20
  timer for apply = 0
@@ -48,17 +78,41 @@ Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 algorithm = "classical" classical algorithm = "default": threshold = 0, blocksize = 3
+Detected 0 agglomerated Dirichlet nodes
+Number of dropped entries in amalgamated matrix graph: 0/3331 (0%)
 lightweight wrap = 1
 Filtered matrix is not being constructed as no filtering is being done
 Build (MueLu::TentativePFactory)
 Build (MueLu::UncoupledAggregationFactory)
 BuildAggregatesNonKokkos (Phase - (Dirichlet))
 BuildAggregatesNonKokkos (Phase 1 (main))
+Algo "Phase - (Dirichlet)"
+  aggregated : 0 (phase), 0/1111 [0.00%] (total)
+  remaining  : 1111
+  aggregates : 0 (phase), 0 (total)
+Algo "Phase 1 (main)"
+  aggregated : 1111 (phase), 1111/1111 [100.00%] (total)
+  remaining  : 0
+  aggregates : 371 (phase), 371 (total)
+Algo "Phase 2a (secondary)" [skipped since no nodes are left to aggregate]
+  aggregated : 0 (phase), 1111/1111 [100.00%] (total)
+  remaining  : 0
+  aggregates : 0 (phase), 371 (total)
+Algo "Phase 2b (expansion)" [skipped since no nodes are left to aggregate]
+  aggregated : 0 (phase), 1111/1111 [100.00%] (total)
+  remaining  : 0
+  aggregates : 0 (phase), 371 (total)
+Algo "Phase 3 (cleanup)" [skipped since no nodes are left to aggregate]
+  aggregated : 0 (phase), 1111/1111 [100.00%] (total)
+  remaining  : 0
+  aggregates : 0 (phase), 371 (total)
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
+Using cached max eigenvalue estimate
+Prolongator damping factor = 0.605685 (|1.33 / 2.19586|)
 matrixmatrix: kernel params -> 
  [empty list]
 Transpose P (MueLu::TransPFactory)
@@ -81,10 +135,10 @@ Operator complexity = 2.11
 Smoother complexity = <ignored>
 Cycle type          = V
 
-level  rows  nnz    nnz/row  c ratio  procs
-  0  9999  29995  3.00                  1  
-  1  3333  23319  7.00     3.00         1  
-  2  1113  9999   8.98     2.99         1  
+level  rows    nnz  nnz/row  c ratio  procs
+  0    9999  29995     3.00               1
+  1    3333  23319     7.00     3.00      1
+  2    1113   9999     8.98     2.99      1
 
 Smoother (level 0) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>, boost factor: 1.1, algorithm: first}, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
 

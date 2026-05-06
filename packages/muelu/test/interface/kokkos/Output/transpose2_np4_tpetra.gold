@@ -2,6 +2,7 @@ Clearing old data (if any)
 
 Level 0
 Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
+"Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
 smoother -> 
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
@@ -13,10 +14,34 @@ Build (MueLu::RebalanceTransferFactory)
 Prolongator smoothing (MueLu::SaPFactory)
 BuildScalar (MueLu::CoalesceDropFactory_kokkos)
 dropping scheme = "point-wise", strength-of-connection measure = "smoothed aggregation", strength-of-connection matrix = "A", threshold = 0, blocksize = 1, useBlocking = 0, symmetrizeDroppedGraph = 0
+Detected 0 Dirichlet nodes
+Number of dropped entries: 0/29995 (0%)
 Build (MueLu::TentativePFactory_kokkos)
 Build (MueLu::UncoupledAggregationFactory)
+  algorithm: serial
+  num colors: 3
 BuildAggregates (Phase - (Dirichlet))
 BuildAggregatesRandom (Phase 1 (main))
+Algo "Phase - (Dirichlet)"
+  aggregated : 0 (phase), 0/9999 [0.00%] (total)
+  remaining  : 9999
+  aggregates : 0 (phase), 0 (total)
+Algo "Phase 1 (main)"
+  aggregated : 9998 (phase), 9998/9999 [99.99%] (total)
+  remaining  : 1
+  aggregates : 3335 (phase), 3335 (total)
+Algo "Phase 2a (secondary)"
+  aggregated : 0 (phase), 9998/9999 [99.99%] (total)
+  remaining  : 1
+  aggregates : 0 (phase), 3335 (total)
+Algo "Phase 2b (expansion)"
+  aggregated : 1 (phase), 9999/9999 [100.00%] (total)
+  remaining  : 0
+  aggregates : 0 (phase), 3335 (total)
+Algo "Phase 3 (cleanup)" [skipped since no nodes are left to aggregate]
+  aggregated : 0 (phase), 9999/9999 [100.00%] (total)
+  remaining  : 0
+  aggregates : 0 (phase), 3335 (total)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 Nullspace factory (MueLu::NullspaceFactory)
@@ -24,6 +49,8 @@ Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
+Calculating max eigenvalue estimate now (max iters = 10, use point diagonal)
+Prolongator damping factor = 0.682431 (|1.33 / 1.94891|)
 matrixmatrix: kernel params -> 
  [empty list]
 Build (MueLu::RepartitionFactory)
@@ -35,6 +62,8 @@ transpose: use implicit = 1
 matrixmatrix: kernel params -> 
  [empty list]
 Build (MueLu::RepartitionHeuristicFactory)
+Repartitioning?  NO:
+  current level = 1, first level where repartitioning can happen is 2
 Build (MueLu::Zoltan2Interface)
 ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{<ignored>}   [unused]
 No repartitioning necessary: partitions were left unchanged by the repartitioner
@@ -42,6 +71,7 @@ Using original prolongator
 type = Interpolation
 Computing Ac (MueLu::RebalanceAcFactory)
 Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
+"Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [3335, 3335], Global nnz: 10015}
 smoother -> 
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
@@ -53,12 +83,36 @@ Build (MueLu::RebalanceTransferFactory)
 Prolongator smoothing (MueLu::SaPFactory)
 BuildScalar (MueLu::CoalesceDropFactory_kokkos)
 dropping scheme = "point-wise", strength-of-connection measure = "smoothed aggregation", strength-of-connection matrix = "A", threshold = 0, blocksize = 1, useBlocking = 0, symmetrizeDroppedGraph = 0
+Detected 0 Dirichlet nodes
+Number of dropped entries: 0/10015 (0%)
 Build (MueLu::TentativePFactory_kokkos)
 Build (MueLu::UncoupledAggregationFactory)
+  algorithm: serial
+  num colors: 3
 BuildAggregates (Phase - (Dirichlet))
 BuildAggregatesRandom (Phase 1 (main))
 BuildAggregatesRandom (Phase 2a (secondary))
 BuildAggregatesRandom (Phase 2b (expansion))
+Algo "Phase - (Dirichlet)"
+  aggregated : 0 (phase), 0/3335 [0.00%] (total)
+  remaining  : 3335
+  aggregates : 0 (phase), 0 (total)
+Algo "Phase 1 (main)"
+  aggregated : 3332 (phase), 3332/3335 [99.91%] (total)
+  remaining  : 3
+  aggregates : 1112 (phase), 1112 (total)
+Algo "Phase 2a (secondary)"
+  aggregated : 0 (phase), 3332/3335 [99.91%] (total)
+  remaining  : 3
+  aggregates : 0 (phase), 1112 (total)
+Algo "Phase 2b (expansion)"
+  aggregated : 3 (phase), 3335/3335 [100.00%] (total)
+  remaining  : 0
+  aggregates : 0 (phase), 1112 (total)
+Algo "Phase 3 (cleanup)" [skipped since no nodes are left to aggregate]
+  aggregated : 0 (phase), 3335/3335 [100.00%] (total)
+  remaining  : 0
+  aggregates : 0 (phase), 1112 (total)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 Nullspace factory (MueLu::NullspaceFactory)
@@ -66,6 +120,8 @@ Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
+Calculating max eigenvalue estimate now (max iters = 10, use point diagonal)
+Prolongator damping factor = 0.684596 (|1.33 / 1.94275|)
 matrixmatrix: kernel params -> 
  [empty list]
 Build (MueLu::RepartitionFactory)
@@ -77,9 +133,13 @@ transpose: use implicit = 1
 matrixmatrix: kernel params -> 
  [empty list]
 Build (MueLu::RepartitionHeuristicFactory)
+Repartitioning? YES:
+  min # rows per proc = 278, min allowable = 800
+Number of partitions to use = 1
 Build (MueLu::Zoltan2Interface)
 ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{<ignored>}   [unused]
 Only one partition: Skip call to the repartitioner.
+Number of unassigned partitions before cleanup stage: 0 / 1
 Using original prolongator
 type = Interpolation
 Computing Ac (MueLu::RebalanceAcFactory)
@@ -93,10 +153,10 @@ Operator complexity = 1.45
 Smoother complexity = <ignored>
 Cycle type          = V
 
-level  rows  nnz    nnz/row  c ratio  procs
-  0  9999  29995  3.00                  4  
-  1  3335  10015  3.00     3.00         4  
-  2  1112  3340   3.00     3.00         1  
+level  rows    nnz  nnz/row  c ratio  procs
+  0    9999  29995     3.00               4
+  1    3335  10015     3.00     3.00      4
+  2    1112   3340     3.00     3.00      1
 
 Smoother (level 0) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
 

@@ -55,7 +55,7 @@ enum MsgType {
   Statistics    = Statistics0 | Statistics1 | Statistics2,            //!< Print all statistics
   Timings       = Timings0 | Timings1 | TimingsByLevel,               //!< Print all timing information
   Test          = Test0 | Test1 | Runtime0,
-  InterfaceTest = Test0 | Runtime0,
+  InterfaceTest = Test0 | Runtime0 | Statistics1,
 
   //
   None   = 0,

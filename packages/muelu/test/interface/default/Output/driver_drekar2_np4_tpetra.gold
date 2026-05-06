@@ -2,6 +2,9 @@ Clearing old data (if any)
 
 Level 0
 Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
+chebyshev: ratio eigenvalue (computed) = 20
+chebyshev: max eigenvalue (calculated by Ifpack2) = 1.9491
+"Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>, boost factor: 1.1, algorithm: first}, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
 smoother -> 
  chebyshev: degree = 2
  chebyshev: ratio eigenvalue = 20
@@ -19,6 +22,8 @@ Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 algorithm = "distance laplacian" distance laplacian algorithm = "default": threshold = 0.02, blocksize = 1
+Detected 0 agglomerated Dirichlet nodes using threshold 0
+Number of dropped entries in unamalgamated matrix graph: 0/29995 (0%)
 aggregation: drop tol = 0.02
 aggregation: drop scheme = distance laplacian
 lightweight wrap = 1
@@ -29,11 +34,33 @@ Build (MueLu::TentativePFactory)
 Build (MueLu::UncoupledAggregationFactory)
 BuildAggregatesNonKokkos (Phase - (Dirichlet))
 BuildAggregatesNonKokkos (Phase 1 (main))
+Algo "Phase - (Dirichlet)"
+  aggregated : 0 (phase), 0/9999 [0.00%] (total)
+  remaining  : 9999
+  aggregates : 0 (phase), 0 (total)
+Algo "Phase 1 (main)"
+  aggregated : 9998 (phase), 9998/9999 [99.99%] (total)
+  remaining  : 1
+  aggregates : 3335 (phase), 3335 (total)
+Algo "Phase 2a (secondary)"
+  aggregated : 0 (phase), 9998/9999 [99.99%] (total)
+  remaining  : 1
+  aggregates : 0 (phase), 3335 (total)
+Algo "Phase 2b (expansion)"
+  aggregated : 1 (phase), 9999/9999 [100.00%] (total)
+  remaining  : 0
+  aggregates : 0 (phase), 3335 (total)
+Algo "Phase 3 (cleanup)" [skipped since no nodes are left to aggregate]
+  aggregated : 0 (phase), 9999/9999 [100.00%] (total)
+  remaining  : 0
+  aggregates : 0 (phase), 3335 (total)
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
+Using cached max eigenvalue estimate
+Prolongator damping factor = 0.682365 (|1.33 / 1.9491|)
 matrixmatrix: kernel params -> 
  [empty list]
 Build (MueLu::RepartitionFactory)
@@ -47,12 +74,16 @@ Transferring coordinates
 matrixmatrix: kernel params -> 
  [empty list]
 Build (MueLu::RepartitionHeuristicFactory)
+Repartitioning? YES:
+  min # rows per proc = 833, min allowable = 2000
+Number of partitions to use = 1
 repartition: start level = 1
 repartition: min rows per proc = 2000
 repartition: max imbalance = 1.327
 Build (MueLu::Zoltan2Interface)
 ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{<ignored>}   [unused]
 Only one partition: Skip call to the repartitioner.
+Number of unassigned partitions before cleanup stage: 0 / 1
 repartition: remap parts = 1
 Using original prolongator
 type = Interpolation
@@ -70,11 +101,11 @@ Operator complexity = 1.48
 Smoother complexity = <ignored>
 Cycle type          = V
 
-level  rows  nnz    nnz/row  c ratio  procs
-  0  9999  29995  3.00                  4  
-  1  3335  10015  3.00     3.00         1  
-  2  1111  3331   3.00     3.00         1  
-  3  371   1111   2.99     2.99         1  
+level  rows    nnz  nnz/row  c ratio  procs
+  0    9999  29995     3.00               4
+  1    3335  10015     3.00     3.00      1
+  2    1111   3331     3.00     3.00      1
+  3     371   1111     2.99     2.99      1
 
 Smoother (level 0) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>, boost factor: 1.1, algorithm: first}, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
 
@@ -86,6 +117,9 @@ Smoother (level 3) pre  : <Direct> solver interface
 Smoother (level 3) post : no smoother
 
 Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
+chebyshev: ratio eigenvalue (computed) = 20
+chebyshev: max eigenvalue (calculated by Ifpack2) = 1.9465
+"Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>, boost factor: 1.1, algorithm: first}, Global matrix dimensions: [3335, 3335], Global nnz: 10015}
 smoother -> 
  chebyshev: degree = 2
  chebyshev: ratio eigenvalue = 20
@@ -103,6 +137,8 @@ Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 algorithm = "distance laplacian" distance laplacian algorithm = "default": threshold = 0.02, blocksize = 1
+Detected 0 agglomerated Dirichlet nodes using threshold 0
+Number of dropped entries in unamalgamated matrix graph: 0/10015 (0%)
 aggregation: drop tol = 0.02
 aggregation: drop scheme = distance laplacian
 lightweight wrap = 1
@@ -113,11 +149,33 @@ Build (MueLu::TentativePFactory)
 Build (MueLu::UncoupledAggregationFactory)
 BuildAggregatesNonKokkos (Phase - (Dirichlet))
 BuildAggregatesNonKokkos (Phase 1 (main))
+Algo "Phase - (Dirichlet)"
+  aggregated : 0 (phase), 0/3335 [0.00%] (total)
+  remaining  : 3335
+  aggregates : 0 (phase), 0 (total)
+Algo "Phase 1 (main)"
+  aggregated : 3335 (phase), 3335/3335 [100.00%] (total)
+  remaining  : 0
+  aggregates : 1111 (phase), 1111 (total)
+Algo "Phase 2a (secondary)" [skipped since no nodes are left to aggregate]
+  aggregated : 0 (phase), 3335/3335 [100.00%] (total)
+  remaining  : 0
+  aggregates : 0 (phase), 1111 (total)
+Algo "Phase 2b (expansion)" [skipped since no nodes are left to aggregate]
+  aggregated : 0 (phase), 3335/3335 [100.00%] (total)
+  remaining  : 0
+  aggregates : 0 (phase), 1111 (total)
+Algo "Phase 3 (cleanup)" [skipped since no nodes are left to aggregate]
+  aggregated : 0 (phase), 3335/3335 [100.00%] (total)
+  remaining  : 0
+  aggregates : 0 (phase), 1111 (total)
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
+Using cached max eigenvalue estimate
+Prolongator damping factor = 0.683278 (|1.33 / 1.9465|)
 matrixmatrix: kernel params -> 
  [empty list]
 Build (MueLu::RepartitionFactory)
@@ -131,6 +189,8 @@ Transferring coordinates
 matrixmatrix: kernel params -> 
  [empty list]
 Build (MueLu::RepartitionHeuristicFactory)
+Repartitioning?  NO:
+  comm size = 1
 repartition: start level = 1
 repartition: min rows per proc = 2000
 repartition: max imbalance = 1.327
@@ -145,6 +205,9 @@ Using original restrictor
 type = Restriction
 Computing Ac (MueLu::RebalanceAcFactory)
 Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
+chebyshev: ratio eigenvalue (computed) = 20
+chebyshev: max eigenvalue (calculated by Ifpack2) = 1.94505
+"Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>, boost factor: 1.1, algorithm: first}, Global matrix dimensions: [1111, 1111], Global nnz: 3331}
 smoother -> 
  chebyshev: degree = 2
  chebyshev: ratio eigenvalue = 20
@@ -162,6 +225,8 @@ Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 algorithm = "distance laplacian" distance laplacian algorithm = "default": threshold = 0.02, blocksize = 1
+Detected 0 agglomerated Dirichlet nodes using threshold 0
+Number of dropped entries in unamalgamated matrix graph: 0/3331 (0%)
 aggregation: drop tol = 0.02
 aggregation: drop scheme = distance laplacian
 lightweight wrap = 1
@@ -172,11 +237,33 @@ Build (MueLu::TentativePFactory)
 Build (MueLu::UncoupledAggregationFactory)
 BuildAggregatesNonKokkos (Phase - (Dirichlet))
 BuildAggregatesNonKokkos (Phase 1 (main))
+Algo "Phase - (Dirichlet)"
+  aggregated : 0 (phase), 0/1111 [0.00%] (total)
+  remaining  : 1111
+  aggregates : 0 (phase), 0 (total)
+Algo "Phase 1 (main)"
+  aggregated : 1111 (phase), 1111/1111 [100.00%] (total)
+  remaining  : 0
+  aggregates : 371 (phase), 371 (total)
+Algo "Phase 2a (secondary)" [skipped since no nodes are left to aggregate]
+  aggregated : 0 (phase), 1111/1111 [100.00%] (total)
+  remaining  : 0
+  aggregates : 0 (phase), 371 (total)
+Algo "Phase 2b (expansion)" [skipped since no nodes are left to aggregate]
+  aggregated : 0 (phase), 1111/1111 [100.00%] (total)
+  remaining  : 0
+  aggregates : 0 (phase), 371 (total)
+Algo "Phase 3 (cleanup)" [skipped since no nodes are left to aggregate]
+  aggregated : 0 (phase), 1111/1111 [100.00%] (total)
+  remaining  : 0
+  aggregates : 0 (phase), 371 (total)
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
+Using cached max eigenvalue estimate
+Prolongator damping factor = 0.683787 (|1.33 / 1.94505|)
 matrixmatrix: kernel params -> 
  [empty list]
 Build (MueLu::RepartitionFactory)
@@ -190,6 +277,8 @@ Transferring coordinates
 matrixmatrix: kernel params -> 
  [empty list]
 Build (MueLu::RepartitionHeuristicFactory)
+Repartitioning?  NO:
+  comm size = 1
 repartition: start level = 1
 repartition: min rows per proc = 2000
 repartition: max imbalance = 1.327
