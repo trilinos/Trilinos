@@ -104,9 +104,9 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(
     isorropia.xml
     material.mm
     material.xml
+    multiPhys4x4.mat
+    multiPhys4x4.mat
     multiphys_monolithic_smoother.xml
-    multiPhys4x4.mat
-    multiPhys4x4.mat
     null1.mat
     null2.mat
     oLapSchwarzEquivBlkSmoo.xml
