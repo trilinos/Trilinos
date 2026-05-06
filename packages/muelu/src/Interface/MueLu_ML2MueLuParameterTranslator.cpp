@@ -14,7 +14,7 @@ using Teuchos::ParameterList;
 
 namespace MueLu {
 
-std::string ML2MueLuParameterTranslator::GetSmootherFactory(const Teuchos::ParameterList &paramList, Teuchos::ParameterList &adaptingParamList, const std::string &pname, const std::string &value) {
+std::string ML2MueLuParameterTranslator::GetSmootherFactory(const Teuchos::ParameterList& paramList, Teuchos::ParameterList& adaptingParamList, const std::string& pname, const std::string& value) {
   TEUCHOS_TEST_FOR_EXCEPTION(pname != "coarse: type" && pname != "coarse: list" && pname != "smoother: type" && pname.find("smoother: list", 0) != 0,
                              Exceptions::RuntimeError,
                              "MueLu::MLParameterListInterpreter::Setup(): Only \"coarse: type\", \"smoother: type\" or \"smoother: list\" (\"coarse: list\") are "
@@ -300,7 +300,7 @@ std::string ML2MueLuParameterTranslator::GetSmootherFactory(const Teuchos::Param
   return mueluss.str();
 }
 
-std::string ML2MueLuParameterTranslator::SetParameterList(const Teuchos::ParameterList &paramList_in, const std::string &defaultVals) {
+std::string ML2MueLuParameterTranslator::SetParameterList(const Teuchos::ParameterList& paramList_in, const std::string& defaultVals) {
   Teuchos::ParameterList paramList = paramList_in;
 
   RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));  // TODO: use internal out (GetOStream())
@@ -377,10 +377,13 @@ std::string ML2MueLuParameterTranslator::SetParameterList(const Teuchos::Paramet
   // make sure that MueLu's drop tol matches ML's
   mueluss << "<Parameter name=\"aggregation: use ml scaling of drop tol\"      type=\"bool\"     value=\"true\"/>" << std::endl;
 
+  // make sure that MueLu's SaP diagonal behavior matches ML's
+  mueluss << "<Parameter name=\"sa: diagonal replacement tolerance\"      type=\"double\"     value=\"0.0\"/>" << std::endl;
+
   // loop over all ML parameters in provided parameter list
   for (ParameterList::ConstIterator param = paramListWithSubList.begin(); param != paramListWithSubList.end(); ++param) {
     // extract ML parameter name
-    const std::string &pname = paramListWithSubList.name(param);
+    const std::string& pname = paramListWithSubList.name(param);
 
     // Short circuit the "parameterlist: syntax" parameter
     // We want to remove this to make sure that createXpetraPreconditioner doesn't re-call translate()
@@ -492,8 +495,8 @@ std::string ML2MueLuParameterTranslator::SetParameterList(const Teuchos::Paramet
   return mueluss.str();
 }
 
-static void ML_OverwriteDefaults(ParameterList &inList, ParameterList &List, bool OverWrite) {
-  ParameterList *coarseList = 0;
+static void ML_OverwriteDefaults(ParameterList& inList, ParameterList& List, bool OverWrite) {
+  ParameterList* coarseList = 0;
   // Don't create the coarse list if it doesn't already exist!
   if (inList.isSublist("coarse: list"))
     coarseList = &(inList.sublist("coarse: list"));
@@ -508,15 +511,15 @@ static void ML_OverwriteDefaults(ParameterList &inList, ParameterList &List, boo
   }
 }  // ML_OverwriteDefaults()
 
-static int UpdateList(Teuchos::ParameterList &source, Teuchos::ParameterList &dest, bool OverWrite) {
+static int UpdateList(Teuchos::ParameterList& source, Teuchos::ParameterList& dest, bool OverWrite) {
   for (Teuchos::ParameterList::ConstIterator param = source.begin(); param != source.end(); param++)
     if (dest.isParameter(source.name(param)) == false || OverWrite)
       dest.setEntry(source.name(param), source.entry(param));
   return 0;
 }
 
-int ML2MueLuParameterTranslator::SetDefaults(std::string ProblemType, Teuchos::ParameterList &List,
-                                             int *ioptions, double *iparams, const bool OverWrite) {
+int ML2MueLuParameterTranslator::SetDefaults(std::string ProblemType, Teuchos::ParameterList& List,
+                                             int* ioptions, double* iparams, const bool OverWrite) {
   Teuchos::RCP<std::vector<int> > options;
   Teuchos::RCP<std::vector<double> > params;
 
@@ -564,9 +567,9 @@ int ML2MueLuParameterTranslator::SetDefaults(std::string ProblemType, Teuchos::P
   return (0);
 }
 
-int ML2MueLuParameterTranslator::SetDefaultsSA(ParameterList &inList,
-                                               Teuchos::RCP<std::vector<int> > & /* options */,
-                                               Teuchos::RCP<std::vector<double> > & /* params */,
+int ML2MueLuParameterTranslator::SetDefaultsSA(ParameterList& inList,
+                                               Teuchos::RCP<std::vector<int> >& /* options */,
+                                               Teuchos::RCP<std::vector<double> >& /* params */,
                                                bool OverWrite) {
   ParameterList List;
   inList.setName("SA default values");
@@ -598,9 +601,9 @@ int ML2MueLuParameterTranslator::SetDefaultsSA(ParameterList &inList,
   return 0;
 }  // ML2MueLuParameterTranslator::SetDefaultsSA()
 
-int ML2MueLuParameterTranslator::SetDefaultsDD(ParameterList &inList,
-                                               Teuchos::RCP<std::vector<int> > &options,
-                                               Teuchos::RCP<std::vector<double> > &params,
+int ML2MueLuParameterTranslator::SetDefaultsDD(ParameterList& inList,
+                                               Teuchos::RCP<std::vector<int> >& options,
+                                               Teuchos::RCP<std::vector<double> >& params,
                                                bool OverWrite) {
   ParameterList List;
 
@@ -639,9 +642,9 @@ int ML2MueLuParameterTranslator::SetDefaultsDD(ParameterList &inList,
   return 0;
 }  // ML2MueLuParameterTranslator::SetDefaultsDD()
 
-int ML2MueLuParameterTranslator::SetDefaultsDD_3Levels(ParameterList &inList,
-                                                       Teuchos::RCP<std::vector<int> > &options,
-                                                       Teuchos::RCP<std::vector<double> > &params,
+int ML2MueLuParameterTranslator::SetDefaultsDD_3Levels(ParameterList& inList,
+                                                       Teuchos::RCP<std::vector<int> >& options,
+                                                       Teuchos::RCP<std::vector<double> >& params,
                                                        bool OverWrite) {
   ParameterList List;
 
@@ -682,9 +685,9 @@ int ML2MueLuParameterTranslator::SetDefaultsDD_3Levels(ParameterList &inList,
   return 0;
 }  // ML2MueLuParameterTranslator::SetDefaultsDD_3Levels()
 
-int ML2MueLuParameterTranslator::SetDefaultsMaxwell(ParameterList &inList,
-                                                    Teuchos::RCP<std::vector<int> > & /* options */,
-                                                    Teuchos::RCP<std::vector<double> > & /* params */,
+int ML2MueLuParameterTranslator::SetDefaultsMaxwell(ParameterList& inList,
+                                                    Teuchos::RCP<std::vector<int> >& /* options */,
+                                                    Teuchos::RCP<std::vector<double> >& /* params */,
                                                     bool OverWrite) {
   ParameterList List;
 
@@ -724,9 +727,9 @@ int ML2MueLuParameterTranslator::SetDefaultsMaxwell(ParameterList &inList,
   return 0;
 }  // ML2MueLuParameterTranslator::SetDefaultsMaxwell()
 
-int ML2MueLuParameterTranslator::SetDefaultsNSSA(ParameterList &inList,
-                                                 Teuchos::RCP<std::vector<int> > & /* options */,
-                                                 Teuchos::RCP<std::vector<double> > & /* params */,
+int ML2MueLuParameterTranslator::SetDefaultsNSSA(ParameterList& inList,
+                                                 Teuchos::RCP<std::vector<int> >& /* options */,
+                                                 Teuchos::RCP<std::vector<double> >& /* params */,
                                                  bool OverWrite) {
   ParameterList List;
 
@@ -758,9 +761,9 @@ int ML2MueLuParameterTranslator::SetDefaultsNSSA(ParameterList &inList,
   return 0;
 }  // ML2MueLuParameterTranslator::SetDefaultsNSSA()
 
-int ML2MueLuParameterTranslator::SetDefaultsDD_LU(ParameterList &inList,
-                                                  Teuchos::RCP<std::vector<int> > &options,
-                                                  Teuchos::RCP<std::vector<double> > &params,
+int ML2MueLuParameterTranslator::SetDefaultsDD_LU(ParameterList& inList,
+                                                  Teuchos::RCP<std::vector<int> >& options,
+                                                  Teuchos::RCP<std::vector<double> >& params,
                                                   bool OverWrite) {
   ParameterList List;
 
@@ -800,9 +803,9 @@ int ML2MueLuParameterTranslator::SetDefaultsDD_LU(ParameterList &inList,
   return 0;
 }  // ML2MueLuParameterTranslator::SetDefaultsDD_LU()
 
-int ML2MueLuParameterTranslator::SetDefaultsDD_3Levels_LU(ParameterList &inList,
-                                                          Teuchos::RCP<std::vector<int> > &options,
-                                                          Teuchos::RCP<std::vector<double> > &params,
+int ML2MueLuParameterTranslator::SetDefaultsDD_3Levels_LU(ParameterList& inList,
+                                                          Teuchos::RCP<std::vector<int> >& options,
+                                                          Teuchos::RCP<std::vector<double> >& params,
                                                           bool OverWrite) {
   ParameterList List;
 
@@ -836,9 +839,9 @@ int ML2MueLuParameterTranslator::SetDefaultsDD_3Levels_LU(ParameterList &inList,
   return 0;
 }  // ML2MueLuParameterTranslator::SetDefaultsDD_3Levels_LU()
 
-int ML2MueLuParameterTranslator::SetDefaultsClassicalAMG(ParameterList &inList,
-                                                         Teuchos::RCP<std::vector<int> > & /* options */,
-                                                         Teuchos::RCP<std::vector<double> > & /* params */,
+int ML2MueLuParameterTranslator::SetDefaultsClassicalAMG(ParameterList& inList,
+                                                         Teuchos::RCP<std::vector<int> >& /* options */,
+                                                         Teuchos::RCP<std::vector<double> >& /* params */,
                                                          bool OverWrite) {
   ParameterList List;
 
@@ -864,12 +867,12 @@ int ML2MueLuParameterTranslator::SetDefaultsClassicalAMG(ParameterList &inList,
   return 0;
 }  // ML2MueLuParameterTranslator::SetDefaultsClassicalAMG()
 
-int ML2MueLuParameterTranslator::SetDefaultsRefMaxwell(Teuchos::ParameterList &inList, bool OverWrite) {
+int ML2MueLuParameterTranslator::SetDefaultsRefMaxwell(Teuchos::ParameterList& inList, bool OverWrite) {
   /* Sublists */
   Teuchos::ParameterList ListRF, List11, List11c, List22, dummy;
-  Teuchos::ParameterList &List11_  = inList.sublist("refmaxwell: 11list");
-  Teuchos::ParameterList &List22_  = inList.sublist("refmaxwell: 22list");
-  Teuchos::ParameterList &List11c_ = List11_.sublist("edge matrix free: coarse");
+  Teuchos::ParameterList& List11_  = inList.sublist("refmaxwell: 11list");
+  Teuchos::ParameterList& List22_  = inList.sublist("refmaxwell: 22list");
+  Teuchos::ParameterList& List11c_ = List11_.sublist("edge matrix free: coarse");
 
   /* Build Teuchos List: (1,1) coarse */
   SetDefaults("SA", List11c);

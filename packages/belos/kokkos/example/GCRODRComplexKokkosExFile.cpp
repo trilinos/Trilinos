@@ -60,6 +60,7 @@ try {
   int numrhs = 1;            // number of right-hand sides to solve for
   int maxiters = -1;         // maximum number of iterations allowed per linear system
   int maxsubspace = 300;     // maximum number of blocks the solver can use for the subspace
+  int numRecycledBlocks = 20;
   int maxrestarts = 5;       // number of restarts allowed
   bool expresidual = false;  // use explicit residual
   std::string filename("mhd1280b.mtx"); // example matrix
@@ -109,12 +110,13 @@ try {
   belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
   belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
   belosList.set( "Num Blocks", maxsubspace);             // Maximum number of blocks in Krylov factorization
+  belosList.set( "Num Recycled Blocks", numRecycledBlocks );
   belosList.set( "Maximum Restarts", maxrestarts );      // Maximum number of restarts allowed
   belosList.set( "Explicit Residual Test", expresidual); // Use explicit residual
 
   if (verbose) {
     belosList.set( "Verbosity", Belos::Errors + Belos::Warnings +
-		   Belos::StatusTestDetails + Belos::FinalSummary + Belos::TimingDetails);
+               Belos::StatusTestDetails + Belos::FinalSummary + Belos::TimingDetails);
     if (frequency > 0)
       belosList.set( "Output Frequency", frequency );
   }
@@ -154,6 +156,7 @@ try {
   Belos::ReturnType ret;
   ret = newSolver->solve();
   Belos::UnconvergedCauseType unconvergedCause = newSolver->getUnconvergedCause();
+  int numIters1 = newSolver->getNumIters();
 
   //
   // Compute actual residuals.
@@ -173,12 +176,25 @@ try {
     if (actRes > tol) badRes = true;
   }
 
-  if (ret==Belos::Converged && (unconvergedCause == Belos::SolverConverged) && !badRes) {
-    success = true;
-    std::cout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
-  } else {
+  // Resolve linear system with same rhs and recycled space
+  X->MvInit(0.0);
+  newSolver->reset(Belos::Problem);
+  ret = newSolver->solve();
+  int numIters2 = newSolver->getNumIters();
+
+  // Resolve linear system (again) with same rhs and recycled space
+  X->MvInit(0.0);
+  newSolver->reset(Belos::Problem);
+  ret = newSolver->solve();
+  int numIters3 = newSolver->getNumIters();
+
+  //
+  if (ret!=Belos::Converged || unconvergedCause!=Belos::SolverConverged || badRes || numIters1 < numIters2 || numIters2 < numIters3) {
     success = false;
-    std::cout << std::endl << "ERROR:  Belos did not converge!" << std::endl;
+    std::cout << std::endl << "ERROR: Belos GCRODR TEST FAILED!" << std::endl;
+  } else {
+    success = true;
+    std::cout << std::endl << "SUCCESS: Belos GCRRODRR TEST PASSED!" << std::endl;
   }
 
   }

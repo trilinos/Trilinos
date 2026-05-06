@@ -229,8 +229,6 @@ namespace mini_em {
 
     }
 
-    TEUCHOS_TEST_FOR_EXCEPTION(solver == MAXWELL1_EMIN, std::runtime_error, "Maxwelll1 Emin is not yet available.");
-
     return lin_solver_pl;
   }
 
