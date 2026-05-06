@@ -29,72 +29,6 @@
 
 namespace MueLuTests {
 
-/////////////////////////
-// Helper: build a simple tridiagonal matrix with stencil (b, a, c)
-// on the given range/domain maps. This follows the style of
-// BlockedPFactory.cpp and creates square subblocks that are suitable
-// for use as Psubblock# inputs to CombinePFactory.
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
-GenerateProblemMatrix(const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > rangemap,
-                      const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > domainmap,
-                      Scalar a = 2.0, Scalar b = -1.0, Scalar c = -1.0) {
-#include "MueLu_UseShortNames.hpp"
-  Teuchos::RCP<CrsMatrixWrap> mtx = Galeri::Xpetra::MatrixTraits<Map, CrsMatrixWrap>::Build(rangemap, 3);
-
-  LocalOrdinal NumMyRowElements = rangemap->getLocalNumElements();
-
-  GlobalOrdinal minGColId       = domainmap->getMinAllGlobalIndex();
-  GlobalOrdinal maxGColId       = domainmap->getMaxAllGlobalIndex();
-  GlobalOrdinal numGColElements = domainmap->getGlobalNumElements();
-  TEUCHOS_TEST_FOR_EXCEPTION(maxGColId - minGColId != numGColElements - 1,
-                             MueLu::Exceptions::RuntimeError,
-                             "GenerateProblemMatrix: inconsistent number of domain map elements.");
-
-  GlobalOrdinal minGRowId = rangemap->getMinAllGlobalIndex();
-  GlobalOrdinal maxGRowId = rangemap->getMaxAllGlobalIndex();
-  TEUCHOS_TEST_FOR_EXCEPTION(maxGRowId - minGRowId != maxGColId - minGColId,
-                             MueLu::Exceptions::RuntimeError,
-                             "GenerateProblemMatrix: inconsistent number of elements between range and domain maps.");
-
-  GlobalOrdinal offset = minGColId - minGRowId;
-
-  GlobalOrdinal NumEntries;
-  LocalOrdinal nnz = 2;
-  std::vector<Scalar> Values(nnz);
-  std::vector<GlobalOrdinal> Indices(nnz);
-
-  for (LocalOrdinal i = 0; i < NumMyRowElements; ++i) {
-    GlobalOrdinal grid = rangemap->getGlobalElement(i);
-    if (grid == minGRowId) {
-      NumEntries = 1;
-      Values[0]  = c;
-      Indices[0] = minGColId + 1;
-    } else if (grid == maxGRowId) {
-      NumEntries = 1;
-      Values[0]  = b;
-      Indices[0] = maxGColId - 1;
-    } else {
-      NumEntries = 2;
-      Indices[0] = offset + rangemap->getMinGlobalIndex() + i - 1;
-      Indices[1] = offset + rangemap->getMinGlobalIndex() + i + 1;
-      Values[0]  = b;
-      Values[1]  = c;
-    }
-
-    Teuchos::ArrayView<Scalar> av(&Values[0], NumEntries);
-    Teuchos::ArrayView<GlobalOrdinal> iv(&Indices[0], NumEntries);
-    mtx->insertGlobalValues(rangemap->getGlobalElement(i), iv, av);
-
-    mtx->insertGlobalValues(grid,
-                            Teuchos::tuple<GlobalOrdinal>(offset + rangemap->getMinGlobalIndex() + i),
-                            Teuchos::tuple<Scalar>(a));
-  }
-
-  mtx->fillComplete(domainmap, rangemap);
-  return mtx;
-}
-
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CombinePFactory, Constructor, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
 #include "MueLu_UseShortNames.hpp"
   MUELU_TESTING_SET_OSTREAM;
@@ -130,12 +64,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CombinePFactory, CombineTwoSubblocks, Scalar, 
 
   // Fine-level A only needs a compatible row map and communicator. A simple tridiagonal
   // on the combined map is sufficient.
-  RCP<CrsMatrixWrap> A = GenerateProblemMatrix<Scalar, LO, GO, Node>(bigMap, bigMap, 2.0, -1.0, -1.0);
+  const auto Nx        = bigMap->getGlobalNumElements();
+  RCP<CrsMatrixWrap> A = Galeri::Xpetra::TriDiag<Scalar, LO, GO, Node>(bigMap, Nx, 2.0, -1.0, -1.0);
 
   // Build two subblock prolongators. We use square matrices here for simplicity;
   // CombinePFactory only cares that they are valid matrices with compatible maps.
-  RCP<CrsMatrixWrap> P0 = GenerateProblemMatrix<Scalar, LO, GO, Node>(map0, map0, 2.0, -1.0, -1.0);
-  RCP<CrsMatrixWrap> P1 = GenerateProblemMatrix<Scalar, LO, GO, Node>(map1, map1, 3.0, -2.0, -1.0);
+  const auto Nx0        = map0->getGlobalNumElements();
+  RCP<CrsMatrixWrap> P0 = Galeri::Xpetra::TriDiag<Scalar, LO, GO, Node>(map0, Nx0, 2.0, -1.0, -1.0);
+
+  const auto Nx1        = map1->getGlobalNumElements();
+  RCP<CrsMatrixWrap> P1 = Galeri::Xpetra::TriDiag<Scalar, LO, GO, Node>(map1, Nx1, 3.0, -2.0, -1.0);
 
   TEST_EQUALITY(P0 != Teuchos::null, true);
   TEST_EQUALITY(P1 != Teuchos::null, true);
