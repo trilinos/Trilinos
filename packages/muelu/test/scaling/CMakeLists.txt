@@ -104,6 +104,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(
     isorropia.xml
     material.mm
     material.xml
+    multiphys_monolithic_smoother.xml
     multiPhys4x4.mat
     multiPhys4x4.mat
     null1.mat
@@ -147,6 +148,14 @@ IF(${PACKAGE_NAME}_ENABLE_Belos)
   TRIBITS_ADD_EXECUTABLE(
     ComboPDriver
     SOURCES ComboPDriver.cpp
+    COMM mpi
+  )
+ENDIF()
+
+IF(${PACKAGE_NAME}_ENABLE_Belos)
+  TRIBITS_ADD_EXECUTABLE(
+    MultiphysicsDriver
+    SOURCES MultiphysDriver.cpp
     COMM mpi
   )
 ENDIF()
@@ -309,6 +318,15 @@ TRIBITS_ADD_TEST(
   ComboPDriver
   NAME "ComboPTest"
   ARGS "--linAlgebra=Tpetra --its=9"
+  NUM_MPI_PROCS 4
+  COMM mpi
+  PASS_REGULAR_EXPRESSION "Belos converged"
+)
+
+TRIBITS_ADD_TEST(
+  MultiphysicsDriver
+  NAME "MultiphysicsTest"
+  ARGS "--xml=multiphys_monolithic_smoother.xml --expected-iters=5"
   NUM_MPI_PROCS 4
   COMM mpi
   PASS_REGULAR_EXPRESSION "Belos converged"
