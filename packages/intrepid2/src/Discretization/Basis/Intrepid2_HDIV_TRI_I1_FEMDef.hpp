@@ -34,20 +34,20 @@ namespace Intrepid2 {
         const auto y = input(1);
 
         // output is a rank-2 array with dimensions (basisCardinality_)
-        output.access(0, 0) = 2.0*x;
-        output.access(0, 1) = 2.0*(y - 1.0);
+        output(0, 0) = 2.0*x;
+        output(0, 1) = 2.0*(y - 1.0);
 
-        output.access(1, 0) =  2.0*x;
-        output.access(1, 1) =  2.0*y;
+        output(1, 0) =  2.0*x;
+        output(1, 1) =  2.0*y;
 
-        output.access(2, 0) =  2.0*(x - 1.0);
-        output.access(2, 1) =  2.0*y;
+        output(2, 0) =  2.0*(x - 1.0);
+        output(2, 1) =  2.0*y;
       }
       else if constexpr (OpType == OPERATOR_DIV) {
         // output is a rank-3 array with dimensions (basisCardinality_, spaceDim)
-        output.access(0) = 4.0;
-        output.access(1) = 4.0;
-        output.access(2) = 4.0;
+        output(0) = 4.0;
+        output(1) = 4.0;
+        output(2) = 4.0;
       }
       else {
         INTREPID2_TEST_FOR_ABORT( OpType != OPERATOR_VALUE &&

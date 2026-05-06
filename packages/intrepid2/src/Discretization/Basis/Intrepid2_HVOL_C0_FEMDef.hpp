@@ -29,14 +29,14 @@ namespace Intrepid2 {
                const inputViewType /* input */ ) {
        
        if constexpr (OpType == OPERATOR_VALUE) {
-        output.access(0) = 1.0;
+        output(0) = 1.0;
        } else if constexpr (OpType == OPERATOR_MAX) {
         const ordinal_type jend = output.extent(1);
         const ordinal_type iend = output.extent(0);
 
         for (ordinal_type j=0;j<jend;++j)
           for (ordinal_type i=0;i<iend;++i)
-            output.access(i, j) = 0.0;
+            output(i, j) = 0.0;
       } else {
         INTREPID2_TEST_FOR_ABORT( OpType != OPERATOR_VALUE &&
                                   OpType != OPERATOR_MAX,

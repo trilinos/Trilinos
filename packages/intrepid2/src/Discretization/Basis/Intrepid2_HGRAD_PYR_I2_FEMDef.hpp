@@ -48,171 +48,171 @@ namespace Intrepid2 {
       if constexpr (OpType == OPERATOR_VALUE) {
         const value_type w = 1.0/(1.0 - z);
 
-        output.access(0) = 0.25 * (-x - y - 1.0)*((1.0-x)*(1.0-y) - z + x*y*z*w);
-        output.access(1) = 0.25 * ( x - y - 1.0)*((1.0+x)*(1.0-y) - z - x*y*z*w);
-        output.access(2) = 0.25 * ( x + y - 1.0)*((1.0+x)*(1.0+y) - z + x*y*z*w);
-        output.access(3) = 0.25 * (-x + y - 1.0)*((1.0-x)*(1.0+y) - z - x*y*z*w);
+        output(0) = 0.25 * (-x - y - 1.0)*((1.0-x)*(1.0-y) - z + x*y*z*w);
+        output(1) = 0.25 * ( x - y - 1.0)*((1.0+x)*(1.0-y) - z - x*y*z*w);
+        output(2) = 0.25 * ( x + y - 1.0)*((1.0+x)*(1.0+y) - z + x*y*z*w);
+        output(3) = 0.25 * (-x + y - 1.0)*((1.0-x)*(1.0+y) - z - x*y*z*w);
 
-        output.access(4) =  z * (2.0*z - 1.0);
+        output(4) =  z * (2.0*z - 1.0);
 
-        output.access(5) = 0.5 * (1.0 + x - z)*(1.0 - x - z)*(1.0 - y - z)*w;
-        output.access(6) = 0.5 * (1.0 + y - z)*(1.0 - y - z)*(1.0 + x - z)*w;
-        output.access(7) = 0.5 * (1.0 + x - z)*(1.0 - x - z)*(1.0 + y - z)*w;
-        output.access(8) = 0.5 * (1.0 + y - z)*(1.0 - y - z)*(1.0 - x - z)*w;
+        output(5) = 0.5 * (1.0 + x - z)*(1.0 - x - z)*(1.0 - y - z)*w;
+        output(6) = 0.5 * (1.0 + y - z)*(1.0 - y - z)*(1.0 + x - z)*w;
+        output(7) = 0.5 * (1.0 + x - z)*(1.0 - x - z)*(1.0 + y - z)*w;
+        output(8) = 0.5 * (1.0 + y - z)*(1.0 - y - z)*(1.0 - x - z)*w;
 
-        output.access(9) = z*(1.0 - x - z)*(1.0 - y - z)*w;
-        output.access(10) = z*(1.0 + x - z)*(1.0 - y - z)*w;
-        output.access(11) = z*(1.0 + x - z)*(1.0 + y - z)*w;
-        output.access(12) = z*(1.0 - x - z)*(1.0 + y - z)*w;
+        output(9) = z*(1.0 - x - z)*(1.0 - y - z)*w;
+        output(10) = z*(1.0 + x - z)*(1.0 - y - z)*w;
+        output(11) = z*(1.0 + x - z)*(1.0 + y - z)*w;
+        output(12) = z*(1.0 - x - z)*(1.0 + y - z)*w;
       }
       else if constexpr ((OpType == OPERATOR_GRAD) || (OpType == OPERATOR_D1)) {
         const value_type w  = 1.0/(1.0 - z);
 
-        output.access(0, 0) =  0.25*(-1.0-x-y)*(-1.0+y + y*z*w) - 0.25*((1.0-x)*(1.0-y)-z + x*y*z*w);
-        output.access(0, 1) =  0.25*(-1.0-x-y)*(-1.0+x + x*z*w) - 0.25*((1.0-x)*(1.0-y)-z + x*y*z*w);
-        output.access(0, 2) =  0.25*(-1.0-x-y)*(-1.0 + x*y*w + x*y*z*w*w);
+        output(0, 0) =  0.25*(-1.0-x-y)*(-1.0+y + y*z*w) - 0.25*((1.0-x)*(1.0-y)-z + x*y*z*w);
+        output(0, 1) =  0.25*(-1.0-x-y)*(-1.0+x + x*z*w) - 0.25*((1.0-x)*(1.0-y)-z + x*y*z*w);
+        output(0, 2) =  0.25*(-1.0-x-y)*(-1.0 + x*y*w + x*y*z*w*w);
         
-        output.access(1, 0) =  0.25*(-1.0+x-y)*( 1.0-y - y*z*w) + 0.25*((1.0+x)*(1.0-y)-z - x*y*z*w);
-        output.access(1, 1) =  0.25*(-1.0+x-y)*(-1.0-x - x*z*w) - 0.25*((1.0+x)*(1.0-y)-z - x*y*z*w);
-        output.access(1, 2) =  0.25*(-1.0+x-y)*(-1.0 - x*y*w - x*y*z*w*w);
+        output(1, 0) =  0.25*(-1.0+x-y)*( 1.0-y - y*z*w) + 0.25*((1.0+x)*(1.0-y)-z - x*y*z*w);
+        output(1, 1) =  0.25*(-1.0+x-y)*(-1.0-x - x*z*w) - 0.25*((1.0+x)*(1.0-y)-z - x*y*z*w);
+        output(1, 2) =  0.25*(-1.0+x-y)*(-1.0 - x*y*w - x*y*z*w*w);
         
-        output.access(2, 0) =  0.25*(-1.0+x+y)*(1.0+y + y*z*w) + 0.25*((1.0+x)*(1.0+y)-z + x*y*z*w);
-        output.access(2, 1) =  0.25*(-1.0+x+y)*(1.0+x + x*z*w) + 0.25*((1.0+x)*(1.0+y)-z + x*y*z*w);
-        output.access(2, 2) =  0.25*(-1.0+x+y)*(-1.0 + x*y*w + x*y*z*w*w);
+        output(2, 0) =  0.25*(-1.0+x+y)*(1.0+y + y*z*w) + 0.25*((1.0+x)*(1.0+y)-z + x*y*z*w);
+        output(2, 1) =  0.25*(-1.0+x+y)*(1.0+x + x*z*w) + 0.25*((1.0+x)*(1.0+y)-z + x*y*z*w);
+        output(2, 2) =  0.25*(-1.0+x+y)*(-1.0 + x*y*w + x*y*z*w*w);
         
-        output.access(3, 0) =  0.25*(-1.0-x+y)*(-1.0-y - y*z*w) - 0.25*((1.0-x)*(1.0+y)-z - x*y*z*w);
-        output.access(3, 1) =  0.25*(-1.0-x+y)*( 1.0-x - x*z*w) + 0.25*((1.0-x)*(1.0+y)-z - x*y*z*w);
-        output.access(3, 2) =  0.25*(-1.0-x+y)*(-1.0 - x*y*w - x*y*z*w*w);
+        output(3, 0) =  0.25*(-1.0-x+y)*(-1.0-y - y*z*w) - 0.25*((1.0-x)*(1.0+y)-z - x*y*z*w);
+        output(3, 1) =  0.25*(-1.0-x+y)*( 1.0-x - x*z*w) + 0.25*((1.0-x)*(1.0+y)-z - x*y*z*w);
+        output(3, 2) =  0.25*(-1.0-x+y)*(-1.0 - x*y*w - x*y*z*w*w);
         
-        output.access(4, 0) =  0.0;
-        output.access(4, 1) =  0.0;
-        output.access(4, 2) =  -1.0 + 4.0*z;
+        output(4, 0) =  0.0;
+        output(4, 1) =  0.0;
+        output(4, 2) =  -1.0 + 4.0*z;
         
-        output.access(5, 0) = -x*w*(1.0-y-z);
-        output.access(5, 1) = -0.5*(1.0-x-z)*(1.0+x-z)*w;
-        output.access(5, 2) =  0.5*y*x*x*w*w + 0.5*y - 1.0+z;
+        output(5, 0) = -x*w*(1.0-y-z);
+        output(5, 1) = -0.5*(1.0-x-z)*(1.0+x-z)*w;
+        output(5, 2) =  0.5*y*x*x*w*w + 0.5*y - 1.0+z;
         
-        output.access(6, 0) =  0.5*(1.0-y-z)*(1.0+y-z)*w;
-        output.access(6, 1) = -y*w*(1.0+x-z);
-        output.access(6, 2) = -0.5*x*y*y*w*w - 0.5*x - 1.0+z; 
+        output(6, 0) =  0.5*(1.0-y-z)*(1.0+y-z)*w;
+        output(6, 1) = -y*w*(1.0+x-z);
+        output(6, 2) = -0.5*x*y*y*w*w - 0.5*x - 1.0+z; 
         
-        output.access(7, 0) = -x*w*(1.0+y-z);
-        output.access(7, 1) =  0.5*(1.0-x-z)*(1.0+x-z)*w;
-        output.access(7, 2) = -0.5*y*x*x*w*w - 0.5*y - 1.0+z;
+        output(7, 0) = -x*w*(1.0+y-z);
+        output(7, 1) =  0.5*(1.0-x-z)*(1.0+x-z)*w;
+        output(7, 2) = -0.5*y*x*x*w*w - 0.5*y - 1.0+z;
         
-        output.access(8, 0) = -0.5*(1.0-y-z)*(1.0+y-z)*w;
-        output.access(8, 1) = -y*w*(1.0-x-z);
-        output.access(8, 2) =  0.5*x*y*y*w*w + 0.5*x - 1.0+z;
+        output(8, 0) = -0.5*(1.0-y-z)*(1.0+y-z)*w;
+        output(8, 1) = -y*w*(1.0-x-z);
+        output(8, 2) =  0.5*x*y*y*w*w + 0.5*x - 1.0+z;
         
-        output.access(9, 0) = -(1.0-y-z)*z*w;
-        output.access(9, 1) = -(1.0-x-z)*z*w;
-        output.access(9, 2) =  x*y*w*w + 1.0 - x - y - 2.0*z;
+        output(9, 0) = -(1.0-y-z)*z*w;
+        output(9, 1) = -(1.0-x-z)*z*w;
+        output(9, 2) =  x*y*w*w + 1.0 - x - y - 2.0*z;
         
-        output.access(10,0) =  (1.0-y-z)*z*w;
-        output.access(10,1) = -(1.0+x-z)*z*w;
-        output.access(10,2) = -x*y*w*w + 1.0 + x - y - 2.0*z;
+        output(10,0) =  (1.0-y-z)*z*w;
+        output(10,1) = -(1.0+x-z)*z*w;
+        output(10,2) = -x*y*w*w + 1.0 + x - y - 2.0*z;
         
-        output.access(11,0) =  (1.0+y-z)*z*w;
-        output.access(11,1) =  (1.0+x-z)*z*w;
-        output.access(11,2) =  x*y*w*w + 1.0 + x + y - 2.0*z;
+        output(11,0) =  (1.0+y-z)*z*w;
+        output(11,1) =  (1.0+x-z)*z*w;
+        output(11,2) =  x*y*w*w + 1.0 + x + y - 2.0*z;
         
-        output.access(12,0) = -(1.0+y-z)*z*w;
-        output.access(12,1) =  (1.0-x-z)*z*w;
-        output.access(12,2) = -x*y*w*w + 1.0 - x + y - 2.0*z;
+        output(12,0) = -(1.0+y-z)*z*w;
+        output(12,1) =  (1.0-x-z)*z*w;
+        output(12,2) = -x*y*w*w + 1.0 - x + y - 2.0*z;
       }
       else if constexpr (OpType == OPERATOR_D2) {
         const value_type w  = 1.0/(1.0 - z);
         
-        output.access(0, 0) = -0.5*(-1.0+y+y*z*w);
-        output.access(0, 1) = -(-0.25 + 0.5*x + 0.5*y + 0.5*z)*w;
-        output.access(0, 2) =  0.25 + (-0.25*y-0.5*x*y-0.25*y*y)*w*w; 
-        output.access(0, 3) = -0.5*(-1.0+x+x*z*w);
-        output.access(0, 4) =  0.25 + (-0.25*x*x-0.25*x-0.5*x*y)*w*w; 
-        output.access(0, 5) =  0.5*x*y*(-1.0-x-y)*w*w*w;
+        output(0, 0) = -0.5*(-1.0+y+y*z*w);
+        output(0, 1) = -(-0.25 + 0.5*x + 0.5*y + 0.5*z)*w;
+        output(0, 2) =  0.25 + (-0.25*y-0.5*x*y-0.25*y*y)*w*w; 
+        output(0, 3) = -0.5*(-1.0+x+x*z*w);
+        output(0, 4) =  0.25 + (-0.25*x*x-0.25*x-0.5*x*y)*w*w; 
+        output(0, 5) =  0.5*x*y*(-1.0-x-y)*w*w*w;
         
-        output.access(1, 0) =  0.5*(1.0-y-y*z*w); 
-        output.access(1, 1) =-(0.25 + 0.5*x - 0.5*y - 0.5*z)*w;
-        output.access(1, 2) = -0.25 + (0.25*y-0.5*x*y+0.25*y*y)*w*w;
-        output.access(1, 3) = -0.5*(-1.0-x-x*z*w); 
-        output.access(1, 4) =  0.25 + (-0.25*x*x + 0.25*x + 0.5*x*y)*w*w; 
-        output.access(1, 5) = -0.5*x*y*(-1.0+x-y)*w*w*w; 
+        output(1, 0) =  0.5*(1.0-y-y*z*w); 
+        output(1, 1) =-(0.25 + 0.5*x - 0.5*y - 0.5*z)*w;
+        output(1, 2) = -0.25 + (0.25*y-0.5*x*y+0.25*y*y)*w*w;
+        output(1, 3) = -0.5*(-1.0-x-x*z*w); 
+        output(1, 4) =  0.25 + (-0.25*x*x + 0.25*x + 0.5*x*y)*w*w; 
+        output(1, 5) = -0.5*x*y*(-1.0+x-y)*w*w*w; 
         
-        output.access(2, 0) =  0.5*(1.0+y+y*z*w);
-        output.access(2, 1) =-(-0.25 - 0.5*x - 0.5*y + 0.5*z)*w; 
-        output.access(2, 2) = -0.25 + (-0.25*y+0.5*x*y+0.25*y*y)*w*w;
-        output.access(2, 3) =  0.5*(1.0+x+x*z*w); 
-        output.access(2, 4) = -0.25 + (0.25*x*x -0.25*x + 0.5*x*y)*w*w;  
-        output.access(2, 5) =  0.5*x*y*(-1.0+x+y)*w*w*w;
+        output(2, 0) =  0.5*(1.0+y+y*z*w);
+        output(2, 1) =-(-0.25 - 0.5*x - 0.5*y + 0.5*z)*w; 
+        output(2, 2) = -0.25 + (-0.25*y+0.5*x*y+0.25*y*y)*w*w;
+        output(2, 3) =  0.5*(1.0+x+x*z*w); 
+        output(2, 4) = -0.25 + (0.25*x*x -0.25*x + 0.5*x*y)*w*w;  
+        output(2, 5) =  0.5*x*y*(-1.0+x+y)*w*w*w;
         
-        output.access(3, 0) = -0.5*(-1.0-y-y*z*w);
-        output.access(3, 1) =-(0.25 - 0.5*x + 0.5*y - 0.5*z)*w; 
-        output.access(3, 2) =  0.25 + (0.25*y+0.5*x*y-0.25*y*y)*w*w; 
-        output.access(3, 3) =  0.5*(1.0-x-x*z*w);
-        output.access(3, 4) = -0.25 + (0.25*x + 0.25*x*x - 0.5*x*y)*w*w;
-        output.access(3, 5) = -0.5*x*y*(-1.0-x+y)*w*w*w;
+        output(3, 0) = -0.5*(-1.0-y-y*z*w);
+        output(3, 1) =-(0.25 - 0.5*x + 0.5*y - 0.5*z)*w; 
+        output(3, 2) =  0.25 + (0.25*y+0.5*x*y-0.25*y*y)*w*w; 
+        output(3, 3) =  0.5*(1.0-x-x*z*w);
+        output(3, 4) = -0.25 + (0.25*x + 0.25*x*x - 0.5*x*y)*w*w;
+        output(3, 5) = -0.5*x*y*(-1.0-x+y)*w*w*w;
         
-        output.access(4, 0) =  0.0;
-        output.access(4, 1) =  0.0;
-        output.access(4, 2) =  0.0;
-        output.access(4, 3) =  0.0; 
-        output.access(4, 4) =  0.0;
-        output.access(4, 5) =  4.0; 
+        output(4, 0) =  0.0;
+        output(4, 1) =  0.0;
+        output(4, 2) =  0.0;
+        output(4, 3) =  0.0; 
+        output(4, 4) =  0.0;
+        output(4, 5) =  4.0; 
         
-        output.access(5, 0) = -(1.0-y-z)*w;
-        output.access(5, 1) =  x*w; 
-        output.access(5, 2) =  x*y*w*w;
-        output.access(5, 3) =  0.0; 
-        output.access(5, 4) =  0.5*x*x*w*w + 0.5; 
-        output.access(5, 5) =  x*x*y*w*w*w + 1.0;
+        output(5, 0) = -(1.0-y-z)*w;
+        output(5, 1) =  x*w; 
+        output(5, 2) =  x*y*w*w;
+        output(5, 3) =  0.0; 
+        output(5, 4) =  0.5*x*x*w*w + 0.5; 
+        output(5, 5) =  x*x*y*w*w*w + 1.0;
         
-        output.access(6, 0) =  0.0;
-        output.access(6, 1) = -y*w;
-        output.access(6, 2) = -0.5*y*y*w*w - 0.5;
-        output.access(6, 3) =-(1.0+x-z)*w; 
-        output.access(6, 4) = -x*y*w*w; 
-        output.access(6, 5) = -x*y*y*w*w*w + 1.0; 
+        output(6, 0) =  0.0;
+        output(6, 1) = -y*w;
+        output(6, 2) = -0.5*y*y*w*w - 0.5;
+        output(6, 3) =-(1.0+x-z)*w; 
+        output(6, 4) = -x*y*w*w; 
+        output(6, 5) = -x*y*y*w*w*w + 1.0; 
         
-        output.access(7, 0) = -(1.0+y-z)*w;
-        output.access(7, 1) = -x*w;
-        output.access(7, 2) = -x*y*w*w; 
-        output.access(7, 3) =  0.0; 
-        output.access(7, 4) = -0.5*x*x*w*w - 0.5;
-        output.access(7, 5) = -x*x*y*w*w*w + 1.0; 
+        output(7, 0) = -(1.0+y-z)*w;
+        output(7, 1) = -x*w;
+        output(7, 2) = -x*y*w*w; 
+        output(7, 3) =  0.0; 
+        output(7, 4) = -0.5*x*x*w*w - 0.5;
+        output(7, 5) = -x*x*y*w*w*w + 1.0; 
         
-        output.access(8, 0) =  0.0;
-        output.access(8, 1) =  y*w;
-        output.access(8, 2) =  0.5*y*y*w*w + 0.5; 
-        output.access(8, 3) = -(1.0-x-z)*w; 
-        output.access(8, 4) =  x*y*w*w;
-        output.access(8, 5) =  x*y*y*w*w*w + 1.0;
+        output(8, 0) =  0.0;
+        output(8, 1) =  y*w;
+        output(8, 2) =  0.5*y*y*w*w + 0.5; 
+        output(8, 3) = -(1.0-x-z)*w; 
+        output(8, 4) =  x*y*w*w;
+        output(8, 5) =  x*y*y*w*w*w + 1.0;
 
-        output.access(9, 0) =  0.0;
-        output.access(9, 1) =  z*w; 
-        output.access(9, 2) =  y*w*w - 1.0;
-        output.access(9, 3) =  0.0; 
-        output.access(9, 4) =  x*w*w - 1.0; 
-        output.access(9, 5) =  2.0*x*y*w*w*w - 2.0; 
+        output(9, 0) =  0.0;
+        output(9, 1) =  z*w; 
+        output(9, 2) =  y*w*w - 1.0;
+        output(9, 3) =  0.0; 
+        output(9, 4) =  x*w*w - 1.0; 
+        output(9, 5) =  2.0*x*y*w*w*w - 2.0; 
          
-        output.access(10,0) =  0.0;
-        output.access(10,1) = -z*w;
-        output.access(10,2) = -y*w*w + 1.0;
-        output.access(10,3) =  0.0;
-        output.access(10,4) = -x*w*w - 1.0;
-        output.access(10,5) = -2.0*x*y*w*w*w - 2.0;
+        output(10,0) =  0.0;
+        output(10,1) = -z*w;
+        output(10,2) = -y*w*w + 1.0;
+        output(10,3) =  0.0;
+        output(10,4) = -x*w*w - 1.0;
+        output(10,5) = -2.0*x*y*w*w*w - 2.0;
         
-        output.access(11,0) =  0.0;
-        output.access(11,1) =  z*w; 
-        output.access(11,2) =  y*w*w + 1.0;
-        output.access(11,3) =  0.0;
-        output.access(11,4) =  x*w*w + 1.0; 
-        output.access(11,5) =  2.0*x*y*w*w*w - 2.0;      
+        output(11,0) =  0.0;
+        output(11,1) =  z*w; 
+        output(11,2) =  y*w*w + 1.0;
+        output(11,3) =  0.0;
+        output(11,4) =  x*w*w + 1.0; 
+        output(11,5) =  2.0*x*y*w*w*w - 2.0;      
         
-        output.access(12,0) =  0.0;
-        output.access(12,1) = -z*w; 
-        output.access(12,2) = -y*w*w - 1.0; 
-        output.access(12,3) =  0.0;
-        output.access(12,4) = -x*w*w + 1.0;    
-        output.access(12,5) = -2.0*x*y*w*w*w - 2.0;
+        output(12,0) =  0.0;
+        output(12,1) = -z*w; 
+        output(12,2) = -y*w*w - 1.0; 
+        output(12,3) =  0.0;
+        output(12,4) = -x*w*w + 1.0;    
+        output(12,5) = -2.0*x*y*w*w*w - 2.0;
       }
       else {
         INTREPID2_TEST_FOR_ABORT( OpType != OPERATOR_VALUE &&

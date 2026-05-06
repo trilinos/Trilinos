@@ -36,28 +36,28 @@ namespace Intrepid2 {
         const auto z = input(2);
 
         // output is a rank-2 array with dimensions (basisCardinality_)
-        output.access(0, 0) = x;
-        output.access(0, 1) = (y - 1.0);
-        output.access(0, 2) = z;
+        output(0, 0) = x;
+        output(0, 1) = (y - 1.0);
+        output(0, 2) = z;
 
-        output.access(1, 0) = x;
-        output.access(1, 1) = y;
-        output.access(1, 2) = z;
+        output(1, 0) = x;
+        output(1, 1) = y;
+        output(1, 2) = z;
 
-        output.access(2, 0) = (x - 1.0);
-        output.access(2, 1) = y;
-        output.access(2, 2) = z;
+        output(2, 0) = (x - 1.0);
+        output(2, 1) = y;
+        output(2, 2) = z;
 
-        output.access(3, 0) = x;
-        output.access(3, 1) = y;
-        output.access(3, 2) = (z - 1.0);
+        output(3, 0) = x;
+        output(3, 1) = y;
+        output(3, 2) = (z - 1.0);
       }
       else if constexpr (OpType == OPERATOR_DIV) {
         // output is a rank-3 array with dimensions (basisCardinality_, spaceDim)
-        output.access(0) = 3;
-        output.access(1) = 3;
-        output.access(2) = 3;
-        output.access(3) = 3;
+        output(0) = 3;
+        output(1) = 3;
+        output(2) = 3;
+        output(3) = 3;
       }
       else {
         INTREPID2_TEST_FOR_ABORT( OpType != OPERATOR_VALUE &&

@@ -51,9 +51,9 @@ namespace Intrepid2 {
 
         for (ordinal_type i=0;i<card;++i)
           for (ordinal_type j=0;j<npts;++j) {
-            output.access(i,j) = 0.0;
+            output(i,j) = 0.0;
             for (ordinal_type k=0;k<card;++k)
-              output.access(i,j) += vinv(k,i)*phis.access(k,j);
+              output(i,j) += vinv(k,i)*phis(k,j);
           }
       }
       else if constexpr ((OpType == OPERATOR_GRAD) || (OpType == OPERATOR_D1) || (OpType == OPERATOR_D2) || (OpType == OPERATOR_D3) || (OpType == OPERATOR_D4) || (OpType == OPERATOR_D5) ||
@@ -70,9 +70,9 @@ namespace Intrepid2 {
         for (ordinal_type i=0;i<card;++i)
           for (ordinal_type j=0;j<npts;++j)
             for (ordinal_type k=0;k<dkcard;++k) {
-              output.access(i,j,k) = 0.0;
+              output(i,j,k) = 0.0;
               for (ordinal_type l=0;l<card;++l)
-                output.access(i,j,k) += vinv(l,i)*phis.access(l,j,k);
+                output(i,j,k) += vinv(l,i)*phis(l,j,k);
             }
       }
       else {

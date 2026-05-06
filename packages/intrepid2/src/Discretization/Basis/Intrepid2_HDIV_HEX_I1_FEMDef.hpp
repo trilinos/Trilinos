@@ -36,40 +36,40 @@ namespace Intrepid2 {
         const auto z = input(2);
 
         // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
-        output.access(0, 0) = 0.0;
-        output.access(0, 1) = (y - 1.0)/2.0;
-        output.access(0, 2) = 0.0;
+        output(0, 0) = 0.0;
+        output(0, 1) = (y - 1.0)/2.0;
+        output(0, 2) = 0.0;
 
-        output.access(1, 0) = (1.0 + x)/2.0;
-        output.access(1, 1) = 0.0;
-        output.access(1, 2) = 0.0;
+        output(1, 0) = (1.0 + x)/2.0;
+        output(1, 1) = 0.0;
+        output(1, 2) = 0.0;
 
-        output.access(2, 0) = 0.0;
-        output.access(2, 1) = (1.0 + y)/2.0;
-        output.access(2, 2) = 0.0;
+        output(2, 0) = 0.0;
+        output(2, 1) = (1.0 + y)/2.0;
+        output(2, 2) = 0.0;
 
-        output.access(3, 0) = (x - 1.0)/2.0;
-        output.access(3, 1) = 0.0;
-        output.access(3, 2) = 0.0;
+        output(3, 0) = (x - 1.0)/2.0;
+        output(3, 1) = 0.0;
+        output(3, 2) = 0.0;
 
-        output.access(4, 0) = 0.0;
-        output.access(4, 1) = 0.0;
-        output.access(4, 2) = (z - 1.0)/2.0;
+        output(4, 0) = 0.0;
+        output(4, 1) = 0.0;
+        output(4, 2) = (z - 1.0)/2.0;
 
-        output.access(5, 0) = 0.0;
-        output.access(5, 1) = 0.0;
-        output.access(5, 2) = (1.0 + z)/2.0;
+        output(5, 0) = 0.0;
+        output(5, 1) = 0.0;
+        output(5, 2) = (1.0 + z)/2.0;
       }
       else if constexpr (OpType == OPERATOR_DIV) {
 
         // output is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
         // outputValues is a rank-2 array with dimensions (basisCardinality_, dim0)
-        output.access(0) = 0.5;
-        output.access(1) = 0.5;
-        output.access(2) = 0.5;
-        output.access(3) = 0.5;
-        output.access(4) = 0.5;
-        output.access(5) = 0.5;
+        output(0) = 0.5;
+        output(1) = 0.5;
+        output(2) = 0.5;
+        output(3) = 0.5;
+        output(4) = 0.5;
+        output(5) = 0.5;
       }
       else {
         INTREPID2_TEST_FOR_ABORT( OpType != OPERATOR_VALUE &&

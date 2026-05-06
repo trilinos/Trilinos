@@ -35,24 +35,24 @@ namespace Intrepid2 {
         const auto y = input(1);
 
         // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
-        output.access(0, 0) =  0.5*(1.0 - y);
-        output.access(0, 1) =   0.0;
+        output(0, 0) =  0.5*(1.0 - y);
+        output(0, 1) =   0.0;
 
-        output.access(1, 0) =   0.0;
-        output.access(1, 1) =  0.5*(1.0 + x);
+        output(1, 0) =   0.0;
+        output(1, 1) =  0.5*(1.0 + x);
 
-        output.access(2, 0) = -0.5*(1.0 + y);
-        output.access(2, 1) =   0.0;
+        output(2, 0) = -0.5*(1.0 + y);
+        output(2, 1) =   0.0;
 
-        output.access(3, 0) =   0.0;
-        output.access(3, 1) = -0.5*(1.0 - x);
+        output(3, 0) =   0.0;
+        output(3, 1) = -0.5*(1.0 - x);
       }
       else if constexpr (OpType == OPERATOR_CURL) {
         // outputValues is a rank-2 array with dimensions (basisCardinality_, dim0)
-        output.access(0) = 0.5;
-        output.access(1) = 0.5;
-        output.access(2) = 0.5;
-        output.access(3) = 0.5;
+        output(0) = 0.5;
+        output(1) = 0.5;
+        output(2) = 0.5;
+        output(3) = 0.5;
       }
       else {
         INTREPID2_TEST_FOR_ABORT( OpType != OPERATOR_VALUE &&

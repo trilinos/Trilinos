@@ -80,9 +80,9 @@ namespace Intrepid2 {
             for (ordinal_type j=0;j<cardLine;++j) // y
               for (ordinal_type i=0;i<cardBubble;++i,++idx) // x
                 for (ordinal_type l=0;l<npts;++l) {
-                  output.access(idx,l,0) = output_x.access(i,l)*output_y.access(j,l)*output_z.access(k,l);
-                  output.access(idx,l,1) = 0.0;
-                  output.access(idx,l,2) = 0.0;
+                  output(idx,l,0) = output_x(i,l)*output_y(j,l)*output_z(k,l);
+                  output(idx,l,1) = 0.0;
+                  output(idx,l,2) = 0.0;
                 }
         }
         {
@@ -104,9 +104,9 @@ namespace Intrepid2 {
             for (ordinal_type j=0;j<cardBubble;++j) // y
               for (ordinal_type i=0;i<cardLine;++i,++idx) // x
                 for (ordinal_type l=0;l<npts;++l) {
-                  output.access(idx,l,0) = 0.0;
-                  output.access(idx,l,1) = output_x.access(i,l)*output_y.access(j,l)*output_z.access(k,l);
-                  output.access(idx,l,2) = 0.0;
+                  output(idx,l,0) = 0.0;
+                  output(idx,l,1) = output_x(i,l)*output_y(j,l)*output_z(k,l);
+                  output(idx,l,2) = 0.0;
                 }
         }
         {
@@ -128,9 +128,9 @@ namespace Intrepid2 {
             for (ordinal_type j=0;j<cardLine;++j) // y
               for (ordinal_type i=0;i<cardLine;++i,++idx) // x
                 for (ordinal_type l=0;l<npts;++l) {
-                  output.access(idx,l,0) = 0.0;
-                  output.access(idx,l,1) = 0.0;
-                  output.access(idx,l,2) = output_x.access(i,l)*output_y.access(j,l)*output_z.access(k,l);
+                  output(idx,l,0) = 0.0;
+                  output(idx,l,1) = 0.0;
+                  output(idx,l,2) = output_x(i,l)*output_y(j,l)*output_z(k,l);
                 }
         }
       }
@@ -176,9 +176,9 @@ namespace Intrepid2 {
             for (ordinal_type j=0;j<cardLine;++j) // y
               for (ordinal_type i=0;i<cardBubble;++i,++idx) // x
                 for (ordinal_type l=0;l<npts;++l) {
-                  output.access(idx,l,0) =  0.0;
-                  output.access(idx,l,1) =  output_x.access(i,l)*output_y.access (j,l)  *output_dz.access(k,l,0);
-                  output.access(idx,l,2) = -output_x.access(i,l)*output_dy.access(j,l,0)*output_z.access (k,l);
+                  output(idx,l,0) =  0.0;
+                  output(idx,l,1) =  output_x(i,l)*output_y (j,l)  *output_dz(k,l,0);
+                  output(idx,l,2) = -output_x(i,l)*output_dy(j,l,0)*output_z (k,l);
                 }
         }
         { // y - component
@@ -208,9 +208,9 @@ namespace Intrepid2 {
             for (ordinal_type j=0;j<cardBubble;++j) // y
               for (ordinal_type i=0;i<cardLine;++i,++idx) // x
                 for (ordinal_type l=0;l<npts;++l) {
-                  output.access(idx,l,0) = -output_x.access (i,l)  *output_y.access(j,l)*output_dz.access(k,l,0);
-                  output.access(idx,l,1) =  0.0;
-                  output.access(idx,l,2) =  output_dx(i,l,0)*output_y.access(j,l)*output_z.access (k,l);
+                  output(idx,l,0) = -output_x (i,l)  *output_y(j,l)*output_dz(k,l,0);
+                  output(idx,l,1) =  0.0;
+                  output(idx,l,2) =  output_dx(i,l,0)*output_y(j,l)*output_z (k,l);
                 }
         }
         { // z - component
@@ -240,9 +240,9 @@ namespace Intrepid2 {
             for (ordinal_type j=0;j<cardLine;++j) // y
               for (ordinal_type i=0;i<cardLine;++i,++idx) // x
                 for (ordinal_type l=0;l<npts;++l) {
-                  output.access(idx,l,0) =  output_x.access (i,l)  *output_dy.access(j,l,0)*output_z.access(k,l);
-                  output.access(idx,l,1) = -output_dx(i,l,0)*output_y.access (j,l)  *output_z.access(k,l);
-                  output.access(idx,l,2) =  0.0;
+                  output(idx,l,0) =  output_x (i,l)  *output_dy(j,l,0)*output_z(k,l);
+                  output(idx,l,1) = -output_dx(i,l,0)*output_y (j,l)  *output_z(k,l);
+                  output(idx,l,2) =  0.0;
                 }
         }
       }

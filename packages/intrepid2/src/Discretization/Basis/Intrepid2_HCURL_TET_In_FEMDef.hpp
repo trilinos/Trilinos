@@ -67,9 +67,9 @@ getValues(       OutputViewType output,
     for (ordinal_type i=0;i<card;++i)
       for (ordinal_type j=0;j<npts;++j)
         for (ordinal_type d=0;d<spaceDim;++d) {
-          output.access(i,j,d) = 0.0;
+          output(i,j,d) = 0.0;
           for (ordinal_type k=0;k<cardPn;++k)
-            output.access(i,j,d) += coeffs(k+d*cardPn,i) * phis(k,j);
+            output(i,j,d) += coeffs(k+d*cardPn,i) * phis(k,j);
         }
   } else if constexpr (OpType == OPERATOR_CURL) {
     const ViewType phis = createMatchingUnmanagedView<ViewType>(input, ptr, card, npts, spaceDim);
@@ -82,10 +82,10 @@ getValues(       OutputViewType output,
     for (ordinal_type i=0;i<card;++i) {
       for (ordinal_type j=0;j<npts;++j) {
         for (ordinal_type d=0; d< spaceDim; ++d) {
-          output.access(i,j,d) = 0.0;
+          output(i,j,d) = 0.0;
           ordinal_type d1 = (d+1) % spaceDim, d2 = (d+2) % spaceDim;
           for (ordinal_type k=0; k<cardPn; ++k)   //\sum_k (coeffs_k, coeffs_{k+cardPn}, coeffs_{k+2 cardPn}) \times phis_kj  (cross product)
-            output.access(i,j,d) += coeffs(k+d2*cardPn,i)*phis(k,j,d1)
+            output(i,j,d) += coeffs(k+d2*cardPn,i)*phis(k,j,d1)
             -coeffs(k+d1*cardPn,i)*phis(k,j,d2);
         }
       }

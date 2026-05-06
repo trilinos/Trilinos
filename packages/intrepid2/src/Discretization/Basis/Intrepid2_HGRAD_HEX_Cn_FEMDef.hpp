@@ -73,7 +73,7 @@ namespace Intrepid2 {
           for (ordinal_type j=0;j<cardLine;++j) // y
             for (ordinal_type i=0;i<cardLine;++i,++idx)  // x
               for (ordinal_type l=0;l<npts;++l)
-                output.access(idx,l) = output_x.access(i,l)*output_y.access(j,l)*output_z.access(k,l);
+                output(idx,l) = output_x(i,l)*output_y(j,l)*output_z(k,l);
       }
       else if constexpr ((OpType == OPERATOR_GRAD) || (OpType == OPERATOR_D1) || (OpType == OPERATOR_D2) || (OpType == OPERATOR_D3) || (OpType == OPERATOR_D4) || (OpType == OPERATOR_D5) ||
                         (OpType == OPERATOR_D6) || (OpType == OPERATOR_D7) || (OpType == OPERATOR_D8) || (OpType == OPERATOR_D9)  || (OpType == OPERATOR_D10) || (OpType == OPERATOR_Dn)) {
@@ -132,7 +132,7 @@ namespace Intrepid2 {
                 for (ordinal_type j=0;j<cardLine;++j) // y
                   for (ordinal_type i=0;i<cardLine;++i,++idx)  // x
                     for (ordinal_type l=0;l<npts;++l)
-                      output.access(idx,l,d) = output_x.access(i,l,0)*output_y.access(j,l,0)*output_z.access(k,l,0);
+                      output(idx,l,d) = output_x(i,l,0)*output_y(j,l,0)*output_z(k,l,0);
               ++d;
             }
           }

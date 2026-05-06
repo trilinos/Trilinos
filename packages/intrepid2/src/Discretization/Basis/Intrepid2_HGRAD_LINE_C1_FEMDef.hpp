@@ -34,12 +34,12 @@ namespace Intrepid2 {
       if constexpr (OpType == OPERATOR_VALUE) {
         const auto x = input(0);
 
-        output.access(0) = (1.0 - x)/2.0;
-        output.access(1) = (1.0 + x)/2.0;
+        output(0) = (1.0 - x)/2.0;
+        output(1) = (1.0 + x)/2.0;
       }
       else if constexpr (OpType == OPERATOR_GRAD) {
-        output.access(0, 0) = -0.5;
-        output.access(1, 0) =  0.5;
+        output(0, 0) = -0.5;
+        output(1, 0) =  0.5;
       }
       else if constexpr (OpType == OPERATOR_MAX) {
         const ordinal_type jend = output.extent(1);
@@ -47,7 +47,7 @@ namespace Intrepid2 {
 
         for (ordinal_type j=0;j<jend;++j)
           for (ordinal_type i=0;i<iend;++i)
-            output.access(i, j) = 0.0;
+            output(i, j) = 0.0;
       }
       else {
         INTREPID2_TEST_FOR_ABORT( OpType != OPERATOR_VALUE &&

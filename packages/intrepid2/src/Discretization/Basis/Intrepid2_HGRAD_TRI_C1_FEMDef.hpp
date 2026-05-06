@@ -37,30 +37,30 @@ namespace Intrepid2 {
         const auto y = input(1);
 
         // output is a rank-2 array with dimensions (basisCardinality_)
-        output.access(0) = 1.0 - x - y;
-        output.access(1) = x;
-        output.access(2) = y;
+        output(0) = 1.0 - x - y;
+        output(1) = x;
+        output(2) = y;
       }
       else if constexpr (OpType == OPERATOR_GRAD) {
         // output is a rank-3 array with dimensions (basisCardinality_, spaceDim)
-        output.access(0, 0) = -1.0;
-        output.access(0, 1) = -1.0;
+        output(0, 0) = -1.0;
+        output(0, 1) = -1.0;
 
-        output.access(1, 0) =  1.0;
-        output.access(1, 1) =  0.0;
+        output(1, 0) =  1.0;
+        output(1, 1) =  0.0;
 
-        output.access(2, 0) =  0.0;
-        output.access(2, 1) =  1.0;
+        output(2, 0) =  0.0;
+        output(2, 1) =  1.0;
       }
       else if constexpr (OpType == OPERATOR_CURL) {
-        output.access(0, 0) = -1.0;
-        output.access(0, 1) =  1.0;
+        output(0, 0) = -1.0;
+        output(0, 1) =  1.0;
 
-        output.access(1, 0) =  0.0;
-        output.access(1, 1) = -1.0;
+        output(1, 0) =  0.0;
+        output(1, 1) = -1.0;
 
-        output.access(2, 0) =  1.0;
-        output.access(2, 1) =  0.0;
+        output(2, 0) =  1.0;
+        output(2, 1) =  0.0;
       }
       else if constexpr (OpType == OPERATOR_MAX) {
         const ordinal_type jend = output.extent(1);
@@ -68,7 +68,7 @@ namespace Intrepid2 {
 
         for (ordinal_type j=0;j<jend;++j)
           for (ordinal_type i=0;i<iend;++i)
-            output.access(i, j) = 0.0;
+            output(i, j) = 0.0;
       }
       else {
         INTREPID2_TEST_FOR_ABORT( OpType != OPERATOR_VALUE &&
