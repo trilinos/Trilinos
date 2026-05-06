@@ -24,6 +24,7 @@
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
+#include <Tpetra_MultiVector.hpp>
 
 #include <Xpetra_IO.hpp>
 
@@ -311,54 +312,67 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void CombinePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildPBlocked(Level& fineLevel,
                                                                                Level& coarseLevel) const {
 #ifdef HAVE_XPETRA_THYRA
-  TEUCHOS_TEST_FOR_EXCEPTION(restrictionMode_, Exceptions::RuntimeError, "CombinePFactory::BuildPBlocked does not support restriction mode.");
-  const ParameterList& pL = GetParameterList();
-  const LO nBlks          = as<LO>(pL.get<int>("combine: numBlks"));
-  const bool useMaxLevels = pL.get<bool>("combine: useMaxLevels");
+  using TpetraLO   = typename Tpetra::Map<>::local_ordinal_type;
+  using TpetraGO   = typename Tpetra::Map<>::global_ordinal_type;
+  using TpetraNode = typename Tpetra::Map<>::node_type;
 
-  RCP<Matrix> A = Get<RCP<Matrix>>(fineLevel, "A");
+  constexpr bool typesMatch =
+      std::is_same_v<LocalOrdinal, TpetraLO> &&
+      std::is_same_v<GlobalOrdinal, TpetraGO> &&
+      std::is_same_v<Node, TpetraNode>;
+  if constexpr (!typesMatch) {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "CombinePFactory::BuildPBlocked requires LO/GO/Node to match Tpetra::Map<> default types.");
+    return;
+  } else {
+    TEUCHOS_TEST_FOR_EXCEPTION(restrictionMode_, Exceptions::RuntimeError, "CombinePFactory::BuildPBlocked does not support restriction mode.");
+    const ParameterList& pL = GetParameterList();
+    const LO nBlks          = as<LO>(pL.get<int>("combine: numBlks"));
+    const bool useMaxLevels = pL.get<bool>("combine: useMaxLevels");
 
-  bool anyCoarseGridsRemaining = false;
+    RCP<Matrix> A = Get<RCP<Matrix>>(fineLevel, "A");
 
-  if (useMaxLevels) {
-    for (int j = 0; j < nBlks; j++) {
-      std::string blockName = "Psubblock" + Teuchos::toString(j);
-      anyCoarseGridsRemaining |= coarseLevel.IsAvailable(blockName, NoFactory::get());
-    };
+    bool anyCoarseGridsRemaining = false;
 
-    int localAnyCoarseGridsRemaining  = anyCoarseGridsRemaining;
-    int globalAnyCoarseGridsRemaining = localAnyCoarseGridsRemaining;
-    Teuchos::reduceAll(*A->getDomainMap()->getComm(), Teuchos::REDUCE_MAX, localAnyCoarseGridsRemaining, Teuchos::ptr(&globalAnyCoarseGridsRemaining));
+    if (useMaxLevels) {
+      for (int j = 0; j < nBlks; j++) {
+        std::string blockName = "Psubblock" + Teuchos::toString(j);
+        anyCoarseGridsRemaining |= coarseLevel.IsAvailable(blockName, NoFactory::get());
+      };
 
-    anyCoarseGridsRemaining |= globalAnyCoarseGridsRemaining > 0;
-  }
+      int localAnyCoarseGridsRemaining  = anyCoarseGridsRemaining;
+      int globalAnyCoarseGridsRemaining = localAnyCoarseGridsRemaining;
+      Teuchos::reduceAll(*A->getDomainMap()->getComm(), Teuchos::REDUCE_MAX, localAnyCoarseGridsRemaining, Teuchos::ptr(&globalAnyCoarseGridsRemaining));
 
-  auto blockProlongator = Teuchos::make_rcp<Thyra::DefaultBlockedLinearOp<Scalar>>();
-  blockProlongator->beginBlockFill(nBlks, nBlks);
-
-  for (int j = 0; j < nBlks; j++) {
-    RCP<Matrix> P_jj;
-
-    std::string blockName = "Psubblock" + Teuchos::toString(j);
-    if (coarseLevel.IsAvailable(blockName, NoFactory::get())) {
-      P_jj = coarseLevel.Get<RCP<Matrix>>(blockName, NoFactory::get());
-    } else if (useMaxLevels && anyCoarseGridsRemaining) {
-      std::string subblockOpName = "Operatorsubblock" + Teuchos::toString(j);
-      P_jj                       = constructIdentityProlongator<Scalar, LocalOrdinal, GlobalOrdinal, Node>(fineLevel.Get<RCP<Operator>>(subblockOpName)->getDomainMap());
+      anyCoarseGridsRemaining |= globalAnyCoarseGridsRemaining > 0;
     }
 
-    RCP<const Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tpetra_P_jj = Xpetra::toTpetra(P_jj);
-    auto thyra_P_jj                                                                    = Thyra::createConstLinearOp(tpetra_P_jj);
-    blockProlongator->setBlock(j, j, thyra_P_jj);
+    auto blockProlongator = Teuchos::make_rcp<Thyra::DefaultBlockedLinearOp<Scalar>>();
+    blockProlongator->beginBlockFill(nBlks, nBlks);
+
+    for (int j = 0; j < nBlks; j++) {
+      RCP<Matrix> P_jj;
+
+      std::string blockName = "Psubblock" + Teuchos::toString(j);
+      if (coarseLevel.IsAvailable(blockName, NoFactory::get())) {
+        P_jj = coarseLevel.Get<RCP<Matrix>>(blockName, NoFactory::get());
+      } else if (useMaxLevels && anyCoarseGridsRemaining) {
+        std::string subblockOpName = "Operatorsubblock" + Teuchos::toString(j);
+        P_jj                       = constructIdentityProlongator<Scalar, LocalOrdinal, GlobalOrdinal, Node>(fineLevel.Get<RCP<Operator>>(subblockOpName)->getDomainMap());
+      }
+
+      RCP<const Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tpetra_P_jj = Xpetra::toTpetra(P_jj);
+      auto thyra_P_jj                                                                    = Thyra::createConstLinearOp(tpetra_P_jj);
+      blockProlongator->setBlock(j, j, thyra_P_jj);
+    }
+
+    blockProlongator->endBlockFill();
+
+    Teuchos::RCP<Matrix> blockedProlongatorXpetra = Teuchos::make_rcp<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(blockProlongator, Teuchos::null);
+
+    blockedProlongatorXpetra->fillComplete();
+
+    Set(coarseLevel, "P", blockedProlongatorXpetra);
   }
-
-  blockProlongator->endBlockFill();
-
-  Teuchos::RCP<Matrix> blockedProlongatorXpetra = Teuchos::make_rcp<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(blockProlongator, Teuchos::null);
-
-  blockedProlongatorXpetra->fillComplete();
-
-  Set(coarseLevel, "P", blockedProlongatorXpetra);
 #else
   throw Exceptions::RuntimeError("CombinePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildPBlocked requires HAVE_XPETRA_THYRA!");
 #endif
