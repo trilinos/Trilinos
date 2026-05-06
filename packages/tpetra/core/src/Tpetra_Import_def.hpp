@@ -1018,6 +1018,10 @@ void Import<LocalOrdinal, GlobalOrdinal, Node>::
 
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(this->getSourceMap().is_null(), std::logic_error,
                                         "Source Map is null.  " << suffix);
+  if (!useRemotePIDs && !this->getSourceMap()->haveGlobalConstants()) {
+    // Directory construction below requires global constants
+    Teuchos::rcp_const_cast<Map<LocalOrdinal, GlobalOrdinal, Node>>(this->getSourceMap())->computeGlobalConstants();
+  }
   const map_type& source = *(this->getSourceMap());
 
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(!useRemotePIDs && (userRemotePIDs.size() > 0), std::invalid_argument,
