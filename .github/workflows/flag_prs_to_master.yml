@@ -2,7 +2,7 @@ name: Flag PRs to master by adding the AT WIP keyword
 # Unless you are the autotester, of course
 
 on:
-  pull_request:
+  pull_request_target:
     types: [opened]
     branches: [master]
 
@@ -19,9 +19,9 @@ jobs:
 
     steps:
     - name: Add comment
-      uses: mshick/add-pr-comment@64b8e914979889d746c99dea15a76e77ef64580a # v3.10.0.8.3.10.0
+      uses: mshick/add-pr-comment@8e4927817251f1ff60c001f04568532b38e0b4a0 # v3.11.0.8.3.11.0
       if: "!contains(github.event.sender.login,'snapshot-app[bot]')"
       with:
          message: |
-            You seem to have created a PR on master.  This is not allowed behavior, so we've blocked your PR.  Please switch your PR to target the develop branch and remove the AT: WIP label.
+            You seem to have created a PR on master.  This is not allowed behavior, so we've blocked your PR.  Please switch your PR to target the develop branch.
       

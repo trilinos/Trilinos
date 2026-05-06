@@ -209,6 +209,8 @@ class Import : public ::Tpetra::Details::Transfer<LocalOrdinal, GlobalOrdinal, N
   ///   this constructor reserves the right to reorder the target
   ///   Map indices on each process, for better communication
   ///   performance.
+  /// \param plist [in] Optional list of parameters.
+  /// \param out [in] Optional output stream for debugging.
   Import(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& sourceMap,
          const GlobalOrdinal targetMapRemoteOrPermuteGlobalIndices[],
          const int targetMapRemoteOrPermuteProcessRanks[],

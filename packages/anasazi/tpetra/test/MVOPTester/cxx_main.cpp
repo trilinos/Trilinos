@@ -19,24 +19,14 @@ namespace { // (anonymous)
 
   using Teuchos::as;
   using Teuchos::RCP;
-  using Teuchos::ArrayRCP;
   using Teuchos::rcp;
   using Tpetra::Map;
   using std::vector;
   using std::sort;
-  using Teuchos::arrayViewFromVector;
-  using Teuchos::broadcast;
-  using Teuchos::OrdinalTraits;
   using Teuchos::ScalarTraits;
   using Teuchos::Comm;
   using Tpetra::MultiVector;
   using Tpetra::CrsMatrix;
-  using std::endl;
-  using Teuchos::Array;
-  using Teuchos::ArrayView;
-  using Teuchos::NO_TRANS;
-  using Teuchos::TRANS;
-  using Teuchos::CONJ_TRANS;
   using Anasazi::OutputManager;
   using Anasazi::BasicOutputManager;
   using Anasazi::Warnings;

@@ -681,7 +681,7 @@ SolverCore<ConcreteSolver,Matrix,Vector>::printTiming(
           << std::endl;
       out << p << "Time for pre-ordering = "
           << preTime << " (s), avg = "
-          << preTime / status_.getNumPreOrder() << " (s)"
+          << preTime / std::max(1, status_.getNumPreOrder())<< " (s)"
           << std::endl;
 
       out << p << "Number of symbolic factorizations = "
@@ -689,7 +689,7 @@ SolverCore<ConcreteSolver,Matrix,Vector>::printTiming(
           << std::endl;
       out << p << "Time for sym fact = "
           << symTime << " (s), avg = "
-          << symTime / status_.getNumSymbolicFact() << " (s)"
+          << symTime / std::max(1, status_.getNumSymbolicFact()) << " (s)"
           << std::endl;
 
       out << p << "Number of numeric factorizations = "
@@ -697,7 +697,7 @@ SolverCore<ConcreteSolver,Matrix,Vector>::printTiming(
           << std::endl;
       out << p << "Time for num fact = "
           << numTime << " (s), avg = "
-          << numTime / status_.getNumNumericFact() << " (s)"
+          << numTime / std::max(1, status_.getNumNumericFact()) << " (s)"
           << std::endl;
 
       out << p << "Number of solve phases = "
@@ -705,7 +705,7 @@ SolverCore<ConcreteSolver,Matrix,Vector>::printTiming(
           << std::endl;
       out << p << "Time for solve = "
           << solTime << " (s), avg = "
-          << solTime / status_.getNumSolve() << " (s)"
+          << solTime / std::max(1, status_.getNumSolve()) << " (s)"
           << std::endl;
 
       out << p << "Total time spent in Amesos2 = "

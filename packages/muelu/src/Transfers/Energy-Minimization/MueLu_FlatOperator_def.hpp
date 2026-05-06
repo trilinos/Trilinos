@@ -11,6 +11,9 @@
 #define MUELU_FLATOPERATOR_DEF_HPP
 
 #include "MueLu_FlatOperator_decl.hpp"
+#include "Xpetra_MapFactory.hpp"
+#include "Xpetra_MatrixFactory.hpp"
+#include "Xpetra_MatrixMatrix.hpp"
 
 namespace MueLu {
 
@@ -51,9 +54,14 @@ void FlatOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     Kokkos::deep_copy(lclMat.values, Kokkos::subview(lclVec, Kokkos::ALL(), 0));
   }
 
-  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> AP;
-  AP = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*mat_, false, *tempMat_, false, AP, GetOStream(Runtime0), true, true);
-  constraint_->AssignMatrixEntriesToVector(*AP, Y);
+  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> AP = Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(constraint_->GetPattern());
+  auto params                                                       = Teuchos::rcp(new Teuchos::ParameterList());
+  params->set("MM Throw For Non-Existent Entries", false);
+
+  AP = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*mat_, false, *tempMat_, false, AP, GetOStream(Runtime0), true, true, "", params);
+
+  Kokkos::deep_copy(Kokkos::subview(Y.getLocalViewDevice(Tpetra::Access::OverwriteAll), Kokkos::ALL(), 0),
+                    AP->getLocalMatrixDevice().values);
 }
 }  // namespace MueLu
 #endif

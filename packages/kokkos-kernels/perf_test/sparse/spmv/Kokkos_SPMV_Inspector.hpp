@@ -95,7 +95,7 @@ void kk_inspector_matvec(AType A, XType x, YType y, int team_size, int vector_le
     if (workset_offsets(ws - 1) < A.numRows()) {
       workset_offsets(ws) = A.numRows();
     }
-    printf("Worksets: %i %i\n", worksets, ws);
+    printf("Worksets: %zd %zd\n", (size_t)worksets, (size_t)ws);
     worksets = ws;
   }
   scalar_t s_a(1.0);

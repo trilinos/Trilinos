@@ -245,10 +245,11 @@ class BlockRelaxation : virtual public Ifpack2::Preconditioner<typename MatrixTy
 
   //! Applies the preconditioner to X, returns the result in Y.
   /*!
-    \param
-    X - (In) A Tpetra::MultiVector of dimension NumVectors to be preconditioned.
-    \param
-    Y - (InOut) A Tpetra::MultiVector of dimension NumVectors containing result.
+    \param X (In) A Tpetra::MultiVector of dimension NumVectors to be preconditioned.
+    \param Y (InOut) A Tpetra::MultiVector of dimension NumVectors containing result.
+    \param mode (In) Whether to apply the transpose (Teuchos::NO_TRANS, Teuchos::TRANS, Teuchos::CONJ_TRANS).
+    \param alpha (In) Scaling factor for the result.
+    \param beta (In) Scaling factor for Y before adding the result.
 
     \return Integer error code, set to 0 if successful.
 
@@ -270,11 +271,10 @@ class BlockRelaxation : virtual public Ifpack2::Preconditioner<typename MatrixTy
 
   //! Applies the matrix to a Tpetra::MultiVector.
   /*!
-    \param
-    X - (In) A Tpetra::MultiVector of dimension NumVectors to multiply with matrix.
-    \param
-    Y - (Out) A Tpetra::MultiVector of dimension NumVectors containing the result.
-    */
+    \param X (In) A Tpetra::MultiVector of dimension NumVectors to multiply with matrix.
+    \param Y (Out) A Tpetra::MultiVector of dimension NumVectors containing the result.
+    \param mode (In) Whether to apply the transpose (Teuchos::NO_TRANS, Teuchos::TRANS, Teuchos::CONJ_TRANS).
+  */
   void applyMat(const MV& X,
                 MV& Y,
                 Teuchos::ETransp mode = Teuchos::NO_TRANS) const;

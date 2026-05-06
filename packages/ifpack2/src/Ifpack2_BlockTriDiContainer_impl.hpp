@@ -149,10 +149,10 @@ struct BlockTridiagScalarType<double> {
 
 #if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
 #define IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN \
-  KOKKOS_IMPL_CUDA_SAFE_CALL(cudaProfilerStart());
+  cudaProfilerStart();
 
 #define IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_END \
-  { KOKKOS_IMPL_CUDA_SAFE_CALL(cudaProfilerStop()); }
+  { cudaProfilerStop(); }
 #else
 /// later put vtune profiler region
 #define IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN

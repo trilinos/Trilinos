@@ -578,79 +578,80 @@ void handle_arg(int argc, char** argv, int& i, std::map<std::string, int*> optio
 int main(int argc, char** argv)
 ///////////////////////////////////////////////////////////////////////////////
 {
-  std::string mfile = "";
-  int rows          = -1;
-  int nnz_per_row   = -1;  // depends on other options, so don't set to default yet
-  int bandwidth     = -1;
-  int team_size     = -1;
-#ifdef USE_GINKGO
-  int test = 7;  // Default to all if ginkgo is enabled
-#else
-  int test = 5;  // Default to par_ilut and spiluk
-#endif
-  bool validate                   = false;
-  bool no_context                 = false;
-  int gmres_max_subspace          = 50;
-  int max_iter                    = 20;
-  double fill_in_limit            = 0.75;
-  double residual_norm_delta_stop = 1e-2;
-
-  std::map<std::string, int*> option_map = {{"-n", &rows},       {"-z", &nnz_per_row}, {"-b", &bandwidth},
-                                            {"-ts", &team_size}, {"-t", &test},        {"-m", &gmres_max_subspace},
-                                            {"-i", &max_iter}};
-
-  std::map<std::string, double*> foption_map = {{"-l", &fill_in_limit}, {"-r", &residual_norm_delta_stop}};
-
-  if (argc == 1) {
-    print_help_par_ilut();
-    return 0;
-  }
-
-  // Handle common params
-  benchmark::CommonInputParams common_params;
-  benchmark::parse_common_options(argc, argv, common_params);
-
-  // Handle user options
-  for (int i = 1; i < argc; i++) {
-    if ((strcmp(argv[i], "--help") == 0) || (strcmp(argv[i], "-h") == 0)) {
-      print_help_par_ilut();
-      return 0;
-    } else if ((strcmp(argv[i], "-f") == 0)) {
-      mfile = argv[++i];
-    } else if ((strcmp(argv[i], "-v") == 0)) {
-      validate = true;
-    } else if ((strcmp(argv[i], "-C") == 0)) {
-      no_context = true;
-    } else {
-      handle_arg(argc, argv, i, option_map, foption_map);
-    }
-  }
-
-  // Determine where A is coming from
-  if (rows != -1) {
-    // We are randomly generating the input A
-    KK_USER_REQUIRE_MSG(rows >= 100, "Need to have at least 100 rows");
-
-    KK_USER_REQUIRE_MSG(mfile == "", "Need provide either -n or -f argument to this program, not both");
-  } else {
-    // We are reading A from a file
-    KK_USER_REQUIRE_MSG(mfile != "", "Need provide either -n or -f argument to this program, not both");
-  }
-
-  // Set dependent defaults. Default team_size cannot be set
-  // until we know more about A
-  if (nnz_per_row == -1) {
-    nnz_per_row = std::min(rows / 100, 50);
-  }
-  if (bandwidth == -1) {
-    // bandwidth = std::max(2 * (int)std::sqrt(rows), 2 * nnz_per_row) / 2;
-    bandwidth = nnz_per_row * 8;
-  }
-
   Kokkos::initialize(argc, argv);
   {
     benchmark::Initialize(&argc, argv);
     benchmark::SetDefaultTimeUnit(benchmark::kSecond);
+
+    std::string mfile = "";
+    int rows          = -1;
+    int nnz_per_row   = -1;  // depends on other options, so don't set to default yet
+    int bandwidth     = -1;
+    int team_size     = -1;
+#ifdef USE_GINKGO
+    int test = 7;  // Default to all if ginkgo is enabled
+#else
+    int test = 5;  // Default to par_ilut and spiluk
+#endif
+    bool validate                   = false;
+    bool no_context                 = false;
+    int gmres_max_subspace          = 50;
+    int max_iter                    = 20;
+    double fill_in_limit            = 0.75;
+    double residual_norm_delta_stop = 1e-2;
+
+    std::map<std::string, int*> option_map = {{"-n", &rows},       {"-z", &nnz_per_row}, {"-b", &bandwidth},
+                                              {"-ts", &team_size}, {"-t", &test},        {"-m", &gmres_max_subspace},
+                                              {"-i", &max_iter}};
+
+    std::map<std::string, double*> foption_map = {{"-l", &fill_in_limit}, {"-r", &residual_norm_delta_stop}};
+
+    if (argc == 1) {
+      print_help_par_ilut();
+      return 0;
+    }
+
+    // Handle common params
+    benchmark::CommonInputParams common_params;
+    benchmark::parse_common_options(argc, argv, common_params);
+
+    // Handle user options
+    for (int i = 1; i < argc; i++) {
+      if ((strcmp(argv[i], "--help") == 0) || (strcmp(argv[i], "-h") == 0)) {
+        print_help_par_ilut();
+        return 0;
+      } else if ((strcmp(argv[i], "-f") == 0)) {
+        mfile = argv[++i];
+      } else if ((strcmp(argv[i], "-v") == 0)) {
+        validate = true;
+      } else if ((strcmp(argv[i], "-C") == 0)) {
+        no_context = true;
+      } else {
+        handle_arg(argc, argv, i, option_map, foption_map);
+      }
+    }
+
+    // Determine where A is coming from
+    if (rows != -1) {
+      // We are randomly generating the input A
+      KK_USER_REQUIRE_MSG(rows >= 100, "Need to have at least 100 rows");
+
+      KK_USER_REQUIRE_MSG(mfile == "", "Need provide either -n or -f argument to this program, not both");
+    } else {
+      // We are reading A from a file
+      KK_USER_REQUIRE_MSG(mfile != "", "Need provide either -n or -f argument to this program, not both");
+    }
+
+    // Set dependent defaults. Default team_size cannot be set
+    // until we know more about A
+    if (nnz_per_row == -1) {
+      nnz_per_row = std::min(rows / 100, 50);
+    }
+    if (bandwidth == -1) {
+      // bandwidth = std::max(2 * (int)std::sqrt(rows), 2 * nnz_per_row) / 2;
+      bandwidth = nnz_per_row * 8;
+    }
+
     if (!no_context) {
       KokkosKernelsBenchmark::add_benchmark_context(true);
     }

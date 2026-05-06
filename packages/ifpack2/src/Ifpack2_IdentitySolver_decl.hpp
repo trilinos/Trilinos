@@ -86,9 +86,11 @@ class IdentitySolver : virtual public Ifpack2::Preconditioner<typename MatrixTyp
   /// \brief Apply the preconditioner to X, and put the result in Y.
   ///
   /// \param X [in] MultiVector to which to apply the preconditioner.
-  ///
   /// \param Y [in/out] On input: Initial guess, if applicable.
-  ///   On poutput: Result of applying the preconditioner.
+  ///   On output: Result of applying the preconditioner.
+  /// \param mode [in] Whether to apply the transpose (Teuchos::NO_TRANS, Teuchos::TRANS, Teuchos::CONJ_TRANS).
+  /// \param alpha [in] Scaling factor for the result.
+  /// \param beta [in] Scaling factor for Y before adding the result.
   void
   apply(const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& X,
         Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& Y,
@@ -106,6 +108,7 @@ class IdentitySolver : virtual public Ifpack2::Preconditioner<typename MatrixTyp
   ///
   /// \param X [in] MultiVector input.
   /// \param Y [in/out] Result of applying the matrix A to X.
+  /// \param mode [in] Whether to apply the transpose (Teuchos::NO_TRANS, Teuchos::TRANS, Teuchos::CONJ_TRANS).
   void
   applyMat(const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& X,
            Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& Y,

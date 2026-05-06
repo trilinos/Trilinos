@@ -23,7 +23,7 @@
 //#include <fenv.h>
 
 #include "ROL_Algorithm.hpp"
-#include "ROL_Bounds.hpp"
+#include "ROL_TpetraBoundConstraint.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_Solver.hpp"
 #include "ROL_BoundConstraint_SimOpt.hpp"
@@ -54,17 +54,15 @@ int main(int argc, char *argv[]) {
   //feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
-  int iprint     = argc - 1;
+  int iprint = argc - 1;
   ROL::Ptr<std::ostream> outStream;
   ROL::nullstream bhs; // outputs nothing
 
   /*** Initialize communicator. ***/
   ROL::GlobalMPISession mpiSession (&argc, &argv, &bhs);
   Kokkos::ScopeGuard kokkosScope (argc, argv);
-  ROL::Ptr<const Teuchos::Comm<int> > comm
-    = Tpetra::getDefaultComm();
-  ROL::Ptr<const Teuchos::Comm<int> > serial_comm
-    = ROL::makePtr<Teuchos::SerialComm<int>>();
+  auto comm = Tpetra::getDefaultComm();
+  auto serial_comm = ROL::makePtr<Teuchos::SerialComm<int>>();
   const int myRank = comm->getRank();
   if ((iprint > 0) && (myRank == 0))
     outStream = ROL::makePtrFromRef(std::cout);
@@ -118,15 +116,9 @@ int main(int argc, char *argv[]) {
     z_ptr->randomize();  z_ptr->putScalar(static_cast<RealT>(0));
     dz_ptr->randomize(); //dz_ptr->putScalar(static_cast<RealT>(0));
     yz_ptr->randomize(); //yz_ptr->putScalar(static_cast<RealT>(0));
-    ROL::Ptr<ROL::TpetraMultiVector<RealT>> zpde
-      = ROL::makePtr<PDE_PrimalOptVector<RealT,DeviceT>>(z_ptr,pde,assembler,*parlist);
-    ROL::Ptr<ROL::TpetraMultiVector<RealT>> dzpde
-      = ROL::makePtr<PDE_PrimalOptVector<RealT,DeviceT>>(dz_ptr,pde,assembler,*parlist);
-    ROL::Ptr<ROL::TpetraMultiVector<RealT>> yzpde
-      = ROL::makePtr<PDE_PrimalOptVector<RealT,DeviceT>>(yz_ptr,pde,assembler,*parlist);
-    auto zp  = ROL::makePtr<PDE_OptVector<RealT>>(zpde);
-    auto dzp = ROL::makePtr<PDE_OptVector<RealT>>(dzpde);
-    auto yzp = ROL::makePtr<PDE_OptVector<RealT>>(yzpde);
+    auto zp  = ROL::makePtr<PDE_PrimalOptVector<RealT,DeviceT>>(z_ptr,pde,assembler,*parlist);
+    auto dzp = ROL::makePtr<PDE_PrimalOptVector<RealT,DeviceT>>(dz_ptr,pde,assembler,*parlist);
+    auto yzp = ROL::makePtr<PDE_PrimalOptVector<RealT,DeviceT>>(yz_ptr,pde,assembler,*parlist);
     // Create ROL SimOpt vectors
     ROL::Vector_SimOpt<RealT> x(up,zp);
     ROL::Vector_SimOpt<RealT> d(dup,dzp);
@@ -154,22 +146,14 @@ int main(int argc, char *argv[]) {
     auto zhi_ptr = assembler->createControlVector();
     zlo_ptr->putScalar(static_cast<RealT>(0));
     zhi_ptr->putScalar(ROL::ROL_INF<RealT>());
-    ROL::Ptr<ROL::TpetraMultiVector<RealT>> zlopde
-      = ROL::makePtr<PDE_PrimalOptVector<RealT,DeviceT>>(zlo_ptr,pde,assembler,*parlist);
-    ROL::Ptr<ROL::TpetraMultiVector<RealT>> zhipde
-      = ROL::makePtr<PDE_PrimalOptVector<RealT,DeviceT>>(zhi_ptr,pde,assembler,*parlist);
-    auto zlop = ROL::makePtr<PDE_OptVector<RealT>>(zlopde);
-    auto zhip = ROL::makePtr<PDE_OptVector<RealT>>(zhipde);
-    auto zbnd = ROL::makePtr<ROL::Bounds<RealT>>(zlop,zhip);
+    auto zbnd = ROL::makePtr<ROL::TpetraBoundConstraint<RealT>>(zlo_ptr,zhi_ptr);
     bool useBounds = parlist->sublist("Problem").get("Use bounds", false);
     if (!useBounds) zbnd->deactivate();
     // State bounds
     auto ulo_ptr = assembler->createStateVector();
     auto uhi_ptr = assembler->createStateVector();
     ulo_ptr->putScalar(ROL::ROL_NINF<RealT>()); uhi_ptr->putScalar(ROL::ROL_INF<RealT>());
-    auto ulop = ROL::makePtr<PDE_PrimalSimVector<RealT,DeviceT>>(ulo_ptr,pde,assembler);
-    auto uhip = ROL::makePtr<PDE_PrimalSimVector<RealT,DeviceT>>(uhi_ptr,pde,assembler);
-    auto ubnd = ROL::makePtr<ROL::Bounds<RealT>>(ulop,uhip);
+    auto ubnd = ROL::makePtr<ROL::TpetraBoundConstraint<RealT>>(ulo_ptr,uhi_ptr);
     ubnd->deactivate();
 
     // SimOpt bounds

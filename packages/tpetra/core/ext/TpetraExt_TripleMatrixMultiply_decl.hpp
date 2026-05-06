@@ -53,9 +53,9 @@ namespace TripleMatrixMultiply {
 /// \param R [in] fill-complete sparse matrix.
 /// \param transposeR [in] Whether to use transpose of matrix R.
 /// \param A [in] fill-complete sparse matrix.
-/// \param transposeR [in] Whether to use transpose of matrix A.
+/// \param transposeA [in] Whether to use transpose of matrix A.
 /// \param P [in] fill-complete sparse matrix.
-/// \param transposeB [in] Whether to use transpose of matrix P.
+/// \param transposeP [in] Whether to use transpose of matrix P.
 /// \param Ac [in/out] On entry to this method, if Ac is fill complete,
 ///   then Ac's graph must have the correct structure, that is, its
 ///   structure must equal the structure of R*A*P. (This is currently
@@ -64,6 +64,8 @@ namespace TripleMatrixMultiply {
 /// \param call_FillComplete_on_result [in] Optional argument;
 ///   defaults to true.  If false, C will <i>not</i> be fill complete
 ///   on output.
+/// \param label [in] Label for \c Teuchos::TimeMonitor.
+/// \param params [in/out] List of parameters.
 template <class Scalar,
           class LocalOrdinal,
           class GlobalOrdinal,

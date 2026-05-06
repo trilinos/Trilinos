@@ -39,6 +39,7 @@ from being include more than once in an include chain.
 | `PARALLEL_LEVEL`           | STRING |    NO     | `<num cores>`                                 |                                                                    |
 | `TEST_PARALLEL_LEVEL`      | STRING |    NO     | `${PARALLEL_LEVEL}`                           |                                                                    |
 | `SKIP_RUN_TESTS`           | BOOL   |    NO     | OFF                                           | Skip running any tests (any tests enabled will still compile)      |
+| `ENABLE_ASAN`              | BOOL   |    NO     | OFF                                           | Turn on logic for AddressSanitizer (e.g. use `ctest_memtest()`)    |
 
 
 1. It might worthwhile to remove `build_root` since it's only used to create `build_dir` IF `build_dir` is not passed in

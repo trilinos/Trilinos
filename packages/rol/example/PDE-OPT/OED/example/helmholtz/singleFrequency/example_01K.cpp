@@ -72,20 +72,23 @@ void solve(const ROL::Ptr<ROL::OED::Factory<Real>>    &factory,
   bool usePD = list.sublist("OED").sublist("R-Optimality").get("Use Primal-Dual Algorithm",false);
   if (type=="R" && usePD) {
     ROL::PrimalDualRisk<Real> solver(problem,osampler,list);
-    if (checkDeriv) {
-      factory->check(stream);
-      //solver.check(stream);
-      factory->reset();
-    }
+    // Commented out because check uses random vectors that do not respect bounds
+    //if (checkDeriv) {
+    //  //factory->check(stream);
+    //  //solver.check(stream);
+    //  problem->check(true,stream);
+    //  factory->reset();
+    //}
     solver.run(stream);
   }
   else {
     ROL::Solver<Real> solver(problem,list);
-    if (checkDeriv) {
-      factory->check(stream);
-      problem->check(true,stream);
-      factory->reset();
-    }
+    // Commented out because check uses random vectors that do not respect bounds
+    //if (checkDeriv) {
+    //  //factory->check(stream);
+    //  problem->check(true,stream);
+    //  factory->reset();
+    //}
     solver.solve(stream);
   }
   stream << "  " << dtype << "-optimal design time:      "
@@ -202,6 +205,7 @@ int main(int argc, char *argv[]) {
     // Build nonlinear model and parameter vector
     auto theta = ROL::makePtr<ROL::StdVector<RealT>>(numSpeakers,1);
     auto model = ROL::makePtr<ROL::Reduced_Objective_SimOpt<RealT>>(obs,con,up,theta,up,false);
+    auto obsv  = ROL::makePtr<ROL::SingletonVector<RealT>>(1);
 
     /*************************************************************************/
     /******* BUILD EXPERIMENTAL DESIGN PROBLEM AND SOLVE *********************/
@@ -231,7 +235,7 @@ int main(int argc, char *argv[]) {
     regType  = parlist->sublist("Problem").get("Regression Type","Least Squares"); 
     auto type     = ROL::OED::StringToRegressionType(regType);
     auto noise    = ROL::makePtr<Helmholtz_Noise<RealT>>();
-    auto cov      = ROL::makePtr<ROL::OED::StdMomentOperator<RealT>>(type,homNoise,noise);
+    auto cov      = ROL::makePtr<ROL::OED::StdMomentOperator<RealT>>(type,homNoise ? ROL::nullPtr : noise);
     auto factory  = ROL::makePtr<ROL::OED::Factory<RealT>>(model,dsampler,theta,cov,*parlist);
     obman->barrier();
 
@@ -249,9 +253,10 @@ int main(int argc, char *argv[]) {
       noisFile_d.open(noisName_d.str());
       factFile_d << std::scientific << std::setprecision(15);
       noisFile_d << std::scientific << std::setprecision(15);
+      auto factors = factory->getFactors(theta);
       for (int i = 0; i < dsampler->numMySamples(); ++i) {
         pt = dsampler->getMyPoint(i);
-        factory->getFactors()->evaluate(*Fp,pt);
+        factors->applyAdjoint(*Fp,*obsv,pt);
         for (int j = 0; j < numSpeakers; ++j) {
           factFile_d << std::right << std::setw(25)
                      << (*ROL::dynamicPtrCast<ROL::StdVector<RealT>>(Fp)->getVector())[j];
@@ -272,7 +277,7 @@ int main(int argc, char *argv[]) {
       noisFile_o << std::scientific << std::setprecision(15);
       for (int i = 0; i < osampler->numMySamples(); ++i) {
         pt = osampler->getMyPoint(i);
-        factory->getFactors()->evaluate(*Fp,pt);
+        factors->applyAdjoint(*Fp,*obsv,pt);
         for (int j = 0; j < numSpeakers; ++j) {
           factFile_o << std::right << std::setw(25)
                      << (*ROL::dynamicPtrCast<ROL::StdVector<RealT>>(Fp)->getVector())[j];

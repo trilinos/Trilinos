@@ -1449,8 +1449,6 @@ createNonContigMapWithNode(const Teuchos::ArrayView<const GlobalOrdinal>& elemen
 ///
 /// The Map is configured to use zero-based indexing.
 ///
-/// \relatesalso Map
-
 /// \brief Creates a one-to-one version of the given Map where each
 ///   GID lives on only one process.
 ///

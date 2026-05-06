@@ -37,7 +37,7 @@ RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> MatrixFactory2<Sc
     if (oldTCrsOp != Teuchos::null) {
       RCP<TpetraCrsMatrix> newTCrsOp(new TpetraCrsMatrix(*oldTCrsOp));
       RCP<CrsMatrixWrap> newOp(new CrsMatrixWrap(Teuchos::as<RCP<CrsMatrix>>(newTCrsOp)));
-      if (setFixedBlockSize)
+      if (setFixedBlockSize && A->IsFixedBlockSizeSet())
         newOp->SetFixedBlockSize(A->GetFixedBlockSize());
 
       return newOp;

@@ -154,7 +154,7 @@ void unpackCrsMatrixAndCombineNew(
 ///
 /// \param combineMode [in] the mode to use for combining values
 ///
-/// \param numSameIds [in]
+/// \param numSameIDs [in] Number of IDs that are the same.
 ///
 /// \param permuteToLIDs [in]
 ///

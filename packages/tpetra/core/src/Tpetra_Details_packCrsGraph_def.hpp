@@ -570,34 +570,6 @@ void do_pack(const LocalGraph& local_graph,
   }
 }
 
-/// \brief Pack specified entries of the given local sparse graph for
-///   communication.
-///
-/// \tparam LO The type of local indices.  See the
-///   documentation of Map for requirements.
-/// \tparam GO The type of global indices.  See the
-///   documentation of Map for requirements.
-/// \tparam NT The Kokkos Node type.  See the documentation of Map
-///   for requirements.
-///
-/// \warning This is an implementation detail of Tpetra::CrsGraph.
-///
-/// \param sourceGraph [in] the CrsGraph source
-///
-/// \param exports [in/out] Output pack buffer; resized if needed.
-///
-/// \param num_packets_per_lid [out] Entry k gives the number of bytes
-///   packed for row export_lids[k] of the local graph.
-///
-/// \param export_lids [in] Local indices of the rows to pack.
-///
-/// \param export_pids [in] Process ranks for the column indices in each packed row.
-///
-/// \param constant_num_packets [out] Setting this to zero tells the caller
-///   to expect a possibly /// different ("nonconstant") number of packets per local index
-///   (i.e., a possibly different number of entries per row).
-///
-/// \param pack_pids [in] Whether to pack process IDs.
 template <typename LO, typename GO, typename NT>
 void packCrsGraph(const CrsGraph<LO, GO, NT>& sourceGraph,
                   Kokkos::DualView<
@@ -773,24 +745,22 @@ void packCrsGraph(const CrsGraph<LO, GO, NT>& sourceGraph,
   execution_space().fence();
 }
 
-/// \brief Pack specified entries of the given local sparse graph for
-///   communication ("new" DistObject interface version).
 template <typename LO, typename GO, typename NT>
 void packCrsGraphNew(const CrsGraph<LO, GO, NT>& sourceGraph,
                      const Kokkos::DualView<
                          const LO*,
-                         typename CrsGraph<LO, GO, NT>::buffer_device_type>& export_lids,
+                         typename CrsGraph<LO, GO, NT>::buffer_device_type>& exportLIDs,
                      const Kokkos::DualView<
                          const int*,
-                         typename CrsGraph<LO, GO, NT>::buffer_device_type>& export_pids,
+                         typename CrsGraph<LO, GO, NT>::buffer_device_type>& exportPIDs,
                      Kokkos::DualView<
                          typename CrsGraph<LO, GO, NT>::packet_type*,
                          typename CrsGraph<LO, GO, NT>::buffer_device_type>& exports,
                      Kokkos::DualView<
                          size_t*,
                          typename CrsGraph<LO, GO, NT>::buffer_device_type>
-                         num_packets_per_lid,
-                     size_t& constant_num_packets,
+                         numPacketsPerLID,
+                     size_t& constantNumPackets,
                      const bool pack_pids) {
   using Kokkos::View;
   using crs_graph_type         = CrsGraph<LO, GO, NT>;
@@ -807,16 +777,16 @@ void packCrsGraphNew(const CrsGraph<LO, GO, NT>& sourceGraph,
   // Setting this to zero tells the caller to expect a possibly
   // different ("nonconstant") number of packets per local index
   // (i.e., a possibly different number of entries per row).
-  constant_num_packets = 0;
+  constantNumPackets = 0;
 
   const size_t num_export_lids =
-      static_cast<size_t>(export_lids.extent(0));
+      static_cast<size_t>(exportLIDs.extent(0));
   TEUCHOS_TEST_FOR_EXCEPTION(num_export_lids !=
-                                 static_cast<size_t>(num_packets_per_lid.extent(0)),
-                             std::invalid_argument, prefix << "num_export_lids.extent(0) = " << num_export_lids << " != num_packets_per_lid.extent(0) = " << num_packets_per_lid.extent(0) << ".");
+                                 static_cast<size_t>(numPacketsPerLID.extent(0)),
+                             std::invalid_argument, prefix << "num_export_lids.extent(0) = " << num_export_lids << " != numPacketsPerLID.extent(0) = " << numPacketsPerLID.extent(0) << ".");
   TEUCHOS_TEST_FOR_EXCEPTION(num_export_lids != 0 &&
-                                 num_packets_per_lid.view_device().data() == nullptr,
-                             std::invalid_argument, prefix << "num_export_lids = " << num_export_lids << " != 0, but num_packets_per_lid.view_device().data() = nullptr.");
+                                 numPacketsPerLID.view_device().data() == nullptr,
+                             std::invalid_argument, prefix << "num_export_lids = " << num_export_lids << " != 0, but numPacketsPerLID.view_device().data() = nullptr.");
 
   if (num_export_lids == 0) {
     exports = exports_dual_view_type();
@@ -829,14 +799,14 @@ void packCrsGraphNew(const CrsGraph<LO, GO, NT>& sourceGraph,
 
   // Compute number of packets per LID (row to send), as well as
   // corresponding offsets (the prefix sum of the packet counts).
-  num_packets_per_lid.clear_sync_state();
-  num_packets_per_lid.modify_device();
+  numPacketsPerLID.clear_sync_state();
+  numPacketsPerLID.modify_device();
   using PackCrsGraphImpl::computeNumPacketsAndOffsets;
   const size_t count =
-      computeNumPacketsAndOffsets(offsets, num_packets_per_lid.view_device(),
+      computeNumPacketsAndOffsets(offsets, numPacketsPerLID.view_device(),
                                   local_graph.row_map,
-                                  export_lids.view_device(),
-                                  export_pids.view_device());
+                                  exportLIDs.view_device(),
+                                  exportPIDs.view_device());
 
   // Resize the output pack buffer if needed.
   if (count > static_cast<size_t>(exports.extent(0))) {
@@ -847,17 +817,17 @@ void packCrsGraphNew(const CrsGraph<LO, GO, NT>& sourceGraph,
   // at least one entry to pack.  Thus, if packing process ranks, we
   // had better have at least one process rank to pack.
   TEUCHOS_TEST_FOR_EXCEPTION(pack_pids && exports.extent(0) != 0 &&
-                                 export_pids.extent(0) == 0,
+                                 exportPIDs.extent(0) == 0,
                              std::invalid_argument, prefix << "pack_pids is true, and exports.extent(0) = " << exports.extent(0) << " != 0, meaning that we need to pack at least "
-                                                                                                                                    "one graph entry, but export_pids.extent(0) = 0.");
+                                                                                                                                    "one graph entry, but exportPIDs.extent(0) = 0.");
 
   exports.modify_device();
   using PackCrsGraphImpl::do_pack;
   do_pack<PT, LGT, LMT, BDT>(local_graph, local_col_map,
                              exports.view_device(),
-                             num_packets_per_lid.view_device(),
-                             export_lids.view_device(),
-                             export_pids.view_device(),
+                             numPacketsPerLID.view_device(),
+                             exportLIDs.view_device(),
+                             exportPIDs.view_device(),
                              offsets, pack_pids);
 }
 

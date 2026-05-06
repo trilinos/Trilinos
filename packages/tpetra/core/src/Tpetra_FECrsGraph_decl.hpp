@@ -335,6 +335,8 @@ class FECrsGraph : public CrsGraph<LocalOrdinal, GlobalOrdinal, Node> {
   ///
   /// \param ownedPlusSharedRowMap [in] ownedMap plus the list of shared rows to which off-processor insertion is allowed
   ///
+  /// \param ownedPlusSharedColMap [in] owned+shared column map.
+  ///
   /// \param numEntPerRow [in] Maximum number of graph entries to
   ///   allocate for each row.  You cannot exceed the allocated
   ///   number of entries for any row.
@@ -366,6 +368,8 @@ class FECrsGraph : public CrsGraph<LocalOrdinal, GlobalOrdinal, Node> {
   /// \param ownedRowMap [in] Distribution of rows of the owned graph.
   ///
   /// \param ownedPlusSharedRowMap [in] ownedMap plus the list of shared rows to which off-processor insertion is allowed
+  ///
+  /// \param ownedPlusSharedColMap [in] owned+shared column map.
   ///
   /// \param numEntPerRow [in] Maximum number of graph entries to
   ///   allocate for each row.  You cannot exceed the allocated

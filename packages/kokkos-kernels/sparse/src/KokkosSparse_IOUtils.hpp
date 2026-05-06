@@ -937,18 +937,31 @@ int read_mtx(const char *fileName, lno_t *nrows, lno_t *ncols, size_type *ne, si
   if (mtx_field == UNDEFINED_FIELD) throw std::runtime_error("MatrixMarket file header is missing the field type.");
   if (mtx_sym == UNDEFINED_SYMMETRY) throw std::runtime_error("MatrixMarket file header is missing the symmetry type.");
 
-  while (1) {
-    getline(mmf, fline);
-    if (fline[0] != '%') break;
+  while (mmf) {
+    if (!std::getline(mmf, fline)) {
+      throw std::runtime_error("MatrixMarket file: unexpected EOF before dimension line.");
+    }
+    if (!fline.empty() && fline[0] == '%') continue;
+    break;
+  }
+  if (fline.empty()) {
+    throw std::runtime_error("MatrixMarket file: empty dimension line.");
   }
   std::stringstream ss(fline);
   lno_t nr = 0, nc = 0;
   size_type nnz = 0;
   ss >> nr >> nc;
-  if (mtx_format == COORDINATE)
+  if (ss.fail() || nr <= 0 || nc <= 0) {
+    throw std::runtime_error("MatrixMarket file: invalid or missing row/column dimensions on size line.");
+  }
+  if (mtx_format == COORDINATE) {
     ss >> nnz;
-  else
+    if (ss.fail()) {
+      throw std::runtime_error("MatrixMarket file: coordinate format requires nnz on size line.");
+    }
+  } else {
     nnz = static_cast<size_type>(nr) * nc;
+  }
   size_type numEdges = nnz;
   symmetrize         = symmetrize || mtx_sym != GENERAL;
   if (symmetrize && nr != nc) {
@@ -983,6 +996,9 @@ int read_mtx(const char *fileName, lno_t *nrows, lno_t *ncols, size_type *ne, si
     } else {
       // In coordinate format, row and col of each entry is read from file
       ss2 >> s >> d;
+      if (ss2.fail()) {
+        throw std::runtime_error("MatrixMarket file: failed parsing a coordinate-format entry line.");
+      }
     }
     if (mtx_field == PATTERN)
       w = 1;

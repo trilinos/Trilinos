@@ -12,6 +12,7 @@
 #include "MueLu_Level.hpp"
 
 #include "MueLu_FactoryManagerBase.hpp"
+#include "MueLu_Behavior.hpp"
 
 namespace MueLu {
 
@@ -421,9 +422,8 @@ void Level::print(std::ostream& out, const VerbLevel verbLevel) const {
       } else {
         std::ostringstream oss;
         oss << factory->ShortClassName() << "[" << factory->GetID() << "]";
-#ifdef HAVE_MUELU_DEBUG
-        oss << "(" << factory << ")";
-#endif
+        if (Behavior::debug())
+          oss << "(" << factory << ")";
         outputter.outputField(oss.str());
       }
 
@@ -501,10 +501,8 @@ void Level::print(std::ostream& out, const VerbLevel verbLevel) const {
       for (container_type::const_iterator ct = requestedBy.begin(); ct != requestedBy.end(); ct++) {
         if (ct != requestedBy.begin()) ss << ",";
         ss << ct->first->ShortClassName() << "[" << ct->first->GetID() << "]";
-#ifdef HAVE_MUELU_DEBUG
-        ss << "(" << ct->first << ")";
-#endif
-
+        if (Behavior::debug())
+          ss << "(" << ct->first << ")";
         if (ct->second > 1) ss << "x" << ct->second;
       }
       outputter.outputField(ss.str());

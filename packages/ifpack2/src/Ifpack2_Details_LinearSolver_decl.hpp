@@ -7,7 +7,7 @@
 // *****************************************************************************
 // @HEADER
 
-/// \file Ifpack2_Details_LinearSolver_decl_hpp
+/// \file Ifpack2_Details_LinearSolver_decl.hpp
 /// \brief Declaration of Ifpack2::Details::LinearSolver, an
 ///   implementation detail of Ifpack2's LinearSolverFactory.
 

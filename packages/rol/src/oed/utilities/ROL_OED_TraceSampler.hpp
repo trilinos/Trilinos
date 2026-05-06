@@ -34,7 +34,7 @@ protected:
 public:
   virtual ~TraceSampler() {}
   TraceSampler();
-  TraceSampler(const Ptr<Vector<Real>> &theta);
+  TraceSampler(const Ptr<const Vector<Real>> &theta);
 
   virtual void generate(Vector<Real> &g) const;
   virtual void get(Vector<Real> &F, const std::vector<Real> &param);

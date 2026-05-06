@@ -32,6 +32,7 @@
 #include "MueLu_PFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_SmootherBase.hpp"
+#include "MueLu_Behavior.hpp"
 
 #include "Teuchos_TimeMonitor.hpp"
 
@@ -776,8 +777,7 @@ ConvergenceStatus Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Iterate(
   MagnitudeType prevNorm = STS::magnitude(STS::one()), curNorm = STS::magnitude(STS::one());
   rate_ = 1.0;
 
-  for (LO i = 1; i <= nIts; i++) {
-#ifdef HAVE_MUELU_DEBUG
+  if (Behavior::debug()) {
     if (A->getDomainMap()->isCompatible(*(X.getMap())) == false) {
       std::ostringstream ss;
       ss << "Level " << startLevel << ": level A's domain map is not compatible with X";
@@ -789,7 +789,6 @@ ConvergenceStatus Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Iterate(
       ss << "Level " << startLevel << ": level A's range map is not compatible with B";
       throw Exceptions::Incompatible(ss.str());
     }
-#endif
   }
 
   bool emptyFineSolve = true;

@@ -497,8 +497,6 @@ void TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP
   // coarsest levels.
   if (A->IsView("stridedMaps") == true)
     Ptentative->CreateView("stridedMaps", A->getRowMap("stridedMaps"), coarseMap);
-  else
-    Ptentative->CreateView("stridedMaps", Ptentative->getRangeMap(), coarseMap);
 
   if (bTransferCoordinates_) {
     Set(coarseLevel, "Coordinates", coarseCoords);

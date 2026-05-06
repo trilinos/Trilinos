@@ -7,13 +7,16 @@
 // *****************************************************************************
 // @HEADER
 
+
 #ifndef ROL_OED_HET_OBJECTIVE_BASE_HPP
 #define ROL_OED_HET_OBJECTIVE_BASE_HPP
 
 #include "ROL_Ptr.hpp"
 #include "ROL_Objective_SimOpt.hpp"
 #include "ROL_VectorController.hpp"
+#include "ROL_SampleGenerator.hpp"
 
+#include "ROL_OED_BaseObjective.hpp"
 #include "ROL_OED_BilinearConstraint.hpp"
 #include "ROL_OED_QuadraticObjective.hpp"
 
@@ -41,9 +44,9 @@ namespace Het {
 //
 
 template<typename Real, typename Key>
-class ObjectiveBase : public Objective<Real> {
+class ObjectiveBase : public BaseObjective<Real> {
 private:
-  Ptr<BilinearConstraint<Real>>   con_;
+  Ptr<BilinearConstraint<Real>> con_;
   Ptr<QuadraticObjective<Real>> obj_;
   bool storage_;             
   bool doUpdate_;
@@ -89,6 +92,22 @@ public:
                int iter = -1 ) override;
 
   void setParameter( const std::vector<Real> &param ) override;
+
+  virtual void summarize(std::ostream &stream,
+                   const Ptr<BatchManager<Real>> &bman = nullPtr) const {
+    if (obj_!=nullPtr) {
+      obj_->summarize(stream,bman);
+      stream << std::string(80,'-') << std::endl;
+    }
+    if (con_!=nullPtr) {
+      stream << std::string(80,'-') << std::endl;
+      con_->summarize(stream,bman);
+    }
+  }
+  virtual void reset() {
+    if (obj_!=nullPtr) obj_->reset();
+    if (con_!=nullPtr) con_->reset();
+  }
 };
 
 } // End Het Namespace

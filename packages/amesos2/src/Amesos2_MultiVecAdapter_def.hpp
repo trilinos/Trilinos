@@ -223,9 +223,10 @@ namespace Amesos2{
         "Amesos2::get_1d_copy_helper::do_get(3 args): mv is null.");
 
       Teuchos::RCP<const map_type> map = mv->getMap ();
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        map.is_null (), std::invalid_argument,
-        "Amesos2::get_1d_copy_helper_kokkos_view::do_get(3 args): mv->getMap() is null.");
+      //NOTE: KokkosMultiVecAdapter returns null map
+      //TEUCHOS_TEST_FOR_EXCEPTION(
+      //  map.is_null (), std::invalid_argument,
+      //  "Amesos2::get_1d_copy_helper_kokkos_view::do_get(3 args): mv->getMap() is null.");
 
       return do_get (bInitialize, mv, kokkos_vals, ldx, Teuchos::ptrInArg (*map), ROOTED); // ROOTED the default here for now
     }

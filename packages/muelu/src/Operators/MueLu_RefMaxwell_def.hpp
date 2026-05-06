@@ -52,6 +52,7 @@
 #include "MueLu_RebalanceAcFactory.hpp"
 #include "MueLu_RebalanceTransferFactory.hpp"
 
+#include "MueLu_Behavior.hpp"
 #include "MueLu_VerbosityLevel.hpp"
 
 #include <MueLu_CreateXpetraPreconditioner.hpp>
@@ -2663,61 +2664,60 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     TEUCHOS_ASSERT(invMk_2_invAlpha != Teuchos::null);
   }
 
-#ifdef HAVE_MUELU_DEBUG
+  if (Behavior::debug()) {
+    TEUCHOS_ASSERT(D0->getRangeMap()->isSameAs(*D0->getRowMap()));
 
-  TEUCHOS_ASSERT(D0->getRangeMap()->isSameAs(*D0->getRowMap()));
+    // M1_beta is square
+    TEUCHOS_ASSERT(M1_beta->getDomainMap()->isSameAs(*M1_beta->getRangeMap()));
+    TEUCHOS_ASSERT(M1_beta->getDomainMap()->isSameAs(*M1_beta->getRowMap()));
 
-  // M1_beta is square
-  TEUCHOS_ASSERT(M1_beta->getDomainMap()->isSameAs(*M1_beta->getRangeMap()));
-  TEUCHOS_ASSERT(M1_beta->getDomainMap()->isSameAs(*M1_beta->getRowMap()));
+    // M1_beta is consistent with D0
+    TEUCHOS_ASSERT(M1_beta->getDomainMap()->isSameAs(*D0->getRangeMap()));
 
-  // M1_beta is consistent with D0
-  TEUCHOS_ASSERT(M1_beta->getDomainMap()->isSameAs(*D0->getRangeMap()));
+    if (k >= 2) {
+      // M1_alpha is square
+      TEUCHOS_ASSERT(M1_alpha->getDomainMap()->isSameAs(*M1_alpha->getRangeMap()));
+      TEUCHOS_ASSERT(M1_alpha->getDomainMap()->isSameAs(*M1_alpha->getRowMap()));
 
-  if (k >= 2) {
-    // M1_alpha is square
-    TEUCHOS_ASSERT(M1_alpha->getDomainMap()->isSameAs(*M1_alpha->getRangeMap()));
-    TEUCHOS_ASSERT(M1_alpha->getDomainMap()->isSameAs(*M1_alpha->getRowMap()));
+      // M1_alpha is consistent with D0
+      TEUCHOS_ASSERT(M1_alpha->getDomainMap()->isSameAs(*D0->getRangeMap()));
+    }
 
-    // M1_alpha is consistent with D0
-    TEUCHOS_ASSERT(M1_alpha->getDomainMap()->isSameAs(*D0->getRangeMap()))
+    if (!disable_addon_) {
+      // Mk_one is square
+      TEUCHOS_ASSERT(Mk_one->getDomainMap()->isSameAs(*Mk_one->getRangeMap()));
+      TEUCHOS_ASSERT(Mk_one->getDomainMap()->isSameAs(*Mk_one->getRowMap()));
+
+      // Mk_one is consistent with Dk_1
+      TEUCHOS_ASSERT(Mk_one->getDomainMap()->isSameAs(*Dk_1->getRangeMap()));
+
+      // invMk_1_invBeta is square
+      TEUCHOS_ASSERT(invMk_1_invBeta->getDomainMap()->isSameAs(*invMk_1_invBeta->getRangeMap()));
+      TEUCHOS_ASSERT(invMk_1_invBeta->getDomainMap()->isSameAs(*invMk_1_invBeta->getRowMap()));
+
+      // invMk_1_invBeta is consistent with Dk_1
+      TEUCHOS_ASSERT(invMk_1_invBeta->getDomainMap()->isSameAs(*Dk_1->getDomainMap()));
+    }
+
+    if ((k >= 2) && !disable_addon_22_) {
+      // Mk_1_one is square
+      TEUCHOS_ASSERT(Mk_1_one->getDomainMap()->isSameAs(*Mk_1_one->getRangeMap()));
+      TEUCHOS_ASSERT(Mk_1_one->getDomainMap()->isSameAs(*Mk_1_one->getRowMap()));
+
+      // Mk_1_one is consistent with Dk_1
+      TEUCHOS_ASSERT(Mk_1_one->getDomainMap()->isSameAs(*Dk_1->getDomainMap()));
+
+      // Mk_1_one is consistent with Dk_2
+      TEUCHOS_ASSERT(Mk_1_one->getDomainMap()->isSameAs(*Dk_2->getRangeMap()));
+
+      // invMk_2_invAlpha is square
+      TEUCHOS_ASSERT(invMk_2_invAlpha->getDomainMap()->isSameAs(*invMk_2_invAlpha->getRangeMap()));
+      TEUCHOS_ASSERT(invMk_2_invAlpha->getDomainMap()->isSameAs(*invMk_2_invAlpha->getRowMap()));
+
+      // invMk_2_invAlpha is consistent with Dk_2
+      TEUCHOS_ASSERT(invMk_2_invAlpha->getDomainMap()->isSameAs(*Dk_2->getDomainMap()));
+    }
   }
-
-  if (!disable_addon_) {
-    // Mk_one is square
-    TEUCHOS_ASSERT(Mk_one->getDomainMap()->isSameAs(*Mk_one->getRangeMap()));
-    TEUCHOS_ASSERT(Mk_one->getDomainMap()->isSameAs(*Mk_one->getRowMap()));
-
-    // Mk_one is consistent with Dk_1
-    TEUCHOS_ASSERT(Mk_one->getDomainMap()->isSameAs(*Dk_1->getRangeMap()));
-
-    // invMk_1_invBeta is square
-    TEUCHOS_ASSERT(invMk_1_invBeta->getDomainMap()->isSameAs(*invMk_1_invBeta->getRangeMap()));
-    TEUCHOS_ASSERT(invMk_1_invBeta->getDomainMap()->isSameAs(*invMk_1_invBeta->getRowMap()));
-
-    // invMk_1_invBeta is consistent with Dk_1
-    TEUCHOS_ASSERT(Mk_one->getDomainMap()->isSameAs(*Dk_1->getRangeMap()));
-  }
-
-  if ((k >= 2) && !disable_addon_22_) {
-    // Mk_1_one is square
-    TEUCHOS_ASSERT(Mk_1_one->getDomainMap()->isSameAs(*Mk_1_one->getRangeMap()));
-    TEUCHOS_ASSERT(Mk_1_one->getDomainMap()->isSameAs(*Mk_1_one->getRowMap()));
-
-    // Mk_1_one is consistent with Dk_1
-    TEUCHOS_ASSERT(Mk_1_one->getDomainMap()->isSameAs(*Dk_1->getDomainMap()));
-
-    // Mk_1_one is consistent with Dk_2
-    TEUCHOS_ASSERT(Mk_1_one->getDomainMap()->isSameAs(*Dk_2->getRangeMap()));
-
-    // invMk_2_invAlpha is square
-    TEUCHOS_ASSERT(invMk_2_invAlpha->getDomainMap()->isSameAs(*invMk_2_invAlpha->getRangeMap()));
-    TEUCHOS_ASSERT(invMk_2_invAlpha->getDomainMap()->isSameAs(*invMk_2_invAlpha->getRowMap()));
-
-    // invMk_2_invAlpha is consistent with Dk_2
-    TEUCHOS_ASSERT(invMk_2_invAlpha->getDomainMap()->isSameAs(*Dk_2->getDomainMap()));
-  }
-#endif
 
   D0_ = D0;
   if (Dk_1->getRowMap()->lib() == Xpetra::UseTpetra) {

@@ -989,6 +989,10 @@ class DistObject : virtual public SrcDistObject,
   /// \param prefix [in] If <tt>verbose</tt> is <tt>true</tt>, then
   ///   this is a nonnull prefix to print at the beginning of each
   ///   line of verbose debugging output.  Otherwise, not used.
+  /// \param remoteLIDsContiguous [in] Whether the remote LIDs are
+  ///   contiguous.  If true, the remote LIDs are stored
+  ///   contiguously.
+  /// \param CM [in] Combine mode used for importing.
   ///
   /// \return Whether we actually reallocated.
   ///

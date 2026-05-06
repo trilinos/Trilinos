@@ -78,6 +78,7 @@ if( STANDALONE_ROL )
   set(ROL_CORE_DIRS ${SRC}/algorithm
                     ${SRC}/elementwise
                     ${SRC}/function
+                    ${SRC}/mol
                     ${SRC}/oed
                     ${SRC}/sol
                     ${SRC}/status

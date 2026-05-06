@@ -2260,12 +2260,13 @@ TEST(TEST_CATEGORY, mathematical_functions_ieee_remainder_function) {
 #ifndef KOKKOS_MATHEMATICAL_FUNCTIONS_SKIP_2
 
 // Known to fail with
+// * CUDA 12.4 and GCC 12.1, 12.3
 // * CUDA 12.4 and GCC 13.2
 // * CUDA 12.8 and GCC 13.3, 14.2
 // * CUDA 13.0 and GCC 15.1
 #if defined(KOKKOS_COMPILER_NVCC) && \
     (defined(KOKKOS_COMPILER_GNU) && \
-     (KOKKOS_COMPILER_GNU >= 1300 && KOKKOS_COMPILER_GNU < 1600))
+     (KOKKOS_COMPILER_GNU >= 1210 && KOKKOS_COMPILER_GNU < 1600))
 #define KOKKOS_TEST_WORKAROUND_DEPRECATED_STD_ITERATOR_WARNINGS_PUSH() \
   KOKKOS_IMPL_DISABLE_DEPRECATED_WARNINGS_PUSH()
 
@@ -2906,11 +2907,15 @@ KE::half_t ref_test_fallback_half(KE::half_t) {
   // When SYCL is enabled, half_t is available on both the GPU and the CPU.
   return KE::half_t(0.f);
 #elif defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_HALF_T_IS_FLOAT) && KOKKOS_HALF_T_IS_FLOAT
+  return KE::half_t(1.f);
+#else
   if constexpr (std::is_same_v<TEST_EXECSPACE, Kokkos::Cuda>) {
     return KE::half_t(0.f);
   } else {
     return KE::half_t(1.f);
   }
+#endif
 #elif defined(KOKKOS_ENABLE_HIP)
   if constexpr (std::is_same_v<TEST_EXECSPACE, Kokkos::HIP>) {
     return KE::half_t(0.f);

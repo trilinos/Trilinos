@@ -294,6 +294,7 @@ class RILUK : virtual public Ifpack2::Preconditioner<typename MatrixType::scalar
   /// \brief Constructor that takes a Tpetra::RowMatrix.
   ///
   /// \param A_in [in] The input matrix.
+  /// \param A_in_coordinates [in] Optional coordinates for the input matrix (for load balancing).
   RILUK(const Teuchos::RCP<const row_matrix_type>& A_in, const Teuchos::RCP<const coord_type>& A_in_coordinates = Teuchos::null);
 
   /// \brief Constructor that takes a Tpetra::CrsMatrix.
@@ -303,6 +304,7 @@ class RILUK : virtual public Ifpack2::Preconditioner<typename MatrixType::scalar
   /// a Tpetra::RowMatrix.
   ///
   /// \param A_in [in] The input matrix.
+  /// \param A_in_coordinates [in] Optional coordinates for the input matrix (for load balancing).
   RILUK(const Teuchos::RCP<const crs_matrix_type>& A_in, const Teuchos::RCP<const coord_type>& A_in_coordinates = Teuchos::null);
 
  private:

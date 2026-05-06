@@ -7,7 +7,7 @@
 // *****************************************************************************
 // @HEADER
 
-/// @file Ifpack2_filu_def.hpp
+/// @file Ifpack2_Details_Filu_def.hpp
 
 #ifndef __IFPACK2_FILU_DEF_HPP__
 #define __IFPACK2_FILU_DEF_HPP__

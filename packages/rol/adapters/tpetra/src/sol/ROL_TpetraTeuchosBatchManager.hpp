@@ -27,6 +27,7 @@ public:
   TpetraTeuchosBatchManager(const ROL::Ptr<const Teuchos::Comm<int> > &comm)
     : TeuchosBatchManager<Real,GO>(comm) {}
 
+  using TeuchosBatchManager<Real,GO>::sumAll;
   void sumAll(Vector<Real> &input, Vector<Real> &output) {
     ROL::Ptr<Tpetra_Vector> ivec = dynamic_cast<OptVector&>(input).getVector();
     ROL::Ptr<Tpetra_Vector> ovec = dynamic_cast<OptVector&>(output).getVector();

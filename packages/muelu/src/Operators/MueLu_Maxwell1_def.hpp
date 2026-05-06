@@ -38,6 +38,7 @@
 #include <MueLu_CreateXpetraPreconditioner.hpp>
 #include <MueLu_ML2MueLuParameterTranslator.hpp>
 #include <MueLu_RefMaxwellSmoother.hpp>
+#include "MueLu_Behavior.hpp"
 
 #ifdef HAVE_MUELU_CUDA
 #include "cuda_profiler_api.h"
@@ -806,14 +807,14 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   // some pre-conditions
   TEUCHOS_ASSERT(D0_Matrix != Teuchos::null);
 
-#ifdef HAVE_MUELU_DEBUG
-  if (!Kn_Matrix.is_null()) {
-    TEUCHOS_ASSERT(Kn_Matrix->getDomainMap()->isSameAs(*D0_Matrix->getDomainMap()));
-    TEUCHOS_ASSERT(Kn_Matrix->getRangeMap()->isSameAs(*D0_Matrix->getDomainMap()));
-  }
+  if (Behavior::debug()) {
+    if (!Kn_Matrix.is_null()) {
+      TEUCHOS_ASSERT(Kn_Matrix->getDomainMap()->isSameAs(*D0_Matrix->getDomainMap()));
+      TEUCHOS_ASSERT(Kn_Matrix->getRangeMap()->isSameAs(*D0_Matrix->getDomainMap()));
+    }
 
-  TEUCHOS_ASSERT(D0_Matrix->getRangeMap()->isSameAs(*D0_Matrix->getRowMap()));
-#endif
+    TEUCHOS_ASSERT(D0_Matrix->getRangeMap()->isSameAs(*D0_Matrix->getRowMap()));
+  }
 
   Hierarchy11_   = Teuchos::null;
   Hierarchy22_   = Teuchos::null;
