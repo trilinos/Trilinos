@@ -22,17 +22,17 @@ namespace Intrepid2 {
   namespace Impl {
     
     template<bool serendipity>
-    template<EOperator opType>
+    template<EOperator OpType>
     template<typename OutputViewType,
              typename inputViewType>
     KOKKOS_INLINE_FUNCTION
     void
-    Basis_HGRAD_WEDGE_DEG2_FEM<serendipity>::Serial<opType>::
+    Basis_HGRAD_WEDGE_DEG2_FEM<serendipity>::Serial<OpType>::
     getValues(       OutputViewType output,
                const inputViewType input ) {
       typedef typename inputViewType::value_type value_type;
-      switch (opType) {
-      case OPERATOR_VALUE: {
+
+      if constexpr (OpType == OPERATOR_VALUE) {
         const value_type x = input(0);
         const value_type y = input(1);
         const value_type z = input(2);
@@ -78,9 +78,8 @@ namespace Intrepid2 {
           output.access(13) = 2.0 * x * y * (1.0 + z);
           output.access(14) = 2.0 * y * w * (1.0 + z);
         }
-        break;
       }
-      case OPERATOR_GRAD: {
+      else if constexpr (OpType == OPERATOR_GRAD) {
         const value_type x = input(0);
         const value_type y = input(1);
         const value_type z = input(2);
@@ -221,9 +220,8 @@ namespace Intrepid2 {
           output.access(14,1) =  2.0*(w - y)*(1.0 + z);
           output.access(14,2) =  2.0*w*y;
         }
-        break;
       }
-      case OPERATOR_D2: {
+      else if constexpr (OpType == OPERATOR_D2) {
         const value_type x = input(0);
         const value_type y = input(1);
         const value_type z = input(2);
@@ -463,9 +461,8 @@ namespace Intrepid2 {
           output.access(14,4) =  2.0*(w - y);
           output.access(14,5) =  0.;
         }
-        break;
       }
-      case OPERATOR_D3: {
+      else if constexpr (OpType == OPERATOR_D3) {
         if constexpr (!serendipity) {
           const value_type x = input(0);
           const value_type y = input(1);
@@ -836,9 +833,8 @@ namespace Intrepid2 {
           output.access(14,8) =  0.0;
           output.access(14,9) =  0.0; 
         }
-        break;
       }
-      case OPERATOR_D4: {
+      else if constexpr (OpType == OPERATOR_D4) {
         const ordinal_type jend = output.extent(1);
         const ordinal_type iend = output.extent(0);
 
@@ -896,27 +892,24 @@ namespace Intrepid2 {
           output.access(17, 8) = 8.;
           output.access(17,12) =16.;
         }
-        break;
       }
-      case OPERATOR_MAX : {
+      else if constexpr (OpType == OPERATOR_MAX) {
         const ordinal_type jend = output.extent(1);
         const ordinal_type iend = output.extent(0);
 
         for (ordinal_type j=0;j<jend;++j)
           for (ordinal_type i=0;i<iend;++i)
             output.access(i, j) = 0.0;
-        break;
       }
 
-      default: {
-        INTREPID2_TEST_FOR_ABORT( opType != OPERATOR_VALUE &&
-                                  opType != OPERATOR_GRAD &&
-                                  opType != OPERATOR_D2 &&
-                                  opType != OPERATOR_D3 &&
-                                  opType != OPERATOR_D4 &&
-                                  opType != OPERATOR_MAX,
+      else {
+        INTREPID2_TEST_FOR_ABORT( OpType != OPERATOR_VALUE &&
+                                  OpType != OPERATOR_GRAD &&
+                                  OpType != OPERATOR_D2 &&
+                                  OpType != OPERATOR_D3 &&
+                                  OpType != OPERATOR_D4 &&
+                                  OpType != OPERATOR_MAX,
                                   ">>> ERROR: (Intrepid2::Basis_HGRAD_WEDGE_DEG2_FEM::Serial::getValues) operator is not supported");
-      }
       }
     }
 

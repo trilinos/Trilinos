@@ -57,8 +57,7 @@ getValues(       OutputViewType output,
   typedef typename Kokkos::DynRankView<typename InputViewType::value_type, typename WorkViewType::memory_space> ViewType;
   auto ptr = work.data();
 
-  switch (OpType) {
-  case OPERATOR_VALUE: {
+  if constexpr (OpType == OPERATOR_VALUE) {
     const ViewType phis = createMatchingUnmanagedView<ViewType>(input, ptr, card, npts);
     ViewType dummyView;
 
@@ -72,9 +71,7 @@ getValues(       OutputViewType output,
           for (ordinal_type k=0;k<cardPn;++k)
             output.access(i,j,d) += coeffs(k+d*cardPn,i) * phis(k,j);
         }
-    break;
-  }
-  case OPERATOR_CURL: {
+  } else if constexpr (OpType == OPERATOR_CURL) {
     const ViewType phis = createMatchingUnmanagedView<ViewType>(input, ptr, card, npts, spaceDim);
     ptr += card*npts*spaceDim*get_dimension_scalar(input);
     const ViewType workView = createMatchingUnmanagedView<ViewType>(input, ptr, card, npts, spaceDim+1);
@@ -93,12 +90,9 @@ getValues(       OutputViewType output,
         }
       }
     }
-    break;
-  }
-  default: {
+  } else {
     INTREPID2_TEST_FOR_ABORT( true,
         ">>> ERROR (Basis_HCURL_TET_In_FEM): Operator type not implemented");
-  }
   }
 }
 

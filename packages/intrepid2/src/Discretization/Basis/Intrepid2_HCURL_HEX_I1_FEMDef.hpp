@@ -22,17 +22,16 @@ namespace Intrepid2 {
   // -------------------------------------------------------------------------------------
   namespace Impl {
 
-    template<EOperator opType>
+    template<EOperator OpType>
     template<typename OutputViewType,
              typename inputViewType>
     KOKKOS_INLINE_FUNCTION
     void
-    Basis_HCURL_HEX_I1_FEM::Serial<opType>::
+    Basis_HCURL_HEX_I1_FEM::Serial<OpType>::
     getValues(       OutputViewType output,
                const inputViewType input ) {
 
-      switch (opType) {
-      case OPERATOR_VALUE: {
+      if constexpr (OpType == OPERATOR_VALUE) {
         const auto x = input(0);
         const auto y = input(1);
         const auto z = input(2);
@@ -85,9 +84,8 @@ namespace Intrepid2 {
         output.access(11, 0) = 0.0;
         output.access(11, 1) = 0.0;
         output.access(11, 2) = (1.0 - x)*(1.0 + y)/4.0;
-        break;
       }
-      case OPERATOR_CURL: {
+      else if constexpr (OpType == OPERATOR_CURL) {
         const auto x = input(0);
         const auto y = input(1);
         const auto z = input(2);
@@ -140,14 +138,12 @@ namespace Intrepid2 {
         output.access(11, 0) = (1.0 - x)/4.0;
         output.access(11, 1) = (1.0 + y)/4.0;
         output.access(11, 2) = 0.0;
-        break;
       }
-      default: {
-        INTREPID2_TEST_FOR_ABORT( opType != OPERATOR_VALUE &&
-                                  opType != OPERATOR_CURL,
+      else {
+        INTREPID2_TEST_FOR_ABORT( OpType != OPERATOR_VALUE &&
+                                  OpType != OPERATOR_CURL,
                                   ">>> ERROR: (Intrepid2::Basis_HGRAD_HEX_C1_FEM::Serial::getValues) operator is not supported");
       }
-      } //end switch
 
     }
 

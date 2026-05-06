@@ -21,14 +21,14 @@ namespace Intrepid2 {
   // -------------------------------------------------------------------------------------
   namespace Impl {
 
-    template<EOperator opType>
+    template<EOperator OpType>
     template<typename OutputViewType,
              typename inputViewType,
              typename workViewType,
              typename vinvViewType>
     KOKKOS_INLINE_FUNCTION
     void
-    Basis_HGRAD_HEX_Cn_FEM::Serial<opType>::
+    Basis_HGRAD_HEX_Cn_FEM::Serial<OpType>::
     getValues(       OutputViewType output,
                const inputViewType  input,
                      workViewType   work,
@@ -52,8 +52,7 @@ namespace Intrepid2 {
 
       typedef typename Kokkos::DynRankView<typename inputViewType::value_type, typename workViewType::memory_space> viewType;
 
-      switch (opType) {
-      case OPERATOR_VALUE: {
+      if constexpr (OpType == OPERATOR_VALUE) {
         viewType work_line = createMatchingUnmanagedView<viewType>(input, ptr0, cardLine, npts);
         viewType output_x = createMatchingUnmanagedView<viewType>(input, ptr1, cardLine, npts);
         viewType output_y = createMatchingUnmanagedView<viewType>(input, ptr2, cardLine, npts);
@@ -75,24 +74,12 @@ namespace Intrepid2 {
             for (ordinal_type i=0;i<cardLine;++i,++idx)  // x
               for (ordinal_type l=0;l<npts;++l)
                 output.access(idx,l) = output_x.access(i,l)*output_y.access(j,l)*output_z.access(k,l);
-        break;
       }
-      case OPERATOR_GRAD:
-      case OPERATOR_D1:
-      case OPERATOR_D2:
-      case OPERATOR_D3:
-      case OPERATOR_D4:
-      case OPERATOR_D5:
-      case OPERATOR_D6:
-      case OPERATOR_D7:
-      case OPERATOR_D8:
-      case OPERATOR_D9:
-      case OPERATOR_D10:
-        opDn = getOperatorOrder(opType);
-        [[fallthrough]];
-      case OPERATOR_Dn: {
+      else if constexpr ((OpType == OPERATOR_GRAD) || (OpType == OPERATOR_D1) || (OpType == OPERATOR_D2) || (OpType == OPERATOR_D3) || (OpType == OPERATOR_D4) || (OpType == OPERATOR_D5) ||
+                        (OpType == OPERATOR_D6) || (OpType == OPERATOR_D7) || (OpType == OPERATOR_D8) || (OpType == OPERATOR_D9)  || (OpType == OPERATOR_D10) || (OpType == OPERATOR_Dn)) {
+        if constexpr (OpType != OPERATOR_Dn)
+          opDn = getOperatorOrder(OpType);
         const ordinal_type dkcard = opDn + 1;
-
         ordinal_type d = 0;
         for (ordinal_type l1=0;l1<dkcard;++l1)
           for (ordinal_type l0=0;l0<(l1+1);++l0) {
@@ -149,13 +136,10 @@ namespace Intrepid2 {
               ++d;
             }
           }
-        break;
       }
-      default: {
+      else {
         INTREPID2_TEST_FOR_ABORT( true ,
                                   ">>> ERROR (Basis_HGRAD_HEX_Cn_FEM): Operator type not implemented");
-        break;
-      }
       }
     }
 

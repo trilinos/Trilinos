@@ -50,17 +50,15 @@ namespace Intrepid2 {
         KOKKOS_INLINE_FUNCTION
         static ordinal_type
         getWorkSizePerPoint(ordinal_type order) {
-          switch(opType) {
-          case OPERATOR_VALUE:
+          if constexpr (opType == OPERATOR_VALUE)
             return 3*getPnCardinality<1>(order)+getPnCardinality<1>(order-1);
-          case OPERATOR_CURL:
+          else if constexpr (opType == OPERATOR_CURL)
             return 5*getPnCardinality<1>(order)+getPnCardinality<1>(order-1);
-          default: {
+          else {
             INTREPID2_TEST_FOR_ABORT( true,
               ">>> ERROR: (Intrepid2::Basis_HCURL_HEX_In_FEM::Serial::getWorkSizePerPoint) operator is not supported" );
             return 0;
             }
-          }
         }
       };
 
@@ -112,22 +110,18 @@ namespace Intrepid2 {
 
           workViewType work = createMatchingUnmanagedView<workViewType>(_work, ptr, (ptEnd-ptBegin)*_work.extent(0));
 
-          switch (opType) {
-          case OPERATOR_VALUE : {
+          if constexpr (opType == OPERATOR_VALUE) {
             auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange, Kokkos::ALL() );
             Serial<opType>::getValues( output, input, work, _vinvLine, _vinvBubble );
-            break;
           }
-          case OPERATOR_CURL : {
+          else if constexpr (opType == OPERATOR_CURL) {
             auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange, Kokkos::ALL() );
             Serial<opType>::getValues( output, input, work, _vinvLine, _vinvBubble );
-            break;
           }
-          default: {
+          else {
             INTREPID2_TEST_FOR_ABORT( true,
                                       ">>> ERROR: (Intrepid2::Basis_HCURL_HEX_In_FEM::Functor) operator is not supported." );
 
-          }
           }
         }
       };

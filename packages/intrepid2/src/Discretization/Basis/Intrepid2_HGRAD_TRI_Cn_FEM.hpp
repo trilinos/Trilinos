@@ -124,24 +124,18 @@ namespace Intrepid2 {
 
           WorkViewType work = createMatchingUnmanagedView<WorkViewType>(_work, ptr, (ptEnd-ptBegin)*_work.extent(0));
 
-          switch (OpType) {
-          case OPERATOR_VALUE : {
+          if constexpr (OpType == OPERATOR_VALUE) {
             auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange );
             Serial<OpType>::getValues( output, input, work, _vinv, _order );
-            break;
           }
-          case OPERATOR_CURL:
-          case OPERATOR_D1:
-          case OPERATOR_D2:  {
+          else if constexpr ((OpType == OPERATOR_CURL) || (OpType == OPERATOR_D1) || (OpType == OPERATOR_D2))  {
             auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange, Kokkos::ALL() );
             Serial<OpType>::getValues( output, input, work, _vinv, _order );
-            break;
           }
-          default: {
+          else {
             INTREPID2_TEST_FOR_ABORT( true,
                                       ">>> ERROR: (Intrepid2::Basis_HGRAD_TRI_Cn_FEM::Functor) operator is not supported");
 
-          }
           }
         }
       };

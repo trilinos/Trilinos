@@ -22,12 +22,12 @@ namespace Intrepid2 {
 
   namespace Impl {
 
-    template<EOperator opType>
+    template<EOperator OpType>
     template<typename OutputViewType,
              typename inputViewType>
     KOKKOS_INLINE_FUNCTION
     void
-    Basis_HGRAD_PYR_I2_FEM::Serial<opType>::
+    Basis_HGRAD_PYR_I2_FEM::Serial<OpType>::
     getValues(       OutputViewType output,
                const inputViewType input ) {
       const auto eps = epsilon();
@@ -45,9 +45,7 @@ namespace Intrepid2 {
       //be sure that the basis functions are defined when z is very close to 1.
       const value_type z = ( (value_type(1.0) - ztmp) < value_type(eps) ? value_type(1.0 - eps) : ztmp );
 
-      switch (opType) {
-
-      case OPERATOR_VALUE: {
+      if constexpr (OpType == OPERATOR_VALUE) {
         const value_type w = 1.0/(1.0 - z);
 
         output.access(0) = 0.25 * (-x - y - 1.0)*((1.0-x)*(1.0-y) - z + x*y*z*w);
@@ -66,11 +64,8 @@ namespace Intrepid2 {
         output.access(10) = z*(1.0 + x - z)*(1.0 - y - z)*w;
         output.access(11) = z*(1.0 + x - z)*(1.0 + y - z)*w;
         output.access(12) = z*(1.0 - x - z)*(1.0 + y - z)*w;
-
-        break;
       }
-      case OPERATOR_GRAD:
-      case OPERATOR_D1: {
+      else if constexpr ((OpType == OPERATOR_GRAD) || (OpType == OPERATOR_D1)) {
         const value_type w  = 1.0/(1.0 - z);
 
         output.access(0, 0) =  0.25*(-1.0-x-y)*(-1.0+y + y*z*w) - 0.25*((1.0-x)*(1.0-y)-z + x*y*z*w);
@@ -124,10 +119,8 @@ namespace Intrepid2 {
         output.access(12,0) = -(1.0+y-z)*z*w;
         output.access(12,1) =  (1.0-x-z)*z*w;
         output.access(12,2) = -x*y*w*w + 1.0 - x + y - 2.0*z;
-
-        break;
       }
-      case OPERATOR_D2: {
+      else if constexpr (OpType == OPERATOR_D2) {
         const value_type w  = 1.0/(1.0 - z);
         
         output.access(0, 0) = -0.5*(-1.0+y+y*z*w);
@@ -220,16 +213,13 @@ namespace Intrepid2 {
         output.access(12,3) =  0.0;
         output.access(12,4) = -x*w*w + 1.0;    
         output.access(12,5) = -2.0*x*y*w*w*w - 2.0;
-
-        break;
       }
-      default: {
-        INTREPID2_TEST_FOR_ABORT( opType != OPERATOR_VALUE &&
-                                  opType != OPERATOR_GRAD &&
-                                  opType != OPERATOR_D1 &&
-                                  opType != OPERATOR_D2,
+      else {
+        INTREPID2_TEST_FOR_ABORT( OpType != OPERATOR_VALUE &&
+                                  OpType != OPERATOR_GRAD &&
+                                  OpType != OPERATOR_D1 &&
+                                  OpType != OPERATOR_D2,
                                   ">>> ERROR: (Intrepid2::Basis_HGRAD_PYR_I2_FEM::Serial::getValues) operator is not supported");
-      }
       }
     }
 

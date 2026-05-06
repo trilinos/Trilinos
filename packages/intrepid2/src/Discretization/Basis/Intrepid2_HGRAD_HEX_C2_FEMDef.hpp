@@ -22,16 +22,16 @@ namespace Intrepid2 {
   namespace Impl {
     
     template<bool serendipity>
-    template<EOperator opType>
+    template<EOperator OpType>
     template<typename OutputViewType,
              typename inputViewType>
     KOKKOS_INLINE_FUNCTION
     void
-    Basis_HGRAD_HEX_DEG2_FEM<serendipity>::Serial<opType>::
+    Basis_HGRAD_HEX_DEG2_FEM<serendipity>::Serial<OpType>::
     getValues(       OutputViewType output,
                const inputViewType input ) {
-      switch (opType) {
-      case OPERATOR_VALUE : {
+
+      if constexpr (OpType == OPERATOR_VALUE) {
         const auto x = input(0);
         const auto y = input(1);
         const auto z = input(2);
@@ -92,11 +92,8 @@ namespace Intrepid2 {
           output.access(18) = 0.25*(1.0 - x*x)*(1.0 + y)*(1.0 + z);
           output.access(19) = 0.25*(1.0 - x)*(1.0 - y*y)*(1.0 + z);
         }
-
-        break;
       }
-      case OPERATOR_GRAD :
-      case OPERATOR_D1 : {
+      else if constexpr ((OpType == OPERATOR_GRAD) || (OpType == OPERATOR_D1)) {
         const auto x = input(0);
         const auto y = input(1);
         const auto z = input(2);
@@ -294,9 +291,8 @@ namespace Intrepid2 {
           output.access(19, 2) =  0.25*(1.0-x)*(1.0-y*y);
         
         }
-        break;
       }
-      case OPERATOR_D2 : {
+      else if constexpr (OpType == OPERATOR_D2) {
         const auto x = input(0);
         const auto y = input(1);
         const auto z = input(2);
@@ -634,9 +630,8 @@ namespace Intrepid2 {
           output.access(19, 5) =  0.0;
 
         }
-        break;
       }
-      case OPERATOR_D3 : {
+      else if constexpr (OpType == OPERATOR_D3) {
         const auto x = input(0);
         const auto y = input(1);
         const auto z = input(2);
@@ -1162,9 +1157,8 @@ namespace Intrepid2 {
           output.access(19, 8) =  0.0;
           output.access(19, 9) =  0.0;
         }
-        break;
       }
-      case OPERATOR_D4 : {
+      else if constexpr (OpType == OPERATOR_D4) {
         // Non-zero entries have Dk (derivative cardinality) indices {3,4,5,7,8,12}, all other entries are 0.
         // Intitialize array by zero and then fill only non-zero entries.
         const ordinal_type jend = output.extent(1);
@@ -1415,30 +1409,25 @@ namespace Intrepid2 {
           output.access(18, 4) = -0.5;
           output.access(19, 7) =  0.5;
         } 
-
-        break;
       }
-      case OPERATOR_MAX : {
+      else if constexpr (OpType == OPERATOR_MAX) {
         const ordinal_type jend = output.extent(1);
         const ordinal_type iend = output.extent(0);
 
         for (ordinal_type j=0;j<jend;++j)
           for (ordinal_type i=0;i<iend;++i)
             output.access(i, j) = 0.0;
-        break;
       }
-      default: {
-        INTREPID2_TEST_FOR_ABORT( opType != OPERATOR_VALUE &&
-                                  opType != OPERATOR_GRAD &&
-                                  opType != OPERATOR_CURL &&
-                                  opType != OPERATOR_D1 &&
-                                  opType != OPERATOR_D2 &&
-                                  opType != OPERATOR_D3 &&
-                                  opType != OPERATOR_D4 &&
-                                  opType != OPERATOR_MAX,
+      else {
+        INTREPID2_TEST_FOR_ABORT( OpType != OPERATOR_VALUE &&
+                                  OpType != OPERATOR_GRAD &&
+                                  OpType != OPERATOR_CURL &&
+                                  OpType != OPERATOR_D1 &&
+                                  OpType != OPERATOR_D2 &&
+                                  OpType != OPERATOR_D3 &&
+                                  OpType != OPERATOR_D4 &&
+                                  OpType != OPERATOR_MAX,
                                   ">>> ERROR: (Intrepid2::Basis_HGRAD_HEX_DEG2_FEM::Serial::getValues) operator is not supported");
-
-      }
       }
     }
 

@@ -22,12 +22,12 @@ namespace Intrepid2 {
 
   namespace Impl {
 
-    template<EOperator opType>
+    template<EOperator OpType>
     template<typename OutputViewType,
              typename inputViewType>
     KOKKOS_INLINE_FUNCTION
     void
-    Basis_HGRAD_PYR_C1_FEM::Serial<opType>::
+    Basis_HGRAD_PYR_C1_FEM::Serial<OpType>::
     getValues(       OutputViewType output,
                const inputViewType input ) {
       const auto eps = epsilon();
@@ -45,9 +45,7 @@ namespace Intrepid2 {
       //be sure that the basis functions are defined when z is very close to 1.
       const value_type z = ( (value_type(1.0) - ztmp) < value_type(eps) ? value_type(1.0 - eps) : ztmp );
 
-      switch (opType) {
-
-      case OPERATOR_VALUE: {
+      if constexpr (OpType == OPERATOR_VALUE) {
         const value_type factor = 0.25/(1.0 - z);
 
         // outputValues is a rank-2 array with dimensions (basisCardinality_, dim0)
@@ -56,9 +54,8 @@ namespace Intrepid2 {
         output.access(2) = (1.0 + x - z) * (1.0 + y - z) * factor;
         output.access(3) = (1.0 - x - z) * (1.0 + y - z) * factor;
         output.access(4) = z;
-        break;
       }
-      case OPERATOR_GRAD: {
+      else if constexpr (OpType == OPERATOR_GRAD) {
         const value_type factor  = 0.25/(1.0 - z);
         const value_type factor2 = 4.0 * factor * factor;
 
@@ -82,9 +79,8 @@ namespace Intrepid2 {
         output.access(4, 0) =  0.0;
         output.access(4, 1) =  0.0;
         output.access(4, 2) =  1;
-        break;
       }
-      case OPERATOR_D2: {
+      else if constexpr (OpType == OPERATOR_D2) {
         const value_type factor  = 0.25/(1.0 - z);
         const value_type factor2 = 4.0 * factor * factor;
         const value_type factor3 = 8.0 * factor * factor2;
@@ -124,14 +120,12 @@ namespace Intrepid2 {
         output.access(4, 3) =  0.0;                    // {0, 2, 0}
         output.access(4, 4) =  0.0;                    // {0, 1, 1}
         output.access(4, 5) =  0.0;                    // {0, 0, 2}
-        break;
       }
-      default: {
-        INTREPID2_TEST_FOR_ABORT( opType != OPERATOR_VALUE &&
-                                  opType != OPERATOR_GRAD &&
-                                  opType != OPERATOR_D2,
+      else {
+        INTREPID2_TEST_FOR_ABORT( OpType != OPERATOR_VALUE &&
+                                  OpType != OPERATOR_GRAD &&
+                                  OpType != OPERATOR_D2,
                                   ">>> ERROR: (Intrepid2::Basis_HGRAD_PYR_C1_FEM::Serial::getValues) operator is not supported");
-      }
       }
     }
 

@@ -204,35 +204,30 @@ INTREPID2_TEST_FOR_ABORT( true,
 
 
 
-template<EOperator opType>
+template<EOperator OpType>
 template<typename OutputViewType,
 typename inputViewType,
 typename workViewType>
 KOKKOS_INLINE_FUNCTION
 void
-Basis_HGRAD_TRI_Cn_FEM_ORTH::Serial<opType>::
+Basis_HGRAD_TRI_Cn_FEM_ORTH::Serial<OpType>::
 getValues( OutputViewType output,
     const inputViewType  input,
     workViewType   work,
     const ordinal_type   order) {
-  switch (opType) {
-  case OPERATOR_VALUE: {
+
+  if constexpr (OpType == OPERATOR_VALUE) {
     OrthPolynomialTri<OutputViewType,inputViewType,workViewType,false,0>::generate( output, input, work, order );
-    break;
   }
-  case OPERATOR_GRAD:
-  case OPERATOR_D1: {
+  else if constexpr ((OpType == OPERATOR_GRAD) || (OpType == OPERATOR_D1)) {
     OrthPolynomialTri<OutputViewType,inputViewType,workViewType,true,1>::generate( output, input, work, order );
-    break;
   }
-  case OPERATOR_D2: {
+  else if constexpr (OpType == OPERATOR_D2) {
     OrthPolynomialTri<OutputViewType,inputViewType,workViewType,true,2>::generate( output, input, work, order );
-    break;
   }
-  default: {
+  else {
     INTREPID2_TEST_FOR_ABORT( true,
         ">>> ERROR: (Intrepid2::Basis_HGRAD_TRI_Cn_FEM_ORTH::Serial::getValues) operator is not supported");
-  }
   }
 }
 

@@ -128,21 +128,16 @@ namespace Intrepid2 {
 
         KOKKOS_INLINE_FUNCTION
         void operator()(const ordinal_type pt) const {
-          switch (opType) {
-          case OPERATOR_VALUE:
-          case OPERATOR_CURL:  {
+          if constexpr ((opType == OPERATOR_VALUE) || (opType == OPERATOR_CURL)) {
             auto       output = Kokkos::subview( _outputValues, Kokkos::ALL(), pt, Kokkos::ALL() );
             const auto input  = Kokkos::subview( _inputPoints,                 pt, Kokkos::ALL() );
             Serial<opType>::getValues( output, input );
-            break;
           }
-          default: {
+          else {
             INTREPID2_TEST_FOR_ABORT( opType != OPERATOR_VALUE &&
                                       opType != OPERATOR_CURL,
                                       ">>> ERROR: (Intrepid2::Basis_HCURL_QUAD_CI_FEM::Serial::getVAlues) operator is not supported");
-            break;
           }
-          } //end switch
         }
       };
     };

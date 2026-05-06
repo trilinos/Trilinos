@@ -22,16 +22,16 @@ namespace Intrepid2 {
 
   namespace Impl {                                                                                                                                                       
                                                                                                                                                                          
-    template<EOperator opType>                                                                                                                                           
+    template<EOperator OpType>                                                                                                                                           
     template<typename OutputViewType,                                                                                                                                    
              typename inputViewType>                                                                                                                                     
     KOKKOS_INLINE_FUNCTION                                                                                                                                               
     void                                                                                                                                                                 
-    Basis_HGRAD_TET_C2_FEM::Serial<opType>::                                                                                                                             
+    Basis_HGRAD_TET_C2_FEM::Serial<OpType>::                                                                                                                             
     getValues(       OutputViewType output,                                                                                                                              
                const inputViewType input ) {   
-      switch (opType) {
-      case OPERATOR_VALUE: {
+
+      if constexpr (OpType == OPERATOR_VALUE) {
         const auto x = input(0);
         const auto y = input(1);
         const auto z = input(2);
@@ -48,10 +48,8 @@ namespace Intrepid2 {
         output.access(7) = -4.*z*(-1. + x + y + z);
         output.access(8) =  4.*x*z;
         output.access(9) =  4.*y*z;
-        break;
       }
-      case OPERATOR_D1:
-      case OPERATOR_GRAD: {
+      else if constexpr ((OpType == OPERATOR_D1) || (OpType == OPERATOR_GRAD)) {
         const auto x = input(0);
         const auto y = input(1);
         const auto z = input(2);
@@ -97,9 +95,8 @@ namespace Intrepid2 {
         output.access(9, 0) =  0.;         
         output.access(9, 1) =  4.*z;
         output.access(9, 2) =  4.*y;
-        break;
       }
-      case OPERATOR_D2: {
+      else if constexpr (OpType == OPERATOR_D2) {
         output.access(0, 0) =  4.;
         output.access(0, 1) =  4.;
         output.access(0, 2) =  4.;
@@ -169,25 +166,22 @@ namespace Intrepid2 {
         output.access(9, 3) =  0.;
         output.access(9, 4) =  4.;
         output.access(9, 5) =  0.;
-        break;
       }
-      case OPERATOR_MAX: {
+      else if constexpr (OpType == OPERATOR_MAX) {
         const ordinal_type jend = output.extent(1);
         const ordinal_type iend = output.extent(0);
 
         for (ordinal_type j=0;j<jend;++j)
           for (ordinal_type i=0;i<iend;++i)
             output.access(i, j) = 0.0;
-        break;
       }
-      default: {
-        INTREPID2_TEST_FOR_ABORT( opType != OPERATOR_VALUE &&
-                                  opType != OPERATOR_GRAD &&
-                                  opType != OPERATOR_D1 &&
-                                  opType != OPERATOR_D2 &&
-                                  opType != OPERATOR_MAX,
+      else {
+        INTREPID2_TEST_FOR_ABORT( OpType != OPERATOR_VALUE &&
+                                  OpType != OPERATOR_GRAD &&
+                                  OpType != OPERATOR_D1 &&
+                                  OpType != OPERATOR_D2 &&
+                                  OpType != OPERATOR_MAX,
                                   ">>> ERROR: (Intrepid2::Basis_HGRAD_TET_C2_FEM::Serial::getValues) operator is not supported");
-      }
       }
     }
 

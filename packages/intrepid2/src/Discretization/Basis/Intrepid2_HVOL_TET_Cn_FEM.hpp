@@ -67,14 +67,10 @@ namespace Intrepid2 {
         static ordinal_type
         getWorkSizePerPoint(ordinal_type order) {
           auto cardinality = getPnCardinality<3>(order);
-          switch (opType) {
-          case OPERATOR_GRAD:
-          case OPERATOR_CURL:
-          case OPERATOR_D1:
+          if constexpr ((opType == OPERATOR_GRAD) || (opType == OPERATOR_CURL) || (opType == OPERATOR_D1))
             return 7*cardinality;
-          default:
+          else
             return getDkCardinality<opType,3>()*cardinality;
-          }
         }
       };
 
@@ -123,26 +119,18 @@ namespace Intrepid2 {
 
           workViewType work = createMatchingUnmanagedView<workViewType>(_work, ptr, (ptEnd-ptBegin)*_work.extent(0));
 
-          switch (opType) {
-          case OPERATOR_VALUE : {
+          if constexpr (opType == OPERATOR_VALUE) {
             auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange );
             Serial<opType>::getValues( output, input, work, _vinv );
-            break;
           }
-          case OPERATOR_GRAD :
-          case OPERATOR_D1 :
-          case OPERATOR_D2 :
-          //case OPERATOR_D3 :
-          {
+          else if constexpr ((opType == OPERATOR_GRAD) || (opType == OPERATOR_D1) || (opType == OPERATOR_D2)) {
             auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange, Kokkos::ALL() );
             Serial<opType>::getValues( output, input, work, _vinv );
-            break;
           }
-          default: {
+          else {
             INTREPID2_TEST_FOR_ABORT( true,
                                       ">>> ERROR: (Intrepid2::Basis_HVOL_TET_Cn_FEM::Functor) operator is not supported");
 
-          }
           }
         }
       };

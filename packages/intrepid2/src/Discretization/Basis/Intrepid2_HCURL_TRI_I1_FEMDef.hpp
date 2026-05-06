@@ -21,16 +21,15 @@ namespace Intrepid2 {
   // -------------------------------------------------------------------------------------                            
   namespace Impl {                                                                                                    
                                                                                                                       
-    template<EOperator opType>                                                                                        
+    template<EOperator OpType>                                                                                        
     template<typename OutputViewType,                                                                                 
              typename inputViewType>                                                                                  
     KOKKOS_INLINE_FUNCTION                                                                                            
     void     
-    Basis_HCURL_TRI_I1_FEM::Serial<opType>::
+    Basis_HCURL_TRI_I1_FEM::Serial<OpType>::
     getValues(       OutputViewType output,                                                                           
                const inputViewType input ) {
-      switch (opType) {
-      case OPERATOR_VALUE: {
+      if constexpr (OpType == OPERATOR_VALUE) {
         const auto x = input(0);
         const auto y = input(1);
       
@@ -43,21 +42,17 @@ namespace Intrepid2 {
       
         output.access(2, 0) = -2.0*y;
         output.access(2, 1) = 2.0*(-1.0 + x);
-        break;
       }
-      case OPERATOR_CURL: {
+      else if constexpr (OpType == OPERATOR_CURL) {
         // outputValues is a subview of a rank-2 array with dimensions (basisCardinality_, dim0), dim0 iteration of range
         output.access(0) = 4.0;
         output.access(1) = 4.0;
         output.access(2) = 4.0;
-
-        break;
       }
-      default: {
-        INTREPID2_TEST_FOR_ABORT( opType != OPERATOR_VALUE &&
-                                  opType != OPERATOR_CURL,
+      else {
+        INTREPID2_TEST_FOR_ABORT( OpType != OPERATOR_VALUE &&
+                                  OpType != OPERATOR_CURL,
                                   ">>> ERROR: (Intrepid2::Basis_HCURL_TRI_I1_FEM::Serial::getValues) operator is not supported");
-      }
       }
     }
 

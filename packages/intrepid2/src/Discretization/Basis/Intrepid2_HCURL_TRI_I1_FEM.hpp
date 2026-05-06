@@ -109,34 +109,24 @@ namespace Intrepid2 {
 
         KOKKOS_INLINE_FUNCTION
         void operator()(const ordinal_type pt) const {
-          switch (opType) {
-          case OPERATOR_VALUE : {
+          if constexpr (opType == OPERATOR_VALUE) {
             auto       output = Kokkos::subview( _outputValues, Kokkos::ALL(), pt, Kokkos::ALL() );
             const auto input  = Kokkos::subview( _inputPoints,                 pt, Kokkos::ALL() );
             Serial<opType>::getValues( output, input );
-            break;
-          }
-          case OPERATOR_CURL : {
+          } else if constexpr (opType == OPERATOR_CURL) {
             auto       output = Kokkos::subview( _outputValues, Kokkos::ALL(), pt );
             const auto input  = Kokkos::subview( _inputPoints,                 pt, Kokkos::ALL() );
             Serial<opType>::getValues( output, input );
-            break;
-          }
-          case OPERATOR_DIV: {
+          } else if constexpr (opType == OPERATOR_DIV) {
             INTREPID2_TEST_FOR_ABORT( (opType == OPERATOR_DIV),
                                       ">>> ERROR (Basis_HCURL_TRI_I1_FEM): DIV is invalid operator for HCURL Basis Functions");
-            break;
-          }
-          case OPERATOR_GRAD: {
+          } else if constexpr (opType == OPERATOR_GRAD) {
             INTREPID2_TEST_FOR_ABORT( (opType == OPERATOR_GRAD),
                                       ">>> ERROR (Basis_HCURL_TRI_I1_FEM): GRAD is invalid operator for HCURL Basis Functions");
-            break;
-          }
-          default: {
+          } else {
             INTREPID2_TEST_FOR_ABORT( opType != OPERATOR_VALUE &&
                                       opType != OPERATOR_CURL,
                                       ">>> ERROR: (Intrepid2::Basis_HCURL_QUAD_I1_FEM::Serial::getValues) operator is not supported");
-          }
           }
         }
       };

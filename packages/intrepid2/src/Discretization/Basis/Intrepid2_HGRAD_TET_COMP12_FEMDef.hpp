@@ -126,16 +126,16 @@ namespace Intrepid2 {
       return -1;
     }
     
-    template<EOperator opType>
+    template<EOperator OpType>
     template<typename outputValueViewType,
              typename inputPointViewType>
     KOKKOS_INLINE_FUNCTION
     void
-    Basis_HGRAD_TET_COMP12_FEM::Serial<opType>::
+    Basis_HGRAD_TET_COMP12_FEM::Serial<OpType>::
     getValues(       outputValueViewType output,
                const inputPointViewType  input ) {
-      switch (opType) {
-      case OPERATOR_VALUE: {
+
+      if constexpr (OpType == OPERATOR_VALUE) {
         const typename inputPointViewType::value_type r = input(0);
         const typename inputPointViewType::value_type s = input(1);
         const typename inputPointViewType::value_type t = input(2);
@@ -228,9 +228,8 @@ namespace Intrepid2 {
           for (auto i=4;i<10;++i)
             output.access(i) += aux/6.0;
         }
-        break;
       }
-      case OPERATOR_GRAD: {
+      else if constexpr (OpType == OPERATOR_GRAD) {
         const typename inputPointViewType::value_type r = input(0);
         const typename inputPointViewType::value_type s = input(1);
         const typename inputPointViewType::value_type t = input(2);
@@ -265,21 +264,18 @@ namespace Intrepid2 {
         output.access(9,0) = (-5*(-1 + 2*r + s + t))/12.;
         output.access(9,1) = (-1 - 5*r + 5*s + 40*t)/12.;
         output.access(9,2) = (-1 - 5*r + 40*s + 5*t)/12.;
-        break;
       }
-      case OPERATOR_MAX: {
+      else if constexpr (OpType == OPERATOR_MAX) {
         const ordinal_type jend = output.extent(1);
         const ordinal_type iend = output.extent(0);
 
         for (ordinal_type j=0;j<jend;++j)
           for (auto i=0;i<iend;++i)
             output.access(i, j) = 0.0;
-        break;
       }
-      default: {
+      else {
         INTREPID2_TEST_FOR_ABORT( true , 
                                   ">>> ERROR (Basis_HGRAD_TET_COMP12_FEM): Operator type not implemented" );
-      }
       }
     }
 

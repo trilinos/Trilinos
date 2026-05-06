@@ -21,16 +21,16 @@ namespace Intrepid2 {
   // -------------------------------------------------------------------------------------
   namespace Impl {
 
-    template<EOperator opType>
+    template<EOperator OpType>
     template<typename OutputViewType,
              typename inputViewType>
     KOKKOS_INLINE_FUNCTION
     void
-    Basis_HDIV_TET_I1_FEM::Serial<opType>::
+    Basis_HDIV_TET_I1_FEM::Serial<OpType>::
     getValues(       OutputViewType output,
                const inputViewType input ) {
-      switch (opType) {
-      case OPERATOR_VALUE: {
+
+      if constexpr (OpType == OPERATOR_VALUE) {
         const auto x = input(0);
         const auto y = input(1);
         const auto z = input(2);
@@ -51,21 +51,18 @@ namespace Intrepid2 {
         output.access(3, 0) = x;
         output.access(3, 1) = y;
         output.access(3, 2) = (z - 1.0);
-        break;
       }
-      case OPERATOR_DIV: {
+      else if constexpr (OpType == OPERATOR_DIV) {
         // output is a rank-3 array with dimensions (basisCardinality_, spaceDim)
         output.access(0) = 3;
         output.access(1) = 3;
         output.access(2) = 3;
         output.access(3) = 3;
-        break;
       }
-      default: {
-        INTREPID2_TEST_FOR_ABORT( opType != OPERATOR_VALUE &&
-                                  opType != OPERATOR_DIV,
+      else {
+        INTREPID2_TEST_FOR_ABORT( OpType != OPERATOR_VALUE &&
+                                  OpType != OPERATOR_DIV,
                                   ">>> ERROR: (Intrepid2::Basis_HDIV_TET_I1_FEM::Serial::getValues) operator is not supported");
-      }
       }
     }
 

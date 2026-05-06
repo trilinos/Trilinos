@@ -88,13 +88,10 @@ public:
     static ordinal_type
     getWorkSizePerPoint(ordinal_type order) {
       auto cardinality = CardinalityHCurlTet(order);
-      switch (opType) {
-      case OPERATOR_DIV:
-      case OPERATOR_D1:
+      if constexpr ((opType == OPERATOR_DIV) || (opType ==  OPERATOR_D1))
         return 7*cardinality;
-      default:
+      else
         return getDkCardinality<opType,3>()*cardinality;
-      }
     }
   };
 
@@ -145,22 +142,18 @@ public:
 
       workViewType work = createMatchingUnmanagedView<workViewType>(_work, ptr, (ptEnd-ptBegin)*_work.extent(0));
 
-      switch (opType) {
-      case OPERATOR_VALUE : {
+      if constexpr (opType == OPERATOR_VALUE) {
         auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange, Kokkos::ALL() );
         Serial<opType>::getValues( output, input, work, _coeffs );
-        break;
       }
-      case OPERATOR_CURL: {
+      else if constexpr (opType == OPERATOR_CURL) {
         auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange,  Kokkos::ALL() );
         Serial<opType>::getValues( output, input, work, _coeffs );
-        break;
       }
-      default: {
+      else {
         INTREPID2_TEST_FOR_ABORT( true,
             ">>> ERROR: (Intrepid2::Basis_HCURL_TET_In_FEM::Functor) operator is not supported");
 
-      }
       }
     }
   };

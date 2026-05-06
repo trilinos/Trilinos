@@ -24,12 +24,12 @@ namespace Intrepid2 {
 
     // output (N,P,D)
     // input  (P,D) - assumes that it has a set of points to amortize the function call cost for jacobi polynomial.
-    template<EOperator opType>
+    template<EOperator OpType>
     template<typename OutputViewType,
              typename inputViewType>
     KOKKOS_INLINE_FUNCTION
     void
-    Basis_HGRAD_LINE_Cn_FEM_JACOBI::Serial<opType>::
+    Basis_HGRAD_LINE_Cn_FEM_JACOBI::Serial<OpType>::
     getValues(       OutputViewType output,
                const inputViewType  input,
                const ordinal_type   order,
@@ -43,36 +43,25 @@ namespace Intrepid2 {
       const auto pts = Kokkos::subview( input, Kokkos::ALL(), 0 );
       const ordinal_type np = input.extent(0);
 
-      switch (opType) {
-      case OPERATOR_VALUE: {
+      if constexpr (OpType == OPERATOR_VALUE) {
         const Kokkos::View<typename inputViewType::value_type*,
           typename inputViewType::memory_space,Kokkos::MemoryUnmanaged> null;
         for (ordinal_type p=0;p<card;++p) {
           auto poly = Kokkos::subview( output, p, Kokkos::ALL() );
           Polylib::Serial::JacobiPolynomial(np, pts, poly, null, p, alpha, beta);
         }
-        break;
       }
-      case OPERATOR_GRAD:
-      case OPERATOR_D1: {
+      else if constexpr ((OpType == OPERATOR_GRAD) || (OpType == OPERATOR_D1)) {
         for (ordinal_type p=0;p<card;++p) {
           auto polyd = Kokkos::subview( output, p, Kokkos::ALL(), 0 );
           Polylib::Serial::JacobiPolynomialDerivative(np, pts, polyd, p, alpha, beta);
         }
-        break;
       }
-      case OPERATOR_D2:
-      case OPERATOR_D3:
-      case OPERATOR_D4:
-      case OPERATOR_D5:
-      case OPERATOR_D6:
-      case OPERATOR_D7:
-      case OPERATOR_D8:
-      case OPERATOR_D9:
-      case OPERATOR_D10:
-        opDn = getOperatorOrder(opType);
-        [[fallthrough]];
-      case OPERATOR_Dn: {
+      else if constexpr ((OpType == OPERATOR_D2) || (OpType == OPERATOR_D3) || (OpType == OPERATOR_D4) || (OpType == OPERATOR_D5) || (OpType == OPERATOR_D6) || 
+                         (OpType == OPERATOR_D7) || (OpType == OPERATOR_D8) || (OpType == OPERATOR_D9)  || (OpType == OPERATOR_D10) || (OpType == OPERATOR_Dn)) {
+        if constexpr (OpType != OPERATOR_Dn)
+          opDn = getOperatorOrder(OpType  );
+
         {
           const ordinal_type pend = output.extent(0);
           const ordinal_type iend = output.extent(1);
@@ -98,12 +87,10 @@ namespace Intrepid2 {
               poly(i) = scaleFactor*poly(i);
           }
         }
-        break;
       }
-      default: {
+      else {
         INTREPID2_TEST_FOR_ABORT( true,
                                   ">>> ERROR: (Intrepid2::Basis_HGRAD_LINE_Cn_FEM_JACOBI::Serial::getValues) operator is not supported");
-      }
       }
     }
 

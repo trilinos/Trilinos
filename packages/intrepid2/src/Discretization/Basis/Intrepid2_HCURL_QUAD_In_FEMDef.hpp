@@ -50,8 +50,7 @@ namespace Intrepid2 {
       
       typedef typename Kokkos::DynRankView<typename InputViewType::value_type, typename WorkViewType::memory_space> ViewType;
 
-      switch (OpType) {
-      case OPERATOR_VALUE: {
+      if constexpr (OpType == OPERATOR_VALUE) {
         ViewType workLine = createMatchingUnmanagedView<ViewType>(input, ptr0, cardLine, npts);
         ViewType outputLine = createMatchingUnmanagedView<ViewType>(input, ptr1, cardLine, npts);
         ViewType outputBubble = createMatchingUnmanagedView<ViewType>(input, ptr2, cardBubble, npts);
@@ -94,10 +93,8 @@ namespace Intrepid2 {
                 output.access(idx,k,1) = output_x.access(i,k)*output_y.access(j,k);
               }
         }
-
-        break;
       }
-      case OPERATOR_CURL: {
+      else if constexpr (OpType ==  OPERATOR_CURL) {
         ordinal_type idx = 0;
         { // x - component
           ViewType workLine = createMatchingUnmanagedView<ViewType>(input, ptr0, cardLine, npts);
@@ -137,12 +134,10 @@ namespace Intrepid2 {
               for (ordinal_type k=0;k<npts;++k)
                 output.access(idx,k) = output_x.access(i,k,0)*output_y.access(j,k);
         }
-        break;
       }
-      default: {
+      else {
         INTREPID2_TEST_FOR_ABORT( true,
                                   ">>> ERROR: (Intrepid2::Basis_HCURL_QUAD_In_FEM::Serial::getValues) operator is not supported" );
-      }
       }
     }
 

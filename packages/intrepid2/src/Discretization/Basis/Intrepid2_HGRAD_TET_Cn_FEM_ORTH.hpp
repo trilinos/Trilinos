@@ -137,39 +137,24 @@ public:
       const auto ptRange = Kokkos::pair<ordinal_type,ordinal_type>(ptBegin, ptEnd);
       const auto input   = Kokkos::subview( _inputPoints, ptRange, Kokkos::ALL() );
 
-      switch (opType) {
-      case OPERATOR_VALUE : {
+      if constexpr (opType == OPERATOR_VALUE) {
         auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange );
         Serial<opType>::getValues( output, input, _work, _order );  //here work is not used
-        break;
       }
-      case OPERATOR_GRAD :
-      case OPERATOR_D1 :
-      {
+      else if constexpr ((opType == OPERATOR_GRAD) || (opType == OPERATOR_D1)) {
         const auto work = Kokkos::subview( _work, Kokkos::ALL(), ptRange, Kokkos::ALL() );
         auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange, Kokkos::ALL() );
         Serial<opType>::getValues( output, input, work, _order);
-        break;
       }
-      case OPERATOR_D2 :
-      case OPERATOR_D3 :
-      case OPERATOR_D4 :
-      case OPERATOR_D5 :
-      case OPERATOR_D6 :
-      case OPERATOR_D7 :
-      case OPERATOR_D8 :
-      case OPERATOR_D9 :
-      case OPERATOR_D10 :
-      {
+      else if constexpr ((opType == OPERATOR_D2) || (opType == OPERATOR_D3) || (opType == OPERATOR_D4) || (opType == OPERATOR_D5) ||
+                         (opType == OPERATOR_D6) || (opType == OPERATOR_D7) || (opType == OPERATOR_D8) || (opType == OPERATOR_D9) || (opType == OPERATOR_D10)) {
         auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange, Kokkos::ALL() );
         Serial<opType>::getValues( output, input, _work, _order); //here work is not used
-        break;
       }
-      default: {
+      else {
         INTREPID2_TEST_FOR_ABORT( true,
             ">>> ERROR: (Intrepid2::Basis_HGRAD_TET_Cn_FEM_ORTH::Functor) operator is not supported");
 
-      }
       }
     }
   };

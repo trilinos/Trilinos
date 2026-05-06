@@ -102,22 +102,15 @@ namespace Intrepid2 {
 
           workViewType work = createMatchingUnmanagedView<workViewType>(_work, ptr, (ptEnd-ptBegin)*_work.extent(0));
 
-          switch (opType) {
-          case OPERATOR_VALUE : {
+          if constexpr (opType == OPERATOR_VALUE) {
             auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange, Kokkos::ALL() );
             Serial<opType>::getValues( output, input, work, _vinvLine, _vinvBubble );
-            break;
-          }
-          case OPERATOR_DIV : {
+          } else if constexpr (opType == OPERATOR_DIV) {
             auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange );
             Serial<opType>::getValues( output, input, work, _vinvLine, _vinvBubble );
-            break;
-          }
-          default: {
+          } else {
             INTREPID2_TEST_FOR_ABORT( true,
                                       ">>> ERROR: (Intrepid2::Basis_HDIV_HEX_In_FEM::Functor) operator is not supported." );
-
-          }
           }
         }
       };

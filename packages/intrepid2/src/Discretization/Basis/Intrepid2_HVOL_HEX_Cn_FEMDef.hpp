@@ -51,8 +51,7 @@ namespace Intrepid2 {
 
       typedef typename Kokkos::DynRankView<typename InputViewType::value_type, typename WorkViewType::memory_space> ViewType;
 
-      switch (OpType) {
-      case OPERATOR_VALUE: {
+      if constexpr (OpType == OPERATOR_VALUE) {
         ViewType work_line = createMatchingUnmanagedView<ViewType>(input, ptr0, cardLine, npts);
         ViewType output_x = createMatchingUnmanagedView<ViewType>(input, ptr1, cardLine, npts);
         ViewType output_y = createMatchingUnmanagedView<ViewType>(input, ptr2, cardLine, npts);
@@ -74,22 +73,12 @@ namespace Intrepid2 {
             for (ordinal_type i=0;i<cardLine;++i,++idx)  // x
               for (ordinal_type l=0;l<npts;++l)
                 output.access(idx,l) = output_x.access(i,l)*output_y.access(j,l)*output_z.access(k,l);
-        break;
       }
-      case OPERATOR_GRAD:
-      case OPERATOR_D1:
-      case OPERATOR_D2:
-      case OPERATOR_D3:
-      case OPERATOR_D4:
-      case OPERATOR_D5:
-      case OPERATOR_D6:
-      case OPERATOR_D7:
-      case OPERATOR_D8:
-      case OPERATOR_D9:
-      case OPERATOR_D10:
-        opDn = getOperatorOrder(OpType);
-        [[fallthrough]];
-      case OPERATOR_Dn: {
+      else if constexpr ((OpType == OPERATOR_GRAD) || (OpType == OPERATOR_D1) || (OpType == OPERATOR_D2) || (OpType == OPERATOR_D3) || (OpType == OPERATOR_D4) || (OpType == OPERATOR_D5) ||
+                         (OpType == OPERATOR_D6) || (OpType == OPERATOR_D7) || (OpType == OPERATOR_D8) || (OpType == OPERATOR_D9)  || (OpType == OPERATOR_D10) || (OpType == OPERATOR_Dn)) {
+        if constexpr (OpType != OPERATOR_Dn) 
+          opDn = getOperatorOrder(OpType);
+          
         const ordinal_type dkcard = opDn + 1;
 
         ordinal_type d = 0;
@@ -148,13 +137,10 @@ namespace Intrepid2 {
               ++d;
             }
           }
-        break;
       }
-      default: {
+      else {
         INTREPID2_TEST_FOR_ABORT( true ,
                                   ">>> ERROR (Basis_HVOL_HEX_Cn_FEM): Operator type not implemented");
-        break;
-      }
       }
     }
 

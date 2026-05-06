@@ -20,14 +20,14 @@ namespace Intrepid2 {
   // -------------------------------------------------------------------------------------
   namespace Impl {
 
-    template<EOperator opType>
+    template<EOperator OpType>
     template<typename OutputViewType,
              typename InputViewType,
              typename WorkViewType,
              typename VinvViewType>
     KOKKOS_INLINE_FUNCTION
     void
-    Basis_HVOL_LINE_Cn_FEM::Serial<opType>::
+    Basis_HVOL_LINE_Cn_FEM::Serial<OpType>::
     getValues(       OutputViewType output,
                const InputViewType  input,
                      WorkViewType   work,
@@ -43,12 +43,11 @@ namespace Intrepid2 {
 
       typedef typename Kokkos::DynRankView<typename InputViewType::value_type, typename WorkViewType::memory_space> ViewType;
 
-      switch (opType) {
-      case OPERATOR_VALUE: {
+      if constexpr (OpType == OPERATOR_VALUE) {
         ViewType phis = createMatchingUnmanagedView<ViewType>(input, work.data(), card, npts);
 
         Impl::Basis_HGRAD_LINE_Cn_FEM_JACOBI::
-          Serial<opType>::getValues(phis, input, order, alpha, beta);
+          Serial<OpType>::getValues(phis, input, order, alpha, beta);
 
         for (ordinal_type i=0;i<card;++i)
           for (ordinal_type j=0;j<npts;++j) {
@@ -56,27 +55,17 @@ namespace Intrepid2 {
             for (ordinal_type k=0;k<card;++k)
               output.access(i,j) += vinv(k,i)*phis.access(k,j);
           }
-        break;
       }
-      case OPERATOR_GRAD:
-      case OPERATOR_D1:
-      case OPERATOR_D2:
-      case OPERATOR_D3:
-      case OPERATOR_D4:
-      case OPERATOR_D5:
-      case OPERATOR_D6:
-      case OPERATOR_D7:
-      case OPERATOR_D8:
-      case OPERATOR_D9:
-      case OPERATOR_D10:
-        opDn = getOperatorOrder(opType);
-        [[fallthrough]];
-      case OPERATOR_Dn: {
+      else if constexpr ((OpType == OPERATOR_GRAD) || (OpType == OPERATOR_D1) || (OpType == OPERATOR_D2) || (OpType == OPERATOR_D3) || (OpType == OPERATOR_D4) || (OpType == OPERATOR_D5) ||
+                         (OpType == OPERATOR_D6) || (OpType == OPERATOR_D7) || (OpType == OPERATOR_D8) || (OpType == OPERATOR_D9)  || (OpType == OPERATOR_D10) || (OpType == OPERATOR_Dn)) {
+        if constexpr (OpType != OPERATOR_Dn) 
+          opDn = getOperatorOrder(OpType);
+
         // dkcard is always 1 for 1D element
         const ordinal_type dkcard = 1;
         ViewType phis = createMatchingUnmanagedView<ViewType>(input, work.data(), card, npts, dkcard);
         Impl::Basis_HGRAD_LINE_Cn_FEM_JACOBI::
-          Serial<opType>::getValues(phis, input, order, alpha, beta, opDn);
+          Serial<OpType>::getValues(phis, input, order, alpha, beta, opDn);
 
         for (ordinal_type i=0;i<card;++i)
           for (ordinal_type j=0;j<npts;++j)
@@ -85,12 +74,10 @@ namespace Intrepid2 {
               for (ordinal_type l=0;l<card;++l)
                 output.access(i,j,k) += vinv(l,i)*phis.access(l,j,k);
             }
-        break;
       }
-      default: {
+      else {
         INTREPID2_TEST_FOR_ABORT( true,
                                   ">>> ERROR: (Intrepid2::Basis_HVOL_LINE_Cn_FEM::Serial::getValues) operator is not supported." );
-      }
       }
     }
 

@@ -52,8 +52,7 @@ namespace Impl {
   typedef typename Kokkos::DynRankView<typename InputViewType::value_type, typename WorkViewType::memory_space> ViewType;
   auto ptr = work.data();
 
-  switch (OpType) {
-  case OPERATOR_VALUE: {
+  if constexpr (OpType == OPERATOR_VALUE) {
     const ViewType phis = createMatchingUnmanagedView<ViewType>(input, ptr, card, npts);
       ViewType dummyView;
 
@@ -66,10 +65,8 @@ namespace Impl {
         for (ordinal_type k=0;k<card;++k)
           output.access(i,j) += vinv(k,i)*phis.access(k,j);
       }
-    break;
   }
-  case OPERATOR_GRAD:
-  case OPERATOR_D1: {
+  else if constexpr ((OpType == OPERATOR_GRAD) || (OpType == OPERATOR_D1)) {
     const ViewType phis = createMatchingUnmanagedView<ViewType>(input, ptr, card, npts, spaceDim);
     ptr += card*npts*spaceDim*get_dimension_scalar(input);
     const ViewType workView = createMatchingUnmanagedView<ViewType>(input, ptr, card, npts, spaceDim+1);
@@ -83,17 +80,9 @@ namespace Impl {
           for (ordinal_type l=0;l<card;++l)
             output.access(i,j,k) += vinv(l,i)*phis.access(l,j,k);
         }
-    break;
   }
-  case OPERATOR_D2:
-  case OPERATOR_D3:
-  case OPERATOR_D4:
-  case OPERATOR_D5:
-  case OPERATOR_D6:
-  case OPERATOR_D7:
-  case OPERATOR_D8:
-  case OPERATOR_D9:
-  case OPERATOR_D10: {
+  else if constexpr ((OpType == OPERATOR_D2) || (OpType == OPERATOR_D3) || (OpType == OPERATOR_D4) || (OpType == OPERATOR_D5) ||
+                     (OpType == OPERATOR_D6) || (OpType == OPERATOR_D7) || (OpType == OPERATOR_D8) || (OpType == OPERATOR_D9)  || (OpType == OPERATOR_D10)) {
     const ordinal_type dkcard = getDkCardinality<OpType,spaceDim>(); //(orDn + 1);
     const ViewType phis = createMatchingUnmanagedView<ViewType>(input, ptr, card, npts, dkcard);
     ViewType dummyView;
@@ -108,12 +97,10 @@ namespace Impl {
           for (ordinal_type l=0;l<card;++l)
             output.access(i,j,k) += vinv(l,i)*phis.access(l,j,k);
         }
-    break;
   }
-  default: {
+  else {
     INTREPID2_TEST_FOR_ABORT( true,
         ">>> ERROR (Basis_HVOL_TRI_Cn_FEM): Operator type not implemented");
-  }
   }
 }
 
