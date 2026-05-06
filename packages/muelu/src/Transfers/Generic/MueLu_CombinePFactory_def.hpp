@@ -319,9 +319,10 @@ void CombinePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildPBlocked(L
   constexpr bool typesMatch =
       std::is_same_v<LocalOrdinal, TpetraLO> &&
       std::is_same_v<GlobalOrdinal, TpetraGO> &&
-      std::is_same_v<Node, TpetraNode>;
+      std::is_same_v<Node, TpetraNode> &&
+      std::is_same_v<Scalar, double>;
   if constexpr (!typesMatch) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "CombinePFactory::BuildPBlocked requires LO/GO/Node to match Tpetra::Map<> default types.");
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "CombinePFactory::BuildPBlocked requires LO/GO/Node to match Tpetra::Map<> default types and Scalar=double.");
     return;
   } else {
     TEUCHOS_TEST_FOR_EXCEPTION(restrictionMode_, Exceptions::RuntimeError, "CombinePFactory::BuildPBlocked does not support restriction mode.");

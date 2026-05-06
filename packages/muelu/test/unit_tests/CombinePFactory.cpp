@@ -64,16 +64,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CombinePFactory, CombineTwoSubblocks, Scalar, 
 
   // Fine-level A only needs a compatible row map and communicator. A simple tridiagonal
   // on the combined map is sufficient.
-  const auto Nx        = bigMap->getGlobalNumElements();
-  RCP<CrsMatrixWrap> A = Galeri::Xpetra::TriDiag<Scalar, LO, GO, Node>(bigMap, Nx, 2.0, -1.0, -1.0);
+  RCP<CrsMatrixWrap> A = Galeri::Xpetra::TriDiag<Scalar, LO, GO, Map, CrsMatrixWrap>(bigMap, bigMap->getGlobalNumElements(), 2.0, -1.0, -1.0);
 
   // Build two subblock prolongators. We use square matrices here for simplicity;
   // CombinePFactory only cares that they are valid matrices with compatible maps.
-  const auto Nx0        = map0->getGlobalNumElements();
-  RCP<CrsMatrixWrap> P0 = Galeri::Xpetra::TriDiag<Scalar, LO, GO, Node>(map0, Nx0, 2.0, -1.0, -1.0);
+  RCP<CrsMatrixWrap> P0 = Galeri::Xpetra::TriDiag<Scalar, LO, GO, Map, CrsMatrixWrap>(map0, map0->getGlobalNumElements(), 2.0, -1.0, -1.0);
 
-  const auto Nx1        = map1->getGlobalNumElements();
-  RCP<CrsMatrixWrap> P1 = Galeri::Xpetra::TriDiag<Scalar, LO, GO, Node>(map1, Nx1, 3.0, -2.0, -1.0);
+  RCP<CrsMatrixWrap> P1 = Galeri::Xpetra::TriDiag<Scalar, LO, GO, Map, CrsMatrixWrap>(map1, map1->getGlobalNumElements(), 3.0, -2.0, -1.0);
 
   TEST_EQUALITY(P0 != Teuchos::null, true);
   TEST_EQUALITY(P1 != Teuchos::null, true);
@@ -151,8 +148,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CombinePFactory, CombineSingleBlockDegenerate,
 
   RCP<const Map> map0 = StridedMapFactory::Build(lib, numElements, 0, stridingInfo, comm);
 
-  RCP<CrsMatrixWrap> A  = GenerateProblemMatrix<Scalar, LO, GO, Node>(map0, map0, 2.0, -1.0, -1.0);
-  RCP<CrsMatrixWrap> P0 = GenerateProblemMatrix<Scalar, LO, GO, Node>(map0, map0, 3.0, -2.0, -1.0);
+  RCP<CrsMatrixWrap> A  = Galeri::Xpetra::TriDiag<Scalar, LO, GO, Map, CrsMatrixWrap>(map0, map0->getGlobalNumElements(), 2.0, -1.0, -1.0);
+  RCP<CrsMatrixWrap> P0 = Galeri::Xpetra::TriDiag<Scalar, LO, GO, Map, CrsMatrixWrap>(map0, map0->getGlobalNumElements(), 3.0, -2.0, -1.0);
 
   Level fineLevel, coarseLevel;
   TestHelpers::TestFactory<SC, LO, GO, NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
@@ -210,9 +207,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CombinePFactory, CombineWithIdentityFallback, 
 
   RCP<const Map> bigMap = StridedMapFactory::Build(lib, numElements, 0, stridingInfo, comm);
 
-  RCP<CrsMatrixWrap> Acombo = GenerateProblemMatrix<Scalar, LO, GO, Node>(bigMap, bigMap, 2.0, -1.0, -1.0);
-  RCP<CrsMatrixWrap> P0     = GenerateProblemMatrix<Scalar, LO, GO, Node>(map0, map0, 2.0, -1.0, -1.0);
-  RCP<CrsMatrixWrap> A1     = GenerateProblemMatrix<Scalar, LO, GO, Node>(map1, map1, 3.0, -2.0, -1.0);
+  RCP<CrsMatrixWrap> Acombo = Galeri::Xpetra::TriDiag<Scalar, LO, GO, Map, CrsMatrixWrap>(bigMap, bigMap->getGlobalNumElements(), 2.0, -1.0, -1.0);
+  RCP<CrsMatrixWrap> P0     = Galeri::Xpetra::TriDiag<Scalar, LO, GO, Map, CrsMatrixWrap>(map0, map0->getGlobalNumElements(), 2.0, -1.0, -1.0);
+  RCP<CrsMatrixWrap> A1     = Galeri::Xpetra::TriDiag<Scalar, LO, GO, Map, CrsMatrixWrap>(map1, map1->getGlobalNumElements(), 3.0, -2.0, -1.0);
 
   Level fineLevel, coarseLevel;
   TestHelpers::TestFactory<SC, LO, GO, NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
@@ -302,10 +299,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CombinePFactory, CombineWithBlockedFineMatrix,
   Teuchos::RCP<const MapExtractor> mapExtractor = MapExtractorFactory::Build(bigMap, maps);
 
   // Build blocked fine operator
-  RCP<CrsMatrixWrap> A00 = GenerateProblemMatrix<Scalar, LO, GO, Node>(rangeMap0, rangeMap0, 2.0, -1.0, -1.0);
-  RCP<CrsMatrixWrap> A01 = GenerateProblemMatrix<Scalar, LO, GO, Node>(rangeMap0, rangeMap1, 1.0, 0.0, 0.0);
-  RCP<CrsMatrixWrap> A10 = GenerateProblemMatrix<Scalar, LO, GO, Node>(rangeMap1, rangeMap0, 1.0, 0.0, 0.0);
-  RCP<CrsMatrixWrap> A11 = GenerateProblemMatrix<Scalar, LO, GO, Node>(rangeMap1, rangeMap1, 3.0, -2.0, -1.0);
+  RCP<CrsMatrixWrap> A00 = Galeri::Xpetra::TriDiag<Scalar, LO, GO, Map, CrsMatrixWrap>(rangeMap0, rangeMap0->getGlobalNumElements(), 2.0, -1.0, -1.0);
+  RCP<CrsMatrixWrap> A01 = Galeri::Xpetra::TriDiag<Scalar, LO, GO, Map, CrsMatrixWrap>(rangeMap0, rangeMap1->getGlobalNumElements(), 1.0, 0.0, 0.0);
+  RCP<CrsMatrixWrap> A10 = Galeri::Xpetra::TriDiag<Scalar, LO, GO, Map, CrsMatrixWrap>(rangeMap1, rangeMap0->getGlobalNumElements(), 1.0, 0.0, 0.0);
+  RCP<CrsMatrixWrap> A11 = Galeri::Xpetra::TriDiag<Scalar, LO, GO, Map, CrsMatrixWrap>(rangeMap1, rangeMap1->getGlobalNumElements(), 3.0, -2.0, -1.0);
 
   RCP<BlockedCrsMatrix> bA = Teuchos::rcp(new BlockedCrsMatrix(mapExtractor, mapExtractor, 10));
   bA->setMatrix(0, 0, A00);
@@ -319,8 +316,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CombinePFactory, CombineWithBlockedFineMatrix,
   TEST_EQUALITY(bA->Cols(), 2);
 
   // Valid subblock prolongators
-  RCP<CrsMatrixWrap> P0 = GenerateProblemMatrix<Scalar, LO, GO, Node>(subMap0, subMap0, 2.0, -1.0, -1.0);
-  RCP<CrsMatrixWrap> P1 = GenerateProblemMatrix<Scalar, LO, GO, Node>(subMap1, subMap1, 3.0, -2.0, -1.0);
+  RCP<CrsMatrixWrap> P0 = Galeri::Xpetra::TriDiag<Scalar, LO, GO, Map, CrsMatrixWrap>(subMap0, subMap0->getGlobalNumElements(), 2.0, -1.0, -1.0);
+  RCP<CrsMatrixWrap> P1 = Galeri::Xpetra::TriDiag<Scalar, LO, GO, Map, CrsMatrixWrap>(subMap1, subMap1->getGlobalNumElements(), 3.0, -2.0, -1.0);
 
   TEST_EQUALITY(P0 != Teuchos::null, true);
   TEST_EQUALITY(P1 != Teuchos::null, true);
