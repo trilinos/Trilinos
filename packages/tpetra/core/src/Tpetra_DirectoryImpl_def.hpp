@@ -13,6 +13,7 @@
 /// \file Tpetra_DirectoryImpl_def.hpp
 /// \brief Definition of implementation details of Tpetra::Directory.
 
+#include "Teuchos_TestForException.hpp"
 #include "Tpetra_Distributor.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_TieBreak.hpp"
@@ -529,6 +530,7 @@ void DistributedNoncontiguousDirectory<LO, GO, NT>::
                                                                << sizeof(global_size_t) << " < sizeof(Local"
                                                                                            "Ordinal = "
                                                                << TypeNameTraits<LO>::name() << ") = " << sizeof(LO) << ".");
+  TEUCHOS_TEST_FOR_EXCEPTION(!map.haveGlobalConstants(), std::logic_error, "Map needs to have global constants.");
 
   RCP<const Teuchos::Comm<int> > comm = map.getComm();
   const LO LINVALID                   = Teuchos::OrdinalTraits<LO>::invalid();
