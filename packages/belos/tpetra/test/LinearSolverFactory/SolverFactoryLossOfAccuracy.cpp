@@ -56,7 +56,7 @@ createTestMatrix (Teuchos::FancyOStream& out,
     for (LO lclRow = rowMap->getMinLocalIndex ();
          lclRow <= rowMap->getMaxLocalIndex (); ++lclRow) {
       inds[0] = lclRow;
-      vals[0] = lclRow+1;
+      vals[0] = 1.; //lclRow+1;
       A->insertLocalValues (lclRow, inds (), vals ());
     }
   }
@@ -90,8 +90,40 @@ createTestProblem (Teuchos::FancyOStream& out,
   X = rcp (new MV (A->getDomainMap (), numVecs));
   B = rcp (new MV (A->getRangeMap (), numVecs));
 
-  B->putScalar (STS::one()); 
+  B->putScalar (STS::zero());
+  B->randomize();
+  auto map = B->getMap();
+  auto localView = B->getLocalViewHost(Tpetra::Access::ReadOnly);
+  for (LO lclRow = map->getMinLocalIndex ();
+       lclRow <= map->getMaxLocalIndex (); ++lclRow) {
+    auto tmp = localView(lclRow, 0);
+    B->replaceLocalValue(lclRow, 1, tmp + 1.e-6); // Second vector
+    B->replaceLocalValue(lclRow, 2, tmp - 1.e-6); // Third vector
+  }
+#if 0
+  // Set Vector 0 and Vector 1 at Global Row 0
+  if (map->isNodeGlobalElement(0)) {
+    // Get the local index for global row 0 on this processor
+    size_t localRow = map->getLocalElement(0);
+        
+    // replaceLocalValue(localRowIndex, vectorIndex, value)
+    B->replaceLocalValue(localRow, 0, 1.0); // First vector
+    B->replaceLocalValue(localRow, 1, 2.0 + 1.e-7); // Second vector
+    B->replaceLocalValue(localRow, 2, 2.0 - 1.e-7); // Third vector
+  }
+
+  // Set Vector 2 at Global Row 1
+  if (map->isNodeGlobalElement(1)) {
+    size_t localRow = map->getLocalElement(1);
+    B->replaceLocalValue(localRow, 2, 1.0); // Third vector
+  }
+#endif
   X->putScalar (STS::zero());
+
+  auto tmpOut = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
+  A->describe(*tmpOut, Teuchos::VERB_EXTREME);
+  //X->describe(*tmpOut, Teuchos::VERB_EXTREME);
+  B->describe(*tmpOut, Teuchos::VERB_EXTREME);
 }
 
 template<class SC, class LO, class GO, class NT>
@@ -123,6 +155,13 @@ testSolver (Teuchos::FancyOStream& out,
   Teuchos::RCP<Teuchos::ParameterList> belosList = Teuchos::parameterList (solverName);
   belosList->set ("Verbosity", Belos::Errors + Belos::Warnings);
   belosList->set("Maximum Iterations", 1); 
+  belosList->set("Flexible Gmres", false);
+  belosList->set("Num Blocks", 1);
+  belosList->set("Block Size", 3);
+  belosList->set("Adaptive Block Size", false);
+  belosList->set("Convergence Tolerance", 1.e-8);
+  belosList->set("Orthogonalization", "ICGS");
+  belosList->set("Orthogonalization Constant", 1.e-16);
 
   try {
     solver = factory.create (solverName, belosList);
@@ -175,7 +214,18 @@ testSolver (Teuchos::FancyOStream& out,
   std::cout << "ret = " << convertReturnTypeToString(ret)
       << ", unconvergedCause = " << convertUnconvergedCauseTypeToString(unconvergedCause)
       << endl;
+  if (true) { // (ret == Belos::Converged) {
+    auto AX = Teuchos::rcp(new Tpetra::MultiVector<>(B->getMap(), B->getNumVectors()));
+    A->apply(*X, *AX);
+    AX->update(1.0, *B, -1.0);
+    Teuchos::Array<double> norms(B->getNumVectors());
+    AX->norm2(norms());
+    for (int i = 0; i < norms.size(); ++i) {
+        std::cout << "Norm of residual for vector " << i << ": " << norms[i] << std::endl;
+    }
+  }
 
+  
   if ( (ret != Belos::Unconverged) || (unconvergedCause != Belos::LossOfAccuracyDetected) ) {
     success = false;
     return;

@@ -56,7 +56,12 @@ createTestMatrix (Teuchos::FancyOStream& out,
     for (LO lclRow = rowMap->getMinLocalIndex ();
          lclRow <= rowMap->getMaxLocalIndex (); ++lclRow) {
       inds[0] = lclRow;
-      vals[0] = lclRow+1;
+      if (lclRow < rowMap->getMaxLocalIndex()) {
+        vals[0] = 1.;
+      }
+      else {
+        vals[0] = 1.e-8;
+      }
       A->insertLocalValues (lclRow, inds (), vals ());
     }
   }
@@ -90,8 +95,30 @@ createTestProblem (Teuchos::FancyOStream& out,
   X = rcp (new MV (A->getDomainMap (), numVecs));
   B = rcp (new MV (A->getRangeMap (), numVecs));
 
-  B->putScalar (STS::one()); 
+  B->putScalar (STS::zero());
+  auto map = B->getMap();
+  // Set Vector 0 and Vector 1 at Global Row 0
+  if (map->isNodeGlobalElement(0)) {
+    // Get the local index for global row 0 on this processor
+    size_t localRow = map->getLocalElement(0);
+        
+    // replaceLocalValue(localRowIndex, vectorIndex, value)
+    B->replaceLocalValue(localRow, 0, 1.0); // First vector
+    B->replaceLocalValue(localRow, 1, 2.0); // Second vector
+  }
+
+  // Set Vector 2 at Global Row 1
+  if (map->isNodeGlobalElement(1)) {
+    size_t localRow = map->getLocalElement(1);
+    B->replaceLocalValue(localRow, 2, 1.0); // Third vector
+  }
+
   X->putScalar (STS::zero());
+
+  auto tmpOut = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
+  A->describe(*tmpOut, Teuchos::VERB_EXTREME);
+  //X->describe(*tmpOut, Teuchos::VERB_EXTREME);
+  B->describe(*tmpOut, Teuchos::VERB_EXTREME);
 }
 
 template<class SC, class LO, class GO, class NT>
@@ -122,7 +149,20 @@ testSolver (Teuchos::FancyOStream& out,
   // Set up Belos solver parameters.
   Teuchos::RCP<Teuchos::ParameterList> belosList = Teuchos::parameterList (solverName);
   belosList->set ("Verbosity", Belos::Errors + Belos::Warnings);
-  belosList->set("Maximum Iterations", 1); 
+  belosList->set("Maximum Iterations", 10);
+  if (solverName == "BLOCK GMRES") {
+    belosList->set("Flexible Gmres", false);
+    belosList->set("Num Blocks", 1);
+    belosList->set("Block Size", 3);
+    belosList->set("Adaptive Block Size", false);
+  }
+  if (solverName == "GCRODR") {
+    //belosList->set("Num Blocks", 2);
+    //belosList->set("Num Recycled Blocks", 1);
+  }
+  belosList->set("Convergence Tolerance", 1.e-8);
+  belosList->set("Orthogonalization", "ICGS");
+  belosList->set("Orthogonalization Constant", 1.e-16);
 
   try {
     solver = factory.create (solverName, belosList);

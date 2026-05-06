@@ -176,7 +176,7 @@ testSolver (Teuchos::FancyOStream& out,
     return;
   }
   unconvergedCause = solver->getUnconvergedCause();
-  std::cout << "ret = " << convertReturnTypeToString(ret)
+  out << "ret = " << convertReturnTypeToString(ret)
       << ", unconvergedCause = " << convertUnconvergedCauseTypeToString(unconvergedCause)
       << endl;
 
