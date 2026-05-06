@@ -38,7 +38,6 @@
 #include "Galeri_MatrixTraits.hpp"
 #include "Galeri_XpetraMatrixTypes.hpp"
 #include "Galeri_XpetraProblemFactory.hpp"
-#include "Teko_Utilities.hpp"
 
 // MueLu
 #include <MueLu_TestHelpers.hpp>
