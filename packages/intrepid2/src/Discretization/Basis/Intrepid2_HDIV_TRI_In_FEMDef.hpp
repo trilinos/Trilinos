@@ -74,7 +74,7 @@ getValues(      OutputViewType  output,
   }
   case OPERATOR_DIV: {
     const ViewType phis = createMatchingUnmanagedView<ViewType>(input, ptr, card, npts, spaceDim);
-    ptr += card*npts*spaceDim*get_dimension_scalar(work);
+    ptr += card*npts*spaceDim*get_dimension_scalar(input);
     const ViewType workView = createMatchingUnmanagedView<ViewType>(input, ptr, card, npts, spaceDim+1);
 
     Impl::Basis_HGRAD_TRI_Cn_FEM_ORTH::
