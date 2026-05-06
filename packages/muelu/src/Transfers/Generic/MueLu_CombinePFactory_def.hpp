@@ -311,6 +311,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void CombinePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildPBlocked(Level& fineLevel,
                                                                                Level& coarseLevel) const {
 #ifdef HAVE_XPETRA_THYRA
+  TEUCHOS_TEST_FOR_EXCEPTION(restrictionMode_, Exceptions::RuntimeError, "CombinePFactory::BuildPBlocked does not support restriction mode.");
   const ParameterList& pL = GetParameterList();
   const LO nBlks          = as<LO>(pL.get<int>("combine: numBlks"));
   const bool useMaxLevels = pL.get<bool>("combine: useMaxLevels");
@@ -357,7 +358,7 @@ void CombinePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildPBlocked(L
 
   blockedProlongatorXpetra->fillComplete();
 
-  Set(coarseLevel, "P", blockedProlongatorXpetra);  // TODO: implement restriction mode here
+  Set(coarseLevel, "P", blockedProlongatorXpetra);
 #else
   throw Exceptions::RuntimeError("CombinePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildPBlocked requires HAVE_XPETRA_THYRA!");
 #endif
