@@ -337,13 +337,10 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib lib, int arg
 
       std::cout << "Using MueLu XML file: " << mueluXmlFile << std::endl;
 
-      if (solveOK) {
-        std::cout << "SUCCESS! MultiPhys on monolithic matrix converged in "
-                  << iters << " iterations." << std::endl;
-      } else {
-        std::cout << "FAILURE! MultiPhys on monolithic matrix did not converge within "
-                  << expectedIters << " iterations." << std::endl;
-      }
+      if (solveOK)
+        std::cout << "SUCCESS! Belos converged in " << iters << " iterations." << std::endl;
+      else
+        std::cout << "FAILURE! Belos did not converge fast enough." << std::endl;
     }
 
     success = success && solveOK;
