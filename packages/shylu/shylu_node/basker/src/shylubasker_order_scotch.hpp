@@ -595,28 +595,34 @@ namespace BaskerNS
         }
         for (idx_t j=0; j<metis_size; j++) metis_perm_k(metis_iperm_k(j)) = j;
         if(Options.verbose == BASKER_TRUE) {
-          printf( "\n Output from METIS with %d subdomains\n",num_leaves/2 );
+          printf( "\n Output from METIS with %d subdomains\n",int(num_leaves/2) );
           for (int i=0; i<num_leaves-1; i++) {
             printf( " * metis_size[%d] = %d\n",i,metis_sizes_i(i) );
           }
           printf("\n");
         }
-        Int k = 2*num_leaves-2;
+        Int k = 2*num_leaves-2; // -2 to skip top-separator
+        Int k_metis = num_leaves-1; // -1 to keep top-separator from METIS
+        // top separator is the user-specificed schur complement block
         metis_sep_sizes[k] = n_schur;
+        // now fill the rest of blocks with the first half from Metis and the second half with empty blocks
         for (Int level_k = 1; level_k <= num_levels; level_k++) {
           Int first_sep1  = pow(2.0, (double)(  level_k)) - 1; // id of the first leaf at this level         (top-to-bottom)
           Int first_leaf1 = pow(2.0, (double)(1+level_k)) - 1; // id of the first new leaf at the next level (top-to-bottom)
           Int num_leaves = (first_leaf1 - first_sep1)/2;
-          //printf("\n - level = %d (%d:%d) -\n",level_k,first_sep1,first_leaf1 );
+          //printf("\n - level = %d (%d:%d) with k=%d, k_metis=%d and num_leaves=%d -\n",level_k,first_sep1,first_leaf1-1,k,k_metis,num_leaves );
+          // fill the second half with empty blocks
           for (Int j = first_sep1; j < first_sep1+num_leaves; j++) {
             metis_sep_sizes[k-1] = 0;
             //printf( " x metis_sep_size[%d] = 0\n",k-1 );
             k --;
           }
+          // now fill the first half with blocks from METIS
           for (Int j = first_sep1+num_leaves; j < first_leaf1; j++) {
-            metis_sep_sizes[k-1] = metis_sizes_i[(k+num_leaves)/2-1];
-            //printf( " > metis_sep_size[%d] = metis_sizes_i[%d] = %d\n",k-1,k/2-1,metis_sizes_i((k+num_leaves)/2-1) );
+            metis_sep_sizes[k-1] = metis_sizes_i[k_metis-1];
+            //printf( " > metis_sep_size[%d] = metis_sizes_i[%d] = %d\n",k-1, k_metis-1, metis_sizes_i[k_metis-1]);
             k --;
+            k_metis --;
           }
         }
         if(Options.verbose == BASKER_TRUE) {
@@ -625,8 +631,8 @@ namespace BaskerNS
             printf( " + metis_size[%d] = %d\n",i,metis_sep_sizes(i) );
           }
           printf("\n");
-	}
-      } else {
+        }
+      } else { // not partial-factorization
         // Calling METIS on Original matrix
         //  Copy graph into metis_rowptr/metis_colidx, while removing diagonals
         idx_t nnz_k =0;
@@ -660,7 +666,6 @@ namespace BaskerNS
         fclose(fp);
         for (int i=0; i<2*num_leaves; i++) printf( " metis_size[%d] = %d\n",i,metis_sep_sizes(i) );
       }*/
-
       #if 0
       // debug: merging all the subdomains into one domain
       //metis_sep_sizes(0) = metis_size;
