@@ -822,10 +822,6 @@ int local_parts = 0;
 int *local_parts_params = NULL;
 int i, j, cnt, pcnt;
 int frac = 0, mod = 0;
-MPI_Op op;
-MPI_User_function Zoltan_PartDist_MPIOp;
-
-  MPI_Op_create(&Zoltan_PartDist_MPIOp,1,&op);
 
   /* Check whether global parts or local parts parameters were used. */
   inflag[0] = (zz->LB.Num_Global_Parts_Param != -1); 
@@ -836,8 +832,12 @@ MPI_User_function Zoltan_PartDist_MPIOp;
   inflag[4] = (zz->LB.Num_Global_Parts_Param != zz->LB.Prev_Global_Parts_Param);
   inflag[5] = (zz->LB.Num_Local_Parts_Param != zz->LB.Prev_Local_Parts_Param);
 
-  MPI_Allreduce(inflag, outflag, 6, MPI_INT, op, zz->Communicator);
-  MPI_Op_free(&op);
+  MPI_Allreduce(&(inflag[0]), &(outflag[0]), 1, MPI_INT, MPI_SUM, zz->Communicator);
+  MPI_Allreduce(&(inflag[1]), &(outflag[1]), 1, MPI_INT, MPI_SUM, zz->Communicator);
+  MPI_Allreduce(&(inflag[2]), &(outflag[2]), 1, MPI_INT, MPI_MAX, zz->Communicator);
+  MPI_Allreduce(&(inflag[3]), &(outflag[3]), 1, MPI_INT, MPI_SUM, zz->Communicator);
+  MPI_Allreduce(&(inflag[4]), &(outflag[4]), 1, MPI_INT, MPI_SUM, zz->Communicator);
+  MPI_Allreduce(&(inflag[5]), &(outflag[5]), 1, MPI_INT, MPI_SUM, zz->Communicator);
 
   if (!outflag[4] && !outflag[5]) {
     /* Parameter values have not changed since last invocation of Zoltan. */
@@ -1059,25 +1059,6 @@ static void free_hash_table(struct Hash_Node **ht, int tableSize)
 {
   ZOLTAN_FREE(ht + tableSize);
   ZOLTAN_FREE(&ht);
-}
-/*****************************************************************************/
-/*****************************************************************************/
-/*****************************************************************************/
-void Zoltan_PartDist_MPIOp(
-  void *in, 
-  void *inout, 
-  int *len, 
-  MPI_Datatype *dptr)
-{
-int *int_in = (int *) in;
-int *int_inout = (int *) inout;
-
-  int_inout[0] += int_in[0];
-  int_inout[1] += int_in[1];
-  int_inout[2] = ((int_in[2] > int_inout[2]) ? int_in[2] : int_inout[2]);
-  int_inout[3] += int_in[3];
-  int_inout[4] += int_in[4];
-  int_inout[5] += int_in[5];
 }
 
 #ifdef __cplusplus
