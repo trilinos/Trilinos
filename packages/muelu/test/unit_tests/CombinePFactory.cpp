@@ -273,15 +273,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CombinePFactory, CombineWithBlockedFineMatrix,
   const GO numElements0 = 200;
   const GO numElements1 = 200;
 
-  std::vector<size_t> stridingInfo(1, 1);
-
   // CombinePFactory expects each Psubblock to use index base 0
-  RCP<const Map> subMap0 = StridedMapFactory::Build(lib, numElements0, 0, stridingInfo, comm);
-  RCP<const Map> subMap1 = StridedMapFactory::Build(lib, numElements1, 0, stridingInfo, comm);
+  RCP<const Map> subMap0 = MapFactory::Build(lib, numElements0, 0, comm);
+  RCP<const Map> subMap1 = MapFactory::Build(lib, numElements1, 0, comm);
 
   // Fine blocked operator uses contiguous global IDs across its blocks
-  RCP<const Map> rangeMap0 = StridedMapFactory::Build(lib, numElements0, 0, stridingInfo, comm);
-  RCP<const Map> rangeMap1 = StridedMapFactory::Build(lib, numElements1, numElements0, stridingInfo, comm);
+  RCP<const Map> rangeMap0 = MapFactory::Build(lib, numElements0, 0, comm);
+  RCP<const Map> rangeMap1 = MapFactory::Build(lib, numElements1, 0, comm);
 
   // Build blocked fine operator subblocks
   RCP<CrsMatrixWrap> A00 =
