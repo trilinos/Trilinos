@@ -107,6 +107,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(
     MinvA.xml
     multiPhys4x4.mat
     multiPhys4x4.mat
+    multiphys_blocked_smoother.xml
     multiphys_monolithic_smoother.xml
     null1.mat
     null2.mat
@@ -332,7 +333,7 @@ TRIBITS_ADD_TEST(
 TRIBITS_ADD_TEST(
   MultiphysicsDriver
   NAME "MultiphysicsTestBlockedSmoother"
-  ARGS "--xml=multiphys_blocked_smoother.xml --expected-iters=6 --path=blocked"
+  ARGS "--xml=multiphys_blocked_smoother.xml --expected-iters=8 --path=blocked"
   NUM_MPI_PROCS 4
   COMM mpi
   PASS_REGULAR_EXPRESSION "Belos converged|Skipping test"
