@@ -24,8 +24,9 @@
 #include "MueLu_Exceptions.hpp"
 
 #include <Xpetra_StridedMapFactory.hpp>
-#include <Xpetra_MapExtractorFactory.hpp>
 #include <Xpetra_BlockedCrsMatrix.hpp>
+
+#include <Thyra_DefaultBlockedLinearOp.hpp>
 
 namespace MueLuTests {
 
@@ -282,42 +283,98 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CombinePFactory, CombineWithBlockedFineMatrix,
   RCP<const Map> rangeMap0 = StridedMapFactory::Build(lib, numElements0, 0, stridingInfo, comm);
   RCP<const Map> rangeMap1 = StridedMapFactory::Build(lib, numElements1, numElements0, stridingInfo, comm);
 
-  std::vector<GlobalOrdinal> localGids;
-  {
-    Teuchos::ArrayView<const GlobalOrdinal> map0eleList = rangeMap0->getLocalElementList();
-    localGids.insert(localGids.end(), map0eleList.begin(), map0eleList.end());
-    Teuchos::ArrayView<const GlobalOrdinal> map1eleList = rangeMap1->getLocalElementList();
-    localGids.insert(localGids.end(), map1eleList.begin(), map1eleList.end());
+  // Build blocked fine operator subblocks
+  RCP<CrsMatrixWrap> A00 =
+      Galeri::Xpetra::TriDiag<Scalar, LO, GO, Map, CrsMatrixWrap>(rangeMap0, rangeMap0->getGlobalNumElements(), 2.0, -1.0, -1.0);
+  RCP<CrsMatrixWrap> A01 =
+      Galeri::Xpetra::TriDiag<Scalar, LO, GO, Map, CrsMatrixWrap>(rangeMap0, rangeMap1->getGlobalNumElements(), 1.0, 0.0, 0.0);
+  RCP<CrsMatrixWrap> A10 =
+      Galeri::Xpetra::TriDiag<Scalar, LO, GO, Map, CrsMatrixWrap>(rangeMap1, rangeMap0->getGlobalNumElements(), 1.0, 0.0, 0.0);
+  RCP<CrsMatrixWrap> A11 =
+      Galeri::Xpetra::TriDiag<Scalar, LO, GO, Map, CrsMatrixWrap>(rangeMap1, rangeMap1->getGlobalNumElements(), 3.0, -2.0, -1.0);
+
+  TEST_EQUALITY(A00 != Teuchos::null, true);
+  TEST_EQUALITY(A01 != Teuchos::null, true);
+  TEST_EQUALITY(A10 != Teuchos::null, true);
+  TEST_EQUALITY(A11 != Teuchos::null, true);
+
+  RCP<BlockedCrsMatrix> bA;
+
+#ifdef HAVE_XPETRA_THYRA
+  using TpetraLO   = typename Tpetra::Map<>::local_ordinal_type;
+  using TpetraGO   = typename Tpetra::Map<>::global_ordinal_type;
+  using TpetraNode = typename Tpetra::Map<>::node_type;
+
+  constexpr bool typesMatch =
+      std::is_same_v<LocalOrdinal, TpetraLO> &&
+      std::is_same_v<GlobalOrdinal, TpetraGO> &&
+      std::is_same_v<Node, TpetraNode> &&
+      std::is_same_v<Scalar, double>;
+
+  if (typesMatch) {
+    RCP<Thyra::LinearOpBase<Scalar> > thA00 =
+        Xpetra::ThyraUtils<Scalar, LO, GO, Node>::toThyra(A00->getCrsMatrix());
+    RCP<Thyra::LinearOpBase<Scalar> > thA01 =
+        Xpetra::ThyraUtils<Scalar, LO, GO, Node>::toThyra(A01->getCrsMatrix());
+    RCP<Thyra::LinearOpBase<Scalar> > thA10 =
+        Xpetra::ThyraUtils<Scalar, LO, GO, Node>::toThyra(A10->getCrsMatrix());
+    RCP<Thyra::LinearOpBase<Scalar> > thA11 =
+        Xpetra::ThyraUtils<Scalar, LO, GO, Node>::toThyra(A11->getCrsMatrix());
+
+    TEST_EQUALITY(thA00 != Teuchos::null, true);
+    TEST_EQUALITY(thA01 != Teuchos::null, true);
+    TEST_EQUALITY(thA10 != Teuchos::null, true);
+    TEST_EQUALITY(thA11 != Teuchos::null, true);
+
+    RCP<Thyra::PhysicallyBlockedLinearOpBase<Scalar> > thyraBlockedOp =
+        Thyra::defaultBlockedLinearOp<Scalar>();
+
+    thyraBlockedOp->beginBlockFill(2, 2);
+    thyraBlockedOp->setNonconstBlock(0, 0, thA00);
+    thyraBlockedOp->setNonconstBlock(0, 1, thA01);
+    thyraBlockedOp->setNonconstBlock(1, 0, thA10);
+    thyraBlockedOp->setNonconstBlock(1, 1, thA11);
+    thyraBlockedOp->endBlockFill();
+
+    RCP<const Thyra::BlockedLinearOpBase<Scalar> > thyraBlockedOpConst = thyraBlockedOp;
+
+    bA = Teuchos::rcp(new BlockedCrsMatrix(thyraBlockedOpConst, comm));
+    bA->fillComplete();
   }
-  Teuchos::ArrayView<GlobalOrdinal> eleList(&localGids[0], localGids.size());
-  RCP<const Map> bigMap = StridedMapFactory::Build(lib, numElements0 + numElements1, eleList, 0, stridingInfo, comm);
+#endif
 
-  std::vector<RCP<const Map> > maps;
-  maps.push_back(rangeMap0);
-  maps.push_back(rangeMap1);
+#ifndef HAVE_XPETRA_THYRA
+  // Without Thyra support, the fine matrix cannot be constructed through the Thyra-style constructor.
+  bool threw = false;
+  try {
+    Level fineLevel, coarseLevel;
+    TestHelpers::TestFactory<SC, LO, GO, NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
+    fineLevel.SetFactoryManager(Teuchos::null);
+    coarseLevel.SetFactoryManager(Teuchos::null);
 
-  Teuchos::RCP<const MapExtractor> mapExtractor = MapExtractorFactory::Build(bigMap, maps);
-
-  // Build blocked fine operator
-  RCP<CrsMatrixWrap> A00 = Galeri::Xpetra::TriDiag<Scalar, LO, GO, Map, CrsMatrixWrap>(rangeMap0, rangeMap0->getGlobalNumElements(), 2.0, -1.0, -1.0);
-  RCP<CrsMatrixWrap> A01 = Galeri::Xpetra::TriDiag<Scalar, LO, GO, Map, CrsMatrixWrap>(rangeMap0, rangeMap1->getGlobalNumElements(), 1.0, 0.0, 0.0);
-  RCP<CrsMatrixWrap> A10 = Galeri::Xpetra::TriDiag<Scalar, LO, GO, Map, CrsMatrixWrap>(rangeMap1, rangeMap0->getGlobalNumElements(), 1.0, 0.0, 0.0);
-  RCP<CrsMatrixWrap> A11 = Galeri::Xpetra::TriDiag<Scalar, LO, GO, Map, CrsMatrixWrap>(rangeMap1, rangeMap1->getGlobalNumElements(), 3.0, -2.0, -1.0);
-
-  RCP<BlockedCrsMatrix> bA = Teuchos::rcp(new BlockedCrsMatrix(mapExtractor, mapExtractor, 10));
-  bA->setMatrix(0, 0, A00);
-  bA->setMatrix(0, 1, A01);
-  bA->setMatrix(1, 0, A10);
-  bA->setMatrix(1, 1, A11);
-  bA->fillComplete();
+    fineLevel.Set("A", Teuchos::rcp_dynamic_cast<Matrix>(bA));
+  } catch (const std::exception& e) {
+    threw = true;
+    out << "Caught expected exception without Xpetra/Thyra support: " << e.what() << std::endl;
+  }
+  TEST_EQUALITY(threw || bA == Teuchos::null, true);
+  return;
+#else
+  if (!typesMatch) {
+    TEST_EQUALITY(bA == Teuchos::null, true);
+    return;
+  }
+#endif
 
   TEST_EQUALITY(bA != Teuchos::null, true);
   TEST_EQUALITY(bA->Rows(), 2);
   TEST_EQUALITY(bA->Cols(), 2);
 
   // Valid subblock prolongators
-  RCP<CrsMatrixWrap> P0 = Galeri::Xpetra::TriDiag<Scalar, LO, GO, Map, CrsMatrixWrap>(subMap0, subMap0->getGlobalNumElements(), 2.0, -1.0, -1.0);
-  RCP<CrsMatrixWrap> P1 = Galeri::Xpetra::TriDiag<Scalar, LO, GO, Map, CrsMatrixWrap>(subMap1, subMap1->getGlobalNumElements(), 3.0, -2.0, -1.0);
+  RCP<CrsMatrixWrap> P0 =
+      Galeri::Xpetra::TriDiag<Scalar, LO, GO, Map, CrsMatrixWrap>(subMap0, subMap0->getGlobalNumElements(), 2.0, -1.0, -1.0);
+  RCP<CrsMatrixWrap> P1 =
+      Galeri::Xpetra::TriDiag<Scalar, LO, GO, Map, CrsMatrixWrap>(subMap1, subMap1->getGlobalNumElements(), 3.0, -2.0, -1.0);
 
   TEST_EQUALITY(P0 != Teuchos::null, true);
   TEST_EQUALITY(P1 != Teuchos::null, true);
@@ -339,19 +396,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CombinePFactory, CombineWithBlockedFineMatrix,
 
   coarseLevel.Request("P", PFact.get());
 
-  using TpetraLO   = typename Tpetra::Map<>::local_ordinal_type;
-  using TpetraGO   = typename Tpetra::Map<>::global_ordinal_type;
-  using TpetraNode = typename Tpetra::Map<>::node_type;
-
-#ifdef HAVE_XPETRA_THYRA
-  constexpr bool typesMatch =
-      std::is_same_v<LocalOrdinal, TpetraLO> &&
-      std::is_same_v<GlobalOrdinal, TpetraGO> &&
-      std::is_same_v<Node, TpetraNode> &&
-      std::is_same_v<Scalar, double>;
-
-  bool shouldThrow = !typesMatch;
-
   bool threw = false;
   RCP<Matrix> P;
   try {
@@ -359,10 +403,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CombinePFactory, CombineWithBlockedFineMatrix,
   } catch (const std::exception& e) {
     threw = true;
   }
-  TEST_EQUALITY(threw, shouldThrow);
 
-  if (shouldThrow) return;  // short-circuit test
-
+  TEST_EQUALITY(threw, false);
   TEST_EQUALITY(P != Teuchos::null, true);
 
   RCP<BlockedCrsMatrix> bP = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(P);
@@ -371,7 +413,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CombinePFactory, CombineWithBlockedFineMatrix,
   TEST_EQUALITY(bP->Rows(), 2);
   TEST_EQUALITY(bP->Cols(), 2);
 
-  // Since BuildPBlocked sets only diagonal blocks, verify off-diagonals are null
+  // Since BuildPBlocked sets only diagonal blocks, verify off-diagonals are null/empty
   TEST_EQUALITY(bP->getMatrix(0, 0) != Teuchos::null, true);
   TEST_EQUALITY(bP->getMatrix(1, 1) != Teuchos::null, true);
 
@@ -392,18 +434,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CombinePFactory, CombineWithBlockedFineMatrix,
   TEST_EQUALITY(bP->getMatrix(1, 1)->getGlobalNumRows(), P1->getGlobalNumRows());
   TEST_EQUALITY(bP->getMatrix(0, 0)->getGlobalNumEntries(), P0->getGlobalNumEntries());
   TEST_EQUALITY(bP->getMatrix(1, 1)->getGlobalNumEntries(), P1->getGlobalNumEntries());
-
-#else
-  bool threw = false;
-  try {
-    RCP<Matrix> P = coarseLevel.Get<RCP<Matrix> >("P", PFact.get());
-    (void)P;
-  } catch (const std::exception& e) {
-    threw = true;
-    out << "Caught expected exception without Xpetra/Thyra support: " << e.what() << std::endl;
-  }
-  TEST_EQUALITY(threw, true);
-#endif
 }
 
 #define MUELU_ETI_GROUP(SC, LO, GO, Node)                                                               \
