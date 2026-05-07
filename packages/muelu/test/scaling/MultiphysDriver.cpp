@@ -271,6 +271,25 @@ bool SolveWithMultiPhys(
 }
 #endif
 
+enum class SolvePath {
+  Monolithic,
+  Blocked
+};
+
+SolvePath ParseSolvePath(const std::string& path) {
+  if (path == "monolithic")
+    return SolvePath::Monolithic;
+  if (path == "blocked")
+    return SolvePath::Blocked;
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::invalid_argument,
+      "Invalid value for --path: \"" << path
+                                     << "\". Valid options are: monolithic, blocked");
+
+  return SolvePath::Monolithic;
+}
+
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib lib, int argc, char* argv[]) {
 #include <MueLu_UseShortNames.hpp>
@@ -302,6 +321,8 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib lib, int arg
 
     clp.setOption("xml", &mueluXmlFile,
                   "Required: XML file containing MueLu parameters");
+    clp.setOption("path", &pathString,
+                  "Solve path to run: monolithic or blocked");
 
     Teuchos::CommandLineProcessor::EParseCommandLineReturn parseResult = clp.parse(argc, argv);
     if (parseResult != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL)
@@ -314,6 +335,8 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib lib, int arg
 
     auto params = Teuchos::getParametersFromXmlFile(mueluXmlFile);
 
+    const SolvePath path = ParseSolvePath(pathString);
+
     Scalar alpha = Teuchos::as<Scalar>(alpha_in);
     Scalar beta  = Teuchos::as<Scalar>(beta_in);
 
@@ -321,8 +344,9 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib lib, int arg
 
 #ifdef HAVE_MUELU_BELOS
     int iters          = -1;
+    auto matrix        = path == SolvePath::Monolithic ? objs.monolithicA : Teuchos::rcp_dynamic_cast<Matrix>(objs.blockedA);
     const auto solveOK = SolveWithMultiPhys<Scalar, LocalOrdinal, GlobalOrdinal, Node>(
-        objs.monolithicA,
+        matrix,
         objs.auxMatrices,
         objs.nullspaces,
         objs.coords,
