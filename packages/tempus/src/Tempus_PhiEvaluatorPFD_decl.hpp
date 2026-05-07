@@ -36,12 +36,12 @@ class PhiEvaluatorPFD
   /// compute the Phi_k function of cdt times Jacobian for right hand side rhs_b
   Thyra::SolveStatus<Scalar> computePhi(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
 					const int phi_order, Scalar cdt,
-					const Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mrhs_b) override;
+					const Teuchos::RCP<const Thyra::VectorBase<Scalar>> &Mrhs_b) override;
 
   /// compute the Phi_k function of cdt times Jacobian for a linear combination with right hand side vector rhs_B
   Thyra::SolveStatus<Scalar> computePhis(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
-					 const Scalar cdt,
-					 const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> Mrhs_B) override;
+                                         const Scalar cdt,
+                                         const Teuchos::ArrayView<const Teuchos::RCP<const Thyra::VectorBase<Scalar>>> &Mrhs_B) override;
 
  protected:
   Thyra::SolveStatus<Scalar> computeLinOpPhi(const int phi_order,
