@@ -1450,6 +1450,132 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, FastILDL, Scalar, Loca
   TEST_COMPARE_FLOATING_ARRAYS(yview, zview, 4 * STS::eps());
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, EquilNoOverlap, Scalar, LO, GO) {
+  typedef Tpetra::CrsMatrix<Scalar, LO, GO, Node> crs_matrix_type;
+  typedef Tpetra::Map<LO, GO, Node> map_type;
+  typedef Tpetra::MultiVector<Scalar, LO, GO, Node> MV;
+  typedef Tpetra::RowMatrix<Scalar, LO, GO, Node> row_matrix_type;
+  typedef Teuchos::ScalarTraits<Scalar> STS;
+
+  out << "Ifpack2::AdditiveSchwarz: EquilNoOverlap" << endl;
+  Teuchos::OSTab tab1(out);
+
+  const Tpetra::global_size_t num_rows_per_proc = 10;
+
+  RCP<const map_type> rowmap =
+      tif_utest::create_tpetra_map<LO, GO, Node>(num_rows_per_proc);
+  RCP<const crs_matrix_type> crsmatrix =
+      tif_utest::create_banded_matrix<Scalar, LO, GO, Node>(rowmap, 3);
+
+  // Input vector
+  MV x(rowmap, 2);
+  x.randomize();
+
+  // Parameters without equilibration
+  Teuchos::ParameterList paramsBase;
+  paramsBase.set("inner preconditioner name", "DENSE");
+  paramsBase.set("schwarz: overlap level", 0);
+  paramsBase.set("schwarz: combine mode", "ZERO");
+  paramsBase.set("schwarz: use reordering", false);
+  paramsBase.set("schwarz: subdomain 1-norm equilibration", false);
+
+  // Parameters with equilibration
+  Teuchos::ParameterList paramsEquil = paramsBase;
+  paramsEquil.set("schwarz: subdomain 1-norm equilibration", true);
+
+  Ifpack2::AdditiveSchwarz<row_matrix_type> precBase(crsmatrix);
+  Ifpack2::AdditiveSchwarz<row_matrix_type> precEquil(crsmatrix);
+
+  TEST_NOTHROW(precBase.setParameters(paramsBase));
+  TEST_NOTHROW(precEquil.setParameters(paramsEquil));
+
+  TEST_NOTHROW(precBase.initialize());
+  TEST_NOTHROW(precEquil.initialize());
+
+  TEST_NOTHROW(precBase.compute());
+  TEST_NOTHROW(precEquil.compute());
+
+  MV yBase(rowmap, 2), yEquil(rowmap, 2);
+
+  TEST_NOTHROW(precBase.apply(x, yBase));
+  TEST_NOTHROW(precEquil.apply(x, yEquil));
+
+  Teuchos::ArrayRCP<const Scalar> yBaseView  = yBase.get1dView();
+  Teuchos::ArrayRCP<const Scalar> yEquilView = yEquil.get1dView();
+
+  TEST_COMPARE_FLOATING_ARRAYS(
+      yBaseView, yEquilView,
+      100 * STS::eps());
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, EquilReorder, Scalar, LO, GO) {
+  typedef Tpetra::CrsMatrix<Scalar, LO, GO, Node> crs_matrix_type;
+  typedef Tpetra::Map<LO, GO, Node> map_type;
+  typedef Tpetra::MultiVector<Scalar, LO, GO, Node> MV;
+  typedef Tpetra::RowMatrix<Scalar, LO, GO, Node> row_matrix_type;
+  typedef Teuchos::ScalarTraits<Scalar> STS;
+
+  out << "Ifpack2::AdditiveSchwarz: EquilReorder" << endl;
+  Teuchos::OSTab tab1(out);
+
+  const Tpetra::global_size_t num_rows_per_proc = 10;
+
+  RCP<const map_type> rowmap =
+      tif_utest::create_tpetra_map<LO, GO, Node>(num_rows_per_proc);
+
+  // Use a matrix with some off-diagonal structure so overlap/reordering matter.
+  RCP<const crs_matrix_type> crsmatrix =
+      tif_utest::create_banded_matrix<Scalar, LO, GO, Node>(rowmap, 5);
+
+  MV x(rowmap, 2);
+  x.randomize();
+
+  Teuchos::ParameterList paramsBase;
+  paramsBase.set("inner preconditioner name", "DENSE");
+  paramsBase.set("schwarz: overlap level", 1);
+  paramsBase.set("schwarz: combine mode", "ZERO");
+  paramsBase.set("schwarz: subdomain 1-norm equilibration", false);
+
+#if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
+  paramsBase.set("schwarz: use reordering", true);
+  {
+    Teuchos::ParameterList zlist;
+    zlist.set("order_method", "rcm");
+    zlist.set("order_method_type", "local");
+    paramsBase.set("schwarz: reordering list", zlist);
+  }
+#else
+  paramsBase.set("schwarz: use reordering", false);
+#endif
+
+  Teuchos::ParameterList paramsEquil = paramsBase;
+  paramsEquil.set("schwarz: subdomain 1-norm equilibration", true);
+
+  Ifpack2::AdditiveSchwarz<row_matrix_type> precBase(crsmatrix);
+  Ifpack2::AdditiveSchwarz<row_matrix_type> precEquil(crsmatrix);
+
+  TEST_NOTHROW(precBase.setParameters(paramsBase));
+  TEST_NOTHROW(precEquil.setParameters(paramsEquil));
+
+  TEST_NOTHROW(precBase.initialize());
+  TEST_NOTHROW(precEquil.initialize());
+
+  TEST_NOTHROW(precBase.compute());
+  TEST_NOTHROW(precEquil.compute());
+
+  MV yBase(rowmap, 2), yEquil(rowmap, 2);
+
+  TEST_NOTHROW(precBase.apply(x, yBase));
+  TEST_NOTHROW(precEquil.apply(x, yEquil));
+
+  Teuchos::ArrayRCP<const Scalar> yBaseView  = yBase.get1dView();
+  Teuchos::ArrayRCP<const Scalar> yEquilView = yEquil.get1dView();
+
+  TEST_COMPARE_FLOATING_ARRAYS(
+      yBaseView, yEquilView,
+      200 * STS::eps());
+}
+
 #if defined(HAVE_IFPACK2_AMESOS2) and defined(HAVE_IFPACK2_XPETRA) and (defined(HAVE_AMESOS2_SUPERLU) || defined(HAVE_AMESOS2_KLU2))
 
 #define IFPACK2_AMESOS2_SUPERLU_SCALAR_ORDINAL(Scalar, LocalOrdinal, GlobalOrdinal) \
@@ -1479,6 +1605,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, FastILDL, Scalar, Loca
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(Ifpack2AdditiveSchwarz, ILU_NonOverlap, Scalar, LocalOrdinal, GlobalOrdinal)     \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(Ifpack2AdditiveSchwarz, SGS_NonOverlap, Scalar, LocalOrdinal, GlobalOrdinal)     \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(Ifpack2AdditiveSchwarz, SGS_Overlap, Scalar, LocalOrdinal, GlobalOrdinal)        \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(Ifpack2AdditiveSchwarz, EquilNoOverlap, Scalar, LocalOrdinal, GlobalOrdinal)     \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(Ifpack2AdditiveSchwarz, EquilReorder, Scalar, LocalOrdinal, GlobalOrdinal)       \
   IFPACK2_AMESOS2_SUPERLU_SCALAR_ORDINAL(Scalar, LocalOrdinal, GlobalOrdinal)                                           \
   IFPACK2_FASTILU_SCALAR_ORDINAL(Scalar, LocalOrdinal, GlobalOrdinal)
 
