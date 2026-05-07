@@ -168,7 +168,7 @@ private:
 
   // Members
   int num_threads;
-  int schur_size;
+  size_t schur_size;
   host_ordinal_type_array schur_part;
   host_value_type_array   schur_out;
   scalar_type* schur_out_ptr;

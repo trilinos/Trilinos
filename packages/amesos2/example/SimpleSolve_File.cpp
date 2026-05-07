@@ -55,6 +55,10 @@ int main(int argc, char *argv[]) {
   typedef Tpetra::MatrixMarket::Reader<ID> IDReader;
   typedef Tpetra::Map<LO,GO> MAP;
 
+  typedef Teuchos::ArrayRCP<const LO> SchurPart_type;
+  typedef Teuchos::Array<Scalar>      SchurOut_type;
+  typedef typename SchurOut_type::size_type size_type;
+
   using Tpetra::global_size_t;
   using Tpetra::Import;
   using Teuchos::RCP;
@@ -246,10 +250,10 @@ int main(int argc, char *argv[]) {
     std::cout << solver->description() << std::endl << std::endl;
   }
 
-  int n2 = 0;
+  size_type n2 = 0;
   int dense_schur = 0;
   RCP<ID> SchurPart;
-  Teuchos::Array<Scalar> schurOut;
+  SchurOut_type schurOut;
   if (xml_filename != "") {
     Teuchos::ParameterList test_params = Teuchos::ParameterXMLFileReader(xml_filename).getParameters();
     Teuchos::ParameterList& amesos2_params = test_params.sublist("Amesos2");
@@ -270,7 +274,7 @@ int main(int argc, char *argv[]) {
           SchurPart = rcp(new ID(SerialMap, 1));
           SchurPart->putScalar(0); // no schur
         }
-        Teuchos::ArrayRCP<const LO> schurPart = SchurPart->getData(0);
+        SchurPart_type schurPart = SchurPart->getData(0);
         shylubasker_params.set("SchurPart", schurPart.getRawPtr());
 
         // storage for output schur comp
@@ -338,9 +342,9 @@ int main(int argc, char *argv[]) {
       comm->barrier();
       if (dense_schur == 2 && myRank == 0 && printMatrix) {
         printf("S=[\n");
-        for (int i = 0; i < n2; i++) {
-          for (int j = 0; j < n2; j++) printf("%.16e ",schurOut[i+j*n2]);
-          printf("\n");
+        for (size_type i = 0; i < n2; i++) {
+          for (size_type j = 0; j < n2; j++) *fos << schurOut[i+j*n2];
+          *fos << std::endl;
         }
         printf("];\n");
       }
