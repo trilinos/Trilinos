@@ -679,6 +679,186 @@ void AdditiveSchwarzFilter<MatrixType>::computeAndApplyEquilibration() {
                                        Tpetra::SCALING_DIVIDE);
 }
 
+namespace {
+template <class ViewType1,
+          class ViewType2,
+          class IndexType,
+          const bool takeSquareRootsOfScalingFactors,
+          const bool takeAbsoluteValueOfScalingFactors =
+              !std::is_same<
+                  typename KokkosKernels::ArithTraits<
+                      typename ViewType1::non_const_value_type>::mag_type,
+                  typename ViewType2::non_const_value_type>::value,
+          const int rank = ViewType1::rank>
+class ElementWiseDivide {
+};
+template <class ViewType1,
+          class ViewType2,
+          class IndexType,
+          const bool takeSquareRootsOfScalingFactors,
+          const bool takeAbsoluteValueOfScalingFactors>
+class ElementWiseDivide<ViewType1,
+                        ViewType2,
+                        IndexType,
+                        takeSquareRootsOfScalingFactors,
+                        takeAbsoluteValueOfScalingFactors,
+                        1> {
+ public:
+  static_assert(ViewType1::rank == 1,
+                "ViewType1 must be a rank-1 "
+                "Kokkos::View in order to use this specialization.");
+
+  ElementWiseDivide(const ViewType1& X,
+                    const ViewType2& scalingFactors)
+    : X_(X)
+    , scalingFactors_(scalingFactors) {}
+
+  KOKKOS_INLINE_FUNCTION void operator()(const IndexType i) const {
+    using val_type = typename ViewType2::non_const_value_type;
+    using KAT      = KokkosKernels::ArithTraits<val_type>;
+    using mag_type = typename KAT::mag_type;
+    using KAM      = KokkosKernels::ArithTraits<mag_type>;
+
+    if (takeAbsoluteValueOfScalingFactors) {
+      const mag_type scalFactAbs  = KAT::abs(scalingFactors_(i));
+      const mag_type scalFinalVal = takeSquareRootsOfScalingFactors ? KAM::sqrt(scalFactAbs) : scalFactAbs;
+      X_(i)                       = X_(i) / scalFinalVal;
+    } else {
+      const val_type scalFact     = scalingFactors_(i);
+      const val_type scalFinalVal = takeSquareRootsOfScalingFactors ? KAT::sqrt(scalFact) : scalFact;
+      X_(i)                       = X_(i) / scalFinalVal;
+    }
+  }
+
+ private:
+  ViewType1 X_;
+  typename ViewType2::const_type scalingFactors_;
+};
+
+template <class ViewType1,
+          class ViewType2,
+          class IndexType,
+          const bool takeSquareRootsOfScalingFactors,
+          const bool takeAbsoluteValueOfScalingFactors>
+class ElementWiseDivide<ViewType1,
+                        ViewType2,
+                        IndexType,
+                        takeSquareRootsOfScalingFactors,
+                        takeAbsoluteValueOfScalingFactors,
+                        2> {
+ public:
+  static_assert(ViewType1::rank == 2,
+                "ViewType1 must be a rank-2 "
+                "Kokkos::View in order to use this specialization.");
+
+  ElementWiseDivide(const ViewType1& X,
+                    const ViewType2& scalingFactors)
+    : X_(X)
+    , scalingFactors_(scalingFactors) {}
+
+  KOKKOS_INLINE_FUNCTION void operator()(const IndexType i) const {
+    using val_type = typename ViewType2::non_const_value_type;
+    using KAT      = KokkosKernels::ArithTraits<val_type>;
+    using mag_type = typename KAT::mag_type;
+    using KAM      = KokkosKernels::ArithTraits<mag_type>;
+
+    for (IndexType j = 0; j < static_cast<IndexType>(X_.extent(1)); ++j) {
+      if (takeAbsoluteValueOfScalingFactors) {
+        const mag_type scalFactAbs  = KAT::abs(scalingFactors_(i));
+        const mag_type scalFinalVal = takeSquareRootsOfScalingFactors ? KAM::sqrt(scalFactAbs) : scalFactAbs;
+        X_(i, j)                    = X_(i, j) / scalFinalVal;
+      } else {
+        const val_type scalFact     = scalingFactors_(i);
+        const val_type scalFinalVal = takeSquareRootsOfScalingFactors ? KAT::sqrt(scalFact) : scalFact;
+        X_(i, j)                    = X_(i, j) / scalFinalVal;
+      }
+    }
+  }
+
+ private:
+  ViewType1 X_;
+  typename ViewType2::const_type scalingFactors_;
+};
+
+template <class MultiVectorViewType,
+          class ScalingFactorsViewType,
+          class IndexType>
+void elementWiseDivide(const MultiVectorViewType& X,
+                       const ScalingFactorsViewType& scalingFactors,
+                       const IndexType numRows,
+                       const bool takeSquareRootsOfScalingFactors,
+                       const bool takeAbsoluteValueOfScalingFactors =
+                           !std::is_same<
+                               typename KokkosKernels::ArithTraits<
+                                   typename MultiVectorViewType::non_const_value_type>::mag_type,
+                               typename ScalingFactorsViewType::non_const_value_type>::value) {
+  using execution_space = typename MultiVectorViewType::device_type::execution_space;
+  using range_type      = Kokkos::RangePolicy<execution_space, IndexType>;
+
+  if (takeAbsoluteValueOfScalingFactors) {
+    constexpr bool takeAbsVal = true;
+    if (takeSquareRootsOfScalingFactors) {
+      constexpr bool takeSquareRoots = true;
+      using functor_type             = ElementWiseDivide<MultiVectorViewType,
+                                             ScalingFactorsViewType, IndexType, takeSquareRoots, takeAbsVal>;
+      Kokkos::parallel_for("elementWiseDivide",
+                           range_type(0, numRows),
+                           functor_type(X, scalingFactors));
+    } else {
+      constexpr bool takeSquareRoots = false;
+      using functor_type             = ElementWiseDivide<MultiVectorViewType,
+                                             ScalingFactorsViewType, IndexType, takeSquareRoots, takeAbsVal>;
+      Kokkos::parallel_for("elementWiseDivide",
+                           range_type(0, numRows),
+                           functor_type(X, scalingFactors));
+    }
+  } else {
+    constexpr bool takeAbsVal = false;
+    if (takeSquareRootsOfScalingFactors) {
+      constexpr bool takeSquareRoots = true;
+      using functor_type             = ElementWiseDivide<MultiVectorViewType,
+                                             ScalingFactorsViewType, IndexType, takeSquareRoots, takeAbsVal>;
+      Kokkos::parallel_for("elementWiseDivide",
+                           range_type(0, numRows),
+                           functor_type(X, scalingFactors));
+    } else {
+      constexpr bool takeSquareRoots = false;
+      using functor_type             = ElementWiseDivide<MultiVectorViewType,
+                                             ScalingFactorsViewType, IndexType, takeSquareRoots, takeAbsVal>;
+      Kokkos::parallel_for("elementWiseDivide",
+                           range_type(0, numRows),
+                           functor_type(X, scalingFactors));
+    }
+  }
+}
+
+template <class MultiVectorType, class ScalingFactorsViewType>
+void elementWiseDivideMultiVector(MultiVectorType& X,
+                                  const ScalingFactorsViewType& scalingFactors,
+                                  const bool takeSquareRootsOfScalingFactors,
+                                  const bool takeAbsoluteValueOfScalingFactors =
+                                      !std::is_same<
+                                          typename KokkosKernels::ArithTraits<
+                                              typename MultiVectorType::scalar_type>::mag_type,
+                                          typename ScalingFactorsViewType::non_const_value_type>::value) {
+  using index_type            = typename MultiVectorType::local_ordinal_type;
+  const index_type lclNumRows = static_cast<index_type>(X.getLocalLength());
+
+  auto X_lcl = X.getLocalViewDevice(Tpetra::Access::ReadWrite);
+  if (static_cast<std::size_t>(X.getNumVectors()) == std::size_t(1)) {
+    using pair_type = Kokkos::pair<index_type, index_type>;
+    auto X_lcl_1d   = Kokkos::subview(X_lcl, pair_type(0, lclNumRows), 0);
+    elementWiseDivide(X_lcl_1d, scalingFactors, lclNumRows,
+                      takeSquareRootsOfScalingFactors,
+                      takeAbsoluteValueOfScalingFactors);
+  } else {
+    elementWiseDivide(X_lcl, scalingFactors, lclNumRows,
+                      takeSquareRootsOfScalingFactors,
+                      takeAbsoluteValueOfScalingFactors);
+  }
+}
+}  // namespace
+
 template <class MatrixType>
 void AdditiveSchwarzFilter<MatrixType>::scaleReducedRHS(mv_type& B) const {
   if (!UseEquilibration_) return;

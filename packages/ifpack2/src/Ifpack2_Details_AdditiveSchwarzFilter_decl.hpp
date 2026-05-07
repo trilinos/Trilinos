@@ -356,6 +356,11 @@ class AdditiveSchwarzFilter : public Ifpack2::Details::RowMatrix<MatrixType> {
   /// Used by both the constructor and updateMatrixValues().
   void fillLocalMatrix(local_matrix_type localMatrix);
 
+  void scaleReducedRHS(mv_type& B) const;
+  void unscaleReducedLHS(mv_type& Y) const;
+
+  bool isEquilibrated() const { return UseEquilibration_; };
+
   //@}
 
  private:
@@ -383,10 +388,6 @@ class AdditiveSchwarzFilter : public Ifpack2::Details::RowMatrix<MatrixType> {
   mapPairsAreFitted(const row_matrix_type& A);
 
   void computeAndApplyEquilibration();
-  void scaleReducedRHS(mv_type& B) const;
-  void unscaleReducedLHS(mv_type& Y) const;
-
-  bool isEquilibrated() const { return UseEquilibration_; };
 
   //! Pointer to the matrix to be preconditioned.
   Teuchos::RCP<const row_matrix_type> A_unfiltered_;
