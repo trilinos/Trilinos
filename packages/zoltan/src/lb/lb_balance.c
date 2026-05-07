@@ -3,6 +3,7 @@
 //  Zoltan Toolkit for Load-balancing, Partitioning, Ordering and Coloring
 //
 // Copyright 2012 NTESS and the Zoltan contributors.
+// Copyright 2026 CSC - IT Center for Science Ltd. <www.csc.fi>
 // SPDX-License-Identifier: BSD-3-Clause
 // *****************************************************************************
 // @HEADER
