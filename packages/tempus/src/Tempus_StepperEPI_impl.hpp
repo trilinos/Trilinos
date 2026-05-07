@@ -141,11 +141,12 @@ void StepperEPI<Scalar>::takeStep(
       StepperEPIAppAction<Scalar>::ACTION_LOCATION::BEGIN_STEP);
 
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
-    // RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
-    // TODO: Figure out why we need this hack:
-    RCP<SolutionState<Scalar> > currentState=solutionHistory->getWorkingState();
+    RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
 
-    RCP<const Thyra::VectorBase<Scalar> > xOld = currentState->getX();
+    // TODO: Figure out why we need this hack:
+    // RCP<const Thyra::VectorBase<Scalar> > xOld = currentState->getX();
+
+    RCP<const Thyra::VectorBase<Scalar> > xOld = workingState->getX();
     RCP<Thyra::VectorBase<Scalar> > x = workingState->getX();
     if (workingState->getXDot() != Teuchos::null)
       this->setStepperXDot(workingState->getXDot());
@@ -165,83 +166,82 @@ void StepperEPI<Scalar>::takeStep(
 
     Thyra::SolveStatus<Scalar> sStatus;
 
-      // Setup TimeDerivative
-      timeDer = Teuchos::rcp(new StepperEPITimeDerivative<Scalar>(
-        1/dt, xOld));
-      auto p = Teuchos::rcp(new ImplicitODEParameters<Scalar>(
-          timeDer, dt, Scalar(0.0), Scalar(1.0)));
+    // Setup TimeDerivative
+    timeDer = Teuchos::rcp(new StepperEPITimeDerivative<Scalar>(
+                                                                1/dt, xOld));
+    auto p = Teuchos::rcp(new ImplicitODEParameters<Scalar>(
+                                                            timeDer, dt, Scalar(0.0), Scalar(1.0)));
 
-      // TODO: Transition away from using implicit solver methods and use ModelEvaluator directly
-      Teuchos::ArrayRCP<RCP<const Thyra::VectorBase<Scalar>>> Mrhs_B(3);
-      // Mrhs_B is default initialized with Teuchos::null
+    // TODO: Transition away from using implicit solver methods and use ModelEvaluator directly
+    Teuchos::ArrayRCP<RCP<const Thyra::VectorBase<Scalar>>> Mrhs_B(3);
+    // Mrhs_B is default initialized with Teuchos::null
 
-      // set the right hand side for the Phi_1 function
-      RCP<Thyra::VectorBase<Scalar>> Mf = x->clone_v();
-      this->evaluateImplicitODE(Mf, x, xDot, time, p);
-      Mrhs_B[1] = Mf;
+    // set the right hand side for the Phi_1 function
+    RCP<Thyra::VectorBase<Scalar>> Mf = x->clone_v();
+    this->evaluateImplicitODE(Mf, x, xDot, time, p);
+    Mrhs_B[1] = Mf;
 
-      // if requested, compute the time derivative for the nonaotonomous correction
-      RCP<Thyra::VectorBase<Scalar>> dt_Mf_deriv;
-      if (temporal_finite_difference_eps_ > 0.0) {
-        dt_Mf_deriv = x->clone_v();
-        this->evaluateImplicitODE(dt_Mf_deriv, x, xDot, time + dt * temporal_finite_difference_eps_, p);
-        // we compute dt times finite difference of Mf, subtract Mf / eps from dt_Mf_deriv / eps
-        Thyra::linear_combination<Scalar>(Teuchos::tuple(-1. / temporal_finite_difference_eps_),
-                                          Teuchos::tuple(Mf.getConst().ptr()),
-                                          1. / temporal_finite_difference_eps_,
-                                          dt_Mf_deriv.ptr());
-        // compute rhs for phi_s functions.
-        Mrhs_B[2] = dt_Mf_deriv;
-      }
+    // if requested, compute the time derivative for the nonaotonomous correction
+    RCP<Thyra::VectorBase<Scalar>> dt_Mf_deriv;
+    if (temporal_finite_difference_eps_ > 0.0) {
+      dt_Mf_deriv = x->clone_v();
+      this->evaluateImplicitODE(dt_Mf_deriv, x, xDot, time + dt * temporal_finite_difference_eps_, p);
+      // we compute dt times finite difference of Mf, subtract Mf / eps from dt_Mf_deriv / eps
+      Thyra::linear_combination<Scalar>(Teuchos::tuple(-1. / temporal_finite_difference_eps_),
+                                        Teuchos::tuple(Mf.getConst().ptr()),
+                                        1. / temporal_finite_difference_eps_,
+                                        dt_Mf_deriv.ptr());
+      // compute rhs for phi_s functions.
+      Mrhs_B[2] = dt_Mf_deriv;
+    }
 
-      // f = M*xDot in here
-      std::cout << "xO[0,1] = " << Thyra::get_ele(*xOld, 0) << " " << Thyra::get_ele(*xOld, 1) << std::endl;
-      std::cout << "x[0,1]  = " << Thyra::get_ele(*x, 0) << " " << Thyra::get_ele(*x, 1) << std::endl;
-      // std::cout << "f[0,1]  = " << Thyra::get_ele(*f, 0) << " " << Thyra::get_ele(*f, 1) << std::endl;
+    // f = M*xDot in here
+    std::cout << "xO[0,1] = " << Thyra::get_ele(*xOld, 0) << " " << Thyra::get_ele(*xOld, 1) << std::endl;
+    std::cout << "x[0,1]  = " << Thyra::get_ele(*x, 0) << " " << Thyra::get_ele(*x, 1) << std::endl;
+    // std::cout << "f[0,1]  = " << Thyra::get_ele(*f, 0) << " " << Thyra::get_ele(*f, 1) << std::endl;
 
-      // Using the appModel
-      RCP<const Thyra::ModelEvaluator<Scalar>> appModel = this->getModel();
-      Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs = appModel->createInArgs();
-      // Model evaluator builds: alpha*u_dot + beta*F(u) = 0
-      inArgs.set_x(x);
-      inArgs.set_t(time);
-      inArgs.set_x_dot(xDot); // for what? xDot is zero at this point, updating of it not decided
+    // Using the appModel
+    RCP<const Thyra::ModelEvaluator<Scalar>> appModel = this->getModel();
+    Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs = appModel->createInArgs();
+    // Model evaluator builds: alpha*u_dot + beta*F(u) = 0
+    inArgs.set_x(x);
+    inArgs.set_t(time);
+    inArgs.set_x_dot(xDot); // for what? xDot is zero at this point, updating of it not decided
 
-      // initialize space for the update
-      RCP<Thyra::VectorBase<Scalar>> vphi = x->clone_v();
-      assign(vphi.ptr(), ST::zero());  // Must initialize to a guess before solve!
+    // initialize space for the update
+    RCP<Thyra::VectorBase<Scalar>> vphi = x->clone_v();
+    assign(vphi.ptr(), ST::zero());  // Must initialize to a guess before solve!
 
-      // auto thyraModel = this->getModel();
-      // auto inArgs_tyra  = thyraModel->createInArgs();
-      // auto outArgs_tyra = thyraModel->createOutArgs();
-      // auto curr = solutionHistory->getCurrentState();
+    // auto thyraModel = this->getModel();
+    // auto inArgs_tyra  = thyraModel->createInArgs();
+    // auto outArgs_tyra = thyraModel->createOutArgs();
+    // auto curr = solutionHistory->getCurrentState();
 
-      // inArgs_tyra.set_x(curr->getX());
-      // inArgs_tyra.set_t(curr->getTime());
+    // inArgs_tyra.set_x(curr->getX());
+    // inArgs_tyra.set_t(curr->getTime());
 
-      // auto W = thyraModel->create_W_op();
-      // outArgs_tyra.set_W_op(W);
+    // auto W = thyraModel->create_W_op();
+    // outArgs_tyra.set_W_op(W);
 
-      // thyraModel->evalModel(inArgs_tyra, outArgs_tyra);
+    // thyraModel->evalModel(inArgs_tyra, outArgs_tyra);
 
-      phiEvaluator_->setLinearizationPoint(inArgs);
-      // TODO: Avoid using hard coded EPI2 (p=2) and adjust the logic for general p.
-      // TODO: right now, we have p=1 for EPI2, since we do not compute dF/dt yet
-      // (correct only for autonomous problems)
-      if (temporal_finite_difference_eps_ > 0.0) {
-        sStatus = phiEvaluator_->computePhis(vphi.ptr(), dt, Mrhs_B());
-        // TODO can also call this with
-        //sStatus = phiEvaluator_->computePhis(vphi.ptr(), dt, Teuchos::tuple(Teuchos::null, Mf.getConst(), dt_Mf_deriv.getConst()));
-      }
-      else {
-        sStatus = phiEvaluator_->computePhi(vphi.ptr(), 1, dt, Mf);
-      }
+    phiEvaluator_->setLinearizationPoint(inArgs);
+    // TODO: Avoid using hard coded EPI2 (p=2) and adjust the logic for general p.
+    // TODO: right now, we have p=1 for EPI2, since we do not compute dF/dt yet
+    // (correct only for autonomous problems)
+    if (temporal_finite_difference_eps_ > 0.0) {
+      sStatus = phiEvaluator_->computePhis(vphi.ptr(), dt, Mrhs_B());
+      // TODO can also call this with
+      // sStatus = phiEvaluator_->computePhis(vphi.ptr(), dt, Teuchos::tuple(Teuchos::null, Mf.getConst(), dt_Mf_deriv.getConst()));
+    }
+    else {
+      sStatus = phiEvaluator_->computePhi(vphi.ptr(), 1, dt, Mf);
+    }
 
-      //   std::cout << "xO[0,1] = " << Thyra::get_ele(*xOld, 0) << " " << Thyra::get_ele(*xOld, 1) << std::endl;
-      // std::cout << "x[0,1]  = " << Thyra::get_ele(*x, 0) << " " << Thyra::get_ele(*x, 1) << std::endl;
-      // std::cout << "vphi[0,1]  = " << Thyra::get_ele(*vphi, 0) << " " << Thyra::get_ele(*vphi, 1) << std::endl;
-      Thyra::V_VpStV(x.ptr(), *xOld, Scalar(-1.0)*dt, *vphi);
-
+    //   std::cout << "xO[0,1] = " << Thyra::get_ele(*xOld, 0) << " " << Thyra::get_ele(*xOld, 1) << std::endl;
+    // std::cout << "x[0,1]  = " << Thyra::get_ele(*x, 0) << " " << Thyra::get_ele(*x, 1) << std::endl;
+    // std::cout << "vphi[0,1]  = " << Thyra::get_ele(*vphi, 0) << " " << Thyra::get_ele(*vphi, 1) << std::endl;
+    Thyra::V_VpStV(x.ptr(), *xOld, Scalar(-1.0)*dt, *vphi);
 
     // std::cout << sStatus << std::endl;
 
