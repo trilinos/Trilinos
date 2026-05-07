@@ -339,8 +339,30 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CombinePFactory, CombineWithBlockedFineMatrix,
 
   coarseLevel.Request("P", PFact.get());
 
+  using TpetraLO   = typename Tpetra::Map<>::local_ordinal_type;
+  using TpetraGO   = typename Tpetra::Map<>::global_ordinal_type;
+  using TpetraNode = typename Tpetra::Map<>::node_type;
+
 #ifdef HAVE_XPETRA_THYRA
-  RCP<Matrix> P = coarseLevel.Get<RCP<Matrix> >("P", PFact.get());
+  constexpr bool typesMatch =
+      std::is_same_v<LocalOrdinal, TpetraLO> &&
+      std::is_same_v<GlobalOrdinal, TpetraGO> &&
+      std::is_same_v<Node, TpetraNode> &&
+      std::is_same_v<Scalar, double>;
+
+  bool shouldThrow = !typesMatch;
+
+  bool threw = false;
+  RCP<Matrix> P;
+  try {
+    P = coarseLevel.Get<RCP<Matrix> >("P", PFact.get());
+  } catch (const std::exception& e) {
+    threw = true;
+  }
+  TEST_EQUALITY(threw, shouldThrow);
+
+  if (shouldThrow) return;  // short-circuit test
+
   TEST_EQUALITY(P != Teuchos::null, true);
 
   RCP<BlockedCrsMatrix> bP = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(P);
