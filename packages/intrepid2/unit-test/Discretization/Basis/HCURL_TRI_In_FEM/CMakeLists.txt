@@ -121,13 +121,10 @@ IF(Kokkos_ENABLE_OPENMP)
   LIST(APPEND Intrepid2_TEST_ETI_DEVICE_NAME "OpenMP")
   LIST(APPEND Intrepid2_TEST_ETI_DEVICE      "Kokkos::Device<Kokkos::OpenMP,Kokkos::HostSpace>")
 ENDIF()
-# CAG 02/03/2026: Disabling the test since it requires pretty
-# large tolerances to pass. There might be an underlying issue
-# that needs to be fixed.
-# IF(Kokkos_ENABLE_CUDA)
-#   LIST(APPEND Intrepid2_TEST_ETI_DEVICE_NAME "CUDA")
-#   LIST(APPEND Intrepid2_TEST_ETI_DEVICE      "Kokkos::Device<Kokkos::Cuda,Kokkos::CudaSpace>")
-# ENDIF()
+IF(Kokkos_ENABLE_CUDA)
+  LIST(APPEND Intrepid2_TEST_ETI_DEVICE_NAME "CUDA")
+  LIST(APPEND Intrepid2_TEST_ETI_DEVICE      "Kokkos::Device<Kokkos::Cuda,Kokkos::CudaSpace>")
+ENDIF()
 IF(Kokkos_ENABLE_HIP)
   LIST(APPEND Intrepid2_TEST_ETI_DEVICE_NAME "HIP")
   LIST(APPEND Intrepid2_TEST_ETI_DEVICE      "Kokkos::Device<Kokkos::HIP,Kokkos::HIPSpace>")

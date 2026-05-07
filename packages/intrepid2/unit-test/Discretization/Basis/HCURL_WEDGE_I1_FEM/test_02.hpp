@@ -20,7 +20,7 @@
 #endif
 
 #include "Intrepid2_Types.hpp"
-#include "Intrepid2_Utils.hpp"
+#include "Intrepid2_TestUtils.hpp"
 
 #include "Intrepid2_HCURL_WEDGE_I1_FEM.hpp"
 #include "packages/intrepid2/unit-test/Discretization/Basis/Setup.hpp"
@@ -64,16 +64,11 @@ namespace Intrepid2 {
 
         Kokkos::DynRankView<PointValueType,DeviceType> ConstructWithLabelPointView(inputPoints, npts, ndim);
 
-        using ScalarType = typename ScalarTraits<PointValueType>::scalar_type;
-        Kokkos::View<ScalarType**,DeviceType> inputPointsViewToUseRandom("inputPoints", npts, ndim);
-
-        // random values between (0,1)
-        Kokkos::Random_XorShift64_Pool<DeviceType> random(20251125);
-        Kokkos::fill_random(inputPointsViewToUseRandom, random, 0.0, 1.0);
-
-        auto policy = Kokkos::MDRangePolicy<DeviceSpaceType,Kokkos::Rank<2>>({0,0},{npts,ndim});
-        Kokkos::parallel_for("initialize view", policy, KOKKOS_LAMBDA (const int &i, const int &j) {inputPoints(i,j) = inputPointsViewToUseRandom(i,j);});
-        
+        { //randomly initialize inputPoints including derivatives for fad types
+          auto inputPointsViewToUseRandom = as_scalar_1d_view(inputPoints);          
+          Kokkos::Random_XorShift64_Pool<DeviceType> random(20260504); // random values between (0,1)
+          Kokkos::fill_random(inputPointsViewToUseRandom, random, 0.0, 1.0);
+        } 
 
         *outStream << "Computing values and curls for " << ncells << " cells and " << npts << " points using team-level getValues function" <<std::endl;
 
@@ -88,13 +83,13 @@ namespace Intrepid2 {
           { //compute values
             auto functor = KOKKOS_LAMBDA (typename Kokkos::TeamPolicy<DeviceSpaceType>::member_type team_member) {
                 auto valsACell = Kokkos::subview(outputValuesA, team_member.league_rank(), Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
-                basisRawPtr_device->getValues(valsACell, inputPoints, OPERATOR_VALUE, team_member, team_member.team_scratch(scratch_space_level));
+                basisRawPtr_device->getValues(valsACell, inputPoints, OPERATOR_VALUE, team_member, scratch_space_level);
             };              
             
             //Get the required size of the scratch space per team and per thread.
-            int perThreadSpaceSize(0), perTeamSpaceSize(0);
-            basisPtr->getScratchSpaceSize(perTeamSpaceSize,perThreadSpaceSize,inputPoints, OPERATOR_VALUE);
-            teamPolicy.set_scratch_size(scratch_space_level, Kokkos::PerTeam(perTeamSpaceSize), Kokkos::PerThread(perThreadSpaceSize));
+            int perThreadSpaceSize(0);
+            basisPtr->getScratchSpaceSize(perThreadSpaceSize,inputPoints, OPERATOR_VALUE);
+            teamPolicy.set_scratch_size(scratch_space_level, Kokkos::PerThread(perThreadSpaceSize));
 
             Kokkos::parallel_for (teamPolicy,functor);
           }
@@ -102,13 +97,13 @@ namespace Intrepid2 {
           { //compute curls
             auto functor = KOKKOS_LAMBDA (typename Kokkos::TeamPolicy<DeviceSpaceType>::member_type team_member) {
                 auto curlsACell = Kokkos::subview(outputCurlsA, team_member.league_rank(), Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
-                basisRawPtr_device->getValues(curlsACell, inputPoints, OPERATOR_CURL, team_member, team_member.team_scratch(scratch_space_level));
+                basisRawPtr_device->getValues(curlsACell, inputPoints, OPERATOR_CURL, team_member, scratch_space_level);
             };              
             
             //Get the required size of the scratch space per team and per thread.
-            int perThreadSpaceSize(0), perTeamSpaceSize(0);
-            basisPtr->getScratchSpaceSize(perTeamSpaceSize,perThreadSpaceSize,inputPoints, OPERATOR_CURL);
-            teamPolicy.set_scratch_size(scratch_space_level, Kokkos::PerTeam(perTeamSpaceSize), Kokkos::PerThread(perThreadSpaceSize));
+            int perThreadSpaceSize(0);
+            basisPtr->getScratchSpaceSize(perThreadSpaceSize,inputPoints, OPERATOR_CURL);;
+            teamPolicy.set_scratch_size(scratch_space_level, Kokkos::PerThread(perThreadSpaceSize));
 
             Kokkos::parallel_for (teamPolicy,functor);
           }
@@ -126,23 +121,23 @@ namespace Intrepid2 {
           const auto outputValuesA_Host = Kokkos::create_mirror_view(outputValuesA); Kokkos::deep_copy(outputValuesA_Host, outputValuesA);
           const auto outputValuesB_Host = Kokkos::create_mirror_view(outputValuesB); Kokkos::deep_copy(outputValuesB_Host, outputValuesB);
           
-          OutValueType diff = 0; 
           const auto tol = 100.0 * epsilon<double>();
           for (size_t ic=0;ic<outputValuesA_Host.extent(0);++ic)
             for (size_t i=0;i<outputValuesA_Host.extent(1);++i)
               for (size_t j=0;j<outputValuesA_Host.extent(2);++j) {
-                diff = 0;
-                OutValueType maxMagnitude = 0;
-                for (int d=0;d<ndim;++d) {
-                  diff += std::abs(outputValuesB_Host(i,j,d) - outputValuesA_Host(ic,i,j,d));
-                  maxMagnitude = std::max(maxMagnitude, std::max(std::abs(outputValuesA_Host(ic,i,j,d)), std::abs(outputValuesB_Host(i,j,d))));
+                auto maxBNorm = computeMaxNorm(outputValuesB_Host(i,j,0));
+                auto diffNorm = computeMaxNorm(outputValuesB_Host(i,j,0) - outputValuesA_Host(ic,i,j,0));
+                for (int d=1;d<ndim;++d) {
+                  maxBNorm = std::max(maxBNorm, computeMaxNorm(outputValuesB_Host(i,j,d)));
+                  diffNorm = std::max(diffNorm, computeMaxNorm(outputValuesB_Host(i,j,d)- outputValuesA_Host(ic,i,j,d)));
                 }
-                if (diff > tol * std::max(1.0, maxMagnitude)) {
+                const auto diffRelNorm = diffNorm/std::max(1.0, maxBNorm);
+                if (diffRelNorm > tol) {
                   ++errorFlag;
                   std::cout << ", ic: " << ic << ", i: " << i << ", j: " << j 
                             << ", val A: [" << outputValuesA_Host(ic,i,j,0) << ", " << outputValuesA_Host(ic,i,j,1) << "]"
                             << ", val B: [" << outputValuesB_Host(i,j,0) << ", " << outputValuesB_Host(i,j,1) << "]"
-                            << ", |diff|: " << diff
+                            << ", |rel diff|: " << diffRelNorm
                             << ", tol: " << tol
                             << std::endl;
                 }
@@ -154,23 +149,23 @@ namespace Intrepid2 {
           const auto outputCurlsA_Host = Kokkos::create_mirror_view(outputCurlsA); Kokkos::deep_copy(outputCurlsA_Host, outputCurlsA);
           const auto outputCurlsB_Host = Kokkos::create_mirror_view(outputCurlsB); Kokkos::deep_copy(outputCurlsB_Host, outputCurlsB);
           
-          OutValueType diff = 0;
           const auto tol = 100.0 * epsilon<double>();
           for (size_t ic=0;ic<outputCurlsA_Host.extent(0);++ic)
             for (size_t i=0;i<outputCurlsA_Host.extent(1);++i)
               for (size_t j=0;j<outputCurlsA_Host.extent(2);++j) {
-                diff = 0;
-                OutValueType maxMagnitude = 0;
-                for (int d=0;d<ndim;++d) {
-                  diff += std::abs(outputCurlsB_Host(i,j,d) - outputCurlsA_Host(ic,i,j,d));
-                  maxMagnitude = std::max(maxMagnitude, std::max(std::abs(outputCurlsA_Host(ic,i,j,d)), std::abs(outputCurlsB_Host(i,j,d))));
+                auto maxBNorm = computeMaxNorm(outputCurlsB_Host(i,j,0));
+                auto diffNorm = computeMaxNorm(outputCurlsB_Host(i,j,0) - outputCurlsA_Host(ic,i,j,0));
+                for (int d=1;d<ndim;++d) {
+                  maxBNorm = std::max(maxBNorm, computeMaxNorm(outputCurlsB_Host(i,j,d)));
+                  diffNorm = std::max(diffNorm, computeMaxNorm(outputCurlsB_Host(i,j,d)- outputCurlsA_Host(ic,i,j,d)));
                 }
-                if (diff > tol * std::max(1.0, maxMagnitude)) {
+                const auto diffRelNorm = diffNorm/std::max(1.0, maxBNorm);
+                if (diffRelNorm > tol) {
                   ++errorFlag;
                   std::cout << ", ic: " << ic << ", i: " << i << ", j: " << j 
                             << ", curls A: [" << outputCurlsA_Host(ic,i,j,0)<< ", " << outputCurlsA_Host(ic,i,j,1) << ", " << outputCurlsA_Host(ic,i,j,2) << "]"
                             << ", curls B: [" << outputCurlsB_Host(i,j,0) << ", " << outputCurlsB_Host(i,j,1)<< ", " << outputCurlsB_Host(i,j,2) << "]"
-                            << ", |diff|: " << diff
+                            << ", |rel diff|: " << diffRelNorm
                             << ", tol: " << tol
                             << std::endl;
                 }

@@ -22,172 +22,166 @@ namespace Intrepid2 {
 
   namespace Impl {                                                                                                                                                       
                                                                                                                                                                          
-    template<EOperator opType>                                                                                                                                           
+    template<EOperator OpType>                                                                                                                                           
     template<typename OutputViewType,                                                                                                                                    
              typename inputViewType>                                                                                                                                     
     KOKKOS_INLINE_FUNCTION                                                                                                                                               
     void                                                                                                                                                                 
-    Basis_HGRAD_TET_C2_FEM::Serial<opType>::                                                                                                                             
+    Basis_HGRAD_TET_C2_FEM::Serial<OpType>::                                                                                                                             
     getValues(       OutputViewType output,                                                                                                                              
                const inputViewType input ) {   
-      switch (opType) {
-      case OPERATOR_VALUE: {
+
+      if constexpr (OpType == OPERATOR_VALUE) {
         const auto x = input(0);
         const auto y = input(1);
         const auto z = input(2);
         
         // output is a rank-2 array with dimensions (basisCardinality_, dim0)
-        output.access(0) = (-1. + x + y + z)*(-1. + 2.*x + 2.*y + 2.*z);
-        output.access(1) = x*(-1. + 2.*x);
-        output.access(2) = y*(-1. + 2.*y);
-        output.access(3) = z*(-1. + 2.*z);
+        output(0) = (-1. + x + y + z)*(-1. + 2.*x + 2.*y + 2.*z);
+        output(1) = x*(-1. + 2.*x);
+        output(2) = y*(-1. + 2.*y);
+        output(3) = z*(-1. + 2.*z);
 
-        output.access(4) = -4.*x*(-1. + x + y + z);
-        output.access(5) =  4.*x*y;
-        output.access(6) = -4.*y*(-1. + x + y + z);
-        output.access(7) = -4.*z*(-1. + x + y + z);
-        output.access(8) =  4.*x*z;
-        output.access(9) =  4.*y*z;
-        break;
+        output(4) = -4.*x*(-1. + x + y + z);
+        output(5) =  4.*x*y;
+        output(6) = -4.*y*(-1. + x + y + z);
+        output(7) = -4.*z*(-1. + x + y + z);
+        output(8) =  4.*x*z;
+        output(9) =  4.*y*z;
       }
-      case OPERATOR_D1:
-      case OPERATOR_GRAD: {
+      else if constexpr ((OpType == OPERATOR_D1) || (OpType == OPERATOR_GRAD)) {
         const auto x = input(0);
         const auto y = input(1);
         const auto z = input(2);
         
-        // output.access is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
-        output.access(0, 0) = -3.+ 4.*x + 4.*y + 4.*z;
-        output.access(0, 1) = -3.+ 4.*x + 4.*y + 4.*z;
-        output.access(0, 2) = -3.+ 4.*x + 4.*y + 4.*z; 
+        // output is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
+        output(0, 0) = -3.+ 4.*x + 4.*y + 4.*z;
+        output(0, 1) = -3.+ 4.*x + 4.*y + 4.*z;
+        output(0, 2) = -3.+ 4.*x + 4.*y + 4.*z; 
       
-        output.access(1, 0) = -1.+ 4.*x; 
-        output.access(1, 1) =  0.;
-        output.access(1, 2) =  0.;
+        output(1, 0) = -1.+ 4.*x; 
+        output(1, 1) =  0.;
+        output(1, 2) =  0.;
       
-        output.access(2, 0) =  0.;        
-        output.access(2, 1) = -1.+ 4.*y;
-        output.access(2, 2) =  0.;
+        output(2, 0) =  0.;        
+        output(2, 1) = -1.+ 4.*y;
+        output(2, 2) =  0.;
 
-        output.access(3, 0) =  0.;         
-        output.access(3, 1) =  0.;
-        output.access(3, 2) = -1.+ 4.*z;
+        output(3, 0) =  0.;         
+        output(3, 1) =  0.;
+        output(3, 2) = -1.+ 4.*z;
  
       
-        output.access(4, 0) = -4.*(-1.+ 2*x + y + z);         
-        output.access(4, 1) = -4.*x;
-        output.access(4, 2) = -4.*x;
+        output(4, 0) = -4.*(-1.+ 2*x + y + z);         
+        output(4, 1) = -4.*x;
+        output(4, 2) = -4.*x;
       
-        output.access(5, 0) =  4.*y;       
-        output.access(5, 1) =  4.*x; 
-        output.access(5, 2) =  0.;
+        output(5, 0) =  4.*y;       
+        output(5, 1) =  4.*x; 
+        output(5, 2) =  0.;
 
-        output.access(6, 0) = -4.*y;          
-        output.access(6, 1) = -4.*(-1.+ x + 2*y + z);
-        output.access(6, 2) = -4.*y; 
+        output(6, 0) = -4.*y;          
+        output(6, 1) = -4.*(-1.+ x + 2*y + z);
+        output(6, 2) = -4.*y; 
 
-        output.access(7, 0) = -4.*z;          
-        output.access(7, 1) = -4.*z;
-        output.access(7, 2) = -4.*(-1.+ x + y + 2*z);
+        output(7, 0) = -4.*z;          
+        output(7, 1) = -4.*z;
+        output(7, 2) = -4.*(-1.+ x + y + 2*z);
 
-        output.access(8, 0) =  4.*z;     
-        output.access(8, 1) =  0.;
-        output.access(8, 2) =  4.*x;
+        output(8, 0) =  4.*z;     
+        output(8, 1) =  0.;
+        output(8, 2) =  4.*x;
 
-        output.access(9, 0) =  0.;         
-        output.access(9, 1) =  4.*z;
-        output.access(9, 2) =  4.*y;
-        break;
+        output(9, 0) =  0.;         
+        output(9, 1) =  4.*z;
+        output(9, 2) =  4.*y;
       }
-      case OPERATOR_D2: {
-        output.access(0, 0) =  4.;
-        output.access(0, 1) =  4.;
-        output.access(0, 2) =  4.;
-        output.access(0, 3) =  4.;
-        output.access(0, 4) =  4.;
-        output.access(0, 5) =  4.;
+      else if constexpr (OpType == OPERATOR_D2) {
+        output(0, 0) =  4.;
+        output(0, 1) =  4.;
+        output(0, 2) =  4.;
+        output(0, 3) =  4.;
+        output(0, 4) =  4.;
+        output(0, 5) =  4.;
       
-        output.access(1, 0) =  4.;
-        output.access(1, 1) =  0.;
-        output.access(1, 2) =  0.;
-        output.access(1, 3) =  0.;
-        output.access(1, 4) =  0.;
-        output.access(1, 5) =  0.;
+        output(1, 0) =  4.;
+        output(1, 1) =  0.;
+        output(1, 2) =  0.;
+        output(1, 3) =  0.;
+        output(1, 4) =  0.;
+        output(1, 5) =  0.;
 
-        output.access(2, 0) =  0.;
-        output.access(2, 1) =  0.;
-        output.access(2, 2) =  0.;
-        output.access(2, 3) =  4.;
-        output.access(2, 4) =  0.;
-        output.access(2, 5) =  0.;
+        output(2, 0) =  0.;
+        output(2, 1) =  0.;
+        output(2, 2) =  0.;
+        output(2, 3) =  4.;
+        output(2, 4) =  0.;
+        output(2, 5) =  0.;
 
-        output.access(3, 0) =  0.;
-        output.access(3, 1) =  0.;
-        output.access(3, 2) =  0.;
-        output.access(3, 3) =  0.;
-        output.access(3, 4) =  0.;
-        output.access(3, 5) =  4.;
+        output(3, 0) =  0.;
+        output(3, 1) =  0.;
+        output(3, 2) =  0.;
+        output(3, 3) =  0.;
+        output(3, 4) =  0.;
+        output(3, 5) =  4.;
 
-        output.access(4, 0) = -8.;
-        output.access(4, 1) = -4.;
-        output.access(4, 2) = -4.;
-        output.access(4, 3) =  0.;
-        output.access(4, 4) =  0.;
-        output.access(4, 5) =  0.;
+        output(4, 0) = -8.;
+        output(4, 1) = -4.;
+        output(4, 2) = -4.;
+        output(4, 3) =  0.;
+        output(4, 4) =  0.;
+        output(4, 5) =  0.;
 
-        output.access(5, 0) =  0.;
-        output.access(5, 1) =  4.;
-        output.access(5, 2) =  0.;
-        output.access(5, 3) =  0.;
-        output.access(5, 4) =  0.;
-        output.access(5, 5) =  0.;
+        output(5, 0) =  0.;
+        output(5, 1) =  4.;
+        output(5, 2) =  0.;
+        output(5, 3) =  0.;
+        output(5, 4) =  0.;
+        output(5, 5) =  0.;
 
-        output.access(6, 0) =  0.;
-        output.access(6, 1) = -4.;
-        output.access(6, 2) =  0.;
-        output.access(6, 3) = -8.;
-        output.access(6, 4) = -4.;
-        output.access(6, 5) =  0;
+        output(6, 0) =  0.;
+        output(6, 1) = -4.;
+        output(6, 2) =  0.;
+        output(6, 3) = -8.;
+        output(6, 4) = -4.;
+        output(6, 5) =  0;
 
-        output.access(7, 0) =  0.;
-        output.access(7, 1) =  0.;
-        output.access(7, 2) = -4.;
-        output.access(7, 3) =  0.;
-        output.access(7, 4) = -4.;
-        output.access(7, 5) = -8.;
+        output(7, 0) =  0.;
+        output(7, 1) =  0.;
+        output(7, 2) = -4.;
+        output(7, 3) =  0.;
+        output(7, 4) = -4.;
+        output(7, 5) = -8.;
 
-        output.access(8, 0) =  0.;
-        output.access(8, 1) =  0.;
-        output.access(8, 2) =  4.;
-        output.access(8, 3) =  0.;
-        output.access(8, 4) =  0.;
-        output.access(8, 5) =  0.;
+        output(8, 0) =  0.;
+        output(8, 1) =  0.;
+        output(8, 2) =  4.;
+        output(8, 3) =  0.;
+        output(8, 4) =  0.;
+        output(8, 5) =  0.;
 
-        output.access(9, 0) =  0.;
-        output.access(9, 1) =  0.;
-        output.access(9, 2) =  0.;
-        output.access(9, 3) =  0.;
-        output.access(9, 4) =  4.;
-        output.access(9, 5) =  0.;
-        break;
+        output(9, 0) =  0.;
+        output(9, 1) =  0.;
+        output(9, 2) =  0.;
+        output(9, 3) =  0.;
+        output(9, 4) =  4.;
+        output(9, 5) =  0.;
       }
-      case OPERATOR_MAX: {
+      else if constexpr (OpType == OPERATOR_MAX) {
         const ordinal_type jend = output.extent(1);
         const ordinal_type iend = output.extent(0);
 
         for (ordinal_type j=0;j<jend;++j)
           for (ordinal_type i=0;i<iend;++i)
-            output.access(i, j) = 0.0;
-        break;
+            output(i, j) = 0.0;
       }
-      default: {
-        INTREPID2_TEST_FOR_ABORT( opType != OPERATOR_VALUE &&
-                                  opType != OPERATOR_GRAD &&
-                                  opType != OPERATOR_D1 &&
-                                  opType != OPERATOR_D2 &&
-                                  opType != OPERATOR_MAX,
+      else {
+        INTREPID2_TEST_FOR_ABORT( OpType != OPERATOR_VALUE &&
+                                  OpType != OPERATOR_GRAD &&
+                                  OpType != OPERATOR_D1 &&
+                                  OpType != OPERATOR_D2 &&
+                                  OpType != OPERATOR_MAX,
                                   ">>> ERROR: (Intrepid2::Basis_HGRAD_TET_C2_FEM::Serial::getValues) operator is not supported");
-      }
       }
     }
 
@@ -326,11 +320,9 @@ namespace Intrepid2 {
   template<typename DT, typename OT, typename PT>
   void 
   Basis_HGRAD_TET_C2_FEM<DT,OT,PT>::getScratchSpaceSize(       
-                                    ordinal_type& perTeamSpaceSize,
                                     ordinal_type& perThreadSpaceSize,
                               const PointViewType inputPoints,
                               const EOperator operatorType) const {
-    perTeamSpaceSize = 0;
     perThreadSpaceSize = 0;
   }
 
@@ -342,14 +334,14 @@ namespace Intrepid2 {
       const PointViewType  inputPoints,
       const EOperator operatorType,
       const typename Kokkos::TeamPolicy<typename DT::execution_space>::member_type& team_member,
-      const typename DT::execution_space::scratch_memory_space & scratchStorage, 
+      const int threadScratchLevel, 
       const ordinal_type subcellDim,
       const ordinal_type subcellOrdinal) const {
 
       INTREPID2_TEST_FOR_ABORT( !((subcellDim <= 0) && (subcellOrdinal == -1)),
         ">>> ERROR: (Intrepid2::Basis_HGRAD_TET_C2_FEM::getValues), The capability of selecting subsets of basis functions has not been implemented yet.");
 
-      (void) scratchStorage; //avoid unused variable warning
+      (void) threadScratchLevel; //avoid unused variable warning
 
       const int numPoints = inputPoints.extent(0);
 
