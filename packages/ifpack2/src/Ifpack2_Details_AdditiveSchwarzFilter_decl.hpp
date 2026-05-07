@@ -356,9 +356,13 @@ class AdditiveSchwarzFilter : public Ifpack2::Details::RowMatrix<MatrixType> {
   /// Used by both the constructor and updateMatrixValues().
   void fillLocalMatrix(local_matrix_type localMatrix);
 
+  //! Scale the reduced reordered right-hand side in place before the inner solve.
   void scaleReducedRHS(mv_type& B) const;
+
+  //! Undo solution scaling in place after the inner solve.
   void unscaleReducedLHS(mv_type& Y) const;
 
+  //! Whether row/column 1-norm equilibration is enabled.
   bool isEquilibrated() const { return UseEquilibration_; };
 
   //@}
@@ -387,6 +391,7 @@ class AdditiveSchwarzFilter : public Ifpack2::Details::RowMatrix<MatrixType> {
   static bool
   mapPairsAreFitted(const row_matrix_type& A);
 
+  //! Compute row/column 1-norm scaling factors for \c A_ and scale \c A_ in place.
   void computeAndApplyEquilibration();
 
   //! Pointer to the matrix to be preconditioned.
@@ -410,7 +415,10 @@ class AdditiveSchwarzFilter : public Ifpack2::Details::RowMatrix<MatrixType> {
   //! Row, col, domain and range map of this locally filtered matrix (it's square and non-distributed)
   Teuchos::RCP<const map_type> localMap_;
 
+  //! Whether to apply row/column 1-norm equilibration to the filtered local matrix \c A_.
   bool UseEquilibration_;
+
+  //! Cached row/column 1-norm scaling data for the current filtered local matrix \c A_.
   decltype(Tpetra::computeRowAndColumnOneNorms(
       std::declval<const crs_matrix_type&>(), false)) equilResult_;
 };
