@@ -20,6 +20,8 @@ This is essentially a fusion of LocalFilter, AdditiveSchwarzFilter and Singleton
 
 #include "Ifpack2_ConfigDefs.hpp"
 #include "Ifpack2_Details_RowMatrix.hpp"
+#include "Tpetra_computeRowAndColumnOneNorms.hpp"
+#include "Tpetra_leftAndOrRightScaleCrsMatrix.hpp"
 #include "Ifpack2_OverlappingRowMatrix.hpp"
 
 namespace Ifpack2 {
@@ -103,7 +105,8 @@ class AdditiveSchwarzFilter : public Ifpack2::Details::RowMatrix<MatrixType> {
   AdditiveSchwarzFilter(const Teuchos::RCP<const row_matrix_type>& A,
                         const Teuchos::ArrayRCP<local_ordinal_type>& perm,
                         const Teuchos::ArrayRCP<local_ordinal_type>& reverseperm,
-                        bool filterSingletons);
+                        bool filterSingletons,
+                        bool useEquilibration);
 
   //! Update the filtered matrix in response to A's values changing (A's structure isn't allowed to change, though)
   void updateMatrixValues();
@@ -344,7 +347,8 @@ class AdditiveSchwarzFilter : public Ifpack2::Details::RowMatrix<MatrixType> {
   void setup(const Teuchos::RCP<const row_matrix_type>& A_unfiltered,
              const Teuchos::ArrayRCP<local_ordinal_type>& perm,
              const Teuchos::ArrayRCP<local_ordinal_type>& reverseperm,
-             bool filterSingletons);
+             bool filterSingletons,
+             bool useEquilibration);
 
   /// \brief Fill the entries/values in the local matrix, and from that construct A_.
   ///
@@ -378,6 +382,12 @@ class AdditiveSchwarzFilter : public Ifpack2::Details::RowMatrix<MatrixType> {
   static bool
   mapPairsAreFitted(const row_matrix_type& A);
 
+  void computeAndApplyEquilibration();
+  void scaleReducedRHS(mv_type& B) const;
+  void unscaleReducedLHS(mv_type& Y) const;
+
+  bool isEquilibrated() const { return UseEquilibration_; };
+
   //! Pointer to the matrix to be preconditioned.
   Teuchos::RCP<const row_matrix_type> A_unfiltered_;
   //! Filtered and reordered matrix.
@@ -398,6 +408,10 @@ class AdditiveSchwarzFilter : public Ifpack2::Details::RowMatrix<MatrixType> {
 
   //! Row, col, domain and range map of this locally filtered matrix (it's square and non-distributed)
   Teuchos::RCP<const map_type> localMap_;
+
+  bool UseEquilibration_;
+  decltype(Tpetra::computeRowAndColumnOneNorms(
+      std::declval<const crs_matrix_type&>(), false)) equilResult_;
 };
 
 }  // namespace Details

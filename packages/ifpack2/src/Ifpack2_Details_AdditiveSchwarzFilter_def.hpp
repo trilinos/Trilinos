@@ -12,6 +12,8 @@
 
 #include "Ifpack2_Details_AdditiveSchwarzFilter_decl.hpp"
 #include "Ifpack2_Details_Behavior.hpp"
+#include "Tpetra_computeRowAndColumnOneNorms.hpp"
+#include "Tpetra_leftAndOrRightScaleCrsMatrix.hpp"
 #include "KokkosKernels_Sorting.hpp"
 #include "KokkosSparse_SortCrs.hpp"
 #include "Kokkos_Bitset.hpp"
@@ -24,8 +26,9 @@ AdditiveSchwarzFilter<MatrixType>::
     AdditiveSchwarzFilter(const Teuchos::RCP<const row_matrix_type>& A_unfiltered,
                           const Teuchos::ArrayRCP<local_ordinal_type>& perm,
                           const Teuchos::ArrayRCP<local_ordinal_type>& reverseperm,
-                          bool filterSingletons) {
-  setup(A_unfiltered, perm, reverseperm, filterSingletons);
+                          bool filterSingletons,
+                          bool useEquilibration) {
+  setup(A_unfiltered, perm, reverseperm, filterSingletons, useEquilibration);
 }
 
 template <class MatrixType>
@@ -33,7 +36,8 @@ void AdditiveSchwarzFilter<MatrixType>::
     setup(const Teuchos::RCP<const row_matrix_type>& A_unfiltered,
           const Teuchos::ArrayRCP<local_ordinal_type>& perm,
           const Teuchos::ArrayRCP<local_ordinal_type>& reverseperm,
-          bool filterSingletons) {
+          bool filterSingletons,
+          bool useEquilibration) {
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
@@ -263,6 +267,11 @@ void AdditiveSchwarzFilter<MatrixType>::
   // It also needs to compute local constants (maxNumRowEntries) but this should be a
   // cheap operation relative to what this constructor already did.
   A_ = rcp(new crs_matrix_type(localMap_, localMap_, localMatrix, crsParams));
+
+  UseEquilibration_ = useEquilibration;
+  if (UseEquilibration_) {
+    computeAndApplyEquilibration();
+  }
 }
 
 template <class MatrixType>
@@ -275,6 +284,10 @@ void AdditiveSchwarzFilter<MatrixType>::updateMatrixValues() {
   // Copy new values from A_unfiltered to the local matrix, and then reconstruct A_.
   fillLocalMatrix(localMatrix);
   A_->setAllValues(localMatrix.graph.row_map, localMatrix.graph.entries, localMatrix.values);
+
+  if (UseEquilibration_) {
+    computeAndApplyEquilibration();
+  }
 }
 
 template <class MatrixType>
@@ -646,6 +659,43 @@ template <class MatrixType>
 bool AdditiveSchwarzFilter<MatrixType>::
     mapPairIsFitted(const map_type& map1, const map_type& map2) {
   return map1.isLocallyFitted(map2);
+}
+
+template <class MatrixType>
+void AdditiveSchwarzFilter<MatrixType>::computeAndApplyEquilibration() {
+  if (!UseEquilibration_) return;
+
+  equilResult_           = Tpetra::computeRowAndColumnOneNorms(*A_, false);
+  auto colScalingFactors = equilResult_.assumeSymmetric
+                               ? equilResult_.colNorms
+                               : equilResult_.rowScaledColNorms;
+
+  Tpetra::leftAndOrRightScaleCrsMatrix(*A_,
+                                       equilResult_.rowNorms,
+                                       colScalingFactors,
+                                       true,
+                                       true,
+                                       equilResult_.assumeSymmetric,
+                                       Tpetra::SCALING_DIVIDE);
+}
+
+template <class MatrixType>
+void AdditiveSchwarzFilter<MatrixType>::scaleReducedRHS(mv_type& B) const {
+  if (!UseEquilibration_) return;
+  const bool takeSquareRootsOfScalingFactors = false;
+  elementWiseDivideMultiVector(B, equilResult_.rowNorms,
+                               takeSquareRootsOfScalingFactors);
+}
+
+template <class MatrixType>
+void AdditiveSchwarzFilter<MatrixType>::unscaleReducedLHS(mv_type& Y) const {
+  if (!UseEquilibration_) return;
+  auto colScalingFactors =
+      equilResult_.assumeSymmetric ? equilResult_.colNorms
+                                   : equilResult_.rowScaledColNorms;
+  const bool takeSquareRootsOfScalingFactors = false;
+  elementWiseDivideMultiVector(Y, colScalingFactors,
+                               takeSquareRootsOfScalingFactors);
 }
 
 }  // namespace Details
