@@ -948,7 +948,7 @@ int executeTotalElementLoopSPKokkos_(const Teuchos::RCP<const Teuchos::Comm<int>
     std::ofstream ofs("crsMatrix_TotalElementLoop_SPKokkos.out", std::ofstream::out);
     Tpetra::MatrixMarket::Writer<crs_matrix_type>::writeSparse(ofs, crs_matrix);
     std::ofstream ofs2("rhs_TotalElementLoop_SPKokkos.out", std::ofstream::out);
-    Tpetra::MatrixMarket::Writer<multivector_type>::writeDense(ofs2, rhs);
+    Tpetra::MatrixMarket::Writer<crs_matrix_type>::writeDense(ofs2, rhs);
   }
 
   return 0;

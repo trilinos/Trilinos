@@ -23,7 +23,7 @@
 namespace Tpetra {
 
 /////////////////////////////////////////////////////////////////////////////
-template <typename gno_t, typename scalar_t>
+template <typename gno_t, typename scalar_t, typename node_t>
 class DistributionLowerTriangularBlock : public Distribution<gno_t, scalar_t> {
   // Seher Acer's lower-triangular block decomposition for triangle counting
   // See also:  LowerTriangularBlockOperator below that allows this distribution
@@ -113,8 +113,9 @@ class DistributionLowerTriangularBlock : public Distribution<gno_t, scalar_t> {
   using typename Distribution<gno_t, scalar_t>::NZindex_t;
   using typename Distribution<gno_t, scalar_t>::LocalNZmap_t;
 
-  using map_t    = Tpetra::Map<>;
-  using matrix_t = Tpetra::CrsMatrix<scalar_t>;
+  using lno_t    = ::Tpetra::Details::DefaultTypes::local_ordinal_type;
+  using map_t    = Tpetra::Map<lno_t, gno_t, node_t>;
+  using matrix_t = Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t>;
 
   DistributionLowerTriangularBlock(size_t nrows_,
                                    const Teuchos::RCP<const Teuchos::Comm<int> > &comm_,
@@ -390,7 +391,7 @@ class DistributionLowerTriangularBlock : public Distribution<gno_t, scalar_t> {
 
  private:
   // Initially distribute nonzeros with a 1D linear distribution
-  Distribution1DLinear<gno_t, scalar_t> initialDist;
+  Distribution1DLinear<gno_t, scalar_t, node_t> initialDist;
 
   // Flag indicating whether matrix should be reordered and renumbered
   // in decreasing sort order of number of nonzeros per row in full matrix
@@ -446,7 +447,7 @@ class LowerTriangularBlockOperator : public Tpetra::Operator<scalar_t, Tpetra::M
   using vector_t  = Tpetra::Vector<scalar_t>;
   using mvector_t = Tpetra::MultiVector<scalar_t>;
   using matrix_t  = Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, Node>;
-  using dist_t    = Tpetra::DistributionLowerTriangularBlock<gno_t, scalar_t>;
+  using dist_t    = Tpetra::DistributionLowerTriangularBlock<gno_t, scalar_t, Node>;
 
   LowerTriangularBlockOperator(
       const Teuchos::RCP<const matrix_t> &lowerTriangularMatrix_,
