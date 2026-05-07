@@ -322,8 +322,17 @@ TRIBITS_ADD_TEST(
 
 TRIBITS_ADD_TEST(
   MultiphysicsDriver
-  NAME "MultiphysicsTest"
-  ARGS "--xml=multiphys_monolithic_smoother.xml --expected-iters=5"
+  NAME "MultiphysicsTestMonolithicSmoother"
+  ARGS "--xml=multiphys_monolithic_smoother.xml --expected-iters=5 --path=monolithic"
+  NUM_MPI_PROCS 4
+  COMM mpi
+  PASS_REGULAR_EXPRESSION "Belos converged"
+)
+
+TRIBITS_ADD_TEST(
+  MultiphysicsDriver
+  NAME "MultiphysicsTestBlockedSmoother"
+  ARGS "--xml=multiphys_blocked_smoother.xml --expected-iters=6 --path=blocked"
   NUM_MPI_PROCS 4
   COMM mpi
   PASS_REGULAR_EXPRESSION "Belos converged|Skipping test"
