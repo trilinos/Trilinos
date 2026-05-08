@@ -210,6 +210,11 @@ class CombinePFactory : public PFactory {
   void BuildPBlocked(Level& fineLevel, Level& coarseLevel) const;
   void BuildPBlockedImpl(Level& fineLevel, Level& coarseLevel, std::false_type) const;
 #ifdef HAVE_XPETRA_THYRA
+  template <class S = Scalar,
+            std::enable_if_t<
+                MueLu::Details::has_build_p_blocked_thyra_eti<
+                    S, LocalOrdinal, GlobalOrdinal, Node>::value,
+                int> = 0>
   void BuildPBlockedImpl(Level& fineLevel, Level& coarseLevel, std::true_type) const;
 #endif
   int numPDEs_;

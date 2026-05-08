@@ -298,12 +298,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CombinePFactory, CombineWithBlockedFineMatrix,
 
   RCP<BlockedCrsMatrix> bA;
 
-#ifdef HAVE_XPETRA_THYRA
   constexpr bool typesAreSupported =
       MueLu::Details::has_build_p_blocked_thyra_eti<
           Scalar, LocalOrdinal, GlobalOrdinal, Node>::value;
 
-  if (typesAreSupported) {
+  if constexpr (typesAreSupported) {
     RCP<Thyra::LinearOpBase<Scalar> > thA00 =
         Xpetra::ThyraUtils<Scalar, LO, GO, Node>::toThyra(A00->getCrsMatrix());
     RCP<Thyra::LinearOpBase<Scalar> > thA01 =
@@ -333,7 +332,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CombinePFactory, CombineWithBlockedFineMatrix,
     bA = Teuchos::rcp(new BlockedCrsMatrix(thyraBlockedOpConst, comm));
     bA->fillComplete();
   }
-#endif
 
 #ifndef HAVE_XPETRA_THYRA
   // Without Thyra support, the fine matrix cannot be constructed through the Thyra-style constructor.
@@ -352,7 +350,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CombinePFactory, CombineWithBlockedFineMatrix,
   TEST_EQUALITY(threw || bA == Teuchos::null, true);
   return;
 #else
-  if (!typesMatch) {
+  if (!typesAreSupported) {
     TEST_EQUALITY(bA == Teuchos::null, true);
     return;
   }

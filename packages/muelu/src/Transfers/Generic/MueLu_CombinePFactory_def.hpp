@@ -328,6 +328,11 @@ void CombinePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildPBlockedIm
 
 #ifdef HAVE_XPETRA_THYRA
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+template <class S,
+          std::enable_if_t<
+              MueLu::Details::has_build_p_blocked_thyra_eti<
+                  S, LocalOrdinal, GlobalOrdinal, Node>::value,
+              int>>
 void CombinePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildPBlockedImpl(Level& fineLevel,
                                                                                    Level& coarseLevel, std::true_type) const {
   TEUCHOS_TEST_FOR_EXCEPTION(restrictionMode_, Exceptions::RuntimeError, "CombinePFactory::BuildPBlocked does not support restriction mode.");
@@ -387,7 +392,7 @@ void CombinePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildPBlocked(L
   BuildPBlockedImpl(
       fineLevel, coarseLevel,
       std::integral_constant<bool,
-                             has_build_p_blocked_thyra_eti<Scalar, LocalOrdinal, GlobalOrdinal, Node>::value>{});
+                             MueLu::Details::has_build_p_blocked_thyra_eti<Scalar, LocalOrdinal, GlobalOrdinal, Node>::value>{});
 }
 
 }  // namespace MueLu
