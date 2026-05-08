@@ -299,17 +299,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CombinePFactory, CombineWithBlockedFineMatrix,
   RCP<BlockedCrsMatrix> bA;
 
 #ifdef HAVE_XPETRA_THYRA
-  using TpetraLO   = typename Tpetra::Map<>::local_ordinal_type;
-  using TpetraGO   = typename Tpetra::Map<>::global_ordinal_type;
-  using TpetraNode = typename Tpetra::Map<>::node_type;
+  constexpr bool typesAreSupported =
+      MueLu::Details::has_build_p_blocked_thyra_eti<
+          Scalar, LocalOrdinal, GlobalOrdinal, Node>::value;
 
-  constexpr bool typesMatch =
-      std::is_same_v<LocalOrdinal, TpetraLO> &&
-      std::is_same_v<GlobalOrdinal, TpetraGO> &&
-      std::is_same_v<Node, TpetraNode> &&
-      std::is_same_v<Scalar, double>;
-
-  if (typesMatch) {
+  if (typesAreSupported) {
     RCP<Thyra::LinearOpBase<Scalar> > thA00 =
         Xpetra::ThyraUtils<Scalar, LO, GO, Node>::toThyra(A00->getCrsMatrix());
     RCP<Thyra::LinearOpBase<Scalar> > thA01 =
