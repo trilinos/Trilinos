@@ -1386,6 +1386,25 @@ public:
     //                                                                                            //
     //============================================================================================//
 
+
+    /** \brief  Compute the parametric distance of the point in the specified reference cell.
+        The parametric distance is a continuous piecewise linear function that it is
+        (a) 0 at the centroid of the reference cell,
+        (b) less than 1 for points inside the cell
+        (c) 1 on the cell boundary
+        (d) greater than 1 for points outside the cell
+
+        Requires cell topology with a reference cell.
+
+        \param  point             [in]  - rank-1 view (D) of the point tested for inclusion
+        \param  cellTopo          [in]  - cell topology
+        \return the parametric distance of the point in the specified reference cell.
+    */
+    template<typename PointViewType>
+    static bool
+    parametricDistance( const PointViewType        point,
+                         const shards::CellTopology cellTopo);
+
     /** \brief  Checks if a point belongs to a reference cell.
 
         Requires cell topology with a reference cell.

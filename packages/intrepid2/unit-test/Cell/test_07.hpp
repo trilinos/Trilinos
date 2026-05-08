@@ -90,7 +90,7 @@ namespace Intrepid2 {
       operator()(const ordinal_type i) const {
         const auto in = Kokkos::subview(_input,i,Kokkos::ALL());
         for (int k=0;k<3;++k) in(k)+=_offset;        
-        const auto check = PointInclusion<cellTopologyKey>::check(in, threshold<ValueType>());        
+        const bool check = ParametricDistance<cellTopologyKey>::distance(in) < 1.0 + threshold<ValueType>();        
         _output(i) = check;        
       }
     };
