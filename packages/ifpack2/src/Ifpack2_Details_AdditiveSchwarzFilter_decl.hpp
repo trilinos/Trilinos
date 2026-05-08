@@ -92,6 +92,8 @@ class AdditiveSchwarzFilter : public Ifpack2::Details::RowMatrix<MatrixType> {
   /// \param perm [in] Forward permutation of A's rows and columns.
   /// \param reverseperm [in] Reverse permutation of A's rows and columns.
   /// \param filterSingletons [in] If true, remove rows that have no local neighbors.
+  /// \param useEquilibration [in] If true, apply row/column 1-norm equilibration to the matrix.
+  ///                              This may improve the numerical stability of the subdomain solver.
   ///
   /// It must make sense to apply the given permutation to both the
   /// rows and columns.  This means that the row and column Maps must
