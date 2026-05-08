@@ -173,7 +173,7 @@ BuildProblem(const Teuchos::RCP<const Teuchos::Comm<int>>& comm,
         op);
   };
 
-  auto blockedOperator = Teuchos::make_rcp<Thyra::DefaultBlockedLinearOp<double>>();
+  auto blockedOperator = Teuchos::make_rcp<Thyra::DefaultBlockedLinearOp<Scalar>>();
   const int nBlock     = 2;
 
   blockedOperator->beginBlockFill(nBlock, nBlock);
