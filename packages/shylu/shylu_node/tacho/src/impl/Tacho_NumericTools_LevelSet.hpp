@@ -948,7 +948,7 @@ public:
               UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n_m;
 
               // Apply L^{-1} on off-diagonal
-              _status = Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, Algo::OnDevice>::invoke(
+              _status = Trsm<Side::Left, Uplo::Upper, Trans::Transpose, Algo::OnDevice>::invoke(
                   handle_blas, Diag::Unit(), one, ATL, ATR);
               checkDeviceBlasStatus("trsm");
 
@@ -1033,7 +1033,7 @@ public:
               UnmanagedViewType<value_type_matrix> ABR(bptr, n_m, n_m); // shared with T
               UnmanagedViewType<value_type_matrix> K(bptr+(n_m * n_m), m, n_m);
 
-              _status = Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, Algo::OnDevice>::invoke(
+              _status = Trsm<Side::Left, Uplo::Upper, Trans::Transpose, Algo::OnDevice>::invoke(
                   handle_blas, Diag::Unit(), one, ATL, ATR);
               checkDeviceBlasStatus("trsm");
 
@@ -1108,7 +1108,7 @@ public:
               bptr += ABR.span();
               UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n_m;
               {
-                _status = Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, Algo::OnDevice>::invoke(
+                _status = Trsm<Side::Left, Uplo::Upper, Trans::Transpose, Algo::OnDevice>::invoke(
                     handle_blas, Diag::Unit(), one, ATL, ATR);
                 checkDeviceBlasStatus("trsm");
 
@@ -1548,11 +1548,12 @@ public:
         {
           const ordinal_type offs = s.row_begin, m = s.m, n = s.n, n_m = n - m;
           if (m > 0) {
+            bool conjugate = false;
             value_type *aptr = s.u_buf;
             UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
             aptr += m * m;
 
-            _status = Symmetrize<Uplo::Upper, Algo::OnDevice>::invoke(exec_instance, ATL);
+            _status = Symmetrize<Uplo::Upper, Algo::OnDevice>::invoke(exec_instance, ATL, conjugate);
 
             ordinal_type *pivptr = _piv.data() + 4 * offs;
             UnmanagedViewType<ordinal_type_array> P(pivptr, 4 * m);
@@ -1561,7 +1562,7 @@ public:
 
             value_type *dptr = _diag.data() + 2 * offs;
             UnmanagedViewType<value_type_matrix> D(dptr, m, 2);
-            _status = LDL<Uplo::Lower, Algo::OnDevice>::modify(exec_instance, ATL, P, D);
+            _status = LDL<Uplo::Lower, Algo::OnDevice>::modify(exec_instance, ATL, P, D, conjugate);
             checkDeviceLapackStatus("ldl::modify");
 
             if (n_m > 0) {
@@ -1622,11 +1623,12 @@ public:
         {
           const ordinal_type offs = s.row_begin, m = s.m, n = s.n, n_m = n - m;
           if (m > 0) {
+            bool conjugate = false;
             value_type *aptr = s.u_buf;
             UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
             aptr += m * m;
 
-            _status = Symmetrize<Uplo::Upper, Algo::OnDevice>::invoke(exec_instance, ATL);
+            _status = Symmetrize<Uplo::Upper, Algo::OnDevice>::invoke(exec_instance, ATL, conjugate);
 
             ordinal_type *pivptr = _piv.data() + 4 * offs;
             UnmanagedViewType<ordinal_type_array> P(pivptr, 4 * m);
@@ -1635,7 +1637,7 @@ public:
 
             value_type *dptr = _diag.data() + 2 * offs;
             UnmanagedViewType<value_type_matrix> D(dptr, m, 2);
-            _status = LDL<Uplo::Lower, Algo::OnDevice>::modify(exec_instance, ATL, P, D);
+            _status = LDL<Uplo::Lower, Algo::OnDevice>::modify(exec_instance, ATL, P, D, conjugate);
             checkDeviceLapackStatus("ldl::modify");
 
             value_type *bptr = _buf.data() + h_buf_factor_ptr(p - pbeg);
@@ -1711,11 +1713,12 @@ public:
         {
           const ordinal_type offs = s.row_begin, m = s.m, n = s.n, n_m = n - m;
           if (m > 0) {
+            bool conjugate = false;
             value_type *aptr = s.u_buf;
             UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
             aptr += m * m;
 
-            _status = Symmetrize<Uplo::Upper, Algo::OnDevice>::invoke(exec_instance, ATL);
+            _status = Symmetrize<Uplo::Upper, Algo::OnDevice>::invoke(exec_instance, ATL, conjugate);
 
             ordinal_type *pivptr = _piv.data() + 4 * offs;
             UnmanagedViewType<ordinal_type_array> P(pivptr, 4 * m);
@@ -1724,7 +1727,7 @@ public:
 
             value_type *dptr = _diag.data() + 2 * offs;
             UnmanagedViewType<value_type_matrix> D(dptr, m, 2);
-            _status = LDL<Uplo::Lower, Algo::OnDevice>::modify(exec_instance, ATL, P, D);
+            _status = LDL<Uplo::Lower, Algo::OnDevice>::modify(exec_instance, ATL, P, D, conjugate);
             checkDeviceLapackStatus("ldl::modify");
 
             value_type *bptr = _buf.data() + h_buf_factor_ptr(p - pbeg);
@@ -1758,7 +1761,7 @@ public:
               // AT = ATL^{-1} [I, ATR] (= L^{-1} where A = LTL^T and A^{-1} = L^{-T} T^{-1} L^{-1} = (TL^{-T})^{-1) * L^{-1})
               //                                                             = (solveLDL_Upper_varian2 with Scale2x2_BlockInverseDiagonals) * (solveLDL_Lower_variant2)
               _status = Copy<Algo::OnDevice>::invoke(exec_instance, T, ATL);
-              _status = Symmetrize<Uplo::Lower, Algo::OnDevice>::invoke(exec_instance, T);
+              _status = Symmetrize<Uplo::Lower, Algo::OnDevice>::invoke(exec_instance, T, conjugate);
               _status = SetIdentity<Algo::OnDevice>::invoke(exec_instance, ATL, minus_one);
 
               UnmanagedViewType<value_type_matrix> AT(ATL.data(), m, n);
@@ -2181,7 +2184,7 @@ public:
             auto tT = Kokkos::subview(t, range_type(offm, offm + m), Kokkos::ALL());
 
             _status =
-                Trsv<Uplo::Upper, Trans::ConjTranspose, Algo::OnDevice>::invoke(handle_blas, Diag::Unit(), ATL, tT);
+                Trsv<Uplo::Upper, Trans::Transpose, Algo::OnDevice>::invoke(handle_blas, Diag::Unit(), ATL, tT);
             checkDeviceBlasStatus("trsv");
 
             if (n_m > 0) {
@@ -2190,7 +2193,7 @@ public:
               UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n_m;
               UnmanagedViewType<value_type_matrix> bB(bptr, n_m, nrhs);
 
-              _status = Gemv<Trans::ConjTranspose, Algo::OnDevice>::invoke(handle_blas, minus_one, ATR, tT, zero, bB);
+              _status = Gemv<Trans::Transpose, Algo::OnDevice>::invoke(handle_blas, minus_one, ATR, tT, zero, bB);
               checkDeviceBlasStatus("gemv");
             }
 
@@ -2249,7 +2252,7 @@ public:
             checkDeviceBlasStatus("copy");
 
             // Solve diag (ATL is square)
-            _status = Trmv<Uplo::Upper, Trans::ConjTranspose, Algo::OnDevice>::invoke(handle_blas, Diag::Unit(), ATL, tT, bT);
+            _status = Trmv<Uplo::Upper, Trans::Transpose, Algo::OnDevice>::invoke(handle_blas, Diag::Unit(), ATL, tT, bT);
             checkDeviceBlasStatus("gemv");
 
             if (n_m > 0) {
@@ -2257,7 +2260,7 @@ public:
               UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m);
               UnmanagedViewType<value_type_matrix> bB(bptr, n_m, nrhs);
 
-              _status = Gemv<Trans::ConjTranspose, Algo::OnDevice>::invoke(handle_blas, minus_one, ATR, bT, zero, bB);
+              _status = Gemv<Trans::Transpose, Algo::OnDevice>::invoke(handle_blas, minus_one, ATR, bT, zero, bB);
               checkDeviceBlasStatus("gemv");
             }
 
@@ -2315,7 +2318,7 @@ public:
             checkDeviceBlasStatus("copy");
 
             // AT is short-wide: b := AT'\t : compute current block, and then use it to update off-diagonal
-            _status = Trmv<Uplo::Upper, Trans::ConjTranspose, Algo::OnDevice>::invoke(handle_blas, Diag::Unit(), AT, tT, b);
+            _status = Trmv<Uplo::Upper, Trans::Transpose, Algo::OnDevice>::invoke(handle_blas, Diag::Unit(), AT, tT, b);
             checkDeviceBlasStatus("trmv");
 
             // Apply D^{-1} on diagonal (already updated using this block, also n >= m so diagonal block is stored first in aptr)
@@ -2343,8 +2346,9 @@ public:
       return solveNoPivotLDLLowerOnDeviceVar2(pbeg, pend, h_buf_solve_ptr, t);
     else if (variant == 3) {
       // apply L^{-1}
+      const bool conjugate = false;
       auto &s0 = _h_supernodes(_h_level_sids(pbeg));
-      _spmv->ApplyL_OnDevice(lvl, s0, t, _w_vec);
+      _spmv->ApplyL_OnDevice(lvl, s0, t, _w_vec, conjugate);
       {
         // apply D^{-1}
         const ordinal_type nrhs = t.extent(1);
@@ -3089,8 +3093,9 @@ public:
     else if (variant == 2)
       solveLDL_LowerOnDeviceVar2(pbeg, pend, h_buf_solve_ptr, t);
     else if (variant == 3) {
+      bool conjugate = false;
       auto &s0 = _h_supernodes(_h_level_sids(pbeg));
-      _spmv->ApplyL_OnDevice(lvl, s0, t, _w_vec);
+      _spmv->ApplyL_OnDevice(lvl, s0, t, _w_vec, conjugate);
     } else {
       std::string msg = "Error: LevelSetTools::solveLDL_LowerOnDevice, algorithm variant ("
                         + std::to_string(variant) + ") is not supported.\n";
@@ -3737,8 +3742,6 @@ public:
     {
       // this should be considered with average problem sizes in levels
       const ordinal_type half_level = _nlevel / 2;
-      // const ordinal_type team_size_factor[2] = { 64, 16 }, vector_size_factor[2] = { 8, 8};
-      // const ordinal_type team_size_factor[2] = { 16, 16 }, vector_size_factor[2] = { 32, 32};
       const ordinal_type team_size_factor[2] = {64, 64}, vector_size_factor[2] = {8, 4};
       const ordinal_type team_size_update[2] = {16, 8}, vector_size_update[2] = {32, 32};
       // returned value from team Chol

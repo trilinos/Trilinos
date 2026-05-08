@@ -48,6 +48,7 @@ public:
   typedef typename supernode_info_type::value_type value_type;
   typedef typename supernode_info_type::value_type_matrix value_type_matrix;
   typedef typename supernode_info_type::ordinal_type_array ordinal_type_array;
+  using ATS = Tacho::ArithTraits<value_type>;
 
 private:
   bool _keep_zeros;
@@ -71,6 +72,8 @@ private:
   value_type* _d;
   // to apply pivoting on U? (always applied to L of LU)
   bool _no_perm;
+  // conjugate explicit-transpose
+  bool _conjugate;
 
 public:
   KOKKOS_INLINE_FUNCTION
@@ -109,6 +112,8 @@ public:
     _no_perm = !with_pivot;
     _piv = piv;
   }
+  inline void setConjugate(bool conjugate) { _conjugate = conjugate; }
+
   struct ExtractPtrTag {};
   struct ExtractValTag {};
   struct ExtractPtrColTag {};
@@ -390,7 +395,7 @@ public:
     for (ordinal_type k = _rowptr[i]; k < _rowptr[i+1]; k++) {
       int nnz = Kokkos::atomic_fetch_add(&(_rowptrT[_colind[k]]), 1);
       _colindT[nnz] = i;
-      _nzvalsT[nnz] = _nzvals[k];
+      _nzvalsT[nnz] = (_conjugate ? ATS::conj(_nzvals[k]) : _nzvals[k]);
     }
   }
 };

@@ -116,7 +116,8 @@ public:
   int ApplyL_OnDevice(const ordinal_type lvl,
                             supernode_type &s0,
                       const multi_vectors_type &t,
-                            multi_vectors_type &w) {
+                            multi_vectors_type &w,
+                            bool conjugate = true) {
     int r_val(0);
     const ordinal_type m = t.extent(0);
     const ordinal_type nrhs = t.extent(1);
@@ -131,17 +132,37 @@ public:
     const ordinal_type ldt = t.stride(1);
 
 #if defined(KOKKOS_ENABLE_CUDA)
-    cudaDataType computeType = CUDA_R_64F;
-    if (std::is_same<value_type, float>::value) {
+    cudaDataType computeType;
+    if (std::is_same<value_type, double>::value) {
+      computeType = CUDA_R_64F;
+      conjugate = false;
+    } else if (std::is_same<value_type, float>::value) {
       computeType = CUDA_R_32F;
+      conjugate = false;
+    } else if (std::is_same<value_type, Kokkos::complex<double>>::value ||
+               std::is_same<value_type,    std::complex<double>>::value) {
+      computeType = CUDA_C_64F;
+    } else if (std::is_same<value_type, Kokkos::complex<float>>::value ||
+               std::is_same<value_type,    std::complex<float>>::value) {
+      computeType = CUDA_C_32F;
     } else if (!std::is_same<value_type, double>::value) {
       TACHO_TEST_FOR_EXCEPTION(true, std::logic_error,
                                "LevelSetTools::solveCholeskyLowerOnDevice: ComputeSPMV only supported double or float");
     }
 #elif defined(KOKKOS_ENABLE_HIP)
-    rocsparse_datatype rocsparse_compute_type = rocsparse_datatype_f64_r;
-    if (std::is_same<value_type, float>::value) {
+    rocsparse_datatype rocsparse_compute_type;
+    if (std::is_same<value_type, double>::value) {
+      rocsparse_compute_type = rocsparse_datatype_f64_r;
+      conjugate = false;
+    } else if (std::is_same<value_type, float>::value) {
       rocsparse_compute_type = rocsparse_datatype_f32_r;
+      conjugate = false;
+    } else if (std::is_same<value_type, Kokkos::complex<double>>::value ||
+               std::is_same<value_type,    std::complex<double>>::value) {
+      rocsparse_compute_type = rocsparse_datatype_f64_c;
+    } else if (std::is_same<value_type, Kokkos::complex<float>>::value ||
+               std::is_same<value_type,    std::complex<float>>::value) {
+      rocsparse_compute_type = rocsparse_datatype_f32_c;
     } else if (!std::is_same<value_type, double>::value) {
       TACHO_TEST_FOR_EXCEPTION(true, std::logic_error,
                                "LevelSetTools::solveCholeskyLowerOnDevice: ComputeSPMV only supported double or float");
@@ -186,7 +207,8 @@ public:
     }
     // Call SpMV/SPMM
     cusparseStatus_t status;
-    cusparseOperation_t opL = (s0.spmv_explicit_transpose ? CUSPARSE_OPERATION_NON_TRANSPOSE : CUSPARSE_OPERATION_TRANSPOSE);
+    cusparseOperation_t opL = (s0.spmv_explicit_transpose ? CUSPARSE_OPERATION_NON_TRANSPOSE :
+                               (conjugate ? CUSPARSE_OPERATION_CONJUGATE_TRANSPOSE : CUSPARSE_OPERATION_TRANSPOSE));
     if (nrhs > 1) {
       if (lvl == _nlvls-1) {
         // start : destroy previous
@@ -244,7 +266,8 @@ public:
                                 &buffer_size, (void*)buffer_L.data());
       } else {
         size_t buffer_size = buffer_L.extent(0);
-        status = rocsparse_spmm(sparseHandle, rocsparse_operation_transpose, rocsparse_operation_none,
+        status = rocsparse_spmm(sparseHandle,
+                                (conjugate ? rocsparse_operation_conjugate_transpose : rocsparse_operation_transpose), rocsparse_operation_none,
                                 &alpha, s0.descrL, vecX, &beta, vecY, // dscrL stores the same ptrs as descrU, but optimized for trans
                                 rocsparse_compute_type, rocsparse_spmm_alg_default,
                                 rocsparse_spmm_stage_compute,
@@ -271,7 +294,7 @@ public:
            &buffer_size, (void*)buffer_L.data());
       } else {
         status = tacho_rocsparse_spmv
-          (sparseHandle, rocsparse_operation_transpose,
+          (sparseHandle, (conjugate ? rocsparse_operation_conjugate_transpose : rocsparse_operation_transpose),
            &alpha, s0.descrL, vecX, &beta, vecY, // dscrL stores the same ptrs as descrU, but optimized for trans
            rocsparse_compute_type, rocsparse_spmv_alg_default,
            #if ROCM_VERSION >= 50400
@@ -281,7 +304,7 @@ public:
       }
     }
     if (rocsparse_status_success != status) {
-      printf( " Failed rocsparse_spmv for L\n" );
+      printf( " Failed rocsparse_spmv for L (%s explicit transpose%s)\n",(s0.spmv_explicit_transpose ? "with" : "without"),(conjugate ? ", conjugate" : "") );
     }
 #endif
 #else
@@ -311,10 +334,11 @@ public:
       auto h_rowptr = Kokkos::create_mirror_view_and_copy(host_memory_space(), d_rowptrU);
       auto h_colind = Kokkos::create_mirror_view_and_copy(host_memory_space(), d_colindU);
       auto h_nzvals = Kokkos::create_mirror_view_and_copy(host_memory_space(), d_nzvalsU);
+      using ATS = Tacho::ArithTraits<value_type>;
       for (ordinal_type i = 0; i < m ; i++) {
         for (int k = h_rowptr(i); k < h_rowptr(i+1); k++) {
           for (int j = 0; j < nrhs; j++) {
-            h_t(h_colind(k), j) += h_nzvals(k) * h_w(i, j);
+            h_t(h_colind(k), j) += (conjugate ? ATS::conj(h_nzvals(k)) : h_nzvals(k)) * h_w(i, j);
           }
         }
       }
@@ -355,6 +379,12 @@ public:
     cudaDataType computeType = CUDA_R_64F;
     if (std::is_same<value_type, float>::value) {
       computeType = CUDA_R_32F;
+    } else if (std::is_same<value_type, Kokkos::complex<double>>::value ||
+               std::is_same<value_type,    std::complex<double>>::value) {
+      computeType = CUDA_C_64F;
+    } else if (std::is_same<value_type, Kokkos::complex<float>>::value ||
+               std::is_same<value_type,    std::complex<float>>::value) {
+      computeType = CUDA_C_32F;
     } else if (!std::is_same<value_type, double>::value) {
       TACHO_TEST_FOR_EXCEPTION(true, std::logic_error,
                                "LevelSetTools::solveCholeskyLowerOnDevice: ComputeSPMV only supported double or float");
@@ -408,6 +438,12 @@ public:
     rocsparse_datatype rocsparse_compute_type = rocsparse_datatype_f64_r;
     if (std::is_same<value_type, float>::value) {
       rocsparse_compute_type = rocsparse_datatype_f32_r;
+    } else if (std::is_same<value_type, Kokkos::complex<double>>::value ||
+               std::is_same<value_type,    std::complex<double>>::value) {
+      rocsparse_compute_type = rocsparse_datatype_f64_c;
+    } else if (std::is_same<value_type, Kokkos::complex<float>>::value ||
+               std::is_same<value_type,    std::complex<float>>::value) {
+      rocsparse_compute_type = rocsparse_datatype_f32_c;
     } else if (!std::is_same<value_type, double>::value) {
       TACHO_TEST_FOR_EXCEPTION(true, std::logic_error,
                                "LevelSetTools::solveCholeskyLowerOnDevice: ComputeSPMV only supported double or float");
@@ -588,6 +624,12 @@ public:
       computeType = CUDA_R_64F;
     } else if (std::is_same<value_type, float>::value) {
       computeType = CUDA_R_32F;
+    } else if (std::is_same<value_type, Kokkos::complex<double>>::value ||
+               std::is_same<value_type,    std::complex<double>>::value) {
+      computeType = CUDA_C_64F;
+    } else if (std::is_same<value_type, Kokkos::complex<float>>::value ||
+               std::is_same<value_type,    std::complex<float>>::value) {
+      computeType = CUDA_C_32F;
     } else {
       TACHO_TEST_FOR_EXCEPTION(true, std::logic_error,
                                "LevelSetTools::solveCholeskyLowerOnDevice: ComputeSPMV only supported double or float");
@@ -608,6 +650,12 @@ public:
     rocsparse_datatype rocsparse_compute_type = rocsparse_datatype_f64_r;
     if (std::is_same<value_type, float>::value) {
       rocsparse_compute_type = rocsparse_datatype_f32_r;
+    } else if (std::is_same<value_type, Kokkos::complex<double>>::value ||
+               std::is_same<value_type,    std::complex<double>>::value) {
+      rocsparse_compute_type = rocsparse_datatype_f64_c;
+    } else if (std::is_same<value_type, Kokkos::complex<float>>::value ||
+               std::is_same<value_type,    std::complex<float>>::value) {
+      rocsparse_compute_type = rocsparse_datatype_f32_c;
     }
     // create rocsparse handle
     _status = rocsparse_create_handle(&sparseHandle);
@@ -760,6 +808,7 @@ public:
     const bool lu = (method == 3);
     const bool ldl = (method == 2);
     const bool ldl_nopiv = (method == 0);
+    const bool conjugate = (!ldl && !ldl_nopiv); // conjugate if not-ldl
 
     int r_val(0);
     // ========================
@@ -773,6 +822,12 @@ public:
       computeType = CUDA_R_64F;
     } else if (std::is_same<value_type, float>::value) {
       computeType = CUDA_R_32F;
+    } else if (std::is_same<value_type, Kokkos::complex<double>>::value ||
+               std::is_same<value_type,    std::complex<double>>::value) {
+      computeType = CUDA_C_64F;
+    } else if (std::is_same<value_type, Kokkos::complex<float>>::value ||
+               std::is_same<value_type,    std::complex<float>>::value) {
+      computeType = CUDA_C_32F;
     } else {
       TACHO_TEST_FOR_EXCEPTION(true, std::logic_error,
                                "LevelSetTools::solveCholeskyLowerOnDevice: ComputeSPMV only supported double or float");
@@ -792,6 +847,12 @@ public:
     rocsparse_datatype rocsparse_compute_type = rocsparse_datatype_f64_r;
     if (std::is_same<value_type, float>::value) {
       rocsparse_compute_type = rocsparse_datatype_f32_r;
+    } else if (std::is_same<value_type, Kokkos::complex<double>>::value ||
+               std::is_same<value_type,    std::complex<double>>::value) {
+      rocsparse_compute_type = rocsparse_datatype_f64_c;
+    } else if (std::is_same<value_type, Kokkos::complex<float>>::value ||
+               std::is_same<value_type,    std::complex<float>>::value) {
+      rocsparse_compute_type = rocsparse_datatype_f32_c;
     }
     // vectors used for preprocessing
     rocsparse_dnvec_descr vecX, vecY;
@@ -916,6 +977,7 @@ public:
         // >> copy into transpose-matrix
         extractor_crs.setRowPtrT(s0.rowptrL);
         extractor_crs.setCrsViewT(s0.colindL, s0.nzvalsL);
+        extractor_crs.setConjugate(conjugate);
         {
           using team_policy_type = Kokkos::RangePolicy<typename functor_type::TransMatTag, exec_space>;
           team_policy_type team_policy(0, m);
