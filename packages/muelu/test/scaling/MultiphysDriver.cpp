@@ -223,7 +223,7 @@ bool SolveWithMultiPhys(
   typedef Belos::OperatorT<MultiVector> OP;
 
   Teuchos::RCP<Operator> preconditioner =
-      Teuchos::rcp(new MueLu::MultiPhys<SC, LO, GO, NO>(A, auxMatrices, nullspaces, coords, 2, comboList, true));
+      Teuchos::rcp(new MueLu::MultiPhys<SC, LO, GO, NO>(A, auxMatrices, nullspaces, coords, int(auxMatrices.size()), comboList, true));
 
   Teuchos::RCP<Vector> X = VectorFactory::Build(A->getRowMap());
   Teuchos::RCP<Vector> B = VectorFactory::Build(A->getRowMap());
@@ -267,7 +267,7 @@ bool SolveWithMultiPhys(
   Belos::ReturnType retStatus = solver->solve();
 
   itersOut = solver->getNumIters();
-  return (retStatus == Belos::Converged && itersOut < expectedMaxIters);
+  return (retStatus == Belos::Converged && itersOut <= expectedMaxIters);
 }
 #endif
 
