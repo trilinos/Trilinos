@@ -7,11 +7,58 @@
 // *****************************************************************************
 // @HEADER
 
+#include <cstdlib>
+#include <cstring>
+#include <utility>
+
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_SystemInformation.hpp"
-#include <stdlib.h>
 
 namespace {
+
+// setenv/unsetenv are POSIX; MSVC CRT provides _putenv_s instead.
+// Other Windows toolchains (e.g. MinGW) may still expose setenv/unsetenv.
+#if defined(_MSC_VER)
+void teuchosTestSetEnv(const char* name, const char* value, int overwrite)
+{
+  if(name == nullptr || value == nullptr || std::strchr(name, '=') != nullptr) {
+    return;
+  }
+  if(overwrite == 0) {
+    char* buf{};
+    size_t bufSize{};
+    if(_dupenv_s(std::addressof(buf), std::addressof(bufSize), name) == 0 && buf != nullptr) {
+      std::free(buf);
+      return;
+    }
+  }
+  (void)_putenv_s(name, value);
+}
+
+void teuchosTestUnsetEnv(const char* name)
+{
+  if(name == nullptr || std::strchr(name, '=') != nullptr) {
+    return;
+  }
+  (void)_putenv_s(name, "");
+}
+#else  // !defined(_MSC_VER)
+void teuchosTestSetEnv(const char* name, const char* value, int overwrite)
+{
+  if(name == nullptr || value == nullptr || std::strchr(name, '=') != nullptr) {
+    return;
+  }
+  (void)setenv(name, value, overwrite);
+}
+
+void teuchosTestUnsetEnv(const char* name)
+{
+  if(name == nullptr || std::strchr(name, '=') != nullptr) {
+    return;
+  }
+  (void)unsetenv(name);
+}
+#endif
 
 
 TEUCHOS_UNIT_TEST( SystemInformation, Commands )
@@ -32,13 +79,13 @@ TEUCHOS_UNIT_TEST( SystemInformation, EnvVariables ) {
     TEST_EQUALITY_CONST(values["BLAH_BLAH"], "NOT SET");
   }
 
-  setenv("BLAH_BLAH", "test", 1);
+  teuchosTestSetEnv("BLAH_BLAH", "test", 1);
   {
     auto values = Teuchos::SystemInformation::collectSystemInformation();
     TEST_ASSERT(values.find("BLAH_BLAH") != values.end());
     TEST_EQUALITY_CONST(values["BLAH_BLAH"], "test");
   }
-  unsetenv("BLAH_BLAH");
+  teuchosTestUnsetEnv("BLAH_BLAH");
 }
 
 
