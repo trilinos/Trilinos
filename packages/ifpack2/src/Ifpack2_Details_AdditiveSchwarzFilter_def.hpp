@@ -661,14 +661,35 @@ bool AdditiveSchwarzFilter<MatrixType>::
   return map1.isLocallyFitted(map2);
 }
 
+namespace {  // anonymous
+
+template <class ViewType, class LO>
+void replaceZerosWithOnes(const ViewType& v) {
+  using execution_space = typename ViewType::device_type::execution_space;
+  using range_type      = Kokkos::RangePolicy<execution_space, LO>;
+  using value_type      = typename ViewType::non_const_value_type;
+  using KAT             = KokkosKernels::ArithTraits<value_type>;
+
+  const LO n = static_cast<LO>(v.extent(0));
+  Kokkos::parallel_for(
+      "Ifpack2::AdditiveSchwarzFilter::replaceZerosWithOnes",
+      range_type(0, n),
+      KOKKOS_LAMBDA(const LO i) {
+        if (v(i) == KAT::zero()) {
+          v(i) = KAT::one();
+        }
+      });
+}
+
+}  // end anonymous namespace
+
 template <class MatrixType>
 void AdditiveSchwarzFilter<MatrixType>::computeAndApplyEquilibration() {
   if (!UseEquilibration_) return;
 
   equilResult_ = Tpetra::computeRowAndColumnOneNorms(*A_, false);
 
-  using range_type = Kokkos::RangePolicy<execution_space, local_ordinal_type>;
-  using KAT        = KokkosKernels::ArithTraits<mag_type>;
+  using KAT = KokkosKernels::ArithTraits<mag_type>;
 
   auto rowNorms = equilResult_.rowNorms;
   auto colScalingFactors =
@@ -684,20 +705,13 @@ void AdditiveSchwarzFilter<MatrixType>::computeAndApplyEquilibration() {
     return;
   }
 
-  const local_ordinal_type numRows =
-      static_cast<local_ordinal_type>(rowNorms.extent(0));
-
-  Kokkos::parallel_for(
-      "Ifpack2::AdditiveSchwarzFilter::sanitizeNorms",
-      range_type(0, numRows),
-      KOKKOS_LAMBDA(const local_ordinal_type i) {
-        if (rowNorms(i) == KAT::zero()) {
-          rowNorms(i) = KAT::one();
-        }
-        if (colScalingFactors(i) == KAT::zero()) {
-          colScalingFactors(i) = KAT::one();
-        }
-      });
+  // Tpetra's scaling helpers leave division-by-zero handling to the caller.
+  // Replace any zero scaling factors by one so that those rows/columns are left
+  // unchanged by equilibration.
+  if (equilResult_.foundZeroRowNorm) {
+    replaceZerosWithOnes<decltype(rowNorms), local_ordinal_type>(rowNorms);
+  }
+  replaceZerosWithOnes<decltype(colScalingFactors), local_ordinal_type>(colScalingFactors);
 
   Tpetra::leftAndOrRightScaleCrsMatrix(*A_,
                                        equilResult_.rowNorms,
