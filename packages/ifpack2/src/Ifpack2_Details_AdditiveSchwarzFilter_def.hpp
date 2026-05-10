@@ -667,10 +667,8 @@ void AdditiveSchwarzFilter<MatrixType>::computeAndApplyEquilibration() {
 
   equilResult_ = Tpetra::computeRowAndColumnOneNorms(*A_, false);
 
-  using execution_space = typename crs_matrix_type::execution_space;
-  using range_type      = Kokkos::RangePolicy<execution_space, local_ordinal_type>;
-  using mag_type        = typename decltype(equilResult_)::mag_type;
-  using KAT             = KokkosKernels::ArithTraits<mag_type>;
+  using range_type = Kokkos::RangePolicy<execution_space, local_ordinal_type>;
+  using KAT        = KokkosKernels::ArithTraits<mag_type>;
 
   auto rowNorms = equilResult_.rowNorms;
   auto colScalingFactors =
