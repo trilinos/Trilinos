@@ -762,15 +762,17 @@ class ElementWiseDivide<ViewType1,
     using mag_type = typename KAT::mag_type;
     using KAM      = KokkosKernels::ArithTraits<mag_type>;
 
-    for (IndexType j = 0; j < static_cast<IndexType>(X_.extent(1)); ++j) {
-      if (takeAbsoluteValueOfScalingFactors) {
-        const mag_type scalFactAbs  = KAT::abs(scalingFactors_(i));
-        const mag_type scalFinalVal = takeSquareRootsOfScalingFactors ? KAM::sqrt(scalFactAbs) : scalFactAbs;
-        X_(i, j)                    = X_(i, j) / scalFinalVal;
-      } else {
-        const val_type scalFact     = scalingFactors_(i);
-        const val_type scalFinalVal = takeSquareRootsOfScalingFactors ? KAT::sqrt(scalFact) : scalFact;
-        X_(i, j)                    = X_(i, j) / scalFinalVal;
+    if (takeAbsoluteValueOfScalingFactors) {
+      const mag_type scalFactAbs  = KAT::abs(scalingFactors_(i));
+      const mag_type scalFinalVal = takeSquareRootsOfScalingFactors ? KAM::sqrt(scalFactAbs) : scalFactAbs;
+      for (IndexType j = 0; j < static_cast<IndexType>(X_.extent(1)); ++j) {
+        X_(i, j) = X_(i, j) / scalFinalVal;
+      }
+    } else {
+      const val_type scalFact     = scalingFactors_(i);
+      const val_type scalFinalVal = takeSquareRootsOfScalingFactors ? KAT::sqrt(scalFact) : scalFact;
+      for (IndexType j = 0; j < static_cast<IndexType>(X_.extent(1)); ++j) {
+        X_(i, j) = X_(i, j) / scalFinalVal;
       }
     }
   }
