@@ -665,10 +665,41 @@ template <class MatrixType>
 void AdditiveSchwarzFilter<MatrixType>::computeAndApplyEquilibration() {
   if (!UseEquilibration_) return;
 
-  equilResult_           = Tpetra::computeRowAndColumnOneNorms(*A_, false);
-  auto colScalingFactors = equilResult_.assumeSymmetric
-                               ? equilResult_.colNorms
-                               : equilResult_.rowScaledColNorms;
+  equilResult_ = Tpetra::computeRowAndColumnOneNorms(*A_, false);
+
+  using execution_space = typename crs_matrix_type::execution_space;
+  using range_type      = Kokkos::RangePolicy<execution_space, local_ordinal_type>;
+  using mag_type        = typename decltype(equilResult_)::mag_type;
+  using KAT             = KokkosKernels::ArithTraits<mag_type>;
+
+  auto rowNorms = equilResult_.rowNorms;
+  auto colScalingFactors =
+      equilResult_.assumeSymmetric ? equilResult_.colNorms
+                                   : equilResult_.rowScaledColNorms;
+
+  // If the matrix contains NaN or Inf, disable equilibration by replacing all
+  // scaling factors with one.  This avoids introducing more NaN/Inf values by
+  // dividing through invalid scaling factors.
+  if (equilResult_.foundNan || equilResult_.foundInf) {
+    Kokkos::deep_copy(rowNorms, KAT::one());
+    Kokkos::deep_copy(colScalingFactors, KAT::one());
+    return;
+  }
+
+  const local_ordinal_type numRows =
+      static_cast<local_ordinal_type>(rowNorms.extent(0));
+
+  Kokkos::parallel_for(
+      "Ifpack2::AdditiveSchwarzFilter::sanitizeNorms",
+      range_type(0, numRows),
+      KOKKOS_LAMBDA(const local_ordinal_type i) {
+        if (rowNorms(i) == KAT::zero()) {
+          rowNorms(i) = KAT::one();
+        }
+        if (colScalingFactors(i) == KAT::zero()) {
+          colScalingFactors(i) = KAT::one();
+        }
+      });
 
   Tpetra::leftAndOrRightScaleCrsMatrix(*A_,
                                        equilResult_.rowNorms,
