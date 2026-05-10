@@ -1584,10 +1584,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, EquilImprovesParIlutOn
       rEquil.norm2(normEquil());
       b.norm2(normB());
 
-      cout << "  ||b||_2          = " << normB[0] << endl;
-      cout << "  ||r_base||_2     = " << normBase[0] << endl;
-      cout << "  ||r_equil||_2    = " << normEquil[0] << endl;
-      cout << "  ratio equil/base = " << (normEquil[0] / normBase[0]) << endl;
+      out << "  ||b||_2          = " << normB[0] << endl;
+      out << "  ||r_base||_2     = " << normBase[0] << endl;
+      out << "  ||r_equil||_2    = " << normEquil[0] << endl;
+      out << "  ratio equil/base = " << (normEquil[0] / normBase[0]) << endl;
 
       auto capNormRatio = mag_type(0.9);
       TEST_ASSERT(normEquil[0] / normBase[0] < capNormRatio);
