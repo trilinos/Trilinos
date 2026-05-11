@@ -937,7 +937,7 @@ jobs:
       target-runner-labels: "['self-hosted', 'gcc-12.3.0-openmpi-4.1.6', '20251204']"
       genconfig-string: "rhel8_gcc-openmpi-openmp_release_static_no-kokkos-arch_no-asan_no-complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_ramses"
       cdash-track: "Pull Request (Non-blocking)"
-      dashboard-build-name: ${AT2_IMAGE}_release_static_ramses
+      dashboard-build-name: PR-${{ github.event.pull_request.number }}_${AT2_IMAGE}_release_static_RAMSES
       max-cores-allowed: 29
       num-concurrent-tests: 16
       slots-per-gpu: 8

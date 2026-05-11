@@ -137,14 +137,12 @@ jobs:
             skip_create_packageenabels=""
           fi
 
-          #extra_inputs="${{ inputs.extra-pr-driver-args }}"
-          if [ -n "{{ inputs.extra-pr-driver-args }}" ]
+          if [ -n "${{ inputs.extra-pr-driver-args }}" ]
           then
             extra_pr_driver_args="${{ inputs.extra-pr-driver-args }}"
           else
             extra_pr_driver_args=""
           fi
-          echo "ext: $extra_pr_driver_args"
 
           python3 ${TRILINOS_DIR}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
             --genconfig-build-name ${{ inputs.genconfig-string }} \
