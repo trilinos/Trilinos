@@ -364,7 +364,7 @@ namespace {
     const size_t numRanks = comm->getSize();
     if (myRank==0) {
       std::cout << std::endl
-                << " >> UnitTest for ShyLUBasker::Solve with Scalar = "
+                << " >> UnitTest for ShyLUBasker::Partial1 with Scalar = "
                 << ST::name() << " <<" << std::endl << std::endl;
     }
 
@@ -405,11 +405,11 @@ namespace {
     Xhat->randomize();
 
     #ifdef KOKKOS_ENABLE_OPENMP
-    int check_value = Kokkos::OpenMP().concurrency();
+    int max_num_threads = Kokkos::OpenMP().concurrency();
     #else
-    int check_value = 1;
+    int max_num_threads = 1;
     #endif
-    if (check_value > 1) {
+    if (max_num_threads > 1) {
       // Create ShyLU-Basker solver
       RCP<Amesos2::Solver<MAT,MV> > solver
         = Amesos2::create<MAT,MV>("ShyLUBasker", A, Xhat, B );
@@ -420,7 +420,7 @@ namespace {
       Teuchos::ParameterList & shylubasker_paramlist = amesos2_paramlist.sublist("ShyLUBasker");
       // partial factorization currently requires at least two threads
       shylubasker_paramlist.set("num_threads", 2, "Number of threads");
-      shylubasker_paramlist.set("GetDenseSchur", 1, "Partial Factorization");
+      shylubasker_paramlist.set("PartialFacto", 1, "Partial Factorization");
       // Schur part has odd row IDs
       Teuchos::Array<LO> schurPart(numGlobal);
       for( size_t i = 0; i < numGlobal; i++) {
@@ -447,7 +447,7 @@ namespace {
       }
       TEST_COMPARE_FLOATING_ARRAYS( xhatnorms, xnorms, 0.005 );
     } else {
-      if (myRank==0) printf( " Skipping partial-factorization test because (check_value = %d)\n",check_value );
+      if (myRank==0) printf( " Skipping partial-factorization test because (max_num_threads = %d)\n",max_num_threads );
       TEST_ASSERT( true );
     }
   }
@@ -460,7 +460,7 @@ namespace {
     const size_t myRank = comm->getRank();
     if (myRank==0) {
       std::cout << std::endl
-                << " >> UnitTest for ShyLUBasker::Solve with Scalar = "
+                << " >> UnitTest for ShyLUBasker::Partial2 with Scalar = "
                 << ST::name() << " <<" << std::endl << std::endl;
     }
     #if !defined(HAVE_AMESOS2_METIS)
@@ -509,11 +509,11 @@ namespace {
     Xhat->randomize();
 
     #ifdef KOKKOS_ENABLE_OPENMP
-    int check_value = Kokkos::OpenMP().concurrency();
+    int max_num_threads = Kokkos::OpenMP().concurrency();
     #else
-    int check_value = 1;
+    int max_num_threads = 1;
     #endif
-    if (check_value > 1) {
+    if (max_num_threads > 1) {
       // Create ShyLU-Basker solver
       RCP<Amesos2::Solver<MAT,MV> > solver
         = Amesos2::create<MAT,MV>("ShyLUBasker", A, Xhat, B );
@@ -524,7 +524,7 @@ namespace {
       Teuchos::ParameterList & shylubasker_paramlist = amesos2_paramlist.sublist("ShyLUBasker");
       // partial factorization currently requires at least two threads
       shylubasker_paramlist.set("num_threads", 2, "Number of threads");
-      shylubasker_paramlist.set("GetDenseSchur", 2, "Partial Factorization");
+      shylubasker_paramlist.set("PartialFacto", 2, "Partial Factorization");
       // Schur part has odd row IDs
       Teuchos::Array<LO> schurPart(numGlobal);
       for( size_t i = 0; i < numGlobal; i++) {
@@ -575,7 +575,7 @@ namespace {
       }
       TEST_COMPARE_FLOATING_ARRAYS( schurOut, schur, 0.005 );
     } else {
-      if (myRank==0) printf( " Skipping partial-factorization 2 test because (check_value = %d)\n",check_value );
+      if (myRank==0) printf( " Skipping partial-factorization 2 test because (max_num_threads = %d)\n",max_num_threads );
       TEST_ASSERT( true );
     }
     #endif
