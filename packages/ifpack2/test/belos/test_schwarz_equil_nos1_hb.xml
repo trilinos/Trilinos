@@ -1,0 +1,31 @@
+<ParameterList name="test_params">
+  <Parameter name="hb_file" type="string" value="nos1.rsa"/>
+
+  <Parameter name="solver_type" type="string" value="PseudoBlockGmres"/>
+  <ParameterList name="Belos">
+    <!-- "Num Blocks" is the krylov subspace size, or iters-per-restart. -->
+    <Parameter name="Num Blocks" type="int" value="300"/>
+    <Parameter name="Verbosity" type="int" value="33"/>
+    <Parameter name="Maximum Iterations" type="int" value="1000"/>
+    <Parameter name="Maximum Restarts" type="int" value="20"/>
+    <Parameter name="Orthogonalization" type="string" value="ICGS"/>
+    <Parameter name="Output Style" type="int" value="1"/>
+    <Parameter name="Output Frequency" type="int" value="1"/>
+    <Parameter name="Convergence Tolerance" type="double" value="1e-06"/>
+  </ParameterList>
+
+  <Parameter name="Preconditioner Side" type="string" value="Right"/>
+  <Parameter name="Ifpack2::Preconditioner" type="string" value="SCHWARZ"/>
+  <ParameterList name="Ifpack2">
+    <Parameter name="schwarz: overlap level" type="int" value="0"/>
+    <Parameter name="schwarz: combine mode" type="string" value="ZERO"/>
+    <Parameter name="schwarz: use reordering" type="bool" value="false"/>
+    <Parameter name="schwarz: subdomain 1-norm equilibration" type="bool" value="true"/>
+    <Parameter name="subdomain solver name" type="string" value="RILUK"/>
+    <ParameterList name="subdomain solver parameters">
+      <Parameter name="fact: iluk level-of-fill" type="int" value="2"/>
+    </ParameterList>
+  </ParameterList>
+
+  <Parameter name="expectNumIters" type="int" value="300"/>
+</ParameterList>
