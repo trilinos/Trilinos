@@ -754,19 +754,14 @@ void Map<LocalOrdinal, GlobalOrdinal, Node>::
 
   if (req) req->wait();
 
-  const bool callComputeGlobalConstants = params.get() == nullptr ||
-                                          params->get("compute global constants", true);
+  const bool callComputeGlobalConstants = (params.get() == nullptr) ||
+                                          params->get("compute global constants", true) ||
+                                          (comm->getSize() == 1);
 
-  if (callComputeGlobalConstants && (comm->getSize() > 1))
+  if (callComputeGlobalConstants)
     computeGlobalConstants();
   else {
-    if (comm->getSize() == 1) {
-      minAllGID_           = minMyGID_;
-      maxAllGID_           = maxMyGID_;
-      distributed_         = false;
-      haveGlobalConstants_ = true;
-    } else
-      distributed_ = params->get("distributed", true);
+    distributed_ = params->get("distributed", true);
   }
 
   // Create the Directory on demand in getRemoteIndexList().
@@ -1024,19 +1019,14 @@ Map<LocalOrdinal, GlobalOrdinal, Node>::
 
   if (req) req->wait();
 
-  const bool callComputeGlobalConstants = params.get() == nullptr ||
-                                          params->get("compute global constants", true);
+  const bool callComputeGlobalConstants = (params.get() == nullptr) ||
+                                          params->get("compute global constants", true) ||
+                                          (comm->getSize() == 1);
 
-  if (callComputeGlobalConstants && (comm->getSize() > 1))
+  if (callComputeGlobalConstants)
     computeGlobalConstants();
   else {
-    if (comm->getSize() == 1) {
-      minAllGID_           = minMyGID_;
-      maxAllGID_           = maxMyGID_;
-      distributed_         = false;
-      haveGlobalConstants_ = true;
-    } else
-      distributed_ = params->get("distributed", true);
+    distributed_ = params->get("distributed", true);
   }
 
   contiguous_ = false;  // "Contiguous" is conservative.
@@ -1058,6 +1048,14 @@ void Map<LocalOrdinal, GlobalOrdinal, Node>::computeGlobalConstants() {
 
   if (haveGlobalConstants_)
     return;
+
+  if (comm_->getSize() == 1) {
+    minAllGID_           = minMyGID_;
+    maxAllGID_           = maxMyGID_;
+    distributed_         = false;
+    haveGlobalConstants_ = true;
+    return;
+  }
 
   Tpetra::Details::ProfilingRegion pr("Tpetra::Map::computeGlobalConstants");
 
