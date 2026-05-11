@@ -137,6 +137,27 @@ bool Converters<Scalar, LocalOrdinal, GlobalOrdinal, Node>::replaceWithXpetra(Pa
       RCP<XpMat> M = Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(xpDiag);
       paramList.set<RCP<XpMat> >(parameterName, M);
       return true;
+    } else if (paramList.isType<RCP<ThyLinOpBase> >(parameterName)) {
+      RCP<ThyLinOpBase> thyM = paramList.get<RCP<ThyLinOpBase> >(parameterName);
+      paramList.remove(parameterName);
+      try {
+        RCP<XpMat> M = XpThyUtils::toXpetra(thyM);
+        paramList.set<RCP<XpMat> >(parameterName, M);
+      } catch (std::exception& e) {
+        RCP<XpOp> M                                                                  = XpThyUtils::toXpetraOperator(thyM);
+        RCP<Xpetra::TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tpOp = rcp_dynamic_cast<Xpetra::TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(M, true);
+        RCP<tOp> tO                                                                  = tpOp->getOperator();
+        RCP<tV> diag;
+        if (tO->hasDiagonal()) {
+          diag = rcp(new tV(tO->getRangeMap()));
+          tO->getLocalDiagCopy(*diag);
+        }
+        auto fTpRow                                                                   = rcp(new MueLu::TpetraOperatorAsRowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(tO, diag));
+        RCP<Xpetra::TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tpFOp = rcp(new Xpetra::TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>(fTpRow));
+        auto op                                                                       = rcp_dynamic_cast<XpOp>(tpFOp);
+        paramList.set<RCP<XpOp> >(parameterName, op);
+      }
+      return true;
     } else if (paramList.isType<RCP<const ThyLinOpBase> >(parameterName)) {
       RCP<const ThyLinOpBase> thyM = paramList.get<RCP<const ThyLinOpBase> >(parameterName);
       paramList.remove(parameterName);
@@ -159,7 +180,7 @@ bool Converters<Scalar, LocalOrdinal, GlobalOrdinal, Node>::replaceWithXpetra(Pa
       }
       return true;
     } else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "Parameter " << parameterName << " has wrong type.");
+      TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "Parameter " << parameterName << " has wrong type " << paramList.getEntry(parameterName));
       return false;
     }
   } else

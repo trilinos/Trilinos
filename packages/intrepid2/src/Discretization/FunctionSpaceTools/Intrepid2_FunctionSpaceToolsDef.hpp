@@ -551,11 +551,11 @@ namespace Intrepid2 {
     }
 #endif
     constexpr bool are_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(outputVals)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(inputDet)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(inputWeights)::memory_space>::accessible;
     static_assert(are_accessible, "FunctionSpaceTools<DeviceType>::computeCellMeasure(..): input/output views' memory spaces are not compatible with DeviceType");
 
@@ -909,9 +909,9 @@ namespace Intrepid2 {
 #endif
 
     constexpr bool are_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(inoutOperator)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(fieldSigns)::memory_space>::accessible;
     static_assert(are_accessible, "FunctionSpaceTools<DeviceType>::applyLeftFieldSigns(..): input/output views' memory spaces are not compatible with DeviceType");
 
@@ -972,9 +972,9 @@ namespace Intrepid2 {
 #endif
 
     constexpr bool are_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(inoutOperator)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(fieldSigns)::memory_space>::accessible;
     static_assert(are_accessible, "FunctionSpaceTools<DeviceType>::applyRightFieldSigns(..): input/output views' memory spaces are not compatible with DeviceType");
 
@@ -1040,9 +1040,9 @@ namespace Intrepid2 {
 #endif
 
     constexpr bool are_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(inoutFunction)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(fieldSigns)::memory_space>::accessible;
     static_assert(are_accessible, "FunctionSpaceTools<DeviceType>::applyFieldSigns(..): input/output views' memory spaces are not compatible with DeviceType");
 
@@ -1166,11 +1166,11 @@ namespace Intrepid2 {
 #endif
 
     constexpr bool are_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(outputPointVals)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(inputCoeffs)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(inputFields)::memory_space>::accessible;
     static_assert(are_accessible, "FunctionSpaceTools<DeviceType>::evaluate(..): input/output views' memory spaces are not compatible with DeviceType");
 

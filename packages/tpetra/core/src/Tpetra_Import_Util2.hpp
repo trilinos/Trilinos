@@ -502,9 +502,6 @@ void sortCrsMatrix(local_crs_matrix& lclMatrix) {
 template <typename local_crs_graph>
 void sortCrsGraph(local_crs_graph& lclGraph) {
   KokkosSparse::SortAlgorithm option = KokkosSparse::SortAlgorithm::DEFAULT;
-  static constexpr bool is_cpu       = std::is_same_v<typename local_crs_graph::device_type::memory_space, Kokkos::HostSpace>;
-  if constexpr (is_cpu)
-    option = KokkosSparse::SortAlgorithm::SHELL;
   KokkosSparse::sort_crs_graph(lclGraph, KokkosKernels::ArithTraits<typename local_crs_graph::entries_type::non_const_value_type>::max(), option);
 }
 
@@ -512,9 +509,6 @@ template <typename rowptr_array_type, typename colind_array_type>
 void sortCrsEntries(const rowptr_array_type& CRS_rowptr,
                     const colind_array_type& CRS_colind) {
   KokkosSparse::SortAlgorithm option = KokkosSparse::SortAlgorithm::DEFAULT;
-  static constexpr bool is_cpu       = std::is_same_v<typename rowptr_array_type::memory_space, Kokkos::HostSpace>;
-  if constexpr (is_cpu)
-    option = KokkosSparse::SortAlgorithm::SHELL;
   KokkosSparse::sort_crs_graph(CRS_rowptr, CRS_colind,
                                KokkosKernels::ArithTraits<typename colind_array_type::non_const_value_type>::max(),
                                option);

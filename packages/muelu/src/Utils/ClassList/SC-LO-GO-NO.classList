@@ -32,6 +32,7 @@ DemoFactory
 DenseConstraint
 DirectSolver
 DropNegativeEntriesFactory
+EdgeProlongatorPatternFactory
 EminPFactory
 FacadeBGS2x2
 FacadeClassBase
@@ -62,6 +63,7 @@ LocalPermutationStrategy
 LowPrecisionFactory
 MapTransferFactory
 MatrixAnalysisFactory
+MatrixTransferFactory
 MergedBlockedMatrixFactory
 MergedSmoother
 MultiVectorTransferFactory
@@ -109,6 +111,7 @@ SmootherBase
 SmootherFactory
 SmootherPrototype
 SmooVecCoalesceDropFactory
+SparseConstraint
 StratimikosSmoother - #if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
 StructuredAggregationFactory
 StructuredLineDetectionFactory

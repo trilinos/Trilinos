@@ -76,6 +76,7 @@ TEUCHOS_UNIT_TEST(ML2MueLuParameterTranslator, SA_plus_translate) {
   goldList.set("max levels", 10);
   goldList.set("cycle type", "V");
   goldList.set("sa: damping factor", 1.333);
+  goldList.set("sa: diagonal replacement tolerance", 0.);
   goldList.set("sa: eigenvalue estimate num iterations", 10);
   goldList.set("smoother: type", "RELAXATION");
   goldList.set("smoother: pre or post", "both");
