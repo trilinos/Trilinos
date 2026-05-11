@@ -251,7 +251,7 @@ int main(int argc, char *argv[]) {
   }
 
   size_type n2 = 0;
-  int dense_schur = 0;
+  int partial_facto = 0;
   RCP<ID> SchurPart;
   SchurOut_type schurOut;
   if (xml_filename != "") {
@@ -260,8 +260,8 @@ int main(int argc, char *argv[]) {
     if (Amesos2::tolower (solvername) == "shylubasker") {
       // Partial factorization (only for ShyLU-Basker)
       Teuchos::ParameterList& shylubasker_params = amesos2_params.sublist("ShyLUBasker");
-      dense_schur = (shylubasker_params.isParameter("GetDenseSchur") ? shylubasker_params.get<int>("GetDenseSchur") : 0);
-      if (dense_schur != 0 && myRank == 0) {
+      partial_facto = (shylubasker_params.isParameter("PartialFacto") ? shylubasker_params.get<int>("PartialFacto") : 0);
+      if (partial_facto != 0 && myRank == 0) {
         RCP<const Teuchos::Comm<LO> > SerialComm = rcp(new Teuchos::SerialComm<int>());
         const LO indexBase = 0;
         RCP<const MAP> SerialMap (new MAP (nrows, indexBase, SerialComm));
@@ -340,7 +340,7 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE; //everyone should throw on failure
       }
       comm->barrier();
-      if (dense_schur == 2 && myRank == 0 && printMatrix) {
+      if (partial_facto == 2 && myRank == 0 && printMatrix) {
         printf("S=[\n");
         for (size_type i = 0; i < n2; i++) {
           for (size_type j = 0; j < n2; j++) *fos << schurOut[i+j*n2];

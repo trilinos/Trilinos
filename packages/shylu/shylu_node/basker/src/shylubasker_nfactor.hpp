@@ -102,7 +102,7 @@ namespace BaskerNS
         fflush(stdout);
         timer.reset();
       }
-      //if(Options.dense_schur != 0) {
+      //if(Options.partial_facto != 0) {
       //  if(Options.verbose == BASKER_TRUE) printf( " > halving # teams for partial factorization (%d -> %d)\n",num_doms,num_doms/2 );
       //  num_doms /= 2;
       //}
@@ -172,7 +172,7 @@ namespace BaskerNS
       // -------------------------------------------------------- //
       // ---------------------------Sep-------------------------- //
       if(info == BASKER_SUCCESS) {
-        if(Options.dense_schur == 2) {
+        if(Options.partial_facto == 2) {
           // zero out schur complement
           for (Int i=0; i<schur_size*schur_size; i++) schur_out_ptr[i] = Entry(0.0);
         }
@@ -196,7 +196,7 @@ namespace BaskerNS
             printf("Factoring Sep(# teams = %ld with # threads = %ld) at level = %d\n",
                    (long)lnteams, (long)lthreads, (int)l); fflush(stdout);
           }
-          //if(Options.dense_schur != 0) {
+          //if(Options.partial_facto != 0) {
           //  if(Options.verbose == BASKER_TRUE) printf( " > halving # teams for partial factorization (%d -> %d)\n",lnteams,lnteams/2 );
           //  lnteams /= 2;
           //}
@@ -251,7 +251,7 @@ namespace BaskerNS
           printf(" > Time INNERSEP %ld: %lf \n", (long int)l, timer_inner_sep.seconds());
           #endif
         }//end over each level
-        if(Options.dense_schur == 2 && schur_out_ptr != nullptr) {
+        if(Options.partial_facto == 2 && schur_out_ptr != nullptr) {
           // copy out schur complement
           for (Int i=0; i<schur_size; i++) {
             for (Int j=0; j<schur_size; j++) schur_out_ptr[i+j*schur_size] = schur_out(i,j);

@@ -484,7 +484,7 @@ namespace BaskerNS
    bool crs_transpose_needed_
   )
   {
-    if (Options.dense_schur != 0) {
+    if (Options.partial_facto != 0) {
       // store schur-part into internal view (in case user-pointer goes out of scope?)
       schur_size = 0;
       MALLOC_INT_1DARRAY(schur_part, nrow);
@@ -2052,7 +2052,7 @@ namespace BaskerNS
       }
       nthreads = check_value;
     }
-    BASKER_ASSERT((Options.dense_schur == 0 || nthreads > 1), "Basker SetThreads Assert: Partial Factorization requires at least two threads.");
+    BASKER_ASSERT((Options.partial_facto == 0 || nthreads > 1), "Basker SetThreads Assert: Partial Factorization requires at least two threads.");
 
     // Finally, set the internal number of threads used by ShyLU-Basker.
     num_threads = nthreads;

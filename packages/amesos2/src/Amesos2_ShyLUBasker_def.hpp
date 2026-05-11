@@ -81,7 +81,7 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
 #endif
   ShyLUbasker->Options.worker_threads = false;
   // partial factorization
-  ShyLUbasker->Options.dense_schur = 0;
+  ShyLUbasker->Options.partial_facto = 0;
   ShyLUbasker->Options.only_forward_solve = false;
   ShyLUbasker->Options.only_backward_solve = false;
 
@@ -132,7 +132,7 @@ ShyLUBasker<Matrix,Vector>::symbolicFactorization_impl()
   if(this->root_)
   {
     int nthreads = num_threads;
-    if (ShyLUbasker->Options.dense_schur != 0) {
+    if (ShyLUbasker->Options.partial_facto != 0) {
       // User needs to provide 2x threads, to avoid dead-lock due to busy-wait
       TEUCHOS_TEST_FOR_EXCEPTION
         (nthreads < 2, std::runtime_error,
@@ -179,7 +179,7 @@ ShyLUBasker<Matrix,Vector>::symbolicFactorization_impl()
           std::runtime_error, "Amesos2 Runtime Error: sp_values returned null ");
 
       // In this case, colptr_, rowind_, nzvals_ are invalid
-      if (ShyLUbasker->Options.dense_schur != 0) {
+      if (ShyLUbasker->Options.partial_facto != 0) {
         shylubasker_dtype * sp_schur_out = function_map::convert_scalar(schur_out.data());
         info = ShyLUbasker->Symbolic(this->globalNumRows_,
             this->globalNumCols_,
@@ -206,7 +206,7 @@ ShyLUBasker<Matrix,Vector>::symbolicFactorization_impl()
     { //follow original code path if conditions not met
       // In this case, loadA_impl updates colptr_, rowind_, nzvals_
       shylubasker_dtype * sp_values = function_map::convert_scalar(nzvals_view_.data());
-      if (ShyLUbasker->Options.dense_schur != 0) {
+      if (ShyLUbasker->Options.partial_facto != 0) {
         shylubasker_dtype * sp_schur_out = function_map::convert_scalar(schur_out.data());
         info = ShyLUbasker->Symbolic(this->globalNumRows_,
             this->globalNumCols_,
@@ -292,7 +292,7 @@ ShyLUBasker<Matrix,Vector>::numericFactorization_impl()
             rowind_view_.data(),
             sp_values);
       }
-      if (ShyLUbasker->Options.dense_schur != 0) {
+      if (ShyLUbasker->Options.partial_facto != 0) {
         if (schur_out_ptr != nullptr) {
           // copy schur out if the output pointer is valid (assuming enough space has been allocated)
           for (size_t i = 0; i < schur_size; i++) {
@@ -573,9 +573,9 @@ ShyLUBasker<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Param
       ShyLUbasker->Options.min_block_size = parameterList->get<int>("min_block_size");
     }
 
-  if(parameterList->isParameter("GetDenseSchur"))
+  if(parameterList->isParameter("PartialFacto"))
     {
-      ShyLUbasker->Options.dense_schur = parameterList->get<int>("GetDenseSchur");
+      ShyLUbasker->Options.partial_facto = parameterList->get<int>("PartialFacto");
     }
   if(parameterList->isParameter("SchurPart"))
     {
@@ -676,7 +676,7 @@ ShyLUBasker<Matrix,Vector>::getValidParameters_impl() const
       // TODO: should these be const or not
       scalar_type *dummy_scalar_ptr;
       const local_ordinal_type *dummy_ordinal_ptr;
-      pl->set("GetDenseSchur", 0,
+      pl->set("PartialFacto", 0,
               "Perform partial factorization to extract dense Schur complement (0: no, 1: form + factor Schur, 2: ony form");
       pl->set("SchurPart", dummy_ordinal_ptr,
               "Specify rows/columns belonging to Schur complement for partial factorization");
@@ -793,6 +793,7 @@ ShyLUBasker<Matrix,Vector>::describe_impl(Teuchos::FancyOStream &out,
   out << "  > btf_matching       = " << (ShyLUbasker->Options.btf_matching ? "YES" : "NO") << std::endl;
   out << "  > blk_matching       = " << (ShyLUbasker->Options.blk_matching ? "YES" : "NO") << std::endl;
   out << "  > use_sequential_diag_facto = " << (ShyLUbasker->Options.use_sequential_diag_facto ? "YES" : "NO") << std::endl;
+  out << "  > partial_facto      = " << ShyLUbasker->Options.partial_facto << std::endl;
   out << std::endl;
 }
 

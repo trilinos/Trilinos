@@ -264,7 +264,7 @@ namespace BaskerNS
         // ------------------------------------------------------- //
         // > factor the k-th column of LU(U_col)(U_row)
         Entry pivot (0.0);
-        if (lvl == tot_lvl && Options.dense_schur == 2) {
+        if (lvl == tot_lvl && Options.partial_facto == 2) {
           // skip if asked to return the last top schur
           if((kid%(Int)(pow(2,lvl))) == 0) {
             // > initialize perm
@@ -325,7 +325,7 @@ namespace BaskerNS
 
         // ------------------------------------------------------- //
         // > factor the k-th column of the off-diagonal blocks
-        if (info == BASKER_SUCCESS && (lvl < tot_lvl || Options.dense_schur < 2)) {
+        if (info == BASKER_SUCCESS && (lvl < tot_lvl || Options.partial_facto < 2)) {
           #ifdef BASKER_TIMER
           timer_facoff.reset();
           #endif

@@ -746,7 +746,7 @@ namespace BaskerNS
       //L\x -> y
       BASKER_MATRIX &L = LL(b)(0);
       //printf( "\n == b=%d with LL(%d)(0) %d x %d ==\n",b,b,L.nrow,L.ncol );
-      if (b == tree.nblks-1 && Options.dense_schur == 2) {
+      if (b == tree.nblks-1 && Options.partial_facto == 2) {
         // copy rhs to sol for the top schur complement
         const Int bcol = L.scol + scol_top;
         const Int brow = L.scol + scol_top;
@@ -899,7 +899,7 @@ namespace BaskerNS
 
       //U\y -> x
       BASKER_MATRIX &U = LU(b)(LU_size(b)-1);
-      if (b == tree.nblks-1 && Options.dense_schur == 2) {
+      if (b == tree.nblks-1 && Options.partial_facto == 2) {
         // copy rhs to sol for top schur complement
         const Int bcol = U.scol + scol_top;
         const Int brow = U.srow + scol_top;

@@ -413,15 +413,15 @@ namespace BaskerNS
       double break_work_size = ceil(total_work_estimate*(break_fact * ((double)1.0/num_threads) + ((double)BASKER_BTF_IMBALANCE)));
       double break_block_size = 20 * num_threads; //0;
       #endif
-      if (Options.dense_schur != 0)
+      if (Options.partial_facto != 0)
       {
         if(Options.verbose == BASKER_TRUE) {
-          printf("Basker: Forcing to perform ND factorization of one BTF block for partial factorization %d\n",Options.dense_schur);
+          printf("Basker: Forcing to perform ND factorization of one BTF block for partial factorization %d\n",Options.partial_facto);
         }
         break_work_size = 0.0;
         break_block_size = 0.0;
         #if !defined (HAVE_SHYLU_NODEBASKER_METIS)
-        if (Options.dense_schur == 2) {
+        if (Options.partial_facto == 2) {
           BASKER_ASSERT(1==0, "Basker: partial factorization requires METIS.");
         }
         #endif
@@ -847,9 +847,9 @@ namespace BaskerNS
     //JDB:Note, this needs to be changed just fixed for int/long
     MALLOC_INT_1DARRAY(CC, M.ncol+1);
 
-    if(Options.incomplete == BASKER_TRUE || Options.dense_schur != 0)
+    if(Options.incomplete == BASKER_TRUE || Options.partial_facto != 0)
     {
-      if (Options.dense_schur != 0 && Options.verbose == BASKER_TRUE)
+      if (Options.partial_facto != 0 && Options.verbose == BASKER_TRUE)
       {
         printf("Basker: Forcing one strong-component for partial factorization\n");
       }

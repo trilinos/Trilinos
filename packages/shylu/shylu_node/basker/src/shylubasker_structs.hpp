@@ -818,7 +818,7 @@ namespace BaskerNS
       user_fill  = BASKER_FILL_USER;
 
       // Partial Factorization Option, 0: no, 1: form + factor, 2: only form
-      dense_schur = 0;
+      partial_facto = 0;
       only_forward_solve = false;
       only_backward_solve = false;
     }
@@ -897,7 +897,7 @@ namespace BaskerNS
     BASKER_MAGNITUDE user_fill;
     
     // Partial Factorization Option
-    int dense_schur;
+    int partial_facto;
     bool only_forward_solve;
     bool only_backward_solve;
     /* ---- todo add more ----*/
