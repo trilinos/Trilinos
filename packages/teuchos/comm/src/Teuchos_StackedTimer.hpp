@@ -214,7 +214,7 @@ public:
   struct TimeInfo {
     TimeInfo():time(0.0), stdDev(0.0), count(0), updates(0), running(false){}
     TimeInfo(BaseTimer* t): time(t->accumulation_), stdDev(t->timePerCallStdDev()), count(t->count_started_), updates(t->count_updates_), running(t->running()) {}
-    bool operator ==(const TimeInfo& ti)
+    bool operator ==(const TimeInfo& ti) const
     {return (time == ti.time) &&
             (stdDev == ti.stdDev) &&
             (count == ti.count) &&

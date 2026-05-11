@@ -7,12 +7,12 @@
 // *****************************************************************************
 // @HEADER
 
-#include <cstdlib>
-#include <cstring>
-#include <utility>
 
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_SystemInformation.hpp"
+#include <cstdlib>
+#include <cstring>
+#include <utility>
 
 namespace {
 
