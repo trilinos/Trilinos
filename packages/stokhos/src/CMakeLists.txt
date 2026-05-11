@@ -848,6 +848,9 @@ IF (Stokhos_ENABLE_Sacado)
         MatrixMatrix
         TripleMatrixMultiply
         )
+      SET(TPETRAINOUT_ETI_CLASSES
+        MatrixMarket
+        )
       SET(TPETRA_SD_ETI_CLASSES
         LocalCrsMatrixOperator
         )
@@ -893,6 +896,19 @@ IF (Stokhos_ENABLE_Sacado)
           "TpetraExt"
           TRUE
           "${STOKHOS_TPETRAEXT_DEPS}"
+          DEPLIBS_OUT)
+        LIST(APPEND STOKHOS_TPETRA_DEPLIBS ${DEPLIBS_OUT})
+        # TpetraInOut depends on Tpetra
+        SET(STOKHOS_TPETRAINOUT_DEPS ${STOKHOS_DEPLIBS} ${STOKHOS_TPETRA_DEPLIBS})
+        PROCESS_ENSEMBLE_ETI(
+          "${Stokhos_ETI_Ensemble_Sizes}"
+          "${TPETRAINOUT_ETI_CLASSES}"
+          ""
+          ""
+          "sacado/kokkos/vector/tpetra"
+          "TpetraInOut"
+          TRUE
+          "${STOKHOS_TPETRAINOUT_DEPS}"
           DEPLIBS_OUT)
         LIST(APPEND STOKHOS_TPETRA_DEPLIBS ${DEPLIBS_OUT})
       ENDIF()
@@ -944,6 +960,20 @@ IF (Stokhos_ENABLE_Sacado)
           "TpetraExt"
           TRUE
           "${STOKHOS_TPETRAEXT_DEPS}"
+          DEPLIBS_OUT)
+        LIST(APPEND STOKHOS_TPETRA_DEPLIBS ${DEPLIBS_OUT})
+
+        # TpetraInOut depends on Tpetra
+        SET(STOKHOS_TPETRAINOUT_DEPS ${STOKHOS_DEPLIBS} ${STOKHOS_TPETRA_DEPLIBS})
+        PROCESS_PCE_ETI(
+          "${TPETRAINOUT_ETI_CLASSES}"
+          ""
+          ""
+          ""
+          "sacado/kokkos/pce/tpetra"
+          "TpetraInOut"
+          TRUE
+          "${STOKHOS_TPETRAINOUT_DEPS}"
           DEPLIBS_OUT)
         LIST(APPEND STOKHOS_TPETRA_DEPLIBS ${DEPLIBS_OUT})
       ENDIF()
