@@ -45,7 +45,7 @@ VerboseObject::VerboseObject()
 #endif
 }
 
-VerboseObject::~VerboseObject() {}
+VerboseObject::~VerboseObject() = default;
 
 VerbLevel VerboseObject::GetVerbLevel() const {
   return (verbLevel_ != NotSpecified ? verbLevel_ : globalVerbLevel_);

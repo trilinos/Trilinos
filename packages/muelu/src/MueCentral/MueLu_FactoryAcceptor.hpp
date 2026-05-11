@@ -20,7 +20,7 @@ namespace MueLu {
 
 class FactoryAcceptor {
  public:
-  virtual ~FactoryAcceptor() {}
+  virtual ~FactoryAcceptor() = default;
 
   //@{
   //! Configuration

@@ -20,6 +20,7 @@
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Core.hpp"
 #include "MatrixMarket_Tpetra.hpp"
+#include "Xpetra_TpetraMultiVector.hpp"
 
 // Teko-Package includes
 #include "Teko_Utilities.hpp"

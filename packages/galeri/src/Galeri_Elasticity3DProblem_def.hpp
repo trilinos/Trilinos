@@ -7,14 +7,14 @@
 // *****************************************************************************
 // @HEADER
 
-#ifndef GALERI_ELASTICITY3DPROBLEM_HPP
-#define GALERI_ELASTICITY3DPROBLEM_HPP
+#ifndef GALERI_ELASTICITY3DPROBLEM_DEF_HPP
+#define GALERI_ELASTICITY3DPROBLEM_DEF_HPP
 
-#include <Teuchos_ParameterList.hpp>
 #include "KokkosBlas3_gemm.hpp"
 
-#include "Galeri_Problem.hpp"
+#include "Galeri_Elasticity3DProblem_decl.hpp"
 #include "Galeri_MultiVectorTraits.hpp"
+#include "Galeri_MatrixTraits.hpp"
 #include "Galeri_XpetraUtils.hpp"
 
 namespace Galeri {
@@ -22,95 +22,47 @@ namespace Galeri {
 namespace Xpetra {
 
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
-class Elasticity3DProblem : public Problem<Map, Matrix, MultiVector> {
- public:
-  using RealValuedMultiVector = typename Problem<Map, Matrix, MultiVector>::RealValuedMultiVector;
-  Elasticity3DProblem(Teuchos::ParameterList& list, const Teuchos::RCP<const Map>& map)
-    : Problem<Map, Matrix, MultiVector>(list, map) {
-    E  = list.get("E", Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(1e9));
-    nu = list.get("nu", Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(0.25));
+Elasticity3DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, MultiVector>::Elasticity3DProblem(Teuchos::ParameterList& list, const Teuchos::RCP<const Map>& map)
+  : Problem<Map, Matrix, MultiVector>(list, map) {
+  E  = list.get("E", Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(1e9));
+  nu = list.get("nu", Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(0.25));
 
-    nx_ = -1;
-    ny_ = -1;
-    nz_ = -1;
+  nx_ = -1;
+  ny_ = -1;
+  nz_ = -1;
 
-    if (list.isParameter("nx")) {
-      if (list.isType<int>("nx"))
-        nx_ = Teuchos::as<GlobalOrdinal>(list.get<int>("nx"));
-      else
-        nx_ = list.get<GlobalOrdinal>("nx");
-    }
-    if (list.isParameter("ny")) {
-      if (list.isType<int>("ny"))
-        ny_ = Teuchos::as<GlobalOrdinal>(list.get<int>("ny"));
-      else
-        ny_ = list.get<GlobalOrdinal>("ny");
-    }
-    if (list.isParameter("nz")) {
-      if (list.isType<int>("nz"))
-        nz_ = Teuchos::as<GlobalOrdinal>(list.get<int>("nz"));
-      else
-        nz_ = list.get<GlobalOrdinal>("nz");
-    }
-
-    nDim_      = 3;
-    double one = 1.0;
-    stretch.push_back(list.get("stretchx", one));
-    stretch.push_back(list.get("stretchy", one));
-    stretch.push_back(list.get("stretchz", one));
-
-    // NOTE: -1 is because galeri counts points, not elements
-    dims.push_back(nx_ - 1);
-    dims.push_back(ny_ - 1);
-    dims.push_back(nz_ - 1);
-
-    TEUCHOS_TEST_FOR_EXCEPTION(nx_ <= 0 || ny_ <= 0 || nz_ <= 0, std::logic_error, "nx, ny and nz must be positive");
+  if (list.isParameter("nx")) {
+    if (list.isType<int>("nx"))
+      nx_ = Teuchos::as<GlobalOrdinal>(list.get<int>("nx"));
+    else
+      nx_ = list.get<GlobalOrdinal>("nx");
+  }
+  if (list.isParameter("ny")) {
+    if (list.isType<int>("ny"))
+      ny_ = Teuchos::as<GlobalOrdinal>(list.get<int>("ny"));
+    else
+      ny_ = list.get<GlobalOrdinal>("ny");
+  }
+  if (list.isParameter("nz")) {
+    if (list.isType<int>("nz"))
+      nz_ = Teuchos::as<GlobalOrdinal>(list.get<int>("nz"));
+    else
+      nz_ = list.get<GlobalOrdinal>("nz");
   }
 
-  Teuchos::RCP<Matrix> BuildMatrix();
-  Teuchos::RCP<MultiVector> BuildNullspace();
-  Teuchos::RCP<RealValuedMultiVector> BuildCoords();
+  nDim_      = 3;
+  double one = 1.0;
+  stretch.push_back(list.get("stretchx", one));
+  stretch.push_back(list.get("stretchy", one));
+  stretch.push_back(list.get("stretchz", one));
 
- private:
-  typedef Scalar SC;
-  typedef LocalOrdinal LO;
-  typedef GlobalOrdinal GO;
+  // NOTE: -1 is because galeri counts points, not elements
+  dims.push_back(nx_ - 1);
+  dims.push_back(ny_ - 1);
+  dims.push_back(nz_ - 1);
 
-  struct Point {
-    SC x, y, z;
-
-    Point() { z = Teuchos::ScalarTraits<SC>::zero(); }
-    Point(SC x_, SC y_, SC z_ = Teuchos::ScalarTraits<SC>::zero())
-      : x(x_)
-      , y(y_)
-      , z(z_) {}
-  };
-
-  GlobalOrdinal nx_, ny_, nz_;
-  size_t nDim_;
-  std::vector<GO> dims;
-  // NOTE: nodes correspond to a local subdomain nodes. I have to construct overlapped subdomains because
-  // InsertGlobalValues in Epetra does not support inserting into rows owned by other processor
-  std::vector<Point> nodes_;
-  std::vector<std::vector<LO> > elements_;
-  std::vector<GO> local2Global_;
-
-  std::vector<char> dirichlet_;
-
-  typename Teuchos::ScalarTraits<Scalar>::magnitudeType E, nu;
-  std::vector<Scalar> stretch;
-  std::string mode_;
-
-  using impl_scalar_type = typename KokkosKernels::ArithTraits<SC>::val_type;
-  using KAT              = KokkosKernels::ArithTraits<impl_scalar_type>;
-  using Memory2D         = Kokkos::View<impl_scalar_type**, Kokkos::HostSpace>;
-
-  void EvalD(const std::vector<Point>& refPoints, Point& gaussPoint, Memory2D S);
-
-  void BuildMesh();
-  void BuildMaterialMatrix(Memory2D& D);
-  void BuildReferencePoints(size_t& numRefPoints, std::vector<Point>& refPoints, size_t& numGaussPoints, std::vector<Point>& gaussPoints);
-};
+  TEUCHOS_TEST_FOR_EXCEPTION(nx_ <= 0 || ny_ <= 0 || nz_ <= 0, std::logic_error, "nx, ny and nz must be positive");
+}
 
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
 Teuchos::RCP<Matrix> Elasticity3DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, MultiVector>::BuildMatrix() {
@@ -578,4 +530,24 @@ void Elasticity3DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, Multi
 
 }  // namespace Galeri
 
-#endif  // GALERI_ELASTICITY3DPROBLEM_HPP
+#define GALERI_ELASTICITY3DPROBLEM_INSTANT_TPETRA(S, LO, GO, N) \
+  template class Galeri::Xpetra::Elasticity3DProblem<S, LO, GO, Tpetra::Map<LO, GO, N>, Tpetra::CrsMatrix<S, LO, GO, N>, Tpetra::MultiVector<S, LO, GO, N>>;
+
+#define GALERI_ELASTICITY3DPROBLEM_INSTANT_XPETRA(S, LO, GO, N)                                                                                                  \
+  template class Galeri::Xpetra::Elasticity3DProblem<S, LO, GO, Xpetra::Map<LO, GO, N>, Xpetra::CrsMatrixWrap<S, LO, GO, N>, Xpetra::MultiVector<S, LO, GO, N>>; \
+  template class Galeri::Xpetra::Elasticity3DProblem<S, LO, GO, Xpetra::Map<LO, GO, N>, Xpetra::TpetraCrsMatrix<S, LO, GO, N>, Xpetra::MultiVector<S, LO, GO, N>>;
+
+#ifdef HAVE_GALERI_XPETRA
+
+#define GALERI_ELASTICITY3DPROBLEM_INSTANT(S, LO, GO, N)  \
+  GALERI_ELASTICITY3DPROBLEM_INSTANT_TPETRA(S, LO, GO, N) \
+  GALERI_ELASTICITY3DPROBLEM_INSTANT_XPETRA(S, LO, GO, N)
+
+#else
+
+#define GALERI_ELASTICITY3DPROBLEM_INSTANT(S, LO, GO, N) \
+  GALERI_ELASTICITY3DPROBLEM_INSTANT_TPETRA(S, LO, GO, N)
+
+#endif
+
+#endif
