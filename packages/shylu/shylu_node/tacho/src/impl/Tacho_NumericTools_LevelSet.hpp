@@ -2353,7 +2353,6 @@ public:
         // apply D^{-1}
         const ordinal_type nrhs = t.extent(1);
         auto matY = (lvl == 0 ? t : ((nlvls-1-lvl)%2 == 0 ? _w_vec : t));
-        auto &s0 = _h_supernodes(_h_level_sids(pbeg));
         const UnmanagedViewType<nzvals_view> matD(s0.nzvalsD, _m);
 
         using policy_type = Kokkos::RangePolicy<exec_space>;

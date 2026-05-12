@@ -589,10 +589,7 @@ public:
             ordinal_type_array &piv,
 	    const stream_type &stream_0,
             multi_vectors_type &_w_vec) {
-    using host_device_type = typename UseThisDevice<Kokkos::DefaultHostExecutionSpace>::type;
-    using host_memory_space = typename host_device_type::memory_space;
     using range_type = Kokkos::pair<ordinal_type, ordinal_type>;
-
     int r_val(0);
     if (verbose) {
       printf("LevelSetTools:setupCRS(method=%d)\n",method);
@@ -799,12 +796,7 @@ public:
            ordinal_type_array &piv,
 	   const stream_type &stream_0,
            multi_vectors_type &_w_vec) {
-
-    using exec_space = typename multi_vectors_type::execution_space;
-    using host_device_type = typename UseThisDevice<Kokkos::DefaultHostExecutionSpace>::type;
-    using host_memory_space = typename host_device_type::memory_space;
     using range_type = Kokkos::pair<ordinal_type, ordinal_type>;
-
     const bool lu = (method == 3);
     const bool ldl = (method == 2);
     const bool ldl_nopiv = (method == 0);
