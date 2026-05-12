@@ -636,8 +636,18 @@ void AdditiveSchwarz<MatrixType, LocalInverseType>::
     resetMultiVecIfNeeded(reduced_reordered_B_, additiveSchwarzFilter->getRowMap(), numVectors, true);
     resetMultiVecIfNeeded(reduced_reordered_Y_, additiveSchwarzFilter->getRowMap(), numVectors, true);
     additiveSchwarzFilter->CreateReducedProblem(OverlappingB, OverlappingY, *reduced_reordered_B_);
+
+    if (additiveSchwarzFilter->isEquilibrated()) {
+      additiveSchwarzFilter->scaleReducedRHS(*reduced_reordered_B_);
+    }
+
     // Apply inner solver
     Inverse_->solve(*reduced_reordered_Y_, *reduced_reordered_B_);
+
+    if (additiveSchwarzFilter->isEquilibrated()) {
+      additiveSchwarzFilter->unscaleReducedLHS(*reduced_reordered_Y_);
+    }
+
     // Scatter ReducedY back to non-singleton rows of OverlappingY, according to the reordering.
     additiveSchwarzFilter->UpdateLHS(*reduced_reordered_Y_, OverlappingY);
   } else {
@@ -838,6 +848,9 @@ void AdditiveSchwarz<MatrixType, LocalInverseType>::
   // singletons should help for PDE problems with Dirichlet BCs.
   FilterSingletons_ = plist->get("schwarz: filter singletons", FilterSingletons_);
 
+  EquilibrateSubdomainMatrix_ =
+      plist->get("schwarz: subdomain 1-norm equilibration", EquilibrateSubdomainMatrix_);
+
   // Allow for damped Schwarz updates
   getParamTryingTypes<scalar_type, scalar_type, double>(UpdateDamping_, *plist, "schwarz: update damping", prefix);
 
@@ -908,12 +921,13 @@ AdditiveSchwarz<MatrixType, LocalInverseType>::
   using Teuchos::rcp_const_cast;
 
   if (validParams_.is_null()) {
-    const int overlapLevel          = 0;
-    const bool useReordering        = false;
-    const bool filterSingletons     = false;
-    const int numIterations         = 1;
-    const bool zeroStartingSolution = true;
-    const scalar_type updateDamping = Teuchos::ScalarTraits<scalar_type>::one();
+    const int overlapLevel                = 0;
+    const bool useReordering              = false;
+    const bool filterSingletons           = false;
+    const bool equilibrateSubdomainMatrix = false;
+    const int numIterations               = 1;
+    const bool zeroStartingSolution       = true;
+    const scalar_type updateDamping       = Teuchos::ScalarTraits<scalar_type>::one();
     ParameterList reorderingSublist;
     reorderingSublist.set("order_method", std::string("rcm"));
 
@@ -930,6 +944,7 @@ AdditiveSchwarz<MatrixType, LocalInverseType>::
     plist->set("schwarz: num iterations", numIterations);
     plist->set("schwarz: zero starting solution", zeroStartingSolution);
     plist->set("schwarz: update damping", updateDamping);
+    plist->set("schwarz: subdomain 1-norm equilibration", equilibrateSubdomainMatrix);
 
     // FIXME (mfh 18 Nov 2013) Get valid parameters from inner solver.
     //        JJH The inner solver should handle its own validation.
@@ -1453,9 +1468,9 @@ void AdditiveSchwarz<MatrixType, LocalInverseType>::setup() {
       Teuchos::TimeMonitor t(*Teuchos::TimeMonitor::getNewTimer("Filter construction"));
       RCP<Details::AdditiveSchwarzFilter<MatrixType>> asf;
       if (OverlappingMatrix_.is_null())
-        asf = rcp(new Details::AdditiveSchwarzFilter<MatrixType>(matrixCrs, perm, revperm, FilterSingletons_));
+        asf = rcp(new Details::AdditiveSchwarzFilter<MatrixType>(matrixCrs, perm, revperm, FilterSingletons_, EquilibrateSubdomainMatrix_));
       else
-        asf = rcp(new Details::AdditiveSchwarzFilter<MatrixType>(OverlappingMatrix_, perm, revperm, FilterSingletons_));
+        asf = rcp(new Details::AdditiveSchwarzFilter<MatrixType>(OverlappingMatrix_, perm, revperm, FilterSingletons_, EquilibrateSubdomainMatrix_));
       innerMatrix_ = asf;
     }
 

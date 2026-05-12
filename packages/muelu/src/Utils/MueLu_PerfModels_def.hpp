@@ -296,7 +296,7 @@ PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PerfModels()
   : launch_and_wait_latency_(-1.0) {}
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~PerfModels() {}
+PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~PerfModels() = default;
 
 /****************************************************************************************/
 /****************************************************************************************/

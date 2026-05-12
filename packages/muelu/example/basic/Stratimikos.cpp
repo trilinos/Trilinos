@@ -26,6 +26,7 @@ The source code is not MueLu specific and can be used with any Stratimikos strat
 #include <Teuchos_XMLParameterListHelpers.hpp>
 #include <Teuchos_YamlParameterListHelpers.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
+#include <Teuchos_StackedTimer.hpp>
 
 // Thyra includes
 #include <Thyra_LinearOpWithSolveBase.hpp>

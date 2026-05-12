@@ -11,6 +11,8 @@
 
 namespace MueLu {
 
+FactoryBase::~FactoryBase() = default;
+
 int FactoryBase::GenerateUniqueId() {
   static int i = 0;
   return i++;

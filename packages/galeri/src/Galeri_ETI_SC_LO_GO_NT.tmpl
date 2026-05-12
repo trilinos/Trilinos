@@ -1,0 +1,29 @@
+// @HEADER
+// *****************************************************************************
+//           Galeri: Finite Element and Matrix Generation Package
+//
+// Copyright 2006 ETHZ/NTESS and the Galeri contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
+#include "Galeri_config.h"
+#if defined(HAVE_GALERI_EXPLICIT_INSTANTIATION)
+
+#include "Galeri_ETIHelperMacros.h"
+#include "Galeri_@CLASS_NAME@_decl.hpp"
+#include "Galeri_@CLASS_NAME@_def.hpp"
+
+#if defined (HAVE_TPETRA_INST_@NT_MACRO_NAME@) && defined(HAVE_TPETRA_INST_@SC_MACRO_NAME@) && defined (HAVE_TPETRA_INST_@LO_MACRO_NAME@_@GO_MACRO_NAME@) @SC_MACRO_EXPR@
+
+// Need this for the mangling of the Node typedef.
+GALERI_ETI_MANGLING_TYPEDEFS()
+
+GALERI_@CLASS_MACRO_NAME@_INSTANT( @SC_MANGLED_NAME@, @LO_MANGLED_NAME@, @GO_MANGLED_NAME@, @NT_MANGLED_NAME@ )
+
+#else
+#warning "We don't have the @NT_MACRO_NAME@ node."
+
+#endif
+
+#endif // HAVE_GALERI_EXPLICIT_INSTANTIATION
