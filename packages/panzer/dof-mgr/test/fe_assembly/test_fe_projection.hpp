@@ -124,7 +124,11 @@ template<typename ValueType, typename DeviceSpaceType>
 int feProjection(int argc, char *argv[]) {
 
   using HostSpaceType = typename
+#if KOKKOS_VERSION >= 50199
+      Kokkos::Impl::HostMirror<typename DeviceSpaceType::memory_space>::Space::execution_space;
+#else
       Kokkos::Impl::HostMirror<DeviceSpaceType>::Space::execution_space;
+#endif
   using DynRankView = Kokkos::DynRankView<ValueType,DeviceSpaceType>;
   using DynRankViewHost = Kokkos::DynRankView<ValueType,HostSpaceType>;
 
