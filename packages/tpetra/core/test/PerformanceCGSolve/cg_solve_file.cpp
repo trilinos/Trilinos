@@ -43,6 +43,7 @@ bool cg_solve(Teuchos::RCP<CrsMatrix> A, Teuchos::RCP<Vector> b, Teuchos::RCP<Ve
   Teuchos::RCP<Vector> r, p, Ap;
   // int max_iter=200;
   // double tolerance = 1e-8;
+
   r  = Tpetra::createVector<ScalarType>(A->getRangeMap());
   p  = Tpetra::createVector<ScalarType>(A->getRangeMap());
   Ap = Tpetra::createVector<ScalarType>(A->getRangeMap());
@@ -281,12 +282,13 @@ int main(int argc, char* argv[]) {
   if (rawKokkosNumDevices)
     numgpus = std::atoi(rawKokkosNumDevices);
 
-  bool useSYCL    = false;
-  bool useHIP     = false;
-  bool useCuda    = false;
-  bool useOpenMP  = false;
-  bool useThreads = false;
-  bool useSerial  = false;
+  bool useSYCL        = false;
+  bool useHIP         = false;
+  bool useCuda        = false;
+  bool useOpenMP      = false;
+  bool useThreads     = false;
+  bool useSerial      = false;
+  bool useNextSilicon = false;
 
   Teuchos::CommandLineProcessor cmdp(false, true);
   cmdp.setOption("verbose", "quiet", &verbose, "Print messages and results.");
@@ -305,6 +307,9 @@ int main(int argc, char* argv[]) {
   // Only provide the option to use Node types that are actually enabled in this build
 #ifdef HAVE_TPETRA_INST_SYCL
   cmdp.setOption("sycl", "no-sycl", &useSYCL, "Use SYCL node");
+#endif
+#ifdef HAVE_TPETRA_INST_NEXTSILICON
+  cmdp.setOption("nextsilicon", "no-nextsilicon", &useNextSilicon, "Use NEXTSILICON node");
 #endif
 #ifdef HAVE_TPETRA_INST_HIP
   cmdp.setOption("hip", "no-hip", &useHIP, "Use HIP node");
@@ -327,11 +332,17 @@ int main(int argc, char* argv[]) {
 
   // If no node type was explicitly requested, use Tpetra's default node.
 
-  if (!useSYCL && !useHIP && !useCuda && !useOpenMP && !useThreads && !useSerial) {
+  if (!useNextSilicon && !useSYCL && !useHIP && !useCuda && !useOpenMP && !useThreads && !useSerial) {
 #ifdef HAVE_TPETRA_INST_SYCL
     if (std::is_same<default_exec, Kokkos::SYCL>::value) {
       if (myRank == 0) std::cout << "No node specified in command-line args, so using default (SYCL)\n";
       useSYCL = true;
+    }
+#endif
+#ifdef HAVE_TPETRA_INST_NEXTSILICON
+    if (std::is_same<default_exec, Kokkos::Experimental::NextSilicon>::value) {
+      if (myRank == 0) std::cout << "No node specified in command-line args, so using default (NextSilicon)\n";
+      useNextSilicon = true;
     }
 #endif
 #ifdef HAVE_TPETRA_INST_HIP
@@ -376,6 +387,10 @@ int main(int argc, char* argv[]) {
 #ifdef HAVE_TPETRA_INST_SYCL
     if (useSYCL)
       return run<Tpetra::KokkosCompat::KokkosSYCLWrapperNode>();
+#endif
+#ifdef HAVE_TPETRA_INST_NEXTSILICON
+    if (useNextSilicon)
+      return run<Tpetra::KokkosCompat::KokkosNextSiliconWrapperNode>();
 #endif
 #ifdef HAVE_TPETRA_INST_HIP
     if (useHIP)

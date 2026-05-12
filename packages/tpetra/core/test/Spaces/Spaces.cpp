@@ -183,6 +183,13 @@ int main(int argc, char **argv) {
   test_is_gpu_exec_space<Kokkos::SYCL, true>(success, *out);
 #endif
 
+#if defined(KOKKOS_ENABLE_NEXTSILICON)
+  test_exec_space_wait<Kokkos::Experimental::NextSilicon>(success, *out);
+  test_make_instance<Kokkos::Experimental::NextSilicon>(success, *out);
+  test_space_instance<Kokkos::Experimental::NextSilicon>(success, *out);
+  test_is_gpu_exec_space<Kokkos::Experimental::NextSilicon, true>(success, *out);
+#endif
+
   if (success) {
     std::cout << std::endl
               << "End Result: TEST PASSED" << std::endl;
