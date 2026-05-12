@@ -125,7 +125,8 @@ std::vector<std::string> splitCommaSeparated(const std::string& input) {
   return result;
 }
 
-int readDimensionFromMatFile(const std::string& filename) {
+template <typename GO>
+GO readDimensionFromMatFile(const std::string& filename) {
   std::ifstream in(filename);
   if (!in.is_open()) {
     throw std::runtime_error("File not found: " + filename);
@@ -144,15 +145,13 @@ int readDimensionFromMatFile(const std::string& filename) {
     }
 
     std::istringstream iss(line);
-    int nRows = 0;
-    int nCols = 0;
-    int nnz   = 0;
+    GO nRows = 0;
+    GO nCols = 0;
 
     if (!(iss >> nRows >> nCols)) {
       throw std::runtime_error("Failed to parse matrix dimension line from file: " + filename);
     }
 
-    (void)nnz;
     return nRows;
   }
 
@@ -317,14 +316,14 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib lib, int arg
 
     std::vector<GO> blockDims(opts.nBlks, 0);
     for (int i = 0; i < opts.nBlks; ++i) {
-      blockDims[i] = static_cast<GO>(readDimensionFromMatFile(opts.blocks[i].auxFile));
+      blockDims[i] = static_cast<GO>(readDimensionFromMatFile<GO>(opts.blocks[i].auxFile));
     }
 
     const GO expectedMultiPhysDim =
         std::accumulate(blockDims.begin(), blockDims.end(), static_cast<GO>(0));
 
     const GO actualMultiPhysDim =
-        static_cast<GO>(readDimensionFromMatFile(opts.multiPhysFile));
+        static_cast<GO>(readDimensionFromMatFile<GO>(opts.multiPhysFile));
 
     if (actualMultiPhysDim != expectedMultiPhysDim) {
       if (comm->getRank() == 0) {
@@ -350,12 +349,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib lib, int arg
       GO nodalCount = blockDim;
 
       if (!opts.blocks[i].coordsFile.empty()) {
-        const GO probeSize  = blockDim;
-        const auto probeMap = MapFactory::Build(lib, probeSize, 0, comm);
-        auto coordsProbe =
-            Xpetra::IO<Magnitude, LO, GO, NO>::ReadMultiVector(opts.blocks[i].coordsFile, probeMap);
-
-        nodalCount = static_cast<GO>(coordsProbe->getMap()->getGlobalNumElements());
+        nodalCount = static_cast<GO>(readDimensionFromMatFile<GO>(opts.blocks[i].coordsFile));
 
         if (nodalCount <= 0) {
           throw std::runtime_error("Invalid nodal count inferred from coordinates for block " +
