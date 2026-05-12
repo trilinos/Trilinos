@@ -932,6 +932,8 @@ jobs:
         uses: ./.github/workflows/actions/summary
 
   ramses-openmp:
+    needs: [pre-checks, gcc12-openmpi4, openmp]
+    if: ${{ !cancelled() && needs.pre-checks.outputs.should_skip != 'true' }}
     uses: ./.github/workflows/ci.yml
     with:
       target-runner-labels: "['self-hosted', 'gcc-12.3.0-openmpi-4.1.6', '20251204']"
