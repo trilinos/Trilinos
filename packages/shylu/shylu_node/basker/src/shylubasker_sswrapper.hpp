@@ -27,7 +27,7 @@ namespace BaskerNS
 
     static 
     inline
-    int my_strong_component
+    int strong_component
     (
      Int           &n,
      Int           *col_ptr,
@@ -79,7 +79,7 @@ namespace BaskerNS
     //=========strong componenet===========
     static 
     inline
-    int my_strong_component 
+    int strong_component 
     (
      int           &n,
      int           *col_ptr,
@@ -104,8 +104,8 @@ namespace BaskerNS
         &(perm_in[0]), p, r, work);
       */
       nblks = trilinos_btf_strongcomp(n, col_ptr,
-				    row_idx, 
-				    perm_in, p, r, work);
+                                    row_idx, 
+                                    perm_in, p, r, work);
       
       #ifdef BASKER_DEBUG_ORDER_BTF
       printf("\nBTF perm: \n");
@@ -219,7 +219,7 @@ namespace BaskerNS
   public:
     static 
     inline
-    int my_strong_component 
+    int strong_component 
     (   
      long           &n,
      long           *col_ptr,
@@ -267,24 +267,24 @@ namespace BaskerNS
       printf("\n");
       #endif
 
-    BASKER_ASSERT(n > 0, "M.nrow btf");
-    for(l_Int i = 0; i < n; i++)
-    {
-      perm[p[i]] = i;
-    }
+      BASKER_ASSERT(n > 0, "M.nrow btf");
+      for(l_Int i = 0; i < n; i++)
+      {
+        perm[p[i]] = i;
+      }
 
-    BASKER_ASSERT((nblks+1) > 0, "nblks+1 btf");
-    for(l_Int i = 0; i < nblks+1; i++)
-    {
-      CC[i] = r[i];
-    }
+      BASKER_ASSERT((nblks+1) > 0, "nblks+1 btf");
+      for(l_Int i = 0; i < nblks+1; i++)
+      {
+        CC[i] = r[i];
+      }
 
-    delete [] p;
-    delete [] r;
-    delete [] work;
+      delete [] p;
+      delete [] r;
+      delete [] work;
 
-    return 0;
-  }//strong_component<long int, Entry, Exe_Space>
+      return 0;
+    }//strong_component<long int, Entry, Exe_Space>
 
     //==========================AMD===================
     static

@@ -7,8 +7,8 @@
 // *****************************************************************************
 // @HEADER
 
-#ifndef SHYLUBASKER_NFACTOR_BLK_HPP
-#define SHYLUBASKER_NFACTOR_BLK_HPP
+#ifndef SHYLUBASKER_NFACTOR_DOM_HPP
+#define SHYLUBASKER_NFACTOR_DOM_HPP
 
 #include "shylubasker_matrix_decl.hpp"
 #include "shylubasker_matrix_view_decl.hpp"
@@ -23,7 +23,7 @@
 
 #include "Teuchos_ScalarTraits.hpp"
 
-//#define BASKER_DEBUG_NFACTOR_BLK
+//#define BASKER_DEBUG_NFACTOR_DOM
 //#define BASKER_TIMER
 //#define BASKER_DETAILED_TIMER
 
@@ -52,15 +52,15 @@ namespace BaskerNS
       //Int kid = (Int)(thread.league_rank()*thread.team_size()+
       //              thread.team_rank());
       Int kid = basker->t_get_kid(thread);
-      #ifdef BASKER_DEBUG_NFACTOR_BLK
+      #ifdef BASKER_DEBUG_NFACTOR_DOM
       printf("\n-----------BLK---Kid: %d -------------\n", (int)kid);
       #endif
 
       // Factor kid-th leaf block
-      basker->t_nfactor_blk(kid);
+      basker->t_nfactor_dom(kid);
 #else
       // Factor kid-th leaf block
-      basker->t_nfactor_blk(thread);
+      basker->t_nfactor_dom(thread);
 #endif
     }//end operator
   };//end kokkos_nfactor_domain struct
@@ -95,11 +95,11 @@ namespace BaskerNS
       Int kid = thread.league_rank();
       if(thread_start(kid) != BASKER_MAX_IDX)
       {
-        #ifdef BASKER_DEBUG_NFACTOR_BLK
+        #ifdef BASKER_DEBUG_NFACTOR_DOM
         printf("\n-----------BLK---Kid: %d -------------\n", (int)kid);
         #endif
 
-        basker->t_nfactor_blk(thread);
+        basker->t_nfactor_dom(thread);
       }
 
     }//end operator
@@ -109,7 +109,7 @@ namespace BaskerNS
   //use local number on local blks (Crazy idea)
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  int Basker<Int,Entry,Exe_Space>::t_nfactor_blk(const TeamMember &thread)
+  int Basker<Int,Entry,Exe_Space>::t_nfactor_dom(const TeamMember &thread)
   {
     using STS = Teuchos::ScalarTraits<Entry>;
     using Mag = typename STS::magnitudeType;
@@ -218,7 +218,7 @@ namespace BaskerNS
           printf( " Failed to open /proc/self/stat file\n" );
         }
       }
-      printf(" thread-%d(%d): t_nfactor_blk: M(%d, 0) using LL(%d, 0) & LU(%d, %d)\n",
+      printf(" thread-%d(%d): t_nfactor_dom: M(%d, 0) using LL(%d, 0) & LU(%d, %d)\n",
              kid,team_rank, b, b, b, LU_size(b)-1); fflush(stdout);
     }
     #endif
@@ -247,7 +247,7 @@ namespace BaskerNS
     Int unnz = uval;
     Int xnnz;
 
-    #ifdef BASKER_DEBUG_NFACTOR_BLK
+    #ifdef BASKER_DEBUG_NFACTOR_DOM
     printf("b: %d  ls: %d us: %d llnzz: %d uunzz: %d \n", 
         b, lnnz, unnz, L.nnz, U.nnz);
     printf("b: %d gperm: %d \n", b, gperm(L.srow));
@@ -261,7 +261,7 @@ namespace BaskerNS
     //Note: might want to add const trick for vectorize,
     //though this loop should really not vectorize
 
-    #ifdef BASKER_DEBUG_NFACTOR_BLK
+    #ifdef BASKER_DEBUG_NFACTOR_DOM
     for(i = 0; i < M.ncol; i++)
     {
       if(L.pend(i) != BASKER_MAX_IDX)
@@ -276,20 +276,20 @@ namespace BaskerNS
 
     if(Options.verbose == BASKER_TRUE)
     {
-      printf(" thread-%ld: >  factoring_blk : b = %d, size = %ld, brow = %ld\n",
+      printf(" thread-%ld: >  factoring_dom : b = %d, size = %ld, brow = %ld\n",
           (long)kid, (int)b, (long)M.ncol, (long)brow_g); fflush(stdout);
     }
     //#define MY_DEBUG_BASKER
     #ifdef MY_DEBUG_BASKER
     #define debug_kid 0
     {
-      //printf( " t_nfactor_blk(kid = %d, %dx%d): wsize=%d\n",kid,M.nrow,M.ncol,ws_size );
+      //printf( " t_nfactor_dom(kid = %d, %dx%d): wsize=%d\n",kid,M.nrow,M.ncol,ws_size );
       char filename[200];
       sprintf(filename,"D_%d.dat",kid);
       M.print_matrix(filename);
     }
     char filename[200];
-    sprintf(filename,"t_nfactor_blk_%d_%d.dat",kid,M.ncol);
+    sprintf(filename,"t_nfactor_dom_%d_%d.dat",kid,M.ncol);
     FILE *fp = fopen(filename,"w");
     #endif
 
@@ -308,7 +308,7 @@ namespace BaskerNS
     Int maxindex = BASKER_MAX_IDX;
     for(Int k = 0; k < M.ncol; ++k)
     {
-      #ifdef BASKER_DEBUG_NFACTOR_BLK
+      #ifdef BASKER_DEBUG_NFACTOR_DOM
       //if (kid == debug_kid)
       {
         printf("\n---------------- K=%d/%d (%d:%d) --------------\n", 
@@ -316,7 +316,7 @@ namespace BaskerNS
       }
       #endif
 
-      #ifdef BASKER_DEBUG_NFACTOR_BLK
+      #ifdef BASKER_DEBUG_NFACTOR_DOM
       ASSERT(top == ws_size);
       //ASSERT entry workspace is clean
       for(i = 0 ; i < ws_size; i++)
@@ -350,7 +350,7 @@ namespace BaskerNS
           //Do we need this anymore ?? Don't think
           if(j >= ecol)
           {
-            #ifdef BASKER_DEBUG_NFACTOR_BLK
+            #ifdef BASKER_DEBUG_NFACTOR_DOM
             printf("col_break, kid: %d idx: %d \n", kid, i);
             #endif
             break;
@@ -395,7 +395,7 @@ namespace BaskerNS
         timer1.reset();
         #endif
 
-        #ifdef BASKER_DEBUG_NFACTOR_BLK
+        #ifdef BASKER_DEBUG_NFACTOR_DOM
         if (kid == 0) {
           printf("xnnz: %d ws_size: %d top: %d \n", xnnz, ws_size, top);
         }
@@ -410,7 +410,7 @@ namespace BaskerNS
         timer1.reset();
         #endif
 
-        #ifdef BASKER_DEBUG_NFACTOR_BLK
+        #ifdef BASKER_DEBUG_NFACTOR_DOM
         if (kid == 0) {
           printf("xnnz: %d ws_size: %d top: %d (after solve)\n", xnnz, ws_size, top);
         }
@@ -590,8 +590,9 @@ namespace BaskerNS
                 explicit_pivot = true;
               }
             } else if (Options.replace_zero_pivot && normA_blk > abs(zero)) {
-              // just insert tiny pivot on diagonal
-              maxindex = k;
+              // just insert tiny pivot to first available pivot row
+              //maxindex = k;
+              maxindex = 0;
               while (gperm(maxindex+brow_g) != BASKER_MAX_IDX && maxindex < M.ncol-1) {
                 maxindex ++;
               }
@@ -608,6 +609,10 @@ namespace BaskerNS
               }
             }
             if (!explicit_pivot) {
+              if (Options.verbose == BASKER_TRUE)
+              {
+                std::cout << "  thread-" << kid << " Failed to find pivot for zero pivot " << std::endl;
+              }
               thread_array(kid).error_type =
                 BASKER_ERROR_SINGULAR;
               thread_array(kid).error_blk    = b;
@@ -825,10 +830,10 @@ namespace BaskerNS
           }//end if() not 0
 
           //Note: move x[j] inside of if() not 0....extra ops this way
-          #ifdef BASKER_DEBUG_NFACTOR_BLK
+          #ifdef BASKER_DEBUG_NFACTOR_DOM
           printf("Zeroing element: %d \n", j);
           #endif
-#ifdef SHYLU_BASKER_WORKER_THREAD_VERSION_1
+#if defined(SHYLU_BASKER_WORKER_THREAD_VERSION_1)
           // X(maxindex) store pivot val,
           // which is also stored as the last entry of U
           if (j != maxindex)
@@ -888,7 +893,7 @@ namespace BaskerNS
         t_prune(kid, 0, 0, k, maxindex);
       }
 
-#ifdef SHYLU_BASKER_WORKER_THREAD_VERSION_1
+#if defined(SHYLU_BASKER_WORKER_THREAD_VERSION_1)
       // !! Synch threads !!
       thread.team_barrier();
       if (team_rank == worker_thread_id) {
@@ -910,7 +915,7 @@ namespace BaskerNS
         timer1.reset();
         #endif
 
-#ifndef SHYLU_BASKER_WORKER_THREAD_VERSION_1
+#if !defined(SHYLU_BASKER_WORKER_THREAD_VERSION_1)
         if (team_size > 1) {
           // busy-wait for main thread to finish factoring the column
           Int check_k = atomic_check(0);
@@ -925,8 +930,7 @@ namespace BaskerNS
         }
         //printf( " -> %d:%d: pivot = %e (col_ptr(%d)=%d, %d)\n",league_rank,team_rank, pivot, M.ncol,U.col_ptr(M.ncol),k); fflush(stdout);
 #endif
-
-        //if (kid == 0) printf( "\n blk_row = %d:%d\n",1,LL_size(b)-1 );
+        //if (k == 0) printf( "\n %d: blk_row = %d:%d\n",kid, 1,LL_size(b)-1 );
         // for each row of remainng L, apply the inverse with the k-th column of U
         for(Int blk_row = 1; blk_row < LL_size(b); ++blk_row)
         {
@@ -1017,7 +1021,7 @@ namespace BaskerNS
     #endif
 
     return 0;
-  }//end t_nfactor_blk()
+  }//end t_nfactor_dom()
 
 
  
@@ -1191,7 +1195,7 @@ namespace BaskerNS
     Int i, t, head, i1;
     Int start, end;
 
-    #ifdef BASKER_DEBUG_NFACTOR_BLK
+    #ifdef BASKER_DEBUG_NFACTOR_DOM
     printf("local_reach, L: %d %d  X: %d %d j: %d, kid: %d \n",
            b, 0, wsb, l, j, kid);
     #endif
@@ -1242,7 +1246,7 @@ namespace BaskerNS
       //We want to go backwards through this
       //This little insight can save time
       end = L.col_ptr(t-brow_g);
-      #ifdef BASKER_DEBUG_NFACTOR_BLK
+      #ifdef BASKER_DEBUG_NFACTOR_DOM
       if (kid == 0) {
         printf("t: %d start: %d end: %d \n",t, start, end);
       }
@@ -1261,7 +1265,7 @@ namespace BaskerNS
         }
         else
         {
-          #ifdef BASKER_DEBUG_NFACTOR_BLK
+          #ifdef BASKER_DEBUG_NFACTOR_DOM
           if (kid == 0) {
             printf( " gperm(%d + %d) = %d\n",i,brow_g,gperm(i+brow_g) );
           }
@@ -1282,7 +1286,7 @@ namespace BaskerNS
       }// end for i1
 
       //if we have used up the whole column
-      #ifdef BASKER_DEBUG_NFACTOR_BLK
+      #ifdef BASKER_DEBUG_NFACTOR_DOM
       if (kid == 0) {
         printf( " i1 = %d, end = %d\n",i1,end );
       }
@@ -1347,7 +1351,7 @@ namespace BaskerNS
     Int i, t, head, i1;
     Int start, end, done;
     
-    #ifdef BASKER_DEBUG_NFACTOR_BLK
+    #ifdef BASKER_DEBUG_NFACTOR_DOM
     printf("local_reach, L: %d %d  X: %d %d, kid: %d \n", b, 0, wsb, l, kid);
     #endif
 
@@ -1530,7 +1534,7 @@ namespace BaskerNS
     ENTRY_1DARRAY X     = LL(X_col)(X_row).ews;
    
 
-    #ifdef BASKER_DEBUG_NFACTOR_BLK
+    #ifdef BASKER_DEBUG_NFACTOR_DOM
     printf("t_dense_move_offdiag_L, kid=%d, k=%d:  L (%d %d) X (%d %d), nnz=%d\n",
            kid, k, blkcol,blkrow, X_col, X_row, L.nnz);
     #endif
@@ -1562,7 +1566,7 @@ namespace BaskerNS
           BASKER_ASSERT(true, "\n Not enough memory allocated for off-diagonal L\n");
           return BASKER_ERROR;
         }
-#ifdef BASKER_DEBUG_NFACTOR_BLK
+#ifdef BASKER_DEBUG_NFACTOR_DOM
         printf("L-Moving, kid: %d j: %d val: %f lnnz: %d \n",
             kid, j, X[j]/pivot, lnnz);
 #endif
@@ -1573,7 +1577,7 @@ namespace BaskerNS
 
         //L.val(lnnz) = X(j)/pivot;
         L.val(lnnz) = EntryOP::divide(X(j),pivot);
-        #ifdef BASKER_DEBUG_NFACTOR_BLK
+        #ifdef BASKER_DEBUG_NFACTOR_DOM
         if (blkcol == 2 && blkrow == 1) printf( " L.val(%d) = (%e %d) for %d)\n",lnnz,L.val(lnnz),j, k );
         #endif
         X(j) = 0;
@@ -1590,7 +1594,7 @@ namespace BaskerNS
     
     //L.col_ptr[k-bcol+1] = lnnz;
     L.col_ptr(k+1) = lnnz;
-    #ifdef BASKER_DEBUG_NFACTOR_BLK
+    #ifdef BASKER_DEBUG_NFACTOR_DOM
     if (blkcol == 2 && blkrow == 1) printf( " L.colptr(%d) = %d\n",k+1,lnnz );
     #endif
 
@@ -1618,7 +1622,7 @@ namespace BaskerNS
     const Int   p_size  = LL(X_col)(X_row).p_size;
    
 
-    #ifdef BASKER_DEBUG_NFACTOR_BLK
+    #ifdef BASKER_DEBUG_NFACTOR_DOM
     if(kid == 0 && k == 0)
     {
       printf(" %d: t_move_offdiag_L( L = LL(%d %d) X = LL(%d %d) )\n",
@@ -1663,7 +1667,7 @@ namespace BaskerNS
     {
       Int j = pattern[i];
 
-#ifdef BASKER_DEBUG_NFACTOR_BLK
+#ifdef BASKER_DEBUG_NFACTOR_DOM
       printf("L-Moving, kid: %d j: %d val: %f lnnz: %d \n",
           kid, j, X[j]/pivot, lnnz);
 #endif
@@ -1723,7 +1727,7 @@ namespace BaskerNS
     
     Int nnz = LL(X_col)(X_row).p_size;
   
-    #ifdef BASKER_DEBUG_NFACTOR_BLK
+    #ifdef BASKER_DEBUG_NFACTOR_DOM
     if (kid == 0 && X_row == 1) {
       printf( " %d: t_dense_back_solve_offdiag ( L = LL(%d,%d), X = LL(%d,%d), and B = ALM(%d,%d)\n", kid, blkcol,blkrow,X_col,X_row, blkcol,blkrow );
     }
@@ -1754,7 +1758,7 @@ namespace BaskerNS
       for(Int i = B.col_ptr(k); i < B.col_ptr(k+1); ++i)
       {
         const Int j = B.row_idx(i);
-        #ifdef BASKER_DEBUG_NFACTOR_BLK
+        #ifdef BASKER_DEBUG_NFACTOR_DOM
         //Bgood(remove)
         //printf("t_back_solve_diag, kid: %d i: %d g: %d\n",
         //           kid, i, B.good(i));
@@ -1773,13 +1777,13 @@ namespace BaskerNS
 
       }//over all nnz in subview
     }//end if preload
-    #ifdef BASKER_DEBUG_NFACTOR_BLK
+    #ifdef BASKER_DEBUG_NFACTOR_DOM
     printf("t_back_solve_d, kid: %d xsize: %ld \n",
            kid, x_size);
     #endif
 
     //SPMV
-    //printf("x_offset: %d \n", x_offset);
+    //printf("x_offset: %d..%d \n", x_offset,x_offset+x_size-1);
     const Entry zero (0.0);
     for(Int i = 0; i < x_size; ++i)
     {
@@ -1788,7 +1792,7 @@ namespace BaskerNS
       //if (blkcol == 2 && blkrow == 1) {
       //  printf("t_back_solve_diag kid = %d: i = %d / %d k = %d, xj = %e \n", kid, i,x_size, k, xj); fflush(stdout);
       //}
-      #ifdef BASKER_DEBUG_NFACTOR_BLK
+      #ifdef BASKER_DEBUG_NFACTOR_DOM
       printf("t_back_solve_diag, kid: %d  k: %d %g  x_size: %d [%d %d] \n",
              kid, colid, xj, x_size,  L.col_ptr[k], L.col_ptr[k+1]);
       #endif
@@ -1805,7 +1809,7 @@ namespace BaskerNS
           //}
           X(jj) -= L.val(j)*xj; 
 
-          #ifdef BASKER_DEBUG_NFACTOR_BLK
+          #ifdef BASKER_DEBUG_NFACTOR_DOM
           printf("t_b_solve_d, kid: %d j: %d color: %d \n",
                  kid, jj, color[jj]);
           printf("t_back_solve_d,id:%d  row_idx: %d b4: %f mult: %f %f\n",
@@ -1816,12 +1820,11 @@ namespace BaskerNS
     }//over all nonzero in left
 
     #ifdef BASKER_2DL
-    //LL(X_col)(X_row).p_size = nnz;
     LL(X_col)(X_row).p_size = nnz;
     #endif
 
     //Debug
-    #ifdef BASKER_DEBUG_NFACTOR_BLK
+    #ifdef BASKER_DEBUG_NFACTOR_DOM
      #ifdef BASKER_2DL
      printf("---PATTERN End test: kid: %d nnz: %d pattern: %d \n",
             kid, nnz, pattern[nnz-1]); 
@@ -1872,7 +1875,7 @@ namespace BaskerNS
     Int      ws_size  = LL(X_col)(X_row).iws_size;
     Int          nnz  = LL(X_col)(X_row).p_size;
   
-    #ifdef BASKER_DEBUG_NFACTOR_BLK
+    #ifdef BASKER_DEBUG_NFACTOR_DOM
     if(kid == 0 and col == 0)
     {
       printf( " t_back_solve_offdiag: L = LL(%d)(%d) with %d x %d, X = LL(%d)(%d)\n",blkcol,blkrow,L.nrow,L.ncol, X_col,X_row );
@@ -1901,7 +1904,7 @@ namespace BaskerNS
     {
       for(Int i = B.col_ptr(col); i < B.col_ptr(col+1); ++i)
       {
-#ifdef BASKER_DEBUG_NFACTOR_BLK
+#ifdef BASKER_DEBUG_NFACTOR_DOM
         if(kid == 8)
         {
           printf("t_back_solve_d, add A, kid: %d psize:%d \n",
@@ -1924,7 +1927,7 @@ namespace BaskerNS
     }//end if preload
   
     //SPMV
-    #ifdef BASKER_DEBUG_NFACTOR_BLK
+    #ifdef BASKER_DEBUG_NFACTOR_DOM
     if(kid == 0)
     {
       printf("t_back_solve_d, kid: %d xsize: %d \n",
@@ -1942,7 +1945,7 @@ namespace BaskerNS
         continue;
       }
 
-      #ifdef BASKER_DEBUG_NFACTOR_BLK
+      #ifdef BASKER_DEBUG_NFACTOR_DOM
       if(kid == 8)
       {
         printf("t_back_solve_diag, kid: %d k: %d [%d %d] \n",
@@ -1959,7 +1962,7 @@ namespace BaskerNS
       for(Int j = L.col_ptr(k); j < L.col_ptr(k+1); j++)
       {
         const Int jj = L.row_idx(j);
-        #ifdef BASKER_DEBUG_NFACTOR_BLK
+        #ifdef BASKER_DEBUG_NFACTOR_DOM
         if (blkcol == 2 && blkrow == 1)
         {
           printf("t_b_solve_d, kid: %d j: %d color: %d \n",
@@ -1970,7 +1973,7 @@ namespace BaskerNS
         {
           color[jj] = 1;
           pattern[nnz++] = jj;
-          #ifdef BASKER_DEBUG_NFACTOR_BLK
+          #ifdef BASKER_DEBUG_NFACTOR_DOM
           if(kid == 8)
           {
             printf("pattern index: %d kid: %d \n",
@@ -1979,7 +1982,7 @@ namespace BaskerNS
           #endif
         }
 
-        #ifdef BASKER_DEBUG_NFACTOR_BLK
+        #ifdef BASKER_DEBUG_NFACTOR_DOM
         //if(kid == 8)
         if (blkcol == 2 && blkrow == 1)
         {
@@ -1998,7 +2001,7 @@ namespace BaskerNS
     }//over all nonzero in left
 
     #ifdef BASKER_2DL
-    #ifdef BASKER_DEBUG_NFACTOR_BLK
+    #ifdef BASKER_DEBUG_NFACTOR_DOM
     printf("---PATTERN End test: kid: %d nnz: %d pattern: %d \n",
            kid, nnz, pattern[nnz-1]); 
     printf("SETTING dig PS: %d kid: %d L: %d %d\n",
@@ -2010,7 +2013,7 @@ namespace BaskerNS
     #endif
 
     //Debug
-    #ifdef BASKER_DEBUG_NFACTOR_BLK
+    #ifdef BASKER_DEBUG_NFACTOR_DOM
     if(kid == 8)
     {
       printf("kid: %d all values: \n", kid);
@@ -2035,4 +2038,4 @@ namespace BaskerNS
 #undef BASKER_DETAILED_TIMER
 #undef BASKER_TIMER
 #undef MY_DEBUG_BASKER
-#endif//end ifndef basker_nfactor_blk
+#endif//end ifndef basker_nfactor_dom
