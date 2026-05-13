@@ -7,11 +7,11 @@
 SET(Trilinos_VERSION 17.1.0)
 SET(Trilinos_MAJOR_VERSION 17)
 SET(Trilinos_MAJOR_MINOR_VERSION 170100)
-SET(Trilinos_VERSION_STRING "17.1.0-dev")
-SET(Trilinos_ENABLE_DEVELOPMENT_MODE_DEFAULT ON) # Change to 'OFF' for a release
+SET(Trilinos_VERSION_STRING "17.1.0")
+SET(Trilinos_ENABLE_DEVELOPMENT_MODE_DEFAULT OFF) # Change to 'OFF' for a release
 
 # Used by testing scripts and should not be used elsewhere
-SET(Trilinos_REPOSITORY_BRANCH "develop" CACHE INTERNAL "")
+SET(Trilinos_REPOSITORY_BRANCH "trilinos-release-17-1-branch" CACHE INTERNAL "")
 SET(Trilinos_EXTRAREPOS_BRANCH "master" CACHE INTERNAL "")
 SET(Trilinos_TESTING_TRACK "" CACHE INTERNAL "")
 
