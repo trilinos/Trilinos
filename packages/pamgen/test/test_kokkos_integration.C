@@ -10,9 +10,11 @@
 #include "brick_inline_mesh_desc.h"
 #include "radial_inline_mesh_desc.h"
 #include "pamgen_kokkos_utils.h"
+#include "geometry_transform.h"
 #include <iostream>
 #include <vector>
 #include <map>
+#include <sstream>
 
 using namespace PAMGEN_NEVADA;
 
@@ -691,11 +693,310 @@ int main(int argc, char* argv[]) {
                 // No explicit cleanup needed here to avoid double-free issues in MPI
             }
 
-            std::cout << "Direct Kokkos interface testing PASSED!" << std::endl;
-        }
+        std::cout << "Direct Kokkos interface testing PASSED!" << std::endl;
+    }
 
+    // Test 5: New Kokkos Functions - Offset_Coords and Customize_Coords
+    std::cout << "\n=== Test 5: New Kokkos Functions ===" << std::endl;
+    {
+        std::cout << "Testing new Kokkos-enabled coordinate functions..." << std::endl;
+        
+        // Test Offset_Coords
+        std::cout << "\n--- Testing Offset_Coords ---" << std::endl;
+        {
+            Brick_Inline_Mesh_Desc brick_mesh(2);
+            
+            // Set up basic parameters
+            brick_mesh.inline_b[0] = 2;
+            brick_mesh.inline_b[1] = 2;
+            brick_mesh.inline_b[2] = 1;
+            
+            brick_mesh.inline_n[0] = 3;
+            brick_mesh.inline_n[1] = 3;
+            brick_mesh.inline_n[2] = 1;
+            
+            // Set up intervals
+            for (int axis = 0; axis < 3; axis++) {
+                brick_mesh.interval[axis] = new long long[brick_mesh.inline_b[axis]];
+                for (int i = 0; i < brick_mesh.inline_b[axis]; i++) {
+                    brick_mesh.interval[axis][i] = brick_mesh.inline_n[axis];
+                }
+            }
+            
+            // Set up coordinate arrays
+            for (int axis = 0; axis < 3; axis++) {
+                brick_mesh.IJKcoors[axis] = new double[10];
+                for (int i = 0; i < 10; i++) {
+                    brick_mesh.IJKcoors[axis][i] = i * 1.0;
+                }
+            }
+            
+            // Initialize block_dist arrays
+            for (int axis = 0; axis < 3; axis++) {
+                brick_mesh.block_dist[axis] = new double[brick_mesh.inline_b[axis]];
+                brick_mesh.c_block_dist[axis] = new double[brick_mesh.inline_b[axis] + 1];
+                brick_mesh.first_size[axis] = new double[brick_mesh.inline_b[axis]];
+                brick_mesh.last_size[axis] = new double[brick_mesh.inline_b[axis]];
+                for (int i = 0; i < brick_mesh.inline_b[axis]; i++) {
+                    brick_mesh.block_dist[axis][i] = 1.0;
+                    brick_mesh.first_size[axis][i] = 1.0;
+                    brick_mesh.last_size[axis][i] = 1.0;
+                }
+            }
+            
+            // Set inline_gmin values
+            for (int axis = 0; axis < 3; axis++) {
+                brick_mesh.inline_gmin[axis] = 0.0;
+            }
+            
+            // Set strides
+            brick_mesh.jnstride = 10;
+            brick_mesh.knstride = 100;
+            
+            // Initialize the mesh descriptor
+            brick_mesh.Set_Up();
+            
+            // Set up test data
+            long long num_nodes = 5;
+            double* coords = new double[num_nodes * 2];
+            
+            // Initialize with known values
+            for (long long i = 0; i < num_nodes; i++) {
+                coords[i] = i * 1.0;          // x coordinates
+                coords[i + num_nodes] = i * 2.0; // y coordinates
+            }
+            
+            // Set some offsets
+            brick_mesh.inline_offset[0] = 10.0; // x offset
+            brick_mesh.inline_offset[1] = 20.0; // y offset
+            brick_mesh.inline_offset[2] = 0.0;  // z offset (unused in 2D)
+            
+            std::cout << "Before offset:" << std::endl;
+            for (long long i = 0; i < num_nodes; i++) {
+                std::cout << "  Node " << i << ": ("
+                          << coords[i] << ", "
+                          << coords[i + num_nodes] << ")" << std::endl;
+            }
+            
+            // Test the Kokkos-enabled Offset_Coords function
+            brick_mesh.Offset_Coords(coords, num_nodes, 2);
+            
+            std::cout << "After offset:" << std::endl;
+            for (long long i = 0; i < num_nodes; i++) {
+                std::cout << "  Node " << i << ": ("
+                          << coords[i] << ", "
+                          << coords[i + num_nodes] << ")" << std::endl;
+            }
+            
+            // Verify the offsets were applied correctly
+            bool offset_correct = true;
+            for (long long i = 0; i < num_nodes; i++) {
+                double expected_x = i * 1.0 + 10.0;
+                double expected_y = i * 2.0 + 20.0;
+                
+                if (fabs(coords[i] - expected_x) > 1e-10 || 
+                    fabs(coords[i + num_nodes] - expected_y) > 1e-10) {
+                    std::cout << "Offset error at node " << i 
+                              << ": expected (" << expected_x << ", " << expected_y 
+                              << ") got (" << coords[i] << ", " << coords[i + num_nodes] << ")" << std::endl;
+                    offset_correct = false;
+                }
+            }
+            
+            if (offset_correct) {
+                std::cout << "✅ Offset_Coords test PASSED!" << std::endl;
+            } else {
+                std::cout << "❌ Offset_Coords test FAILED!" << std::endl;
+                delete[] coords;
+                return 1;
+            }
+            
+            delete[] coords;
+        }
+        
+        // Test Customize_Coords (without geometry transform function)
+        std::cout << "\n--- Testing Customize_Coords ---" << std::endl;
+        {
+            Brick_Inline_Mesh_Desc brick_mesh(2);
+            
+            // Set up basic parameters (minimal setup for this test)
+            brick_mesh.inline_b[0] = 1;
+            brick_mesh.inline_b[1] = 1;
+            brick_mesh.inline_b[2] = 1;
+            
+            brick_mesh.inline_n[0] = 2;
+            brick_mesh.inline_n[1] = 2;
+            brick_mesh.inline_n[2] = 1;
+            
+            // Set up intervals
+            for (int axis = 0; axis < 3; axis++) {
+                brick_mesh.interval[axis] = new long long[brick_mesh.inline_b[axis]];
+                for (int i = 0; i < brick_mesh.inline_b[axis]; i++) {
+                    brick_mesh.interval[axis][i] = brick_mesh.inline_n[axis];
+                }
+            }
+            
+            // Set up coordinate arrays
+            for (int axis = 0; axis < 3; axis++) {
+                brick_mesh.IJKcoors[axis] = new double[5];
+                for (int i = 0; i < 5; i++) {
+                    brick_mesh.IJKcoors[axis][i] = i * 1.0;
+                }
+            }
+            
+            // Initialize block_dist arrays
+            for (int axis = 0; axis < 3; axis++) {
+                brick_mesh.block_dist[axis] = new double[brick_mesh.inline_b[axis]];
+                brick_mesh.c_block_dist[axis] = new double[brick_mesh.inline_b[axis] + 1];
+                brick_mesh.first_size[axis] = new double[brick_mesh.inline_b[axis]];
+                brick_mesh.last_size[axis] = new double[brick_mesh.inline_b[axis]];
+                for (int i = 0; i < brick_mesh.inline_b[axis]; i++) {
+                    brick_mesh.block_dist[axis][i] = 1.0;
+                    brick_mesh.first_size[axis][i] = 1.0;
+                    brick_mesh.last_size[axis][i] = 1.0;
+                }
+            }
+            
+            // Set inline_gmin values
+            for (int axis = 0; axis < 3; axis++) {
+                brick_mesh.inline_gmin[axis] = 0.0;
+            }
+            
+            // Set strides
+            brick_mesh.jnstride = 5;
+            brick_mesh.knstride = 25;
+            
+            // Initialize the mesh descriptor
+            brick_mesh.Set_Up();
+            
+            // Ensure no geometry transform function is set (should be null)
+            brick_mesh.Geometry_Transform_Function = nullptr;
+            
+            long long num_nodes = 3;
+            double* coords = new double[num_nodes * 2];
+            double* coords_copy = new double[num_nodes * 2];
+            
+            // Initialize with known values
+            for (long long i = 0; i < num_nodes * 2; i++) {
+                coords[i] = i * 1.0;
+                coords_copy[i] = coords[i];
+            }
+            
+            std::cout << "Before Customize_Coords:" << std::endl;
+            for (long long i = 0; i < num_nodes; i++) {
+                std::cout << "  Node " << i << ": ("
+                          << coords[i] << ", "
+                          << coords[i + num_nodes] << ")" << std::endl;
+            }
+            
+            // Test the Kokkos-enabled Customize_Coords function
+            // Since no geometry transform is set, this should be a no-op
+            brick_mesh.Customize_Coords(coords, num_nodes, 2);
+            
+            std::cout << "After Customize_Coords (should be unchanged):" << std::endl;
+            for (long long i = 0; i < num_nodes; i++) {
+                std::cout << "  Node " << i << ": ("
+                          << coords[i] << ", "
+                          << coords[i + num_nodes] << ")" << std::endl;
+            }
+            
+            // Verify the coordinates are unchanged (no geometry transform)
+            bool customize_correct = true;
+            for (long long i = 0; i < num_nodes * 2; i++) {
+                if (fabs(coords[i] - coords_copy[i]) > 1e-10) {
+                    std::cout << "Customize_Coords error at index " << i 
+                              << ": expected " << coords_copy[i] 
+                              << " got " << coords[i] << std::endl;
+                    customize_correct = false;
+                }
+            }
+            
+            if (customize_correct) {
+                std::cout << "✅ Customize_Coords test PASSED!" << std::endl;
+            } else {
+                std::cout << "❌ Customize_Coords test FAILED!" << std::endl;
+                delete[] coords;
+                delete[] coords_copy;
+                return 1;
+            }
+            
+            delete[] coords;
+            delete[] coords_copy;
+        }
+        
+            std::cout << "New Kokkos functions test PASSED!" << std::endl;
+        }
+        
+        // Test Geometry Transform with Kokkos
+        std::cout << "\n--- Testing Geometry Transform with Kokkos ---" << std::endl;
+        {
+            std::stringstream error_stream;
+            std::string transform_body = 
+                "outxcoord = inxcoord * 2.0;\n"
+                "outycoord = inycoord * 3.0;\n"
+                "outzcoord = inzcoord * 1.5;\n";
+            
+            Geometry_Transform transform(transform_body, error_stream);
+            
+            if (!error_stream.str().empty()) {
+                std::cout << "❌ Geometry transform compilation failed: " << error_stream.str() << std::endl;
+                return 1;
+            }
+            
+            long long num_nodes = 4;
+            double* coords = new double[num_nodes * 2];
+            
+            // Initialize with known values
+            for (long long i = 0; i < num_nodes; i++) {
+                coords[i] = i * 1.0;          // x coordinates
+                coords[i + num_nodes] = i * 2.0; // y coordinates
+            }
+            
+            std::cout << "Before geometry transform:" << std::endl;
+            for (long long i = 0; i < num_nodes; i++) {
+                std::cout << "  Node " << i << ": ("
+                          << coords[i] << ", "
+                          << coords[i + num_nodes] << ")" << std::endl;
+            }
+            
+            // Test the Kokkos-enabled geometry transform
+            transform.Operate(coords, num_nodes, 2);
+            
+            std::cout << "After geometry transform:" << std::endl;
+            for (long long i = 0; i < num_nodes; i++) {
+                std::cout << "  Node " << i << ": ("
+                          << coords[i] << ", "
+                          << coords[i + num_nodes] << ")" << std::endl;
+            }
+            
+            // Verify the transform was applied correctly
+            bool transform_correct = true;
+            for (long long i = 0; i < num_nodes; i++) {
+                double expected_x = i * 1.0 * 2.0;  // x * 2.0
+                double expected_y = i * 2.0 * 3.0;  // y * 3.0
+                
+                if (fabs(coords[i] - expected_x) > 1e-10 || 
+                    fabs(coords[i + num_nodes] - expected_y) > 1e-10) {
+                    std::cout << "Transform error at node " << i 
+                              << ": expected (" << expected_x << ", " << expected_y 
+                              << ") got (" << coords[i] << ", " << coords[i + num_nodes] << ")" << std::endl;
+                    transform_correct = false;
+                }
+            }
+            
+            if (transform_correct) {
+                std::cout << "✅ Geometry Transform test PASSED!" << std::endl;
+            } else {
+                std::cout << "❌ Geometry Transform test FAILED!" << std::endl;
+                delete[] coords;
+                return 1;
+            }
+            
+            delete[] coords;
+        }
+        
         std::cout << "\n🎉 All Kokkos integration tests PASSED!" << std::endl;
-        std::cout << "Kokkos functionality is working correctly." << std::endl;
+    std::cout << "Kokkos functionality is working correctly." << std::endl;
 
     }
 

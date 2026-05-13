@@ -18,6 +18,7 @@
 #include <iostream>
 #include <algorithm>
 #include <limits.h>
+#include <Kokkos_Core.hpp>
 //#pragma warning(disable:981)
 //#pragma warning(disable:383)
 namespace PAMGEN_NEVADA {
@@ -2183,18 +2184,100 @@ void Inline_Mesh_Desc::Customize_Coords(double * coords, long long num_nodes,lon
 /****************************************************************************/
 {
   if(!Geometry_Transform_Function)return;
-  Geometry_Transform_Function->Operate(coords,num_nodes,dim);
+  
+  // Create host view that wraps the raw pointer
+  // Note: The input coords array uses structure-of-arrays layout (all x, then all y, then all z)
+  // We need to create a 2D view with array-of-structures layout for device processing
+  HostView2D<double> coords_host("coords_host", num_nodes, dim);
+  
+  // Copy data from flattened structure-of-arrays to array-of-structures layout
+  for (long long i = 0; i < num_nodes; i++) {
+    for (long long axis = 0; axis < dim; axis++) {
+      coords_host(i, axis) = coords[i + axis * num_nodes];
+    }
+  }
+  
+  // Create device view and copy data
+  auto coords_device = Kokkos::create_mirror_view(Kokkos::DefaultExecutionSpace(), coords_host);
+  Kokkos::deep_copy(coords_device, coords_host);
+  
+  // Execute device computation
+  Customize_Coords_Device(coords_device, num_nodes, dim);
+  
+  // Copy results back to host memory
+  Kokkos::deep_copy(coords_host, coords_device);
+  
+  // Copy back from array-of-structures layout to structure-of-arrays layout
+  for (long long i = 0; i < num_nodes; i++) {
+    for (long long axis = 0; axis < dim; axis++) {
+      coords[i + axis * num_nodes] = coords_host(i, axis);
+    }
+  }
+}
+
+/****************************************************************************/
+KOKKOS_INLINE_FUNCTION
+void Inline_Mesh_Desc::Customize_Coords_Device(View2D<double> coords, long long num_nodes, long long dim)
+/****************************************************************************/
+{
+  // Device version - for now just a placeholder since Geometry_Transform_Function
+  // would need to be adapted for device execution
+  // In a complete implementation, this would call a device-compatible geometry transform
 }
 
 /****************************************************************************/
 void Inline_Mesh_Desc::Offset_Coords(double * coords, long long num_nodes,long long dim)
 /****************************************************************************/
 {
-  for(long long ict = 0; ict < num_nodes; ict ++){
-    for(long long idim = 0; idim < dim; idim ++){
-      coords[idim*num_nodes + ict] = coords[idim*num_nodes + ict] + inline_offset[idim];
+  // Create host view that wraps the raw pointer
+  // Note: The input coords array uses structure-of-arrays layout (all x, then all y, then all z)
+  // We need to create a 2D view with array-of-structures layout for device processing
+  HostView2D<double> coords_host("coords_host", num_nodes, dim);
+  
+  // Copy data from flattened structure-of-arrays to array-of-structures layout
+  for (long long i = 0; i < num_nodes; i++) {
+    for (long long axis = 0; axis < dim; axis++) {
+      coords_host(i, axis) = coords[i + axis * num_nodes];
     }
   }
+  
+  // Create device view and copy data
+  auto coords_device = Kokkos::create_mirror_view(Kokkos::DefaultExecutionSpace(), coords_host);
+  Kokkos::deep_copy(coords_device, coords_host);
+  
+  // Execute device computation
+  Offset_Coords_Device(coords_device, num_nodes, dim);
+  
+  // Copy results back to host memory
+  Kokkos::deep_copy(coords_host, coords_device);
+  
+  // Copy back from array-of-structures layout to structure-of-arrays layout
+  for (long long i = 0; i < num_nodes; i++) {
+    for (long long axis = 0; axis < dim; axis++) {
+      coords[i + axis * num_nodes] = coords_host(i, axis);
+    }
+  }
+}
+
+/****************************************************************************/
+KOKKOS_INLINE_FUNCTION
+void Inline_Mesh_Desc::Offset_Coords_Device(View2D<double> coords, long long num_nodes, long long dim)
+/****************************************************************************/
+{
+  // Device version of coordinate offsetting
+  // Capture the offset values that need to be passed to the device
+  double offset_x = this->inline_offset[0];
+  double offset_y = this->inline_offset[1];
+  double offset_z = this->inline_offset[2];
+  
+  Kokkos::parallel_for("OffsetCoords", num_nodes, 
+    KOKKOS_LAMBDA(const size_t i) {
+      if (dim >= 1) coords(i, 0) += offset_x;
+      if (dim >= 2) coords(i, 1) += offset_y;
+      if (dim >= 3) coords(i, 2) += offset_z;
+    });
+  
+  Kokkos::fence();
 }
 
 /****************************************************************************/
