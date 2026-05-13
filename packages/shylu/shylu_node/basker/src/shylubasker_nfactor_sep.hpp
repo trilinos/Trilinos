@@ -177,12 +177,7 @@ namespace BaskerNS
 
         if(color[j] == 0)
         {
-          #ifdef BASKER_INC_LVL
-          //t_local_reach_selective(kid, l, l, j, &top);
-          #else
-          //t_local_reach(kid, l, l, j, &top); //Note: comeback
           t_local_reach(kid,l,l,j,top);
-          #endif
         }//if not colored
       }// if not zero
     }//end over each nnz in column
@@ -251,10 +246,6 @@ namespace BaskerNS
 
     // --------------
     // solve with L
-    #ifdef BASKER_INC_LVL
-    //Note we have not made a t_back_solve_atomic_selective
-    t_back_solve_selective(kid, l,l, k, top, xnnz);
-    #else //BASKER_INC_LVL
     #ifdef BASKER_ATOMIC_2
     t_back_solve(kid, l, l, k, top, xnnz);
     #else
@@ -262,9 +253,6 @@ namespace BaskerNS
                  lvl, l,k , top,
                  xnnz);
     #endif
-    #endif //BASKER_INC_LVL
-
-
     // --------------
     //move over nnz to U 
     for(Int i = top; i < ws_size && info == BASKER_SUCCESS; ++i)
@@ -347,37 +335,11 @@ namespace BaskerNS
 
       //back_solve
       //come back to the inc case
-      #ifdef BASKER_INC_LVL
-       t_back_solve_offdiag_selective(kid,
-           L_col, L_row,
-           X_col, X_row,
-           k, col_idx_offset,
-           U.val,
-           U.row_idx,
-           U.col_ptr[k-bcol+1]-U.col_ptr[k-bcol],
-           U.col_ptr[k-bcol],
-           A_option);
-
-      #else
        /*
           printf("t_bsolve_d test, kid: %d xsize: %d\n",
           kid, 
           U.col_ptr[k-bcol+1]-U.col_ptr[k-bcol]);
           */
-       /*        
-          t_back_solve_offdiag(kid,
-          L_col, L_row,
-          X_col, X_row,
-          k, col_idx_offset,
-          U.val,
-          U.row_idx,
-       //U.col_ptr[k-bcol+1]-U.col_ptr[k-bcol],
-       U.col_ptr(k+1)-U.col_ptr(k),
-       //U.col_ptr[k-bcol],
-       U.col_ptr(k),
-       A_option);
-       */
-
        t_dense_back_solve_offdiag(kid,
            L_col, L_row,
            X_col, X_row,
@@ -390,7 +352,6 @@ namespace BaskerNS
            U.col_ptr(k),
            A_option);
 
-      #endif
      }//end for over all offdiag
      #endif // end of BASKER_MULTIPLE_UPPER
      //Bgood(removed)
@@ -651,10 +612,6 @@ namespace BaskerNS
       if(color[j] == 0)
       {
         //printf("doing reach: %d \n", j);
-        //#ifdef BASKER_INC_LVL
-        //t_local_reach_selective(kid,lvl,l+1,j, &top);
-        //#else
-        //t_local_reach(kid,lvl,l+1, j, &top);
         if(gperm(j+brow_g) != BASKER_MAX_IDX)
         {
           //printf("COL LOCAL REACH\n");
@@ -665,7 +622,6 @@ namespace BaskerNS
           //printf("COL LOCAL SHORT\n");
           t_local_reach_short(kid,lvl,l+1,j,top);
         }
-        //#endif
       }
     }//over each nnz in the column
     xnnz = ws_size - top;

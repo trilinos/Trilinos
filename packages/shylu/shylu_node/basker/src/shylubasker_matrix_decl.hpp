@@ -148,11 +148,6 @@ namespace BaskerNS
     //***Deprecated***
     BOOL_1DARRAY union_bit;
    
-    //#ifdef BASKER_INC_LVL
-    BASKER_BOOL   inc_lvl_flg;
-    INT_1DARRAY   inc_lvl;
-    //#endif
-
     BASKER_BOOL   w_fill;
     ENTRY_1DARRAY ews;
     INT_1DARRAY   iws;

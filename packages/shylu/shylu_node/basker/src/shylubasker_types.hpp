@@ -84,10 +84,6 @@ enum BASKER_INCOMPLETE_CODE
   BASKER_INCOMPLETE_EXP
 };
 
-//MACRO DEFAULT INC SETTINGS
-#define BASKER_INC_LVL_VALUE        0
-#define BASKER_INC_TOL_VALUE      0.0001
-
 //MACRO INC FILL (this will become dynamic in the future)
 #define BASKER_FILL_USER           0.00
 #define BASKER_FILL_LESTIMATE      1.50

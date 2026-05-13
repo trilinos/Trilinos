@@ -35,7 +35,6 @@ namespace BaskerNS
     tpivot  = 0;
     p_size  = 0;
     w_fill  = BASKER_FALSE;
-    inc_lvl_flg = BASKER_FALSE;
     anorm = -1.0;
     gnorm = -1.0;
     //printf("matrix init\n");
@@ -53,7 +52,6 @@ namespace BaskerNS
     tpivot  = 0;
     p_size  = 0;
     w_fill  = BASKER_FALSE;
-    inc_lvl_flg = BASKER_FALSE;
     anorm = -1.0;
     gnorm = -1.0;
   }//end BaskerMatrix(label)
@@ -119,12 +117,6 @@ namespace BaskerNS
       FREE_INT_1DARRAY(iws);
       FREE_ENTRY_1DARRAY(ews);
       w_fill = BASKER_FALSE;
-    }
-
-    if(inc_lvl_flg == BASKER_TRUE)
-    {
-      FREE_INT_1DARRAY(inc_lvl);
-      inc_lvl_flg = BASKER_FALSE;
     }
   }//end finalize()
 
@@ -225,9 +217,6 @@ namespace BaskerNS
       BASKER_ASSERT(nnz > 0, "matrix init_vector nnz");
       MALLOC_INT_1DARRAY(row_idx,nnz);
       MALLOC_ENTRY_1DARRAY(val,nnz);
-#ifdef BASKER_INC_LVL
-      MALLOC_INT_1DARRAY(inc_lvl, nnz);
-#endif
     }
     else if(nnz==0)
     {
@@ -236,9 +225,6 @@ namespace BaskerNS
       row_idx(0) = (Int) 0;
       MALLOC_ENTRY_1DARRAY(val, nnz+1);
       val(0) = (Entry) 0;
-#ifdef BASKER_INC_LVL
-      MALLOC_INT_1DARRAY(inc_lvl, nnz+1);
-#endif
     }
 
   }//end init_vectors(Int, Int, Int)
@@ -474,17 +460,6 @@ namespace BaskerNS
       val(i) = 0;
     }
     #endif
-
-    //#ifdef BASKER_INC_LVL
-    if(inc_lvl_flg == BASKER_TRUE)
-    {
-      for(Int i = 0; i < nnz; i++)
-      {
-        inc_lvl(i) = 0;
-      }
-    }
-    //#endif
-
     v_fill = BASKER_TRUE;
     return 0;
   }

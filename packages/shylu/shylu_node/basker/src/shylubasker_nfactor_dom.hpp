@@ -899,7 +899,6 @@ namespace BaskerNS
         for(Int blk_row = 1; blk_row < LL_size(b); ++blk_row)
         {
           //Do back solve of off-diag blocks
-          #ifndef BASKER_INC_LVL
           t_back_solve_offdiag(kid,
               b, blk_row,
               b, blk_row,
@@ -909,7 +908,6 @@ namespace BaskerNS
               U.col_ptr(k+1)-U.col_ptr(k),
               U.col_ptr(k),
               BASKER_TRUE);
-          #endif
           #ifdef BASKER_DETAILED_TIMER
           time5 += timer1.seconds();
           timer1.reset();
@@ -1382,9 +1380,6 @@ namespace BaskerNS
           {
             // ith row has not been processed
             //  -> push into stack and break
-            #ifdef BASKER_INC_LVL
-            inc_lvl++;
-            #endif
             head++;
             stack[head] = i;
             store[j] = i1+1;
@@ -1533,11 +1528,6 @@ namespace BaskerNS
         if (blkcol == 2 && blkrow == 1) printf( " L.val(%d) = (%e %d) for %d)\n",lnnz,L.val(lnnz),j, k );
         #endif
         X(j) = 0;
-
-        //Note come back to fix
-#ifdef BASKER_INC_LVL
-        L.inc_lvl[lnnz] = INC_LVL_TEMP[j];
-#endif
         lnnz++;
       }
     }
@@ -1634,12 +1624,6 @@ namespace BaskerNS
         printf( " L.val(%d) = %e at (%d,%d)\n",lnnz, L.val(lnnz),L.row_idx(lnnz),k );
       }
       #endif
-
-      //Note come back to fix
-#ifdef BASKER_INC_LVL
-      L.inc_lvl[lnnz] = INC_LVL_TEMP[j];
-#endif
-
       lnnz++;
     }
     //printf("L-Moving, kid: %d col_ptr(%d): %d \n",

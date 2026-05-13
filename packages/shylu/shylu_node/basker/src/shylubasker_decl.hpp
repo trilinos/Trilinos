@@ -1202,13 +1202,6 @@ namespace BaskerNS
 
     BaskerPointBarrier<Int,Entry,Exe_Space> basker_barrier;
 
-    /*Incomplete Factorization Arrays*/
-    //#ifdef BASKER_INC_LVL
-    INT_1DARRAY INC_LVL_TEMP;
-    INT_1DARRAY INC_LVL_ARRAY_CNT;
-    INT_1DARRAY INC_LVL_ARRAY;
-    //#endif
-
     //ordering perms
     //This should be all compounded in the future
     INT_1DARRAY order_match_array;
