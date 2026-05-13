@@ -170,23 +170,12 @@ namespace BaskerNS
         #endif
 
         #ifdef MY_DEBUG_BASKER
-         #ifdef BASKER_2DL
          if(kid == 0)
            printf(" > kid=%d: X(%d) = %g color = %d \n",
                   (int)kid, (int)j, X[j], (int)ws[j] );
-         #else
-         if(kid == 0)
-           printf(" > kid=%d: X(%d) = %g color = %d \n",
-                  kid, j, X[j], ws[0 + j] );
-         #endif
         #endif
 
-        #ifdef BASKER_2DL
-        //if(color[j-brow] == 0)
         if(color[j] == 0)
-        #else
-        if(color[j] == 0)
-        #endif
         {
           #ifdef BASKER_INC_LVL
           //t_local_reach_selective(kid, l, l, j, &top);
@@ -291,13 +280,7 @@ namespace BaskerNS
       }
       #endif
 
-      #ifdef BASKER_2DL
-      //if(X[j-brow] !=0)
       if (X(j) != zero)
-      #else
-      if (X[j] != zero)
-      //kkos_nfactor_sep2
-      #endif
       {
         //SHOULD:: REMOVE, check if this fine
         //if( (t != L.max_idx) && (t >= L.scol) && 
@@ -317,23 +300,13 @@ namespace BaskerNS
           //printf("kid: %d addU: %d %d \n",
           //     kid, unnz, U.nnz);
           U.row_idx(unnz) = t-brow_g;
-          #ifdef BASKER_2DL
           U.val(unnz) = X(j);
-          #else
-          U.val[unnz] = X[j];
-          #endif
           unnz++;
 
-          #ifdef BASKER_2DL
-          //X[j-brow] = 0;
           X(j) = 0;
-          #else
-          X[j] = 0;
-          #endif
         }//if in U
         else
         {
-          #ifdef BASKER_2DL
           std::cout << "----Error--- kid = " << kid << ": extra L[" << j << "]="
                     << X[j] << " with gperm( " << brow_g << " + " << j << " ) = " << t
                     << std::endl;
@@ -343,7 +316,6 @@ namespace BaskerNS
           thread_array(kid).error_info = k;
           info = BASKER_ERROR;
           //BASKER_ASSERT(t != BASKER_MAX_IDX, "lower entry in U");
-          #endif
         }//lower
       }//end not 0
     }//over all x
@@ -355,8 +327,6 @@ namespace BaskerNS
     //printf("TEST SIZE: %d %d \n", 
     //            U.col_ptr(k), U.col_ptr(k+1));
 
-    #ifdef BASKER_2DL
-  
     #ifdef BASKER_DEBUG_NFACTOR_SEP
     printf("JB TEST kid: %d lvl: %d l: %d L_col: %d size: %d Xrow: %d\n",
            kid, lvl, l, L_col, LL_size[X_col], X_row);
@@ -423,9 +393,6 @@ namespace BaskerNS
       #endif
      }//end for over all offdiag
      #endif // end of BASKER_MULTIPLE_UPPER
-     
-     #endif // end of BASKER_2DL
-
      //Bgood(removed)
      //B.flip_base();
      
@@ -676,22 +643,12 @@ namespace BaskerNS
         printf("i: %ld  j: %ld %ld  val: %g  top: %d \n", 
             i, j, gperm(j+brow_g), B.val(i), top);
       }
-      #ifdef BASKER_2DL
       if(kid>=0)
         printf("Nxk in Ak %d %g color = %d \n",
             j, X[j], ws[j ] );
-      #else
-      if(kid>=0)
-        printf("Nx in Ak %d %g color = %d \n",
-            j, X[j], ws[j ] );
-      #endif
 #endif
 
-      #ifdef BASKER_2DL
       if(color[j] == 0)
-      #else
-      if(color[j] == 0)
-      #endif
       {
         //printf("doing reach: %d \n", j);
         //#ifdef BASKER_INC_LVL
@@ -920,24 +877,14 @@ namespace BaskerNS
 #endif
 
       //if not zero
-      #ifdef BASKER_2DL
       if(X(j) != zero)
-      #else
-      if(X[j] != zero)
-      #endif
       {
 #ifdef BASKER_DEBUG_NFACTOR_SEP
-         #ifdef BASKER_2DL
          if(kid>=0)
          {
            printf("found value: %f at %d, kid: %d \n",
                X[j], j, kid);
          }
-         #else
-         if(kid>=0)
-           printf("found value: %f at %d, kid: %d \n",
-               X[j], j, kid);
-         #endif
 #endif
 
          if(t != BASKER_MAX_IDX)
@@ -948,24 +895,15 @@ namespace BaskerNS
              //if(kid>=0)
              if (L_col == 2 && kid == 0)
              {
-             #ifdef BASKER_2DL
                printf("U insert: %e %d at %d \n",
                    X[j], t-brow_g, unnz);
-             #else
-               printf("U insert: %e %d at %d \n",
-                   X[j], t-brow_g, unnz);
-             #endif
              }
 #endif
              //U.row_idx[unnz] = gperm[j];
              //can't we reuse, this seems
              //stupid
              U.row_idx(unnz) = t-brow_g;
-             #ifdef BASKER_2DL
              U.val(unnz) = X(j);
-             #else
-             U.val[unnz] = X[j];
-             #endif
              unnz++;
            }
            else
@@ -976,7 +914,6 @@ namespace BaskerNS
          else if (t == BASKER_MAX_IDX)
          {
 #ifdef BASKER_DEBUG_NFACTOR_SEP
-           #ifdef BASKER_2DL
            if(kid>=0)
            {
              // printf("inserting %f at %d into %d \n", 
@@ -984,22 +921,9 @@ namespace BaskerNS
              printf("inserting %f at %d into %d \n", 
                  X[j]/pivot, j, lnnz );
            }
-           #else
-           if(kid>=0)
-           {
-             //printf("inserting %f at %d into %d \n", 
-             //          X[j]/pivot, j, lnnz );
-             printf("inserting %f at %d into %d \n", 
-                 X[j]/pivot, j, lnnz );
-           }
-           #endif
 #endif
            L.row_idx(lnnz) = j;
-           #ifdef BASKER_2DL
            L.val(lnnz) = EntryOP::divide(X(j), pivot);
-           #else
-           L.val(lnnz) = EntryOP::divide(X(j), pivot);
-           #endif
            lnnz++;
          }
       }//end if() not zero             
@@ -1008,11 +932,7 @@ namespace BaskerNS
       #ifdef MY_DEBUG_BASKER
       printf(" t_lower_col_factor(kid=%d)t: X(%d) = ZERO\n",kid,j);
       #endif
-      #ifdef BASKER_2DL
       X(j) = zero;
-      #else
-      X[j] = zero;
-      #endif
     }//if(x[j-brow] != 0)
    
     //Fill in last element of U
@@ -1048,7 +968,6 @@ namespace BaskerNS
     #endif
   
     #ifndef BASKER_MULTIPLE_LOWER
-    #ifdef BASKER_2DL
     //----Update offdiag (this can be done in parallel l>0)---//
     //-Need to fix
     #ifdef BASKER_DEBUG_NFACTOR_SEP
@@ -1091,7 +1010,6 @@ namespace BaskerNS
           X_col, x_row,
           k, pivot);
     }//end for over all offdiag blks
-    #endif
     #endif
 
     t_prune(kid, lvl, l+1, k, maxindex);

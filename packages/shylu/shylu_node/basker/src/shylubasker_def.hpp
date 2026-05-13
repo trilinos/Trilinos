@@ -2155,12 +2155,8 @@ namespace BaskerNS
   {
     //print_sep_bal();
 
-    #ifdef BASKER_2DL
     printL2D();
     printLMTX();
-    #else
-    //printL();
-    #endif
     std::cout << "L printed " << std::endl;
     printU();
     printUMTX();

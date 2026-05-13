@@ -753,7 +753,6 @@ namespace BaskerNS
     Int max_sep_size = 0;
 
     //printf( " *** kid=%d :: t_init_worksppace(%d, %d) ***\n",kid, flag,btf_tabs_offset );
-    #ifdef BASKER_2DL
     if(flag)
     {
       if(btf_tabs_offset != 0)
@@ -863,30 +862,6 @@ namespace BaskerNS
         }
       }//else
     }
-    #else //ifdef basker_2dl
-    if(flag)
-    {
-      if(btf_tabs_offset != 0)
-      {
-        INT_1DARRAY  &ws = thread_array(kid).iws;
-        ENTRY_1DARRAY &X = thread_array(kid).ews;
-        Int iws_size     = thread_array(kid).iws_size;
-        Int iws_mult     = thread_array(kid).iws_mult;
-        Int ews_size     = thread_array(kid).ews_size;
-        Int ews_mult     = thread_array(kid).ews_mult;
-      }
-    }
-    printf("init_workspace 1d, kid: %d size: %d %d %d %d \n",
-           kid, iws_mult, iws_size, ews_mult, ews_size);
-    for(Int i=0; i< iws_mult*iws_size; i++)
-    {
-      thread_array(kid).iws[i] = 0;
-    }
-    for(Int i = 0; i < ews_mult*ews_size; i++)
-    {
-      thread_array(kid).ews[i] = 0;
-    }
-    #endif  //endif def basker_2dl
     //return 0;
   }//end init_workspace
   

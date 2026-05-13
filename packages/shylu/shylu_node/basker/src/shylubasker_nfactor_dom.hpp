@@ -128,16 +128,10 @@ namespace BaskerNS
     BASKER_MATRIX &L   = LL(b)(0);
     BASKER_MATRIX &U   = LU(b)(LU_size(b)-1);
     BASKER_MATRIX &M   = ALM(b)(0); //A->blk
-#ifdef BASKER_2DL
     //printf("Accessing blk: %d kid: %d  \n", b, kid);
     INT_1DARRAY   ws   = LL(b)(0).iws;
     ENTRY_1DARRAY X    = LL(b)(0).ews;
     Int        ws_size = LL(b)(0).iws_size;
-#else  //else if BASKER_2DL
-    INT_1DARRAY   ws   = thread_array(kid).iws;
-    ENTRY_1DARRAY X    = thread_array(kid).ews;
-    Int       ws_size  = thread_array(kid).iws_size;
-#endif
     //Int          bcol  = L.scol;  //begining col //NOT UD
     Int          scol_top = btf_tabs[btf_top_tabs_offset]; // the first column index of A
     Int          brow_g   = L.srow + scol_top;   // global offset
@@ -360,11 +354,7 @@ namespace BaskerNS
           if (M.val(i) != zero ||
              (i+1 == M.col_ptr(k+1) && top == ws_size)) // the last element, and have not found non-zero entry, then go ahead and process this zero entry
           {
-            #ifdef BASKER_2DL
             X(j) = M.val(i);
-            #else
-            X[j] = M.val[i];
-            #endif
             #ifdef MY_DEBUG_BASKER
             if (kid == debug_kid) {
               printf( " > original: X(%d) = %e (color = %d)\n",j, X(j), color[j] );
@@ -427,12 +417,7 @@ namespace BaskerNS
         {
           Int j = pattern[i];
           Int t = gperm(j+brow_g);
-
-          #ifdef BASKER_2DL
           Entry value = X(j);
-          #else
-          Entry value = X[j];
-          #endif
 
           #ifdef MY_DEBUG_BASKER
           if (kid == debug_kid)
@@ -767,22 +752,14 @@ namespace BaskerNS
 
           //Note can not exclude numeric cancel for prune
           //if fill-in
-          #ifdef BASKER_2DL
           //if(X(j) != 0)
-          #else
-          //if(X[j] != 0)
-          #endif
           {
             if(t != BASKER_MAX_IDX)
             {
               if(t < (k+brow_g))
               {
                 U.row_idx(unnz) = t-brow_g;
-                #ifdef BASKER_2DL
                 U.val(unnz) = X(j);
-                #else
-                U.val[unnz] = X[j];
-                #endif
 
                 #ifdef MY_DEBUG_BASKER
                 if (kid == debug_kid) {
@@ -795,11 +772,7 @@ namespace BaskerNS
               }
               else
               {
-                #ifdef BASKER_2DL
                 lastU = X(j);
-                #else
-                lastU = X[j];
-                #endif
                 #ifdef MY_DEBUG_BASKER
                 if (kid == debug_kid) {
                   printf(" thread-%d: lastU(%d): %e \n",
@@ -812,11 +785,7 @@ namespace BaskerNS
             else if (t == BASKER_MAX_IDX)
             {
               L.row_idx(lnnz) = j;
-              #ifdef BASKER_2DL
               L.val(lnnz) = EntryOP::divide(X(j),pivot);
-              #else
-              L.val(lnnz) = EntryOP::divde(X(j),pivot);
-              #endif
 
               #ifdef MY_DEBUG_BASKER
               if (kid == debug_kid) {
@@ -839,11 +808,7 @@ namespace BaskerNS
           if (j != maxindex)
 #endif
           {
-            #ifdef BASKER_2DL
             X(j) = zero;
-            #else
-            X[j] = zero;
-            #endif
           }
         }//end if(x[i] != 0)
         #ifdef BASKER_DETAILED_TIMER
@@ -909,7 +874,6 @@ namespace BaskerNS
 
       if (team_rank == worker_thread_id)
       {
-        #ifdef BASKER_2DL
         //-----------------------Update offdiag-------------//
         #ifdef BASKER_DETAILED_TIMER
         timer1.reset();
@@ -967,7 +931,6 @@ namespace BaskerNS
           timer1.reset();
           #endif
         }//end over all diag
-        #endif
       }
 
       #if 0//def BASKER_DETAILED_TIMER
@@ -1321,13 +1284,8 @@ namespace BaskerNS
     const Int      b   = S(lvl)(kid);
     const Int     wsb  = S(0)(kid);
     BASKER_MATRIX  &L  = LL(b)(0);
-    #ifdef BASKER_2DL
     INT_1DARRAY    ws  = LL(wsb)(l).iws;
     const Int  ws_size = LL(wsb)(l).iws_size;
-    #else
-    INT_1DARRAY    ws  = thread_array(kid).iws;
-    Int        ws_size = thread_array(kid).iws_size;
-    #endif
 
     const Int  scol_top = btf_tabs[btf_top_tabs_offset]; // the first column index of A
     const Int  brow_g   = L.srow + scol_top;   // global offset
@@ -1468,15 +1426,9 @@ namespace BaskerNS
     const Int      b = S(lvl)(kid);
     const Int    wsb = S(0)(kid);
     BASKER_MATRIX &L = LL(b)(0);
-    #ifdef BASKER_2DL
     INT_1DARRAY   ws = LL(wsb)(l).iws;
     ENTRY_1DARRAY X  = LL(wsb)(l).ews;
     Int      ws_size = LL(wsb)(l).iws_size;
-    #else
-    INT_1DARRAY   ws = thread_array(kid).iws;
-    ENTRY_1DARRAY  X = thread_array(kid).ews;
-    Int      ws_size = thread_array(kid).iws_size;
-    #endif
     
     const Entry zero (0.0);
     Int *color   = &(ws[0]);
@@ -1819,19 +1771,15 @@ namespace BaskerNS
       }
     }//over all nonzero in left
 
-    #ifdef BASKER_2DL
     LL(X_col)(X_row).p_size = nnz;
-    #endif
 
     //Debug
     #ifdef BASKER_DEBUG_NFACTOR_DOM
-     #ifdef BASKER_2DL
      printf("---PATTERN End test: kid: %d nnz: %d pattern: %d \n",
             kid, nnz, pattern[nnz-1]); 
      printf("SETTING dig PS: %d kid: %d L: %d %d\n",
             nnz, kid, X_col, X_row);
      printf("kid %d Ending nnz: %d \n",kid, nnz);
-     #endif
      printf("kid: %d all values: \n", kid);
      for(Int i = 0; i < L.nrow; ++i)
      {
@@ -2000,7 +1948,6 @@ namespace BaskerNS
       }
     }//over all nonzero in left
 
-    #ifdef BASKER_2DL
     #ifdef BASKER_DEBUG_NFACTOR_DOM
     printf("---PATTERN End test: kid: %d nnz: %d pattern: %d \n",
            kid, nnz, pattern[nnz-1]); 
@@ -2008,9 +1955,7 @@ namespace BaskerNS
            nnz, kid, X_col, X_row);
     printf("kid %d Ending nnz: %d \n",kid, nnz);
     #endif
-    //LL(X_col)(X_row).p_size = nnz;
     LL(X_col)(X_row).p_size = nnz;
-    #endif
 
     //Debug
     #ifdef BASKER_DEBUG_NFACTOR_DOM

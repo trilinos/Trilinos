@@ -19,7 +19,6 @@
 #define BASKER_ATOMIC         //Use Atomics (OLD)
 #define BASKER_ATOMIC_2       //Use Atomics (OLD)
 #define BASKER_NO_LAMBDA      //Do not use lambda
-#define BASKER_2DL            //Use a 2D L
 #define BASKER_MULTIPLE_UPPER //Use multiple threads for upper
 #define BASKER_MULTIPLE_LOWER //Use multiple threads for lower
 #define HAVE_AMESOS           //Use Amesos orderings

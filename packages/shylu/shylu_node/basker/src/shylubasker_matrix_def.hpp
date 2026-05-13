@@ -33,10 +33,8 @@ namespace BaskerNS
     mnnz    = 0;
     v_fill  = BASKER_FALSE;
     tpivot  = 0;
-    #ifdef BASKER_2DL
     p_size  = 0;
     w_fill  = BASKER_FALSE;
-    #endif
     inc_lvl_flg = BASKER_FALSE;
     anorm = -1.0;
     gnorm = -1.0;
@@ -53,10 +51,8 @@ namespace BaskerNS
     nnz     = 0;
     v_fill  = BASKER_FALSE;
     tpivot  = 0;
-    #ifdef BASKER_2DL
     p_size  = 0;
     w_fill  = BASKER_FALSE;
-    #endif
     inc_lvl_flg = BASKER_FALSE;
     anorm = -1.0;
     gnorm = -1.0;
@@ -73,10 +69,8 @@ namespace BaskerNS
     tpivot = 0;
     anorm = -1.0;
     gnorm = -1.0;
-    #ifdef BASKER_2DL
     p_size = 0;
     w_fill = BASKER_FALSE;
-    #endif
 
     v_fill = BASKER_FALSE;
     init_matrix("matrix", _m,_n,_nnz, colptr, rowind, nzval);
@@ -93,10 +87,8 @@ namespace BaskerNS
     tpivot = 0;
     anorm = -1.0;
     gnorm = -1.0;
-    #ifdef BASKER_2DL
     p_size = 0;
     w_fill = BASKER_FALSE;
-    #endif
 
     v_fill = BASKER_FALSE;
     init_matrix(_label, _m,_n,_nnz, colptr, rowind, nzval);

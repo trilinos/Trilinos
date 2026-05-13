@@ -800,11 +800,7 @@ namespace BaskerNS
             if(t < k)
             {
               U.row_idx(unnz) = t - L.srow;
-              #ifdef BASKER_2DL
               U.val(unnz) = X(j);
-              #else
-              U.val[unnz] = X[j];
-              #endif
 
               #ifdef BASKER_DEBUG_NFACTOR_BTF
               if (Options.verbose == BASKER_TRUE) {
@@ -815,11 +811,7 @@ namespace BaskerNS
             }
             else
             {
-              #ifdef BASKER_2DL
               lastU = X(j);
-              #else
-              lastU = X[j];
-              #endif
             }
           }
         }
@@ -828,11 +820,7 @@ namespace BaskerNS
           if (Options.prune || abs(X(j)) > rmin_*abs(pivot))
           {
             L.row_idx(lnnz) = j;
-            #ifdef BASKER_2DL
             L.val(lnnz) = X(j)/pivot;
-            #else
-            L.val[lnnz] = X[j]/pivot;
-            #endif
 
             #ifdef BASKER_DEBUG_NFACTOR_BTF
             if (Options.verbose == BASKER_TRUE) {
@@ -854,11 +842,7 @@ namespace BaskerNS
         }
         #endif
 
-        #ifdef BASKER_2DL
         X(j) = zero;
-        #else
-        X[j] = zero;
-        #endif
       }
       #ifdef BASKER_TIMER
       scale_time += timer_nfactor.seconds();
@@ -1137,45 +1121,35 @@ namespace BaskerNS
       printf("----------DFS: %d %d -------------\n", j, t);
     #endif
 
-      #ifdef BASKER_2DL
-      //if(color[j-brow] == 0)
       if(color[j] == 0)
-      #else
-      if(color[j] == 0)
-      #endif
-        {    
-        #ifdef BASKER_2DL
-          //color[j-brow] = 1;
-          color[j] = 1;
-        #else
-          color[j] = 1;
-        #endif
+      {    
+        color[j] = 1;
 
-          //if not permuted, might be able to make this smaller now
-          //if((t!=L.max_idx) && (t>=L.scol) && (t<(L.scol+L.ncol)))
-          //if(t!=L.max_idx)
-          if(t!=BASKER_MAX_IDX)
-          {
+        //if not permuted, might be able to make this smaller now
+        //if((t!=L.max_idx) && (t>=L.scol) && (t<(L.scol+L.ncol)))
+        //if(t!=L.max_idx)
+        if(t!=BASKER_MAX_IDX)
+        {
           #ifdef BASKER_DEBUG_LOCAL_REACH
-            printf("reach.. j: %d t:%d L.scol %d\n",
-                j, t, L.scol);
+          printf("reach.. j: %d t:%d L.scol %d\n",
+              j, t, L.scol);
           #endif
-            //start = L.col_ptr[t-L.scol];
-            start = L.col_ptr(t-L.scol);
-          }
-          else
-          {
-          #ifdef BASKER_DEBUG_LOCAL_REACH
-            printf("L.scol: %d L.ncol: %d t: %d \n",
-                L.scol, L.ncol,t);
-          #endif
-          }
+          //start = L.col_ptr[t-L.scol];
+          start = L.col_ptr(t-L.scol);
         }
         else
         {
-          //start = store[j-brow];
-          start = store[j];
+        #ifdef BASKER_DEBUG_LOCAL_REACH
+          printf("L.scol: %d L.ncol: %d t: %d \n",
+              L.scol, L.ncol,t);
+        #endif
         }
+      }
+      else
+      {
+        //start = store[j-brow];
+        start = store[j];
+      }
       done = 1;
 
       //if  permuted
@@ -1188,33 +1162,23 @@ namespace BaskerNS
         {
           //i = L.row_idx[i1];
           i = L.row_idx(i1);
-          #ifdef BASKER_2DL
-          //if(color[i-brow] == 0)
           if(color[i] == 0)
-          #else
-          if(color[i] == 0)
-          #endif
-            {
-              ++head;
-              stack[head] = i;
-              //store[j-brow] = i1+1;
-              store[j] = i1+1;
-              done = 0;
+          {
+            ++head;
+            stack[head] = i;
+            //store[j-brow] = i1+1;
+            store[j] = i1+1;
+            done = 0;
 
-              break;
-            }
+            break;
+          }
         }
       }
       if(done)
       {
         //sprintf("%d \n", *top);
         pattern[--*top] = j;
-        #ifdef BASKER_2DL
-        //color[j-brow] = 2;
         color[j] = 2;
-        #else
-        color[j] = 2;
-        #endif
         if(head == 0)
         {head = BASKER_MAX_IDX;}
         else
@@ -1258,17 +1222,8 @@ namespace BaskerNS
       Int j = pattern[top1];
       Int t = gperm(j+brow);
 
-      #ifdef BASKER_2DL
       color[j] = 0;
-      #else
-      color[j] = 0;
-      #endif
-
-      #ifdef BASKER_2DL
-        Entry xj = X(j);
-      #else
-        Entry xj = X[j];
-      #endif
+      Entry xj = X(j);
       if(t != BASKER_MAX_IDX && xj != zero)
       { // j is original nonzero in upper-triangullar part of A
         // p starts witth ptr(k)+1, skipping diagonal element
@@ -1277,24 +1232,14 @@ namespace BaskerNS
         {
           #ifdef BASKER_DEBUG_NFACTOR_BTF
           if (Options.verbose == BASKER_TRUE) {
-            #ifdef BASKER_2DL
             printf("Updating block %d row: %d with value: %f - %f * %f -> %f (j=%d, p=%d)\n",
                    (int)c, (int)L.row_idx[p],
                    std::real(X[L.row_idx[p]]), std::real(L.val[p]), std::real(xj),
                    std::real(X(L.row_idx(p)) - L.val(p)*xj), (int)j, (int)p);
-            #else
-            printf("Updating block %d row: %d with value: %f %f -> %f (j=%d)\n",
-                   (int)c, (int)L.row_idx(p),
-                   std::real(X[L.row_idx(p)]), std::real(L.val[p]*xj), std::real(X[L.row_idx[p]] - L.val[p]*xj), (int)j);
-            #endif
           }
           #endif
 
-          #ifdef BASKER_2DL
           X(L.row_idx(p)) -= L.val(p)*xj;
-          #else
-          X[L.row_idx[p]] -= L.val[p] *xj;
-          #endif
         }//end for() over each nnz in the column
       }//end if() not permuted
     }//end for() over all nnz in LHS
