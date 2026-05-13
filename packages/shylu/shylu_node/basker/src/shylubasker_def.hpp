@@ -18,9 +18,7 @@
 #include "shylubasker_matrix_view_def.hpp"
 #include "shylubasker_tree.hpp"
 #include "shylubasker_sfactor.hpp"
-#include "shylubasker_sfactor_inc.hpp"
 #include "shylubasker_nfactor.hpp"
-#include "shylubasker_nfactor_inc.hpp"
 #include "shylubasker_solve_rhs.hpp"
 #include "shylubasker_util.hpp"
 #include "shylubasker_stats.hpp"
@@ -392,14 +390,8 @@ namespace BaskerNS
       #endif
       //-------------------------------------------------
       //Do symbolic factorization
-      if(Options.incomplete == BASKER_FALSE)
-      {
-        sfactor();
-      }
-      else
-      {
-        sfactor_inc();
-      }
+      sfactor();
+      //-------------------------------------------------
       #ifdef BASKER_TIMER
       sfactor_time += timer_sfactor.seconds();
       std::cout << "Basker Symbolic sfactor time: " << sfactor_time << std::endl;
@@ -1866,15 +1858,7 @@ namespace BaskerNS
 
     Kokkos::Timer timer_factornotoken;
     double fnotoken_time = 0.0;
-    if(Options.incomplete == BASKER_FALSE)    
-    {
-      err = factor_notoken(0);
-    }
-    else
-    {
-      err = factor_inc_lvl(0);
-    }
-
+    err = factor_notoken(0);
 
     if(Options.verbose == BASKER_TRUE) {
       fnotoken_time += timer_factornotoken.seconds();
@@ -1883,7 +1867,7 @@ namespace BaskerNS
 
     if(err == BASKER_ERROR)
     {
-      printf("ShyLUBasker %s error returned (err=%d)\n",(Options.incomplete == BASKER_FALSE ? "factor_notoken" : "factor_inc_lvl"),err);
+      printf("ShyLUBasker factor_notoken error returned (err=%d)\n",err);
       return BASKER_ERROR; 
     }
 
@@ -1910,15 +1894,6 @@ namespace BaskerNS
 
     return 0;
   }//end Factor()
-
-
-  template <class Int, class Entry, class Exe_Space>
-  int Basker<Int,Entry,Exe_Space>::Factor_Inc(Int _Options)
-  {
-    factor_inc_lvl(_Options);
-
-    return 0;
-  }
 
 
   template <class Int, class Entry, class Exe_Space>

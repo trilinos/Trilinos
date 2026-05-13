@@ -636,14 +636,6 @@ namespace BaskerNS
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  void BaskerMatrix<Int,Entry,Exe_Space>::init_inc_lvl()
-  {
-    MALLOC_INT_1DARRAY(inc_lvl, nnz+1);
-    inc_lvl_flg = BASKER_TRUE;
-  }
-
-  template <class Int, class Entry, class Exe_Space>
-  BASKER_INLINE
   void BaskerMatrix<Int,Entry,Exe_Space>::info()
   {
     std::cout << "\n Matrix Information: scol: " << scol

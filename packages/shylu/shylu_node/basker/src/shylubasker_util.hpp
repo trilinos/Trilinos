@@ -437,14 +437,6 @@ namespace BaskerNS
           #ifdef BASKER_TIMER
           printf( " >> LL(%d,%d).init_matrix done <<\n",b,row ); fflush(stdout);
           init_matrixL_time += timer_init_matrixL.seconds();
-          #endif
-
-          //Fix when this all happens in the future
-          if(Options.incomplete == BASKER_TRUE)
-          {
-            LL(b)(row).init_inc_lvl();
-          }
-          #ifdef BASKER_TIMER
           timer_fill_matrixL.reset();
           printf( " ++ zero out (%d) ++\n",int(LL(b)(row).col_ptr.extent(0)) ); fflush(stdout);
           #endif
@@ -557,12 +549,6 @@ namespace BaskerNS
           //LU(U_col)(U_row).fill();
           LU(U_col)(U_row).init_ptr();
           //Kokkos::deep_copy(LU(U_col)(U_row).col_ptr, 0);
-
-          if(Options.incomplete == BASKER_TRUE)
-          {
-            LU(U_col)(U_row).init_inc_lvl();
-          }
-
         }//over inner lvls
       }//if KID
 
