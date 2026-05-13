@@ -651,16 +651,18 @@ class MatrixGenerator {
  private:
   template <class Vec, class S>
   static void miniFE_vector_generate_block(Vec& vec, int nx, S a, S b, int& count, int start, int end) {
-    if ((count >= start) && (count < end))
-      vec.replaceGlobalValue(count++ - start, 0.0);
+    auto map       = vec.getMap();
+    auto insertVal = [&](int i, S val) {
+      if ((i >= start) && (i < end) && map->isNodeGlobalElement(i)) {
+        vec.replaceGlobalValue(i, val);
+      }
+    };
+    insertVal(count++ - start, 0.0);
     for (int i = 0; i < nx - 2; i++) {
-      if ((count >= start) && (count < end))
-        vec.replaceGlobalValue(count++ - start, a / nx / nx / nx);
+      insertVal(count++ - start, a / nx / nx / nx);
     }
-    if ((count >= start) && (count < end))
-      vec.replaceGlobalValue(count++ - start, a / nx / nx / nx + b / nx);
-    if ((count >= start) && (count < end))
-      vec.replaceGlobalValue(count++ - start, 1.0);
+    insertVal(count++ - start, a / nx / nx / nx + b / nx);
+    insertVal(count++ - start, 1.0);
   }
 
   template <class Vec, class S>
