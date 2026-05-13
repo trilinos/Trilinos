@@ -769,7 +769,7 @@ namespace BaskerNS
             {
               //defining here
               LL(b)(l).iws_size = LL(b)(l).nrow;
-              //This can be made smaller, see notes in Sfactor_old
+              //This can be made smaller, see notes in sfactor_old
               LL(b)(l).iws_mult = 5;
               LL(b)(l).ews_size = LL(b)(l).nrow;
               //This can be made smaller, see notes in sfactor_old

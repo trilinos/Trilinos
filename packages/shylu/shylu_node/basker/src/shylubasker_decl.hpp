@@ -140,8 +140,6 @@ namespace BaskerNS
     BASKER_INLINE
     int t_nfactor_dom(const TeamMember &thread);
 
-    int t_nfactor_dom_old(Int kid);
-
     BASKER_INLINE
     void t_init_workspace(bool flag, Int kid);
 
@@ -201,8 +199,6 @@ namespace BaskerNS
     BASKER_INLINE
     int init_tree_thread();
   
-    BASKER_INLINE
-    int init_tree_old(Int*, Int, Int, Int*, Int*, Int*);
 
     BASKER_INLINE
     void rec_tabs(Int, Int, Int, Int, Int, Int*, Int* , Int*, Int *, INT_1DARRAY, INT_1DARRAY, INT_1DARRAY);
@@ -584,17 +580,10 @@ namespace BaskerNS
     inline
     void t_local_reach(const Int, const Int, const Int, Int, Int &);
     
-    inline
-    int t_local_reach_old(Int,Int,Int,Int,Int*);
-
-    BASKER_INLINE
-    int t_local_reach_old_old(Int,Int,Int,Int,Int*);
 
     inline
     int t_back_solve(Int,Int,Int,Int,Int,Int);
 
-    BASKER_INLINE
-    int t_back_solve_old(Int,Int,Int,Int,Int,Int);
 
     BASKER_INLINE
     int t_upper_col_factor(Int kid, Int team_leader, Int lvl, Int l, Int k, BASKER_BOOL);
@@ -760,8 +749,6 @@ namespace BaskerNS
 
     void t_prune_btf(const Int, const BASKER_MATRIX &, const BASKER_MATRIX&, const Int, const Int);
 
-    BASKER_INLINE
-    int t_local_reach_old(Int,BASKER_MATRIX&,Int,Int,Int,Int*);
 
     BASKER_INLINE
     int t_back_solve(Int,Int,BASKER_MATRIX&,Int,Int,Int,Int,Int);
