@@ -23,7 +23,10 @@
 #include "Kokkos_UnorderedMap.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_ScalarTraits.hpp"
+#include "Tpetra_CrsMatrix.hpp"
+#ifdef HAVE_GALERI_XPETRA
 #include "Xpetra_TpetraCrsMatrix.hpp"
+#endif
 #include "Tpetra_Distributor.hpp"
 
 namespace Galeri::Xpetra {
@@ -168,7 +171,7 @@ class ScaledIdentityStencil {
   using GlobalOrdinal     = typename Map::global_ordinal_type;
   using Node              = typename Map::node_type;
   using local_map_type    = typename Map::local_map_type;
-  using local_matrix_type = typename ::Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type;
+  using local_matrix_type = typename ::Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_device_type;
   using rowptr_type       = typename local_matrix_type::row_map_type::non_const_type;
   using colidx_type       = typename local_matrix_type::index_type::non_const_type;
   using values_type       = typename local_matrix_type::values_type::non_const_type;
@@ -221,7 +224,7 @@ class TriDiagStencil {
   using GlobalOrdinal     = typename Map::global_ordinal_type;
   using Node              = typename Map::node_type;
   using local_map_type    = typename Map::local_map_type;
-  using local_matrix_type = typename ::Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type;
+  using local_matrix_type = typename ::Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_device_type;
   using rowptr_type       = typename local_matrix_type::row_map_type::non_const_type;
   using colidx_type       = typename local_matrix_type::index_type::non_const_type;
   using values_type       = typename local_matrix_type::values_type::non_const_type;
@@ -318,7 +321,7 @@ class Cross2DStencil {
   using GlobalOrdinal     = typename Map::global_ordinal_type;
   using Node              = typename Map::node_type;
   using local_map_type    = typename Map::local_map_type;
-  using local_matrix_type = typename ::Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type;
+  using local_matrix_type = typename ::Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_device_type;
   using rowptr_type       = typename local_matrix_type::row_map_type::non_const_type;
   using colidx_type       = typename local_matrix_type::index_type::non_const_type;
   using values_type       = typename local_matrix_type::values_type::non_const_type;
@@ -427,7 +430,7 @@ class Cross3DStencil {
   using GlobalOrdinal     = typename Map::global_ordinal_type;
   using Node              = typename Map::node_type;
   using local_map_type    = typename Map::local_map_type;
-  using local_matrix_type = typename ::Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type;
+  using local_matrix_type = typename ::Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_device_type;
   using rowptr_type       = typename local_matrix_type::row_map_type::non_const_type;
   using colidx_type       = typename local_matrix_type::index_type::non_const_type;
   using values_type       = typename local_matrix_type::values_type::non_const_type;
@@ -558,7 +561,7 @@ class Brick3DStencil {
   using GlobalOrdinal     = typename Map::global_ordinal_type;
   using Node              = typename Map::node_type;
   using local_map_type    = typename Map::local_map_type;
-  using local_matrix_type = typename ::Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type;
+  using local_matrix_type = typename ::Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_device_type;
   using rowptr_type       = typename local_matrix_type::row_map_type::non_const_type;
   using colidx_type       = typename local_matrix_type::index_type::non_const_type;
   using values_type       = typename local_matrix_type::values_type::non_const_type;
@@ -1121,7 +1124,7 @@ StencilMatrix(const Teuchos::RCP<const Map>& map,
   using LocalOrdinal      = typename Map::local_ordinal_type;
   using GlobalOrdinal     = typename Map::global_ordinal_type;
   using Node              = typename Map::node_type;
-  using local_matrix_type = typename ::Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type;
+  using local_matrix_type = typename ::Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_device_type;
   using rowptr_type       = typename local_matrix_type::row_map_type::non_const_type;
   using colidx_type       = typename local_matrix_type::index_type::non_const_type;
   using values_type       = typename local_matrix_type::values_type::non_const_type;
@@ -1216,7 +1219,11 @@ StencilMatrix(const Teuchos::RCP<const Map>& map,
       if constexpr (std::is_same_v<Map, tpetra_map>) {
         TEUCHOS_ASSERT(ret == Tpetra::AllIDsPresent);
       } else {
+#ifdef HAVE_GALERI_XPETRA
         TEUCHOS_ASSERT(ret == ::Xpetra::AllIDsPresent);
+#else
+        TEUCHOS_ASSERT(false);
+#endif
       }
       Kokkos::deep_copy(remotePIDs, remotePIDs_h);
     }
@@ -1233,11 +1240,15 @@ StencilMatrix(const Teuchos::RCP<const Map>& map,
                               map->getIndexBase(),
                               map->getComm()));
   } else {
+#ifdef HAVE_GALERI_XPETRA
     ghosted_map = ::Xpetra::MapFactory<typename Matrix::local_ordinal_type, typename Matrix::global_ordinal_type, typename Matrix::node_type>::Build(map->lib(),
                                                                                                                                                      Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(),
                                                                                                                                                      columnMap_entries,
                                                                                                                                                      map->getIndexBase(),
                                                                                                                                                      map->getComm());
+#else
+    TEUCHOS_ASSERT(false);
+#endif
   }
 
   ///////////////////////////
@@ -1278,7 +1289,9 @@ StencilMatrix(const Teuchos::RCP<const Map>& map,
       auto distor = import->getDistributor();
       TEUCHOS_ASSERT(distor.getPlan().getIndicesTo().is_null());
     }
-  } else if constexpr (std::is_same_v<Matrix, ::Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>) {
+  }
+#ifdef HAVE_GALERI_XPETRA
+  else if constexpr (std::is_same_v<Matrix, ::Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>) {
     auto import = mtx->getCrsGraph()->getImporter();
     if (!import.is_null()) {
       auto xp_tp_import = Teuchos::rcp_dynamic_cast<const ::Xpetra::TpetraImport<LocalOrdinal, GlobalOrdinal, Node>>(import, true);
@@ -1301,6 +1314,9 @@ StencilMatrix(const Teuchos::RCP<const Map>& map,
       TEUCHOS_ASSERT(fastPath);
     }
   }
+#else
+  TEUCHOS_ASSERT(false);
+#endif
 #endif  // HAVE_GALERI_DEBUG
 
   return mtx;
