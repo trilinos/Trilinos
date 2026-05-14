@@ -120,7 +120,6 @@ void StepperEPI<Scalar>::takeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
   this->checkInitialized();
-  phiEvaluator_->checkInitialized();
 
   using Teuchos::RCP;
 
