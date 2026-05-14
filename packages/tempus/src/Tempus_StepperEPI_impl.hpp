@@ -167,10 +167,8 @@ void StepperEPI<Scalar>::takeStep(
     Thyra::SolveStatus<Scalar> sStatus;
 
     // Setup TimeDerivative
-    timeDer = Teuchos::rcp(new StepperEPITimeDerivative<Scalar>(
-                                                                1/dt, xOld));
-    auto p = Teuchos::rcp(new ImplicitODEParameters<Scalar>(
-                                                            timeDer, dt, Scalar(0.0), Scalar(1.0)));
+    timeDer = Teuchos::rcp(new StepperEPITimeDerivative<Scalar>(1/dt, xOld));
+    auto p = Teuchos::rcp(new ImplicitODEParameters<Scalar>(timeDer, dt, Scalar(0.0), Scalar(1.0)));
 
     // TODO: Transition away from using implicit solver methods and use ModelEvaluator directly
     Teuchos::ArrayRCP<RCP<const Thyra::VectorBase<Scalar>>> Mrhs_B(3);
@@ -196,8 +194,8 @@ void StepperEPI<Scalar>::takeStep(
     }
 
     // f = M*xDot in here
-    std::cout << "xO[0,1] = " << Thyra::get_ele(*xOld, 0) << " " << Thyra::get_ele(*xOld, 1) << std::endl;
-    std::cout << "x[0,1]  = " << Thyra::get_ele(*x, 0) << " " << Thyra::get_ele(*x, 1) << std::endl;
+    // std::cout << "xO[0,1] = " << Thyra::get_ele(*xOld, 0) << " " << Thyra::get_ele(*xOld, 1) << std::endl;
+    // std::cout << "x[0,1]  = " << Thyra::get_ele(*x, 0) << " " << Thyra::get_ele(*x, 1) << std::endl;
     // std::cout << "f[0,1]  = " << Thyra::get_ele(*f, 0) << " " << Thyra::get_ele(*f, 1) << std::endl;
 
     // Using the appModel
