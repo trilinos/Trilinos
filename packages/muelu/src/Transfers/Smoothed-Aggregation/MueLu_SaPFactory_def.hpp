@@ -253,8 +253,8 @@ void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLe
 
     const SC nodalDampingFactor = as<SC>(pL.get<double>("sa: nodal damping factor"));
 
-    const bool nodalAndEdgeSmoothing = ((fineLevel.IsAvailable("D0") && fineLevel.IsAvailable("NodeMatrix")) && (nodalDampingFactor != Teuchos::ScalarTraits<SC>::zero()) && (fineLevel.Get<RCP<Matrix>>("NodeMatrix")->GetMaxEigenvalueEstimate() != -Teuchos::ScalarTraits<SC>::one()));
-    const bool edgeSmoothing         = (fineLevel.IsAvailable("CurlCurl") && (dampingFactor != Teuchos::ScalarTraits<SC>::zero()));
+    const bool nodalAndEdgeSmoothing = ((nodalDampingFactor != Teuchos::ScalarTraits<SC>::zero()) && (fineLevel.Get<RCP<Matrix>>("NodeMatrix")->GetMaxEigenvalueEstimate() != -Teuchos::ScalarTraits<SC>::one()));
+    const bool edgeSmoothing         = (dampingFactor != Teuchos::ScalarTraits<SC>::zero());
 
     RCP<Matrix> P_afterNodalAndEdgeSmoothing;
     if (nodalAndEdgeSmoothing) {
@@ -273,9 +273,7 @@ void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLe
         P_afterNodalAndEdgeSmoothing = JacobiMaxwell1(A, NodeMatrix, D0, Ptent, beta);
       }
     } else {
-      if (!fineLevel.IsAvailable("D0") || !fineLevel.IsAvailable("NodeMatrix"))
-        GetOStream(Warnings) << "Skipping nodal&edge smoothing step since D0 or NodeMatrix matrix is not available\n";
-      else if (nodalDampingFactor == Teuchos::ScalarTraits<SC>::zero())
+      if (nodalDampingFactor == Teuchos::ScalarTraits<SC>::zero())
         GetOStream(Statistics1) << "Skipping nodal&edge smoothing step since nodal damping factor is zero\n";
       else if (fineLevel.Get<RCP<Matrix>>("NodeMatrix")->GetMaxEigenvalueEstimate() == -Teuchos::ScalarTraits<SC>::one())
         GetOStream(Warnings) << "Skipping nodal&edge smoothing step since NodeMatrix matrix has invalid eigenvalue estimate\n";
@@ -338,10 +336,7 @@ void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLe
         finalP = MueLu::IteratorOps<SC, LO, GO, NO>::Jacobi(alpha, *invDiag, *CurlCurl, *P_afterNodalAndEdgeSmoothing, finalP, GetOStream(Statistics2), std::string("MueLu::SaP-") + toString(coarseLevel.GetLevelID()), APparams);
       }
     } else {
-      if (!fineLevel.IsAvailable("CurlCurl") && (dampingFactor != Teuchos::ScalarTraits<SC>::zero()))
-        GetOStream(Warnings) << "Skipping edge-only smoothing step since CurlCurl matrix is not available\n";
-      else
-        GetOStream(Statistics1) << "Maxwell1 prolongator edge smoothing skipped" << std::endl;
+      GetOStream(Statistics1) << "Maxwell1 prolongator edge smoothing skipped" << std::endl;
       finalP = P_afterNodalAndEdgeSmoothing;
     }
   }
