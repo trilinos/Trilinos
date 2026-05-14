@@ -37,10 +37,10 @@ class PhiLinearSolver {
    *  This function does not make member data consistent, but just checks it.
    *  This ensures it is inexpensive.
    */
-  void initialize() const;
+  void initialize();
   /// Return if PhiSolver is initialized.
-  bool isInitialized() { return isInitialized_; }
-  void checkInitialized();
+  bool isInitialized() const { return isInitialized_; }
+  void checkInitialized() const;
 
   void computeMassMatrix(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs);
   void applyMass(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> Mf, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> f) const;
@@ -49,29 +49,37 @@ class PhiLinearSolver {
   void computeJacobian(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs);
   void applyJacobian(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> Jf, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> f) const;
 
-  Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> buildL(const Scalar dt);
+  Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> buildL(const Scalar dt) const;
 
   // TODO: make that one public function
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> buildATilde(const Scalar dt);
   void buildK(const Thyra::Ordinal n);
   void buildb(const Teuchos::ArrayView<const Teuchos::RCP<const Thyra::VectorBase<Scalar>>> &rhs_B);
   Teuchos::RCP<Thyra::ProductVectorBase<Scalar>> buildv(const Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar>> space,
-							const Teuchos::RCP<const Thyra::VectorBase<Scalar>> x0);
+							const Teuchos::RCP<const Thyra::VectorBase<Scalar>> x0) const;
 
-  Thyra::SolveStatus<Scalar> solveMpJ(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
-				      const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
-				      const Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mf, Scalar alpha=1., Scalar beta=0.) const;
+  // Solve Mass plus Jacobian, for given inArgs (recompute matrices from from ModelEvaluator)
+  Thyra::SolveStatus<Scalar> assembleAndsolveMpJ(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+                                                 const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
+                                                 const Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mf,
+                                                 Scalar alpha = 1., Scalar beta = 0.) const;
+
+  // Solve Mass plus Jacobian, for precomputed Mass and Jacobian
+  Thyra::SolveStatus<Scalar> solveMpJ(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
+                                      const Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mf,
+                                      Scalar alpha=1., Scalar beta=0.) const;
 
  private:
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > appModel_;
   bool lumpMass_;
-  mutable bool isInitialized_;
+  bool isInitialized_;
 
   Teuchos::RCP<Thyra::LinearOpBase<Scalar>> fullMassMatrix_;
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> lumpedMassMatrix_;
   Teuchos::RCP<Thyra::VectorBase<Scalar> > lumpedMassDiagonal_;
 
-  // the inverseMassMatrix_ is either lumped, or not, depending on bool lumpMass_
+  // massMatrix_ and inverseMassMatrix_ are either lumped, or not, depending on bool lumpMass_
+  Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> massMatrix_;
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> inverseMassMatrix_;
 
   Teuchos::RCP<Thyra::LinearOpBase<Scalar>> jacobianMatrix_;
