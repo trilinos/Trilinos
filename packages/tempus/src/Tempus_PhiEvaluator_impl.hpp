@@ -14,6 +14,7 @@
 #include "Tempus_PhiEvaluator_decl.hpp"
 #include "Teuchos_RCPDecl.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 
 #include "Thyra_DefaultDiagonalLinearOp.hpp"
 #include "Thyra_LinearOpWithSolveFactoryBase.hpp"
@@ -36,8 +37,8 @@
 #include "Thyra_DefaultScaledAdjointLinearOp.hpp"
 
 // For printing
-    #include "Teuchos_FancyOStream.hpp"
-    #include "Teuchos_VerbosityLevel.hpp"
+#include "Teuchos_FancyOStream.hpp"
+#include "Teuchos_VerbosityLevel.hpp"
 
 
 namespace Tempus {
@@ -139,6 +140,9 @@ void PhiEvaluator<Scalar>::initialize() const
   TEUCHOS_TEST_FOR_EXCEPTION(
       appModel_ == Teuchos::null, std::logic_error,
       "Error - PhiEvaluator::initialize() Model not set!\n");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      phiLinSolv_ == Teuchos::null, std::logic_error,
+      "Error - PhiEvaluator::initialize() phiLinearSolver not set!\n");
 
   isInitialized_ = true;  // Only place where this is set to true!
 }
@@ -187,7 +191,22 @@ void PhiEvaluator<Scalar>::setLumpMassMatrix(bool lumpMassMatrix)
 template <class Scalar>
 void PhiEvaluator<Scalar>::setLinearizationPoint(const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs)
 {
+  // TODO: remove this copy, when the TakeStep goes out of scope, this pointer becomes invalid
   inArgs_lin_ = Teuchos::rcpFromRef(inArgs);
+
+  // ensure that model and phiLinSolv are available
+  checkInitialized();
+
+  TEMPUS_FUNC_TIME_MONITOR("Tempus::PhiEvaluator::setLinearizationPoint (Mass and Jac assembly)");
+  {
+    // compute all required matrices at current linearization point
+    this->phiLinSolv_->setLumpMassMatrix(this->lumpMassMatrix_);
+    this->phiLinSolv_->computeMassMatrix(*inArgs_lin_);
+    this->phiLinSolv_->computeJacobian(*inArgs_lin_);
+
+    // check that everything has been initialized properly
+    this->phiLinSolv_->initialize();
+  }
 }
 
 template<class Scalar>
@@ -211,10 +230,9 @@ PhiEvaluator<Scalar>::computePhi(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x
   {
     // Call LinOpPhi directly
 
-    // TODO: move to setLinearizationPoint (have to change PFD solver to use these matrices)
-    this->phiLinSolv_->setLumpMassMatrix(this->lumpMassMatrix_);
-    this->phiLinSolv_->computeMassMatrix(*inArgs_lin_);
-    this->phiLinSolv_->computeJacobian(*inArgs_lin_);
+    // check that everything has been initialized properly
+    checkInitialized();
+    this->phiLinSolv_->checkInitialized();
 
     // Invert the mass matrix out of the right hand side and store in x
     Thyra::assign(x, 0.0);
@@ -249,10 +267,9 @@ PhiEvaluator<Scalar>::computePhis(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> 
     return computePhi(x, 0, cdt, Mrhs_B[0]);
   }
 
-  // TODO: move to setLinearizationPoint (have to change PFD solver to use these matrices)
-  this->phiLinSolv_->setLumpMassMatrix(this->lumpMassMatrix_);
-  this->phiLinSolv_->computeMassMatrix(*inArgs_lin_);
-  this->phiLinSolv_->computeJacobian(*inArgs_lin_);
+  // check that everything has been initialized properly
+  checkInitialized();
+  this->phiLinSolv_->checkInitialized();
 
   Teuchos::ArrayRCP<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> rhs_B(max_phi_order+1);
 
@@ -316,6 +333,32 @@ void PhiLinearSolver<Scalar>::setLumpMassMatrix(bool lump)
 }
 
 template <class Scalar>
+void PhiLinearSolver<Scalar>::initialize() const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      appModel_ == Teuchos::null, std::logic_error,
+      "Error - PhiLinearSolver::initialize() Model not set!\n");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      inverseMassMatrix_ == Teuchos::null, std::logic_error,
+      "Error - PhiLinearSolver::initialize() Mass matrix not computed!\n");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      jacobianMatrix_ == Teuchos::null, std::logic_error,
+      "Error - PhiLinearSolver::initialize() Jacobian matrix not computed!\n");
+
+  isInitialized_ = true;  // Only place where this is set to true!
+}
+
+template <class Scalar>
+void PhiLinearSolver<Scalar>::checkInitialized()
+{
+  if (!this->isInitialized()) {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        !this->isInitialized(), std::logic_error,
+        "Error - PhiLinearSolver is not initialized!");
+  }
+}
+
+template <class Scalar>
 void PhiLinearSolver<Scalar>::computeMassMatrix(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs)
 {
 
@@ -341,8 +384,6 @@ void PhiLinearSolver<Scalar>::computeMassMatrix(const Thyra::ModelEvaluatorBase:
 
   // TEUCHOS_TEST_FOR_EXCEPTION(inArgs_new.get_x_dot().is_null(), std::runtime_error,
   //   "computeMassMatrix: x_dot is null");
-
-  // std::cout << "alpha=" << inArgs_new.get_alpha() << " beta=" << inArgs_new.get_beta() << "\n";
 
   // TODO: figure out how we can do something for Dirichlet boundary conditions:
 
@@ -590,7 +631,6 @@ void PhiLinearSolver<Scalar>::computeJacobian(const Thyra::ModelEvaluatorBase::I
   inArgs_new.set_x_dot(inArgs.get_x_dot());
   // Set x_dot to ensure we call the implicit model evaluator
   // for models that make a distiction based on x_dot==null
-  // TODO: check this
   inArgs_new.set_alpha(0.0);
   inArgs_new.set_beta(1.0);
 
