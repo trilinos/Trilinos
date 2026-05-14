@@ -131,10 +131,11 @@ void StepperEPI<Scalar>::takeStep(
     TEUCHOS_TEST_FOR_EXCEPTION(solutionHistory->getNumStates() < 2,
       std::logic_error,
       "Error - StepperEPI<Scalar>::takeStep(...)\n"
-      "Need at least two SolutionStates for EPI.\n"
+      "Need at least two SolutionStates for EPI2, three for EPI3.\n"
       "  Number of States = " << solutionHistory->getNumStates() << "\n"
       "Try setting in \"Solution History\" \"Storage Type\" = \"Undo\"\n"
-      "  or \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"2\"\n");
+      "  or \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"2\" for EPI2,\n"
+      "  or \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"3\" for EPI3.\n");
 
     RCP<StepperEPI<Scalar> > thisStepper = Teuchos::rcpFromRef(*this);
     stepperEPIAppAction_->execute(solutionHistory, thisStepper,
@@ -154,6 +155,14 @@ void StepperEPI<Scalar>::takeStep(
 
     const Scalar time = workingState->getTime();
     const Scalar dt = workingState->getTimeStep();
+
+    // Retrieve x_{n-2} when available (used by EPI3 formula, added in next step).
+    // On the first step only two states exist so xOldOld remains null and the
+    // method runs as pure EPI2.
+    RCP<const Thyra::VectorBase<Scalar> > xOldOld = Teuchos::null;
+    if (solutionHistory->getNumStates() >= 3)
+      xOldOld = solutionHistory->getStateTimeIndexNM2()->getX();
+    // TODO: use xOldOld in EPI3 formula
 
     stepperEPIAppAction_->execute(solutionHistory, thisStepper,
       StepperEPIAppAction<Scalar>::ACTION_LOCATION::BEFORE_EXP);
