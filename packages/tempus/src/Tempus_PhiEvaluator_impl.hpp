@@ -134,7 +134,7 @@ PhiEvaluator<Scalar>::getNonconstParameterList()
 }
 
 template <class Scalar>
-void PhiEvaluator<Scalar>::initialize() const
+void PhiEvaluator<Scalar>::initialize()
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
       appModel_ == Teuchos::null, std::logic_error,
@@ -158,7 +158,7 @@ void PhiEvaluator<Scalar>::setPhiEvaluatorValues(
 
 
 template <class Scalar>
-void PhiEvaluator<Scalar>::checkInitialized()
+void PhiEvaluator<Scalar>::checkInitialized() const
 {
   if (!this->isInitialized()) {
     this->describe(*(this->getOStream()), Teuchos::VERB_MEDIUM);
@@ -319,6 +319,27 @@ PhiEvaluator<Scalar>::computePhis(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> 
   return sStatus;
 }
 
+template <class Scalar>
+void PhiEvaluator<Scalar>::applyMass(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> Mf, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> f)
+    const
+{
+    checkInitialized();
+    phiLinSolv_->applyMass(Mf, f);
+}
+
+template <class Scalar>
+void PhiEvaluator<Scalar>::solveMass(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> f, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mf) const
+{
+    checkInitialized();
+    phiLinSolv_->solveMass(f, Mf);
+}
+
+template <class Scalar>
+void PhiEvaluator<Scalar>::applyJacobian(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> MJf, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> f) const
+{
+    checkInitialized();
+    phiLinSolv_->applyJacobian(MJf, f);
+}
 
 /*
  * PhiLinearSolver methods
