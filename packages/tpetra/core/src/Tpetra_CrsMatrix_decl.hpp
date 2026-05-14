@@ -948,6 +948,9 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   ///   may not use insertGlobalValues() or
   ///   insertLocalValues().</li>
   /// </ol>
+  ///
+  /// MPI synchronization: never
+  /// Kokkos synchronization: sometimes - may synchronize device to host to access matrix data
   void
   insertGlobalValues(const GlobalOrdinal globalRow,
                      const Teuchos::ArrayView<const GlobalOrdinal>& cols,
@@ -967,6 +970,9 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   /// \param vals [in] Values to insert.
   /// \param inds [in] Global indices of the columns into which
   ///   to insert the entries.
+  ///
+  /// MPI synchronization: never
+  /// Kokkos synchronization: sometimes - may synchronize device to host to access matrix data
   void
   insertGlobalValues(const GlobalOrdinal globalRow,
                      const LocalOrdinal numEnt,
@@ -1015,6 +1021,9 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   ///   may not use insertGlobalValues() or
   ///   insertLocalValues().</li>
   /// </ol>
+  ///
+  /// MPI synchronization: never
+  /// Kokkos synchronization: sometimes - may synchronize device to host to access matrix data
   void
   insertLocalValues(const LocalOrdinal localRow,
                     const Teuchos::ArrayView<const LocalOrdinal>& cols,
@@ -1040,6 +1049,9 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   ///   matrix graph, and sums values that are already present. INSERT
   ///   inserts values that are not yet in the matrix graph, and
   ///   replaces values that are already present.
+  ///
+  /// MPI synchronization: never
+  /// Kokkos synchronization: sometimes - may synchronize device to host to access matrix data
   void
   insertLocalValues(const LocalOrdinal localRow,
                     const LocalOrdinal numEnt,
@@ -1104,6 +1116,9 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   /// <li> <tt>! isFillActive ()</tt> </li>
   /// <li> <tt> inputInds.extent (0) != inputVals.extent (0)</tt> </li>
   /// </ul>
+  ///
+  /// MPI synchronization: never
+  /// Kokkos synchronization: sometimes - may synchronize device to host to access matrix data
   local_ordinal_type
   replaceGlobalValues(
       const global_ordinal_type globalRow,
@@ -1112,6 +1127,9 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
 
   /// \brief Overload of replaceGlobalValues (see above), that takes
   ///   Teuchos::ArrayView (host pointers) instead of Kokkos::View.
+  ///
+  /// MPI synchronization: never
+  /// Kokkos synchronization: sometimes - may synchronize device to host to access matrix data
   LocalOrdinal
   replaceGlobalValues(const GlobalOrdinal globalRow,
                       const Teuchos::ArrayView<const GlobalOrdinal>& cols,
@@ -1131,6 +1149,9 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   /// \param vals [in] Values to use for replacing the entries.
   /// \param cols [in] Global indices of the columns in which to
   ///   replace the entries.
+  ///
+  /// MPI synchronization: never
+  /// Kokkos synchronization: sometimes - may synchronize device to host to access matrix data
   LocalOrdinal
   replaceGlobalValues(const GlobalOrdinal globalRow,
                       const LocalOrdinal numEnt,
@@ -1193,6 +1214,9 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   ///   <li> <tt>! hasColMap ()</tt> </li>
   ///   <li> <tt> cols.extent (0) != vals.extent (0)</tt> </li>
   ///   </ul>
+  ///
+  /// MPI synchronization: never
+  /// Kokkos synchronization: sometimes - may synchronize device to host to access matrix data
   local_ordinal_type
   replaceLocalValues(
       const local_ordinal_type localRow,
@@ -1202,6 +1226,9 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   /// \brief Backwards compatibility version of replaceLocalValues
   ///   (see above), that takes Teuchos::ArrayView (host pointers)
   ///   instead of Kokkos::View.
+  ///
+  /// MPI synchronization: never
+  /// Kokkos synchronization: sometimes - may synchronize device to host to access matrix data
   LocalOrdinal
   replaceLocalValues(const LocalOrdinal localRow,
                      const Teuchos::ArrayView<const LocalOrdinal>& cols,
@@ -1224,6 +1251,9 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   ///
   /// \return The number of indices for which values were actually
   ///   replaced; the number of "correct" indices.
+  ///
+  /// MPI synchronization: never
+  /// Kokkos synchronization: sometimes - may synchronize device to host to access matrix data
   LocalOrdinal
   replaceLocalValues(const LocalOrdinal localRow,
                      const LocalOrdinal numEnt,
@@ -1314,6 +1344,9 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   ///
   /// This method has the same preconditions and return value
   /// meaning as replaceGlobalValues() (which see).
+  ///
+  /// MPI synchronization: never
+  /// Kokkos synchronization: sometimes - may synchronize device to host to access matrix data
   LocalOrdinal
   sumIntoGlobalValues(const GlobalOrdinal globalRow,
                       const Teuchos::ArrayView<const GlobalOrdinal>& cols,
@@ -1342,6 +1375,9 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   ///
   /// \return The number of indices for which values were actually
   ///   modified; the number of "correct" indices.
+  ///
+  /// MPI synchronization: never
+  /// Kokkos synchronization: sometimes - may synchronize device to host to access matrix data
   LocalOrdinal
   sumIntoGlobalValues(const GlobalOrdinal globalRow,
                       const LocalOrdinal numEnt,
@@ -1409,6 +1445,9 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   ///
   /// This method has the same preconditions and return value
   /// meaning as replaceLocalValues() (which see).
+  ///
+  /// MPI synchronization: never
+  /// Kokkos synchronization: sometimes - may synchronize device to host to access matrix data
   local_ordinal_type
   sumIntoLocalValues(
       const local_ordinal_type localRow,
@@ -1445,6 +1484,9 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   ///
   /// This method has the same preconditions and return value
   /// meaning as replaceLocalValues() (which see).
+  ///
+  /// MPI synchronization: never
+  /// Kokkos synchronization: sometimes - may synchronize device to host to access matrix data
   LocalOrdinal
   sumIntoLocalValues(const LocalOrdinal localRow,
                      const Teuchos::ArrayView<const LocalOrdinal>& cols,
@@ -1788,9 +1830,15 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   }
 
   //! Set all matrix entries equal to \c alpha.
+  ///
+  /// MPI synchronization: never
+  /// Kokkos synchronization: sometimes - may synchronize device to host to access matrix data
   void setAllToScalar(const Scalar& alpha);
 
   //! Scale the matrix's values: <tt>this := alpha*this</tt>.
+  ///
+  /// MPI synchronization: never
+  /// Kokkos synchronization: sometimes - may synchronize device to host to access matrix data
   void scale(const Scalar& alpha);
 
   /// \brief Set the local matrix using three (compressed sparse row) arrays.
@@ -1918,6 +1966,9 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   /// an exception, or it may silently drop the entries inserted
   /// into invalid rows.  Behavior may vary, depending on whether
   /// Tpetra was built with debug checking enabled.
+  ///
+  /// MPI synchronization: always - must be called collectively on all processes in the communicator
+  /// Kokkos synchronization: sometimes - may synchronize device to host for communication buffers, inherits sync behavior from CrsGraph::globalAssemble
   void globalAssemble();
 
   /// \brief Resume operations that may change the values or
@@ -1933,6 +1984,9 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   /// resumeFill calls as many times as you wish.
   ///
   /// \post <tt>isFillActive() && ! isFillComplete()</tt>
+  ///
+  /// MPI synchronization: always - must be called collectively on all processes in the communicator
+  /// Kokkos synchronization: never
   void resumeFill(const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
   /// \brief Tell the matrix that you are done changing its
@@ -1992,6 +2046,9 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   ///      or disappear at any time.
   /// </li>
   /// </ul>
+  ///
+  /// MPI synchronization: always - must be called collectively on all processes in the communicator
+  /// Kokkos synchronization: sometimes - may synchronize device to host for communication and sorting operations, inherits sync behavior from CrsGraph::fillComplete
   void
   fillComplete(const Teuchos::RCP<const map_type>& domainMap,
                const Teuchos::RCP<const map_type>& rangeMap,
@@ -2023,6 +2080,9 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   /// \param params [in/out] List of parameters controlling this
   ///   method's behavior.  See documentation of the three-argument
   ///   version of fillComplete (above) for valid parameters.
+  ///
+  /// MPI synchronization: always - must be called collectively on all processes in the communicator
+  /// Kokkos synchronization: sometimes - may synchronize device to host for communication and sorting operations, inherits sync behavior from CrsGraph::fillComplete
   void
   fillComplete(const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
@@ -2052,6 +2112,9 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   ///   Tpetra::Map::isSameAs), then this may be Teuchos::null.
   /// \param params [in/out] List of parameters controlling this
   ///   method's behavior.
+  ///
+  /// MPI synchronization: always - must be called collectively on all processes in the communicator
+  /// Kokkos synchronization: sometimes - may synchronize device to host for communication operations, inherits sync behavior from CrsGraph::expertStaticFillComplete
   void
   expertStaticFillComplete(const Teuchos::RCP<const map_type>& domainMap,
                            const Teuchos::RCP<const map_type>& rangeMap,
@@ -2076,6 +2139,9 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   ///
   /// \pre The matrix must not have been created with a constant
   ///   (a.k.a. "static") CrsGraph.
+  ///
+  /// MPI synchronization: never
+  /// Kokkos synchronization: never - inherits sync behavior from CrsGraph::replaceColMap
   void
   replaceColMap(const Teuchos::RCP<const map_type>& newColMap);
 
@@ -2295,6 +2361,9 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   ///   least once.  This method will do no error checking, so you
   ///   are responsible for knowing when it is safe to call this
   ///   method.
+  ///
+  /// MPI synchronization: never
+  /// Kokkos synchronization: sometimes for getLocalMatrixHost (may synchronize device to host), never for getLocalMatrixDevice
   TPETRA_DETAILS_ALWAYS_INLINE local_matrix_device_type
   getLocalMatrixDevice() const;
   local_matrix_host_type getLocalMatrixHost() const;
