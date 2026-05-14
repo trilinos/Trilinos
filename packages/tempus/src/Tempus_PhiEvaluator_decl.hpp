@@ -151,12 +151,12 @@ class PhiEvaluator
    *  and is consistent.  This function does not make member data
    *  consistent, but just checks it.  This ensures it is inexpensive.
    */
-  void initialize() const;
+  void initialize();
 
   /// Return if PhiEvaluator is initialized.
-  bool isInitialized() { return isInitialized_; }
+  bool isInitialized() const { return isInitialized_; }
 
-  void checkInitialized();
+  void checkInitialized() const;
 
   void setLumpMassMatrix(bool lumpMassMatrix);
 
@@ -193,12 +193,21 @@ class PhiEvaluator
                                                  const Scalar cdt,
                                                  const Teuchos::ArrayView<const Teuchos::RCP<const Thyra::VectorBase<Scalar>>> &Mrhs_B);
 
+  // Multiply the mass matrix (lumped or not) with right hand side f
+  void applyMass(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> Mf, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> f) const;
+
+  // Invert the mass matrix (lumped or not) with right hand side Mf
+  void solveMass(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> f, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mf) const;
+
+  // Multiply the MassJacobian matrix with right hand side Mf
+  void applyJacobian(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> MJf, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> f) const;
+
  protected:
   std::string name_;
   bool lumpMassMatrix_;
   bool useAtildeForSingleRHS_;
 
-  mutable bool isInitialized_;  ///< Bool if PhiEvaluator is initialized.
+  bool isInitialized_;  ///< Bool if PhiEvaluator is initialized.
 
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>> appModel_;
   Teuchos::RCP<Tempus::PhiLinearSolver<Scalar>> phiLinSolv_;
