@@ -111,7 +111,7 @@ public:
     virtual bool isImplicit() const override {return true;}
     virtual bool isExplicitImplicit() const override
       {return isExplicit() && isImplicit();}
-    virtual bool isOneStepMethod() const override {return true;}
+    virtual bool isOneStepMethod() const override {return false;}
     virtual bool isMultiStepMethod() const override {return !isOneStepMethod();}
     virtual OrderODE getOrderODE() const override {return FIRST_ORDER_ODE;}
   //@}
