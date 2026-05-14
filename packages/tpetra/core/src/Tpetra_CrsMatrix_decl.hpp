@@ -950,7 +950,7 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   /// </ol>
   ///
   /// MPI synchronization: never
-  /// Kokkos synchronization: sometimes - may synchronize device to host to access matrix data
+  /// Kokkos synchronization: sometimes - calls sync_host() to ensure host data is up-to-date before modification, then modify_host() to mark host data as modified
   void
   insertGlobalValues(const GlobalOrdinal globalRow,
                      const Teuchos::ArrayView<const GlobalOrdinal>& cols,
@@ -972,7 +972,7 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   ///   to insert the entries.
   ///
   /// MPI synchronization: never
-  /// Kokkos synchronization: sometimes - may synchronize device to host to access matrix data
+  /// Kokkos synchronization: sometimes - calls sync_host() to ensure host data is up-to-date before modification, then modify_host() to mark host data as modified
   void
   insertGlobalValues(const GlobalOrdinal globalRow,
                      const LocalOrdinal numEnt,
@@ -1023,7 +1023,7 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   /// </ol>
   ///
   /// MPI synchronization: never
-  /// Kokkos synchronization: sometimes - may synchronize device to host to access matrix data
+  /// Kokkos synchronization: sometimes - calls sync_host() to ensure host data is up-to-date before modification, then modify_host() to mark host data as modified
   void
   insertLocalValues(const LocalOrdinal localRow,
                     const Teuchos::ArrayView<const LocalOrdinal>& cols,
@@ -1051,7 +1051,7 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   ///   replaces values that are already present.
   ///
   /// MPI synchronization: never
-  /// Kokkos synchronization: sometimes - may synchronize device to host to access matrix data
+  /// Kokkos synchronization: sometimes - calls sync_host() to ensure host data is up-to-date before modification, then modify_host() to mark host data as modified
   void
   insertLocalValues(const LocalOrdinal localRow,
                     const LocalOrdinal numEnt,
@@ -1118,7 +1118,7 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   /// </ul>
   ///
   /// MPI synchronization: never
-  /// Kokkos synchronization: sometimes - may synchronize device to host to access matrix data
+  /// Kokkos synchronization: sometimes - calls sync_host() to ensure host data is up-to-date before modification, then modify_host() to mark host data as modified
   local_ordinal_type
   replaceGlobalValues(
       const global_ordinal_type globalRow,
@@ -1129,7 +1129,7 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   ///   Teuchos::ArrayView (host pointers) instead of Kokkos::View.
   ///
   /// MPI synchronization: never
-  /// Kokkos synchronization: sometimes - may synchronize device to host to access matrix data
+  /// Kokkos synchronization: sometimes - calls sync_host() to ensure host data is up-to-date before modification, then modify_host() to mark host data as modified
   LocalOrdinal
   replaceGlobalValues(const GlobalOrdinal globalRow,
                       const Teuchos::ArrayView<const GlobalOrdinal>& cols,
@@ -1151,7 +1151,7 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   ///   replace the entries.
   ///
   /// MPI synchronization: never
-  /// Kokkos synchronization: sometimes - may synchronize device to host to access matrix data
+  /// Kokkos synchronization: sometimes - calls sync_host() to ensure host data is up-to-date before modification, then modify_host() to mark host data as modified
   LocalOrdinal
   replaceGlobalValues(const GlobalOrdinal globalRow,
                       const LocalOrdinal numEnt,
@@ -1216,7 +1216,7 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   ///   </ul>
   ///
   /// MPI synchronization: never
-  /// Kokkos synchronization: sometimes - may synchronize device to host to access matrix data
+  /// Kokkos synchronization: sometimes - calls sync_host() to ensure host data is up-to-date before modification, then modify_host() to mark host data as modified
   local_ordinal_type
   replaceLocalValues(
       const local_ordinal_type localRow,
@@ -1228,7 +1228,7 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   ///   instead of Kokkos::View.
   ///
   /// MPI synchronization: never
-  /// Kokkos synchronization: sometimes - may synchronize device to host to access matrix data
+  /// Kokkos synchronization: sometimes - calls sync_host() to ensure host data is up-to-date before modification, then modify_host() to mark host data as modified
   LocalOrdinal
   replaceLocalValues(const LocalOrdinal localRow,
                      const Teuchos::ArrayView<const LocalOrdinal>& cols,
@@ -1253,7 +1253,7 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   ///   replaced; the number of "correct" indices.
   ///
   /// MPI synchronization: never
-  /// Kokkos synchronization: sometimes - may synchronize device to host to access matrix data
+  /// Kokkos synchronization: sometimes - calls sync_host() to ensure host data is up-to-date before modification, then modify_host() to mark host data as modified
   LocalOrdinal
   replaceLocalValues(const LocalOrdinal localRow,
                      const LocalOrdinal numEnt,
@@ -1346,7 +1346,7 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   /// meaning as replaceGlobalValues() (which see).
   ///
   /// MPI synchronization: never
-  /// Kokkos synchronization: sometimes - may synchronize device to host to access matrix data
+  /// Kokkos synchronization: sometimes - calls sync_host() to ensure host data is up-to-date before modification, then modify_host() to mark host data as modified
   LocalOrdinal
   sumIntoGlobalValues(const GlobalOrdinal globalRow,
                       const Teuchos::ArrayView<const GlobalOrdinal>& cols,
@@ -1377,7 +1377,7 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   ///   modified; the number of "correct" indices.
   ///
   /// MPI synchronization: never
-  /// Kokkos synchronization: sometimes - may synchronize device to host to access matrix data
+  /// Kokkos synchronization: sometimes - calls sync_host() to ensure host data is up-to-date before modification, then modify_host() to mark host data as modified
   LocalOrdinal
   sumIntoGlobalValues(const GlobalOrdinal globalRow,
                       const LocalOrdinal numEnt,
@@ -1447,7 +1447,7 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   /// meaning as replaceLocalValues() (which see).
   ///
   /// MPI synchronization: never
-  /// Kokkos synchronization: sometimes - may synchronize device to host to access matrix data
+  /// Kokkos synchronization: sometimes - calls sync_host() to ensure host data is up-to-date before modification, then modify_host() to mark host data as modified
   local_ordinal_type
   sumIntoLocalValues(
       const local_ordinal_type localRow,
@@ -1486,7 +1486,7 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   /// meaning as replaceLocalValues() (which see).
   ///
   /// MPI synchronization: never
-  /// Kokkos synchronization: sometimes - may synchronize device to host to access matrix data
+  /// Kokkos synchronization: sometimes - calls sync_host() to ensure host data is up-to-date before modification, then modify_host() to mark host data as modified
   LocalOrdinal
   sumIntoLocalValues(const LocalOrdinal localRow,
                      const Teuchos::ArrayView<const LocalOrdinal>& cols,
@@ -1832,13 +1832,13 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   //! Set all matrix entries equal to \c alpha.
   ///
   /// MPI synchronization: never
-  /// Kokkos synchronization: sometimes - may synchronize device to host to access matrix data
+  /// Kokkos synchronization: sometimes - calls sync_host() to ensure host data is up-to-date before modification, then modify_host() to mark host data as modified
   void setAllToScalar(const Scalar& alpha);
 
   //! Scale the matrix's values: <tt>this := alpha*this</tt>.
   ///
   /// MPI synchronization: never
-  /// Kokkos synchronization: sometimes - may synchronize device to host to access matrix data
+  /// Kokkos synchronization: sometimes - calls sync_host() to ensure host data is up-to-date before modification, then modify_host() to mark host data as modified
   void scale(const Scalar& alpha);
 
   /// \brief Set the local matrix using three (compressed sparse row) arrays.
@@ -2363,7 +2363,7 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   ///   method.
   ///
   /// MPI synchronization: never
-  /// Kokkos synchronization: sometimes for getLocalMatrixHost (may synchronize device to host), never for getLocalMatrixDevice
+  /// Kokkos synchronization: never for getLocalMatrixDevice, sometimes for getLocalMatrixHost - calls sync_host() to ensure host data is up-to-date
   TPETRA_DETAILS_ALWAYS_INLINE local_matrix_device_type
   getLocalMatrixDevice() const;
   local_matrix_host_type getLocalMatrixHost() const;
