@@ -251,7 +251,7 @@ int main( int argc, char* argv[] ) {
 
       // Manually clean up some memory
 
-      delete d_ptr1.release().get(); // Now d_ptr1.get() no longer points to a valid object but okay
+      delete static_cast<E*>(d_ptr1.release().get()); // Now d_ptr1.get() no longer points to a valid object but okay
       // as long as no other access to this object is attempted! (see below)
 #ifdef SHOW_RUN_TIME_ERROR_2
       TEUCHOS_TEST_FOR_EXCEPT( d_ptr1->D_g() == D_g_return ); // Should cause a segmentation fault since d_ptr.get() was deleted!

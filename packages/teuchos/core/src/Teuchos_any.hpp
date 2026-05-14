@@ -127,8 +127,9 @@ public:
     : content(0)
     {}
 
-  //! Templated constructor
-  template<typename ValueType>
+  //! Templated constructor (excluded for any/any& to prevent infinite recursion via holder<any>)
+  template<typename ValueType,
+    std::enable_if_t<!std::is_same_v<std::decay_t<ValueType>, any>, int> = 0>
   explicit any(ValueType&& value)
     : content(new holder<std::decay_t<ValueType>>(std::forward<ValueType>(value)))
     {}
