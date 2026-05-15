@@ -77,7 +77,7 @@ int HVOL_HEX_Cn_FEM_Test01(const bool verbose) {
   typedef typename ScalarTraits<OutValueType>::scalar_type scalar_type;
   typedef Kokkos::DynRankView<scalar_type, DeviceType> DynRankViewScalarValueType;     
 
-  const scalar_type tol = tolerence();
+  const scalar_type tol = tolerance();
   int errorFlag = 0;
 
   typedef Basis_HVOL_HEX_Cn_FEM<DeviceType,OutValueType,PointValueType> HexBasisType;

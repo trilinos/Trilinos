@@ -253,7 +253,7 @@ namespace Intrepid2 {
       errorPointwise("CellTools::mapToReferenceFrameInitGuess::errorPointwise", numCells, numPoints);
 
     
-    const auto tol = tolerence<errorType>();
+    const auto tol = tolerance<errorType>();
 
     errorType error(0), physInfNorm(0);
 

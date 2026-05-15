@@ -93,7 +93,7 @@ int OrientationPyrTriFaceNewBasis(const bool verbose) {
   oldFormatState.copyfmt(std::cout);
 
   int errorFlag = 0;
-  const ValueType tol = tolerence();
+  const ValueType tol = tolerance();
 
   struct Fun {
     ValueType

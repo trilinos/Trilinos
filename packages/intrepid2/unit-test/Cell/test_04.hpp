@@ -61,7 +61,7 @@ namespace Intrepid2 {
         auto in  = Kokkos::subview(input_,  cl, pt, Kokkos::ALL()); // D
         auto out = Kokkos::subview(output_, cl, pt, Kokkos::ALL()); // D
 
-        const auto tol = tolerence<typename OutputViewType::value_type>();        
+        const auto tol = tolerance<typename OutputViewType::value_type>();        
           
         Impl::CellTools::Serial::mapToReferenceFrame<ImplBasis>(out, in, nodes, tol, shellThickness_);
         }
@@ -179,7 +179,7 @@ namespace Intrepid2 {
       using ct = CellTools<DeviceType>;
       using DynRankView = Kokkos::DynRankView<ValueType,DeviceType>;
 
-      const ValueType tol = tolerence<ValueType>()*100.0;
+      const ValueType tol = tolerance<ValueType>()*100.0;
 
       int errorFlag  = 0;
 

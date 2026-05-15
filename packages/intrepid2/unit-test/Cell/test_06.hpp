@@ -97,7 +97,7 @@ namespace Intrepid2 {
         const ordinal_type P = _output.extent(1);
 
         auto nodes = Kokkos::subview(_workset, cl, Kokkos::ALL(), Kokkos::ALL()); // N,D
-        typename InputViewType::value_type tol = tolerence();
+        typename InputViewType::value_type tol = tolerance();
         for (ordinal_type i=0;i<P;++i) {
           auto in  = Kokkos::subview(_input,  cl, i, Kokkos::ALL()); // D
           auto out = Kokkos::subview(_output, cl, i, Kokkos::ALL()); // D
@@ -136,7 +136,7 @@ namespace Intrepid2 {
         << "|                                                                             |\n"
         << "===============================================================================\n";
   
-      const ValueType tol = tolerence<ValueType>()*100.0;
+      const ValueType tol = tolerance<ValueType>()*100.0;
 
       int errorFlag = 0;
       

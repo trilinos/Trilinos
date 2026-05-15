@@ -58,7 +58,7 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
   typedef Kokkos::DynRankView<scalar_type, DeviceType> DynRankViewScalarValueType;
   typedef Kokkos::DynRankView<scalar_type, HostSpaceType> DynRankViewHostScalarValueType;
 
-  const scalar_type tol = tolerence();
+  const scalar_type tol = tolerance();
   int errorFlag = 0;
 
   typedef Basis_HGRAD_HEX_Cn_FEM<DeviceType,OutValueType,PointValueType> HexBasisType;

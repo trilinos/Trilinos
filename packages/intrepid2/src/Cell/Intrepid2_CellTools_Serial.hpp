@@ -121,7 +121,7 @@ public:
     mapToReferenceFrame(const refPointViewType &refPoint, // refDim
         const phyPointViewType &physPoint, // physDim
         const nodeViewType &nodes,
-        const double tol = tolerence(),
+        const double tol = tolerance(),
         const typename phyPointViewType::value_type shellThickness = -1.0) {  // numNodes,physDim
 
       bool isBeamOrShell = (shellThickness > 0); 
