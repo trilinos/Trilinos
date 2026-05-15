@@ -112,6 +112,22 @@ namespace Intrepid2 {
     };
 
     template <typename ValueType>
+    struct MapPoints<shards::ShellLine<2>::key, ValueType> {
+      ValueType operator()(const ValueType* coords, int comp) {
+        MapPoints<shards::Quadrilateral<4>::key, ValueType> quad4Map;
+        return quad4Map(coords, comp);
+      }
+    };
+
+    template <typename ValueType>
+    struct MapPoints<shards::ShellLine<3>::key, ValueType> {
+      ValueType operator()(const ValueType* coords, int comp) {
+        MapPoints<shards::Quadrilateral<9>::key, ValueType> quad9Map;
+        return quad9Map(coords, comp);
+      }
+    };
+
+    template <typename ValueType>
     struct MapPoints<shards::Triangle<3>::key, ValueType> {
       ValueType operator()(const ValueType* coords, int comp) {
         const auto& x = coords[0]; const auto& y = coords[1];
@@ -126,6 +142,22 @@ namespace Intrepid2 {
         MapPoints<shards::Triangle<3>::key, ValueType> linearMap;
         const auto& x = coords[0]; const auto& y = coords[1];
         return linearMap(coords, comp) -0.1*x*x+0.05*x*y+0.2*y*y;
+      }
+    };
+
+    template <typename ValueType>
+    struct MapPoints<shards::ShellTriangle<3>::key, ValueType> {
+      ValueType operator()(const ValueType* coords, int comp) {
+        MapPoints<shards::Wedge<6>::key, ValueType> wedge6Map;
+        return wedge6Map(coords, comp);
+      }
+    };
+
+    template <typename ValueType>
+    struct MapPoints<shards::ShellTriangle<6>::key, ValueType> {
+      ValueType operator()(const ValueType* coords, int comp) {
+        MapPoints<shards::Wedge<15>::key, ValueType> wedge15Map;
+        return wedge15Map(coords, comp);
       }
     };
 
@@ -153,6 +185,30 @@ namespace Intrepid2 {
         MapPoints<shards::Quadrilateral<4>::key, ValueType> bilinearMap;
         const auto& x = coords[0]; const auto& y = coords[1];
         return bilinearMap(coords, comp)-0.1*x*x -0.2*y*y +0.05*x*y*(x-y+x*y);
+      }
+    };
+
+    template <typename ValueType>
+    struct MapPoints<shards::ShellQuadrilateral<4>::key, ValueType> {
+      ValueType operator()(const ValueType* coords, int comp) {
+        MapPoints<shards::Hexahedron<8>::key, ValueType> trilineareMap;
+        return trilineareMap(coords, comp);
+      }
+    };
+
+    template <typename ValueType>
+    struct MapPoints<shards::ShellQuadrilateral<8>::key, ValueType> {
+      ValueType operator()(const ValueType* coords, int comp) {
+        MapPoints<shards::Hexahedron<20>::key, ValueType> hexa20Map;
+        return hexa20Map(coords, comp);
+      }
+    };
+
+    template <typename ValueType>
+    struct MapPoints<shards::ShellQuadrilateral<9>::key, ValueType> {
+      ValueType operator()(const ValueType* coords, int comp) {
+        MapPoints<shards::Hexahedron<27>::key, ValueType> hexa27Map;
+        return hexa27Map(coords, comp);
       }
     };
 
@@ -257,41 +313,20 @@ namespace Intrepid2 {
 #define INTREPID2_COMPUTE_POINTS_AND_CELL_NODES_IN_PHYS_SPACE(inCell, host_points, physPoints, physNodes, shtopo, cellTools)     \
     {                                                                                                                            \
         MapPoints<shtopo::key,ValueType> mapPoints;                                                                              \
-        Intrepid2::HostBasisPtr<ValueType, ValueType> basisPtr;                                                                  \
-        using HostDeviceType = Kokkos::HostSpace::device_type;                                                                   \
         shards::CellTopology topo( shards::getCellTopologyData<shtopo>());                                                       \
-        switch (topo.getKey()) {                                                                                                 \
-          case shards::Line<2>::key:          basisPtr = Teuchos::rcp(new Basis_HGRAD_LINE_C1_FEM   <HostDeviceType,ValueType,ValueType>()); break;  \
-          case shards::Line<3>::key:          basisPtr = Teuchos::rcp(new Basis_HGRAD_LINE_C2_FEM   <HostDeviceType,ValueType,ValueType>()); break;  \
-          case shards::Triangle<3>::key:      basisPtr = Teuchos::rcp(new Basis_HGRAD_TRI_C1_FEM    <HostDeviceType,ValueType,ValueType>()); break;  \
-          case shards::Quadrilateral<4>::key: basisPtr = Teuchos::rcp(new Basis_HGRAD_QUAD_C1_FEM   <HostDeviceType,ValueType,ValueType>()); break;  \
-          case shards::Tetrahedron<4>::key:   basisPtr = Teuchos::rcp(new Basis_HGRAD_TET_C1_FEM    <HostDeviceType,ValueType,ValueType>()); break;  \
-          case shards::Hexahedron<8>::key:    basisPtr = Teuchos::rcp(new Basis_HGRAD_HEX_C1_FEM    <HostDeviceType,ValueType,ValueType>()); break;  \
-          case shards::Wedge<6>::key:         basisPtr = Teuchos::rcp(new Basis_HGRAD_WEDGE_C1_FEM  <HostDeviceType,ValueType,ValueType>()); break;  \
-          case shards::Pyramid<5>::key:       basisPtr = Teuchos::rcp(new Basis_HGRAD_PYR_C1_FEM    <HostDeviceType,ValueType,ValueType>()); break;  \
-          case shards::Triangle<6>::key:      basisPtr = Teuchos::rcp(new Basis_HGRAD_TRI_C2_FEM    <HostDeviceType,ValueType,ValueType>()); break;  \
-          case shards::Quadrilateral<8>::key: basisPtr = Teuchos::rcp(new Basis_HGRAD_QUAD_I2_FEM   <HostDeviceType,ValueType,ValueType>()); break;  \
-          case shards::Quadrilateral<9>::key: basisPtr = Teuchos::rcp(new Basis_HGRAD_QUAD_C2_FEM   <HostDeviceType,ValueType,ValueType>()); break;  \
-          case shards::Tetrahedron<10>::key:  basisPtr = Teuchos::rcp(new Basis_HGRAD_TET_C2_FEM    <HostDeviceType,ValueType,ValueType>()); break;  \
-          case shards::Tetrahedron<11>::key:  basisPtr = Teuchos::rcp(new Basis_HGRAD_TET_COMP12_FEM<HostDeviceType,ValueType,ValueType>()); break;  \
-          case shards::Hexahedron<20>::key:   basisPtr = Teuchos::rcp(new Basis_HGRAD_HEX_I2_FEM    <HostDeviceType,ValueType,ValueType>()); break;  \
-          case shards::Hexahedron<27>::key:   basisPtr = Teuchos::rcp(new Basis_HGRAD_HEX_C2_FEM    <HostDeviceType,ValueType,ValueType>()); break;  \
-          case shards::Wedge<15>::key:        basisPtr = Teuchos::rcp(new Basis_HGRAD_WEDGE_I2_FEM  <HostDeviceType,ValueType,ValueType>()); break;  \
-          case shards::Wedge<18>::key:        basisPtr = Teuchos::rcp(new Basis_HGRAD_WEDGE_C2_FEM  <HostDeviceType,ValueType,ValueType>()); break;  \
-          case shards::Pyramid<13>::key:      basisPtr = Teuchos::rcp(new Basis_HGRAD_PYR_I2_FEM    <HostDeviceType,ValueType,ValueType>()); break;  \
-          default:   {};                                                                                                         \
-        }                                                                                                                        \
+        const auto basisPtr = cellTools::template createHGradBasis<ValueType, ValueType>(topo);                                  \
                                                                                                                                  \
         auto dim = topo.getDimension();                                                                                          \
-        auto refNodes_h = Kokkos::DynRankView<ValueType,Kokkos::HostSpace>("refNodes",basisPtr->getCardinality(),dim);           \
-        basisPtr->getDofCoords(refNodes_h);                                                                                      \
+        auto refNodes = Kokkos::DynRankView<ValueType,DeviceType>("refNodes",basisPtr->getCardinality(),basisPtr->getDomainDimension());                    \
+        basisPtr->getDofCoords(refNodes);                                                                                        \
         physNodes = Kokkos::DynRankView<ValueType,DeviceType>("physNodes",1,basisPtr->getCardinality(),dim);                     \
         physPoints = Kokkos::DynRankView<ValueType,DeviceType>("physPoints", host_points.extent(0),dim);                         \
         auto physNodes_h = Kokkos::create_mirror_view(physNodes);                                                                \
         auto physPoints_h = Kokkos::create_mirror_view(physPoints);                                                              \
+        auto refNodes_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), refNodes);                                                   \
         ValueType coords[3]={};                                                                                                  \
         for(size_t i=0; i< refNodes_h.extent(0);++i) {                                                                           \
-          for (size_t d=0; d<dim; ++d)                                                                                           \
+          for (size_t d=0; d<refNodes_h.extent(1); ++d)                                                                                           \
             coords[d]= refNodes_h(i,d);                                                                                          \
           for (size_t d=0; d<dim; ++d)                                                                                           \
             physNodes_h(0,i,d) = mapPoints(coords,d);                                                                            \
@@ -308,7 +343,7 @@ namespace Intrepid2 {
         
 // This macro performs the inclusion test for four points and check that they are inside/outside the cell as expected.
 // We expect that the first and third points are inside the cell, whereas the second and fourth are outside.
-#define INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, points, physNodes, shtopo, cellTools)     \
+#define INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, points, physNodes, shtopo, shellThickness, cellTools)  \
     {                                                                                   \
         Kokkos::deep_copy(inCell, 0.0);                                                 \
         shards::CellTopology topo( shards::getCellTopologyData<shtopo>());              \
@@ -316,32 +351,31 @@ namespace Intrepid2 {
         std::string label = "reference";                                                \
         if(physNodes.extent(0)==0)                                                      \
           cellTools::checkPointwiseInclusion(Kokkos::subview(inCell,0,Kokkos::ALL()),   \
-            points, topo );                                                             \
+            points, topo);                                                              \
         else {                                                                          \
-          cellTools::checkPointwiseInclusion(inCell, points, physNodes, topo );         \
+          cellTools::checkPointwiseInclusion(inCell, points, physNodes, topo, 0.0, shellThickness  ); \
           label = "physical";                                                           \
         }                                                                               \
-        auto inCell_host = Kokkos::create_mirror_view(inCell);                          \
-        Kokkos::deep_copy(inCell_host, inCell);                                         \
+        auto inCell_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), inCell); \
         auto numPoints = points.extent(0);                                              \
         if (inCell_host(0,0)==0) {                                                      \
           *outStream << "Error : Point 0 is inside the " <<label <<" element " <<       \
-          topo.getName() << " but PointWiseInclusion says otherwise";                   \
+          topo.getName() << " but PointWiseInclusion says otherwise" << std::endl;      \
           errorFlag++;                                                                  \
         }                                                                               \
         if (inCell_host(0,1)==1)     {                                                  \
           *outStream << "Error : Point 1 is outside the " <<label <<" element " <<      \
-          topo.getName() << " but PointWiseInclusion says otherwise";                   \
+          topo.getName() << " but PointWiseInclusion says otherwise"<< std::endl;       \
           errorFlag++;                                                                  \
         }                                                                               \
         if (numPoints>2 && inCell_host(0,2)==0)     {                                   \
           *outStream << "Error : Point 2 is inside the " <<label <<" element " <<       \
-          topo.getName() << " but PointWiseInclusion says otherwise";                   \
+          topo.getName() << " but PointWiseInclusion says otherwise"<< std::endl;       \
           errorFlag++;                                                                  \
         }                                                                               \
         if (numPoints>3 && inCell_host(0,3)==1)     {                                   \
           *outStream << "Error : Point 3 is outside the " <<label <<" element " <<      \
-          topo.getName() << " but PointWiseInclusion says otherwise";                   \
+          topo.getName() << " but PointWiseInclusion says otherwise"<< std::endl;       \
           errorFlag++;                                                                  \
         }                                                                               \
       }                                                                                 \
@@ -447,6 +481,7 @@ namespace Intrepid2 {
         auto pts2d_h = Kokkos::create_mirror_view(pts2d); 
         auto pts3d_h = Kokkos::create_mirror_view(pts3d); 
         ValueType eps = 1e-4;
+        ValueType shellThickness = -1.0; //only used for beams or shells
         using ct = Intrepid2::CellTools<DeviceType>;
 
         // line topologies
@@ -455,14 +490,45 @@ namespace Intrepid2 {
         pts1d_h(2,0) = 1.0-eps;    //point near vertex (in)
         pts1d_h(3,0) = 1.0+eps;    //point near vertex (out)
         Kokkos::deep_copy(pts1d,pts1d_h);
-        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, pts1d, emptyView, shards::Line<2>, ct);
-        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, pts1d, emptyView, shards::Line<3>, ct);
 
+         *outStream << "\nLine" <<std::endl;
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, pts1d, emptyView, shards::Line<2>, shellThickness, ct);
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, pts1d, emptyView, shards::Line<3>, shellThickness, ct);
+
+        
         INTREPID2_COMPUTE_POINTS_AND_CELL_NODES_IN_PHYS_SPACE(inCell, pts1d_h, physPoints, physNodes, shards::Line<2>, ct);    
-        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, physPoints, physNodes, shards::Line<2>, ct);
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, physPoints, physNodes, shards::Line<2>, shellThickness, ct);
         INTREPID2_COMPUTE_POINTS_AND_CELL_NODES_IN_PHYS_SPACE(inCell, pts1d_h, physPoints, physNodes, shards::Line<3>, ct);  
-        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, physPoints, physNodes, shards::Line<3>, ct);
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, physPoints, physNodes, shards::Line<3>, shellThickness, ct);
 
+        // Beam and shellLine topologies
+        pts2d_h(0,0) = -1.0+eps; pts2d_h(0,1) = 0.0+eps; //point near vertex (in)
+        pts2d_h(1,0) = -1.0-eps; pts2d_h(1,1) = 0.0;     //point near vertex (out)
+        pts2d_h(2,0) = 1.0-eps;  pts2d_h(2,1) = 0.0-eps; //point near vertex (in)
+        pts2d_h(3,0) = 1.0+eps;  pts2d_h(3,1) = 1.0+eps; //point near vertex (out in the orthogonal direction)
+        Kokkos::deep_copy(pts2d,pts2d_h);
+        *outStream << "\nBeam, ShellLine and Line cells in 2D physical space" <<std::endl;
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, pts2d, emptyView, shards::Beam<2>, shellThickness, ct);
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, pts2d, emptyView, shards::ShellLine<2>, shellThickness, ct);
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, pts2d, emptyView, shards::ShellLine<3>, shellThickness, ct);
+
+
+        //line in 2D physical space (physical points and nodes are in 2D space, but topology is 2d line)  
+        INTREPID2_COMPUTE_POINTS_AND_CELL_NODES_IN_PHYS_SPACE(inCell, pts2d_h, physPoints, physNodes, shards::ShellLine<2>, ct);
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, physPoints, physNodes, shards::Line<2>, shellThickness, ct);
+
+        shellThickness = 0.002;
+        //for shell elements, we should not expect that the recovered orthogonal reference coordinate is the same as the original ref coordinate 
+        //here we pick the original reference coordinate to make sure the recovered one is outside the ref element.
+        //for beams and shellLine, the recovered orthogonal ref coordinate is approximately the distance between the 2d physical point and the 1d physical map of the reference line, divided by the beam/shell half-thickness.
+        pts2d_h(3,1) = 0.0-50.0*eps; //point near edge (out)
+
+        INTREPID2_COMPUTE_POINTS_AND_CELL_NODES_IN_PHYS_SPACE(inCell, pts2d_h, physPoints, physNodes, shards::ShellLine<2>, ct);  
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, physPoints, physNodes, shards::Beam<2>, shellThickness, ct);  
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, physPoints, physNodes, shards::ShellLine<2>, shellThickness, ct);
+        INTREPID2_COMPUTE_POINTS_AND_CELL_NODES_IN_PHYS_SPACE(inCell, pts2d_h, physPoints, physNodes, shards::ShellLine<3>, ct);  
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, physPoints, physNodes, shards::ShellLine<3>, shellThickness, ct);
+        shellThickness = -1.0;
 
         // triangle topologies
         pts2d_h(0,0) = 0.0+eps; pts2d_h(0,1) = 0.0+eps; //point near vertex (in)
@@ -471,13 +537,41 @@ namespace Intrepid2 {
         pts2d_h(3,0) = 0.5+eps; pts2d_h(3,1) = 0.5+eps; //point near edge (out)
         Kokkos::deep_copy(pts2d,pts2d_h);
 
-        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, pts2d, emptyView, shards::Triangle<3>, ct);
-        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, pts2d, emptyView, shards::Triangle<4>, ct);
+        *outStream << "\nTriangle" <<std::endl;
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, pts2d, emptyView, shards::Triangle<3>, shellThickness, ct);
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, pts2d, emptyView, shards::Triangle<6>, shellThickness, ct);
 
         INTREPID2_COMPUTE_POINTS_AND_CELL_NODES_IN_PHYS_SPACE(inCell, pts2d_h, physPoints, physNodes, shards::Triangle<3>, ct);
-        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, physPoints, physNodes, shards::Triangle<3>, ct);
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, physPoints, physNodes, shards::Triangle<3>, shellThickness, ct);
         INTREPID2_COMPUTE_POINTS_AND_CELL_NODES_IN_PHYS_SPACE(inCell, pts2d_h, physPoints, physNodes, shards::Triangle<6>, ct);
-        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, physPoints, physNodes, shards::Triangle<6>, ct);
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, physPoints, physNodes, shards::Triangle<6>, shellThickness, ct);
+
+
+        //triangle and shellTriangle topologies in 3D physical space 
+        pts3d_h(0,0) = 0.0+eps; pts3d_h(0,1) = 0.0+eps; pts3d_h(0,2) = 0.0+eps; //point near vertex (in)
+        pts3d_h(1,0) = 0.0-eps; pts3d_h(1,1) = 0.0-eps; pts3d_h(1,2) = 0.0;     //point near vertex (out)
+        pts3d_h(2,0) = 0.5-eps; pts3d_h(2,1) = 0.5-eps; pts3d_h(2,2) = 0.0-eps; //point near edge (in)
+        pts3d_h(3,0) = 0.5-eps; pts3d_h(3,1) = 0.5-eps; pts3d_h(3,2) = 1.0+eps; //point near edge (out in the orthogonal direction)
+        Kokkos::deep_copy(pts3d,pts3d_h);
+
+        *outStream << "\nShellTriangle and Triangle cells in 3D physical space" <<std::endl;
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, pts3d, emptyView, shards::ShellTriangle<3>, shellThickness, ct);
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, pts3d, emptyView, shards::ShellTriangle<6>, shellThickness, ct);
+ 
+        //triangle in 3D physical space (physical points and nodes are in 3D space, but topology is 2d triangle)  
+        INTREPID2_COMPUTE_POINTS_AND_CELL_NODES_IN_PHYS_SPACE(inCell, pts3d_h, physPoints, physNodes, shards::ShellTriangle<3>, ct);
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, physPoints, physNodes, shards::Triangle<3>, shellThickness, ct);
+
+        shellThickness = 0.0002;
+        //for shell elements, we should not expect that the recovered orthogonal reference coordinate is the same as the original ref coordinate 
+        //here we pick the original reference coordinate to make sure the recovered one is outside the ref element.
+        //for shellTriangle, the recovered orthogonal ref coordinate is the distance between the 3d physical point and the 2d physical map of the reference triangle, divided by the shell half-thickness.
+        pts3d_h(3,2) = 0.0+5.0*eps; //point near edge (out)
+        INTREPID2_COMPUTE_POINTS_AND_CELL_NODES_IN_PHYS_SPACE(inCell, pts3d_h, physPoints, physNodes, shards::ShellTriangle<3>, ct);
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, physPoints, physNodes, shards::ShellTriangle<3>, shellThickness, ct);
+        INTREPID2_COMPUTE_POINTS_AND_CELL_NODES_IN_PHYS_SPACE(inCell, pts3d_h, physPoints, physNodes, shards::ShellTriangle<6>, ct);
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, physPoints, physNodes, shards::ShellTriangle<6>, shellThickness, ct);
+        shellThickness = -1.0;
 
 
         // quadrilateral topologies
@@ -487,32 +581,64 @@ namespace Intrepid2 {
         pts2d_h(3,0) = 0.0; pts2d_h(3,1) = -1.0-eps;       //point near edge (out)
         Kokkos::deep_copy(pts2d,pts2d_h);
 
-        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, pts2d, emptyView, shards::Quadrilateral<4>, ct);
-        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, pts2d, emptyView, shards::Quadrilateral<8>, ct);
-        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, pts2d, emptyView, shards::Quadrilateral<9>, ct);
+        *outStream << "\nQuadrilateral" <<std::endl;
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, pts2d, emptyView, shards::Quadrilateral<4>, shellThickness, ct);
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, pts2d, emptyView, shards::Quadrilateral<8>, shellThickness, ct);
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, pts2d, emptyView, shards::Quadrilateral<9>, shellThickness, ct);
 
         INTREPID2_COMPUTE_POINTS_AND_CELL_NODES_IN_PHYS_SPACE(inCell, pts2d_h, physPoints, physNodes, shards::Quadrilateral<4>, ct);
-        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, physPoints, physNodes, shards::Quadrilateral<4>, ct);
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, physPoints, physNodes, shards::Quadrilateral<4>, shellThickness, ct);
         INTREPID2_COMPUTE_POINTS_AND_CELL_NODES_IN_PHYS_SPACE(inCell, pts2d_h, physPoints, physNodes, shards::Quadrilateral<8>, ct);
-        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, physPoints, physNodes, shards::Quadrilateral<8>, ct);
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, physPoints, physNodes, shards::Quadrilateral<8>, shellThickness, ct);
         INTREPID2_COMPUTE_POINTS_AND_CELL_NODES_IN_PHYS_SPACE(inCell, pts2d_h, physPoints, physNodes, shards::Quadrilateral<9>, ct);
-        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, physPoints, physNodes, shards::Quadrilateral<9>, ct);
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, physPoints, physNodes, shards::Quadrilateral<9>, shellThickness, ct);
 
+
+        // shell quadrilateral topologies
+        pts3d_h(0,0) = -1.0+eps; pts3d_h(0,1) = -1.0+eps; pts3d_h(0,2) = 0.0+eps;        //point near vertex (in)
+        pts3d_h(1,0) = -1.0-eps; pts3d_h(1,1) = -1.0-eps; pts3d_h(1,2) = 0.0-eps;        //point near vertex (out)
+        pts3d_h(2,0) = 0.0; pts3d_h(2,1) = -1.0+eps; pts3d_h(2,2) = 0.-eps;  //point near face (in)
+        pts3d_h(3,0) = 0.0; pts3d_h(3,1) = -1.0+eps; pts3d_h(3,2) = 1.0+eps;  //point near face (out in the orthogonal direction)
+        Kokkos::deep_copy(pts3d,pts3d_h);
+
+        *outStream << "\nShellQuadrilateral and Quadrilateral cells in 3D physical space" <<std::endl;
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, pts3d, emptyView, shards::ShellQuadrilateral<4>, shellThickness, ct);
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, pts3d, emptyView, shards::ShellQuadrilateral<8>, shellThickness, ct);
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, pts3d, emptyView, shards::ShellQuadrilateral<9>, shellThickness, ct);
+
+        //quadrilateral in 3D physical space (physical points and nodes are in 3D space, but topology is 2d quadrilateral)  
+        INTREPID2_COMPUTE_POINTS_AND_CELL_NODES_IN_PHYS_SPACE(inCell, pts3d_h, physPoints, physNodes, shards::ShellQuadrilateral<4>, ct);
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, physPoints, physNodes, shards::Quadrilateral<4>, shellThickness, ct);
+
+        shellThickness = 0.002;
+        //for shell elements, we should not expect that the recovered orthogonal reference coordinate is the same as the original ref coordinate 
+        //here we pick the original reference coordinate to make sure the recovered one is outside the ref element.
+        //for shellquadrilateral, the recovered orthogonal ref coordinate is approximately the distance between the 3d physical point and the 2d physical map of the reference quadrilateral, divided by the shell half-thickness.
+        pts3d_h(3,2) = 0.0-50.0*eps; //point near edge (out)
+        INTREPID2_COMPUTE_POINTS_AND_CELL_NODES_IN_PHYS_SPACE(inCell, pts3d_h, physPoints, physNodes, shards::ShellQuadrilateral<4>, ct);
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, physPoints, physNodes, shards::ShellQuadrilateral<4>, shellThickness, ct);
+        INTREPID2_COMPUTE_POINTS_AND_CELL_NODES_IN_PHYS_SPACE(inCell, pts3d_h, physPoints, physNodes, shards::ShellQuadrilateral<8>, ct);
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, physPoints, physNodes, shards::ShellQuadrilateral<8>, shellThickness, ct);
+        INTREPID2_COMPUTE_POINTS_AND_CELL_NODES_IN_PHYS_SPACE(inCell, pts3d_h, physPoints, physNodes, shards::ShellQuadrilateral<9>, ct);
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, physPoints, physNodes, shards::ShellQuadrilateral<9>, shellThickness, ct);
+        shellThickness = -1.0;
+
+
+        // tetrahedron topologies
         pts3d_h(0,0) = 0.0+eps; pts3d_h(0,1) = 0.0+eps; pts3d_h(0,2) = 0.0+eps;        //point near vertex (in)
         pts3d_h(1,0) = 0.0-eps; pts3d_h(1,1) = 0.0-eps; pts3d_h(1,2) = 0.0-eps;        //point near vertex (out)
         pts3d_h(2,0) = 1./3.-eps; pts3d_h(2,1) = 1./3.-eps; pts3d_h(2,2) = 1./3.-eps;  //point near face (in)
         pts3d_h(3,0) = 1./3.+eps; pts3d_h(3,1) = 1./3.+eps; pts3d_h(3,2) = 1./3.+eps;  //point near face (out)
         Kokkos::deep_copy(pts3d,pts3d_h);
 
-
-        // tetrahedron topologies
-        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, pts3d, emptyView, shards::Tetrahedron<4>, ct);
-        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, pts3d, emptyView, shards::Tetrahedron<10>, ct);
+        *outStream << "\nTetrahedron" <<std::endl;
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, pts3d, emptyView, shards::Tetrahedron<4>, shellThickness, ct);
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, pts3d, emptyView, shards::Tetrahedron<10>, shellThickness, ct);
 
         INTREPID2_COMPUTE_POINTS_AND_CELL_NODES_IN_PHYS_SPACE(inCell, pts3d_h, physPoints, physNodes, shards::Tetrahedron<4>, ct);
-        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, physPoints, physNodes  , shards::Tetrahedron<4>, ct);
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, physPoints, physNodes  , shards::Tetrahedron<4>, shellThickness, ct);
         INTREPID2_COMPUTE_POINTS_AND_CELL_NODES_IN_PHYS_SPACE(inCell, pts3d_h, physPoints, physNodes, shards::Tetrahedron<10>, ct);
-        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, physPoints, physNodes, shards::Tetrahedron<10>, ct);
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, physPoints, physNodes, shards::Tetrahedron<10>, shellThickness, ct);
 
 
         // pyramid topologies
@@ -522,14 +648,14 @@ namespace Intrepid2 {
         pts3d_h(3,0) = 0.0; pts3d_h(3,1) = 0.0; pts3d_h(3,2) = 0.0-eps;                //points near face (out)
         Kokkos::deep_copy(pts3d,pts3d_h);
 
-        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, pts3d, emptyView, shards::Pyramid<5>, ct);
-        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, pts3d, emptyView, shards::Pyramid<13>, ct);
-        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, pts3d, emptyView, shards::Pyramid<14>, ct);
+        *outStream << "\nPyramid" <<std::endl;
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, pts3d, emptyView, shards::Pyramid<5>, shellThickness, ct);
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, pts3d, emptyView, shards::Pyramid<13>, shellThickness, ct);
         
         INTREPID2_COMPUTE_POINTS_AND_CELL_NODES_IN_PHYS_SPACE(inCell, pts3d_h, physPoints, physNodes, shards::Pyramid<5>, ct);
-	      INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, physPoints, physNodes, shards::Pyramid<5>, ct);
+	      INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, physPoints, physNodes, shards::Pyramid<5>, shellThickness, ct);
         INTREPID2_COMPUTE_POINTS_AND_CELL_NODES_IN_PHYS_SPACE(inCell, pts3d_h, physPoints, physNodes, shards::Pyramid<13>, ct);
-        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, physPoints, physNodes, shards::Pyramid<13>, ct);
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, physPoints, physNodes, shards::Pyramid<13>, shellThickness, ct);
         //missing basis functions for Pyramid<14>, need to implement them
 
 
@@ -540,16 +666,17 @@ namespace Intrepid2 {
         pts3d_h(3,0) = 0.5+eps; pts3d_h(3,1) = 0.5+eps; pts3d_h(3,2) = 0.0;       //point near face (out)
         Kokkos::deep_copy(pts3d,pts3d_h);
 
-        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, pts3d, emptyView, shards::Wedge<6>, ct);
-        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, pts3d, emptyView, shards::Wedge<15>, ct);
-        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, pts3d, emptyView, shards::Wedge<18>, ct);
+        *outStream << "\nWedge" <<std::endl;
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, pts3d, emptyView, shards::Wedge<6>, shellThickness, ct);
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, pts3d, emptyView, shards::Wedge<15>, shellThickness, ct);
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, pts3d, emptyView, shards::Wedge<18>, shellThickness, ct);
         
         INTREPID2_COMPUTE_POINTS_AND_CELL_NODES_IN_PHYS_SPACE(inCell, pts3d_h, physPoints, physNodes, shards::Wedge<6>, ct);
-        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, physPoints, physNodes, shards::Wedge<6>, ct);
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, physPoints, physNodes, shards::Wedge<6>, shellThickness, ct);
         INTREPID2_COMPUTE_POINTS_AND_CELL_NODES_IN_PHYS_SPACE(inCell, pts3d_h, physPoints, physNodes, shards::Wedge<15>, ct);
-        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, physPoints, physNodes, shards::Wedge<15>, ct);
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, physPoints, physNodes, shards::Wedge<15>, shellThickness, ct);
         INTREPID2_COMPUTE_POINTS_AND_CELL_NODES_IN_PHYS_SPACE(inCell, pts3d_h, physPoints, physNodes, shards::Wedge<18>, ct);
-        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, physPoints, physNodes, shards::Wedge<18>, ct);
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, physPoints, physNodes, shards::Wedge<18>, shellThickness, ct);
 
 
         // hexahedron topologies
@@ -559,16 +686,17 @@ namespace Intrepid2 {
         pts3d_h(3,0) = 0.0; pts3d_h(3,1) = 0.0; pts3d_h(3,2) = -1.0-eps;            //point near face (out)
         Kokkos::deep_copy(pts3d,pts3d_h);
 
-        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, pts3d, emptyView, shards::Hexahedron<8>, ct);
-        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, pts3d, emptyView, shards::Hexahedron<20>, ct);
-        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, pts3d, emptyView, shards::Hexahedron<27>, ct);
+        *outStream << "\nHexahedron" <<std::endl;
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, pts3d, emptyView, shards::Hexahedron<8>, shellThickness, ct);
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, pts3d, emptyView, shards::Hexahedron<20>, shellThickness, ct);
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, pts3d, emptyView, shards::Hexahedron<27>, shellThickness, ct);
 
         INTREPID2_COMPUTE_POINTS_AND_CELL_NODES_IN_PHYS_SPACE(inCell, pts3d_h, physPoints, physNodes, shards::Hexahedron<8>, ct);
-        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, physPoints, physNodes, shards::Hexahedron<8>, ct);
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, physPoints, physNodes, shards::Hexahedron<8>, shellThickness, ct);
         INTREPID2_COMPUTE_POINTS_AND_CELL_NODES_IN_PHYS_SPACE(inCell, pts3d_h, physPoints, physNodes, shards::Hexahedron<20>, ct);
-        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, physPoints, physNodes, shards::Hexahedron<20>, ct);
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, physPoints, physNodes, shards::Hexahedron<20>, shellThickness, ct);
         INTREPID2_COMPUTE_POINTS_AND_CELL_NODES_IN_PHYS_SPACE(inCell, pts3d_h, physPoints, physNodes, shards::Hexahedron<27>, ct);
-        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, physPoints, physNodes, shards::Hexahedron<27>, ct);
+        INTREPID2_TEST_CHECK_POINTWISE_INCLUSION(inCell, physPoints, physNodes, shards::Hexahedron<27>, shellThickness, ct);
 
       } catch (std::logic_error &err) {
         //============================================================================================//

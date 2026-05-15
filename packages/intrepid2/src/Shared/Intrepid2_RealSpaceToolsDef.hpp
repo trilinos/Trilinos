@@ -1300,7 +1300,8 @@ det( DeterminantArrayViewType detArray, const MatrixViewType inMats );
     */ 
     template<typename matVecViewType,
              typename inMatViewType,
-             typename inVecViewType>
+             typename inVecViewType,
+             bool transpose>
     struct F_matvec {
             matVecViewType _matVecs;
       const inMatViewType  _inMats;
@@ -1341,7 +1342,10 @@ det( DeterminantArrayViewType detArray, const MatrixViewType inMats );
         for (ordinal_type i=0;i<iend;++i) {
           result(i) = 0;
           for (ordinal_type j=0;j<jend;++j)
-            result(i) += mat(i, j)*vec(j);
+            if constexpr (transpose)
+              result(i) += mat(j, i)*vec(j);
+            else
+              result(i) += mat(i, j)*vec(j);
         }
       }
     };
@@ -1406,7 +1410,8 @@ det( DeterminantArrayViewType detArray, const MatrixViewType inMats );
   RealSpaceTools<DeviceType>::
   matvec(       Kokkos::DynRankView<matVecValueType,matVecProperties...> matVecs,
           const Kokkos::DynRankView<inMatValueType, inMatProperties...>  inMats,
-          const Kokkos::DynRankView<inVecValueType, inVecProperties...>  inVecs ) {
+          const Kokkos::DynRankView<inVecValueType, inVecProperties...>  inVecs, 
+          const bool transpose) {
 
 #ifdef HAVE_INTREPID2_DEBUG
     INTREPID2_TEST_FOR_EXCEPTION( inMats.rank() < 2 || inMats.rank() > 4, std::invalid_argument,
@@ -1424,10 +1429,6 @@ det( DeterminantArrayViewType detArray, const MatrixViewType inMats );
         INTREPID2_TEST_FOR_EXCEPTION( matVecs.extent(i) != inVecs.extent(i), std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::matvec): Dimensions of vector array arguments do not agree!");
       }
-      // matvec compatibility 
-      INTREPID2_TEST_FOR_EXCEPTION( inMats.extent(0) != matVecs.extent(matVecs.rank()-1) || 
-                                    inMats.extent(1) != inVecs.extent(inVecs.rank()-1), std::invalid_argument,
-                                    ">>> ERROR (RealSpaceTools::matvec): Matvec dimensions are not compatible each other.");
     } else if (inVecs.rank() < matVecs.rank()) {
       // multiple matrix, single input and multiple output
       INTREPID2_TEST_FOR_EXCEPTION( inMats.rank() != (matVecs.rank()+1), std::invalid_argument,
@@ -1436,10 +1437,6 @@ det( DeterminantArrayViewType detArray, const MatrixViewType inMats );
         INTREPID2_TEST_FOR_EXCEPTION( inMats.extent(i) != matVecs.extent(i), std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::matvec): Dimensions of vector and matrix array arguments do not agree!");
       }
-      // matvec compatibility 
-      INTREPID2_TEST_FOR_EXCEPTION( inMats.extent(inMats.rank()-2) != matVecs.extent(matVecs.rank()-1) || 
-                                    inMats.extent(inMats.rank()-1) != inVecs.extent(inVecs.rank()-1), std::invalid_argument,
-                                    ">>> ERROR (RealSpaceTools::matvec): Matvec dimensions are not compatible each other.");
     } else {
       // multiple matrix, multiple input and multiple output
       INTREPID2_TEST_FOR_EXCEPTION( inMats.rank() != (matVecs.rank()+1), std::invalid_argument,
@@ -1450,13 +1447,19 @@ det( DeterminantArrayViewType detArray, const MatrixViewType inMats );
         INTREPID2_TEST_FOR_EXCEPTION( inMats.extent(i) != matVecs.extent(i), std::invalid_argument,
                                         ">>> ERROR (RealSpaceTools::matvec): Dimensions of vector and matrix array arguments do not agree!");
       }
-      for (size_type i=0;i<inVecs.rank();++i) {
+      for (ordinal_type i=0;i<static_cast<ordinal_type>(inVecs.rank()-1);++i) {
         INTREPID2_TEST_FOR_EXCEPTION( matVecs.extent(i) != inVecs.extent(i), std::invalid_argument,
                                         ">>> ERROR (RealSpaceTools::matvec): Dimensions of vector array arguments do not agree!");
       }
-      INTREPID2_TEST_FOR_EXCEPTION( inMats.extent(inMats.rank()-1) != inVecs.extent(inVecs.rank()-1), std::invalid_argument,
-                                      ">>> ERROR (RealSpaceTools::matvec): Matrix column dimension does not match to the length of a vector!");
     }
+    // matvec compatibility 
+    INTREPID2_TEST_FOR_EXCEPTION( !transpose && (inMats.extent(inMats.rank()-2) != matVecs.extent(matVecs.rank()-1) || 
+                                  inMats.extent(inMats.rank()-1) != inVecs.extent(inVecs.rank()-1)), std::invalid_argument,
+                                  ">>> ERROR (RealSpaceTools::matvec): Matvec dimensions are not compatible each other.");
+    INTREPID2_TEST_FOR_EXCEPTION( transpose && (inMats.extent(inMats.rank()-1) != matVecs.extent(matVecs.rank()-1) || 
+                                  inMats.extent(inMats.rank()-2) != inVecs.extent(inVecs.rank()-1)), std::invalid_argument,
+                                  ">>> ERROR (RealSpaceTools::matvec): Matvec dimensions are not compatible each other.");
+
 #endif
     using MemSpaceType = typename DeviceType::memory_space;
     constexpr bool are_accessible =
@@ -1468,8 +1471,6 @@ det( DeterminantArrayViewType detArray, const MatrixViewType inMats );
         typename decltype(inVecs)::memory_space>::accessible;
     static_assert(are_accessible, "RealSpaceTools<DeviceType>::matvec(..): input/output views' memory spaces are not compatible with DeviceType");
 
-    using FunctorType = FunctorRealSpaceTools::F_matvec<decltype(matVecs),decltype(inMats),decltype(inVecs)>;
-
     size_type loopSize = 1;
     const ordinal_type r = matVecs.rank() - 1;
     for (ordinal_type i=0;i<r;++i) 
@@ -1477,7 +1478,13 @@ det( DeterminantArrayViewType detArray, const MatrixViewType inMats );
 
     using ExecSpaceType = typename DeviceType::execution_space;
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
-    Kokkos::parallel_for( policy, FunctorType(matVecs, inMats, inVecs) );
+    if(transpose) {
+      using FunctorType = FunctorRealSpaceTools::F_matvec<decltype(matVecs),decltype(inMats),decltype(inVecs),true>;
+      Kokkos::parallel_for( policy, FunctorType(matVecs, inMats, inVecs) );
+    } else {
+      using FunctorType = FunctorRealSpaceTools::F_matvec<decltype(matVecs),decltype(inMats),decltype(inVecs),false>;
+      Kokkos::parallel_for( policy, FunctorType(matVecs, inMats, inVecs) );
+    }
   }
 
 

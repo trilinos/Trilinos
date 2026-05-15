@@ -38,9 +38,9 @@ namespace Intrepid2 {
                        const shards::CellTopology   cellTopo) {
 #ifdef HAVE_INTREPID2_DEBUG
     INTREPID2_TEST_FOR_EXCEPTION( point.rank() != 1, std::invalid_argument,
-                                  ">>> ERROR (Intrepid2::CellTools::checkPointInclusion): Point must have rank 1. ");
+                                  ">>> ERROR (Intrepid2::CellTools::parametricDistance): Point must have rank 1. ");
     INTREPID2_TEST_FOR_EXCEPTION( point.extent(0) != cellTopo.getDimension(), std::invalid_argument,
-                                  ">>> ERROR (Intrepid2::CellTools::checkPointInclusion): Point and cell dimensions do not match. ");
+                                  ">>> ERROR (Intrepid2::CellTools::parametricDistance): Point and cell dimensions do not match. ");
 #endif
     // A cell with extended topology has the same reference cell as a cell with base topology. 
     // => testing for inclusion in a reference Triangle<> and a reference Triangle<6> relies on 
@@ -187,12 +187,28 @@ namespace Intrepid2 {
       checkPointwiseInclusion<shards::Line<>::key,decltype(inCell),decltype(points)>(inCell, points, threshold);
       break;
 
+    case shards::Beam<>::key :
+      checkPointwiseInclusion<shards::Beam<>::key,decltype(inCell),decltype(points)>(inCell, points, threshold);
+      break;
+
+    case shards::ShellLine<>::key :
+      checkPointwiseInclusion<shards::ShellLine<>::key,decltype(inCell),decltype(points)>(inCell, points, threshold);
+      break;
+
     case shards::Triangle<>::key :
       checkPointwiseInclusion<shards::Triangle<>::key,decltype(inCell),decltype(points)>(inCell, points, threshold);
+      break;
+    
+    case shards::ShellTriangle<>::key :
+      checkPointwiseInclusion<shards::ShellTriangle<>::key,decltype(inCell),decltype(points)>(inCell, points, threshold);
       break;
 
     case shards::Quadrilateral<>::key :
       checkPointwiseInclusion<shards::Quadrilateral<>::key,decltype(inCell),decltype(points)>(inCell, points, threshold);
+      break;
+
+    case shards::ShellQuadrilateral<>::key :
+      checkPointwiseInclusion<shards::ShellQuadrilateral<>::key,decltype(inCell),decltype(points)>(inCell, points, threshold);
       break;
 
     case shards::Tetrahedron<>::key :
@@ -212,7 +228,7 @@ namespace Intrepid2 {
       break;
       
     default:
-      INTREPID2_TEST_FOR_EXCEPTION( false,
+      INTREPID2_TEST_FOR_EXCEPTION( true,
                                     std::invalid_argument,
                                     ">>> ERROR (Intrepid2::CellTools::checkPointInclusion): Invalid cell topology. ");
     }
@@ -222,33 +238,36 @@ namespace Intrepid2 {
   template<typename inCellValueType, class ...inCellProperties,
            typename pointValueType, class ...pointProperties,
            typename cellWorksetValueType, class ...cellWorksetProperties>
-  void
+  bool
   CellTools<DeviceType>::
   checkPointwiseInclusion(       Kokkos::DynRankView<inCellValueType,inCellProperties...> inCell,
                            const Kokkos::DynRankView<pointValueType,pointProperties...> points,
                            const Kokkos::DynRankView<cellWorksetValueType,cellWorksetProperties...> cellWorkset,
                            const shards::CellTopology cellTopo,
-                           const typename ScalarTraits<pointValueType>::scalar_type threshold ) {
+                           const typename ScalarTraits<pointValueType>::scalar_type threshold,
+                           const typename ScalarTraits<pointValueType>::scalar_type shellThickness ) {
 #ifdef HAVE_INTREPID2_DEBUG
     {
       const auto key = cellTopo.getBaseKey();
+      const bool isShellorBeam = (key == shards::Beam<>::key) || (key == shards::ShellLine<>::key) || (key == shards::ShellTriangle<>::key) || (key == shards::ShellQuadrilateral<>::key);      
       INTREPID2_TEST_FOR_EXCEPTION( key != shards::Line<>::key &&
                                     key != shards::Triangle<>::key &&
                                     key != shards::Quadrilateral<>::key &&
                                     key != shards::Tetrahedron<>::key &&                                                                                                                                               
                                     key != shards::Hexahedron<>::key &&                                                                                                                                                
                                     key != shards::Wedge<>::key &&                                                                                                                                                     
-                                    key != shards::Pyramid<>::key, 
+                                    key != shards::Pyramid<>::key &&
+                                    !isShellorBeam,
                                     std::invalid_argument, 
                                     ">>> ERROR (Intrepid2::CellTools::checkPointwiseInclusion): cell topology not supported");
       INTREPID2_TEST_FOR_EXCEPTION( inCell.rank() != 2, std::invalid_argument,
                                     ">>> ERROR (Intrepid2::CellTools::checkPointwiseInclusion): InCell must have rank 2. ");
       INTREPID2_TEST_FOR_EXCEPTION( cellWorkset.rank() != 3, std::invalid_argument,
                                     ">>> ERROR (Intrepid2::CellTools::checkPointwiseInclusion): cellWorkset must have rank 3. ");
-      INTREPID2_TEST_FOR_EXCEPTION( cellWorkset.extent(2) != cellTopo.getDimension(), std::invalid_argument,
-                                    ">>> ERROR (Intrepid2::CellTools::checkPointInclusion): cellWorkset and points have incompatible dimensions. ");
       INTREPID2_TEST_FOR_EXCEPTION( (points.rank() == 3) && (points.extent(0) != cellWorkset.extent(0)) , std::invalid_argument,
                                     ">>> ERROR (Intrepid2::CellTools::checkPointInclusion): cellWorkset and points have incompatible dimensions. ");
+      INTREPID2_TEST_FOR_EXCEPTION( isShellorBeam && (shellThickness < 0.0) , std::invalid_argument,
+                                    ">>> ERROR (Intrepid2::CellTools::checkPointInclusion): beam and shell topologies require cell thickness information. ");
     }
 #endif    
     const ordinal_type 
@@ -257,16 +276,19 @@ namespace Intrepid2 {
       spaceDim = cellTopo.getDimension();
 
     auto refPoints = Impl::createMatchingDynRankView(points, "CellTools::checkPointwiseInclusion::refPoints", numCells, numPoints, spaceDim);
+
+    bool isValid(false);
     
     // expect refPoints(CPD), points (CPD or PD), cellWorkset(CND) 
     if(points.rank() == 3)  
-      mapToReferenceFrame(refPoints, points, cellWorkset, cellTopo);
+      isValid = mapToReferenceFrame(refPoints, points, cellWorkset, cellTopo, shellThickness);
     else { //points.rank() == 2
-      auto cellPoints = Impl::createMatchingDynRankView(points, "CellTools::checkPointwiseInclusion::physCellPoints", numCells, numPoints, spaceDim);
+      auto cellPoints = Impl::createMatchingDynRankView(points, "CellTools::checkPointwiseInclusion::physCellPoints", numCells, numPoints, points.extent_int(1));
       RealSpaceTools<DeviceType>::clone(cellPoints,points);
-      mapToReferenceFrame(refPoints, cellPoints, cellWorkset, cellTopo);
+      isValid = mapToReferenceFrame(refPoints, cellPoints, cellWorkset, cellTopo, shellThickness);
     }    
     checkPointwiseInclusion(inCell, refPoints, cellTopo, threshold);
+    return isValid;
   }
 
 }

@@ -72,6 +72,41 @@ namespace Intrepid2 {
       \li     inclusion tests for point sets in reference and physical cells.
   */
 
+  namespace FunctorCellTools {
+
+    /** \brief Computes the values or gradients of basis functions at input points
+    */
+    template<typename OutputViewType,
+             typename InputViewType,
+             typename ImplBasis,
+             EOperator Operator>
+    struct F_getValues {
+      OutputViewType output_;
+      const InputViewType input_;
+
+      KOKKOS_INLINE_FUNCTION
+      F_getValues(OutputViewType output,
+                  const InputViewType input) 
+        : output_(output), 
+          input_(input) {}
+
+      KOKKOS_INLINE_FUNCTION
+      void
+      operator()(const ordinal_type cl, const ordinal_type pt) const {
+        auto in  = Kokkos::subview(input_,  cl, pt, Kokkos::ALL()); // D
+        if constexpr(Operator == OPERATOR_VALUE) {
+          auto out = Kokkos::subview(output_, cl, Kokkos::ALL(), pt); // N
+          ImplBasis::template Serial<OPERATOR_VALUE>::getValues(out, in);
+        }
+        else if constexpr (Operator == OPERATOR_GRAD) {
+          auto out = Kokkos::subview(output_, cl, Kokkos::ALL(), pt, Kokkos::ALL()); // N, D
+          ImplBasis::template Serial<OPERATOR_GRAD>::getValues(out, in);
+        } else {
+          static_assert((Operator != OPERATOR_VALUE) && (Operator != OPERATOR_GRAD), "Invalid template parameter. Only OPERATOR_VALUE and OPERATOR_GRAD are supported.");
+        } 
+      }
+    };
+  }
 
   template<typename DeviceType>
   class CellTools {
@@ -89,8 +124,6 @@ namespace Intrepid2 {
       return RefSubcellParametrization<DeviceType>::isSupported(cellTopo.getKey());
     }
 
-  private:
-
     /** \brief Generates default HGrad basis based on cell topology
         \param cellTopo            [in] - cell topology
      */
@@ -101,41 +134,177 @@ namespace Intrepid2 {
       Teuchos::RCP<Basis<DeviceType,outputValueType,pointValueType> > r_val;
 
       switch (cellTopo.getKey()) {
-      case shards::Line<2>::key:          r_val = Teuchos::rcp(new Basis_HGRAD_LINE_C1_FEM   <DeviceType,outputValueType,pointValueType>()); break;
-      case shards::Line<3>::key:          r_val = Teuchos::rcp(new Basis_HGRAD_LINE_C2_FEM   <DeviceType,outputValueType,pointValueType>()); break;
-      case shards::Triangle<3>::key:      r_val = Teuchos::rcp(new Basis_HGRAD_TRI_C1_FEM    <DeviceType,outputValueType,pointValueType>()); break;
-      case shards::Quadrilateral<4>::key: r_val = Teuchos::rcp(new Basis_HGRAD_QUAD_C1_FEM   <DeviceType,outputValueType,pointValueType>()); break;
-      case shards::Tetrahedron<4>::key:   r_val = Teuchos::rcp(new Basis_HGRAD_TET_C1_FEM    <DeviceType,outputValueType,pointValueType>()); break;
-      case shards::Hexahedron<8>::key:    r_val = Teuchos::rcp(new Basis_HGRAD_HEX_C1_FEM    <DeviceType,outputValueType,pointValueType>()); break;
-      case shards::Wedge<6>::key:         r_val = Teuchos::rcp(new Basis_HGRAD_WEDGE_C1_FEM  <DeviceType,outputValueType,pointValueType>()); break;
-      case shards::Pyramid<5>::key:       r_val = Teuchos::rcp(new Basis_HGRAD_PYR_C1_FEM    <DeviceType,outputValueType,pointValueType>()); break;
+      case shards::Line<2>::key:                r_val = Teuchos::rcp(new Basis_HGRAD_LINE_C1_FEM   <DeviceType,outputValueType,pointValueType>()); break;
+      case shards::Triangle<3>::key:            r_val = Teuchos::rcp(new Basis_HGRAD_TRI_C1_FEM    <DeviceType,outputValueType,pointValueType>()); break;
+      case shards::Quadrilateral<4>::key:       r_val = Teuchos::rcp(new Basis_HGRAD_QUAD_C1_FEM   <DeviceType,outputValueType,pointValueType>()); break;
+      case shards::Tetrahedron<4>::key:         r_val = Teuchos::rcp(new Basis_HGRAD_TET_C1_FEM    <DeviceType,outputValueType,pointValueType>()); break;
+      case shards::Hexahedron<8>::key:          r_val = Teuchos::rcp(new Basis_HGRAD_HEX_C1_FEM    <DeviceType,outputValueType,pointValueType>()); break;
+      case shards::Wedge<6>::key:               r_val = Teuchos::rcp(new Basis_HGRAD_WEDGE_C1_FEM  <DeviceType,outputValueType,pointValueType>()); break;
+      case shards::Pyramid<5>::key:             r_val = Teuchos::rcp(new Basis_HGRAD_PYR_C1_FEM    <DeviceType,outputValueType,pointValueType>()); break;
 
-      case shards::Triangle<6>::key:      r_val = Teuchos::rcp(new Basis_HGRAD_TRI_C2_FEM    <DeviceType,outputValueType,pointValueType>()); break;
-      case shards::Quadrilateral<8>::key: r_val = Teuchos::rcp(new Basis_HGRAD_QUAD_I2_FEM   <DeviceType,outputValueType,pointValueType>()); break;
-      case shards::Quadrilateral<9>::key: r_val = Teuchos::rcp(new Basis_HGRAD_QUAD_C2_FEM   <DeviceType,outputValueType,pointValueType>()); break;
-      case shards::Tetrahedron<10>::key:  r_val = Teuchos::rcp(new Basis_HGRAD_TET_C2_FEM    <DeviceType,outputValueType,pointValueType>()); break;
-      case shards::Tetrahedron<11>::key:  r_val = Teuchos::rcp(new Basis_HGRAD_TET_COMP12_FEM<DeviceType,outputValueType,pointValueType>()); break;
-      case shards::Hexahedron<20>::key:   r_val = Teuchos::rcp(new Basis_HGRAD_HEX_I2_FEM    <DeviceType,outputValueType,pointValueType>()); break;
-      case shards::Hexahedron<27>::key:   r_val = Teuchos::rcp(new Basis_HGRAD_HEX_C2_FEM    <DeviceType,outputValueType,pointValueType>()); break;
-      case shards::Wedge<15>::key:        r_val = Teuchos::rcp(new Basis_HGRAD_WEDGE_I2_FEM  <DeviceType,outputValueType,pointValueType>()); break;
-      case shards::Wedge<18>::key:        r_val = Teuchos::rcp(new Basis_HGRAD_WEDGE_C2_FEM  <DeviceType,outputValueType,pointValueType>()); break;
-      case shards::Pyramid<13>::key:      r_val = Teuchos::rcp(new Basis_HGRAD_PYR_I2_FEM    <DeviceType,outputValueType,pointValueType>()); break;
+      case shards::Line<3>::key:                r_val = Teuchos::rcp(new Basis_HGRAD_LINE_C2_FEM   <DeviceType,outputValueType,pointValueType>()); break;
+      case shards::Triangle<6>::key:            r_val = Teuchos::rcp(new Basis_HGRAD_TRI_C2_FEM    <DeviceType,outputValueType,pointValueType>()); break;
+      case shards::Quadrilateral<8>::key:       r_val = Teuchos::rcp(new Basis_HGRAD_QUAD_I2_FEM   <DeviceType,outputValueType,pointValueType>()); break;
+      case shards::Quadrilateral<9>::key:       r_val = Teuchos::rcp(new Basis_HGRAD_QUAD_C2_FEM   <DeviceType,outputValueType,pointValueType>()); break;
+      case shards::Tetrahedron<10>::key:        r_val = Teuchos::rcp(new Basis_HGRAD_TET_C2_FEM    <DeviceType,outputValueType,pointValueType>()); break;
+      case shards::Tetrahedron<11>::key:        r_val = Teuchos::rcp(new Basis_HGRAD_TET_COMP12_FEM<DeviceType,outputValueType,pointValueType>()); break;
+      case shards::Hexahedron<20>::key:         r_val = Teuchos::rcp(new Basis_HGRAD_HEX_I2_FEM    <DeviceType,outputValueType,pointValueType>()); break;
+      case shards::Hexahedron<27>::key:         r_val = Teuchos::rcp(new Basis_HGRAD_HEX_C2_FEM    <DeviceType,outputValueType,pointValueType>()); break;
+      case shards::Wedge<15>::key:              r_val = Teuchos::rcp(new Basis_HGRAD_WEDGE_I2_FEM  <DeviceType,outputValueType,pointValueType>()); break;
+      case shards::Wedge<18>::key:              r_val = Teuchos::rcp(new Basis_HGRAD_WEDGE_C2_FEM  <DeviceType,outputValueType,pointValueType>()); break;
+      case shards::Pyramid<13>::key:            r_val = Teuchos::rcp(new Basis_HGRAD_PYR_I2_FEM    <DeviceType,outputValueType,pointValueType>()); break;
 
-      case shards::Beam<2>::key:
-      case shards::Beam<3>::key:
-      case shards::ShellLine<2>::key:
-      case shards::ShellLine<3>::key:
-      case shards::ShellTriangle<3>::key:
-      case shards::ShellTriangle<6>::key:
-      case shards::ShellQuadrilateral<4>::key:
-      case shards::ShellQuadrilateral<8>::key:
-      case shards::ShellQuadrilateral<9>::key:
+      case shards::Beam<2>::key:                r_val = Teuchos::rcp(new Basis_HGRAD_LINE_C1_FEM   <DeviceType,outputValueType,pointValueType>()); break;
+      case shards::Beam<3>::key:                r_val = Teuchos::rcp(new Basis_HGRAD_LINE_C2_FEM   <DeviceType,outputValueType,pointValueType>()); break;
+      case shards::ShellLine<2>::key:           r_val = Teuchos::rcp(new Basis_HGRAD_LINE_C1_FEM   <DeviceType,outputValueType,pointValueType>()); break;
+      case shards::ShellLine<3>::key:           r_val = Teuchos::rcp(new Basis_HGRAD_LINE_C2_FEM   <DeviceType,outputValueType,pointValueType>()); break;
+      case shards::ShellTriangle<3>::key:       r_val = Teuchos::rcp(new Basis_HGRAD_TRI_C1_FEM    <DeviceType,outputValueType,pointValueType>()); break;
+      case shards::ShellTriangle<6>::key:       r_val = Teuchos::rcp(new Basis_HGRAD_TRI_C2_FEM    <DeviceType,outputValueType,pointValueType>()); break;
+      case shards::ShellQuadrilateral<4>::key:  r_val = Teuchos::rcp(new Basis_HGRAD_QUAD_C1_FEM   <DeviceType,outputValueType,pointValueType>()); break;
+      case shards::ShellQuadrilateral<8>::key:  r_val = Teuchos::rcp(new Basis_HGRAD_QUAD_I2_FEM   <DeviceType,outputValueType,pointValueType>()); break;
+      case shards::ShellQuadrilateral<9>::key:  r_val = Teuchos::rcp(new Basis_HGRAD_QUAD_C2_FEM   <DeviceType,outputValueType,pointValueType>()); break;
       default: {
         INTREPID2_TEST_FOR_EXCEPTION( true, std::invalid_argument,
                                       ">>> ERROR (Intrepid2::CellTools::createHGradBasis): Cell topology not supported.");
       }
       }
       return r_val;
+    }
+
+
+
+    /** \brief Computes the value or gradient of HGRAD basis functions at input points
+        \param output     [out] - view of dimensions [C,N,P] or [C,N,P,D] containing the basis value or their gradients at input points
+        \param input      [in]  - view of dimension [C,P,D], containing the points at which the basis values or gradients are evaluated
+        \param basis      [in]  - basis pointer
+
+        the template parameter Operator can either be OPERATOR_VALUE or OPERATOR_GRAD.
+     */
+    template<EOperator Operator,
+             typename OutputViewType,
+             typename InputViewType
+             >
+    static void
+    getHGradValues(      OutputViewType output,
+                   const InputViewType input,
+                   const Basis<DeviceType,typename OutputViewType::value_type,typename InputViewType::value_type>* basis) {
+
+      using outputValueType = typename OutputViewType::value_type;
+      using pointValueType = typename InputViewType::value_type;
+      using range_policy_type = Kokkos::MDRangePolicy<typename DeviceType::execution_space, Kokkos::Rank<2>, Kokkos::IndexType<ordinal_type> >;
+      range_policy_type policy( { 0, 0 }, { input.extent(0), input.extent(1) } );
+
+      #define KOKKOS_BASIS_PARALLEL_FOR(BasisName)      \
+        do {                                                                                                                      \
+          using FunctorType = FunctorCellTools::F_getValues<OutputViewType, InputViewType, Intrepid2::Impl::BasisName, Operator>; \
+          Kokkos::parallel_for(policy, FunctorType(output, input));                                                               \
+        } while (0)
+
+      if(dynamic_cast<const Basis_HGRAD_LINE_C1_FEM<DeviceType,outputValueType,pointValueType>*>(basis))
+        KOKKOS_BASIS_PARALLEL_FOR(Basis_HGRAD_LINE_C1_FEM);
+      else if(dynamic_cast<const Basis_HGRAD_TRI_C1_FEM<DeviceType,outputValueType,pointValueType>*>(basis))
+        KOKKOS_BASIS_PARALLEL_FOR(Basis_HGRAD_TRI_C1_FEM);
+      else if(dynamic_cast<const Basis_HGRAD_QUAD_C1_FEM<DeviceType,outputValueType,pointValueType>*>(basis))
+        KOKKOS_BASIS_PARALLEL_FOR(Basis_HGRAD_QUAD_C1_FEM);
+      else if(dynamic_cast<const Basis_HGRAD_TET_C1_FEM<DeviceType,outputValueType,pointValueType>*>(basis))
+        KOKKOS_BASIS_PARALLEL_FOR(Basis_HGRAD_TET_C1_FEM);
+      else if(dynamic_cast<const Basis_HGRAD_HEX_C1_FEM<DeviceType,outputValueType,pointValueType>*>(basis))
+        KOKKOS_BASIS_PARALLEL_FOR(Basis_HGRAD_HEX_C1_FEM);
+      else if(dynamic_cast<const Basis_HGRAD_WEDGE_C1_FEM<DeviceType,outputValueType,pointValueType>*>(basis))
+        KOKKOS_BASIS_PARALLEL_FOR(Basis_HGRAD_WEDGE_C1_FEM);
+      else if(dynamic_cast<const Basis_HGRAD_PYR_C1_FEM<DeviceType,outputValueType,pointValueType>*>(basis))
+        KOKKOS_BASIS_PARALLEL_FOR(Basis_HGRAD_PYR_C1_FEM);
+
+      else if(dynamic_cast<const Basis_HGRAD_LINE_C2_FEM<DeviceType,outputValueType,pointValueType>*>(basis))
+        KOKKOS_BASIS_PARALLEL_FOR(Basis_HGRAD_LINE_C2_FEM);
+      else if(dynamic_cast<const Basis_HGRAD_TRI_C2_FEM<DeviceType,outputValueType,pointValueType>*>(basis))
+        KOKKOS_BASIS_PARALLEL_FOR(Basis_HGRAD_TRI_C2_FEM);
+      else if(dynamic_cast<const Basis_HGRAD_QUAD_I2_FEM<DeviceType,outputValueType,pointValueType>*>(basis))
+        KOKKOS_BASIS_PARALLEL_FOR(Basis_HGRAD_QUAD_DEG2_FEM<true>);
+      else if(dynamic_cast<const Basis_HGRAD_QUAD_C2_FEM<DeviceType,outputValueType,pointValueType>*>(basis))
+        KOKKOS_BASIS_PARALLEL_FOR(Basis_HGRAD_QUAD_DEG2_FEM<false>);
+      else if(dynamic_cast<const Basis_HGRAD_TET_C2_FEM<DeviceType,outputValueType,pointValueType>*>(basis))
+        KOKKOS_BASIS_PARALLEL_FOR(Basis_HGRAD_TET_C2_FEM);
+      else if(dynamic_cast<const Basis_HGRAD_TET_COMP12_FEM<DeviceType,outputValueType,pointValueType>*>(basis))
+        KOKKOS_BASIS_PARALLEL_FOR(Basis_HGRAD_TET_COMP12_FEM);
+      else if(dynamic_cast<const Basis_HGRAD_HEX_I2_FEM<DeviceType,outputValueType,pointValueType>*>(basis))
+        KOKKOS_BASIS_PARALLEL_FOR(Basis_HGRAD_HEX_DEG2_FEM<true>);
+      else if(dynamic_cast<const Basis_HGRAD_HEX_C2_FEM<DeviceType,outputValueType,pointValueType>*>(basis))
+        KOKKOS_BASIS_PARALLEL_FOR(Basis_HGRAD_HEX_DEG2_FEM<false>);
+      else if(dynamic_cast<const Basis_HGRAD_WEDGE_I2_FEM<DeviceType,outputValueType,pointValueType>*>(basis))
+        KOKKOS_BASIS_PARALLEL_FOR(Basis_HGRAD_WEDGE_DEG2_FEM<true>);
+      else if(dynamic_cast<const Basis_HGRAD_WEDGE_C2_FEM<DeviceType,outputValueType,pointValueType>*>(basis))
+        KOKKOS_BASIS_PARALLEL_FOR(Basis_HGRAD_WEDGE_DEG2_FEM<false>);
+      else if(dynamic_cast<const Basis_HGRAD_PYR_I2_FEM<DeviceType,outputValueType,pointValueType>*>(basis))
+        KOKKOS_BASIS_PARALLEL_FOR(Basis_HGRAD_PYR_I2_FEM);
+      else {
+        INTREPID2_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+                                      ">>> ERROR (Intrepid2::CellTools::getHGradValues): Basis type not supported.");
+      }
+  }
+      
+    
+  /** \brief Computes the value or gradient of HGRAD basis functions at input points
+      \param output     [out] - view of dimensions [C,N,P] or [C,N,P,D] containing the basis value or their gradients at input points
+      \param input      [in]  - view of dimension [C,P,D], containing the points at which the basis values or gradients are evaluated
+      \param cellTopo   [in]  - cell topology
+
+      the template parameter Operator can either be OPERATOR_VALUE or OPERATOR_GRAD.
+  */
+  template<EOperator Operator,
+           typename OutputViewType,
+           typename InputViewType
+          >
+    static void
+    getHGradValues(      OutputViewType output,
+                   const InputViewType input,
+                   const shards::CellTopology cellTopo) {
+
+      using range_policy_type = Kokkos::MDRangePolicy<typename DeviceType::execution_space, Kokkos::Rank<2>, Kokkos::IndexType<ordinal_type> >;
+      range_policy_type policy( { 0, 0 }, { input.extent(0), input.extent(1) } );
+
+      #define KOKKOS_BASIS_PARALLEL_FOR(BasisName)      \
+        do {                                                                                                                      \
+          using FunctorType = FunctorCellTools::F_getValues<OutputViewType, InputViewType, Intrepid2::Impl::BasisName, Operator>; \
+          Kokkos::parallel_for(policy, FunctorType(output, input));                                                               \
+        } while (0)
+
+      switch (cellTopo.getKey()) {
+      case shards::Line<2>::key:                KOKKOS_BASIS_PARALLEL_FOR(Basis_HGRAD_LINE_C1_FEM); break; 
+      case shards::Triangle<3>::key:            KOKKOS_BASIS_PARALLEL_FOR(Basis_HGRAD_TRI_C1_FEM); break;
+      case shards::Quadrilateral<4>::key:       KOKKOS_BASIS_PARALLEL_FOR(Basis_HGRAD_QUAD_C1_FEM); break;
+      case shards::Tetrahedron<4>::key:         KOKKOS_BASIS_PARALLEL_FOR(Basis_HGRAD_TET_C1_FEM); break;
+      case shards::Hexahedron<8>::key:          KOKKOS_BASIS_PARALLEL_FOR(Basis_HGRAD_HEX_C1_FEM); break;
+      case shards::Wedge<6>::key:               KOKKOS_BASIS_PARALLEL_FOR(Basis_HGRAD_WEDGE_C1_FEM); break;
+      case shards::Pyramid<5>::key:             KOKKOS_BASIS_PARALLEL_FOR(Basis_HGRAD_PYR_C1_FEM); break;
+
+      case shards::Line<3>::key:                KOKKOS_BASIS_PARALLEL_FOR(Basis_HGRAD_LINE_C2_FEM); break;   
+      case shards::Triangle<6>::key:            KOKKOS_BASIS_PARALLEL_FOR(Basis_HGRAD_TRI_C2_FEM); break;
+      case shards::Quadrilateral<8>::key:       KOKKOS_BASIS_PARALLEL_FOR(Basis_HGRAD_QUAD_DEG2_FEM<true>); break;
+      case shards::Quadrilateral<9>::key:       KOKKOS_BASIS_PARALLEL_FOR(Basis_HGRAD_QUAD_DEG2_FEM<false>); break;
+      case shards::Tetrahedron<10>::key:        KOKKOS_BASIS_PARALLEL_FOR(Basis_HGRAD_TET_C2_FEM); break;
+      case shards::Tetrahedron<11>::key:        KOKKOS_BASIS_PARALLEL_FOR(Basis_HGRAD_TET_COMP12_FEM); break;
+      case shards::Hexahedron<20>::key:         KOKKOS_BASIS_PARALLEL_FOR(Basis_HGRAD_HEX_DEG2_FEM<true>); break;
+      case shards::Hexahedron<27>::key:         KOKKOS_BASIS_PARALLEL_FOR(Basis_HGRAD_HEX_DEG2_FEM<false>); break;
+      case shards::Wedge<15>::key:              KOKKOS_BASIS_PARALLEL_FOR(Basis_HGRAD_WEDGE_DEG2_FEM<true>); break;
+      case shards::Wedge<18>::key:              KOKKOS_BASIS_PARALLEL_FOR(Basis_HGRAD_WEDGE_DEG2_FEM<false>); break;
+      case shards::Pyramid<13>::key:            KOKKOS_BASIS_PARALLEL_FOR(Basis_HGRAD_PYR_I2_FEM); break;
+
+      case shards::Beam<2>::key:                KOKKOS_BASIS_PARALLEL_FOR(Basis_HGRAD_LINE_C1_FEM); break;
+      case shards::Beam<3>::key:                KOKKOS_BASIS_PARALLEL_FOR(Basis_HGRAD_LINE_C2_FEM); break;
+      case shards::ShellLine<2>::key:           KOKKOS_BASIS_PARALLEL_FOR(Basis_HGRAD_LINE_C1_FEM); break;
+      case shards::ShellLine<3>::key:           KOKKOS_BASIS_PARALLEL_FOR(Basis_HGRAD_LINE_C2_FEM); break;
+      case shards::ShellTriangle<3>::key:       KOKKOS_BASIS_PARALLEL_FOR(Basis_HGRAD_TRI_C1_FEM); break;
+      case shards::ShellTriangle<6>::key:       KOKKOS_BASIS_PARALLEL_FOR(Basis_HGRAD_TRI_C2_FEM); break;
+      case shards::ShellQuadrilateral<4>::key:  KOKKOS_BASIS_PARALLEL_FOR(Basis_HGRAD_QUAD_C1_FEM); break;
+      case shards::ShellQuadrilateral<8>::key:  KOKKOS_BASIS_PARALLEL_FOR(Basis_HGRAD_QUAD_DEG2_FEM<true>); break;
+      case shards::ShellQuadrilateral<9>::key:  KOKKOS_BASIS_PARALLEL_FOR(Basis_HGRAD_QUAD_DEG2_FEM<false>); break;
+      
+      default: {
+        INTREPID2_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+                                      ">>> ERROR (Intrepid2::CellTools::getHGradValues): Cell topology not supported.");
+      }
+      }
     }
 
 public:
@@ -291,7 +460,38 @@ public:
                 points,
                 worksetCell,
                 basis);
-   }
+    }
+
+
+
+    /** \brief  Computes the scaled normal component of a d-dimensional resudial vecor with respect to a (d-1) dimensional manifold, given the manifold tangents.
+
+      The dimension d can be either 2 or 3.
+      Typically, the input residual is the difference between points in d space and their projections onto the manifold.
+      This function compute the normal n to the manifold as the outer product of the manifold tangents.
+      It then computes the normal component as
+      \f[
+      (n \cdot \mbox{residual}) / |n|^2
+      \f]
+      and multiplies it by the input scaling term. 
+
+      \param  result      [out] - rank-2 array with dimensions (C,P) containing the normal component of the residual scaled by scaling
+      \param  tangents    [in]  - rank-4 container with logical dimensions (C,P,D,D-1) containing the tangents of a (D-1) dimensional manifold at points
+      \param  residual    [in]  - rank-3 array with dimensions (C,P,D), containing a vector in D dimensional space, typically the difference between points in 3D space and their projection on the manifold
+      \param  scaling     [in]  - a scalar quantity to scale the normal component.
+    */
+    
+    template<typename OutViewType, 
+             typename TanViewType,
+             typename InViewType>
+    static void
+    scaledResidualNormalComponent(
+               OutViewType result,
+               const TanViewType tangents,
+               const InViewType residual,
+               const typename InViewType::value_type scaling);
+
+
 
     /** \brief  Computes the inverse of the Jacobian matrix \e DF of the reference-to-physical frame map \e F.
 
@@ -962,20 +1162,22 @@ public:
 
         There are 2 use cases:
         \li     Applies \f$ F_{c} \f$ for \b all cells in a cell workset to a \b single point set stored
-        in a rank-2 (P,D) array;
+        in a rank-2 (P,D2) array;
         \li     Applies \f$ F_{c} \f$ for \b all cells in a cell workset to \b multiple point sets having
-        the same number of points, indexed by cell ordinal, and stored in a rank-3 (C,P,D) array;
+        the same number of points, indexed by cell ordinal, and stored in a rank-3 (C,P,D2) array;
 
-        For a single point set in a rank-2 array (P,D) returns a rank-3 (C,P,D) array such that
+        For a single point set in a rank-2 array (P,D1) returns a rank-3 (C,P,D2) array such that
         \f[
         \mbox{physPoints}(c,p,d) = \Big(F_c(\mbox{refPoint}(p,*)) \Big)_d \quad c=0,\ldots, C
         \f]
-        For multiple point sets in a rank-3 (C,P,D) array returns a rank-3 (C,P,D) array such that
+        For multiple point sets in a rank-3 (C,P,D1) array returns a rank-3 (C,P,D2) array such that
         \f[
         \mbox{physPoints}(c,p,d) = \Big(F_c(\mbox{refPoint}(c,p,*)) \Big)_d \quad c=0,\ldots, C
         \f]
         This corresponds to mapping multiple sets of reference points to a matching number of
         physical cells.
+
+        The reference (D1) and physics D2 dimensions don't have to be the same, as long as D1 is not greater than D2.
 
         Requires pointer to HGrad basis that defines reference to physical cell mapping.
         See Section \ref sec_cell_topology_ref_map for definition of the mapping function.
@@ -988,10 +1190,10 @@ public:
         is the image of the reference cell under that map. CellTools provides several
         inclusion tests methods to check whether or not the points are inside a reference cell.
 
-        \param  physPoints        [out] - rank-3 array with dimensions (C,P,D) with the images of the ref. points
-        \param  refPoints          [in]  - rank-3/2 array with dimensions (C,P,D)/(P,D) with points in reference frame
-        \param  cellWorkset      [in]  - rank-3 container with logical dimensions (C,N,D) with the nodes of the cell workset
-        \param  basis                   [in]  - pointer to HGrad basis used in reference-to-physical cell mapping
+        \param  physPoints        [out] - rank-3 array with dimensions (C,P,D2) with the images of the ref. points
+        \param  refPoints         [in]  - rank-3/2 array with dimensions (C,P,D1)/(P,D1) with points in reference frame
+        \param  cellWorkset       [in]  - rank-3 container with logical dimensions (C,N,D2) with the nodes of the cell workset
+        \param  basis             [in]  - pointer to HGrad basis used in reference-to-physical cell mapping
 
     */
     template<typename PhysPointValueType,
@@ -1008,20 +1210,22 @@ public:
 
         There are 2 use cases:
         \li     Applies \f$ F_{c} \f$ for \b all cells in a cell workset to a \b single point set stored
-        in a rank-2 (P,D) array;
+        in a rank-2 (P,D2) array;
         \li     Applies \f$ F_{c} \f$ for \b all cells in a cell workset to \b multiple point sets having
-        the same number of points, indexed by cell ordinal, and stored in a rank-3 (C,P,D) array;
+        the same number of points, indexed by cell ordinal, and stored in a rank-3 (C,P,D2) array;
 
-        For a single point set in a rank-2 array (P,D) returns a rank-3 (C,P,D) array such that
+        For a single point set in a rank-2 array (P,D1) returns a rank-3 (C,P,D2) array such that
         \f[
         \mbox{physPoints}(c,p,d) = \Big(F_c(\mbox{refPoint}(p,*)) \Big)_d \quad c=0,\ldots, C
         \f]
-        For multiple point sets in a rank-3 (C,P,D) array returns a rank-3 (C,P,D) array such that
+        For multiple point sets in a rank-3 (C,P,D1) array returns a rank-3 (C,P,D2) array such that
         \f[
         \mbox{physPoints}(c,p,d) = \Big(F_c(\mbox{refPoint}(c,p,*)) \Big)_d \quad c=0,\ldots, C
         \f]
         This corresponds to mapping multiple sets of reference points to a matching number of
         physical cells.
+
+        The reference (D1) and physics D2 dimensions don't have to be the same, as long as D1 is not greater than D2.
 
         Requires cell topology with a reference cell. See Section \ref sec_cell_topology_ref_map
         for definition of the mapping function. Presently supported cell topologies are
@@ -1038,9 +1242,9 @@ public:
         is the image of the reference cell under that map. CellTools provides several
         inclusion tests methods to check whether or not the points are inside a reference cell.
 
-        \param  physPoints        [out] - rank-3 array with dimensions (C,P,D) with the images of the ref. points
-        \param  refPoints         [in]  - rank-3/2 array with dimensions (C,P,D)/(P,D) with points in reference frame
-        \param  cellWorkset       [in]  - rank-3 array with dimensions (C,N,D) with the nodes of the cell workset
+        \param  physPoints        [out] - rank-3 array with dimensions (C,P,D2) with the images of the ref. points
+        \param  refPoints         [in]  - rank-3/2 array with dimensions (C,P,D1)/(P,D1) with points in reference frame
+        \param  cellWorkset       [in]  - rank-3 array with dimensions (C,N,D2) with the nodes of the cell workset
         \param  cellTopo          [in]  - cell topology of the cells stored in \c cellWorkset
 
     */
@@ -1051,14 +1255,7 @@ public:
     mapToPhysicalFrame(       PhysPointViewType    physPoints,
                         const RefPointViewType     refPoints,
                         const WorksetCellViewType  worksetCell,
-                        const shards::CellTopology cellTopo ) {
-      using nonConstRefPointValueType = typename RefPointViewType::non_const_value_type;
-      auto basis = createHGradBasis<nonConstRefPointValueType,nonConstRefPointValueType>(cellTopo);
-      mapToPhysicalFrame(physPoints,
-                         refPoints,
-                         worksetCell,
-                         basis);
-    }
+                        const shards::CellTopology cellTopo );
 
 
     /** \brief  Computes parameterization maps of 1- and 2-subcells of reference cells.
@@ -1191,6 +1388,8 @@ public:
         are not necessarily contained in the reference cell corresponding to the specified
         cell topology.
 
+        returns true if it converged to a solution, false otherwise
+
         \param  refPoints         [out] - rank-3 array with dimensions (C,P,D) with the images of the physical points
         \param  physPoints        [in]  - rank-3 array with dimensions (C,P,D) with points in physical frame
         \param  worksetCell       [in]  - rank-3 array with dimensions (C,N,D) with the nodes of the cell workset
@@ -1200,13 +1399,54 @@ public:
     template<typename refPointValueType,    class ...refPointProperties,
              typename physPointValueType,   class ...physPointProperties,
              typename worksetCellValueType, class ...worksetCellProperties>
-    static void
+    static bool
     mapToReferenceFrame(       Kokkos::DynRankView<refPointValueType,refPointProperties...>    refPoints,
                          const Kokkos::DynRankView<physPointValueType,physPointProperties...>  physPoints,
                          const Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...>   worksetCell,
-                         const shards::CellTopology cellTopo );
+                         const shards::CellTopology cellTopo,
+                         const physPointValueType shellThickness = -1.0 );
+
+
 
     /** \brief  Computation of \f$ F^{-1}_{c} \f$, the inverse of the reference-to-physical frame map
+        where refPoints is also used as initial guess.
+
+        Applies \f$ F^{-1}_{c} \f$ for \b all cells in a cell workset to \b multiple point sets
+        having the same number of points, indexed by cell ordinal, and stored in a rank-3
+        (C,P,D) array. Returns a rank-3 (C,P,D) array such that
+        \f[
+        \mbox{refPoints}(c,p,d) = \Big(F^{-1}_c(physPoint(c,p,*)) \Big)_d
+        \f]
+
+        Requires pointer to HGrad basis that defines reference to physical cell mapping.
+        See Section \ref sec_cell_topology_ref_map for definition of the mapping function.
+
+        Note, refPoints is used as initial guess.
+
+        \warning
+        The array \c physPoints represents an arbitrary set (or sets) of points in the physical
+        frame that are not required to belong in the physical cell (cells) that define(s) the reference
+        to physical mapping. As a result, the images of these points in the reference frame
+        are not necessarily contained in the reference cell corresponding to the specified
+        cell topology.
+
+        \param  refPoints         [out] - rank-3 array with dimensions (C,P,D) with the images of the physical points
+        \param  physPoints        [in]  - rank-3 array with dimensions (C,P,D) with points in physical frame
+        \param  worksetCell       [in]  - rank-3 array with dimensions (C,N,D) with the nodes of the cell workset
+        \param  basis             [in]  - pointer to HGrad basis used for reference to physical cell mapping
+    */
+    template<typename refPointValueType,    class ...refPointProperties,
+             typename physPointValueType,   class ...physPointProperties,
+             typename worksetCellValueType, class ...worksetCellProperties>
+             
+    static bool
+    mapToReferenceFrame(       Kokkos::DynRankView<refPointValueType,refPointProperties...>       refPoints,
+                         const Kokkos::DynRankView<physPointValueType,physPointProperties...>     physPoints,
+                         const Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCell,
+                         const BasisPtr<DeviceType, refPointValueType, refPointValueType>         basis,
+                         const physPointValueType                                                 shellThickness = -1.0 );
+
+    /** \brief  [Deprecated] Computation of \f$ F^{-1}_{c} \f$, the inverse of the reference-to-physical frame map
         using user-supplied initial guess.
 
         Applies \f$ F^{-1}_{c} \f$ for \b all cells in a cell workset to \b multiple point sets
@@ -1226,9 +1466,9 @@ public:
         are not necessarily contained in the reference cell corresponding to the specified
         cell topology.
 
-        \param  refPoints         [out] - rank-3/2 array with dimensions (C,P,D)/(P,D) with the images of the physical points
-        \param  initGuess         [in]  - rank-3/2 array with dimensions (C,P,D)/(P,D) with the initial guesses for each point
-        \param  physPoints        [in]  - rank-3/2 array with dimensions (C,P,D)/(P,D) with points in physical frame
+        \param  refPoints         [out] - rank-3 array with dimensions (C,P,D) with the images of the physical points
+        \param  initGuess         [in]  - rank-3 array with dimensions (C,P,D) with the initial guesses for each point
+        \param  physPoints        [in]  - rank-3 array with dimensions (C,P,D) with points in physical frame
         \param  worksetCell       [in]  - rank-3 array with dimensions (C,N,D) with the nodes of the cell workset
         \param  basis             [in]  - pointer to HGrad basis used for reference to physical cell mapping
     */
@@ -1237,12 +1477,17 @@ public:
              typename physPointValueType,   class ...physPointProperties,
              typename worksetCellValueType, class ...worksetCellProperties,
              typename HGradBasisPtrType>
-    static void
+    [[deprecated("Deprecated, use mapToReferenceFrame instead with refPoints initialized with initGuess.")]]
+    static bool
     mapToReferenceFrameInitGuess(       Kokkos::DynRankView<refPointValueType,refPointProperties...>       refPoints,
                                   const Kokkos::DynRankView<initGuessValueType,initGuessProperties...>     initGuess,
                                   const Kokkos::DynRankView<physPointValueType,physPointProperties...>     physPoints,
                                   const Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCell,
-                                  const HGradBasisPtrType basis );
+                                  const HGradBasisPtrType basis,
+                                  const physPointValueType shellThickness = -1.0 ){
+                                    Kokkos::deep_copy(refPoints,initGuess);
+                                    return mapToReferenceFrame(refPoints,physPoints,worksetCell,basis,initGuess);
+                                  }
 
 
     /** \brief  Computation of \f$ F^{-1}_{c} \f$, the inverse of the reference-to-physical frame map
@@ -1269,9 +1514,9 @@ public:
         are not necessarily contained in the reference cell corresponding to the specified
         cell topology.
 
-        \param  refPoints         [out] - rank-3/2 array with dimensions (C,P,D)/(P,D) with the images of the physical points
-        \param  initGuess         [in]  - rank-3/2 array with dimensions (C,P,D)/(P,D) with the initial guesses for each point
-        \param  physPoints        [in]  - rank-3/2 array with dimensions (C,P,D)/(P,D) with points in physical frame
+        \param  refPoints         [out] - rank-3 array with dimensions (C,P,D) with the images of the physical points
+        \param  initGuess         [in]  - rank-3 array with dimensions (C,P,D) with the initial guesses for each point
+        \param  physPoints        [in]  - rank-3 array with dimensions (C,P,D) with points in physical frame
         \param  worksetCell       [in]  - rank-3 array with dimensions (C,N,D) with the nodes of the cell workset
         \param  cellTopo          [in]  - cell topology of the cells stored in \c cellWorkset
     */
@@ -1279,19 +1524,13 @@ public:
              typename initGuessValueType,   class ...initGuessProperties,
              typename physPointValueType,   class ...physPointProperties,
              typename worksetCellValueType, class ...worksetCellProperties>
-    static void
+    static bool
     mapToReferenceFrameInitGuess(       Kokkos::DynRankView<refPointValueType,refPointProperties...>       refPoints,
                                   const Kokkos::DynRankView<initGuessValueType,initGuessProperties...>     initGuess,
                                   const Kokkos::DynRankView<physPointValueType,physPointProperties...>     physPoints,
                                   const Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCell,
-                                  const shards::CellTopology cellTopo ) {
-      auto basis = createHGradBasis<refPointValueType,refPointValueType>(cellTopo);
-      mapToReferenceFrameInitGuess(refPoints,
-                                   initGuess,
-                                   physPoints,
-                                   worksetCell,
-                                   basis);
-    }
+                                  const shards::CellTopology cellTopo,
+                                  const physPointValueType shellThickness = -1.0 ); 
 
 
     //============================================================================================//
@@ -1396,27 +1635,27 @@ public:
 
         Requires cell topology with a reference cell.
 
-        \param  point             [in]  - rank-1 view (D) of the point tested for inclusion
+        \param  refPoint          [in]  - rank-1 view (D) of the reference point tested for inclusion
         \param  cellTopo          [in]  - cell topology
         \return the parametric distance of the point in the specified reference cell.
     */
     template<typename PointViewType>
     static bool
-    parametricDistance( const PointViewType        point,
+    parametricDistance( const PointViewType         refPoint,
                          const shards::CellTopology cellTopo);
 
     /** \brief  Checks if a point belongs to a reference cell.
 
         Requires cell topology with a reference cell.
 
-        \param  point             [in]  - rank-1 view (D) of the point tested for inclusion
+        \param  refPoint          [in]  - rank-1 view (D) of the reference point tested for inclusion
         \param  cellTopo          [in]  - cell topology
         \param  threshold         [in]  - "tightness" of the inclusion test
         \return true if the point is in the closure of the specified reference cell and false otherwise.
     */
     template<typename PointViewType>
     static bool
-    checkPointInclusion( const PointViewType        point,
+    checkPointInclusion( const PointViewType        refPoint,
                          const shards::CellTopology cellTopo,
                          const typename ScalarTraits<typename PointViewType::value_type>::scalar_type thres =
                                threshold<typename ScalarTraits<typename PointViewType::value_type>::scalar_type>() );
@@ -1429,14 +1668,14 @@ public:
         The cell topology key is a template argument.
         Requires cell topology with a reference cell.
         \param  inCell            [out] - rank-1 view (P) or rank-2 view (C,P). On return, its entries will be set to 1 or 0 depending on whether points are included in cells
-        \param  point             [in]  - rank-2 view (P,D) or rank-3 view (C,P,D) with reference coordinates of the points tested for inclusion
+        \param  refPoints         [in]  - rank-2 view (P,D) or rank-3 view (C,P,D) with coordinates of the reference points tested for inclusion
         \param  threshold         [in]  - "tightness" of the inclusion test
     */
     template<unsigned cellTopologyKey,
              typename OutputViewType,
              typename InputViewType>
     static void checkPointwiseInclusion(       OutputViewType inCell,
-                                         const InputViewType points,
+                                         const InputViewType refPoints,
                                          const typename ScalarTraits<typename InputViewType::value_type>::scalar_type thresh =
                                                threshold<typename ScalarTraits<typename InputViewType::value_type>::scalar_type>());
 
@@ -1453,7 +1692,7 @@ public:
     template<typename InCellViewType,
              typename PointViewType>
     static void checkPointwiseInclusion(       InCellViewType inCell,
-                                         const PointViewType points,
+                                         const PointViewType refPoints,
                                          const shards::CellTopology cellTopo,
                                          const typename ScalarTraits<typename PointViewType::value_type>::scalar_type thres =
                                                threshold<typename ScalarTraits<typename PointViewType::value_type>::scalar_type>() );
@@ -1462,6 +1701,8 @@ public:
                 The points can belong to a global set and stored in a rank-2 (P,D) view,
                 or to multiple sets indexed by a cell ordinal and stored in a rank-3 (C,P,D) view
                 cells in a cell workset.
+
+                returns true if the computation is valid (map to reference cell converged), false otherwise
 
         \param  inCell            [out] - rank-2 view (P,D)  with results from the pointwise inclusion test
         \param  points            [in]  - rank-2 view (P,D) or rank-3 view (C,P,D) with the physical points
@@ -1472,12 +1713,13 @@ public:
     template<typename inCellValueType, class ...inCellProperties,
              typename pointValueType, class ...pointProperties,
              typename cellWorksetValueType, class ...cellWorksetProperties>
-    static void checkPointwiseInclusion(       Kokkos::DynRankView<inCellValueType,inCellProperties...> inCell,
+    static bool checkPointwiseInclusion(       Kokkos::DynRankView<inCellValueType,inCellProperties...> inCell,
                                          const Kokkos::DynRankView<pointValueType,pointProperties...> points,
                                          const Kokkos::DynRankView<cellWorksetValueType,cellWorksetProperties...> cellWorkset,
                                          const shards::CellTopology cellTopo,
                                          const typename ScalarTraits<pointValueType>::scalar_type thres =
-                                               threshold<typename ScalarTraits<pointValueType>::scalar_type>() );
+                                               threshold<typename ScalarTraits<pointValueType>::scalar_type>(),
+                                         const typename ScalarTraits<pointValueType>::scalar_type shellThickness = -1.0 );
 
 
     // //============================================================================================//

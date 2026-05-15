@@ -45,29 +45,29 @@ namespace Intrepid2 {
       const worksetCellType  _worksetCells;
       const basisGradType    _basisGrads;
       const int              _startCell;
-      const int              _endCell;
 
       KOKKOS_INLINE_FUNCTION
       F_setJacobian( jacobianViewType jacobian_,
                      worksetCellType  worksetCells_,
                      basisGradType    basisGrads_,
-                     const int        startCell_,
-                     const int        endCell_)
+                     const int        startCell_)
         : _jacobian(jacobian_), _worksetCells(worksetCells_), _basisGrads(basisGrads_),
-          _startCell(startCell_), _endCell(endCell_) {}
+          _startCell(startCell_) {}
 
       KOKKOS_INLINE_FUNCTION
       void operator()(const ordinal_type cell,
                       const ordinal_type point) const {
         
-        const ordinal_type dim = _jacobian.extent(2); // dim2 and dim3 should match
+        const ordinal_type phys_dim = _jacobian.extent(2); // dim2 and dim3 should match
         
         const ordinal_type gradRank = rank(_basisGrads);
+        const ordinal_type ref_dim = _basisGrads.extent_int(gradRank-1);
+
         if ( gradRank == 3)
         {
           const ordinal_type cardinality = _basisGrads.extent(0);
-          for (ordinal_type i=0;i<dim;++i)
-            for (ordinal_type j=0;j<dim;++j) {
+          for (ordinal_type i=0;i<phys_dim;++i)
+            for (ordinal_type j=0;j<ref_dim;++j) {
               _jacobian(cell, point, i, j) = 0;
               for (ordinal_type bf=0;bf<cardinality;++bf)
                 _jacobian(cell, point, i, j) += _worksetCells(cell+_startCell, bf, i) * _basisGrads(bf, point, j);
@@ -76,8 +76,8 @@ namespace Intrepid2 {
         else
         {
           const ordinal_type cardinality = _basisGrads.extent(1);
-          for (ordinal_type i=0;i<dim;++i)
-          for (ordinal_type j=0;j<dim;++j) {
+          for (ordinal_type i=0;i<phys_dim;++i)
+          for (ordinal_type j=0;j<ref_dim;++j) {
             _jacobian(cell, point, i, j) = 0;
             for (ordinal_type bf=0;bf<cardinality;++bf)
               _jacobian(cell, point, i, j) += _worksetCells(cell+_startCell, bf, i) * _basisGrads(cell, bf, point, j);
@@ -85,7 +85,10 @@ namespace Intrepid2 {
         }
       }
     };
+
   }
+
+
 
   template<typename DeviceType>
   template<class PointScalar>
@@ -780,14 +783,15 @@ namespace Intrepid2 {
     using FunctorType      = FunctorCellTools::F_setJacobian<JacobianViewType,WorksetType,BasisGradientsType> ;
     
     // resolve the -1 default argument for endCell into the true end cell index
-    int endCellResolved = (endCell == -1) ? worksetCell.extent_int(0) : endCell;
+    ordinal_type endCellResolved = (endCell == -1) ? worksetCell.extent_int(0) : endCell;
     
     using range_policy_type = Kokkos::MDRangePolicy
       < ExecSpaceType, Kokkos::Rank<2>, Kokkos::IndexType<ordinal_type> >;
     range_policy_type policy( { 0, 0 },
-                              { jacobian.extent(0), jacobian.extent(1) } );
-    Kokkos::parallel_for( policy, FunctorType(jacobian, worksetCell, gradients, startCell, endCellResolved) );
+                              { std::max(jacobian.extent_int(0), endCellResolved-startCell), jacobian.extent_int(1) } );
+    Kokkos::parallel_for( policy, FunctorType(jacobian, worksetCell, gradients, startCell) );
   }
+
 
   template<typename DeviceType>
   template<typename JacobianViewType,
@@ -812,8 +816,6 @@ namespace Intrepid2 {
     CellTools_setJacobianArgs(jacobian, points, worksetCell, basis->getBaseCellTopology(), startCell, endCell);
     //static_assert(std::is_same( pointValueType, decltype(basis->getDummyOutputValue()) ));
 #endif
-    const auto cellTopo = basis->getBaseCellTopology();
-    const ordinal_type spaceDim = cellTopo.getDimension();
     const ordinal_type numCells = jacobian.extent(0);
     
     //points can be rank-2 (P,D), or rank-3 (C,P,D)
@@ -828,19 +830,16 @@ namespace Intrepid2 {
     switch (pointRank) {
     case 2: {
       // For most FEMs
-      grads = Impl::createMatchingView<GradViewType>(points, "CellTools::setJacobian::grads", basisCardinality, numPoints, spaceDim);
+      grads = Impl::createMatchingView<GradViewType>(points, "CellTools::setJacobian::grads", basisCardinality, numPoints, basis->getDomainDimension());
       basis->getValues(grads, 
                        points, 
                        OPERATOR_GRAD);
       break;
     }
     case 3: { 
-      // For CVFEM
-      grads = Impl::createMatchingView<GradViewType>(points, "CellTools::setJacobian::grads", numCells, basisCardinality, numPoints, spaceDim);
-      for (ordinal_type cell=0;cell<numCells;++cell) 
-        basis->getValues(Kokkos::subview( grads,  cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL() ),  
-                         Kokkos::subview( points, cell, Kokkos::ALL(), Kokkos::ALL() ),  
-                         OPERATOR_GRAD);
+      // For CVFEM or map to reference frames for point inclusion
+      grads = Impl::createMatchingView<GradViewType>(points, "CellTools::setJacobian::grads", numCells, basisCardinality, numPoints, basis->getDomainDimension());
+      getHGradValues<OPERATOR_GRAD>(grads,points,basis.get());
       break;
     }
     }
