@@ -136,6 +136,8 @@ void StepperEPI<Scalar>::takeStep(
       "  or \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"2\" for EPI2,\n"
       "  or \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"3\" for EPI3.\n");
 
+    Thyra::SolveStatus<Scalar> sStatus;
+
     RCP<StepperEPI<Scalar> > thisStepper = Teuchos::rcpFromRef(*this);
     stepperEPIAppAction_->execute(solutionHistory, thisStepper,
       StepperEPIAppAction<Scalar>::ACTION_LOCATION::BEGIN_STEP);
@@ -166,17 +168,11 @@ void StepperEPI<Scalar>::takeStep(
     stepperEPIAppAction_->execute(solutionHistory, thisStepper,
       StepperEPIAppAction<Scalar>::ACTION_LOCATION::BEFORE_EXP);
 
-    //{
-    //  Teuchos::basic_FancyOStream<char> ostr(Teuchos::rcp(&std::cout, false));
-    //  this->describe(ostr, Teuchos::VERB_EXTREME);
-    //}
-    RCP<TimeDerivative<Scalar> > timeDer;
-
-    Thyra::SolveStatus<Scalar> sStatus;
-
-    // TODO: Transition away from using implicit solver methods and use ModelEvaluator directly
+    // TODO: Transition away from using implicit solver methods
+    // and use ModelEvaluator directly
 
     // Setup TimeDerivative
+    RCP<TimeDerivative<Scalar> > timeDer;
     timeDer = Teuchos::rcp(new StepperEPITimeDerivative<Scalar>(1/dt, xOld));
     auto p = Teuchos::rcp(new ImplicitODEParameters<Scalar>(timeDer, dt, Scalar(0.0), Scalar(1.0)));
 
