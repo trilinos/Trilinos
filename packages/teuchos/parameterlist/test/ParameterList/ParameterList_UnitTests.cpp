@@ -12,6 +12,7 @@
 #include "Teuchos_as.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_ParameterListModifier.hpp"
+#include "Teuchos_TypeNameTraits.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 
 
@@ -1253,9 +1254,10 @@ TEUCHOS_UNIT_TEST( ParameterList, NonPrintableParameterEntries){
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "If you get here then the test failed!");
     }
     catch (const NonprintableTypeException &except) {
-      std::string actualMessage = except.what();
-      std::string expectedMessage = "Trying to print type std::vector<int, std::allocator<int> > "
-                                    "which is not printable (i.e. does not have operator<<() defined)!";
+      const std::string actualMessage = except.what();
+      const std::string typeName = Teuchos::demangleName(typeid(std::vector<int>).name());
+      const std::string expectedMessage = "Trying to print type " + typeName +
+        " which is not printable (i.e. does not have operator<<() defined)!";
       TEST_ASSERT(actualMessage.find(expectedMessage) != std::string::npos);
     }
   }
@@ -1270,10 +1272,10 @@ TEUCHOS_UNIT_TEST( ParameterList, NonPrintableParameterEntries){
       TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error, "If you get here then the test failed!" );
     }
     catch (const NonprintableTypeException &except) {
-      std::string actualMessage = except.what();
-      std::string expectedMessage =
-              "Trying to print type Teuchos::(anonymous namespace)::Shape which is not printable "
-              "(i.e. does not have operator<<() defined)!";
+      const std::string actualMessage = except.what();
+      const std::string typeName = Teuchos::demangleName(typeid(Shape).name());
+      const std::string expectedMessage = "Trying to print type " + typeName +
+        " which is not printable (i.e. does not have operator<<() defined)!";
       TEST_ASSERT(actualMessage.find(expectedMessage) != std::string::npos);
     }
   }
