@@ -166,7 +166,7 @@ int main(int argc, char *argv[]) {
     // Perform solve
     //
     Belos::ReturnType ret = solver.solve();
-    Belos::UnconvergedCauseType unconvergedCause = solver->getUnconvergedCause();
+    Belos::UnconvergedCauseType unconvergedCause = solver.getUnconvergedCause();
     //
     // Compute actual residuals.
     //

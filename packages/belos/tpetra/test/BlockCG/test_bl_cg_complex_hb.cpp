@@ -178,17 +178,18 @@ int run(int argc, char *argv[])
   }
 
   if (ret==Belos::Converged && (unconvergedCause==Belos::SolverConverged) && !badRes) {
+    // Default return value
+    if (proc_verbose) {
+      std::cout << "\nEnd Result: TEST PASSED" << std::endl;
+    }
+  }
+  else {
     if (proc_verbose) {
       std::cout << "\nEnd Result: TEST FAILED" << std::endl;
     }
     return -1;
   }
   
-  // Default return value
-  if (proc_verbose) {
-    std::cout << "\nEnd Result: TEST PASSED" << std::endl;
-  }
-
   return 0;
 } // end test_bl_cg_complex_hb.cpp
 
