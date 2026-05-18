@@ -12,7 +12,7 @@ ENDIF()
 
 IF (TEMPUS_ENABLE_EPETRA_STACK OR TEMPUS_ENABLE_TPETRA_STACK)
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Test_EPI_CopyFiles
-    DEST_FILES Tempus_EPI_CDR.xml Tempus_EPI_SinCos.xml Tempus_EPI_VanDerPol.xml Tempus_EPI_Reaction.xml Tempus_EPI_Leja_Reaction.xml
+    DEST_FILES Tempus_EPI_CDR.xml Tempus_EPI_SinCos.xml Tempus_EPI_VanDerPol.xml Tempus_EPI_Reaction.xml Tempus_EPI_Leja_Reaction.xml Tempus_EPI_NonAutoSrc.xml
     EXEDEPS EPI
     )
 ENDIF()
