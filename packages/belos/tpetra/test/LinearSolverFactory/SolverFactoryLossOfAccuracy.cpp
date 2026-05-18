@@ -35,7 +35,7 @@ createTestMatrix (Teuchos::FancyOStream& out,
   typedef Tpetra::Map<LO,GO,NT> map_type;
 
   Teuchos::OSTab tab0 (out);
-  std::cout << "Create test matrix with " << gblNumRows << " row(s)" << endl;
+  out << "Create test matrix with " << gblNumRows << " row(s)" << endl;
   Teuchos::OSTab tab1 (out);
 
   TEUCHOS_TEST_FOR_EXCEPTION
@@ -100,30 +100,7 @@ createTestProblem (Teuchos::FancyOStream& out,
     B->replaceLocalValue(lclRow, 1, tmp + 1.e-6); // Second vector
     B->replaceLocalValue(lclRow, 2, tmp - 1.e-6); // Third vector
   }
-#if 0
-  // Set Vector 0 and Vector 1 at Global Row 0
-  if (map->isNodeGlobalElement(0)) {
-    // Get the local index for global row 0 on this processor
-    size_t localRow = map->getLocalElement(0);
-        
-    // replaceLocalValue(localRowIndex, vectorIndex, value)
-    B->replaceLocalValue(localRow, 0, 1.0); // First vector
-    B->replaceLocalValue(localRow, 1, 2.0 + 1.e-7); // Second vector
-    B->replaceLocalValue(localRow, 2, 2.0 - 1.e-7); // Third vector
-  }
-
-  // Set Vector 2 at Global Row 1
-  if (map->isNodeGlobalElement(1)) {
-    size_t localRow = map->getLocalElement(1);
-    B->replaceLocalValue(localRow, 2, 1.0); // Third vector
-  }
-#endif
   X->putScalar (STS::zero());
-
-  auto tmpOut = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
-  A->describe(*tmpOut, Teuchos::VERB_EXTREME);
-  //X->describe(*tmpOut, Teuchos::VERB_EXTREME);
-  B->describe(*tmpOut, Teuchos::VERB_EXTREME);
 }
 
 template<class SC, class LO, class GO, class NT>
@@ -145,7 +122,7 @@ testSolver (Teuchos::FancyOStream& out,
   typedef Teuchos::ScalarTraits<SC> STS;
 
   Teuchos::OSTab tab0 (out);
-  std::cout << "Test solver \"" << solverName << "\" from Belos package" << endl;
+  out << "Test solver \"" << solverName << "\" from Belos package" << endl;
   Teuchos::OSTab tab1 (out);
 
   RCP<Belos::SolverManager<SC, MV, OP> > solver;
@@ -166,65 +143,45 @@ testSolver (Teuchos::FancyOStream& out,
   try {
     solver = factory.create (solverName, belosList);
   } catch (std::exception& e) {
-    std::cout << "*** FAILED: Belos::SolverFactory::create threw an exception: "
+    out << "*** FAILED: Belos::SolverFactory::create threw an exception: "
         << e.what () << endl;
     success = false;
     return;
   }
   TEST_EQUALITY_CONST( solver.is_null (), false );
   if (solver.is_null ()) {
-    std::cout << "*** FAILED to create solver \"" << solverName
+    out << "*** FAILED to create solver \"" << solverName
         << "\" from Belos package" << endl;
     success = false;
     return;
   }
 
-  std::cout << "Create the Belos::LinearProblem to solve" << endl;
+  out << "Create the Belos::LinearProblem to solve" << endl;
   typedef Belos::LinearProblem<SC, MV, OP> linear_problem_type;
   X->putScalar (STS::zero ());
-
-  //std::cout << "A = " << *A << std::endl;
-  //std::cout << "X = " << *X << std::endl;
-  //std::cout << "B = " << *B << std::endl;
-
-  //auto tmpOut = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
-  //A->describe(*tmpOut, Teuchos::VERB_EXTREME);
-  //X->describe(*tmpOut, Teuchos::VERB_EXTREME);
-  //B->describe(*tmpOut, Teuchos::VERB_EXTREME);
 
   RCP<linear_problem_type> problem (new linear_problem_type (A, X, B));
   problem->setProblem ();
 
-  std::cout << "Set up the solver" << endl;
+  out << "Set up the solver" << endl;
   solver->setProblem (problem);
 
-  std::cout << "Apply solver to \"solve\" AX=B for X, and check if it fails to converge with 'LossOfAccuracyDetected' unconverged cause." << endl;
+  out << "Apply solver to \"solve\" AX=B for X, and check if it fails to converge with 'LossOfAccuracyDetected' unconverged cause." << endl;
   Belos::ReturnType ret;
   Belos::UnconvergedCauseType unconvergedCause;
 
   try {
     ret = solver->solve ();
   } catch (std::exception& e) {
-    std::cout << "*** FAILED: Belos::SolverFactory::solve threw an unexpected exception: "
+    out << "*** FAILED: Belos::SolverFactory::solve threw an unexpected exception: "
         << e.what () << endl;
     success = false;
     return;
   }
   unconvergedCause = solver->getUnconvergedCause();
-  std::cout << "ret = " << convertReturnTypeToString(ret)
+  out << "ret = " << convertReturnTypeToString(ret)
       << ", unconvergedCause = " << convertUnconvergedCauseTypeToString(unconvergedCause)
       << endl;
-  if (true) { // (ret == Belos::Converged) {
-    auto AX = Teuchos::rcp(new Tpetra::MultiVector<>(B->getMap(), B->getNumVectors()));
-    A->apply(*X, *AX);
-    AX->update(1.0, *B, -1.0);
-    Teuchos::Array<double> norms(B->getNumVectors());
-    AX->norm2(norms());
-    for (int i = 0; i < norms.size(); ++i) {
-        std::cout << "Norm of residual for vector " << i << ": " << norms[i] << std::endl;
-    }
-  }
-
   
   if ( (ret != Belos::Unconverged) || (unconvergedCause != Belos::LossOfAccuracyDetected) ) {
     success = false;
@@ -240,7 +197,6 @@ testSolver (Teuchos::FancyOStream& out,
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( SolverFactory, CreateAndSolve, SC, LO, GO, NT )
 {
-  std::cout << "2----------------------------------------------------" << std::endl;
   using Teuchos::Comm;
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -254,7 +210,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( SolverFactory, CreateAndSolve, SC, LO, GO, NT
   const Tpetra::global_size_t gblNumRows = comm->getSize () * 10;
   const size_t numVecs = 3;
 
-  std::cout << "Create test problem" << endl;
+  out << "Create test problem" << endl;
   RCP<MV> X_exact, B;
   RCP<MAT> A;
   createTestProblem (out, X_exact, A, B, comm, gblNumRows, numVecs);
@@ -270,7 +226,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( SolverFactory, CreateAndSolve, SC, LO, GO, NT
   int numSolversTested = 0;
   for (int k = 0; k < numSolvers; ++k) {
     const std::string solverName (solverNames[k]);
-    std::cout << "Testing k = " << k << ", solverName = " << solverName << std::endl;
+    out << "Testing k = " << k << ", solverName = " << solverName << std::endl;
 
     // Use Belos' factory to tell us whether the factory supports the
     // given combination of template parameters.  If create() throws,
@@ -288,17 +244,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( SolverFactory, CreateAndSolve, SC, LO, GO, NT
     }
   }
 
-  std::cout << "Tested " << numSolversTested << " solver(s) of " << numSolvers
+  out << "Tested " << numSolversTested << " solver(s) of " << numSolvers
       << endl;
   if (numSolversTested == 0) {
-    std::cout << "*** ERROR: Tested no solvers for template parameters"
+    out << "*** ERROR: Tested no solvers for template parameters"
         << "SC = " << TypeNameTraits<SC>::name ()
         << ", LO = " << TypeNameTraits<LO>::name ()
         << ", GO = " << TypeNameTraits<GO>::name ()
         << ", NT = " << TypeNameTraits<NT>::name () << endl;
     success = false;
   }
-  std::cout << "2----------------------------------------------------" << endl;
 }
 
 // Define typedefs that make the Tpetra macros work.

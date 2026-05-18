@@ -606,7 +606,6 @@ TFQMRSolMgr<ScalarType,MV,OP>::getValidParameters() const
 // solve()
 template<class ScalarType, class MV, class OP>
 ReturnType TFQMRSolMgr<ScalarType,MV,OP>::solve() {
-  std::cout << "Entering TFQMRSolMgr::solve()" << std::endl;
   this->unconvergedCause_ = Undetermined;
 
   // Set the current parameters if they were not set before.

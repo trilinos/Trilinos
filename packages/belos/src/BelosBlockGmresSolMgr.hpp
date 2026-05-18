@@ -867,7 +867,6 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setDebugStatusTest(
 // solve()
 template<class ScalarType, class MV, class OP>
 ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
-  std::cout << "Entering BlockGmresSolMgr::solve()" << std::endl;
   this->unconvergedCause_ = Undetermined;
 
   // Set the current parameters if they were not set before.

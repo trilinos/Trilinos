@@ -644,7 +644,6 @@ namespace Belos {
     using Teuchos::rcp_const_cast;
     using std::endl;
 
-    std::cout << "Entering MinresSolMgr::solve()" << std::endl;
     this->unconvergedCause_ = Undetermined;
 
     if (! parametersSet_) {

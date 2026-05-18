@@ -244,7 +244,6 @@ public:
   SolverOutput<SC>
   solve (MV& X, const MV& B)
   {
-    std::cout << "Entering Krylov::solve() in packages/belos/tpetra/src/solvers/Belos_Tpetra_Krylov.hpp" << std::endl;
     using Teuchos::FancyOStream;
     using Teuchos::getFancyOStream;
     using Teuchos::oblackholestream;

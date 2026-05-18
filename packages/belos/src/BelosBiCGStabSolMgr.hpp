@@ -578,7 +578,6 @@ BiCGStabSolMgr<ScalarType,MV,OP>::getValidParameters() const
 template<class ScalarType, class MV, class OP>
 ReturnType BiCGStabSolMgr<ScalarType,MV,OP>::solve ()
 {
-  std::cout << "Entering BiCGStabSolMgr::solve()" << std::endl;
   this->unconvergedCause_ = Undetermined;
 
   // Set the current parameters if they were not set before.

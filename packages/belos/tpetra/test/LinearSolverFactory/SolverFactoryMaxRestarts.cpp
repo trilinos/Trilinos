@@ -103,11 +103,6 @@ createTestProblem (Teuchos::FancyOStream& out,
     }
   }
   X->putScalar (STS::zero());
-
-  //auto tmpOut = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
-  //A->describe(*tmpOut, Teuchos::VERB_EXTREME);
-  //X->describe(*tmpOut, Teuchos::VERB_EXTREME);
-  //B->describe(*tmpOut, Teuchos::VERB_EXTREME);
 }
 
 template<class SC, class LO, class GO, class NT>
@@ -161,15 +156,6 @@ testSolver (Teuchos::FancyOStream& out,
   out << "Create the Belos::LinearProblem to solve" << endl;
   typedef Belos::LinearProblem<SC, MV, OP> linear_problem_type;
   X->putScalar (STS::zero ());
-
-  //std::cout << "A = " << *A << std::endl;
-  //std::cout << "X = " << *X << std::endl;
-  //std::cout << "B = " << *B << std::endl;
-
-  //auto tmpOut = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
-  //A->describe(*tmpOut, Teuchos::VERB_EXTREME);
-  //X->describe(*tmpOut, Teuchos::VERB_EXTREME);
-  //B->describe(*tmpOut, Teuchos::VERB_EXTREME);
 
   RCP<linear_problem_type> problem (new linear_problem_type (A, X, B));
   problem->setProblem ();

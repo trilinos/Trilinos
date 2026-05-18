@@ -579,7 +579,6 @@ PseudoBlockStochasticCGSolMgr<ScalarType,MV,OP>::getValidParameters() const
 // solve()
 template<class ScalarType, class MV, class OP>
 ReturnType PseudoBlockStochasticCGSolMgr<ScalarType,MV,OP>::solve() {
-  std::cout << "Entering PseudoBlockStochasticCGSolMgr::solve()" << std::endl;
   this->unconvergedCause_ = Undetermined;
 
   // Set the current parameters if they were not set before.

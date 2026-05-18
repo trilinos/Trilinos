@@ -103,11 +103,6 @@ createTestProblem (Teuchos::FancyOStream& out,
     }
   }
   X->putScalar (STS::zero());
-
-  //auto tmpOut = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
-  //A->describe(*tmpOut, Teuchos::VERB_EXTREME);
-  //X->describe(*tmpOut, Teuchos::VERB_EXTREME);
-  //B->describe(*tmpOut, Teuchos::VERB_EXTREME);
 }
 
 template<class SC, class LO, class GO, class NT>
@@ -160,15 +155,6 @@ testSolver (Teuchos::FancyOStream& out,
   typedef Belos::LinearProblem<SC, MV, OP> linear_problem_type;
   X->putScalar (STS::zero ());
 
-  //std::cout << "A = " << *A << std::endl;
-  //std::cout << "X = " << *X << std::endl;
-  //std::cout << "B = " << *B << std::endl;
-
-  //auto tmpOut = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
-  //A->describe(*tmpOut, Teuchos::VERB_EXTREME);
-  //X->describe(*tmpOut, Teuchos::VERB_EXTREME);
-  //B->describe(*tmpOut, Teuchos::VERB_EXTREME);
-
   RCP<linear_problem_type> problem (new linear_problem_type (A, X, B));
   problem->setProblem ();
 
@@ -191,16 +177,6 @@ testSolver (Teuchos::FancyOStream& out,
   out << "ret = " << convertReturnTypeToString(ret)
       << ", unconvergedCause = " << convertUnconvergedCauseTypeToString(unconvergedCause)
       << endl;
-  //if (true) { // (ret == Belos::Converged) {
-  //  auto AX = Teuchos::rcp(new Tpetra::MultiVector<>(B->getMap(), B->getNumVectors()));
-  //  A->apply(*X, *AX);
-  //  AX->update(1.0, *B, -1.0);
-  //  Teuchos::Array<double> norms(B->getNumVectors());
-  //  AX->norm2(norms());
-  //  for (int i = 0; i < norms.size(); ++i) {
-  //      std::cout << "Norm of residual for vector " << i << ": " << norms[i] << std::endl;
-  //  }
-  //}
 
   if ( (ret != Belos::Unconverged) || (unconvergedCause != Belos::BreakdownDetected) ) {
     success = false;

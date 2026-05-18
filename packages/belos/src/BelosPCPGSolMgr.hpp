@@ -694,7 +694,6 @@ PCPGSolMgr<ScalarType,MV,OP,true>::getValidParameters() const
 // solve()
 template<class ScalarType, class MV, class OP>
 ReturnType PCPGSolMgr<ScalarType,MV,OP,true>::solve() {
-  std::cout << "Entering PCPGSolMgr::solve()" << std::endl;
   this->unconvergedCause_ = Undetermined;
 
   // Set the current parameters if are not set already.

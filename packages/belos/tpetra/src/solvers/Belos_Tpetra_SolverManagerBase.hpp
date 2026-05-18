@@ -146,7 +146,6 @@ public:
     using Teuchos::RCP;
     const char prefix[] = "SolverManagerBase::solve: ";
 
-    std::cout << "Entering SolverManagerBase::solve() in Trilinos/packages/belos/tpetra/src/solvers/Belos_Tpetra_SolverManagerBase.hpp" << std::endl;
     TEUCHOS_TEST_FOR_EXCEPTION
       (this->solver_.get () == nullptr, std::logic_error,
        prefix << ErrMsgs::solverNull);
