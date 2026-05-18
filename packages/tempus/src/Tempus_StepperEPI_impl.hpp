@@ -205,8 +205,9 @@ void StepperEPI<Scalar>::takeStep(
     phiEvaluator_->setLinearizationPoint(inArgs);
 
     // if requested, compute the time derivative for the nonaotonomous correction
+    RCP<Thyra::VectorBase<Scalar>> dt_Mf_deriv = Teuchos::null;
     if (temporal_finite_difference_eps_ > 0.0) {
-      RCP<Thyra::VectorBase<Scalar>> dt_Mf_deriv = Mf->clone_v();
+      dt_Mf_deriv = Mf->clone_v();
       this->evaluateImplicitODE(
           dt_Mf_deriv, x, xDot, time + dt*temporal_finite_difference_eps_, p);
       // compute -dt times the temporal finite difference of Mf,
@@ -222,7 +223,8 @@ void StepperEPI<Scalar>::takeStep(
 
     // if requested, use the EPI3 3rd order update
     if (useEPI3) {
-      RCP<Thyra::VectorBase<Scalar>> Remf = computeRemf(xOldOld, tOldOld, xOld, xDot, dt, Mf);
+      RCP<Thyra::VectorBase<Scalar>> Remf = computeRemf(
+          xOldOld, tOldOld, xOld, time, xDot, dt, Mf, dt_Mf_deriv);
       // Add (2/3)*R to phi_2 term
       Thyra::scale((2.0 / 3.0), Remf.ptr());
       if (Mrhs_B[2] != Teuchos::null) {
@@ -265,9 +267,11 @@ StepperEPI<Scalar>::computeRemf(
     const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& xr,
     const Scalar tr,
     const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& x0,
+    const Scalar t0,
     const Teuchos::RCP<Thyra::VectorBase<Scalar>>& xDot,
     const Scalar dt,
-    const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& Mf
+    const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& Mf,
+    const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& dt_Mf_deriv
 )
 {
   Teuchos::RCP<TimeDerivative<Scalar> > timeDer;
@@ -293,6 +297,12 @@ StepperEPI<Scalar>::computeRemf(
   Teuchos::RCP<Thyra::VectorBase<Scalar>> R = Mf->clone_v();
   Thyra::Vp_StV(R.ptr(), Scalar(-1.0), *Mf_old);
   Thyra::Vp_StV(R.ptr(), Scalar(1.0), *J_xd);
+
+  // Time derivative remainder term only nonzero in nonautonomous case
+  // -= d(Frhs)/dt * (tr - t0)
+  if (dt_Mf_deriv != Teuchos::null) {
+    Thyra::Vp_StV(R.ptr(), Scalar(-(tr - t0)/dt), *dt_Mf_deriv);
+  }
 
   return R;
 }

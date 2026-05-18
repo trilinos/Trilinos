@@ -155,11 +155,13 @@ private:
   ///   R = F(xr,tr) - F(x0,t0) - J_{x0}*(xr-x0)
   Teuchos::RCP<Thyra::VectorBase<Scalar>> computeRemf(
     const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& xr,
-    const Scalar                                         tr,
+    const Scalar tr,
     const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& x0,
-    const Teuchos::RCP<Thyra::VectorBase<Scalar>>&       xDot,
-    const Scalar                                         dt,
-    const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& Mf
+    const Scalar t0,
+    const Teuchos::RCP<Thyra::VectorBase<Scalar>>& xDot,
+    const Scalar dt,
+    const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& Mf,
+    const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& dt_Mf_deriv
   );
 
 private:
