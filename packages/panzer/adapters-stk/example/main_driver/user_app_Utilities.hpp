@@ -72,10 +72,6 @@ namespace user_app {
                       Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits>> linObjFactory,
                       Teuchos::RCP<panzer::GlobalIndexer> globalIndexer,
                       const bool overrideNoxOutput);
-
-  std::tuple<int,int> findParameterIndex(const std::string& p_name,const Thyra::ModelEvaluator<double>& me);
-
-  std::tuple<int,int> findResponseIndex(const std::string& g_name,const Thyra::ModelEvaluator<double>& me);
 }
 
 /*
