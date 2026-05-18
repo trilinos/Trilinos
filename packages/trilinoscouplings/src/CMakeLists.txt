@@ -7,10 +7,6 @@ INCLUDE(TrilinosCreateClientTemplateHeaders)
 #setting up optional package defines since the default
 #names are not used
 
-IF(HAVE_TRILINOSCOUPLINGS_EPETRAEXT)
- SET(HAVE_EPETRAEXT ON)
-ENDIF()
-
 IF(HAVE_TRILINOSCOUPLINGS_ML)
  SET(HAVE_ML ON)
 ENDIF()
@@ -25,10 +21,6 @@ ENDIF()
 
 IF(HAVE_TRILINOSCOUPLINGS_IFPACK)
  SET(HAVE_IFPACK ON)
-ENDIF()
-
-IF(HAVE_TRILINOSCOUPLINGS_ISORROPIA)
- SET(HAVE_ISORROPIA ON)
 ENDIF()
 
 ASSERT_DEFINED(
@@ -104,48 +96,6 @@ IF(HAVE_TRILINOSCOUPLINGS_ML)
 
     APPEND_SET(SOURCES
       ifpack/Ifpack_ML.cpp
-      )
-  ENDIF()
-ENDIF()
-
-IF(HAVE_TRILINOSCOUPLINGS_EPETRAEXT)
-  #Have Isorropia and Epetra ext
-  IF(HAVE_TRILINOSCOUPLINGS_ISORROPIA)
-    TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/epetraext)
-    APPEND_SET(HEADERS
-      epetraext/EpetraExt_Isorropia_CrsGraph.h
-      )
-
-    APPEND_SET(SOURCES
-      epetraext/EpetraExt_Isorropia_CrsGraph.cpp
-      )
-  ENDIF()
-
-  #Have Amesos and Epetra ext
-  IF(HAVE_TRILINOSCOUPLINGS_AMESOS)
-    TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/epetraext)
-    APPEND_SET(HEADERS
-      epetraext/EpetraExt_AmesosBTF_CrsGraph.h
-      epetraext/EpetraExt_AmesosBTF_CrsMatrix.h
-      epetraext/EpetraExt_AmesosAMDGlobal_CrsGraph.h
-      )
-
-    APPEND_SET(SOURCES
-      epetraext/EpetraExt_AmesosBTF_CrsGraph.cpp
-      epetraext/EpetraExt_AmesosBTF_CrsMatrix.cpp
-      epetraext/EpetraExt_AmesosAMDGlobal_CrsGraph.cpp
-      )
-  ENDIF()
-
-  #Have all three Epetra ext, Amesos and Isorropia
-  IF(HAVE_TRILINOSCOUPLINGS_AMESOS AND HAVE_TRILINOSCOUPLINGS_ISORROPIA)
-    TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/epetraext)
-    APPEND_SET(HEADERS
-      epetraext/EpetraExt_AmesosBTFGlobal_LinearProblem.h
-      )
-
-    APPEND_SET(SOURCES
-      epetraext/EpetraExt_AmesosBTFGlobal_LinearProblem.cpp
       )
   ENDIF()
 ENDIF()
