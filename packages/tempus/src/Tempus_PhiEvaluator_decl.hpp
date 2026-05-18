@@ -42,7 +42,7 @@ class PhiLinearSolver {
 
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> buildATilde(const Scalar dt);
   void buildK(const Thyra::Ordinal n);
-  void buildb(const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> rhs_B);
+  void buildb(const Teuchos::ArrayView<const Teuchos::RCP<const Thyra::VectorBase<Scalar>>> &rhs_B);
   Teuchos::RCP<Thyra::ProductVectorBase<Scalar>> buildv(const Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar>> space,
 							const Teuchos::RCP<const Thyra::VectorBase<Scalar>> x0);
 
@@ -156,21 +156,21 @@ class PhiEvaluator
    */
   virtual Thyra::SolveStatus<Scalar> computePhi(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
 						const int phi_order, const Scalar cdt,
-						const Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mrhs_b);
+						const Teuchos::RCP<const Thyra::VectorBase<Scalar>> &Mrhs_b);
 
   /** \brief  Compute the Phi function of cdt times Jacobian for a linear combination with right hand side vectors Mrhs_B
    *
    *  The vectors in Mrhs_B are at the index of the vector corresponding to the phi_order of the
-   *  respective Phi function, Mrhs_b[0] is the rhs for the matrix exponential.
+   *  respective Phi function, Mrhs_b[0] is the rhs for the matrix exponential, Mrhs_b[1] is the
+   *  right-hand side for the phi_1 function. A Teuchos::null RCP is interpreted as a zero vector.
    *  For an implicit model, the right hand side contains a multiplication with the mass matrix M,
    *  which is solved as part of this method.
    */
   virtual Thyra::SolveStatus<Scalar> computePhis(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
-						 const Scalar cdt,
-						 const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> Mrhs_B);
+                                                 const Scalar cdt,
+                                                 const Teuchos::ArrayView<const Teuchos::RCP<const Thyra::VectorBase<Scalar>>> &Mrhs_B);
 
   // TODO: refactor int -> Thyra::Ordinal?
-  //                std::vector -> Teuchos::Array or Teuchos::ArrayRCP or Teuchos::Tuple?
 
  protected:
   std::string name_;
