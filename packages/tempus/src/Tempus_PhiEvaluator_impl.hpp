@@ -194,7 +194,7 @@ template<class Scalar>
 Thyra::SolveStatus<Scalar>
 PhiEvaluator<Scalar>::computePhi(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
 				 const int phi_order, const Scalar cdt,
-				 const Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mrhs_b)
+				 const Teuchos::RCP<const Thyra::VectorBase<Scalar>> &Mrhs_b)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
     phi_order < 0, std::logic_error,
@@ -203,9 +203,9 @@ PhiEvaluator<Scalar>::computePhi(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x
   if (useAtildeForSingleRHS_ && phi_order > 0)
   {
     // Use linear combination extension formula and matrix exponential
-    std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> Mrhs_B(phi_order+1);
+    Teuchos::ArrayRCP<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> Mrhs_B(phi_order+1);
     Mrhs_B[phi_order] = Mrhs_b;
-    return this->computePhis(x, cdt, Mrhs_B);
+    return this->computePhis(x, cdt, Mrhs_B());
   }
   else
   {
@@ -233,8 +233,8 @@ PhiEvaluator<Scalar>::computePhi(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x
 template <class Scalar>
 Thyra::SolveStatus<Scalar>
 PhiEvaluator<Scalar>::computePhis(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
-				  const Scalar cdt,
-				  const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> Mrhs_B)
+                                  const Scalar cdt,
+                                  const Teuchos::ArrayView<const Teuchos::RCP<const Thyra::VectorBase<Scalar>>> &Mrhs_B)
 {
   const int max_phi_order = Mrhs_B.size() - 1;
 
@@ -254,7 +254,7 @@ PhiEvaluator<Scalar>::computePhis(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> 
   this->phiLinSolv_->computeMassMatrix(*inArgs_lin_);
   this->phiLinSolv_->computeJacobian(*inArgs_lin_);
 
-  std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> rhs_B(max_phi_order+1);
+  Teuchos::ArrayRCP<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> rhs_B(max_phi_order+1);
 
   // Invert the mass matrix out of the right hand sides
   // TODO: This might be more efficient to do on the combined MultiVector that will be assembled in buildb
@@ -287,7 +287,7 @@ PhiEvaluator<Scalar>::computePhis(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> 
 
   // Build extended matrix
   this->phiLinSolv_->buildK(max_phi_order);
-  this->phiLinSolv_->buildb(rhs_B);
+  this->phiLinSolv_->buildb(rhs_B());
   const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> Atilde = this->phiLinSolv_->buildATilde(cdt);
 
   // Build initial vector and compute matrix exponential in place
@@ -472,7 +472,7 @@ void PhiLinearSolver<Scalar>::buildK(const Thyra::Ordinal p)
 }
 
 template <class Scalar>
-void PhiLinearSolver<Scalar>::buildb(const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> rhs_B)
+void PhiLinearSolver<Scalar>::buildb(const Teuchos::ArrayView<const Teuchos::RCP<const Thyra::VectorBase<Scalar>>> &rhs_B)
 {
   int p = rhs_B.size() - 1;
 

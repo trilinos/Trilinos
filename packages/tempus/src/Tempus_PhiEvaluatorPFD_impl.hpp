@@ -45,7 +45,7 @@ PhiEvaluatorPFD<Scalar>::getValidParameters() const
 template <class Scalar>
 Thyra::SolveStatus<Scalar> PhiEvaluatorPFD<Scalar>::computePhi(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> phiv,
 							       const int k, const Scalar cdt,
-							       const Teuchos::RCP<const Thyra::VectorBase<Scalar>> rhs_b)
+							       const Teuchos::RCP<const Thyra::VectorBase<Scalar>> &Mrhs_b)
 {
   // TODO: right now, hard-codes 'CN' method and k == 1. Generalize.
 
@@ -57,7 +57,7 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorPFD<Scalar>::computePhi(const Teuchos::Pt
   const Scalar alpha = Scalar(1.0);
   const Scalar beta  = Scalar(0.5) * cdt;
 
-  Thyra::SolveStatus<Scalar> sStatus = this->phiLinSolv_->solveMpJ(*this->inArgs_lin_, phiv, rhs_b, alpha, beta);
+  Thyra::SolveStatus<Scalar> sStatus = this->phiLinSolv_->solveMpJ(*this->inArgs_lin_, phiv, Mrhs_b, alpha, beta);
 
   //TODO: make this configurable
   Teuchos::RCP<Teuchos::FancyOStream> out =
@@ -82,17 +82,17 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorPFD<Scalar>::computePhi(const Teuchos::Pt
 
 template <class Scalar>
 Thyra::SolveStatus<Scalar> PhiEvaluatorPFD<Scalar>::computePhis(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
-								const Scalar cdt,
-								const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> rhs_B)
+                                                                const Scalar cdt,
+                                                                const Teuchos::ArrayView<const Teuchos::RCP<const Thyra::VectorBase<Scalar>>> &Mrhs_B)
 {
-  bool not_phi1 = (rhs_B.size() != 2) || (rhs_B[0] != Teuchos::null);
+  bool not_phi1 = (Mrhs_B.size() != 2) || (Mrhs_B[0] != Teuchos::null);
 
   TEUCHOS_TEST_FOR_EXCEPTION(
       not_phi1,
       std::invalid_argument,
       "PhiEvaluatorPFD<Scalar>::computePhis is only implemented for k=1");
 
-  return this->computePhi(x, 1, cdt, rhs_B[1]);
+  return this->computePhi(x, 1, cdt, Mrhs_B[1]);
 }
 
 template <class Scalar>
