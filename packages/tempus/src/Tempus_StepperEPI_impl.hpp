@@ -222,9 +222,9 @@ void StepperEPI<Scalar>::takeStep(
 
     // if requested, use the EPI3 3rd order update
     if (useEPI3) {
-      RCP<Thyra::VectorBase<Scalar>> Remf = computeRemf(xOldOld, tOldOld, xOld, xDot, p, Mf);
+      RCP<Thyra::VectorBase<Scalar>> Remf = computeRemf(xOldOld, tOldOld, xOld, xDot, dt, Mf);
       // Add (2/3)*R to phi_2 term
-      Thyra::V_S(Remf.ptr(), 2.0/3.0);
+      Thyra::scale((2.0 / 3.0), Remf.ptr());
       if (Mrhs_B[2] != Teuchos::null) {
         Thyra::Vp_V(Teuchos::rcp_const_cast<Thyra::VectorBase<Scalar>>(Mrhs_B[2]).ptr(), *Remf);
       } else {
@@ -263,13 +263,17 @@ template<class Scalar>
 Teuchos::RCP<Thyra::VectorBase<Scalar>>
 StepperEPI<Scalar>::computeRemf(
     const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& xr,
-    const Scalar                                         tr,
+    const Scalar tr,
     const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& x0,
-    const Teuchos::RCP<Thyra::VectorBase<Scalar>>&       xDot,
-    const Teuchos::RCP<ImplicitODEParameters<Scalar>>&   p,
+    const Teuchos::RCP<Thyra::VectorBase<Scalar>>& xDot,
+    const Scalar dt,
     const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& Mf
 )
 {
+  Teuchos::RCP<TimeDerivative<Scalar> > timeDer;
+  timeDer = Teuchos::rcp(new StepperEPITimeDerivative<Scalar>(1/dt, xr));
+  auto p = Teuchos::rcp(new ImplicitODEParameters<Scalar>(timeDer, dt, Scalar(0.0), Scalar(1.0)));
+
   // Eval the rhs at (xr, tr)
   // Mf_old = M^{-1}*F_impl(xr, tr)
   Teuchos::RCP<Thyra::VectorBase<Scalar>> Mf_old = xr->clone_v();
@@ -281,14 +285,14 @@ StepperEPI<Scalar>::computeRemf(
 
   // J_xd = -(M^{-1}*J) * (xr - x0)
   Teuchos::RCP<Thyra::VectorBase<Scalar>> J_xd = x0->clone_v();
-  Thyra::assign(J_xd.ptr(), Scalar(0.0));
+  // Thyra::assign(J_xd.ptr(), Scalar(0.0));
   phiEvaluator_->applyJacobian(J_xd.ptr(), xd);
 
   // R = Mf - Mf_old + J_xd
   // Mf is rhs at the current time: M^{-1}*F_impl(x0, t0)
   Teuchos::RCP<Thyra::VectorBase<Scalar>> R = Mf->clone_v();
   Thyra::Vp_StV(R.ptr(), Scalar(-1.0), *Mf_old);
-  Thyra::Vp_StV(R.ptr(), Scalar( 1.0), *J_xd);
+  Thyra::Vp_StV(R.ptr(), Scalar(1.0), *J_xd);
 
   return R;
 }

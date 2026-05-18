@@ -158,7 +158,7 @@ private:
     const Scalar                                         tr,
     const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& x0,
     const Teuchos::RCP<Thyra::VectorBase<Scalar>>&       xDot,
-    const Teuchos::RCP<ImplicitODEParameters<Scalar>>&   p,
+    const Scalar                                         dt,
     const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& Mf
   );
 
