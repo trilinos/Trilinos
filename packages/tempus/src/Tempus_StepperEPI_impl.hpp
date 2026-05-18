@@ -362,8 +362,7 @@ void StepperEPI<Scalar>::setStepperExponentialValues(
   Teuchos::RCP<Teuchos::ParameterList> phiPL = Teuchos::null;
 
   temporal_finite_difference_eps_ = pl->get<double>("Epsilon for RHS finite difference", 1e-4);
-  // TODO: get this on factory init
-  order_ = 2.0;
+  order_ = pl->get<Scalar>("EPI Order", 2.0);
 
   if (pl != Teuchos::null) {
     // TODO read in the pl for the exponential solver
