@@ -103,9 +103,9 @@ public:
 
     /// Get a default (initial) StepperState
     virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getDefaultStepperState() override;
-    virtual Scalar getOrder() const override {return 2.0;}
+    virtual Scalar getOrder() const override {return order_;}
     virtual Scalar getOrderMin() const override {return 2.0;}
-    virtual Scalar getOrderMax() const override {return 2.0;} //order is 2 for autonomous problems
+    virtual Scalar getOrderMax() const override {return 3.0;}
 
     virtual bool isExplicit() const override {return false;}
     virtual bool isImplicit() const override {return true;}
@@ -117,7 +117,7 @@ public:
   //@}
 
   // TODO: not sure what alpha should be for an exponential method
-  // figure out where this is needed exterally (public) 
+  // figure out where this is needed exterally (public)
   /// Return alpha = d(xDot)/dx.
   virtual Scalar getAlpha(const Scalar dt) const override { return Scalar(1.0)/dt; }
   /// Return beta  = d(x)/dx.
@@ -128,7 +128,7 @@ public:
 
   /// Return a valid ParameterList with current settings.
   Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const override;
-  
+
   /// \name Overridden from Teuchos::Describable
   //@{
     virtual void describe(Teuchos::FancyOStream        & out,
@@ -139,7 +139,7 @@ public:
 
   void setPhiEvaluatorParameterList(const Teuchos::RCP<Teuchos::ParameterList>& pl)
   { phiEvaluatorPL_ = pl; }
-  
+
 private:
 
   /// Implementation of computeStep*() methods
@@ -151,6 +151,17 @@ private:
     const int param_index,
     const int deriv_index = 0) const;
 
+  /// Compute the nonlinear remainder
+  ///   R = F(xr,tr) - F(x0,t0) - J_{x0}*(xr-x0)
+  Teuchos::RCP<Thyra::VectorBase<Scalar>> computeRemf(
+    const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& xr,
+    const Scalar                                         tr,
+    const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& x0,
+    const Teuchos::RCP<Thyra::VectorBase<Scalar>>&       xDot,
+    const Teuchos::RCP<ImplicitODEParameters<Scalar>>&   p,
+    const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& Mf
+  );
+
 private:
 
   Teuchos::RCP<StepperEPIAppAction<Scalar> > stepperEPIAppAction_;
@@ -159,7 +170,12 @@ private:
 
   Teuchos::RCP<Teuchos::ParameterList> phiEvaluatorPL_;
 
+  /// Finite difference step size used for RHS time derivative estimation
+  /// needed for nonautonomous correction.
   Scalar temporal_finite_difference_eps_;
+
+  /// temporal Integration order
+  Scalar order_;
 
 };
 
