@@ -161,9 +161,13 @@ void StepperEPI<Scalar>::takeStep(
     // On the first step only two states exist so xOldOld remains null and the
     // method runs as pure EPI2.
     RCP<const Thyra::VectorBase<Scalar> > xOldOld = Teuchos::null;
-    if (solutionHistory->getNumStates() >= 3)
+    Scalar tOldOld = 1.0;
+    bool useEPI3 = false;
+    if (solutionHistory->getNumStates() >= 3 && order_ > 2.0) {
       xOldOld = solutionHistory->getStateTimeIndexNM2()->getX();
-    // TODO: use xOldOld in EPI3 formula
+      tOldOld = solutionHistory->getStateTimeIndexNM2()->getTime();
+      useEPI3 = true;
+    }
 
     stepperEPIAppAction_->execute(solutionHistory, thisStepper,
       StepperEPIAppAction<Scalar>::ACTION_LOCATION::BEFORE_EXP);
@@ -184,20 +188,6 @@ void StepperEPI<Scalar>::takeStep(
     // Mrhs_B is default initialized with Teuchos::null
     Mrhs_B[1] = Mf;
 
-    // if requested, compute the time derivative for the nonaotonomous correction
-    if (temporal_finite_difference_eps_ > 0.0) {
-      RCP<Thyra::VectorBase<Scalar>> dt_Mf_deriv = Mf->clone_v();
-      this->evaluateImplicitODE(dt_Mf_deriv, x, xDot, time + dt*temporal_finite_difference_eps_, p);
-      // compute -dt times the temporal finite difference of Mf, subtract dt_Mf_deriv / eps from Mf / eps
-      Scalar one_over_eps = Scalar(1. / temporal_finite_difference_eps_);
-      Thyra::linear_combination<Scalar>(Teuchos::tuple(one_over_eps),
-                                        Teuchos::tuple(Mf.getConst().ptr()),
-                                        -one_over_eps,
-                                        dt_Mf_deriv.ptr());
-      // compute rhs for the phi_2 function.
-      Mrhs_B[2] = dt_Mf_deriv;
-    }
-
     // Using the appModel
     RCP<const Thyra::ModelEvaluator<Scalar>> appModel = this->getModel();
     Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs = appModel->createInArgs();
@@ -211,23 +201,47 @@ void StepperEPI<Scalar>::takeStep(
     RCP<Thyra::VectorBase<Scalar>> vphi = x->clone_v();
     assign(vphi.ptr(), ST::zero());  // Must initialize to a guess before solve!
 
+    // setup system Jacobian computation at the current time
     phiEvaluator_->setLinearizationPoint(inArgs);
-    // TODO: Avoid using hard coded EPI2 (p=2) and adjust the logic for general p.
 
-    // unless temporal_finite_difference_eps_ is not positive, add the nonautonomous correction term
+    // if requested, compute the time derivative for the nonaotonomous correction
     if (temporal_finite_difference_eps_ > 0.0) {
+      RCP<Thyra::VectorBase<Scalar>> dt_Mf_deriv = Mf->clone_v();
+      this->evaluateImplicitODE(
+          dt_Mf_deriv, x, xDot, time + dt*temporal_finite_difference_eps_, p);
+      // compute -dt times the temporal finite difference of Mf,
+      // subtract dt_Mf_deriv / eps from Mf / eps
+      Scalar one_over_eps = Scalar(1. / temporal_finite_difference_eps_);
+      Thyra::linear_combination<Scalar>(Teuchos::tuple(one_over_eps),
+                                        Teuchos::tuple(Mf.getConst().ptr()),
+                                        -one_over_eps,
+                                        dt_Mf_deriv.ptr());
+      // compute rhs for the phi_2 function.
+      Mrhs_B[2] = dt_Mf_deriv;
+    }
+
+    // if requested, use the EPI3 3rd order update
+    if (useEPI3) {
+      RCP<Thyra::VectorBase<Scalar>> Remf = computeRemf(xOldOld, tOldOld, xOld, xDot, p, Mf);
+      // Add (2/3)*R to phi_2 term
+      Thyra::V_S(Remf.ptr(), 2.0/3.0);
+      if (Mrhs_B[2] != Teuchos::null) {
+        Thyra::Vp_V(Teuchos::rcp_const_cast<Thyra::VectorBase<Scalar>>(Mrhs_B[2]).ptr(), *Remf);
+      } else {
+        Mrhs_B[2] = Remf;
+      };
+    }
+
+    // unless temporal_finite_difference_eps_ is not positive,
+    // add the nonautonomous correction term
+    if (temporal_finite_difference_eps_ > 0.0 || useEPI3) {
       sStatus = phiEvaluator_->computePhis(vphi.ptr(), dt, Mrhs_B());
     }
     else {
       sStatus = phiEvaluator_->computePhi(vphi.ptr(), 1, dt, Mf);
     }
 
-    // std::cout << "xO[0,1] = " << Thyra::get_ele(*xOld, 0) << " " << Thyra::get_ele(*xOld, 1) << std::endl;
-    // std::cout << "x[0,1]  = " << Thyra::get_ele(*x, 0) << " " << Thyra::get_ele(*x, 1) << std::endl;
-    // std::cout << "vphi[0,1]  = " << Thyra::get_ele(*vphi, 0) << " " << Thyra::get_ele(*vphi, 1) << std::endl;
     Thyra::V_VpStV(x.ptr(), *xOld, Scalar(-1.0)*dt, *vphi);
-
-    // std::cout << sStatus << std::endl;
 
     stepperEPIAppAction_->execute(solutionHistory, thisStepper,
       StepperEPIAppAction<Scalar>::ACTION_LOCATION::AFTER_EXP);
@@ -244,6 +258,40 @@ void StepperEPI<Scalar>::takeStep(
   return;
 }
 
+
+template<class Scalar>
+Teuchos::RCP<Thyra::VectorBase<Scalar>>
+StepperEPI<Scalar>::computeRemf(
+    const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& xr,
+    const Scalar                                         tr,
+    const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& x0,
+    const Teuchos::RCP<Thyra::VectorBase<Scalar>>&       xDot,
+    const Teuchos::RCP<ImplicitODEParameters<Scalar>>&   p,
+    const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& Mf
+)
+{
+  // Eval the rhs at (xr, tr)
+  // Mf_old = M^{-1}*F_impl(xr, tr)
+  Teuchos::RCP<Thyra::VectorBase<Scalar>> Mf_old = xr->clone_v();
+  this->evaluateImplicitODE(Mf_old, Teuchos::rcp_const_cast<Thyra::VectorBase<Scalar>>(xr), xDot, tr, p);
+
+  // xd = xr - x0
+  Teuchos::RCP<Thyra::VectorBase<Scalar>> xd = xr->clone_v();
+  Thyra::Vp_StV(xd.ptr(), Scalar(-1.0), *x0);
+
+  // J_xd = -(M^{-1}*J) * (xr - x0)
+  Teuchos::RCP<Thyra::VectorBase<Scalar>> J_xd = x0->clone_v();
+  Thyra::assign(J_xd.ptr(), Scalar(0.0));
+  phiEvaluator_->applyJacobian(J_xd.ptr(), xd);
+
+  // R = Mf - Mf_old + J_xd
+  // Mf is rhs at the current time: M^{-1}*F_impl(x0, t0)
+  Teuchos::RCP<Thyra::VectorBase<Scalar>> R = Mf->clone_v();
+  Thyra::Vp_StV(R.ptr(), Scalar(-1.0), *Mf_old);
+  Thyra::Vp_StV(R.ptr(), Scalar( 1.0), *J_xd);
+
+  return R;
+}
 
 
 /** \brief Provide a StepperState to the SolutionState.
@@ -314,12 +362,14 @@ void StepperEPI<Scalar>::setStepperExponentialValues(
   Teuchos::RCP<Teuchos::ParameterList> phiPL = Teuchos::null;
 
   temporal_finite_difference_eps_ = pl->get<double>("Epsilon for RHS finite difference", 1e-4);
+  // TODO: get this on factory init
+  order_ = 2.0;
 
   if (pl != Teuchos::null) {
     // TODO read in the pl for the exponential solver
     phiPL = sublist(pl, "PhiEvaluator");
   }
-  
+
   // TODO: is this the right place to initialize the PhiEvaluator?
   auto phif = Teuchos::rcp(new PhiEvaluatorFactory<Scalar>());
   phiEvaluator_ = phif->createPhiEvaluator(phiPL);
