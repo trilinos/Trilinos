@@ -211,55 +211,6 @@ namespace BaskerNS
   }//end InitMatrix (int, int , int, int *, int *, entry *)
 
 
-  template <class Int, class Entry, class Exe_Space>
-  BASKER_INLINE
-  int Basker<Int, Entry, Exe_Space>::Symbolic( Int option )
-  {
-    #ifdef BASKER_TIMER 
-    Kokkos::Timer timer;
-    double time = 0.0;
-    #endif
-
-    //symmetric_sfactor();
-    sfactor(); // NDE: This is the 'old' routine or alternative? When is this case used?
-
-    if(option == 0)
-    {}
-    else if(option == 1)
-    {}
-
-    #ifdef BASKER_TIMER
-    time = timer.seconds();
-    stats.time_sfactor += time;
-    std::cout << "Basker Symbolic total time: " << time << std::endl;
-    #endif
-
-    // NDE store matrix dims here
-    sym_gn = A.ncol;
-    sym_gm = A.nrow;
-    MALLOC_ENTRY_1DARRAY(x_view_ptr_copy, sym_gn); //used in basker_solve_rhs - move alloc
-    MALLOC_ENTRY_1DARRAY(y_view_ptr_copy, sym_gm);
-
-    MALLOC_ENTRY_1DARRAY(x_view_ptr_scale, sym_gn); //used in basker_solve_rhs - move alloc
-    MALLOC_ENTRY_1DARRAY(y_view_ptr_scale, sym_gm);
-
-    MALLOC_INT_1DARRAY(perm_inv_comp_array , sym_gm); //y
-    MALLOC_INT_1DARRAY(perm_comp_array, sym_gn); //x
-
-    Int lwork = 3 * sym_gn;
-    if (btf_tabs_offset != 0) {
-      lwork = (BTF_A.nnz > lwork ? BTF_A.nnz : lwork);
-      lwork = (BTF_B.nnz > lwork ? BTF_B.nnz : lwork);
-      lwork = (BTF_C.nnz > lwork ? BTF_C.nnz : lwork);
-    }
-    MALLOC_INT_1DARRAY(perm_comp_iworkspace_array, lwork); 
-    MALLOC_ENTRY_1DARRAY(perm_comp_fworkspace_array, sym_gn);
-    permute_composition_for_solve(sym_gn);
-
-    return 0;
-  }//end Symbolic
-
-
   //This is the interface for Amesos2
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
@@ -288,6 +239,7 @@ namespace BaskerNS
     {
       std::cout << "\n == Basker Symbolic ==" << std::endl;
       std::cout << "Matrix dims: " << nrow << " x " << ncol << ", nnz = " << nnz << std::endl;
+      std::cout << std::flush;
     }
 
     //Init Matrix A.
@@ -385,7 +337,7 @@ namespace BaskerNS
       #endif
       //-------------------------------------------------
       //Find BTF ordering
-      if(btf_order2() != BASKER_SUCCESS)
+      if(btf_order() != BASKER_SUCCESS)
       {
         if(Options.verbose == BASKER_TRUE)
         {
@@ -461,26 +413,26 @@ namespace BaskerNS
     }
 
     // NDE store matrix dims here for comparison in Factor
-    sym_gn = A.ncol;
-    sym_gm = A.nrow;
-    MALLOC_ENTRY_1DARRAY(x_view_ptr_copy, sym_gn); //used in basker_solve_rhs
-    MALLOC_ENTRY_1DARRAY(y_view_ptr_copy, sym_gm);
+    symbolic_gn = A.ncol;
+    symbolic_gm = A.nrow;
+    MALLOC_ENTRY_1DARRAY(x_view_ptr_copy, symbolic_gn); //used in basker_solve_rhs
+    MALLOC_ENTRY_1DARRAY(y_view_ptr_copy, symbolic_gm);
 
-    MALLOC_ENTRY_1DARRAY(x_view_ptr_scale, sym_gn); //used in basker_solve_rhs
-    MALLOC_ENTRY_1DARRAY(y_view_ptr_scale, sym_gm);
+    MALLOC_ENTRY_1DARRAY(x_view_ptr_scale, symbolic_gn); //used in basker_solve_rhs
+    MALLOC_ENTRY_1DARRAY(y_view_ptr_scale, symbolic_gm);
 
-    MALLOC_INT_1DARRAY(perm_inv_comp_array, sym_gm); //y
-    MALLOC_INT_1DARRAY(perm_comp_array, sym_gn); //x
+    MALLOC_INT_1DARRAY(perm_inv_comp_array, symbolic_gm); //y
+    MALLOC_INT_1DARRAY(perm_comp_array, symbolic_gn); //x
 
-    Int lwork = 3 * sym_gn;
+    Int lwork = 3 * symbolic_gn;
     if (btf_tabs_offset != 0) {
       lwork = (BTF_A.nnz > lwork ? BTF_A.nnz : lwork);
       lwork = (BTF_B.nnz > lwork ? BTF_B.nnz : lwork);
       lwork = (BTF_C.nnz > lwork ? BTF_C.nnz : lwork);
     }
     MALLOC_INT_1DARRAY(perm_comp_iworkspace_array, lwork);
-    MALLOC_ENTRY_1DARRAY(perm_comp_fworkspace_array, sym_gn);
-    permute_composition_for_solve(sym_gn);
+    MALLOC_ENTRY_1DARRAY(perm_comp_fworkspace_array, symbolic_gn);
+    permute_composition_for_solve(symbolic_gn);
 
     /*printf( " end symbolic with\n original A = [\n" );
     for(Int j = 0; j < ncol; j++) {
@@ -516,40 +468,44 @@ namespace BaskerNS
   } //end Symbolic()
 
 
+  // This is the interface for partial factorization
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  int Basker<Int, Entry, Exe_Space>::Factor(Int option)
+  int Basker<Int, Entry, Exe_Space>::Symbolic
+  (
+   Int nrow,
+   Int ncol,
+   Int nnz, 
+   Int *col_ptr, 
+   Int *row_idx, 
+   Entry *val,
+   Int *schur_part_in,
+   Entry *schur_out_in,
+   bool crs_transpose_needed_
+  )
   {
-    #ifdef BASKER_TIMER
-    Kokkos::Timer timer;
-    double time = 0.0;
-    #endif
-
-    if(symb_flag != BASKER_TRUE)
-    {
-      if(Options.verbose == BASKER_TRUE) {
-        printf("BASKER: YOU NEED TO RUN SYMBOLIC BEFORE FACTOR\n");
+    if (Options.partial_facto != 0) {
+      // store schur-part into internal view (in case user-pointer goes out of scope?)
+      schur_size = 0;
+      MALLOC_INT_1DARRAY(schur_part, nrow);
+      if (schur_part_in == nullptr) {
+        for (Int i=0; i<nrow; i++) schur_part(i) = 0;
+      } else {
+        for (Int i=0; i<nrow; i++) {
+          schur_part(i) = schur_part_in[i];
+          if (schur_part(i) == 1) schur_size ++;
+        }
+        // allocate storage for schur complement (schur_out_ptr may be nullptr, if user does not want it)
+        MALLOC_ENTRY_RANK2DARRAY(schur_out, schur_size, schur_size);
       }
-      return BASKER_ERROR;
+      schur_out_ptr = schur_out_in;
+
+      Options.amd_dom = 0; // no AMD (since partitioned, and AMD/ND on each leaf)
+      Options.btf_matching = -1;  // no global matching
+      Options.blk_matching = 0;   // no local matching (on one big blk)
     }
-
-    //Reset error codes
-    reset_error();
-
-    //Do numerical factorization
-    factor_notoken(option);
-
-    #ifdef BASKER_TIMER
-    time += timer.seconds();
-    stats.time_nfactor += time;
-    std::cout << "Basker factor_notoken time: " << time << std::endl;
-    std::cout << "Basker Factor total   time: " << time << std::endl;
-    #endif
-
-    factor_flag = BASKER_TRUE;
-
-    return 0;
-  }//end Factor()
+    return Symbolic(nrow, ncol, nnz, col_ptr, row_idx, val, crs_transpose_needed_);
+  }
 
 
   //This is the interface for Amesos2
@@ -1526,7 +1482,7 @@ namespace BaskerNS
         } else {
           // ----------------------------------------------------------------------------------------------
           // compute & apply ND on a big block A
-          info_scotch = apply_scotch_partition(keep_zeros);
+          info_scotch = compute_partition(keep_zeros);
         }
         if (info_scotch != BASKER_SUCCESS) {
           return info_scotch;
@@ -1901,7 +1857,8 @@ namespace BaskerNS
     if(Options.verbose == BASKER_TRUE) {
       sfactorcopy_time += timer_sfactorcopy.seconds();
       std::cout << "Basker Factor sfactor_copy2 time: " << sfactorcopy_time << std::endl;
-      std::cout << " >> error = " << err << std::endl;
+      if (err != 0) std::cout << " >> error (" << err << ")" << std::endl;
+      else          std::cout << " >> success (" << err << ")" << std::endl;
     }
     if(err == BASKER_ERROR)
     { return BASKER_ERROR; }
@@ -1930,8 +1887,8 @@ namespace BaskerNS
       return BASKER_ERROR; 
     }
 
-    if ( sym_gn != gn || sym_gm != gm ) {
-      printf( "ShyLUBasker Factor error: Matrix dims at Symbolic and Factor stages do not agree (sym_gm=%d, gn=%d, gm=%d)",(int)sym_gn,(int)gn,(int)gm);
+    if ( symbolic_gn != gn || symbolic_gm != gm ) {
+      printf( "ShyLUBasker Factor error: Matrix dims at Symbolic and Factor stages do not agree (symbolic_gm=%d, gn=%d, gm=%d)",(int)symbolic_gn,(int)gn,(int)gm);
       printf( " - Symbolic reordered structure will not apply.\n");
       //exit(EXIT_FAILURE);
       return BASKER_ERROR; 
@@ -2083,18 +2040,19 @@ namespace BaskerNS
     //Next test if Kokkos has that many threads!
     //This is a common mistake in mpi-based apps
     #ifdef KOKKOS_ENABLE_OPENMP
-    check_value = Kokkos::OpenMP::impl_max_hardware_threads();
+    check_value = Kokkos::OpenMP().concurrency();
     #else
     check_value = 1;
     #endif
-    if(nthreads > check_value)
-    {
+    if(Options.verbose == BASKER_TRUE) printf( "Basker SetThreads: Checking user-requested %d threads against availalbe %d cores\n", int(nthreads), int(check_value) );
+    if(nthreads > check_value) {
       if(Options.verbose == BASKER_TRUE) {
         printf("Basker SetThreads Assert: Number of thread not available (%d > %d). Resetting to %d.",
                 int(nthreads), int(check_value), int(check_value));
       }
       nthreads = check_value;
     }
+    BASKER_ASSERT((Options.partial_facto == 0 || nthreads > 1), "Basker SetThreads Assert: Partial Factorization requires at least two threads.");
 
     // Finally, set the internal number of threads used by ShyLU-Basker.
     num_threads = nthreads;

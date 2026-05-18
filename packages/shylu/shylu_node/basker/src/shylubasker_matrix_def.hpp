@@ -687,13 +687,15 @@ namespace BaskerNS
   
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  void BaskerMatrix<Int,Entry,Exe_Space>::print_matrix(const char *filename)
+  void BaskerMatrix<Int,Entry,Exe_Space>::print_matrix(const char *filename, const int base)
   {
     FILE *fp = fopen(filename, "w");
     if (nrow > 0 && ncol > 0) {
       for(Int j = 0; j < ncol; j++) {
         for(Int k = col_ptr[j]; k < col_ptr[j+1]; k++) {
-          fprintf(fp,"%d %d %.16e\n", (int)row_idx[k], (int)j, val[k]);
+          int row = base+row_idx[k];
+          int col = base+j;
+          fprintf(fp,"%d %d %.16e\n", row, col, val[k]);
         }
       }
     }

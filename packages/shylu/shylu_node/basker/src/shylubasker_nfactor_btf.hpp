@@ -7,8 +7,8 @@
 // *****************************************************************************
 // @HEADER
 
-#ifndef SHYLUBASKER_NFACTOR_DIAG_HPP
-#define SHYLUBASKER_NFACTOR_DIAG_HPP
+#ifndef SHYLUBASKER_NFACTOR_BTF_HPP
+#define SHYLUBASKER_NFACTOR_BTF_HPP
 
 #include "shylubasker_matrix_decl.hpp"
 #include "shylubasker_matrix_view_decl.hpp"
@@ -21,13 +21,13 @@
 #include <Kokkos_Timer.hpp>
 
 //#define BASKER_TIMER
-//#define BASKER_DEBUG_NFACTOR_DIAG
+//#define BASKER_DEBUG_NFACTOR_BTF
 
 namespace BaskerNS
 {
 
   template <class Int, class Entry, class Exe_Space>
-  struct kokkos_nfactor_diag
+  struct kokkos_nfactor_btf
   {
     //Comeback and cleanup kokkos
     typedef Exe_Space                        execution_space;
@@ -36,10 +36,10 @@ namespace BaskerNS
 
     Basker<Int,Entry,Exe_Space> *basker;
 
-    kokkos_nfactor_diag()
+    kokkos_nfactor_btf()
     {}
 
-    kokkos_nfactor_diag(Basker<Int,Entry,Exe_Space> *_basker)
+    kokkos_nfactor_btf(Basker<Int,Entry,Exe_Space> *_basker)
     {
       basker = _basker;
     }
@@ -69,14 +69,14 @@ namespace BaskerNS
 
       //printf("kid: %d c_size: %d numc: %d schunk: %d \n", kid, chunk_size, nchunks, chunk_start);
 
-      //basker->t_nfactor_diag(kid, chunk_start, 
+      //basker->t_nfactor_btf(kid, chunk_start, 
       //                       chunk_size);
 
       //extra
       //if(kid == 0)
       //{
       //  Int extra_start=chunk_size*total_threads;
-      //  basker->t_nfactor_diag(kid, extra_start,
+      //  basker->t_nfactor_btf(kid, extra_start,
       //                         chunks_left_over);
       //}
 
@@ -87,11 +87,11 @@ namespace BaskerNS
       Int chunk_size  = basker->btf_schedule(kid+1) - basker->btf_schedule(kid);
 
 
-      //printf(" > kokkos_nfactor_diag: Chunk start = %d, size = %d\n", chunk_start, chunk_size);
+      //printf(" > kokkos_nfactor_btf: Chunk start = %d, size = %d\n", chunk_start, chunk_size);
       int info = BASKER_SUCCESS;
       if(chunk_size > 0)
       {
-        info = basker->t_nfactor_diag(kid, chunk_start, chunk_size);
+        info = basker->t_nfactor_btf(kid, chunk_start, chunk_size);
       }
 
 #if defined(BASKER_SPLIT_A) 
@@ -103,19 +103,19 @@ namespace BaskerNS
           chunk_size = basker->btf_top_nblks - chunk_start;
         }
 
-        //printf( " Top D factor:t_nfactor_diag(kid=%d: chunk_start=%d, chunk_size=%d) with tab=%d top_tab=%d\n",kid,chunk_start,chunk_size,
+        //printf( " Top D factor:t_nfactor_btf(kid=%d: chunk_start=%d, chunk_size=%d) with tab=%d top_tab=%d\n",kid,chunk_start,chunk_size,
         //        basker->btf_tabs_offset,basker->btf_top_tabs_offset );
-        basker->t_nfactor_diag(kid, chunk_start, chunk_size);
+        basker->t_nfactor_btf(kid, chunk_start, chunk_size);
       }
 #endif
 
     }//end operator()
     
-  };//end kokkos_nfactor_diag
+  };//end kokkos_nfactor_btf
 
 
   template <class Int, class Entry, class Exe_Space>
-  struct kokkos_nfactor_diag_remalloc
+  struct kokkos_nfactor_btf_remalloc
   {
     //Comeback and cleanup kokkos
     typedef Exe_Space                        execution_space;
@@ -127,10 +127,10 @@ namespace BaskerNS
     INT_1DARRAY thread_start_top;
     INT_1DARRAY thread_start;
 
-    kokkos_nfactor_diag_remalloc()
+    kokkos_nfactor_btf_remalloc()
     {}
 
-    kokkos_nfactor_diag_remalloc
+    kokkos_nfactor_btf_remalloc
     (
      Basker<Int,Entry,Exe_Space> *_basker,
      INT_1DARRAY                 _thread_start_top,
@@ -155,14 +155,14 @@ namespace BaskerNS
 
       int info = BASKER_SUCCESS;
       Int chunk_start = thread_start(kid);
-      //printf(" > kokkos_nfactor_diag_remalloc: %d %d: start = %d (max=%d) \n", kid, thread_start(kid), chunk_start, BASKER_MAX_IDX);
+      //printf(" > kokkos_nfactor_btf_remalloc: %d %d: start = %d (max=%d) \n", kid, thread_start(kid), chunk_start, BASKER_MAX_IDX);
       if(chunk_start != BASKER_MAX_IDX)
       {
         Int chunk_size  = basker->btf_schedule(kid+1) - chunk_start;
 
         //printf("Chunk start: %d size: %d \n", chunk_start, chunk_size);
         if (chunk_size > 0) {
-          info = basker->t_nfactor_diag(kid, chunk_start, chunk_size);
+          info = basker->t_nfactor_btf(kid, chunk_start, chunk_size);
           if (info == BASKER_SUCCESS) {
             thread_start(kid) = basker->btf_schedule(kid+1);
           }
@@ -180,19 +180,19 @@ namespace BaskerNS
             chunk_size = basker->btf_top_nblks - chunk_start;
           }
 
-          basker->t_nfactor_diag(kid, chunk_start, chunk_size);
+          basker->t_nfactor_btf(kid, chunk_start, chunk_size);
         }
       }
 #endif
 
     }//end operator()
     
-  };//end kokkos_nfactor_diag_remalloc
+  };//end kokkos_nfactor_btf_remalloc
 
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  int Basker<Int,Entry,Exe_Space>::t_nfactor_diag
+  int Basker<Int,Entry,Exe_Space>::t_nfactor_btf
   (
    Int kid,
    Int schunk,
@@ -206,7 +206,7 @@ namespace BaskerNS
 
     //for(Int c = schunk+btf_tabs_offset;
     //    c < schunk+nchunk+btf_tabs_offset; ++c)
-    //printf( "\n >> t_nfactor_diag( c = %d .. %d) <<\n",schunk,schunk+nchunk-1 );
+    //printf( "\n >> t_nfactor_btf( c = %d .. %d) <<\n",schunk,schunk+nchunk-1 );
     for(Int c = schunk; c < schunk+nchunk; ++c)
     {
       Int c_size = btf_tabs(c+1)-btf_tabs(c);
@@ -235,11 +235,11 @@ namespace BaskerNS
     }//over all chunks 
     #ifdef BASKER_TIMER
     double nfactor_time = timer_nfactor.seconds();
-    std::cout << " > Basker nfactor_diag(" << schunk << ":" << schunk+nchunk-1 << ") : time: " << nfactor_time
+    std::cout << " > Basker nfactor_btf(" << schunk << ":" << schunk+nchunk-1 << ") : time: " << nfactor_time
               << std::endl << std::endl;
     #endif
     return BASKER_SUCCESS;
-  }//end t_nfactor_diag
+  }//end t_nfactor_btf
 
 
   template <class Int, class Entry, class Exe_Space>
@@ -344,7 +344,7 @@ namespace BaskerNS
       brow2 -= btf_tabs(btab);
     }
 
-    #ifdef BASKER_DEBUG_NFACTOR_DIAG
+    #ifdef BASKER_DEBUG_NFACTOR_BTF
     if (Options.verbose == BASKER_TRUE) {
       printf("CURRENT BLK: %ld \n", (long)c);
       printf("btab: %ld %ld\n", (long)btab, (long)c-btab);
@@ -403,8 +403,8 @@ namespace BaskerNS
     unnz = 0;
     lnnz = 0;
 
-    //#define BASKER_DEBUG_NFACTOR_DIAG
-    #ifdef BASKER_DEBUG_NFACTOR_DIAG
+    //#define BASKER_DEBUG_NFACTOR_BTF
+    #ifdef BASKER_DEBUG_NFACTOR_BTF
     if (Options.verbose == BASKER_TRUE && c == 4) {
       printf( " kid=%d: c: %d bcol=%d, brow2=%d, wsize=%d\n", (int)kid, (int)c, (int)bcol, (int)brow2, (int)ws_size );
       //if (c >= btab) {
@@ -449,7 +449,7 @@ namespace BaskerNS
     //for each column
     for(Int k = btf_tabs(c); k < btf_tabs(c+1); ++k)
     {
-      #ifdef BASKER_DEBUG_NFACTOR_DIAG
+      #ifdef BASKER_DEBUG_NFACTOR_BTF
       if (Options.verbose == BASKER_TRUE) {
         printf("\n------------ K=%d (%d) -------------\n", (int)(k-btf_tabs(c)), (int)k);
         BASKER_ASSERT(top == ws_size, "nfactor dig, top");
@@ -478,7 +478,7 @@ namespace BaskerNS
       #ifdef BASKER_TIMER
       timer_nfactor.reset();
       #endif
-      #ifdef BASKER_DEBUG_NFACTOR_DIAG
+      #ifdef BASKER_DEBUG_NFACTOR_BTF
       if (Options.verbose == BASKER_TRUE) {
         printf(" ptr[%d] = %d:%d", (int)(k-bcol), (int)M.col_ptr(k-bcol), (int)M.col_ptr(k-bcol+1));
       }
@@ -487,7 +487,7 @@ namespace BaskerNS
       {
         j = M.row_idx(i);
         j = j - brow2;
-        #ifdef BASKER_DEBUG_NFACTOR_DIAG
+        #ifdef BASKER_DEBUG_NFACTOR_BTF
         if (Options.verbose == BASKER_TRUE) {
           printf("\n Input(i=%d): %d(%d-%d) %d(%d-%d) %e", (int)i, (int)j, (int)M.row_idx(i), (int)brow2, (int)(k-bcol), (int)k, (int)bcol, std::real(M.val(i)));
           if (j < 0) {
@@ -525,7 +525,7 @@ namespace BaskerNS
       initi_time += timer_nfactor.seconds();
       #endif
 
-      #ifdef BASKER_DEBUG_NFACTOR_DIAG
+      #ifdef BASKER_DEBUG_NFACTOR_BTF
       if (Options.verbose == BASKER_TRUE) {
         printf("xnnz: %d ws_size: %d top: %d \n", 
                (int)xnnz, (int)ws_size, (int)top);
@@ -575,7 +575,7 @@ namespace BaskerNS
         }
         absv = abs(value);
 
-        #ifdef BASKER_DEBUG_NFACTOR_DIAG
+        #ifdef BASKER_DEBUG_NFACTOR_BTF
         if (Options.verbose == BASKER_TRUE) {
           printf("\nconsider X(%d)=%e -> %e, c=%d, i=%d, k=%d->%d: j=%d t=%d: val=%e,max=%e (off=%d, %d, %d)\n",
                  (int)j,std::real(X(j)),absv, (int)c, (int)i, (int)k,(int)(k-L.scol), (int)j, (int)t,
@@ -593,7 +593,7 @@ namespace BaskerNS
             maxv     = absv;
             pivot    = value;
             maxindex = j;
-            #ifdef BASKER_DEBUG_NFACTOR_DIAG
+            #ifdef BASKER_DEBUG_NFACTOR_BTF
             if (Options.verbose == BASKER_TRUE) {
               printf( " pivot=%e (k=%d, j=%d -> %d)\n", std::real(pivot), (int)k, (int)j, (int)(j+L.srow));
             }
@@ -603,7 +603,7 @@ namespace BaskerNS
           {
             digv = absv;
             digindex = j;
-            #ifdef BASKER_DEBUG_NFACTOR_DIAG
+            #ifdef BASKER_DEBUG_NFACTOR_BTF
             if (Options.verbose == BASKER_TRUE) {
               printf( " digv=%e (k=%d, brow=%d,bcol=%d)\n", absv, (int)(k), (int)(M.scol), (int)(M.srow));
             }
@@ -612,7 +612,7 @@ namespace BaskerNS
         }
       } //for (i = top; i < ws_size)
       //printf("b: %d lcnt: %d after \n", b, lcnt);
-      #ifdef BASKER_DEBUG_NFACTOR_DIAG
+      #ifdef BASKER_DEBUG_NFACTOR_BTF
       if (Options.verbose == BASKER_TRUE) {
         printf(" >> pivot=%e, maxindex=%d, k=%d (digv = %e, pivot_tol = %g)\n",
                std::real(pivot), (int)maxindex, (int)k, digv, Options.pivot_tol);
@@ -634,7 +634,7 @@ namespace BaskerNS
       {
         maxindex = digindex;
         pivot    = X(maxindex);
-        #ifdef BASKER_DEBUG_NFACTOR_DIAG
+        #ifdef BASKER_DEBUG_NFACTOR_BTF
         if (Options.verbose == BASKER_TRUE) {
           printf( " pivot -> %d %e (using diagonal)\n",maxindex,pivot );
         }
@@ -705,7 +705,7 @@ namespace BaskerNS
       #ifdef BASKER_TIMER
       pivot_time += timer_nfactor.seconds();
       #endif
-      #ifdef BASKER_DEBUG_NFACTOR_DIAG
+      #ifdef BASKER_DEBUG_NFACTOR_BTF
       if (Options.verbose == BASKER_TRUE) {
         printf( " > gperm(%d+%d = %d) = %d\n", (int)maxindex, (int)L.scol, (int)(maxindex+L.scol), (int)k );
         //for(Int ii = btf_tabs(c); ii < btf_tabs(c+1); ++ii) {
@@ -786,7 +786,7 @@ namespace BaskerNS
         j = pattern[i];
         t = gperm(j+L.srow);
 
-        #ifdef BASKER_DEBUG_NFACTOR_DIAG
+        #ifdef BASKER_DEBUG_NFACTOR_BTF
         if (Options.verbose == BASKER_TRUE) {
           printf("j = %d, t = %d, k = %d, x = %g\n",
                   (int)j, (int)t, (int)k, std::real(X(j)));
@@ -806,7 +806,7 @@ namespace BaskerNS
               U.val[unnz] = X[j];
               #endif
 
-              #ifdef BASKER_DEBUG_NFACTOR_DIAG
+              #ifdef BASKER_DEBUG_NFACTOR_BTF
               if (Options.verbose == BASKER_TRUE) {
                 printf("%d: U(%d,%d) = %f \n", (int)unnz, (int)U.row_idx(unnz), (int)(k-L.srow), std::real(U.val(unnz)));
               }
@@ -834,7 +834,7 @@ namespace BaskerNS
             L.val[lnnz] = X[j]/pivot;
             #endif
 
-            #ifdef BASKER_DEBUG_NFACTOR_DIAG
+            #ifdef BASKER_DEBUG_NFACTOR_BTF
             if (Options.verbose == BASKER_TRUE) {
               printf("%d: L(%d,%d) = %f \n", (int)lnnz, (int)L.row_idx(lnnz), (int)(k-L.srow), std::real(L.val(lnnz)));
             }
@@ -848,7 +848,7 @@ namespace BaskerNS
         }
         //Note: move x[j] inside of if() not 0..
         //..extra ops this way
-        #ifdef BASKER_DEBUG_NFACTOR_DIAG
+        #ifdef BASKER_DEBUG_NFACTOR_BTF
         if (Options.verbose == BASKER_TRUE) {
           printf("Zeroing element: %d \n", (int)j);
         }
@@ -921,14 +921,14 @@ namespace BaskerNS
 
     #ifdef BASKER_TIMER
     double total_time = timer_nfactor_tot.seconds();
-    std::cout << " ++ Basker nfactor_diag(" << c << ") : n=" << btf_tabs(c+1)-btf_tabs(c)
+    std::cout << " ++ Basker nfactor_btf(" << c << ") : n=" << btf_tabs(c+1)-btf_tabs(c)
               << " nnz(L)=" << lnnz << " nnz(U)= " << unnz << std::endl;
-    std::cout << " ++ Basker nfactor_diag(" << c << ") : init   time: " << initi_time << std::endl;
-    std::cout << " ++ Basker nfactor_diag(" << c << ") : update time: " << solve_time << std::endl;
-    std::cout << " ++ Basker nfactor_diag(" << c << ") : pivot  time: " << pivot_time << std::endl;
-    std::cout << " ++ Basker nfactor_diag(" << c << ") : scale  time: " << scale_time << std::endl;
-    std::cout << " ++ Basker nfactor_diag(" << c << ") : prune  time: " << prune_time << std::endl;
-    std::cout << " ++ Basker nfactor_diag(" << c << ") : total  time: " << total_time << std::endl << std::endl;
+    std::cout << " ++ Basker nfactor_btf(" << c << ") : init   time: " << initi_time << std::endl;
+    std::cout << " ++ Basker nfactor_btf(" << c << ") : update time: " << solve_time << std::endl;
+    std::cout << " ++ Basker nfactor_btf(" << c << ") : pivot  time: " << pivot_time << std::endl;
+    std::cout << " ++ Basker nfactor_btf(" << c << ") : scale  time: " << scale_time << std::endl;
+    std::cout << " ++ Basker nfactor_btf(" << c << ") : prune  time: " << prune_time << std::endl;
+    std::cout << " ++ Basker nfactor_btf(" << c << ") : total  time: " << total_time << std::endl << std::endl;
     #endif
     return 0;
   }//end t_factor_diag()
@@ -1275,7 +1275,7 @@ namespace BaskerNS
         Int k_i = t - L.scol;
         for(Int p = L.col_ptr(k_i)+1; p < L.col_ptr(k_i+1); ++p)
         {
-          #ifdef BASKER_DEBUG_NFACTOR_DIAG
+          #ifdef BASKER_DEBUG_NFACTOR_BTF
           if (Options.verbose == BASKER_TRUE) {
             #ifdef BASKER_2DL
             printf("Updating block %d row: %d with value: %f - %f * %f -> %f (j=%d, p=%d)\n",
@@ -1364,4 +1364,4 @@ namespace BaskerNS
 }//end namespace BaskerNS
 
 #undef BASKER_TIMER
-#endif//end BASKER_NFACTOR_DIAG_HPP
+#endif//end BASKER_NFACTOR_BTF_HPP

@@ -435,7 +435,7 @@ namespace BaskerNS
   //========BTF ERROR HANDLE==============//
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  int Basker<Int,Entry,Exe_Space>::nfactor_diag_error
+  int Basker<Int,Entry,Exe_Space>::nfactor_btf_error
   (
     INT_1DARRAY thread_start_top,
     INT_1DARRAY thread_start
@@ -481,7 +481,7 @@ namespace BaskerNS
       {
         Int liwork = thread_array(ti).iws_size*thread_array(ti).iws_mult;
         Int lework = thread_array(ti).ews_size*thread_array(ti).ews_mult;
-        BASKER_ASSERT(c >= 0, "nfactor_diag_error error_blk");
+        BASKER_ASSERT(c >= 0, "nfactor_btf_error error_blk");
         if(Options.verbose == BASKER_TRUE)
         {
           std::cout << " > THREADS: " << ti
@@ -576,9 +576,9 @@ namespace BaskerNS
     }
 
     //Should never be here
-    BASKER_ASSERT(0==1, "nfactor_diag_error, should never");
+    BASKER_ASSERT(0==1, "nfactor_btf_error, should never");
     return BASKER_SUCCESS;
-  }//end nfactor_diag_error
+  }//end nfactor_btf_error
 
 
   //======================//

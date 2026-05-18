@@ -77,15 +77,75 @@ namespace BaskerNS {
     {
       // NDE: Allocate a new array for the non-matching type; copy into that then pass that along
 
-      int return_value = 
+      int return_value =
         BaskerNS::Basker<Int, Entry, Exe_Space>::Symbolic
         (
          nrow,
          ncol,
-         nnz, 
-         col_ptr, 
-         row_idx, 
+         nnz,
+         col_ptr,
+         row_idx,
          val,
+         _crs_transpose_needed
+        );
+
+      return return_value;
+    }
+
+    // Symbolic partial-factorization interface
+    template < typename U >
+    BASKER_INLINE
+    int Symbolic
+    (Int nrow, Int ncol, typename std::enable_if< !std::is_same<Int,U>::value, Int>::type nnz, U *col_ptr, Int *row_idx,
+     Entry *val, Int * _schur_part, Entry *_schur_out, bool _crs_transpose_needed = false)
+    {
+      // NDE: Allocate a new array for the non-matching type; copy into that then pass that along
+      matching_type_col_ptr = new Int[ncol+1];
+
+    #ifdef KOKKOS_ENABLE_OPENMP
+    #pragma omp parallel for
+    #endif
+      for (Int i = 0; i < ncol+1; ++i)
+      {
+        matching_type_col_ptr[i] = col_ptr[i];
+      }
+
+      int return_value =
+        BaskerNS::Basker<Int, Entry, Exe_Space>::Symbolic
+        (
+         nrow,
+         ncol,
+         nnz,
+         matching_type_col_ptr,
+         row_idx,
+         val,
+         _schur_part,
+         _schur_out,
+         _crs_transpose_needed
+        );
+
+      //delete [] matching_type_col_ptr;
+
+      return return_value;
+    }
+
+    template < typename U >
+    BASKER_INLINE
+    int Symbolic
+    (Int nrow, Int ncol, typename std::enable_if< std::is_same<Int,U>::value, Int>::type nnz, U *col_ptr, Int *row_idx,
+     Entry * val, Int* _schur_part, Entry *_schur_out, bool _crs_transpose_needed = false)
+    {
+      int return_value =
+        BaskerNS::Basker<Int, Entry, Exe_Space>::Symbolic
+        (
+         nrow,
+         ncol,
+         nnz,
+         col_ptr,
+         row_idx,
+         val,
+         _schur_part,
+         _schur_out,
          _crs_transpose_needed
         );
 

@@ -272,7 +272,6 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
 
     #ifdef BASKER_TIMER 
     std::cout << " >> symmetric_sfactor::init : " << timer.seconds() << " seconds" << std::endl;
-
     double time1 = 0.0;
     double time1_2 = 0.0;
     double time1_3 = 0.0;
@@ -287,6 +286,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     if(Options.verbose == BASKER_TRUE)
     {
       printf("\n");
+      printf( "   Symmetric Sfactor\n" );
       printf("\n --------------- OVER DOMS ---------------\n");
       printf("\n");
     }
@@ -1567,7 +1567,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       #ifdef BASKER_TIMER
       printf(" > leaf nnz: (t_nnz = %ld + ncol = %ld) / 2 = %ld\n", (long)t_nnz,(long)M.ncol,(long)(t_nnz+M.ncol)/2);
       #endif
-      t_nnz = long(t_nnz+M.ncol)/2;
+      t_nnz = Int(double(t_nnz)/2.0 +double(M.ncol)/2.0);
 
       //double nnz_shoulder = 1.05;
       double fill_factor = BASKER_DOM_NNZ_OVER+Options.user_fill; // used to boost fill estimate
@@ -1658,7 +1658,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       if(Options.verbose == BASKER_TRUE)
       {
         printf("U_assing with elbow global_nnz = %ld, t_nnz = %ld (fill_factor = %f), M.nnz = %ld (%ld x %ld) -> %.2f\n",
-               (long)global_nnz,(long)t_nnz, fill_factor, (long)M.nnz,(long)M.nrow,(long)M.ncol, ((double)M.nnz)/((double)(M.nrow*M.ncol)));
+               (long)global_nnz,(long)t_nnz, fill_factor, (long)M.nnz,(long)M.nrow,(long)M.ncol, (M.nrow > 0 && M.ncol > 0 ? ((double)M.nnz)/((double)(M.nrow*M.ncol)) : 0.0));
       }
     }
   }//end assign_upper_nnz

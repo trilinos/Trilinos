@@ -317,7 +317,7 @@ namespace BaskerNS
 
         for(Int row = 0; row < LL_size(b); row++)
         {
-          #ifdef BASKER_DEBUG_INIT
+          #ifdef BASKER_DEBUG_UTIL
           printf("L Factor Init: %d %d , kid: %d, nnz: %ld \n",
               b, row, kid, LL(b)(row).nnz);
           #endif
@@ -335,7 +335,7 @@ namespace BaskerNS
       {
         Int b = S(lvl)(kid);
 
-        #ifdef BASKER_DEBUG_INIT
+        #ifdef BASKER_DEBUG_UTIL
         printf("U Factor init: %d %d, nnz: %ld \n",
             b, LU_size[b]-1, 
             LU(b)(LU_size[b]-1).nnz);
@@ -368,7 +368,7 @@ namespace BaskerNS
           //JDB TEST PASS
           U_row = my_new_row;
 
-          #ifdef BASKER_DEBUG_INIT
+          #ifdef BASKER_DEBUG_UTIL
           printf("Init U: %d %d lvl: %d l: %d kid: %d nnz: %ld \n",
               U_col, U_row, lvl, l, kid, 
               LU(U_col)(U_row).nnz);
@@ -481,7 +481,7 @@ namespace BaskerNS
       {
         Int b = S(lvl)(kid);
 
-        #ifdef BASKER_DEBUG_INIT
+        #ifdef BASKER_DEBUG_UTIL
         printf("U Factor init: %d %d, nnz: %ld \n",
             b, LU_size[b]-1, 
             LU(b)(LU_size[b]-1).nnz);
@@ -535,7 +535,7 @@ namespace BaskerNS
           //JDB TEST PASS
           U_row = my_new_row;
 
-          #ifdef BASKER_DEBUG_INIT
+          #ifdef BASKER_DEBUG_UTIL
           printf("Init U: %d %d lvl: %d l: %d kid: %d nnz: %ld \n",
               U_col, U_row, lvl, l, kid, 
               LU(U_col)(U_row).nnz);
@@ -599,7 +599,7 @@ namespace BaskerNS
 
         for(Int row = 0; row < LL_size(b); row++)
         {
-          #ifdef BASKER_DEBUG_INIT
+          #ifdef BASKER_DEBUG_UTIL
           printf("ALM Factor Init: %d %d , kid: %d, nnz: %d nrow: %d ncol: %d \n",
               b, row, kid, ALM(b)(row).nnz, 
               ALM(b)(row).nrow, 
@@ -614,7 +614,7 @@ namespace BaskerNS
           }*/
           if(Options.btf == BASKER_FALSE)
           {
-            #ifdef BASKER_DEBUG_INIT
+            #ifdef BASKER_DEBUG_UTIL
             printf("ALM(%d,%d: %dx%d) alloc with A: kid=%d btf=%d\n",
                     b, row, ALM(b)(row).nrow, ALM(b)(row).ncol, kid, Options.btf);
             #endif
@@ -623,7 +623,7 @@ namespace BaskerNS
           else
           {
             //printf("Using BTF AL \n");
-            #ifdef BASKER_DEBUG_INIT
+            #ifdef BASKER_DEBUG_UTIL
             printf("ALM(%d,%d, %dx%d) alloc (btf) with BTF_A: kid=%d \n",
                    b, row, ALM(b)(row).nrow, ALM(b)(row).ncol, kid);
             #endif
@@ -723,7 +723,7 @@ namespace BaskerNS
              }
           */
 
-          #ifdef BASKER_DEBUG_INIT
+          #ifdef BASKER_DEBUG_UTIL
           printf("Init AUM: %d %d lvl: %d l: %d kid: %d nnz: %d nrow: %d ncol: %d \n",
               U_col, U_row, lvl, l, kid, 
               AVM(U_col)(U_row).nnz, 
@@ -2377,15 +2377,13 @@ namespace BaskerNS
         break;
       }
     }
-
-    #ifdef BASKER_DEBUG_NFACTOR_BLK
+    #ifdef BASKER_DEBUG_UTIL
     printf("find_leader, kid: %d l: %d leader: %d \n", kid, l, my_loc);
     #endif
 
     return my_loc;
   }//end find_leader()
-
-
+ 
   //Added print function
   //I like printf because it is not a thread race dependend like 
   //c++ streams, however be may get compiler warnings

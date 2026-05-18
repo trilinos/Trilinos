@@ -1473,26 +1473,43 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, EquilImprovesParIlutOn
       tif_utest::create_tpetra_map<LO, GO, Node>(num_rows_per_proc);
   auto A = Teuchos::rcp_const_cast<crs_matrix_type>(tif_utest::create_test_matrix<Scalar, LO, GO, Node>(rowmap));
 
-  // Apply nonsymmetric scaling: A <- D_left * A * D_right.
-  vec_type dLeft(rowmap), dRight(rowmap);
+  RCP<const map_type> rowMap = A->getRowMap();
+  RCP<const map_type> colMap = A->getColMap();
+
+  vec_type dLeft(rowMap);
+  vec_type dRight(colMap);
+
+  // Fill left scaling on row map
   {
-    auto dLeftView  = dLeft.getLocalViewHost(Tpetra::Access::ReadWrite);
-    auto dRightView = dRight.getLocalViewHost(Tpetra::Access::ReadWrite);
+    auto dLeftView = dLeft.getLocalViewHost(Tpetra::Access::ReadWrite);
 
-    const GO indexBase     = rowmap->getIndexBase();
-    const GO globalNumRows = static_cast<GO>(rowmap->getGlobalNumElements());
+    const GO indexBase     = rowMap->getIndexBase();
+    const GO globalNumRows = static_cast<GO>(rowMap->getGlobalNumElements());
 
-    for (LO lclRow = 0; lclRow < static_cast<LO>(rowmap->getLocalNumElements()); ++lclRow) {
-      const GO gblRow = rowmap->getGlobalElement(lclRow);
+    for (LO lclRow = 0; lclRow < static_cast<LO>(rowMap->getLocalNumElements()); ++lclRow) {
+      const GO gblRow = rowMap->getGlobalElement(lclRow);
       const double t =
           (globalNumRows <= 1) ? 0.0 : double(gblRow - indexBase) / double(globalNumRows - 1);
 
-      // Opposing scalings induce strong row/column imbalance.
-      const double leftExponent  = -6.0 + 12.0 * t;
-      const double rightExponent = 6.0 + 12.0 * t;
+      const double leftExponent = -6.0 + 12.0 * t;
+      dLeftView(lclRow, 0)      = Scalar(std::pow(10.0, leftExponent));
+    }
+  }
 
-      dLeftView(lclRow, 0)  = Scalar(std::pow(10.0, leftExponent));
-      dRightView(lclRow, 0) = Scalar(std::pow(10.0, rightExponent));
+  // Fill right scaling on column map
+  {
+    auto dRightView = dRight.getLocalViewHost(Tpetra::Access::ReadWrite);
+
+    const GO indexBase     = rowMap->getIndexBase();
+    const GO globalNumRows = static_cast<GO>(rowMap->getGlobalNumElements());
+
+    for (LO lclCol = 0; lclCol < static_cast<LO>(colMap->getLocalNumElements()); ++lclCol) {
+      const GO gblCol = colMap->getGlobalElement(lclCol);
+      const double t =
+          (globalNumRows <= 1) ? 0.0 : double(gblCol - indexBase) / double(globalNumRows - 1);
+
+      const double rightExponent = 6.0 + 12.0 * t;
+      dRightView(lclCol, 0)      = Scalar(std::pow(10.0, rightExponent));
     }
   }
 
