@@ -462,6 +462,26 @@ FUNCTION(TPETRA_PROCESS_ONE_LGN_TEMPLATE OUTPUT_FILE TEMPLATE_FILE
   SET(${OUTPUT_FILE} ${OUT_FILE} PARENT_SCOPE)
 ENDFUNCTION(TPETRA_PROCESS_ONE_LGN_TEMPLATE)
 
+# Function to generate one .cpp file for the given GlobalOrdinal
+# template parameter combination, for run-time registration of a
+# Tpetra class or function over those template parameters. This is
+# meant to be called by TPETRA_PROCESS_ALL_G_TEMPLATES. This
+# function takes the names already mangled, to avoid unnecessary
+# string processing overhead.
+FUNCTION(TPETRA_PROCESS_ONE_G_TEMPLATE OUTPUT_FILE TEMPLATE_FILE
+  CLASS_NAME CLASS_MACRO_NAME
+  GO_MANGLED_NAME
+  GO_MACRO_NAME)
+
+  STRING(REPLACE "ETI_GO.tmpl"
+    "${CLASS_NAME}_${GO_MACRO_NAME}.cpp"
+    OUT_FILE "${TEMPLATE_FILE}")
+  CONFIGURE_FILE("${TEMPLATE_FILE}" "${OUT_FILE}")
+
+  SET(${OUTPUT_FILE} ${OUT_FILE} PARENT_SCOPE)
+ENDFUNCTION(TPETRA_PROCESS_ONE_G_TEMPLATE)
+
+
 # Function to generate .cpp files for ETI of a Tpetra class or
 # function, over all enabled LocalOrdinal, GlobalOrdinal, and Node
 # template parameters.  We generate one .cpp file for each
@@ -495,6 +515,31 @@ FUNCTION(TPETRA_PROCESS_ALL_LGN_TEMPLATES OUTPUT_FILES TEMPLATE_FILE
   # that the caller can see the result.
   SET(${OUTPUT_FILES} ${OUT_FILES} PARENT_SCOPE)
 ENDFUNCTION(TPETRA_PROCESS_ALL_LGN_TEMPLATES)
+
+# Function to generate .cpp files for ETI of a Tpetra class or
+# function, over all enabled GlobalOrdinal template parameters. We
+# generate one .cpp file for each GlobalOrdinal type combination over
+# which Tpetra does ETI.
+FUNCTION(TPETRA_PROCESS_ALL_G_TEMPLATES OUTPUT_FILES TEMPLATE_FILE
+  CLASS_NAME CLASS_MACRO_NAME GLOBALORDINAL_TYPES)
+
+  SET(OUT_FILES "")
+  FOREACH(GO ${GLOBALORDINAL_TYPES})
+    TPETRA_MANGLE_TEMPLATE_PARAMETER(GO_MANGLED "${GO}")
+    TPETRA_SLG_MACRO_NAME(GO_MACRO_NAME "${GO}")
+
+    TPETRA_PROCESS_ONE_G_TEMPLATE(OUT_FILE "${TEMPLATE_FILE}"
+      "${CLASS_NAME}" "${CLASS_MACRO_NAME}"
+      "${GO_MANGLED}"
+      "${GO_MACRO_NAME}")
+    LIST(APPEND OUT_FILES ${OUT_FILE})
+  ENDFOREACH() # GO
+
+  # This is the standard CMake idiom for setting an output variable so
+  # that the caller can see the result.
+  SET(${OUTPUT_FILES} ${OUT_FILES} PARENT_SCOPE)
+ENDFUNCTION(TPETRA_PROCESS_ALL_G_TEMPLATES)
+
 
 # Function to generate one .cpp file for the given (Scalar, Node)
 # template parameter combination, for run-time registration of a
@@ -792,3 +837,36 @@ FUNCTION(TPETRA_PROCESS_ETI_TEMPLATES_LGN OUTPUT_FILES TEMPLATE_FILE CLASS_LIST 
   # that the caller can see the result.
   SET(${OUTPUT_FILES} ${SRCS} PARENT_SCOPE)
 ENDFUNCTION(TPETRA_PROCESS_ETI_TEMPLATES_LGN)
+
+
+# Function to generate .cpp files for ETI of a list of classes or
+# functions, over all enabled GlobalOrdinaltemplate parameters. We
+# generate one .cpp file for each GlobalOrdinal type combination over
+# which Tpetra does ETI.
+#
+# OUTPUT_FILES [out] List of the generated .cpp files.
+#
+# TEMPLATE_FILE [in] Name of the input .tmpl "template" file.  This
+#   function does string substitution in that file, using the input
+#   arguments of this function.  For example, @SC_MACRO_EXPR@ (Scalar
+#   macro expression) gets substituted for the value of this
+#   function's SC_MACRO_EXPR input argument.
+#
+# CLASS_LIST [in] List of classes (without namespace
+#   qualifiers)
+#
+# GLOBALORDINAL_TYPES [in] All GlobalOrdinal types over which to do
+#   ETI for the given class.
+FUNCTION(TPETRA_PROCESS_ETI_TEMPLATES_G OUTPUT_FILES TEMPLATE_FILE CLASS_LIST GLOBALORDINAL_TYPES)
+  SET(SRCS "")
+  FOREACH(CLASS ${CLASS_LIST})
+    TPETRA_MANGLE_TEMPLATE_PARAMETER(CLASS_MANGLED ${CLASS})
+    string(TOUPPER "${CLASS_MANGLED}" UPPER_CASE_CLASS)
+    TPETRA_PROCESS_ALL_G_TEMPLATES(TMP_OUTPUT_FILES ${TEMPLATE_FILE} ${CLASS_MANGLED} ${UPPER_CASE_CLASS} "${GLOBALORDINAL_TYPES}")
+    LIST(APPEND SRCS ${TMP_OUTPUT_FILES})
+  ENDFOREACH()
+
+  # This is the standard CMake idiom for setting an output variable so
+  # that the caller can see the result.
+  SET(${OUTPUT_FILES} ${SRCS} PARENT_SCOPE)
+ENDFUNCTION(TPETRA_PROCESS_ETI_TEMPLATES_G)

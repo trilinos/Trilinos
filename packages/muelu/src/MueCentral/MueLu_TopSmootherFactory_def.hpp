@@ -64,7 +64,7 @@ TopSmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TopSmootherFactor
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-TopSmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~TopSmootherFactory() {}
+TopSmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~TopSmootherFactory() = default;
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void TopSmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& level) const {

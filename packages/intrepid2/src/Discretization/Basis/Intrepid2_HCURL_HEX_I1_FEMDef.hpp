@@ -22,132 +22,128 @@ namespace Intrepid2 {
   // -------------------------------------------------------------------------------------
   namespace Impl {
 
-    template<EOperator opType>
+    template<EOperator OpType>
     template<typename OutputViewType,
              typename inputViewType>
     KOKKOS_INLINE_FUNCTION
     void
-    Basis_HCURL_HEX_I1_FEM::Serial<opType>::
+    Basis_HCURL_HEX_I1_FEM::Serial<OpType>::
     getValues(       OutputViewType output,
                const inputViewType input ) {
 
-      switch (opType) {
-      case OPERATOR_VALUE: {
+      if constexpr (OpType == OPERATOR_VALUE) {
         const auto x = input(0);
         const auto y = input(1);
         const auto z = input(2);
 
         // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
-        output.access(0, 0) = (1.0 - y)*(1.0 - z)/4.0;
-        output.access(0, 1) = 0.0;
-        output.access(0, 2) = 0.0;
+        output(0, 0) = (1.0 - y)*(1.0 - z)/4.0;
+        output(0, 1) = 0.0;
+        output(0, 2) = 0.0;
 
-        output.access(1, 0) = 0.0;
-        output.access(1, 1) = (1.0 + x)*(1.0 - z)/4.0;
-        output.access(1, 2) = 0.0;
+        output(1, 0) = 0.0;
+        output(1, 1) = (1.0 + x)*(1.0 - z)/4.0;
+        output(1, 2) = 0.0;
 
-        output.access(2, 0) = -(1.0 + y)*(1.0 - z)/4.0;
-        output.access(2, 1) = 0.0;
-        output.access(2, 2) = 0.0;
+        output(2, 0) = -(1.0 + y)*(1.0 - z)/4.0;
+        output(2, 1) = 0.0;
+        output(2, 2) = 0.0;
 
-        output.access(3, 0) = 0.0;
-        output.access(3, 1) = -(1.0 - x)*(1.0 - z)/4.0;
-        output.access(3, 2) = 0.0;
+        output(3, 0) = 0.0;
+        output(3, 1) = -(1.0 - x)*(1.0 - z)/4.0;
+        output(3, 2) = 0.0;
 
-        output.access(4, 0) = (1.0 - y)*(1.0 + z)/4.0;
-        output.access(4, 1) = 0.0;
-        output.access(4, 2) = 0.0;
+        output(4, 0) = (1.0 - y)*(1.0 + z)/4.0;
+        output(4, 1) = 0.0;
+        output(4, 2) = 0.0;
 
-        output.access(5, 0) = 0.0;
-        output.access(5, 1) = (1.0 + x)*(1.0 + z)/4.0;
-        output.access(5, 2) = 0.0;
+        output(5, 0) = 0.0;
+        output(5, 1) = (1.0 + x)*(1.0 + z)/4.0;
+        output(5, 2) = 0.0;
 
-        output.access(6, 0) = -(1.0 + y)*(1.0 + z)/4.0;
-        output.access(6, 1) = 0.0;
-        output.access(6, 2) = 0.0;
+        output(6, 0) = -(1.0 + y)*(1.0 + z)/4.0;
+        output(6, 1) = 0.0;
+        output(6, 2) = 0.0;
 
-        output.access(7, 0) = 0.0;
-        output.access(7, 1) = -(1.0 - x)*(1.0 + z)/4.0;
-        output.access(7, 2) = 0.0;
+        output(7, 0) = 0.0;
+        output(7, 1) = -(1.0 - x)*(1.0 + z)/4.0;
+        output(7, 2) = 0.0;
 
-        output.access(8, 0) = 0.0;
-        output.access(8, 1) = 0.0;
-        output.access(8, 2) = (1.0 - x)*(1.0 - y)/4.0;
+        output(8, 0) = 0.0;
+        output(8, 1) = 0.0;
+        output(8, 2) = (1.0 - x)*(1.0 - y)/4.0;
 
-        output.access(9, 0) = 0.0;
-        output.access(9, 1) = 0.0;
-        output.access(9, 2) = (1.0 + x)*(1.0 - y)/4.0;
+        output(9, 0) = 0.0;
+        output(9, 1) = 0.0;
+        output(9, 2) = (1.0 + x)*(1.0 - y)/4.0;
 
-        output.access(10, 0) = 0.0;
-        output.access(10, 1) = 0.0;
-        output.access(10, 2) = (1.0 + x)*(1.0 + y)/4.0;
+        output(10, 0) = 0.0;
+        output(10, 1) = 0.0;
+        output(10, 2) = (1.0 + x)*(1.0 + y)/4.0;
 
-        output.access(11, 0) = 0.0;
-        output.access(11, 1) = 0.0;
-        output.access(11, 2) = (1.0 - x)*(1.0 + y)/4.0;
-        break;
+        output(11, 0) = 0.0;
+        output(11, 1) = 0.0;
+        output(11, 2) = (1.0 - x)*(1.0 + y)/4.0;
       }
-      case OPERATOR_CURL: {
+      else if constexpr (OpType == OPERATOR_CURL) {
         const auto x = input(0);
         const auto y = input(1);
         const auto z = input(2);
 
         // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
-        output.access(0, 0) = 0.0;
-        output.access(0, 1) = -(1.0 - y)/4.0;
-        output.access(0, 2) = (1.0 - z)/4.0;
+        output(0, 0) = 0.0;
+        output(0, 1) = -(1.0 - y)/4.0;
+        output(0, 2) = (1.0 - z)/4.0;
 
-        output.access(1, 0) = (1.0 + x)/4.0;
-        output.access(1, 1) = 0.0;
-        output.access(1, 2) = (1.0 - z)/4.0;
+        output(1, 0) = (1.0 + x)/4.0;
+        output(1, 1) = 0.0;
+        output(1, 2) = (1.0 - z)/4.0;
 
-        output.access(2, 0) = 0.0;
-        output.access(2, 1) = (1.0 + y)/4.0;
-        output.access(2, 2) = (1.0 - z)/4.0;
+        output(2, 0) = 0.0;
+        output(2, 1) = (1.0 + y)/4.0;
+        output(2, 2) = (1.0 - z)/4.0;
 
-        output.access(3, 0) = -(1.0 - x)/4.0;
-        output.access(3, 1) = 0.0;
-        output.access(3, 2) = (1.0 - z)/4.0;
+        output(3, 0) = -(1.0 - x)/4.0;
+        output(3, 1) = 0.0;
+        output(3, 2) = (1.0 - z)/4.0;
 
-        output.access(4, 0) = 0.0;
-        output.access(4, 1) = (1.0 - y)/4.0;
-        output.access(4, 2) = (1.0 + z)/4.0;
+        output(4, 0) = 0.0;
+        output(4, 1) = (1.0 - y)/4.0;
+        output(4, 2) = (1.0 + z)/4.0;
 
-        output.access(5, 0) = -(1.0 + x)/4.0;
-        output.access(5, 1) = 0.0;
-        output.access(5, 2) = (1.0 + z)/4.0;
+        output(5, 0) = -(1.0 + x)/4.0;
+        output(5, 1) = 0.0;
+        output(5, 2) = (1.0 + z)/4.0;
 
-        output.access(6, 0) = 0.0;
-        output.access(6, 1) = -(1.0 + y)/4.0;
-        output.access(6, 2) = (1.0 + z)/4.0;
+        output(6, 0) = 0.0;
+        output(6, 1) = -(1.0 + y)/4.0;
+        output(6, 2) = (1.0 + z)/4.0;
 
-        output.access(7, 0) = (1.0 - x)/4.0;
-        output.access(7, 1) = 0.0;
-        output.access(7, 2) = (1.0 + z)/4.0;
+        output(7, 0) = (1.0 - x)/4.0;
+        output(7, 1) = 0.0;
+        output(7, 2) = (1.0 + z)/4.0;
 
-        output.access(8, 0) = -(1.0 - x)/4.0;
-        output.access(8, 1) = (1.0 - y)/4.0;
-        output.access(8, 2) = 0.0;
+        output(8, 0) = -(1.0 - x)/4.0;
+        output(8, 1) = (1.0 - y)/4.0;
+        output(8, 2) = 0.0;
 
-        output.access(9, 0) = -(1.0 + x)/4.0;
-        output.access(9, 1) = -(1.0 - y)/4.0;
-        output.access(9, 2) = 0.0;
+        output(9, 0) = -(1.0 + x)/4.0;
+        output(9, 1) = -(1.0 - y)/4.0;
+        output(9, 2) = 0.0;
 
-        output.access(10, 0) = (1.0 + x)/4.0;
-        output.access(10, 1) = -(1.0 + y)/4.0;
-        output.access(10, 2) = 0.0;
+        output(10, 0) = (1.0 + x)/4.0;
+        output(10, 1) = -(1.0 + y)/4.0;
+        output(10, 2) = 0.0;
 
-        output.access(11, 0) = (1.0 - x)/4.0;
-        output.access(11, 1) = (1.0 + y)/4.0;
-        output.access(11, 2) = 0.0;
-        break;
+        output(11, 0) = (1.0 - x)/4.0;
+        output(11, 1) = (1.0 + y)/4.0;
+        output(11, 2) = 0.0;
       }
-      default: {
-        INTREPID2_TEST_FOR_ABORT( opType != OPERATOR_VALUE &&
-                                  opType != OPERATOR_CURL,
+      else {
+        INTREPID2_TEST_FOR_ABORT( OpType != OPERATOR_VALUE &&
+                                  OpType != OPERATOR_CURL,
                                   ">>> ERROR: (Intrepid2::Basis_HGRAD_HEX_C1_FEM::Serial::getValues) operator is not supported");
       }
-      } //end switch
 
     }
 
@@ -333,11 +329,9 @@ namespace Intrepid2 {
   template<typename DT, typename OT, typename PT>
   void 
   Basis_HCURL_HEX_I1_FEM<DT,OT,PT>::getScratchSpaceSize(       
-                                    ordinal_type& perTeamSpaceSize,
                                     ordinal_type& perThreadSpaceSize,
                               const PointViewType inputPoints,
                               const EOperator operatorType) const {
-    perTeamSpaceSize = 0;
     perThreadSpaceSize = 0;
   }
 
@@ -349,14 +343,14 @@ namespace Intrepid2 {
       const PointViewType  inputPoints,
       const EOperator operatorType,
       const typename Kokkos::TeamPolicy<typename DT::execution_space>::member_type& team_member,
-      const typename DT::execution_space::scratch_memory_space & scratchStorage, 
+      const int threadScratchLevel, 
       const ordinal_type subcellDim,
       const ordinal_type subcellOrdinal) const {
 
       INTREPID2_TEST_FOR_ABORT( !((subcellDim == -1) && (subcellOrdinal == -1)),
         ">>> ERROR: (Intrepid2::Basis_HCURL_HEX_I1_FEM::getValues), The capability of selecting subsets of basis functions has not been implemented yet.");
 
-      (void) scratchStorage; //avoid unused variable warning
+      (void) threadScratchLevel; //avoid unused variable warning
 
       const int numPoints = inputPoints.extent(0);
 

@@ -816,6 +816,11 @@ namespace BaskerNS
       inc_lvl    = BASKER_INC_LVL_VALUE;
       inc_tol    = BASKER_INC_TOL_VALUE;
       user_fill  = BASKER_FILL_USER;
+
+      // Partial Factorization Option, 0: no, 1: form + factor, 2: only form
+      partial_facto = 0;
+      only_forward_solve = false;
+      only_backward_solve = false;
     }
 
     //Reuse Pattern (Save time if same pattern can be used)
@@ -891,6 +896,10 @@ namespace BaskerNS
     BASKER_MAGNITUDE inc_tol;    //Not Used
     BASKER_MAGNITUDE user_fill;
     
+    // Partial Factorization Option
+    int partial_facto;
+    bool only_forward_solve;
+    bool only_backward_solve;
     /* ---- todo add more ----*/
   }; // end bask_options
 

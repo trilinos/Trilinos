@@ -42,7 +42,7 @@ class MapTraits {
  public:
   static Teuchos::RCP<Map> Build(global_size_t numGlobalElements, const Teuchos::ArrayView<const GlobalOrdinal> &elementList, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int>> &comm) { return UndefinedMapTraits<Map>::notDefined(); }
 
-  static Teuchos::RCP<Map> Build(global_size_t numGlobalElements, const Kokkos::View<const GlobalOrdinal> &elementList, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int>> &comm) { return UndefinedMapTraits<Map>::notDefined(); }
+  static Teuchos::RCP<Map> Build(global_size_t numGlobalElements, const Kokkos::View<const GlobalOrdinal *> &elementList, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int>> &comm) { return UndefinedMapTraits<Map>::notDefined(); }
 
   static Teuchos::RCP<Map> Build(global_size_t numGlobalElements, global_size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int>> &comm) { return UndefinedMapTraits<Map>::notDefined(); }
 };

@@ -21,51 +21,48 @@ namespace Intrepid2 {
   // -------------------------------------------------------------------------------------
   namespace Impl {
 
-    template<EOperator opType>
+    template<EOperator OpType>
     template<typename OutputViewType,
              typename inputViewType>
     KOKKOS_INLINE_FUNCTION
     void
-    Basis_HDIV_TET_I1_FEM::Serial<opType>::
+    Basis_HDIV_TET_I1_FEM::Serial<OpType>::
     getValues(       OutputViewType output,
                const inputViewType input ) {
-      switch (opType) {
-      case OPERATOR_VALUE: {
+
+      if constexpr (OpType == OPERATOR_VALUE) {
         const auto x = input(0);
         const auto y = input(1);
         const auto z = input(2);
 
         // output is a rank-2 array with dimensions (basisCardinality_)
-        output.access(0, 0) = x;
-        output.access(0, 1) = (y - 1.0);
-        output.access(0, 2) = z;
+        output(0, 0) = x;
+        output(0, 1) = (y - 1.0);
+        output(0, 2) = z;
 
-        output.access(1, 0) = x;
-        output.access(1, 1) = y;
-        output.access(1, 2) = z;
+        output(1, 0) = x;
+        output(1, 1) = y;
+        output(1, 2) = z;
 
-        output.access(2, 0) = (x - 1.0);
-        output.access(2, 1) = y;
-        output.access(2, 2) = z;
+        output(2, 0) = (x - 1.0);
+        output(2, 1) = y;
+        output(2, 2) = z;
 
-        output.access(3, 0) = x;
-        output.access(3, 1) = y;
-        output.access(3, 2) = (z - 1.0);
-        break;
+        output(3, 0) = x;
+        output(3, 1) = y;
+        output(3, 2) = (z - 1.0);
       }
-      case OPERATOR_DIV: {
+      else if constexpr (OpType == OPERATOR_DIV) {
         // output is a rank-3 array with dimensions (basisCardinality_, spaceDim)
-        output.access(0) = 3;
-        output.access(1) = 3;
-        output.access(2) = 3;
-        output.access(3) = 3;
-        break;
+        output(0) = 3;
+        output(1) = 3;
+        output(2) = 3;
+        output(3) = 3;
       }
-      default: {
-        INTREPID2_TEST_FOR_ABORT( opType != OPERATOR_VALUE &&
-                                  opType != OPERATOR_DIV,
+      else {
+        INTREPID2_TEST_FOR_ABORT( OpType != OPERATOR_VALUE &&
+                                  OpType != OPERATOR_DIV,
                                   ">>> ERROR: (Intrepid2::Basis_HDIV_TET_I1_FEM::Serial::getValues) operator is not supported");
-      }
       }
     }
 
@@ -233,11 +230,9 @@ namespace Intrepid2 {
   template<typename DT, typename OT, typename PT>
   void 
   Basis_HDIV_TET_I1_FEM<DT,OT,PT>::getScratchSpaceSize(       
-                                    ordinal_type& perTeamSpaceSize,
                                     ordinal_type& perThreadSpaceSize,
                               const PointViewType inputPoints,
                               const EOperator operatorType) const {
-    perTeamSpaceSize = 0;
     perThreadSpaceSize = 0;
   }
 
@@ -249,14 +244,14 @@ namespace Intrepid2 {
       const PointViewType  inputPoints,
       const EOperator operatorType,
       const typename Kokkos::TeamPolicy<typename DT::execution_space>::member_type& team_member,
-      const typename DT::execution_space::scratch_memory_space & scratchStorage, 
+      const int threadScratchLevel,
       const ordinal_type subcellDim,
       const ordinal_type subcellOrdinal) const {
 
       INTREPID2_TEST_FOR_ABORT( !((subcellDim == -1) && (subcellOrdinal == -1)),
         ">>> ERROR: (Intrepid2::Basis_HDIV_TET_I1_FEM::getValues), The capability of selecting subsets of basis functions has not been implemented yet.");
 
-      (void) scratchStorage; //avoid unused variable warning
+      (void) threadScratchLevel; //avoid unused variable warning
 
       const int numPoints = inputPoints.extent(0);
 

@@ -482,9 +482,11 @@ namespace BaskerNS
           std::cout << " ** BLK_MWM_AMD::NO BLK MWM (blk=" << b << ", " << btf_tabs(b) << ":" << btf_tabs(b+1)-1 << ") ** " << std::endl;
           //flag = false;
         }
-        for(Int ii = 0; ii < blk_size; ii++) {
-          scale_row_array(btf_tabs(b)+ii) = one;
-          scale_col_array(btf_tabs(b)+ii) = one;
+	if (Options.matrix_scaling != 0) {
+          for(Int ii = 0; ii < blk_size; ii++) {
+            scale_row_array(btf_tabs(b)+ii) = one;
+            scale_col_array(btf_tabs(b)+ii) = one;
+          }
         }
         for(Int ii = 0; ii < blk_size; ii++) tempp(ii) = ii;
       }

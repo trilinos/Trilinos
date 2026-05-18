@@ -23,64 +23,59 @@ namespace Intrepid2 {
 
   namespace Impl {
 
-    template<EOperator opType>
+    template<EOperator OpType>
     template<typename OutputViewType,
              typename inputViewType>
     KOKKOS_INLINE_FUNCTION
     void
-    Basis_HGRAD_TRI_C1_FEM::Serial<opType>::
+    Basis_HGRAD_TRI_C1_FEM::Serial<OpType>::
     getValues(       OutputViewType output,
                const inputViewType input ) {
-      switch (opType) {
-      case OPERATOR_VALUE: {
+                
+      if constexpr (OpType == OPERATOR_VALUE) {
         const auto x = input(0);
         const auto y = input(1);
 
         // output is a rank-2 array with dimensions (basisCardinality_)
-        output.access(0) = 1.0 - x - y;
-        output.access(1) = x;
-        output.access(2) = y;
-        break;
+        output(0) = 1.0 - x - y;
+        output(1) = x;
+        output(2) = y;
       }
-      case OPERATOR_GRAD: {
+      else if constexpr (OpType == OPERATOR_GRAD) {
         // output is a rank-3 array with dimensions (basisCardinality_, spaceDim)
-        output.access(0, 0) = -1.0;
-        output.access(0, 1) = -1.0;
+        output(0, 0) = -1.0;
+        output(0, 1) = -1.0;
 
-        output.access(1, 0) =  1.0;
-        output.access(1, 1) =  0.0;
+        output(1, 0) =  1.0;
+        output(1, 1) =  0.0;
 
-        output.access(2, 0) =  0.0;
-        output.access(2, 1) =  1.0;
-        break;
+        output(2, 0) =  0.0;
+        output(2, 1) =  1.0;
       }
-      case OPERATOR_CURL: {
-        output.access(0, 0) = -1.0;
-        output.access(0, 1) =  1.0;
+      else if constexpr (OpType == OPERATOR_CURL) {
+        output(0, 0) = -1.0;
+        output(0, 1) =  1.0;
 
-        output.access(1, 0) =  0.0;
-        output.access(1, 1) = -1.0;
+        output(1, 0) =  0.0;
+        output(1, 1) = -1.0;
 
-        output.access(2, 0) =  1.0;
-        output.access(2, 1) =  0.0;
-        break;
+        output(2, 0) =  1.0;
+        output(2, 1) =  0.0;
       }
-      case OPERATOR_MAX: {
+      else if constexpr (OpType == OPERATOR_MAX) {
         const ordinal_type jend = output.extent(1);
         const ordinal_type iend = output.extent(0);
 
         for (ordinal_type j=0;j<jend;++j)
           for (ordinal_type i=0;i<iend;++i)
-            output.access(i, j) = 0.0;
-        break;
+            output(i, j) = 0.0;
       }
-      default: {
-        INTREPID2_TEST_FOR_ABORT( opType != OPERATOR_VALUE &&
-                                  opType != OPERATOR_GRAD &&
-                                  opType != OPERATOR_CURL &&
-                                  opType != OPERATOR_MAX,
+      else {
+        INTREPID2_TEST_FOR_ABORT( OpType != OPERATOR_VALUE &&
+                                  OpType != OPERATOR_GRAD &&
+                                  OpType != OPERATOR_CURL &&
+                                  OpType != OPERATOR_MAX,
                                   ">>> ERROR: (Intrepid2::Basis_HGRAD_TRI_C1_FEM::Serial::getValues) operator is not supported");
-      }
       }
     }
 
@@ -207,11 +202,9 @@ namespace Intrepid2 {
   template<typename DT, typename OT, typename PT>
   void 
   Basis_HGRAD_TRI_C1_FEM<DT,OT,PT>::getScratchSpaceSize(       
-                                    ordinal_type& perTeamSpaceSize,
                                     ordinal_type& perThreadSpaceSize,
                               const PointViewType inputPoints,
                               const EOperator operatorType) const {
-    perTeamSpaceSize = 0;
     perThreadSpaceSize = 0;
   }
 
@@ -223,14 +216,14 @@ namespace Intrepid2 {
       const PointViewType  inputPoints,
       const EOperator operatorType,
       const typename Kokkos::TeamPolicy<typename DT::execution_space>::member_type& team_member,
-      const typename DT::execution_space::scratch_memory_space & scratchStorage, 
+      const int threadScratchLevel, 
       const ordinal_type subcellDim,
       const ordinal_type subcellOrdinal) const {
 
       INTREPID2_TEST_FOR_ABORT( !((subcellDim <= 0) && (subcellOrdinal == -1)),
         ">>> ERROR: (Intrepid2::Basis_HGRAD_TRI_C1_FEM::getValues), The capability of selecting subsets of basis functions has not been implemented yet.");
 
-      (void) scratchStorage; //avoid unused variable warning
+      (void) threadScratchLevel; //avoid unused variable warning
 
       const int numPoints = inputPoints.extent(0);
 

@@ -24,6 +24,7 @@
 
 #include "Intrepid2_HGRAD_HEX_C1_FEM.hpp"
 #include "Intrepid2_HGRAD_HEX_C2_FEM.hpp"
+#include "Intrepid2_HDIV_HEX_I1_FEM.hpp"
 
 typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
 

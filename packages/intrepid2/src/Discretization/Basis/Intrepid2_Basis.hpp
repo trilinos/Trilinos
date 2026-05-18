@@ -387,13 +387,13 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
         when using DFAD types, </var>inputPoints</var> cannot be empty, 
         otherwise the size of the scracth space needed won't be deduced correctly.
 
-        \param  space             [in]  - inputPoints
-        \param  perTeamSpaceSize  [out] - size of the scratch space needed per team
         \param  perThreadeSize    [out] - size of the scratch space beeded per thread
+        \param  inputPoints       [in]  - inputPoints
+        \param  operatorType      [in]  - operator type (OPERATOR_VALUE, OPERATOR_GRAD, OPERATOR_DIV, OPERATOR_CURL)
+        
     */
     virtual
-    void getScratchSpaceSize(       ordinal_type& perTeamSpaceSize,
-                                    ordinal_type& perThreadSpaceSize,
+    void getScratchSpaceSize(       ordinal_type& perThreadSpaceSize,
                                 const PointViewType inputPoints,
                                 const EOperator operatorType = OPERATOR_VALUE) const {
       INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE( true, std::logic_error,
@@ -414,7 +414,7 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
         \param  inputPoints       [in]  - rank-2 array (P,D) with the evaluation points
         \param  operatorType      [in]  - the operator acting on the basis functions
         \param  teamMember        [in]  - team member of the Kokkos::TemaPolicy
-        \param  scratchStorage    [in]  - scratch space to use by each team
+        \param  threadScratchLevel[in]  - scratch level for thread scratch
         \param  subcellDim        [in]  - the dimension of the subcells, the default values of -1 returns basis functions associated to subcells of all dimensions
         \param  subcellOrdinal    [in]  - the ordinal of the subcell, the default values of -1 returns basis functions associated to subcells of all ordinals
 
@@ -427,7 +427,7 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
                     const PointViewType  /* inputPoints */,
                     const EOperator /* operatorType */,
                     const typename Kokkos::TeamPolicy<ExecutionSpace>::member_type& teamMember,
-                    const typename ExecutionSpace::scratch_memory_space &scratchStorage, 
+                    const int threadScratchLevel, 
                     const ordinal_type subcellDim=-1,
                     const ordinal_type subcellOrdinal=-1) const {
       INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE( true, std::logic_error,

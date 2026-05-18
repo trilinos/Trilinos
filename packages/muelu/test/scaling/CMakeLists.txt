@@ -172,24 +172,20 @@ TRIBITS_ADD_EXECUTABLE(
 
 TRIBITS_ADD_TEST(
   MatrixMatrixMultiply
-  NAME MatrixMultiply_Performance_1
+  NAME MatrixMultiply_1
   COMM mpi
   ARGS "--timings --seed=12345 --minrows=8000 --maxrows=10000 --nmults=5"
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
-  RUN_SERIAL
-  CATEGORIES PERFORMANCE
 )
 
 TRIBITS_ADD_TEST(
   MatrixMatrixMultiply
-  NAME MatrixMultiply_Performance_4
+  NAME MatrixMultiply_4
   COMM mpi
   ARGS "--timings --seed=12345 --minrows=8000 --maxrows=10000 --nmults=5"
   NUM_MPI_PROCS 4
   STANDARD_PASS_OUTPUT
-  RUN_SERIAL
-  CATEGORIES PERFORMANCE
 )
 
 TRIBITS_ADD_TEST(

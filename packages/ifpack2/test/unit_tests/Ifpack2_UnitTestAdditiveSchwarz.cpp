@@ -40,6 +40,7 @@
 #include "Tpetra_RowMatrix.hpp"
 #include "Teuchos_CommHelpers.hpp"
 #include "MatrixMarket_Tpetra.hpp"
+#include "Tpetra_leftAndOrRightScaleCrsMatrix.hpp"
 
 namespace {  // (anonymous)
 
@@ -1450,6 +1451,172 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, FastILDL, Scalar, Loca
   TEST_COMPARE_FLOATING_ARRAYS(yview, zview, 4 * STS::eps());
 }
 
+#ifdef HAVE_IFPACK2_XPETRA
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, EquilImprovesParIlutOnNonsymScaledTriDiag, Scalar, LO, GO) {
+  typedef Tpetra::CrsMatrix<Scalar, LO, GO, Node> crs_matrix_type;
+  typedef Tpetra::Map<LO, GO, Node> map_type;
+  typedef Tpetra::MultiVector<Scalar, LO, GO, Node> MV;
+  typedef Tpetra::Vector<Scalar, LO, GO, Node> vec_type;
+  typedef Tpetra::RowMatrix<Scalar, LO, GO, Node> row_matrix_type;
+  typedef Teuchos::ScalarTraits<Scalar> STS;
+  typedef typename STS::magnitudeType mag_type;
+
+  using Teuchos::ParameterList;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+
+  out << "Ifpack2::AdditiveSchwarz: EquilImprovesParIlutOnNonsymScaledTriDiag" << endl;
+  Teuchos::OSTab tab1(out);
+
+  const Tpetra::global_size_t num_rows_per_proc = 50;
+  RCP<const map_type> rowmap =
+      tif_utest::create_tpetra_map<LO, GO, Node>(num_rows_per_proc);
+  auto A = Teuchos::rcp_const_cast<crs_matrix_type>(tif_utest::create_test_matrix<Scalar, LO, GO, Node>(rowmap));
+
+  RCP<const map_type> rowMap = A->getRowMap();
+  RCP<const map_type> colMap = A->getColMap();
+
+  vec_type dLeft(rowMap);
+  vec_type dRight(colMap);
+
+  // Fill left scaling on row map
+  {
+    auto dLeftView = dLeft.getLocalViewHost(Tpetra::Access::ReadWrite);
+
+    const GO indexBase     = rowMap->getIndexBase();
+    const GO globalNumRows = static_cast<GO>(rowMap->getGlobalNumElements());
+
+    for (LO lclRow = 0; lclRow < static_cast<LO>(rowMap->getLocalNumElements()); ++lclRow) {
+      const GO gblRow = rowMap->getGlobalElement(lclRow);
+      const double t =
+          (globalNumRows <= 1) ? 0.0 : double(gblRow - indexBase) / double(globalNumRows - 1);
+
+      const double leftExponent = -6.0 + 12.0 * t;
+      dLeftView(lclRow, 0)      = Scalar(std::pow(10.0, leftExponent));
+    }
+  }
+
+  // Fill right scaling on column map
+  {
+    auto dRightView = dRight.getLocalViewHost(Tpetra::Access::ReadWrite);
+
+    const GO indexBase     = rowMap->getIndexBase();
+    const GO globalNumRows = static_cast<GO>(rowMap->getGlobalNumElements());
+
+    for (LO lclCol = 0; lclCol < static_cast<LO>(colMap->getLocalNumElements()); ++lclCol) {
+      const GO gblCol = colMap->getGlobalElement(lclCol);
+      const double t =
+          (globalNumRows <= 1) ? 0.0 : double(gblCol - indexBase) / double(globalNumRows - 1);
+
+      const double rightExponent = 6.0 + 12.0 * t;
+      dRightView(lclCol, 0)      = Scalar(std::pow(10.0, rightExponent));
+    }
+  }
+
+  {
+    auto dLeft2d  = dLeft.getLocalViewDevice(Tpetra::Access::ReadOnly);
+    auto dRight2d = dRight.getLocalViewDevice(Tpetra::Access::ReadOnly);
+    auto dLeft1d  = Kokkos::subview(dLeft2d, Kokkos::ALL(), 0);
+    auto dRight1d = Kokkos::subview(dRight2d, Kokkos::ALL(), 0);
+    // A <- D_left * A * D_right
+    TEST_NOTHROW(
+        Tpetra::leftAndOrRightScaleCrsMatrix(
+            *A, dLeft1d, dRight1d,
+            true, true, false, Tpetra::SCALING_MULTIPLY));
+  }
+
+  // Random RHS exposes approximation-quality differences.
+  MV b(rowmap, 1);
+  b.randomize();
+
+  for (const int overlapLevel : {0, 1}) {
+    if (rowmap->getComm()->getSize() == 1 && overlapLevel > 0) {
+      out << "Skipping overlap > 0 case in serial." << endl;
+      continue;
+    }
+
+    for (const bool useReordering : {false, true}) {
+#if !defined(HAVE_IFPACK2_ZOLTAN2)
+      if (useReordering) {
+        continue;
+      }
+#endif
+
+      out << "Case: overlap = " << overlapLevel
+          << ", useReordering = " << std::boolalpha << useReordering
+          << endl;
+
+      ParameterList paramsBase;
+      paramsBase.set("subdomain solver name", "RILUK");
+      paramsBase.set("schwarz: overlap level", overlapLevel);
+      paramsBase.set("schwarz: combine mode", "ZERO");
+      paramsBase.set("schwarz: use reordering", useReordering);
+      paramsBase.set("schwarz: zero starting solution", true);
+      paramsBase.set("schwarz: subdomain 1-norm equilibration", false);
+
+#if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
+      if (useReordering) {
+        ParameterList zlist;
+        zlist.set("order_method", "rcm");
+        zlist.set("order_method_type", "local");
+        paramsBase.set("schwarz: reordering list", zlist);
+      }
+#endif
+
+      ParameterList paramsEquil = paramsBase;
+      paramsEquil.set("schwarz: subdomain 1-norm equilibration", true);
+
+      // No equilibration run
+      Ifpack2::AdditiveSchwarz<row_matrix_type> precBase(A);
+
+      TEST_NOTHROW(precBase.setParameters(paramsBase));
+      TEST_NOTHROW(precBase.initialize());
+      TEST_NOTHROW(precBase.compute());
+
+      MV yBase(rowmap, 1);
+      yBase.putScalar(STS::zero());
+
+      TEST_NOTHROW(precBase.apply(b, yBase));
+
+      MV rBase(b, Teuchos::Copy);
+      A->apply(yBase, rBase, Teuchos::NO_TRANS, -STS::one(), STS::one());
+
+      // Equilibration run
+      Ifpack2::AdditiveSchwarz<row_matrix_type> precEquil(A);
+
+      TEST_NOTHROW(precEquil.setParameters(paramsEquil));
+      TEST_NOTHROW(precEquil.initialize());
+      TEST_NOTHROW(precEquil.compute());
+
+      MV yEquil(rowmap, 1);
+      yEquil.putScalar(STS::zero());
+
+      TEST_NOTHROW(precEquil.apply(b, yEquil));
+
+      MV rEquil(b, Teuchos::Copy);
+      A->apply(yEquil, rEquil, Teuchos::NO_TRANS, -STS::one(), STS::one());
+
+      Teuchos::Array<mag_type> normBase(1), normEquil(1), normB(1);
+      rBase.norm2(normBase());
+      rEquil.norm2(normEquil());
+      b.norm2(normB());
+
+      out << "  ||b||_2          = " << normB[0] << endl;
+      out << "  ||r_base||_2     = " << normBase[0] << endl;
+      out << "  ||r_equil||_2    = " << normEquil[0] << endl;
+      out << "  ratio equil/base = " << (normEquil[0] / normBase[0]) << endl;
+
+      auto capNormRatio = mag_type(0.9);
+      TEST_ASSERT(normEquil[0] / normBase[0] < capNormRatio);
+    }
+  }
+}
+#define IFPACK2_EQUILIBRATION_SCALAR_ORDINAL(Scalar, LocalOrdinal, GlobalOrdinal) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(Ifpack2AdditiveSchwarz, EquilImprovesParIlutOnNonsymScaledTriDiag, Scalar, LocalOrdinal, GlobalOrdinal)
+#else
+#define IFPACK2_EQUILIBRATION_SCALAR_ORDINAL(Scalar, LocalOrdinal, GlobalOrdinal)
+#endif  // HAVE_IFPACK2_XPETRA
+
 #if defined(HAVE_IFPACK2_AMESOS2) and defined(HAVE_IFPACK2_XPETRA) and (defined(HAVE_AMESOS2_SUPERLU) || defined(HAVE_AMESOS2_KLU2))
 
 #define IFPACK2_AMESOS2_SUPERLU_SCALAR_ORDINAL(Scalar, LocalOrdinal, GlobalOrdinal) \
@@ -1479,6 +1646,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, FastILDL, Scalar, Loca
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(Ifpack2AdditiveSchwarz, ILU_NonOverlap, Scalar, LocalOrdinal, GlobalOrdinal)     \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(Ifpack2AdditiveSchwarz, SGS_NonOverlap, Scalar, LocalOrdinal, GlobalOrdinal)     \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(Ifpack2AdditiveSchwarz, SGS_Overlap, Scalar, LocalOrdinal, GlobalOrdinal)        \
+  IFPACK2_EQUILIBRATION_SCALAR_ORDINAL(Scalar, LocalOrdinal, GlobalOrdinal)                                             \
   IFPACK2_AMESOS2_SUPERLU_SCALAR_ORDINAL(Scalar, LocalOrdinal, GlobalOrdinal)                                           \
   IFPACK2_FASTILU_SCALAR_ORDINAL(Scalar, LocalOrdinal, GlobalOrdinal)
 

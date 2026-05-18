@@ -842,6 +842,7 @@ IF (Stokhos_ENABLE_Sacado)
         replaceDiagonalCrsMatrix
         BlockCrsMatrix_Helpers
         computeRowAndColumnOneNorms
+        leftAndOrRightScaleCrsMatrix
         )
       SET(TPETRAEXT_ETI_CLASSES
         MatrixMatrix

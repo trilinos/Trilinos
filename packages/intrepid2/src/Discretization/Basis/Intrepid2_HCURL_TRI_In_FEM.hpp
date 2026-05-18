@@ -76,14 +76,10 @@ public:
     static ordinal_type
     getWorkSizePerPoint(ordinal_type order) {
       auto cardinality = CardinalityHCurlTri(order);
-      switch (opType) {
-      case OPERATOR_GRAD:
-      case OPERATOR_CURL:
-      case OPERATOR_D1:
+      if constexpr ((opType == OPERATOR_GRAD) || (opType == OPERATOR_CURL) || (opType == OPERATOR_D1))
         return 5*cardinality;
-      default:
+      else
         return getDkCardinality<opType,2>()*cardinality;
-      }
     }
   };
 
@@ -135,22 +131,17 @@ public:
 
       workViewType work = createMatchingUnmanagedView<workViewType>(_work, ptr, (ptEnd-ptBegin)*_work.extent(0));
 
-      switch (opType) {
-      case OPERATOR_VALUE : {
+      if constexpr (opType == OPERATOR_VALUE) {
         auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange, Kokkos::ALL() );
         Serial<opType>::getValues( output, input, work, _coeffs );
-        break;
       }
-      case OPERATOR_CURL: {
+      else if constexpr (opType == OPERATOR_CURL) {
         auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange);
         Serial<opType>::getValues( output, input, work, _coeffs );
-        break;
       }
-      default: {
+      else {
         INTREPID2_TEST_FOR_ABORT( true,
             ">>> ERROR: (Intrepid2::Basis_HCURL_TRI_In_FEM::Functor) operator is not supported");
-
-      }
       }
     }
   };
@@ -209,8 +200,7 @@ class Basis_HCURL_TRI_In_FEM
   }
 
     virtual void 
-    getScratchSpaceSize(      ordinal_type& perTeamSpaceSize,
-                              ordinal_type& perThreadSpaceSize,
+    getScratchSpaceSize(      ordinal_type& perThreadSpaceSize,
                         const PointViewType inputPointsconst,
                         const EOperator operatorType = OPERATOR_VALUE) const override;
 
@@ -221,7 +211,7 @@ class Basis_HCURL_TRI_In_FEM
       const PointViewType  inputPoints,
       const EOperator operatorType,
       const typename Kokkos::TeamPolicy<typename DeviceType::execution_space>::member_type& team_member,
-      const typename DeviceType::execution_space::scratch_memory_space & scratchStorage, 
+      const int threadScratchLevel, 
       const ordinal_type subcellDim = -1,
       const ordinal_type subcellOrdinal = -1) const override;
 

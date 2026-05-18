@@ -31,7 +31,7 @@ class FactoryManagerBase : public BaseClass {
     : bIgnoreUserData_(false) {}
 
   //! Destructor.
-  virtual ~FactoryManagerBase() {}
+  virtual ~FactoryManagerBase() = default;
 
   //@}
 

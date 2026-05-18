@@ -30,7 +30,7 @@ class BaseClass
   //@{
 
   //! Destructor.
-  virtual ~BaseClass() {}
+  virtual ~BaseClass() = default;
 
   //@}
 

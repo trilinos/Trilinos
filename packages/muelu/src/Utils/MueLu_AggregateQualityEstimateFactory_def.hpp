@@ -28,10 +28,10 @@
 namespace MueLu {
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-AggregateQualityEstimateFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AggregateQualityEstimateFactory() {}
+AggregateQualityEstimateFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AggregateQualityEstimateFactory() = default;
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-AggregateQualityEstimateFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~AggregateQualityEstimateFactory() {}
+AggregateQualityEstimateFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~AggregateQualityEstimateFactory() = default;
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void AggregateQualityEstimateFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
