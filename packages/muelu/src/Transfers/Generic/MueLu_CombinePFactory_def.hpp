@@ -13,9 +13,8 @@
 #include <stdlib.h>
 #include <iomanip>
 
-#include <Teuchos_SerialDenseMatrix.hpp>
-#include <Teuchos_SerialDenseVector.hpp>
-#include <Teuchos_SerialDenseSolver.hpp>
+#include <Tpetra_ConfigDefs.hpp>
+#include <TpetraCore_ETIHelperMacros.h>
 
 #include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_ImportFactory.hpp>
@@ -32,9 +31,6 @@
 
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
-
-#include <Tpetra_ConfigDefs.hpp>
-#include <TpetraCore_ETIHelperMacros.h>
 
 namespace MueLu {
 
