@@ -307,16 +307,21 @@ void CombinePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& f
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void CombinePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildPBlockedImpl(Level& fineLevel,
-                                                                                   Level& coarseLevel, std::false_type) const {
+void CombinePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    BuildPBlockedImpl(Level& fineLevel, Level& coarseLevel, std::false_type) const {
 #ifdef HAVE_XPETRA_THYRA
-  TEUCHOS_TEST_FOR_EXCEPTION(
-      true, Exceptions::RuntimeError,
-      "CombinePFactory::BuildPBlocked requires Thyra ETI support for this "
-      "Scalar/LocalOrdinal/GlobalOrdinal/Node combination. "
-      "If your application provides the necessary Thyra ETIs, specialize "
-      "MueLu::Details::has_build_p_blocked_thyra_eti<Scalar,LO,GO,Node> "
-      "to std::true_type.");
+  std::ostringstream oss;
+  oss << "CombinePFactory::BuildPBlocked requires Thyra ETI support for this "
+         "template-parameter combination:\n"
+      << "  Scalar        = " << Teuchos::TypeNameTraits<Scalar>::name() << '\n'
+      << "  LocalOrdinal  = " << Teuchos::TypeNameTraits<LocalOrdinal>::name() << '\n'
+      << "  GlobalOrdinal = " << Teuchos::TypeNameTraits<GlobalOrdinal>::name() << '\n'
+      << "  Node          = " << Teuchos::TypeNameTraits<Node>::name() << '\n'
+      << "If your application provides the necessary Thyra ETIs, specialize "
+         "MueLu::Details::has_build_p_blocked_thyra_eti<Scalar,LocalOrdinal,GlobalOrdinal,Node> "
+         "to std::true_type.";
+
+  TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, oss.str());
 #else
   TEUCHOS_TEST_FOR_EXCEPTION(
       true, Exceptions::RuntimeError,
