@@ -13,7 +13,6 @@
 #include <stdlib.h>
 #include <iomanip>
 
-// #include <Teuchos_LAPACK.hpp>
 #include <Teuchos_SerialDenseMatrix.hpp>
 #include <Teuchos_SerialDenseVector.hpp>
 #include <Teuchos_SerialDenseSolver.hpp>
@@ -33,6 +32,9 @@
 
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
+
+#include <Tpetra_ConfigDefs.hpp>
+#include <TpetraCore_ETIHelperMacros.h>
 
 namespace MueLu {
 
@@ -394,6 +396,18 @@ void CombinePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildPBlocked(L
       std::integral_constant<bool,
                              MueLu::Details::has_build_p_blocked_thyra_eti<Scalar, LocalOrdinal, GlobalOrdinal, Node>::value>{});
 }
+
+#ifdef HAVE_XPETRA_THYRA
+#define MUELU_BUILD_P_BLOCKED_THYRA_ETI_SPEC(S, LO, GO, N) \
+  template <>                                              \
+  struct Details::has_build_p_blocked_thyra_eti<S, LO, GO, N> : std::true_type {};
+
+TPETRA_ETI_MANGLING_TYPEDEFS()
+
+TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(MUELU_BUILD_P_BLOCKED_THYRA_ETI_SPEC)
+
+#undef MUELU_BUILD_P_BLOCKED_THYRA_ETI_SPEC
+#endif
 
 }  // namespace MueLu
 

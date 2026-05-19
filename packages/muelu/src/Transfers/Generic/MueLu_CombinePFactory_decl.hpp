@@ -64,50 +64,6 @@ namespace Details {
  */
 template <class Scalar, class LO, class GO, class Node>
 struct has_build_p_blocked_thyra_eti : std::false_type {};
-
-#ifdef HAVE_XPETRA_THYRA
-
-#ifdef HAVE_TPETRA_DOUBLE
-template <>
-struct has_build_p_blocked_thyra_eti<
-    double,
-    typename Tpetra::Map<>::local_ordinal_type,
-    typename Tpetra::Map<>::global_ordinal_type,
-    typename Tpetra::Map<>::node_type>
-  : std::true_type {};
-#endif
-
-#ifdef HAVE_TPETRA_FLOAT
-template <>
-struct has_build_p_blocked_thyra_eti<
-    float,
-    typename Tpetra::Map<>::local_ordinal_type,
-    typename Tpetra::Map<>::global_ordinal_type,
-    typename Tpetra::Map<>::node_type>
-  : std::true_type {};
-#endif
-
-#ifdef HAVE_TPETRA_COMPLEX_DOUBLE
-template <>
-struct has_build_p_blocked_thyra_eti<
-    std::complex<double>,
-    typename Tpetra::Map<>::local_ordinal_type,
-    typename Tpetra::Map<>::global_ordinal_type,
-    typename Tpetra::Map<>::node_type>
-  : std::true_type {};
-#endif
-
-#ifdef HAVE_TPETRA_COMPLEX_FLOAT
-template <>
-struct has_build_p_blocked_thyra_eti<
-    std::complex<float>,
-    typename Tpetra::Map<>::local_ordinal_type,
-    typename Tpetra::Map<>::global_ordinal_type,
-    typename Tpetra::Map<>::node_type>
-  : std::true_type {};
-#endif
-
-#endif
 }  // namespace Details
 
 /*!
