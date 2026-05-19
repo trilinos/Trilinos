@@ -10,6 +10,7 @@
 #ifndef MUELU_COMBINEPFACTORY_DECL_HPP
 #define MUELU_COMBINEPFACTORY_DECL_HPP
 
+#include "MueLu_ConfigDefs.hpp"
 #include <Teuchos_SerialDenseVector.hpp>
 
 #include <Xpetra_MultiVector.hpp>
@@ -20,6 +21,7 @@
 #include "MueLu_CombinePFactory_fwd.hpp"
 
 #include "MueLu_Level_fwd.hpp"
+#include <type_traits>
 
 namespace MueLuTests {
 // Forward declaration of friend tester class used to UnitTest CombinePFactory
@@ -28,6 +30,41 @@ class CombinePFactoryTester;
 }  // namespace MueLuTests
 
 namespace MueLu {
+
+namespace Details {
+
+/*!
+ * \brief Compile-time trait indicating whether
+ *        \c CombinePFactory::BuildPBlocked may use its Thyra-based blocked
+ *        prolongator construction for a given
+ *        \c Scalar/\c LocalOrdinal/\c GlobalOrdinal/\c Node tuple.
+ *
+ * This trait is used to guard the Thyra-dependent implementation of
+ * \c BuildPBlocked against template instantiations for which the required
+ * Thyra/Tpetra/Xpetra explicit template instantiations (ETI) are not available.
+ * Without this guard, unsupported type combinations may compile successfully
+ * but fail later at link time due to missing Thyra-side instantiations.
+ *
+ * The trait therefore answers a narrower question than "is this scalar type
+ * generally supported by Tpetra?"  It is intended to represent whether the
+ * specific interop path used by \c BuildPBlocked is available for the given
+ * template arguments.
+ *
+ * The primary template defaults to \c std::false_type.  Known-good type
+ * combinations should specialize this trait to \c std::true_type.
+ *
+ * Advanced users who provide the necessary Thyra ETI externally may also
+ * specialize this trait for additional type combinations.  Such a
+ * specialization must be visible at the point where
+ * \c CombinePFactory<...>::BuildPBlocked is instantiated.
+ *
+ * \note Setting this trait to \c true does not create the required ETI; it
+ *       only informs MueLu that the caller guarantees the necessary Thyra-side
+ *       support exists.
+ */
+template <class Scalar, class LO, class GO, class Node>
+struct has_build_p_blocked_thyra_eti : std::false_type {};
+}  // namespace Details
 
 /*!
   @class CombinePFactory
@@ -126,6 +163,16 @@ class CombinePFactory : public PFactory {
   //@}
 
  private:
+  void BuildPBlocked(Level& fineLevel, Level& coarseLevel) const;
+  void BuildPBlockedImpl(Level& fineLevel, Level& coarseLevel, std::false_type) const;
+#ifdef HAVE_XPETRA_THYRA
+  template <class S = Scalar,
+            std::enable_if_t<
+                MueLu::Details::has_build_p_blocked_thyra_eti<
+                    S, LocalOrdinal, GlobalOrdinal, Node>::value,
+                int> = 0>
+  void BuildPBlockedImpl(Level& fineLevel, Level& coarseLevel, std::true_type) const;
+#endif
   int numPDEs_;
 
 };  // class CombinePFactory
