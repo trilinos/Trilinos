@@ -471,7 +471,7 @@ public:
       This function compute the normal n to the manifold as the outer product of the manifold tangents.
       It then computes the normal component as
       \f[
-      (n \cdot \mbox{residual}) / |n|^2
+      (n \cdot \mbox{residual}) / |n|
       \f]
       and multiplies it by the input scaling term. 
 
@@ -1225,7 +1225,10 @@ public:
         This corresponds to mapping multiple sets of reference points to a matching number of
         physical cells.
 
-        The reference (D1) and physics D2 dimensions don't have to be the same, as long as D1 is not greater than D2.
+        The reference (D1) and physics D2 dimensions do not have to be the same, as long as D1 is not greater than D2.
+        For beam and shell cells, D1 = D2; however, the reference-to-physical frame map,
+        sends the in-plane (D1-1) reference coordinats into the D2 physiscal space.
+        As a result, for beam and shell cells, the orthogonal reference coordinates are ignored.
 
         Requires cell topology with a reference cell. See Section \ref sec_cell_topology_ref_map
         for definition of the mapping function. Presently supported cell topologies are
@@ -1486,7 +1489,7 @@ public:
                                   const HGradBasisPtrType basis,
                                   const physPointValueType shellThickness = -1.0 ){
                                     Kokkos::deep_copy(refPoints,initGuess);
-                                    return mapToReferenceFrame(refPoints,physPoints,worksetCell,basis,initGuess);
+                                    return mapToReferenceFrame(refPoints,physPoints,worksetCell,basis,shellThickness);
                                   }
 
 
@@ -1640,9 +1643,10 @@ public:
         \return the parametric distance of the point in the specified reference cell.
     */
     template<typename PointViewType>
-    static bool
+    [[deprecated("Deprecated, use the templated ParametricDistance struct directly.")]]
+    static typename ScalarTraits<typename PointViewType::value_type>::scalar_type
     parametricDistance( const PointViewType         refPoint,
-                         const shards::CellTopology cellTopo);
+                        const shards::CellTopology  cellTopo);
 
     /** \brief  Checks if a point belongs to a reference cell.
 
@@ -1654,6 +1658,7 @@ public:
         \return true if the point is in the closure of the specified reference cell and false otherwise.
     */
     template<typename PointViewType>
+    [[deprecated("Deprecated, use checkPointwiseInclusion, or the templated ParametricDistance struct directly.")]]
     static bool
     checkPointInclusion( const PointViewType        refPoint,
                          const shards::CellTopology cellTopo,

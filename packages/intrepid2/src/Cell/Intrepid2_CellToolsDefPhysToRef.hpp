@@ -175,12 +175,7 @@ namespace Intrepid2 {
       cellCenter("CellTools::mapToReferenceFrame::cellCenter", spaceDim);
     getReferenceCellCenter(cellCenter, cellTopo);
 
-    // Default: map (C,P,D) array of physical pt. sets to (C,P,D) array. Requires (C,P,D) initial guess.
-    const auto numCells = worksetCell.extent(0);
-    const auto numPoints = physPoints.extent(1);
-    
-    // init guess is created locally and non fad whatever refpoints type is 
-    auto initGuess = Impl::createMatchingDynRankView(refPoints, "CellTools::mapToReferenceFrame::initGuess", numCells, numPoints, spaceDim );
+    // initialize refPoints with the cell center
     rst::clone(refPoints, cellCenter);
     
     auto basis = createHGradBasis<refPointValueType,refPointValueType>(cellTopo);
@@ -249,7 +244,7 @@ namespace Intrepid2 {
     using errorViewType = Kokkos::DynRankView<typename ScalarTraits<refPointValueType>::scalar_type, DeviceType>;
     using errorType = typename errorViewType::value_type;
     errorViewType
-      xScalarTmp    ("CellTools::mapToReferenceFrameInitGuess::xScalarTmp",     numCells, numPoints, refDim),
+      xScalarTmp    ("CellTools::mapToReferenceFrameInitGuess::xScalarTmp",     numCells, numPoints, physDim),
       errorPointwise("CellTools::mapToReferenceFrameInitGuess::errorPointwise", numCells, numPoints);
 
     
@@ -258,7 +253,7 @@ namespace Intrepid2 {
     errorType error(0), physInfNorm(0);
 
     rst::extractScalarValues(xScalarTmp, physPoints);
-    rst::vectorNorm(errorPointwise, Kokkos::subview(xScalarTmp, Kokkos::ALL(), Kokkos::ALL(), refDimRange), NORM_TWO);
+    rst::vectorNorm(errorPointwise, xScalarTmp, NORM_TWO);
     using range_policy_type = Kokkos::MDRangePolicy<typename DeviceType::execution_space, Kokkos::Rank<2>, Kokkos::IndexType<ordinal_type> >;
     range_policy_type policy( { 0, 0 }, { numCells, numPoints } );
     using FunctorType = FunctorCellTools::F_maxNorm<errorViewType>;
@@ -279,9 +274,9 @@ namespace Intrepid2 {
       mapToPhysicalFrame(physTmp, xOld, worksetCell, basis); // physTmp <- F(xOld)
       rst::subtract(physTmp, physPoints, physTmp);           // physTmp <- physPoints - F(xOld)
 
-      // l2 error (Euclidean distance) between old and new iterates: |physPoints - F(xOld)|
+      // l2 error (Euclidean distance) of the residual |physPoints - F(xOld)|
       rst::extractScalarValues(xScalarTmp, physTmp);
-      rst::vectorNorm(errorPointwise, Kokkos::subview(xScalarTmp, Kokkos::ALL(), Kokkos::ALL(), refDimRange), NORM_TWO);
+      rst::vectorNorm(errorPointwise, xScalarTmp, NORM_TWO);
 
       error = 0;
       Kokkos::parallel_reduce("MaxReduction", policy, FunctorType(errorPointwise), Kokkos::Max<errorType>(error));
@@ -304,7 +299,7 @@ namespace Intrepid2 {
       }
   
       // extract values
-      rst::extractScalarValues(xScalarTmp, refPts);
+      rst::extractScalarValues(Kokkos::subview(xScalarTmp, Kokkos::ALL(), Kokkos::ALL(), refDimRange), refPts);
 
       rst::add(refPts, xOld);                                 // refPoints <- refPoints + xOld
 
@@ -317,6 +312,11 @@ namespace Intrepid2 {
       // Stopping criterion:
       if (error < tol) {
         converged = true;
+        if(isShell) { //update Jacobian and residual so that they are consistent with refPts
+          setJacobian(jacobian, refPts, worksetCell, basis);
+          mapToPhysicalFrame(physTmp, refPts, worksetCell, basis); // physTmp <- F(refPts)
+          rst::subtract(physTmp, physPoints, physTmp);             // physTmp <- physPoints - F(refPts)
+        }
         break;
       }
 
@@ -330,7 +330,6 @@ namespace Intrepid2 {
       //and dividing it by the shell half thickness. We do so by solving
       //(physPoints - F(xOld)) * n /|n|^2 / (H/2)
       //where H is the shell thickness and  n is the normal to the manifold defined by the map to physical frame (n is orthogonal to the tangents defined by the Jacobian)
-      setJacobian(jacobian, refPts, worksetCell, basis);
       scaledResidualNormalComponent(
                Kokkos::subview(refPoints,Kokkos::ALL(), Kokkos::ALL(), refDim),
                jacobian,

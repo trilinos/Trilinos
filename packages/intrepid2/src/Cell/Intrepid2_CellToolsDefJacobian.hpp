@@ -783,12 +783,15 @@ namespace Intrepid2 {
     using FunctorType      = FunctorCellTools::F_setJacobian<JacobianViewType,WorksetType,BasisGradientsType> ;
     
     // resolve the -1 default argument for endCell into the true end cell index
+    // In some cases, endCell may be smaller than worksetCell.extent(0).
+    // This can occur when cells are split across worksets and the final
+    // workset is not completely filled with valid cells.
     ordinal_type endCellResolved = (endCell == -1) ? worksetCell.extent_int(0) : endCell;
     
     using range_policy_type = Kokkos::MDRangePolicy
       < ExecSpaceType, Kokkos::Rank<2>, Kokkos::IndexType<ordinal_type> >;
     range_policy_type policy( { 0, 0 },
-                              { std::max(jacobian.extent_int(0), endCellResolved-startCell), jacobian.extent_int(1) } );
+                              { std::min(jacobian.extent_int(0), endCellResolved-startCell), jacobian.extent_int(1) } );
     Kokkos::parallel_for( policy, FunctorType(jacobian, worksetCell, gradients, startCell) );
   }
 

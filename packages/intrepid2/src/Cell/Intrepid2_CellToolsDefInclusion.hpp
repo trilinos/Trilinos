@@ -32,10 +32,10 @@ namespace Intrepid2 {
 
   template<typename DeviceType>
   template<typename PointViewType>
-  bool 
+  typename ScalarTraits<typename PointViewType::value_type>::scalar_type 
   CellTools<DeviceType>::
   parametricDistance( const PointViewType      point,
-                       const shards::CellTopology   cellTopo) {
+                      const shards::CellTopology   cellTopo) {
 #ifdef HAVE_INTREPID2_DEBUG
     INTREPID2_TEST_FOR_EXCEPTION( point.rank() != 1, std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::parametricDistance): Point must have rank 1. ");
