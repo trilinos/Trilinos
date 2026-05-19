@@ -286,31 +286,29 @@ StepperEPI<Scalar>::computeRemf(
 
   // Eval the rhs at (xr, tr)
   // Mf_old = M^{-1}*F_impl(xr, tr)
-  Teuchos::RCP<Thyra::VectorBase<Scalar>> Mf_old = xr->clone_v();
+  Teuchos::RCP<Thyra::VectorBase<Scalar>> Mf_old = Thyra::createMember(xr->space());
   this->evaluateImplicitODE(Mf_old, Teuchos::rcp_const_cast<Thyra::VectorBase<Scalar>>(xr), xrDot, tr, p);
 
   // xd = xr - x0
-  Teuchos::RCP<Thyra::VectorBase<Scalar>> xd = xr->clone_v();
-  Thyra::Vp_StV(xd.ptr(), Scalar(-1.0), *x0);
+  Teuchos::RCP<Thyra::VectorBase<Scalar>> xd = Thyra::createMember(xr->space());
+  Thyra::V_VpStV(xd.ptr(), *xr, Scalar(-1.0), *x0);
 
   // J_xd = -(M^{-1}*J) * (xr - x0)
-  Teuchos::RCP<Thyra::VectorBase<Scalar>> J_xd = x0->clone_v();
-  // Thyra::assign(J_xd.ptr(), Scalar(0.0));
+  Teuchos::RCP<Thyra::VectorBase<Scalar>> J_xd = Thyra::createMember(x0->space());
   phiEvaluator_->applyJacobian(J_xd.ptr(), xd);
 
-  // R = (Mf_old - Mf) + J_xd
+  // R = (Mf - Mf_old) + J_xd
   // Mf is rhs at the current time: M^{-1}*F_impl(x0, t0)
-  Teuchos::RCP<Thyra::VectorBase<Scalar>> R = Mf->clone_v();
-  Thyra::Vp_StV(R.ptr(), Scalar(-1.0), *Mf_old);
-  Thyra::Vp_StV(R.ptr(), Scalar(1.0), *J_xd);
+  Thyra::Vp_V(J_xd.ptr(), *Mf);
+  Thyra::Vp_StV(J_xd.ptr(), Scalar(-1.0), *Mf_old);
 
   // Time derivative remainder term only nonzero in nonautonomous case
   // += (dt * M^{-1} * F') * ((tr - t0) / dt)
   if (dt_Mf_deriv != Teuchos::null) {
-    Thyra::Vp_StV(R.ptr(), Scalar((tr - t0)/dt), *dt_Mf_deriv);
+    Thyra::Vp_StV(J_xd.ptr(), Scalar((tr - t0)/dt), *dt_Mf_deriv);
   }
 
-  return R;
+  return J_xd;
 }
 
 
