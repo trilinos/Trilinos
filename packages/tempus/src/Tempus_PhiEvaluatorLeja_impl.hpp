@@ -364,6 +364,15 @@ void PhiEvaluatorLeja<Scalar>::setLejaEllipse(const double a, const double b, co
 }
 
 template <class Scalar>
+void PhiEvaluatorLeja<Scalar>::adaptEvaluator()
+{
+   Teuchos::Tuple<Scalar, 3> leja_abc = this->phiLinSolv_->computeJacobianSpectrumBounds(16);
+   leja_a_ = leja_abc[0];
+   leja_b_ = leja_abc[1];
+   leja_c_ = leja_abc[2];
+}
+
+template <class Scalar>
 void PhiEvaluatorLeja<Scalar>::setDivideDifferenceMethod(const int ddMethod)
 {
   ddMethod_ = ddMethod;

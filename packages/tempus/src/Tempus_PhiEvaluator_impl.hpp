@@ -39,6 +39,11 @@
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_VerbosityLevel.hpp"
 
+// Anasazi eigensolver (Block Krylov-Schur) for spectrum bound estimation
+#include "AnasaziThyraAdapter.hpp"           // registers Thyra MV/OP traits with Anasazi
+#include "AnasaziBasicEigenproblem.hpp"
+#include "AnasaziBlockKrylovSchurSolMgr.hpp"
+
 
 namespace Tempus {
 
@@ -505,6 +510,102 @@ Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> PhiLinearSolver<Scalar>::buildAT
   );
 
   return Atilde_;
+}
+
+template <class Scalar>
+Teuchos::Tuple<Scalar, 3> PhiLinearSolver<Scalar>::computeJacobianSpectrumBounds(int inev)
+{
+  this->checkInitialized();
+
+  using MT = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+  typedef Thyra::MultiVectorBase<Scalar> MV;
+  typedef Thyra::LinearOpBase<Scalar>    OP;
+
+  // A = M^{-1}*J LinOp
+  Teuchos::RCP<const OP> A =
+      Thyra::multiply<Scalar>(inverseMassMatrix_, jacobianMatrix_);
+
+  // Estimate up to the first inev eigenvalues, or the full dimension if smaller.
+  const int dim       = static_cast<int>(A->domain()->dim());
+  const int nev       = std::min(inev, dim);
+  const int blockSize = 1;
+  // numBlocks * blockSize <= dim (Anasazi constraint)
+  // numBlocks > nev (solver requirement)
+  const int numBlocks = std::min(2 * nev, dim);
+  // loose tol sufficient for spectrum bound estimate
+  const double eig_tolerance = 5e-3;
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      numBlocks <= nev, std::logic_error,
+      "computeJacobianSpectrumBounds: operator dimension (" << dim <<
+      ") is too small for Krylov-Schur eigensolver with nev=" << nev << ".");
+
+  // Init eigenvec multivector: warmstart from previous eigenvectors if available
+  Teuchos::RCP<MV> initVec;
+  const bool canWarmstart =
+      evecsMinvJ_ != Teuchos::null &&
+      static_cast<int>(evecsMinvJ_->domain()->dim()) == blockSize &&
+      evecsMinvJ_->range()->isCompatible(*A->domain());
+
+  if (canWarmstart) {
+    initVec = evecsMinvJ_;
+  } else {
+    initVec = Thyra::createMembers(A->domain(), blockSize);
+    Thyra::randomize(MT(-1), MT(1), initVec.ptr());
+  }
+
+  Teuchos::RCP<Anasazi::BasicEigenproblem<Scalar, MV, OP>> problem =
+      Teuchos::rcp(new Anasazi::BasicEigenproblem<Scalar, MV, OP>());
+  problem->setOperator(A);
+  problem->setInitVec(initVec);
+  problem->setNEV(nev);
+  problem->setHermitian(false);  // M^{-1}*J is generally non-symmetric
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      !problem->setProblem(), std::logic_error,
+      "computeJacobianSpectrumBounds: BasicEigenproblem::setProblem() failed.");
+
+  Teuchos::ParameterList pl;
+  pl.set("Which",                          "LM");
+  pl.set("Block Size",                     blockSize);
+  pl.set("Num Blocks",                     numBlocks);
+  pl.set("Maximum Restarts",               50);
+  pl.set("Convergence Tolerance",          eig_tolerance);
+  pl.set("Relative Convergence Tolerance", false);
+  pl.set("Verbosity",                      Anasazi::Errors);
+  Anasazi::BlockKrylovSchurSolMgr<Scalar, MV, OP> solverMgr(problem, pl);
+  solverMgr.solve();
+
+  // Extract eigenvalues: prefer converged, fall back to current Ritz values
+  const Anasazi::Eigensolution<Scalar, MV>& sol = problem->getSolution();
+
+  std::vector<Anasazi::Value<Scalar>> evals;
+  if (sol.numVecs > 0) {
+    evals.assign(sol.Evals.begin(), sol.Evals.begin() + sol.numVecs);
+  } else {
+    evals = solverMgr.getRitzValues();
+  }
+
+  // Compute spectrum bounds
+  MT a_val =  Teuchos::ScalarTraits<MT>::rmax();
+  MT b_val = -Teuchos::ScalarTraits<MT>::rmax();
+  MT c_val =  Teuchos::ScalarTraits<MT>::zero();
+
+  for (const auto& ev : evals) {
+    a_val = std::min(a_val, ev.realpart);
+    b_val = std::max(b_val, ev.realpart);
+    c_val = std::max(c_val, std::abs(ev.imagpart));
+  }
+
+  // Store converged eigenvectors for warmstart on the next call
+  if (sol.numVecs > 0 && sol.Evecs != Teuchos::null) {
+    const int cols = std::min(blockSize, sol.numVecs);
+    evecsMinvJ_ = Thyra::createMembers(A->domain(), cols);
+    Thyra::assign(evecsMinvJ_.ptr(),
+                  *sol.Evecs->subView(Teuchos::Range1D(0, cols - 1)));
+  }
+
+  return Teuchos::tuple<Scalar>(Scalar(a_val), Scalar(std::max(0.0, b_val)), Scalar(c_val));
 }
 
 template <class Scalar>

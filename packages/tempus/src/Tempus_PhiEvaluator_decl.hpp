@@ -57,6 +57,7 @@ class PhiLinearSolver {
   void buildb(const Teuchos::ArrayView<const Teuchos::RCP<const Thyra::VectorBase<Scalar>>> &rhs_B);
   Teuchos::RCP<Thyra::ProductVectorBase<Scalar>> buildv(const Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar>> space,
 							const Teuchos::RCP<const Thyra::VectorBase<Scalar>> x0) const;
+  Teuchos::Tuple<Scalar, 3> computeJacobianSpectrumBounds(int inev);
 
   // Solve Mass plus Jacobian, for given inArgs (recompute matrices from from ModelEvaluator)
   Thyra::SolveStatus<Scalar> assembleAndsolveMpJ(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
@@ -89,6 +90,9 @@ class PhiLinearSolver {
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> Atilde_;
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> KMatrix_;
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> bMatrix_;
+
+  // internal storage for eigenvectors of the M^{-1}*J LinOp
+  Teuchos::RCP<Thyra::MultiVectorBase<Scalar>> evecsMinvJ_;
 };
 
 
@@ -163,13 +167,20 @@ class PhiEvaluator
   /// set the ModelEvaluator
   void setModel(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > appModel);
 
-
   /** \brief   Set the linearization point for the Jacobian calculation
    *
    *  The linearization point x and time t are taken from inArgs.
    *  This computes the Mass and Jacobian matrix for future use.
    */
   void setLinearizationPoint(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs);
+
+  /** \brief   Adapt internal PhiEvaluator hyperparameters to the current Jacobian.
+   *
+   *  Called after setLinearizationPoint.  Default implementation is a null-op.
+   *  This method should be overridden by inheriting PhiEvaluator implementations when
+   *  there are hyperparameters of the method that require analysis of the Jacobian.
+   */
+  virtual void adaptEvaluator() { this->isInitialized(); };
 
   /** \brief  Compute the Phi_k function of cdt*Jacobian for right hand side Mrhs_b
    *

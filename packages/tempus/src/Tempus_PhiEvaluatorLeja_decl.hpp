@@ -116,6 +116,10 @@ class PhiEvaluatorLeja
   /// Update the Leja ellipse parameters
   void setLejaEllipse(const double a, const double b, const double c);
 
+  /// Adaptively update the spectrum parameters
+  /// leja_a_, leja_b_ and leja_c_ using Krylov-Schur
+  void adaptEvaluator() override;
+
   /// Set the divided difference method
   void setDivideDifferenceMethod(const int ddMethod);
 
