@@ -402,7 +402,7 @@ namespace Intrepid2 {
            const ordinal_type np,
            const double alpha,
            const double beta) {
-    const double tol = tolerence();
+    const double tol = tolerance();
 
     typedef typename zViewType::value_type value_type;
     typedef typename zViewType::pointer_type pointer_type;
@@ -435,7 +435,7 @@ namespace Intrepid2 {
            const ordinal_type np,
            const double alpha,
            const double beta) {
-    const double tol = tolerence();
+    const double tol = tolerance();
 
     typedef typename zViewType::value_type value_type;
     typedef typename zViewType::pointer_type pointer_type;
@@ -473,7 +473,7 @@ namespace Intrepid2 {
            const ordinal_type np,
            const double alpha,
            const double beta) {
-    const double tol = tolerence();
+    const double tol = tolerance();
 
     typedef typename zViewType::value_type value_type;
     typedef typename zViewType::pointer_type pointer_type;
@@ -511,7 +511,7 @@ namespace Intrepid2 {
            const ordinal_type np,
            const double alpha,
            const double beta) {
-    const double one = 1.0, two = 2.0, tol = tolerence();
+    const double one = 1.0, two = 2.0, tol = tolerance();
 
     typedef typename zViewType::value_type value_type;
     typedef typename zViewType::pointer_type pointer_type;
@@ -699,7 +699,7 @@ namespace Intrepid2 {
 
     const double dth = M_PI/(2.0*n);
     const double one = 1.0, two = 2.0;
-    const double tol = tolerence();
+    const double tol = tolerance();
 
     typedef typename zViewType::value_type value_type;
     typedef typename zViewType::pointer_type pointer_type;

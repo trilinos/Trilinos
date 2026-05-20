@@ -272,7 +272,7 @@ Basis_HCURL_TET_In_FEM( const ordinal_type order,
 #ifdef HAVE_INTREPID2_DEBUG
   ordinal_type num_nonzero_sv = 0;
   for (int i=0;i<cardVecPn;i++)
-    num_nonzero_sv += (S(i,0) > 10*tolerence());
+    num_nonzero_sv += (S(i,0) > 10*tolerance());
 
   INTREPID2_TEST_FOR_EXCEPTION( num_nonzero_sv != card, std::invalid_argument,
       ">>> ERROR: (Intrepid2::Basis_HCURL_TET_In_FEM( order, pointType), Matrix V1 should have rank equal to the cardinality of HCURL space");

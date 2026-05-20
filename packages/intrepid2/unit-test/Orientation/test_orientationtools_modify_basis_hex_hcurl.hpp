@@ -63,7 +63,7 @@ namespace Intrepid2 {
         << "===============================================================================\n";
 
       int errorFlag = 0;
-      const double tol = 100*tolerence();
+      const double tol = 100*tolerance();
       constexpr ordinal_type maxOrder = Parameters::MaxOrder;
 
       typedef OrientationTools<DeviceType> ots;
