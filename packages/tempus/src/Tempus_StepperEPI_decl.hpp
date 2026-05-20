@@ -183,6 +183,8 @@ private:
   /// temporal Integration order
   Scalar order_;
 
+  /// Number of time steps to wait between adapt PhiEvaluator calls
+  int adapt_phi_evaluator_interval_;
 };
 
 /** \brief Time-derivative interface for Backward Euler.
