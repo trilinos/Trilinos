@@ -127,20 +127,23 @@ void StepperEPI<Scalar>::takeStep(
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperEPI::takeStep()");
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(solutionHistory->getNumStates() < 2,
+    TEUCHOS_TEST_FOR_EXCEPTION((solutionHistory->getNumStates() < 2 && order_ <= 2.0),
       std::logic_error,
       "Error - StepperEPI<Scalar>::takeStep(...)\n"
-      "Need at least two SolutionStates for EPI2, three for EPI3.\n"
+      "Need at least two SolutionStates for EPI2.\n"
       "  Number of States = " << solutionHistory->getNumStates() << "\n"
-      "Try setting in \"Solution History\" \"Storage Type\" = \"Undo\"\n"
-      "  or \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"2\" for EPI2,\n"
-      "  or \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"3\" for EPI3.\n");
+      "Try setting in \"Solution History\"\n"
+      "  \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"2\" for EPI2.\n"
+      "  or \"Storage Type\" = \"Unlimited\"\n");
 
     TEUCHOS_TEST_FOR_EXCEPTION((solutionHistory->getStorageLimit() < 3 && order_ > 2.0),
       std::logic_error,
       "Error - StepperEPI<Scalar>::takeStep(...)\n"
       "Need at least three SolutionStates for EPI3.\n"
-      "Set: \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"3\" for EPI3.\n");
+      "  Number of States = " << solutionHistory->getNumStates() << "\n"
+      "Try setting in \"Solution History\"\n"
+      "  \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"3\" for EPI3.\n"
+      "  or \"Storage Type\" = \"Unlimited\"\n");
     bool useEPI3 = false;
     if (solutionHistory->getNumStates() >= 3 && order_ > 2.0) {
       useEPI3 = true;
@@ -224,7 +227,7 @@ void StepperEPI<Scalar>::takeStep(
     if (useEPI3) {
       // Retrieve x_{n-1} when available (used by EPI3 formula, added in next step).
       // Note this last solution is obtined with getStateTimeIndexNM2()
-      // On the first step only two states exist so xOldOld remains null and the
+      // On the first step only two states exist so
       // method runs as pure EPI2.
       Scalar tOldOld = solutionHistory->getStateTimeIndexNM2()->getTime();
       RCP<const Thyra::VectorBase<Scalar>> xOldOld = solutionHistory->getStateTimeIndexNM2()->getX();
