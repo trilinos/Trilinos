@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
   typedef Tpetra::MultiVector<Scalar,LO,GO> MV;
   typedef Tpetra::MultiVector<LO,LO,GO> ID;
   typedef Tpetra::MatrixMarket::Reader<MAT> MMReader;
-  typedef Tpetra::MatrixMarket::Reader<ID> IDReader;
+  typedef Tpetra::MatrixMarket::Reader<typename Tpetra::CrsMatrix<LO, LO, GO>> IDReader;
   typedef Tpetra::Map<LO,GO> MAP;
 
   typedef Teuchos::ArrayRCP<const LO> SchurPart_type;
