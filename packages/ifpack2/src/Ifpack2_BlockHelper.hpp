@@ -134,9 +134,23 @@ struct is_sycl<Kokkos::SYCL> {
 };
 #endif
 
+///
+/// nextsilicon specialization
+///
+template <typename T>
+struct is_nextsilicon {
+  enum : bool { value = false };
+};
+#if defined(KOKKOS_ENABLE_NEXTSILICON)
+template <>
+struct is_nextsilicon<Kokkos::Experimental::NextSilicon> {
+  enum : bool { value = true };
+};
+#endif
+
 template <typename T>
 struct is_device {
-  enum : bool { value = is_cuda<T>::value || is_hip<T>::value || is_sycl<T>::value };
+  enum : bool { value = is_cuda<T>::value || is_hip<T>::value || is_sycl<T>::value || is_nextsilicon<T>::value };
 };
 
 ///
@@ -180,6 +194,15 @@ template <>
 struct ExecutionSpaceFactory<Kokkos::SYCL> {
   static void createInstance(Kokkos::SYCL &exec_instance) {
     exec_instance = Kokkos::SYCL();
+  }
+};
+#endif
+
+#if defined(KOKKOS_ENABLE_NEXTSILICON)
+template <>
+struct ExecutionSpaceFactory<Kokkos::Experimental::NextSilicon> {
+  static void createInstance(Kokkos::Experimental::NextSilicon &exec_instance) {
+    exec_instance = Kokkos::Experimental::NextSilicon();
   }
 };
 #endif
