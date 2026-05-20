@@ -4,6 +4,7 @@
   <Parameter name="use kokkos refactor" type="bool" value="true"/>
 
   <Parameter name="repartition: enable" type="bool" value="true"/>
+  <Parameter name="repartition: use subcommunicators" type="bool" value="false"/>
 
   <Parameter name="smoother: type" type="string" value="RELAXATION"/>
   <ParameterList name="smoother: params">
