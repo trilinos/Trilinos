@@ -283,7 +283,8 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib lib, int argc, char* argv[]) {
 #include <MueLu_UseShortNames.hpp>
 #ifndef HAVE_XPETRA_THYRA
-  std::cout << "MultiphysicsDriver requires Thyra to be enabled. Skipping test." return EXIT_SUCCESS;
+  std::cout << "MultiphysicsDriver requires Thyra to be enabled. Skipping test.";
+  return EXIT_SUCCESS;
 #else
 
   Teuchos::oblackholestream blackhole;
