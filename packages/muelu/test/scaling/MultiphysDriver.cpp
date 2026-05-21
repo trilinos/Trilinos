@@ -146,7 +146,7 @@ BuildProblem(const Teuchos::RCP<const Teuchos::Comm<int>>& comm,
              Scalar alpha,
              Scalar beta) {
 #ifndef HAVE_XPETRA_THYRA
-  return MultiPhysTestObjects<Scalar, LocalOrdinal, GlobalOrdinal, Node> objs{};
+  return MultiPhysTestObjects<Scalar, LocalOrdinal, GlobalOrdinal, Node>{};
 #else
   using Matrix           = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   using BlockedCrsMatrix = Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
