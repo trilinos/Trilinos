@@ -39,23 +39,23 @@ extern "C" {
 #include <stdexcept>
 #include <numeric>
 
-namespace Tpetra::MatrixMarket {
+namespace Tpetra {
 
-template <class SparseMatrixType>
-Teuchos::RCP<const typename Reader<SparseMatrixType>::map_type>
-Reader<SparseMatrixType>::makeRangeMap(const trcp_tcomm_t& pComm,
-                                       const global_ordinal_type numRows) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<const typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::map_type>
+MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::makeRangeMap(const trcp_tcomm_t& pComm,
+                                                                            const global_ordinal_type numRows) {
   // Return a conventional, uniformly partitioned, contiguous map.
   return rcp(new map_type(static_cast<global_size_t>(numRows),
                           static_cast<global_ordinal_type>(0),
                           pComm, GloballyDistributed));
 }
 
-template <class SparseMatrixType>
-Teuchos::RCP<const typename Reader<SparseMatrixType>::map_type>
-Reader<SparseMatrixType>::makeRowMap(const Teuchos::RCP<const map_type>& pRowMap,
-                                     const trcp_tcomm_t& pComm,
-                                     const global_ordinal_type numRows) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<const typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::map_type>
+MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::makeRowMap(const Teuchos::RCP<const map_type>& pRowMap,
+                                                                          const trcp_tcomm_t& pComm,
+                                                                          const global_ordinal_type numRows) {
   // If the caller didn't provide a map, return a conventional,
   // uniformly partitioned, contiguous map.
   if (pRowMap.is_null()) {
@@ -76,11 +76,11 @@ Reader<SparseMatrixType>::makeRowMap(const Teuchos::RCP<const map_type>& pRowMap
   }
 }
 
-template <class SparseMatrixType>
-Teuchos::RCP<const typename Reader<SparseMatrixType>::map_type>
-Reader<SparseMatrixType>::makeDomainMap(const Teuchos::RCP<const map_type>& pRangeMap,
-                                        const global_ordinal_type numRows,
-                                        const global_ordinal_type numCols) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<const typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::map_type>
+MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::makeDomainMap(const Teuchos::RCP<const map_type>& pRangeMap,
+                                                                             const global_ordinal_type numRows,
+                                                                             const global_ordinal_type numCols) {
   // Abbreviations so that the map creation call isn't too long.
   typedef local_ordinal_type LO;
   typedef global_ordinal_type GO;
@@ -94,17 +94,17 @@ Reader<SparseMatrixType>::makeDomainMap(const Teuchos::RCP<const map_type>& pRan
   }
 }
 
-template <class SparseMatrixType>
-void Reader<SparseMatrixType>::distribute(Teuchos::ArrayRCP<size_t>& myNumEntriesPerRow,
-                                          Teuchos::ArrayRCP<size_t>& myRowPtr,
-                                          Teuchos::ArrayRCP<global_ordinal_type>& myColInd,
-                                          Teuchos::ArrayRCP<scalar_type>& myValues,
-                                          const Teuchos::RCP<const map_type>& pRowMap,
-                                          Teuchos::ArrayRCP<size_t>& numEntriesPerRow,
-                                          Teuchos::ArrayRCP<size_t>& rowPtr,
-                                          Teuchos::ArrayRCP<global_ordinal_type>& colInd,
-                                          Teuchos::ArrayRCP<scalar_type>& values,
-                                          const bool debug) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::distribute(Teuchos::ArrayRCP<size_t>& myNumEntriesPerRow,
+                                                                               Teuchos::ArrayRCP<size_t>& myRowPtr,
+                                                                               Teuchos::ArrayRCP<global_ordinal_type>& myColInd,
+                                                                               Teuchos::ArrayRCP<scalar_type>& myValues,
+                                                                               const Teuchos::RCP<const map_type>& pRowMap,
+                                                                               Teuchos::ArrayRCP<size_t>& numEntriesPerRow,
+                                                                               Teuchos::ArrayRCP<size_t>& rowPtr,
+                                                                               Teuchos::ArrayRCP<global_ordinal_type>& colInd,
+                                                                               Teuchos::ArrayRCP<scalar_type>& values,
+                                                                               const bool debug) {
   using std::cerr;
   using std::endl;
   using Teuchos::arcp;
@@ -446,16 +446,16 @@ void Reader<SparseMatrixType>::distribute(Teuchos::ArrayRCP<size_t>& myNumEntrie
   }
 }
 
-template <class SparseMatrixType>
-Teuchos::RCP<typename Reader<SparseMatrixType>::sparse_matrix_type>
-Reader<SparseMatrixType>::makeMatrix(Teuchos::ArrayRCP<size_t>& myNumEntriesPerRow,
-                                     Teuchos::ArrayRCP<size_t>& myRowPtr,
-                                     Teuchos::ArrayRCP<global_ordinal_type>& myColInd,
-                                     Teuchos::ArrayRCP<scalar_type>& myValues,
-                                     const Teuchos::RCP<const map_type>& pRowMap,
-                                     const Teuchos::RCP<const map_type>& pRangeMap,
-                                     const Teuchos::RCP<const map_type>& pDomainMap,
-                                     const bool callFillComplete) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::sparse_matrix_type>
+MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::makeMatrix(Teuchos::ArrayRCP<size_t>& myNumEntriesPerRow,
+                                                                          Teuchos::ArrayRCP<size_t>& myRowPtr,
+                                                                          Teuchos::ArrayRCP<global_ordinal_type>& myColInd,
+                                                                          Teuchos::ArrayRCP<scalar_type>& myValues,
+                                                                          const Teuchos::RCP<const map_type>& pRowMap,
+                                                                          const Teuchos::RCP<const map_type>& pRangeMap,
+                                                                          const Teuchos::RCP<const map_type>& pDomainMap,
+                                                                          const bool callFillComplete) {
   using std::cerr;
   using std::endl;
   using Teuchos::ArrayView;
@@ -525,17 +525,17 @@ Reader<SparseMatrixType>::makeMatrix(Teuchos::ArrayRCP<size_t>& myNumEntriesPerR
   return A;
 }
 
-template <class SparseMatrixType>
-Teuchos::RCP<typename Reader<SparseMatrixType>::sparse_matrix_type>
-Reader<SparseMatrixType>::makeMatrix(Teuchos::ArrayRCP<size_t>& myNumEntriesPerRow,
-                                     Teuchos::ArrayRCP<size_t>& myRowPtr,
-                                     Teuchos::ArrayRCP<typename Reader<SparseMatrixType>::global_ordinal_type>& myColInd,
-                                     Teuchos::ArrayRCP<typename Reader<SparseMatrixType>::scalar_type>& myValues,
-                                     const Teuchos::RCP<const typename Reader<SparseMatrixType>::map_type>& pRowMap,
-                                     const Teuchos::RCP<const typename Reader<SparseMatrixType>::map_type>& pRangeMap,
-                                     const Teuchos::RCP<const typename Reader<SparseMatrixType>::map_type>& pDomainMap,
-                                     const Teuchos::RCP<Teuchos::ParameterList>& constructorParams,
-                                     const Teuchos::RCP<Teuchos::ParameterList>& fillCompleteParams) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::sparse_matrix_type>
+MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::makeMatrix(Teuchos::ArrayRCP<size_t>& myNumEntriesPerRow,
+                                                                          Teuchos::ArrayRCP<size_t>& myRowPtr,
+                                                                          Teuchos::ArrayRCP<typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::global_ordinal_type>& myColInd,
+                                                                          Teuchos::ArrayRCP<typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::scalar_type>& myValues,
+                                                                          const Teuchos::RCP<const typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::map_type>& pRowMap,
+                                                                          const Teuchos::RCP<const typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::map_type>& pRangeMap,
+                                                                          const Teuchos::RCP<const typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::map_type>& pDomainMap,
+                                                                          const Teuchos::RCP<Teuchos::ParameterList>& constructorParams,
+                                                                          const Teuchos::RCP<Teuchos::ParameterList>& fillCompleteParams) {
   using std::cerr;
   using std::endl;
   using Teuchos::ArrayView;
@@ -543,8 +543,8 @@ Reader<SparseMatrixType>::makeMatrix(Teuchos::ArrayRCP<size_t>& myNumEntriesPerR
   using Teuchos::RCP;
   using Teuchos::rcp;
   // Typedef to make certain type declarations shorter.
-  typedef typename Reader<SparseMatrixType>::global_ordinal_type GO;
-  using size_type = typename Reader<SparseMatrixType>::size_type;
+  typedef typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::global_ordinal_type GO;
+  using size_type = typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::size_type;
 
   // The row pointer array always has at least one entry, even
   // if the matrix has zero rows.  myNumEntriesPerRow, myColInd,
@@ -570,9 +570,9 @@ Reader<SparseMatrixType>::makeMatrix(Teuchos::ArrayRCP<size_t>& myNumEntriesPerR
 
   // Construct the CrsMatrix, using the row map, with the
   // constructor specifying the number of nonzeros for each row.
-  RCP<typename Reader<SparseMatrixType>::sparse_matrix_type> A =
-      rcp(new typename Reader<SparseMatrixType>::sparse_matrix_type(pRowMap, myNumEntriesPerRow(),
-                                                                    constructorParams));
+  RCP<typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::sparse_matrix_type> A =
+      rcp(new typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::sparse_matrix_type(pRowMap, myNumEntriesPerRow(),
+                                                                                                         constructorParams));
 
   // List of the global indices of my rows.
   // They may or may not be contiguous.
@@ -582,10 +582,10 @@ Reader<SparseMatrixType>::makeMatrix(Teuchos::ArrayRCP<size_t>& myNumEntriesPerR
   // Add this processor's matrix entries to the CrsMatrix.
   const GO indexBase = pRowMap->getIndexBase();
   for (size_type i = 0; i < myNumRows; ++i) {
-    const size_type myCurPos                                                  = myRowPtr[i];
-    const typename Reader<SparseMatrixType>::local_ordinal_type curNumEntries = myNumEntriesPerRow[i];
-    ArrayView<GO> curColInd                                                   = myColInd.view(myCurPos, curNumEntries);
-    ArrayView<typename Reader<SparseMatrixType>::scalar_type> curValues       = myValues.view(myCurPos, curNumEntries);
+    const size_type myCurPos                                                                                       = myRowPtr[i];
+    const typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_ordinal_type curNumEntries = myNumEntriesPerRow[i];
+    ArrayView<GO> curColInd                                                                                        = myColInd.view(myCurPos, curNumEntries);
+    ArrayView<typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::scalar_type> curValues       = myValues.view(myCurPos, curNumEntries);
 
     // Modify the column indices in place to have the right index base.
     for (size_type k = 0; k < curNumEntries; ++k) {
@@ -608,17 +608,17 @@ Reader<SparseMatrixType>::makeMatrix(Teuchos::ArrayRCP<size_t>& myNumEntriesPerR
   return A;
 }
 
-template <class SparseMatrixType>
-Teuchos::RCP<typename Reader<SparseMatrixType>::sparse_matrix_type>
-Reader<SparseMatrixType>::makeMatrix(Teuchos::ArrayRCP<size_t>& myNumEntriesPerRow,
-                                     Teuchos::ArrayRCP<size_t>& myRowPtr,
-                                     Teuchos::ArrayRCP<global_ordinal_type>& myColInd,
-                                     Teuchos::ArrayRCP<scalar_type>& myValues,
-                                     const Teuchos::RCP<const typename Reader<SparseMatrixType>::map_type>& rowMap,
-                                     Teuchos::RCP<const typename Reader<SparseMatrixType>::map_type>& colMap,
-                                     const Teuchos::RCP<const typename Reader<SparseMatrixType>::map_type>& domainMap,
-                                     const Teuchos::RCP<const typename Reader<SparseMatrixType>::map_type>& rangeMap,
-                                     const bool callFillComplete) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::sparse_matrix_type>
+MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::makeMatrix(Teuchos::ArrayRCP<size_t>& myNumEntriesPerRow,
+                                                                          Teuchos::ArrayRCP<size_t>& myRowPtr,
+                                                                          Teuchos::ArrayRCP<global_ordinal_type>& myColInd,
+                                                                          Teuchos::ArrayRCP<scalar_type>& myValues,
+                                                                          const Teuchos::RCP<const typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::map_type>& rowMap,
+                                                                          Teuchos::RCP<const typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::map_type>& colMap,
+                                                                          const Teuchos::RCP<const typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::map_type>& domainMap,
+                                                                          const Teuchos::RCP<const typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::map_type>& rangeMap,
+                                                                          const bool callFillComplete) {
   using Teuchos::ArrayView;
   using Teuchos::as;
   using Teuchos::null;
@@ -674,13 +674,13 @@ Reader<SparseMatrixType>::makeMatrix(Teuchos::ArrayRCP<size_t>& myNumEntriesPerR
   return A;
 }
 
-template <class SparseMatrixType>
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<const Teuchos::MatrixMarket::Banner>
-Reader<SparseMatrixType>::readBanner(std::istream& in,
-                                     size_t& lineNumber,
-                                     const bool tolerant,
-                                     const bool /* debug */,
-                                     const bool isGraph) {
+MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readBanner(std::istream& in,
+                                                                          size_t& lineNumber,
+                                                                          const bool tolerant,
+                                                                          const bool /* debug */,
+                                                                          const bool isGraph) {
   using std::cerr;
   using std::endl;
   using Teuchos::RCP;
@@ -744,21 +744,21 @@ Reader<SparseMatrixType>::readBanner(std::istream& in,
   return pBanner;
 }
 
-template <class SparseMatrixType>
-Teuchos::Tuple<typename Reader<SparseMatrixType>::global_ordinal_type, 3>
-Reader<SparseMatrixType>::readCoordDims(std::istream& in,
-                                        size_t& lineNumber,
-                                        const Teuchos::RCP<const Teuchos::MatrixMarket::Banner>& pBanner,
-                                        const typename Reader<SparseMatrixType>::trcp_tcomm_t& pComm,
-                                        const bool tolerant,
-                                        const bool /* debug */) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::Tuple<typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::global_ordinal_type, 3>
+MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readCoordDims(std::istream& in,
+                                                                             size_t& lineNumber,
+                                                                             const Teuchos::RCP<const Teuchos::MatrixMarket::Banner>& pBanner,
+                                                                             const typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::trcp_tcomm_t& pComm,
+                                                                             const bool tolerant,
+                                                                             const bool /* debug */) {
   using Teuchos::Tuple;
   using Teuchos::MatrixMarket::readCoordinateDimensions;
 
   // Packed coordinate matrix dimensions (numRows, numCols,
   // numNonzeros); computed on Rank 0 and broadcasted to all MPI
   // ranks.
-  Tuple<typename Reader<SparseMatrixType>::global_ordinal_type, 3> dims;
+  Tuple<typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::global_ordinal_type, 3> dims;
 
   // Read in the coordinate matrix dimensions from the input
   // stream.  "success" tells us whether reading in the
@@ -771,7 +771,7 @@ Reader<SparseMatrixType>::readCoordDims(std::istream& in,
                                "The Tpetra::CrsMatrix Matrix Market reader "
                                "only accepts \"coordinate\" (sparse) matrix data.");
     // Unpacked coordinate matrix dimensions
-    typename Reader<SparseMatrixType>::global_ordinal_type numRows, numCols, numNonzeros;
+    typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::global_ordinal_type numRows, numCols, numNonzeros;
     // Only MPI Rank 0 reads from the input stream
     success = readCoordinateDimensions(in, numRows, numCols,
                                        numNonzeros, lineNumber,
@@ -809,13 +809,13 @@ Reader<SparseMatrixType>::readCoordDims(std::istream& in,
   return dims;
 }
 
-template <class SparseMatrixType>
-Teuchos::RCP<typename Reader<SparseMatrixType>::adder_type>
-Reader<SparseMatrixType>::makeAdder(const Teuchos::RCP<const Teuchos::Comm<int>>& pComm,
-                                    Teuchos::RCP<const Teuchos::MatrixMarket::Banner>& pBanner,
-                                    const Teuchos::Tuple<global_ordinal_type, 3>& dims,
-                                    const bool tolerant,
-                                    const bool debug) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::adder_type>
+MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::makeAdder(const Teuchos::RCP<const Teuchos::Comm<int>>& pComm,
+                                                                         Teuchos::RCP<const Teuchos::MatrixMarket::Banner>& pBanner,
+                                                                         const Teuchos::Tuple<global_ordinal_type, 3>& dims,
+                                                                         const bool tolerant,
+                                                                         const bool debug) {
   if (pComm->getRank() == 0) {
     typedef Teuchos::MatrixMarket::Raw::Adder<scalar_type,
                                               global_ordinal_type>
@@ -829,13 +829,13 @@ Reader<SparseMatrixType>::makeAdder(const Teuchos::RCP<const Teuchos::Comm<int>>
   }
 }
 
-template <class SparseMatrixType>
-Teuchos::RCP<typename Reader<SparseMatrixType>::graph_adder_type>
-Reader<SparseMatrixType>::makeGraphAdder(const Teuchos::RCP<const Teuchos::Comm<int>>& pComm,
-                                         Teuchos::RCP<const Teuchos::MatrixMarket::Banner>& pBanner,
-                                         const Teuchos::Tuple<global_ordinal_type, 3>& dims,
-                                         const bool tolerant,
-                                         const bool debug) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::graph_adder_type>
+MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::makeGraphAdder(const Teuchos::RCP<const Teuchos::Comm<int>>& pComm,
+                                                                              Teuchos::RCP<const Teuchos::MatrixMarket::Banner>& pBanner,
+                                                                              const Teuchos::Tuple<global_ordinal_type, 3>& dims,
+                                                                              const bool tolerant,
+                                                                              const bool debug) {
   if (pComm->getRank() == 0) {
     typedef Teuchos::MatrixMarket::Raw::GraphAdder<global_ordinal_type> raw_adder_type;
     Teuchos::RCP<raw_adder_type> pRaw =
@@ -847,15 +847,15 @@ Reader<SparseMatrixType>::makeGraphAdder(const Teuchos::RCP<const Teuchos::Comm<
   }
 }
 
-template <class SparseMatrixType>
-Teuchos::RCP<typename Reader<SparseMatrixType>::sparse_graph_type>
-Reader<SparseMatrixType>::readSparseGraphHelper(std::istream& in,
-                                                const Teuchos::RCP<const Teuchos::Comm<int>>& pComm,
-                                                const Teuchos::RCP<const map_type>& rowMap,
-                                                Teuchos::RCP<const map_type>& colMap,
-                                                const Teuchos::RCP<Teuchos::ParameterList>& constructorParams,
-                                                const bool tolerant,
-                                                const bool debug) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::sparse_graph_type>
+MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readSparseGraphHelper(std::istream& in,
+                                                                                     const Teuchos::RCP<const Teuchos::Comm<int>>& pComm,
+                                                                                     const Teuchos::RCP<const map_type>& rowMap,
+                                                                                     Teuchos::RCP<const map_type>& colMap,
+                                                                                     const Teuchos::RCP<Teuchos::ParameterList>& constructorParams,
+                                                                                     const bool tolerant,
+                                                                                     const bool debug) {
   using std::cerr;
   using std::endl;
   using Teuchos::ptr;
@@ -1186,14 +1186,14 @@ Reader<SparseMatrixType>::readSparseGraphHelper(std::istream& in,
   return distGraph;
 }
 
-template <class SparseMatrixType>
-Teuchos::RCP<typename Reader<SparseMatrixType>::sparse_graph_type>
-Reader<SparseMatrixType>::readSparseGraphFile(const std::string& filename,
-                                              const trcp_tcomm_t& comm,
-                                              const bool callFillComplete,
-                                              const bool tolerant,
-                                              const bool debug) {
-  std::ifstream in = Reader::openInFileOnRankZero(comm, filename, true);
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::sparse_graph_type>
+MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readSparseGraphFile(const std::string& filename,
+                                                                                   const trcp_tcomm_t& comm,
+                                                                                   const bool callFillComplete,
+                                                                                   const bool tolerant,
+                                                                                   const bool debug) {
+  std::ifstream in = MatrixMarketReader::openInFileOnRankZero(comm, filename, true);
 
   return readSparseGraph(in, comm,
                          callFillComplete,
@@ -1203,16 +1203,16 @@ Reader<SparseMatrixType>::readSparseGraphFile(const std::string& filename,
   // exception.
 }
 
-template <class SparseMatrixType>
-Teuchos::RCP<typename Reader<SparseMatrixType>::
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                  sparse_graph_type>
-Reader<SparseMatrixType>::readSparseGraphFile(const std::string& filename,
-                                              const Teuchos::RCP<const Teuchos::Comm<int>>& pComm,
-                                              const Teuchos::RCP<Teuchos::ParameterList>& constructorParams,
-                                              const Teuchos::RCP<Teuchos::ParameterList>& fillCompleteParams,
-                                              const bool tolerant,
-                                              const bool debug) {
-  std::ifstream in = Reader::openInFileOnRankZero(pComm, filename, true);
+MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readSparseGraphFile(const std::string& filename,
+                                                                                   const Teuchos::RCP<const Teuchos::Comm<int>>& pComm,
+                                                                                   const Teuchos::RCP<Teuchos::ParameterList>& constructorParams,
+                                                                                   const Teuchos::RCP<Teuchos::ParameterList>& fillCompleteParams,
+                                                                                   const bool tolerant,
+                                                                                   const bool debug) {
+  std::ifstream in = MatrixMarketReader::openInFileOnRankZero(pComm, filename, true);
 
   return readSparseGraph(in, pComm,
                          constructorParams,
@@ -1222,16 +1222,16 @@ Reader<SparseMatrixType>::readSparseGraphFile(const std::string& filename,
   // exception.
 }
 
-template <class SparseMatrixType>
-Teuchos::RCP<typename Reader<SparseMatrixType>::sparse_graph_type>
-Reader<SparseMatrixType>::readSparseGraphFile(const std::string& filename,
-                                              const Teuchos::RCP<const map_type>& rowMap,
-                                              Teuchos::RCP<const map_type>& colMap,
-                                              const Teuchos::RCP<const map_type>& domainMap,
-                                              const Teuchos::RCP<const map_type>& rangeMap,
-                                              const bool callFillComplete,
-                                              const bool tolerant,
-                                              const bool debug) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::sparse_graph_type>
+MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readSparseGraphFile(const std::string& filename,
+                                                                                   const Teuchos::RCP<const map_type>& rowMap,
+                                                                                   Teuchos::RCP<const map_type>& colMap,
+                                                                                   const Teuchos::RCP<const map_type>& domainMap,
+                                                                                   const Teuchos::RCP<const map_type>& rangeMap,
+                                                                                   const bool callFillComplete,
+                                                                                   const bool tolerant,
+                                                                                   const bool debug) {
   TEUCHOS_TEST_FOR_EXCEPTION(rowMap.is_null(), std::invalid_argument,
                              "Input rowMap must be nonnull.");
   trcp_tcomm_t comm = rowMap->getComm();
@@ -1241,19 +1241,19 @@ Reader<SparseMatrixType>::readSparseGraphFile(const std::string& filename,
     return Teuchos::null;
   }
 
-  std::ifstream in = Reader::openInFileOnRankZero(comm, filename, true);
+  std::ifstream in = MatrixMarketReader::openInFileOnRankZero(comm, filename, true);
 
   return readSparseGraph(in, rowMap, colMap, domainMap, rangeMap,
                          callFillComplete, tolerant, debug);
 }
 
-template <class SparseMatrixType>
-Teuchos::RCP<typename Reader<SparseMatrixType>::sparse_graph_type>
-Reader<SparseMatrixType>::readSparseGraph(std::istream& in,
-                                          const Teuchos::RCP<const Teuchos::Comm<int>>& pComm,
-                                          const bool callFillComplete,
-                                          const bool tolerant,
-                                          const bool debug) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::sparse_graph_type>
+MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readSparseGraph(std::istream& in,
+                                                                               const Teuchos::RCP<const Teuchos::Comm<int>>& pComm,
+                                                                               const bool callFillComplete,
+                                                                               const bool tolerant,
+                                                                               const bool debug) {
   Teuchos::RCP<const map_type> fakeRowMap;
   Teuchos::RCP<const map_type> fakeColMap;
   Teuchos::RCP<Teuchos::ParameterList> fakeCtorParams;
@@ -1268,14 +1268,14 @@ Reader<SparseMatrixType>::readSparseGraph(std::istream& in,
   return graph;
 }
 
-template <class SparseMatrixType>
-Teuchos::RCP<typename Reader<SparseMatrixType>::sparse_graph_type>
-Reader<SparseMatrixType>::readSparseGraph(std::istream& in,
-                                          const Teuchos::RCP<const Teuchos::Comm<int>>& pComm,
-                                          const Teuchos::RCP<Teuchos::ParameterList>& constructorParams,
-                                          const Teuchos::RCP<Teuchos::ParameterList>& fillCompleteParams,
-                                          const bool tolerant,
-                                          const bool debug) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::sparse_graph_type>
+MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readSparseGraph(std::istream& in,
+                                                                               const Teuchos::RCP<const Teuchos::Comm<int>>& pComm,
+                                                                               const Teuchos::RCP<Teuchos::ParameterList>& constructorParams,
+                                                                               const Teuchos::RCP<Teuchos::ParameterList>& fillCompleteParams,
+                                                                               const bool tolerant,
+                                                                               const bool debug) {
   Teuchos::RCP<const map_type> fakeRowMap;
   Teuchos::RCP<const map_type> fakeColMap;
   Teuchos::RCP<sparse_graph_type> graph =
@@ -1286,16 +1286,16 @@ Reader<SparseMatrixType>::readSparseGraph(std::istream& in,
   return graph;
 }
 
-template <class SparseMatrixType>
-Teuchos::RCP<typename Reader<SparseMatrixType>::sparse_graph_type>
-Reader<SparseMatrixType>::readSparseGraph(std::istream& in,
-                                          const Teuchos::RCP<const map_type>& rowMap,
-                                          Teuchos::RCP<const map_type>& colMap,
-                                          const Teuchos::RCP<const map_type>& domainMap,
-                                          const Teuchos::RCP<const map_type>& rangeMap,
-                                          const bool callFillComplete,
-                                          const bool tolerant,
-                                          const bool debug) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::sparse_graph_type>
+MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readSparseGraph(std::istream& in,
+                                                                               const Teuchos::RCP<const map_type>& rowMap,
+                                                                               Teuchos::RCP<const map_type>& colMap,
+                                                                               const Teuchos::RCP<const map_type>& domainMap,
+                                                                               const Teuchos::RCP<const map_type>& rangeMap,
+                                                                               const bool callFillComplete,
+                                                                               const bool tolerant,
+                                                                               const bool debug) {
   Teuchos::RCP<sparse_graph_type> graph =
       readSparseGraphHelper(in, rowMap->getComm(),
                             rowMap, colMap, Teuchos::null, tolerant,
@@ -1308,14 +1308,14 @@ Reader<SparseMatrixType>::readSparseGraph(std::istream& in,
 
 #include "MatrixMarket_TpetraNew.hpp"
 
-template <class SparseMatrixType>
-Teuchos::RCP<typename Reader<SparseMatrixType>::sparse_matrix_type>
-Reader<SparseMatrixType>::readSparseFile(const std::string& filename,
-                                         const trcp_tcomm_t& comm,
-                                         const bool callFillComplete,
-                                         const bool tolerant,
-                                         const bool debug) {
-  std::ifstream in = Reader::openInFileOnRankZero(comm, filename, true);
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::sparse_matrix_type>
+MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readSparseFile(const std::string& filename,
+                                                                              const trcp_tcomm_t& comm,
+                                                                              const bool callFillComplete,
+                                                                              const bool tolerant,
+                                                                              const bool debug) {
+  std::ifstream in = MatrixMarketReader::openInFileOnRankZero(comm, filename, true);
 
   return readSparse(in, comm, callFillComplete, tolerant, debug);
   // We can rely on the destructor of the input stream to close
@@ -1323,49 +1323,49 @@ Reader<SparseMatrixType>::readSparseFile(const std::string& filename,
   // exception.
 }
 
-template <class SparseMatrixType>
-Teuchos::RCP<typename Reader<SparseMatrixType>::sparse_matrix_type>
-Reader<SparseMatrixType>::readSparseFile(const std::string& filename,
-                                         const trcp_tcomm_t& comm,
-                                         const Teuchos::RCP<Teuchos::ParameterList>& constructorParams,
-                                         const Teuchos::RCP<Teuchos::ParameterList>& fillCompleteParams,
-                                         const bool tolerant,
-                                         const bool debug) {
-  std::ifstream in = Reader::openInFileOnRankZero(comm, filename, true);
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::sparse_matrix_type>
+MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readSparseFile(const std::string& filename,
+                                                                              const trcp_tcomm_t& comm,
+                                                                              const Teuchos::RCP<Teuchos::ParameterList>& constructorParams,
+                                                                              const Teuchos::RCP<Teuchos::ParameterList>& fillCompleteParams,
+                                                                              const bool tolerant,
+                                                                              const bool debug) {
+  std::ifstream in = MatrixMarketReader::openInFileOnRankZero(comm, filename, true);
 
   return readSparse(in, comm, constructorParams,
                     fillCompleteParams, tolerant, debug);
 }
 
-template <class SparseMatrixType>
-Teuchos::RCP<typename Reader<SparseMatrixType>::sparse_matrix_type>
-Reader<SparseMatrixType>::readSparseFile(const std::string& filename,
-                                         const Teuchos::RCP<const map_type>& rowMap,
-                                         Teuchos::RCP<const map_type>& colMap,
-                                         const Teuchos::RCP<const map_type>& domainMap,
-                                         const Teuchos::RCP<const map_type>& rangeMap,
-                                         const bool callFillComplete,
-                                         const bool tolerant,
-                                         const bool debug) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::sparse_matrix_type>
+MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readSparseFile(const std::string& filename,
+                                                                              const Teuchos::RCP<const map_type>& rowMap,
+                                                                              Teuchos::RCP<const map_type>& colMap,
+                                                                              const Teuchos::RCP<const map_type>& domainMap,
+                                                                              const Teuchos::RCP<const map_type>& rangeMap,
+                                                                              const bool callFillComplete,
+                                                                              const bool tolerant,
+                                                                              const bool debug) {
   TEUCHOS_TEST_FOR_EXCEPTION(
       rowMap.is_null(), std::invalid_argument,
       "Row Map must be nonnull.");
 
   trcp_tcomm_t comm = rowMap->getComm();
 
-  std::ifstream in = Reader::openInFileOnRankZero(comm, filename, true);
+  std::ifstream in = MatrixMarketReader::openInFileOnRankZero(comm, filename, true);
 
   return readSparse(in, rowMap, colMap, domainMap, rangeMap,
                     callFillComplete, tolerant, debug);
 }
 
-template <class SparseMatrixType>
-Teuchos::RCP<typename Reader<SparseMatrixType>::sparse_matrix_type>
-Reader<SparseMatrixType>::readSparse(std::istream& in,
-                                     const Teuchos::RCP<const Teuchos::Comm<int>>& pComm,
-                                     const bool callFillComplete,
-                                     const bool tolerant,
-                                     const bool debug) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::sparse_matrix_type>
+MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readSparse(std::istream& in,
+                                                                          const Teuchos::RCP<const Teuchos::Comm<int>>& pComm,
+                                                                          const bool callFillComplete,
+                                                                          const bool tolerant,
+                                                                          const bool debug) {
   using std::cerr;
   using std::endl;
   using Teuchos::arcp;
@@ -1831,11 +1831,11 @@ Reader<SparseMatrixType>::readSparse(std::istream& in,
     int globalIsNull = 0;
     reduceAll(*pComm, REDUCE_MAX, localIsNull, ptr(&globalIsNull));
     TEUCHOS_TEST_FOR_EXCEPTION(globalIsNull != 0, std::logic_error,
-                               "Reader::makeMatrix() returned a null pointer on at least one "
+                               "MatrixMarketReader::makeMatrix() returned a null pointer on at least one "
                                "process.  Please report this bug to the Tpetra developers.");
   } else {
     TEUCHOS_TEST_FOR_EXCEPTION(pMatrix.is_null(), std::logic_error,
-                               "Reader::makeMatrix() returned a null pointer.  "
+                               "MatrixMarketReader::makeMatrix() returned a null pointer.  "
                                "Please report this bug to the Tpetra developers.");
   }
 
@@ -1882,14 +1882,14 @@ Reader<SparseMatrixType>::readSparse(std::istream& in,
   return pMatrix;
 }
 
-template <class SparseMatrixType>
-Teuchos::RCP<typename Reader<SparseMatrixType>::sparse_matrix_type>
-Reader<SparseMatrixType>::readSparse(std::istream& in,
-                                     const Teuchos::RCP<const Teuchos::Comm<int>>& pComm,
-                                     const Teuchos::RCP<Teuchos::ParameterList>& constructorParams,
-                                     const Teuchos::RCP<Teuchos::ParameterList>& fillCompleteParams,
-                                     const bool tolerant,
-                                     const bool debug) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::sparse_matrix_type>
+MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readSparse(std::istream& in,
+                                                                          const Teuchos::RCP<const Teuchos::Comm<int>>& pComm,
+                                                                          const Teuchos::RCP<Teuchos::ParameterList>& constructorParams,
+                                                                          const Teuchos::RCP<Teuchos::ParameterList>& fillCompleteParams,
+                                                                          const bool tolerant,
+                                                                          const bool debug) {
   using std::cerr;
   using std::endl;
   using Teuchos::arcp;
@@ -2353,11 +2353,11 @@ Reader<SparseMatrixType>::readSparse(std::istream& in,
     int globalIsNull = 0;
     reduceAll(*pComm, Teuchos::REDUCE_MAX, localIsNull, ptr(&globalIsNull));
     TEUCHOS_TEST_FOR_EXCEPTION(globalIsNull != 0, std::logic_error,
-                               "Reader::makeMatrix() returned a null pointer on at least one "
+                               "MatrixMarketReader::makeMatrix() returned a null pointer on at least one "
                                "process.  Please report this bug to the Tpetra developers.");
   } else {
     TEUCHOS_TEST_FOR_EXCEPTION(pMatrix.is_null(), std::logic_error,
-                               "Reader::makeMatrix() returned a null pointer.  "
+                               "MatrixMarketReader::makeMatrix() returned a null pointer.  "
                                "Please report this bug to the Tpetra developers.");
   }
 
@@ -2398,16 +2398,16 @@ Reader<SparseMatrixType>::readSparse(std::istream& in,
   return pMatrix;
 }
 
-template <class SparseMatrixType>
-Teuchos::RCP<typename Reader<SparseMatrixType>::sparse_matrix_type>
-Reader<SparseMatrixType>::readSparse(std::istream& in,
-                                     const Teuchos::RCP<const map_type>& rowMap,
-                                     Teuchos::RCP<const map_type>& colMap,
-                                     const Teuchos::RCP<const map_type>& domainMap,
-                                     const Teuchos::RCP<const map_type>& rangeMap,
-                                     const bool callFillComplete,
-                                     const bool tolerant,
-                                     const bool debug) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::sparse_matrix_type>
+MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readSparse(std::istream& in,
+                                                                          const Teuchos::RCP<const map_type>& rowMap,
+                                                                          Teuchos::RCP<const map_type>& colMap,
+                                                                          const Teuchos::RCP<const map_type>& domainMap,
+                                                                          const Teuchos::RCP<const map_type>& rangeMap,
+                                                                          const bool callFillComplete,
+                                                                          const bool tolerant,
+                                                                          const bool debug) {
   using std::cerr;
   using std::endl;
   using Teuchos::arcp;
@@ -3000,21 +3000,21 @@ Reader<SparseMatrixType>::readSparse(std::istream& in,
   return A;
 }
 
-template <class SparseMatrixType>
-Teuchos::RCP<typename Reader<SparseMatrixType>::multivector_type>
-Reader<SparseMatrixType>::readDenseFile(const std::string& filename,
-                                        const typename Reader<SparseMatrixType>::trcp_tcomm_t& comm,
-                                        Teuchos::RCP<const typename Reader<SparseMatrixType>::map_type>& map,
-                                        const bool tolerant,
-                                        const bool debug,
-                                        const bool binary) {
-  std::ifstream in = Reader::openInFileOnRankZero(comm, filename, true, binary ? std::ios::binary : std::ios::in);
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::multivector_type>
+MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readDenseFile(const std::string& filename,
+                                                                             const typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::trcp_tcomm_t& comm,
+                                                                             Teuchos::RCP<const typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::map_type>& map,
+                                                                             const bool tolerant,
+                                                                             const bool debug,
+                                                                             const bool binary) {
+  std::ifstream in = MatrixMarketReader::openInFileOnRankZero(comm, filename, true, binary ? std::ios::binary : std::ios::in);
 
   return readDense(in, comm, map, tolerant, debug, binary);
 }
 
-template <class SparseMatrixType>
-std::ifstream Reader<SparseMatrixType>::openInFileOnRankZero(
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+std::ifstream MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::openInFileOnRankZero(
     const trcp_tcomm_t& comm,
     const std::string& filename, const bool safe,
     std::ios_base::openmode mode) {
@@ -3041,68 +3041,68 @@ std::ifstream Reader<SparseMatrixType>::openInFileOnRankZero(
   return in;
 }
 
-template <class SparseMatrixType>
-Teuchos::RCP<typename Reader<SparseMatrixType>::vector_type>
-Reader<SparseMatrixType>::readVectorFile(const std::string& filename,
-                                         const typename Reader<SparseMatrixType>::trcp_tcomm_t& comm,
-                                         Teuchos::RCP<const typename Reader<SparseMatrixType>::map_type>& map,
-                                         const bool tolerant,
-                                         const bool debug) {
-  std::ifstream in = Reader::openInFileOnRankZero(comm, filename, true);
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::vector_type>
+MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readVectorFile(const std::string& filename,
+                                                                              const typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::trcp_tcomm_t& comm,
+                                                                              Teuchos::RCP<const typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::map_type>& map,
+                                                                              const bool tolerant,
+                                                                              const bool debug) {
+  std::ifstream in = MatrixMarketReader::openInFileOnRankZero(comm, filename, true);
 
   return readVector(in, comm, map, tolerant, debug);
 }
 
-template <class SparseMatrixType>
-Teuchos::RCP<typename Reader<SparseMatrixType>::multivector_type>
-Reader<SparseMatrixType>::readDense(std::istream& in,
-                                    const typename Reader<SparseMatrixType>::trcp_tcomm_t& comm,
-                                    Teuchos::RCP<const typename Reader<SparseMatrixType>::map_type>& map,
-                                    const bool tolerant,
-                                    const bool debug,
-                                    const bool binary) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::multivector_type>
+MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readDense(std::istream& in,
+                                                                         const typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::trcp_tcomm_t& comm,
+                                                                         Teuchos::RCP<const typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::map_type>& map,
+                                                                         const bool tolerant,
+                                                                         const bool debug,
+                                                                         const bool binary) {
   Teuchos::RCP<Teuchos::FancyOStream> err =
       Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cerr));
   return readDenseImpl<scalar_type>(in, comm, map, err, tolerant, debug, binary);
 }
 
-template <class SparseMatrixType>
-Teuchos::RCP<typename Reader<SparseMatrixType>::vector_type>
-Reader<SparseMatrixType>::readVector(std::istream& in,
-                                     const typename Reader<SparseMatrixType>::trcp_tcomm_t& comm,
-                                     Teuchos::RCP<const typename Reader<SparseMatrixType>::map_type>& map,
-                                     const bool tolerant,
-                                     const bool debug) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::vector_type>
+MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readVector(std::istream& in,
+                                                                          const typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::trcp_tcomm_t& comm,
+                                                                          Teuchos::RCP<const typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::map_type>& map,
+                                                                          const bool tolerant,
+                                                                          const bool debug) {
   Teuchos::RCP<Teuchos::FancyOStream> err =
       Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cerr));
   return readVectorImpl<scalar_type>(in, comm, map, err, tolerant, debug);
 }
 
-template <class SparseMatrixType>
-Teuchos::RCP<const typename Reader<SparseMatrixType>::map_type>
-Reader<SparseMatrixType>::readMapFile(const std::string& filename,
-                                      const typename Reader<SparseMatrixType>::trcp_tcomm_t& comm,
-                                      const bool tolerant,
-                                      const bool debug,
-                                      const bool binary) {
-  std::ifstream in = Reader::openInFileOnRankZero(comm, filename, true, binary ? std::ios::binary : std::ios::in);
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<const typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::map_type>
+MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readMapFile(const std::string& filename,
+                                                                           const typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::trcp_tcomm_t& comm,
+                                                                           const bool tolerant,
+                                                                           const bool debug,
+                                                                           const bool binary) {
+  std::ifstream in = MatrixMarketReader::openInFileOnRankZero(comm, filename, true, binary ? std::ios::binary : std::ios::in);
 
   return readMap(in, comm, tolerant, debug, binary);
 }
 
-template <class SparseMatrixType>
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 template <class MultiVectorScalarType>
 Teuchos::RCP<Tpetra::MultiVector<MultiVectorScalarType,
-                                 typename Reader<SparseMatrixType>::local_ordinal_type,
-                                 typename Reader<SparseMatrixType>::global_ordinal_type,
-                                 typename Reader<SparseMatrixType>::node_type>>
-Reader<SparseMatrixType>::readDenseImpl(std::istream& in,
-                                        const typename Reader<SparseMatrixType>::trcp_tcomm_t& comm,
-                                        Teuchos::RCP<const typename Reader<SparseMatrixType>::map_type>& map,
-                                        const Teuchos::RCP<Teuchos::FancyOStream>& err,
-                                        const bool tolerant,
-                                        const bool debug,
-                                        const bool binary) {
+                                 typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_ordinal_type,
+                                 typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::global_ordinal_type,
+                                 typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::node_type>>
+MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readDenseImpl(std::istream& in,
+                                                                             const typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::trcp_tcomm_t& comm,
+                                                                             Teuchos::RCP<const typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::map_type>& map,
+                                                                             const Teuchos::RCP<Teuchos::FancyOStream>& err,
+                                                                             const bool tolerant,
+                                                                             const bool debug,
+                                                                             const bool binary) {
   using std::endl;
   using Teuchos::ArrayRCP;
   using Teuchos::as;
@@ -3672,18 +3672,18 @@ Reader<SparseMatrixType>::readDenseImpl(std::istream& in,
   return Y;
 }
 
-template <class SparseMatrixType>
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 template <class VectorScalarType>
 Teuchos::RCP<Tpetra::Vector<VectorScalarType,
-                            typename Reader<SparseMatrixType>::local_ordinal_type,
-                            typename Reader<SparseMatrixType>::global_ordinal_type,
-                            typename Reader<SparseMatrixType>::node_type>>
-Reader<SparseMatrixType>::readVectorImpl(std::istream& in,
-                                         const typename Reader<SparseMatrixType>::trcp_tcomm_t& comm,
-                                         Teuchos::RCP<const typename Reader<SparseMatrixType>::map_type>& map,
-                                         const Teuchos::RCP<Teuchos::FancyOStream>& err,
-                                         const bool tolerant,
-                                         const bool debug) {
+                            typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_ordinal_type,
+                            typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::global_ordinal_type,
+                            typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::node_type>>
+MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readVectorImpl(std::istream& in,
+                                                                              const typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::trcp_tcomm_t& comm,
+                                                                              Teuchos::RCP<const typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::map_type>& map,
+                                                                              const Teuchos::RCP<Teuchos::FancyOStream>& err,
+                                                                              const bool tolerant,
+                                                                              const bool debug) {
   using std::endl;
   using Teuchos::as;
   using Teuchos::broadcast;
@@ -4185,26 +4185,26 @@ Reader<SparseMatrixType>::readVectorImpl(std::istream& in,
   return Y;
 }
 
-template <class SparseMatrixType>
-Teuchos::RCP<const typename Reader<SparseMatrixType>::map_type>
-Reader<SparseMatrixType>::readMap(std::istream& in,
-                                  const typename Reader<SparseMatrixType>::trcp_tcomm_t& comm,
-                                  const bool tolerant,
-                                  const bool debug,
-                                  const bool binary) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<const typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::map_type>
+MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readMap(std::istream& in,
+                                                                       const typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::trcp_tcomm_t& comm,
+                                                                       const bool tolerant,
+                                                                       const bool debug,
+                                                                       const bool binary) {
   Teuchos::RCP<Teuchos::FancyOStream> err =
       Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cerr));
   return readMap(in, comm, err, tolerant, debug, binary);
 }
 
-template <class SparseMatrixType>
-Teuchos::RCP<const typename Reader<SparseMatrixType>::map_type>
-Reader<SparseMatrixType>::readMap(std::istream& in,
-                                  const typename Reader<SparseMatrixType>::trcp_tcomm_t& comm,
-                                  const Teuchos::RCP<Teuchos::FancyOStream>& err,
-                                  const bool tolerant,
-                                  const bool debug,
-                                  const bool binary) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<const typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::map_type>
+MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readMap(std::istream& in,
+                                                                       const typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::trcp_tcomm_t& comm,
+                                                                       const Teuchos::RCP<Teuchos::FancyOStream>& err,
+                                                                       const bool tolerant,
+                                                                       const bool debug,
+                                                                       const bool binary) {
   using std::endl;
   using Teuchos::arcp;
   using Teuchos::Array;
@@ -4543,8 +4543,8 @@ Reader<SparseMatrixType>::readMap(std::istream& in,
   return newMap;
 }
 
-template <class SparseMatrixType>
-int Reader<SparseMatrixType>::encodeDataType(const std::string& dataType) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+int MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::encodeDataType(const std::string& dataType) {
   if (dataType == "real" || dataType == "integer") {
     return 0;
   } else if (dataType == "complex") {
@@ -4562,18 +4562,18 @@ int Reader<SparseMatrixType>::encodeDataType(const std::string& dataType) {
   }
 }
 
-template <class SparseMatrixType>
-Teuchos::RCP<typename Reader<SparseMatrixType>::sparse_matrix_type>
-Reader<SparseMatrixType>::readSparsePerRank(const std::string& filename_prefix,
-                                            const std::string& filename_suffix,
-                                            const Teuchos::RCP<const typename Reader<SparseMatrixType>::map_type>& rowMap,
-                                            Teuchos::RCP<const typename Reader<SparseMatrixType>::map_type>& colMap,
-                                            const Teuchos::RCP<const typename Reader<SparseMatrixType>::map_type>& domainMap,
-                                            const Teuchos::RCP<const typename Reader<SparseMatrixType>::map_type>& rangeMap,
-                                            const bool callFillComplete,
-                                            const bool tolerant,
-                                            const int ranksToReadAtOnce,
-                                            const bool debug) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::sparse_matrix_type>
+MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readSparsePerRank(const std::string& filename_prefix,
+                                                                                 const std::string& filename_suffix,
+                                                                                 const Teuchos::RCP<const typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::map_type>& rowMap,
+                                                                                 Teuchos::RCP<const typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::map_type>& colMap,
+                                                                                 const Teuchos::RCP<const typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::map_type>& domainMap,
+                                                                                 const Teuchos::RCP<const typename MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::map_type>& rangeMap,
+                                                                                 const bool callFillComplete,
+                                                                                 const bool tolerant,
+                                                                                 const int ranksToReadAtOnce,
+                                                                                 const bool debug) {
   using ST  = scalar_type;
   using LO  = local_ordinal_type;
   using GO  = global_ordinal_type;
@@ -4816,18 +4816,18 @@ Reader<SparseMatrixType>::readSparsePerRank(const std::string& filename_prefix,
   return A;
 }  // end readSparsePerRank
 
-template <class SparseMatrixType>
-void Writer<SparseMatrixType>::writeSparseFile(const std::string& filename,
-                                               const sparse_matrix_type& matrix,
-                                               const std::string& matrixName,
-                                               const std::string& matrixDescription,
-                                               const bool debug) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeSparseFile(const std::string& filename,
+                                                                                    const sparse_matrix_type& matrix,
+                                                                                    const std::string& matrixName,
+                                                                                    const std::string& matrixDescription,
+                                                                                    const bool debug) {
   trcp_tcomm_t comm = matrix.getComm();
   TEUCHOS_TEST_FOR_EXCEPTION(comm.is_null(), std::invalid_argument,
                              "The input matrix's communicator (Teuchos::Comm object) is null.");
   const int myRank = comm->getRank();
 
-  auto out = Writer::openOutFileOnRankZero(comm, filename, myRank, true);
+  auto out = MatrixMarketWriter::openOutFileOnRankZero(comm, filename, myRank, true);
 
   writeSparse(out, matrix, matrixName, matrixDescription, debug);
   // We can rely on the destructor of the output stream to close
@@ -4835,38 +4835,38 @@ void Writer<SparseMatrixType>::writeSparseFile(const std::string& filename,
   // exception.
 }
 
-template <class SparseMatrixType>
-void Writer<SparseMatrixType>::writeSparseFile(const std::string& filename,
-                                               const Teuchos::RCP<const sparse_matrix_type>& pMatrix,
-                                               const std::string& matrixName,
-                                               const std::string& matrixDescription,
-                                               const bool debug) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeSparseFile(const std::string& filename,
+                                                                                    const Teuchos::RCP<const sparse_matrix_type>& pMatrix,
+                                                                                    const std::string& matrixName,
+                                                                                    const std::string& matrixDescription,
+                                                                                    const bool debug) {
   TEUCHOS_TEST_FOR_EXCEPTION(pMatrix.is_null(), std::invalid_argument,
                              "The input matrix is null.");
   writeSparseFile(filename, *pMatrix, matrixName,
                   matrixDescription, debug);
 }
 
-template <class SparseMatrixType>
-void Writer<SparseMatrixType>::writeSparseFile(const std::string& filename,
-                                               const sparse_matrix_type& matrix,
-                                               const bool debug) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeSparseFile(const std::string& filename,
+                                                                                    const sparse_matrix_type& matrix,
+                                                                                    const bool debug) {
   writeSparseFile(filename, matrix, "", "", debug);
 }
 
-template <class SparseMatrixType>
-void Writer<SparseMatrixType>::writeSparseFile(const std::string& filename,
-                                               const Teuchos::RCP<const sparse_matrix_type>& pMatrix,
-                                               const bool debug) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeSparseFile(const std::string& filename,
+                                                                                    const Teuchos::RCP<const sparse_matrix_type>& pMatrix,
+                                                                                    const bool debug) {
   writeSparseFile(filename, *pMatrix, "", "", debug);
 }
 
-template <class SparseMatrixType>
-void Writer<SparseMatrixType>::writeSparse(std::ostream& out,
-                                           const sparse_matrix_type& matrix,
-                                           const std::string& matrixName,
-                                           const std::string& matrixDescription,
-                                           const bool debug) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeSparse(std::ostream& out,
+                                                                                const sparse_matrix_type& matrix,
+                                                                                const std::string& matrixName,
+                                                                                const std::string& matrixDescription,
+                                                                                const bool debug) {
   using std::cerr;
   using std::endl;
   using Teuchos::ArrayView;
@@ -5122,23 +5122,23 @@ void Writer<SparseMatrixType>::writeSparse(std::ostream& out,
   }        // If my process' rank is 0
 }
 
-template <class SparseMatrixType>
-void Writer<SparseMatrixType>::writeSparse(std::ostream& out,
-                                           const Teuchos::RCP<const sparse_matrix_type>& pMatrix,
-                                           const std::string& matrixName,
-                                           const std::string& matrixDescription,
-                                           const bool debug) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeSparse(std::ostream& out,
+                                                                                const Teuchos::RCP<const sparse_matrix_type>& pMatrix,
+                                                                                const std::string& matrixName,
+                                                                                const std::string& matrixDescription,
+                                                                                const bool debug) {
   TEUCHOS_TEST_FOR_EXCEPTION(pMatrix.is_null(), std::invalid_argument,
                              "The input matrix is null.");
   writeSparse(out, *pMatrix, matrixName, matrixDescription, debug);
 }
 
-template <class SparseMatrixType>
-void Writer<SparseMatrixType>::writeSparseGraph(std::ostream& out,
-                                                const crs_graph_type& graph,
-                                                const std::string& graphName,
-                                                const std::string& graphDescription,
-                                                const bool debug) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeSparseGraph(std::ostream& out,
+                                                                                     const crs_graph_type& graph,
+                                                                                     const std::string& graphName,
+                                                                                     const std::string& graphDescription,
+                                                                                     const bool debug) {
   using std::cerr;
   using std::endl;
   using Teuchos::ArrayView;
@@ -5378,19 +5378,19 @@ void Writer<SparseMatrixType>::writeSparseGraph(std::ostream& out,
   }        // If my process' rank is 0
 }
 
-template <class SparseMatrixType>
-void Writer<SparseMatrixType>::writeSparseGraph(std::ostream& out,
-                                                const crs_graph_type& graph,
-                                                const bool debug) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeSparseGraph(std::ostream& out,
+                                                                                     const crs_graph_type& graph,
+                                                                                     const bool debug) {
   writeSparseGraph(out, graph, "", "", debug);
 }
 
-template <class SparseMatrixType>
-void Writer<SparseMatrixType>::writeSparseGraphFile(const std::string& filename,
-                                                    const crs_graph_type& graph,
-                                                    const std::string& graphName,
-                                                    const std::string& graphDescription,
-                                                    const bool debug) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeSparseGraphFile(const std::string& filename,
+                                                                                         const crs_graph_type& graph,
+                                                                                         const std::string& graphName,
+                                                                                         const std::string& graphDescription,
+                                                                                         const bool debug) {
   auto comm = graph.getComm();
   if (comm.is_null()) {
     // Processes on which the communicator is null shouldn't
@@ -5402,7 +5402,7 @@ void Writer<SparseMatrixType>::writeSparseGraphFile(const std::string& filename,
   }
   const int myRank = comm->getRank();
 
-  auto out = Writer::openOutFileOnRankZero(comm, filename, myRank, true);
+  auto out = MatrixMarketWriter::openOutFileOnRankZero(comm, filename, myRank, true);
 
   writeSparseGraph(out, graph, graphName, graphDescription, debug);
   // We can rely on the destructor of the output stream to close
@@ -5410,54 +5410,54 @@ void Writer<SparseMatrixType>::writeSparseGraphFile(const std::string& filename,
   // an exception.
 }
 
-template <class SparseMatrixType>
-void Writer<SparseMatrixType>::writeSparseGraphFile(const std::string& filename,
-                                                    const crs_graph_type& graph,
-                                                    const bool debug) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeSparseGraphFile(const std::string& filename,
+                                                                                         const crs_graph_type& graph,
+                                                                                         const bool debug) {
   writeSparseGraphFile(filename, graph, "", "", debug);
 }
 
-template <class SparseMatrixType>
-void Writer<SparseMatrixType>::writeSparseGraphFile(const std::string& filename,
-                                                    const Teuchos::RCP<const crs_graph_type>& pGraph,
-                                                    const std::string& graphName,
-                                                    const std::string& graphDescription,
-                                                    const bool debug) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeSparseGraphFile(const std::string& filename,
+                                                                                         const Teuchos::RCP<const crs_graph_type>& pGraph,
+                                                                                         const std::string& graphName,
+                                                                                         const std::string& graphDescription,
+                                                                                         const bool debug) {
   writeSparseGraphFile(filename, *pGraph, graphName, graphDescription, debug);
 }
 
-template <class SparseMatrixType>
-void Writer<SparseMatrixType>::writeSparseGraphFile(const std::string& filename,
-                                                    const Teuchos::RCP<const crs_graph_type>& pGraph,
-                                                    const bool debug) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeSparseGraphFile(const std::string& filename,
+                                                                                         const Teuchos::RCP<const crs_graph_type>& pGraph,
+                                                                                         const bool debug) {
   writeSparseGraphFile(filename, *pGraph, "", "", debug);
 }
 
-template <class SparseMatrixType>
-void Writer<SparseMatrixType>::writeSparse(std::ostream& out,
-                                           const sparse_matrix_type& matrix,
-                                           const bool debug) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeSparse(std::ostream& out,
+                                                                                const sparse_matrix_type& matrix,
+                                                                                const bool debug) {
   writeSparse(out, matrix, "", "", debug);
 }
 
-template <class SparseMatrixType>
-void Writer<SparseMatrixType>::writeSparse(std::ostream& out,
-                                           const Teuchos::RCP<const sparse_matrix_type>& pMatrix,
-                                           const bool debug) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeSparse(std::ostream& out,
+                                                                                const Teuchos::RCP<const sparse_matrix_type>& pMatrix,
+                                                                                const bool debug) {
   writeSparse(out, *pMatrix, "", "", debug);
 }
 
-template <class SparseMatrixType>
-void Writer<SparseMatrixType>::writeDenseFile(const std::string& filename,
-                                              const typename Writer<SparseMatrixType>::multivector_type& X,
-                                              const std::string& matrixName,
-                                              const std::string& matrixDescription,
-                                              const Teuchos::RCP<Teuchos::FancyOStream>& err,
-                                              const Teuchos::RCP<Teuchos::FancyOStream>& dbg) {
-  trcp_tcomm_t comm = Writer::getComm(X.getMap());
-  const int myRank  = Writer::getRank(comm);
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeDenseFile(const std::string& filename,
+                                                                                   const typename MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::multivector_type& X,
+                                                                                   const std::string& matrixName,
+                                                                                   const std::string& matrixDescription,
+                                                                                   const Teuchos::RCP<Teuchos::FancyOStream>& err,
+                                                                                   const Teuchos::RCP<Teuchos::FancyOStream>& dbg) {
+  trcp_tcomm_t comm = MatrixMarketWriter::getComm(X.getMap());
+  const int myRank  = MatrixMarketWriter::getRank(comm);
 
-  auto out = Writer::openOutFileOnRankZero(comm, filename, myRank, true);
+  auto out = MatrixMarketWriter::openOutFileOnRankZero(comm, filename, myRank, true);
 
   writeDense(out, X, matrixName, matrixDescription, err, dbg);
   // We can rely on the destructor of the output stream to close
@@ -5465,13 +5465,13 @@ void Writer<SparseMatrixType>::writeDenseFile(const std::string& filename,
   // exception.
 }
 
-template <class SparseMatrixType>
-void Writer<SparseMatrixType>::writeDenseFile(const std::string& filename,
-                                              const Teuchos::RCP<const typename Writer<SparseMatrixType>::multivector_type>& X,
-                                              const std::string& matrixName,
-                                              const std::string& matrixDescription,
-                                              const Teuchos::RCP<Teuchos::FancyOStream>& err,
-                                              const Teuchos::RCP<Teuchos::FancyOStream>& dbg) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeDenseFile(const std::string& filename,
+                                                                                   const Teuchos::RCP<const typename MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::multivector_type>& X,
+                                                                                   const std::string& matrixName,
+                                                                                   const std::string& matrixDescription,
+                                                                                   const Teuchos::RCP<Teuchos::FancyOStream>& err,
+                                                                                   const Teuchos::RCP<Teuchos::FancyOStream>& dbg) {
   TEUCHOS_TEST_FOR_EXCEPTION(
       X.is_null(), std::invalid_argument,
       "Tpetra::MatrixMarket::"
@@ -5479,19 +5479,19 @@ void Writer<SparseMatrixType>::writeDenseFile(const std::string& filename,
   writeDenseFile(filename, *X, matrixName, matrixDescription, err, dbg);
 }
 
-template <class SparseMatrixType>
-void Writer<SparseMatrixType>::writeDenseFile(const std::string& filename,
-                                              const typename Writer<SparseMatrixType>::multivector_type& X,
-                                              const Teuchos::RCP<Teuchos::FancyOStream>& err,
-                                              const Teuchos::RCP<Teuchos::FancyOStream>& dbg) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeDenseFile(const std::string& filename,
+                                                                                   const typename MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::multivector_type& X,
+                                                                                   const Teuchos::RCP<Teuchos::FancyOStream>& err,
+                                                                                   const Teuchos::RCP<Teuchos::FancyOStream>& dbg) {
   writeDenseFile(filename, X, "", "", err, dbg);
 }
 
-template <class SparseMatrixType>
-void Writer<SparseMatrixType>::writeDenseFile(const std::string& filename,
-                                              const Teuchos::RCP<const typename Writer<SparseMatrixType>::multivector_type>& X,
-                                              const Teuchos::RCP<Teuchos::FancyOStream>& err,
-                                              const Teuchos::RCP<Teuchos::FancyOStream>& dbg) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeDenseFile(const std::string& filename,
+                                                                                   const Teuchos::RCP<const typename MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::multivector_type>& X,
+                                                                                   const Teuchos::RCP<Teuchos::FancyOStream>& err,
+                                                                                   const Teuchos::RCP<Teuchos::FancyOStream>& dbg) {
   TEUCHOS_TEST_FOR_EXCEPTION(
       X.is_null(), std::invalid_argument,
       "Tpetra::MatrixMarket::"
@@ -5499,21 +5499,21 @@ void Writer<SparseMatrixType>::writeDenseFile(const std::string& filename,
   writeDenseFile(filename, *X, err, dbg);
 }
 
-template <class SparseMatrixType>
-void Writer<SparseMatrixType>::writeDense(std::ostream& out,
-                                          const multivector_type& X,
-                                          const std::string& matrixName,
-                                          const std::string& matrixDescription,
-                                          const Teuchos::RCP<Teuchos::FancyOStream>& err,
-                                          const Teuchos::RCP<Teuchos::FancyOStream>& dbg) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeDense(std::ostream& out,
+                                                                               const multivector_type& X,
+                                                                               const std::string& matrixName,
+                                                                               const std::string& matrixDescription,
+                                                                               const Teuchos::RCP<Teuchos::FancyOStream>& err,
+                                                                               const Teuchos::RCP<Teuchos::FancyOStream>& dbg) {
   using std::endl;
   using Teuchos::Comm;
   using Teuchos::outArg;
   using Teuchos::REDUCE_MAX;
   using Teuchos::reduceAll;
 
-  trcp_tcomm_t comm = Writer::getComm(X.getMap());
-  const int myRank  = Writer::getRank(comm);
+  trcp_tcomm_t comm = MatrixMarketWriter::getComm(X.getMap());
+  const int myRank  = MatrixMarketWriter::getRank(comm);
 
   // If the caller provides a nonnull debug output stream, we
   // print debugging output to it.  This is a local thing; we
@@ -5545,8 +5545,8 @@ void Writer<SparseMatrixType>::writeDense(std::ostream& out,
   }
 }
 
-template <class SparseMatrixType>
-std::ofstream Writer<SparseMatrixType>::openOutFileOnRankZero(
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+std::ofstream MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::openOutFileOnRankZero(
     const trcp_tcomm_t& comm,
     const std::string& filename, const int rank, const bool safe,
     const std::ios_base::openmode mode) {
@@ -5573,13 +5573,13 @@ std::ofstream Writer<SparseMatrixType>::openOutFileOnRankZero(
   return out;
 }
 
-template <class SparseMatrixType>
-void Writer<SparseMatrixType>::writeDenseHeader(std::ostream& out,
-                                                const typename Writer<SparseMatrixType>::multivector_type& X,
-                                                const std::string& matrixName,
-                                                const std::string& matrixDescription,
-                                                const Teuchos::RCP<Teuchos::FancyOStream>& err,
-                                                const Teuchos::RCP<Teuchos::FancyOStream>& dbg) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeDenseHeader(std::ostream& out,
+                                                                                     const typename MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::multivector_type& X,
+                                                                                     const std::string& matrixName,
+                                                                                     const std::string& matrixDescription,
+                                                                                     const Teuchos::RCP<Teuchos::FancyOStream>& err,
+                                                                                     const Teuchos::RCP<Teuchos::FancyOStream>& dbg) {
   using std::endl;
   using Teuchos::Comm;
   using Teuchos::outArg;
@@ -5589,8 +5589,8 @@ void Writer<SparseMatrixType>::writeDenseHeader(std::ostream& out,
   typedef Teuchos::ScalarTraits<scalar_type> STS;
   const char prefix[] = "Tpetra::MatrixMarket::writeDenseHeader: ";
 
-  trcp_tcomm_t comm = Writer::getComm(X.getMap());
-  const int myRank  = Writer::getRank(comm);
+  trcp_tcomm_t comm = MatrixMarketWriter::getComm(X.getMap());
+  const int myRank  = MatrixMarketWriter::getRank(comm);
   int lclErr        = 0;  // whether this MPI process has seen an error
   int gblErr        = 0;  // whether we know if some MPI process has seen an error
 
@@ -5672,11 +5672,11 @@ void Writer<SparseMatrixType>::writeDenseHeader(std::ostream& out,
   }
 }
 
-template <class SparseMatrixType>
-void Writer<SparseMatrixType>::writeDenseColumn(std::ostream& out,
-                                                const typename Writer<SparseMatrixType>::multivector_type& X,
-                                                const Teuchos::RCP<Teuchos::FancyOStream>& err,
-                                                const Teuchos::RCP<Teuchos::FancyOStream>& dbg) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeDenseColumn(std::ostream& out,
+                                                                                     const typename MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::multivector_type& X,
+                                                                                     const Teuchos::RCP<Teuchos::FancyOStream>& err,
+                                                                                     const Teuchos::RCP<Teuchos::FancyOStream>& dbg) {
   using std::endl;
   using Teuchos::arcp;
   using Teuchos::Array;
@@ -6219,13 +6219,13 @@ void Writer<SparseMatrixType>::writeDenseColumn(std::ostream& out,
   }
 }
 
-template <class SparseMatrixType>
-void Writer<SparseMatrixType>::writeDense(std::ostream& out,
-                                          const Teuchos::RCP<const typename Writer<SparseMatrixType>::multivector_type>& X,
-                                          const std::string& matrixName,
-                                          const std::string& matrixDescription,
-                                          const Teuchos::RCP<Teuchos::FancyOStream>& err,
-                                          const Teuchos::RCP<Teuchos::FancyOStream>& dbg) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeDense(std::ostream& out,
+                                                                               const Teuchos::RCP<const typename MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::multivector_type>& X,
+                                                                               const std::string& matrixName,
+                                                                               const std::string& matrixDescription,
+                                                                               const Teuchos::RCP<Teuchos::FancyOStream>& err,
+                                                                               const Teuchos::RCP<Teuchos::FancyOStream>& dbg) {
   TEUCHOS_TEST_FOR_EXCEPTION(
       X.is_null(), std::invalid_argument,
       "Tpetra::MatrixMarket::"
@@ -6233,19 +6233,19 @@ void Writer<SparseMatrixType>::writeDense(std::ostream& out,
   writeDense(out, *X, matrixName, matrixDescription, err, dbg);
 }
 
-template <class SparseMatrixType>
-void Writer<SparseMatrixType>::writeDense(std::ostream& out,
-                                          const typename Writer<SparseMatrixType>::multivector_type& X,
-                                          const Teuchos::RCP<Teuchos::FancyOStream>& err,
-                                          const Teuchos::RCP<Teuchos::FancyOStream>& dbg) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeDense(std::ostream& out,
+                                                                               const typename MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::multivector_type& X,
+                                                                               const Teuchos::RCP<Teuchos::FancyOStream>& err,
+                                                                               const Teuchos::RCP<Teuchos::FancyOStream>& dbg) {
   writeDense(out, X, "", "", err, dbg);
 }
 
-template <class SparseMatrixType>
-void Writer<SparseMatrixType>::writeDense(std::ostream& out,
-                                          const Teuchos::RCP<const typename Writer<SparseMatrixType>::multivector_type>& X,
-                                          const Teuchos::RCP<Teuchos::FancyOStream>& err,
-                                          const Teuchos::RCP<Teuchos::FancyOStream>& dbg) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeDense(std::ostream& out,
+                                                                               const Teuchos::RCP<const typename MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::multivector_type>& X,
+                                                                               const Teuchos::RCP<Teuchos::FancyOStream>& err,
+                                                                               const Teuchos::RCP<Teuchos::FancyOStream>& dbg) {
   TEUCHOS_TEST_FOR_EXCEPTION(
       X.is_null(), std::invalid_argument,
       "Tpetra::MatrixMarket::"
@@ -6253,18 +6253,18 @@ void Writer<SparseMatrixType>::writeDense(std::ostream& out,
   writeDense(out, *X, "", "", err, dbg);
 }
 
-template <class SparseMatrixType>
-void Writer<SparseMatrixType>::writeMap(std::ostream& out, const typename Writer<SparseMatrixType>::map_type& map, const bool debug) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeMap(std::ostream& out, const typename MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::map_type& map, const bool debug) {
   Teuchos::RCP<Teuchos::FancyOStream> err =
       Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cerr));
   writeMap(out, map, err, debug);
 }
 
-template <class SparseMatrixType>
-void Writer<SparseMatrixType>::writeMap(std::ostream& out,
-                                        const typename Writer<SparseMatrixType>::map_type& map,
-                                        const Teuchos::RCP<Teuchos::FancyOStream>& err,
-                                        const bool debug) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeMap(std::ostream& out,
+                                                                             const typename MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::map_type& map,
+                                                                             const Teuchos::RCP<Teuchos::FancyOStream>& err,
+                                                                             const bool debug) {
   using std::endl;
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
@@ -6762,12 +6762,12 @@ void Writer<SparseMatrixType>::writeMap(std::ostream& out,
   }
 }
 
-template <class SparseMatrixType>
-void Writer<SparseMatrixType>::writeMapFile(const std::string& filename,
-                                            const typename Writer<SparseMatrixType>::map_type& map) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeMapFile(const std::string& filename,
+                                                                                 const typename MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::map_type& map) {
   const int myRank = map.getComm()->getRank();
 
-  auto out = Writer::openOutFileOnRankZero(map.getComm(), filename, myRank, true);
+  auto out = MatrixMarketWriter::openOutFileOnRankZero(map.getComm(), filename, myRank, true);
 
   writeMap(out, map);
   // We can rely on the destructor of the output stream to close
@@ -6775,8 +6775,8 @@ void Writer<SparseMatrixType>::writeMapFile(const std::string& filename,
   // exception.
 }
 
-template <class SparseMatrixType>
-void Writer<SparseMatrixType>::printAsComment(std::ostream& out, const std::string& str) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::printAsComment(std::ostream& out, const std::string& str) {
   using std::endl;
   std::istringstream inpstream(str);
   std::string line;
@@ -6794,22 +6794,22 @@ void Writer<SparseMatrixType>::printAsComment(std::ostream& out, const std::stri
   }
 }
 
-template <class SparseMatrixType>
-void Writer<SparseMatrixType>::writeOperator(const std::string& fileName, typename Writer<SparseMatrixType>::operator_type const& A) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeOperator(const std::string& fileName, typename MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::operator_type const& A) {
   Teuchos::ParameterList pl;
   writeOperator(fileName, A, pl);
 }
 
-template <class SparseMatrixType>
-void Writer<SparseMatrixType>::writeOperator(std::ostream& out, const typename Writer<SparseMatrixType>::operator_type& A) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeOperator(std::ostream& out, const typename MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::operator_type& A) {
   Teuchos::ParameterList pl;
   writeOperator(out, A, pl);
 }
 
-template <class SparseMatrixType>
-void Writer<SparseMatrixType>::writeOperator(const std::string& fileName,
-                                             const typename Writer<SparseMatrixType>::operator_type& A,
-                                             const Teuchos::ParameterList& params) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeOperator(const std::string& fileName,
+                                                                                  const typename MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::operator_type& A,
+                                                                                  const Teuchos::ParameterList& params) {
   std::ofstream out;
   std::string tmpFile   = "__TMP__" + fileName;
   const int myRank      = A.getDomainMap()->getComm()->getRank();
@@ -6856,10 +6856,10 @@ void Writer<SparseMatrixType>::writeOperator(const std::string& fileName,
   }
 }
 
-template <class SparseMatrixType>
-void Writer<SparseMatrixType>::writeOperator(std::ostream& out,
-                                             const typename Writer<SparseMatrixType>::operator_type& A,
-                                             const Teuchos::ParameterList& params) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeOperator(std::ostream& out,
+                                                                                  const typename MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::operator_type& A,
+                                                                                  const Teuchos::ParameterList& params) {
   const int myRank = A.getDomainMap()->getComm()->getRank();
 
   // The number of nonzero entries in a Tpetra::Operator is
@@ -6912,11 +6912,11 @@ void Writer<SparseMatrixType>::writeOperator(std::ostream& out,
   }
 }
 
-template <class SparseMatrixType>
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 std::string
-Writer<SparseMatrixType>::writeOperatorImpl(std::ostream& os,
-                                            const typename Writer<SparseMatrixType>::operator_type& A,
-                                            const Teuchos::ParameterList& params) {
+MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeOperatorImpl(std::ostream& os,
+                                                                                 const typename MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::operator_type& A,
+                                                                                 const Teuchos::ParameterList& params) {
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
   using Teuchos::RCP;
@@ -6924,7 +6924,6 @@ Writer<SparseMatrixType>::writeOperatorImpl(std::ostream& os,
 
   typedef local_ordinal_type LO;
   typedef global_ordinal_type GO;
-  typedef scalar_type Scalar;
   typedef Teuchos::OrdinalTraits<LO> TLOT;
   typedef Teuchos::OrdinalTraits<GO> TGOT;
   typedef Tpetra::Import<LO, GO, node_type> import_type;
@@ -7131,14 +7130,13 @@ Writer<SparseMatrixType>::writeOperatorImpl(std::ostream& os,
   return oss.str();
 }
 
-template <class SparseMatrixType>
-typename Writer<SparseMatrixType>::global_ordinal_type
-Writer<SparseMatrixType>::writeColumns(std::ostream& os, mv_type const& colsA, size_t const& numCols,
-                                       Teuchos::ArrayView<const typename Writer<SparseMatrixType>::global_ordinal_type> const& rowGids,
-                                       Teuchos::Array<global_ordinal_type> const& colsArray,
-                                       typename Writer<SparseMatrixType>::global_ordinal_type const& indexBase) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+typename MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::global_ordinal_type
+MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeColumns(std::ostream& os, mv_type const& colsA, size_t const& numCols,
+                                                                            Teuchos::ArrayView<const typename MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::global_ordinal_type> const& rowGids,
+                                                                            Teuchos::Array<global_ordinal_type> const& colsArray,
+                                                                            typename MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::global_ordinal_type const& indexBase) {
   typedef global_ordinal_type GO;
-  typedef scalar_type Scalar;
   typedef Teuchos::ScalarTraits<Scalar> STS;
 
   GO nnz               = 0;
@@ -7159,14 +7157,14 @@ Writer<SparseMatrixType>::writeColumns(std::ostream& os, mv_type const& colsA, s
   return nnz;
 }
 
-template <class SparseMatrixType>
-void Writer<SparseMatrixType>::writeSparsePerRank(const std::string& filename_prefix,
-                                                  const std::string& filename_suffix,
-                                                  const typename Writer<SparseMatrixType>::sparse_matrix_type& matrix,
-                                                  const std::string& matrixName,
-                                                  const std::string& matrixDescription,
-                                                  const int ranksToWriteAtOnce,
-                                                  const bool debug) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeSparsePerRank(const std::string& filename_prefix,
+                                                                                       const std::string& filename_suffix,
+                                                                                       const typename MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::sparse_matrix_type& matrix,
+                                                                                       const std::string& matrixName,
+                                                                                       const std::string& matrixDescription,
+                                                                                       const int ranksToWriteAtOnce,
+                                                                                       const bool debug) {
   using ST = scalar_type;
   // using LO = local_ordinal_type;
   using GO  = global_ordinal_type;
@@ -7261,23 +7259,23 @@ void Writer<SparseMatrixType>::writeSparsePerRank(const std::string& filename_pr
 
 }  // end writeSparsePerRank
 
-template <class SparseMatrixType>
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 template <typename T>
-typename Writer<SparseMatrixType>::trcp_tcomm_t Writer<SparseMatrixType>::getComm(const Teuchos::RCP<T>& obj) {
+typename MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::trcp_tcomm_t MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getComm(const Teuchos::RCP<T>& obj) {
   return obj.is_null() ? Teuchos::null : obj->getComm();
 }
 
-template <class SparseMatrixType>
-int Writer<SparseMatrixType>::getRank(const trcp_tcomm_t& comm) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+int MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getRank(const trcp_tcomm_t& comm) {
   return comm.is_null() ? 0 : comm->getRank();
 }
 
-}  // namespace Tpetra::MatrixMarket
+}  // namespace Tpetra
 
 namespace Tpetra {
-#define TPETRA_MATRIXMARKET_INSTANT(SCALAR, LO, GO, NODE)                       \
-  template class MatrixMarket::Reader<Tpetra::CrsMatrix<SCALAR, LO, GO, NODE>>; \
-  template class MatrixMarket::Writer<Tpetra::CrsMatrix<SCALAR, LO, GO, NODE>>;
+#define TPETRA_MATRIXMARKET_INSTANT(SCALAR, LO, GO, NODE)  \
+  template class MatrixMarketReader<SCALAR, LO, GO, NODE>; \
+  template class MatrixMarketWriter<SCALAR, LO, GO, NODE>;
 }  // namespace Tpetra
 
 #endif

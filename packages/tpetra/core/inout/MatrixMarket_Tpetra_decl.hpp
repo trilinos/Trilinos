@@ -50,37 +50,8 @@ extern "C" {
 #include <numeric>
 
 namespace Tpetra {
-/// \namespace MatrixMarket
-/// \brief Matrix Market file readers and writers for sparse and
-///   dense matrices (as \c CrsMatrix resp. \c MultiVector).
-/// \author Mark Hoemmen
-///
-/// The Matrix Market (see their <a
-/// href="http://math.nist.gov/MatrixMarket"> web site </a> for
-/// details) defines a human-readable ASCII text file format
-/// ("Matrix Market format") for interchange of sparse and dense
-/// matrices.  This namespace defines classes for reading and
-/// writing sparse or dense matrices from a Matrix Market file or
-/// input stream.
-///
-/// Matrix Market files are designed for easy reading and writing of
-/// test matrices by both humans and computers.  They are <i>not</i>
-/// intended for high-performance or parallel file input and output.
-/// You should use a true parallel file format if you want to do
-/// parallel input and output of sparse or dense matrices.
-///
-/// Since the Matrix Market format is not optimized for performance
-/// or parallelism, some of our readers and writers assume that the
-/// entire matrix can fit in a single MPI process.  Nevertheless, we
-/// always do all of the file input or output on the MPI process
-/// with rank 0 in the given communicator ("Process 0").
-/// Distributed input matrices may be gathered from all MPI
-/// processes in the participating communicator, and distributed
-/// output matrices are broadcast from Process 0 to all MPI
-/// processes in the participating communicator.  In some cases, we
-/// have optimized this to save memory.
-namespace MatrixMarket {
-/// \class Reader
+
+/// \class MatrixMarketReader
 /// \brief Matrix Market file reader for CrsMatrix and MultiVector.
 /// \author Mark Hoemmen
 ///
@@ -135,10 +106,11 @@ namespace MatrixMarket {
 /// may not have the same memory layout (e.g., copying an array of
 /// boost::variant<int, double, complex<double> > bitwise into an
 /// array of int may not work).
-template <class SparseMatrixType>
-class Reader {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class MatrixMarketReader {
  public:
   //! This class' template parameter; a specialization of CrsMatrix.
+  typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> SparseMatrixType;
   typedef SparseMatrixType sparse_matrix_type;
   typedef Teuchos::RCP<sparse_matrix_type> sparse_matrix_ptr;
 
@@ -1349,9 +1321,9 @@ class Reader {
                     const int ranksToReadAtOnce = 8,
                     const bool debug            = false);  // end readSparsePerRank
 
-};  // class Reader
+};  // class MatrixMarketReader
 
-/// \class Writer
+/// \class MatrixMarketWriter
 /// \brief Matrix Market file writer for CrsMatrix and MultiVector.
 /// \tparam SparseMatrixType A specialization of Tpetra::CrsMatrix.
 /// \author Mark Hoemmen
@@ -1379,10 +1351,11 @@ class Reader {
 /// Trilinos is to test sparse matrix methods, which usually
 /// involves reading a sparse matrix A and perhaps also a dense
 /// right-hand side b.
-template <class SparseMatrixType>
-class Writer {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class MatrixMarketWriter {
  public:
   //! Template parameter of this class; specialization of CrsMatrix.
+  typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> SparseMatrixType;
   typedef SparseMatrixType sparse_matrix_type;
   typedef Teuchos::RCP<sparse_matrix_type> sparse_matrix_ptr;
 
@@ -2148,7 +2121,50 @@ class Writer {
   //! Return MPI rank or 0.
   static int getRank(const trcp_tcomm_t& comm);
 
-};  // class Writer
+};  // class MatrixMarketWriter
+
+/// \namespace MatrixMarket
+/// \brief Matrix Market file readers and writers for sparse and
+///   dense matrices (as \c CrsMatrix resp. \c MultiVector).
+/// \author Mark Hoemmen
+///
+/// The Matrix Market (see their <a
+/// href="http://math.nist.gov/MatrixMarket"> web site </a> for
+/// details) defines a human-readable ASCII text file format
+/// ("Matrix Market format") for interchange of sparse and dense
+/// matrices.  This namespace defines classes for reading and
+/// writing sparse or dense matrices from a Matrix Market file or
+/// input stream.
+///
+/// Matrix Market files are designed for easy reading and writing of
+/// test matrices by both humans and computers.  They are <i>not</i>
+/// intended for high-performance or parallel file input and output.
+/// You should use a true parallel file format if you want to do
+/// parallel input and output of sparse or dense matrices.
+///
+/// Since the Matrix Market format is not optimized for performance
+/// or parallelism, some of our readers and writers assume that the
+/// entire matrix can fit in a single MPI process.  Nevertheless, we
+/// always do all of the file input or output on the MPI process
+/// with rank 0 in the given communicator ("Process 0").
+/// Distributed input matrices may be gathered from all MPI
+/// processes in the participating communicator, and distributed
+/// output matrices are broadcast from Process 0 to all MPI
+/// processes in the participating communicator.  In some cases, we
+/// have optimized this to save memory.
+namespace MatrixMarket {
+
+template <class SparseMatrixType>
+using Reader = MatrixMarketReader<typename SparseMatrixType::scalar_type,
+                                  typename SparseMatrixType::local_ordinal_type,
+                                  typename SparseMatrixType::global_ordinal_type,
+                                  typename SparseMatrixType::node_type>;
+
+template <class SparseMatrixType>
+using Writer = MatrixMarketWriter<typename SparseMatrixType::scalar_type,
+                                  typename SparseMatrixType::local_ordinal_type,
+                                  typename SparseMatrixType::global_ordinal_type,
+                                  typename SparseMatrixType::node_type>;
 
 }  // namespace MatrixMarket
 }  // namespace Tpetra
