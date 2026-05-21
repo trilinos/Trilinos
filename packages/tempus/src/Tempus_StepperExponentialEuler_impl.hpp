@@ -154,9 +154,11 @@ void StepperExponentialEuler<Scalar>::takeStep(
     stepperEEAppAction_->execute(solutionHistory, thisStepper,
       StepperExponentialEulerAppAction<Scalar>::ACTION_LOCATION::BEFORE_EXP);
 
+    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+    // Teuchos::OSTab ostab(out, 1, "StepperExponentialEuler::takeStep");
+
     //{
-    //  Teuchos::basic_FancyOStream<char> ostr(Teuchos::rcp(&std::cout, false));
-    //  this->describe(ostr, Teuchos::VERB_EXTREME);
+    //  this->describe(out, Teuchos::VERB_EXTREME);
     //}
     Teuchos::RCP<TimeDerivative<Scalar> > timeDer;
 
@@ -211,9 +213,6 @@ void StepperExponentialEuler<Scalar>::takeStep(
       Scalar factor = Scalar(-dt);
 
       // use the PhiEvaluator to compute update
-      //Teuchos::RCP<Teuchos::FancyOStream> out =
-      //  Teuchos::VerboseObjectBase::getDefaultOStream();
-      //out->setOutputToRootOnly(0);
       //phiEvaluator_->describe(*out, Teuchos::VERB_EXTREME);
 
       phiEvaluator_->setLinearizationPoint(inArgs);
@@ -226,7 +225,18 @@ void StepperExponentialEuler<Scalar>::takeStep(
       Thyra::V_VpStV(x.ptr(), *xOld, factor, *vphi);
     }
 
-    //std::cout << sStatus << std::endl;
+    int current_iters = -1;
+    if(!sStatus.extraParameters.is_null()) {
+      current_iters = sStatus.extraParameters->get("Iteration Count", 0);
+    }
+    Scalar achieved_tol = sStatus.achievedTol;
+
+    if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED && current_iters >=0) {
+      *out << "Phi converged: iters: " << current_iters << " tol: " << achieved_tol << std::endl;
+    }
+    else {
+      *out << sStatus.message << std::endl;
+    }
 
     stepperEEAppAction_->execute(solutionHistory, thisStepper,
       StepperExponentialEulerAppAction<Scalar>::ACTION_LOCATION::AFTER_EXP);

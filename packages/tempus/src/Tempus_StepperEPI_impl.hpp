@@ -243,13 +243,29 @@ void StepperEPI<Scalar>::takeStep(
       };
     }
 
-    // unless temporal_finite_difference_eps_ is not positive,
-    // add the nonautonomous correction term
+    // if temporal_finite_difference_eps_ is positive or we use EPI3,
+    // use the extension formula.
     if (temporal_finite_difference_eps_ > 0.0 || useEPI3) {
       sStatus = phiEvaluator_->computePhis(vphi.ptr(), dt, Mrhs_B());
     }
     else {
       sStatus = phiEvaluator_->computePhi(vphi.ptr(), 1, dt, Mf);
+    }
+
+    // TODO: make this configurable
+    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+    // Teuchos::OSTab ostab(out, 1, "StepperEPI::takeStep");
+    int current_iters = -1;
+    if(!sStatus.extraParameters.is_null()) {
+      current_iters = sStatus.extraParameters->get("Iteration Count", 0);
+    }
+    Scalar achieved_tol = sStatus.achievedTol;
+
+    if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED && current_iters >=0) {
+      *out << "Phi converged: iters: " << current_iters << " tol: " << achieved_tol << std::endl;
+    }
+    else {
+      *out << sStatus.message << std::endl;
     }
 
     Thyra::V_VpStV(x.ptr(), *xOld, Scalar(-1.0)*dt, *vphi);
@@ -288,7 +304,7 @@ StepperEPI<Scalar>::computeRemf(
   auto p = Teuchos::rcp(new ImplicitODEParameters<Scalar>(timeDer, dt, Scalar(0.0), Scalar(1.0)));
 
   // Eval the rhs at (xr, tr)
-  // Mf_old = M^{-1}*F_impl(xr, tr)
+  // Mf_old = -M*F(xr, tr) = F_impl(xDot = 0, xr, tr)
   Teuchos::RCP<Thyra::VectorBase<Scalar>> Mf_old = Thyra::createMember(xr->space());
   this->evaluateImplicitODE(Mf_old, Teuchos::rcp_const_cast<Thyra::VectorBase<Scalar>>(xr), xrDot, tr, p);
 
@@ -296,22 +312,23 @@ StepperEPI<Scalar>::computeRemf(
   Teuchos::RCP<Thyra::VectorBase<Scalar>> xd = Thyra::createMember(xr->space());
   Thyra::V_VpStV(xd.ptr(), *xr, Scalar(-1.0), *x0);
 
-  // J_xd = -(M^{-1}*J) * (xr - x0)
-  Teuchos::RCP<Thyra::VectorBase<Scalar>> J_xd = Thyra::createMember(x0->space());
-  phiEvaluator_->applyJacobian(J_xd.ptr(), xd);
+  // J_xd = -M*J * (xr - x0)
+  Teuchos::RCP<Thyra::VectorBase<Scalar>> MJ_xd = Thyra::createMember(x0->space());
+  phiEvaluator_->applyJacobian(MJ_xd.ptr(), xd);
 
   // R = (Mf - Mf_old) + J_xd
-  // Mf is rhs at the current time: M^{-1}*F_impl(x0, t0)
-  Thyra::Vp_V(J_xd.ptr(), *Mf);
-  Thyra::Vp_StV(J_xd.ptr(), Scalar(-1.0), *Mf_old);
+  // Mf is rhs at the current time: -M*F(x0, t0)
+  Thyra::Vp_V(MJ_xd.ptr(), *Mf);
+  Thyra::Vp_StV(MJ_xd.ptr(), Scalar(-1.0), *Mf_old);
 
   // Time derivative remainder term only nonzero in nonautonomous case
-  // += (dt * M^{-1} * F') * ((tr - t0) / dt)
+  // add  (M * F') * (tr - t0) = (dt * M * F') * ((tr - t0) / dt)
   if (dt_Mf_deriv != Teuchos::null) {
-    Thyra::Vp_StV(J_xd.ptr(), Scalar((tr - t0)/dt), *dt_Mf_deriv);
+    Thyra::Vp_StV(MJ_xd.ptr(), Scalar((tr - t0) / dt), *dt_Mf_deriv);
   }
 
-  return J_xd;
+  // TODO: let the outer function provide the memory.
+  return MJ_xd;
 }
 
 
