@@ -142,7 +142,7 @@ PhiEvaluatorTaylor<Scalar>::computeLinOpPhi(const int phi_order,
      << " achieved in it. " << k << ".";
   sStatus.message = ss.str();
 
-  std::cout << sStatus.message << std::endl;
+  // std::cout << sStatus.message << std::endl;
 
   return sStatus;
 }
