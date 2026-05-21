@@ -26,7 +26,9 @@
 #include <Xpetra_StridedMapFactory.hpp>
 #include <Xpetra_BlockedCrsMatrix.hpp>
 
+#ifdef HAVE_XPETRA_THYRA
 #include <Thyra_DefaultBlockedLinearOp.hpp>
+#endif
 
 namespace MueLuTests {
 
@@ -263,6 +265,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CombinePFactory, CombineWithIdentityFallback, 
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CombinePFactory, CombineWithBlockedFineMatrix, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#ifdef HAVE_XPETRA_THYRA
 #include "MueLu_UseShortNames.hpp"
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, NO);
@@ -424,6 +427,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CombinePFactory, CombineWithBlockedFineMatrix,
   TEST_EQUALITY(bP->getMatrix(1, 1)->getGlobalNumRows(), P1->getGlobalNumRows());
   TEST_EQUALITY(bP->getMatrix(0, 0)->getGlobalNumEntries(), P0->getGlobalNumEntries());
   TEST_EQUALITY(bP->getMatrix(1, 1)->getGlobalNumEntries(), P1->getGlobalNumEntries());
+#endif
 }
 
 #define MUELU_ETI_GROUP(SC, LO, GO, Node)                                                               \
