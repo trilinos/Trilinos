@@ -50,6 +50,10 @@
 #include <BelosXpetraAdapter.hpp>
 #endif
 
+#ifdef HAVE_XPETRA_THYRA
+#include <Thyra_DefaultBlockedLinearOp.hpp>
+#endif
+
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 struct MultiPhysTestObjects {
   Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> monolithicA;
@@ -141,6 +145,9 @@ BuildProblem(const Teuchos::RCP<const Teuchos::Comm<int>>& comm,
              GlobalOrdinal ny,
              Scalar alpha,
              Scalar beta) {
+#ifndef HAVE_XPETRA_THYRA
+  return MultiPhysTestObjects<Scalar, LocalOrdinal, GlobalOrdinal, Node> objs{};
+#else
   using Matrix           = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   using BlockedCrsMatrix = Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   using BlockedMap       = Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node>;
@@ -206,6 +213,7 @@ BuildProblem(const Teuchos::RCP<const Teuchos::Comm<int>>& comm,
   objs.nullspaces[1] = nullspace1;
 
   return objs;
+#endif
 }
 
 #ifdef HAVE_MUELU_BELOS
@@ -274,6 +282,9 @@ bool SolveWithMultiPhys(
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib lib, int argc, char* argv[]) {
 #include <MueLu_UseShortNames.hpp>
+#ifndef HAVE_XPETRA_THYRA
+  std::cout << "MultiphysicsDriver requires Thyra to be enabled. Skipping test." return EXIT_SUCCESS;
+#else
 
   Teuchos::oblackholestream blackhole;
   bool success = true;
@@ -317,7 +328,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib lib, int arg
     Scalar alpha = Teuchos::as<Scalar>(alpha_in);
     Scalar beta  = Teuchos::as<Scalar>(beta_in);
 
-    auto objs = BuildProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node>(comm, lib, nx, ny, alpha, beta);
+    auto objs          = BuildProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node>(comm, lib, nx, ny, alpha, beta);
 
 #ifdef HAVE_MUELU_BELOS
     int iters          = -1;
@@ -351,6 +362,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib lib, int arg
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
   return success ? EXIT_SUCCESS : EXIT_FAILURE;
+#endif
 }
 
 //- -- --------------------------------------------------------
