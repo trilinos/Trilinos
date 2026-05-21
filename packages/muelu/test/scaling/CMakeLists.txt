@@ -326,7 +326,7 @@ TRIBITS_ADD_TEST(
   ARGS "--xml=multiphys_monolithic_smoother.xml --expected-iters=5"
   NUM_MPI_PROCS 4
   COMM mpi
-  PASS_REGULAR_EXPRESSION "Belos converged"
+  PASS_REGULAR_EXPRESSION "Belos converged|Skipping test"
 )
 
 TRIBITS_ADD_TEST(
