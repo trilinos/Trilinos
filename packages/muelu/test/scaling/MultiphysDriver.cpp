@@ -50,7 +50,7 @@
 #include <BelosXpetraAdapter.hpp>
 #endif
 
-#ifdef HAVE_XPETRA_THYRA
+#if defined(HAVE_XPETRA_THYRA) && defined(HAVE_MUELU_THYRA)
 #include <Thyra_DefaultBlockedLinearOp.hpp>
 #endif
 
@@ -145,7 +145,7 @@ BuildProblem(const Teuchos::RCP<const Teuchos::Comm<int>>& comm,
              GlobalOrdinal ny,
              Scalar alpha,
              Scalar beta) {
-#ifndef HAVE_XPETRA_THYRA
+#if !(defined(HAVE_XPETRA_THYRA) && defined(HAVE_MUELU_THYRA))
   return MultiPhysTestObjects<Scalar, LocalOrdinal, GlobalOrdinal, Node>{};
 #else
   using Matrix           = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
@@ -282,7 +282,7 @@ bool SolveWithMultiPhys(
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib lib, int argc, char* argv[]) {
 #include <MueLu_UseShortNames.hpp>
-#ifndef HAVE_XPETRA_THYRA
+#if !(defined(HAVE_XPETRA_THYRA) && defined(HAVE_MUELU_THYRA))
   std::cout << "MultiphysicsDriver requires Thyra to be enabled. Skipping test.";
   return EXIT_SUCCESS;
 #else

@@ -309,7 +309,7 @@ void CombinePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& f
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void CombinePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     BuildPBlockedImpl(Level& fineLevel, Level& coarseLevel, std::false_type) const {
-#ifdef HAVE_XPETRA_THYRA
+#if defined(HAVE_XPETRA_THYRA) && defined(HAVE_MUELU_THYRA)
   std::ostringstream oss;
   oss << "CombinePFactory::BuildPBlocked requires Thyra ETI support for this "
          "template-parameter combination:\n"
@@ -329,7 +329,7 @@ void CombinePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 #endif
 }
 
-#ifdef HAVE_XPETRA_THYRA
+#if defined(HAVE_XPETRA_THYRA) && defined(HAVE_MUELU_THYRA)
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 template <class S,
           std::enable_if_t<
@@ -398,7 +398,7 @@ void CombinePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildPBlocked(L
                              MueLu::Details::has_build_p_blocked_thyra_eti<Scalar, LocalOrdinal, GlobalOrdinal, Node>::value>{});
 }
 
-#ifdef HAVE_XPETRA_THYRA
+#if defined(HAVE_XPETRA_THYRA) && defined(HAVE_MUELU_THYRA)
 #define MUELU_BUILD_P_BLOCKED_THYRA_ETI_SPEC(S, LO, GO, N) \
   template <>                                              \
   struct Details::has_build_p_blocked_thyra_eti<S, LO, GO, N> : std::true_type {};

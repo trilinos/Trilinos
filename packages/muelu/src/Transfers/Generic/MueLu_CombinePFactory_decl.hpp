@@ -165,7 +165,7 @@ class CombinePFactory : public PFactory {
  private:
   void BuildPBlocked(Level& fineLevel, Level& coarseLevel) const;
   void BuildPBlockedImpl(Level& fineLevel, Level& coarseLevel, std::false_type) const;
-#ifdef HAVE_XPETRA_THYRA
+#if defined(HAVE_XPETRA_THYRA) && defined(HAVE_MUELU_THYRA)
   template <class S = Scalar,
             std::enable_if_t<
                 MueLu::Details::has_build_p_blocked_thyra_eti<

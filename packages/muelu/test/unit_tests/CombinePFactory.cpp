@@ -26,7 +26,7 @@
 #include <Xpetra_StridedMapFactory.hpp>
 #include <Xpetra_BlockedCrsMatrix.hpp>
 
-#ifdef HAVE_XPETRA_THYRA
+#if defined(HAVE_XPETRA_THYRA) && defined(HAVE_MUELU_THYRA)
 #include <Thyra_DefaultBlockedLinearOp.hpp>
 #endif
 
@@ -265,7 +265,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CombinePFactory, CombineWithIdentityFallback, 
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CombinePFactory, CombineWithBlockedFineMatrix, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
-#ifdef HAVE_XPETRA_THYRA
+#if defined(HAVE_XPETRA_THYRA) && defined(HAVE_MUELU_THYRA)
 #include "MueLu_UseShortNames.hpp"
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, NO);
@@ -336,7 +336,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CombinePFactory, CombineWithBlockedFineMatrix,
     bA->fillComplete();
   }
 
-#ifndef HAVE_XPETRA_THYRA
+#if !(defined(HAVE_XPETRA_THYRA) && defined(HAVE_MUELU_THYRA))
   // Without Thyra support, the fine matrix cannot be constructed through the Thyra-style constructor.
   bool threw = false;
   try {
