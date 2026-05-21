@@ -89,7 +89,7 @@ RCP<const ParameterList> CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, Global
   validParamList->getEntry("aggregation: classical algo").setValidator(rcp(new Teuchos::StringValidator(Teuchos::tuple<std::string>("default", "unscaled cut", "scaled cut", "scaled cut symmetric"))));
   validParamList->getEntry("aggregation: distance laplacian algo").setValidator(rcp(new Teuchos::StringValidator(Teuchos::tuple<std::string>("default", "unscaled cut", "scaled cut", "scaled cut symmetric"))));
 #endif
-  validParamList->getEntry("aggregation: strength-of-connection: matrix").setValidator(rcp(new Teuchos::StringValidator(Teuchos::tuple<std::string>("A", "distance laplacian"))));
+  validParamList->getEntry("aggregation: strength-of-connection: matrix").setValidator(rcp(new Teuchos::StringValidator(Teuchos::tuple<std::string>("A", "distance laplacian", "MinvA"))));
   validParamList->getEntry("aggregation: strength-of-connection: measure").setValidator(rcp(new Teuchos::StringValidator(Teuchos::tuple<std::string>("smoothed aggregation", "signed smoothed aggregation", "signed ruge-stueben", "unscaled"))));
   validParamList->getEntry("aggregation: distance laplacian metric").setValidator(rcp(new Teuchos::StringValidator(Teuchos::tuple<std::string>("unweighted", "material"))));
 
@@ -98,6 +98,9 @@ RCP<const ParameterList> CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, Global
   validParamList->set<RCP<const FactoryBase>>("Coordinates", Teuchos::null, "Generating factory for Coordinates");
   validParamList->set<RCP<const FactoryBase>>("BlockNumber", Teuchos::null, "Generating factory for BlockNumber");
   validParamList->set<RCP<const FactoryBase>>("Material", Teuchos::null, "Generating factory for Material");
+  validParamList->set<RCP<const FactoryBase>>("M", Teuchos::null, "Generating factory for M");
+  validParamList->set<RCP<const FactoryBase>>("Minv", Teuchos::null, "Generating factory for Minv");
+  validParamList->set<RCP<const FactoryBase>>("MinvA", Teuchos::null, "Generating factory for MinvA");
 
   return validParamList;
 }
@@ -111,6 +114,7 @@ void CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Decl
 
   std::string socUsesMatrix = pL.get<std::string>("aggregation: strength-of-connection: matrix");
   bool needCoords           = (socUsesMatrix == "distance laplacian");
+  const bool needM          = (socUsesMatrix == "MinvA");
 #ifdef HAVE_MUELU_COALESCEDROP_ALLOW_OLD_PARAMETERS
   std::string droppingMethod = pL.get<std::string>("aggregation: drop scheme");
   needCoords |= (droppingMethod.find("distance laplacian") != std::string::npos);
@@ -121,6 +125,8 @@ void CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Decl
     if (distLaplMetric == "material")
       Input(currentLevel, "Material");
   }
+  if (needM)
+    Input(currentLevel, "M");
 
   bool useBlocking = pL.get<bool>("aggregation: use blocking");
 #ifdef HAVE_MUELU_COALESCEDROP_ALLOW_OLD_PARAMETERS
@@ -363,6 +369,49 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
 
   // TODO: We could merge pass 1 and 2.
 
+  // Compute matrix that is used for dropping
+  RCP<Matrix> A_drop;
+  if (threshold != zero) {
+    if ((socUsesMatrix == "A") || (socUsesMatrix == "MinvA")) {
+      // Get matrix used for dropping
+      if (socUsesMatrix == "A")
+        A_drop = A;
+      else if (socUsesMatrix == "MinvA") {
+        if (currentLevel.IsAvailable("MinvA", NoFactory::get())) {
+          A_drop = currentLevel.Get<RCP<Matrix>>("MinvA", NoFactory::get());
+        } else {
+          RCP<Matrix> Minv;
+          if (currentLevel.IsAvailable("Minv", NoFactory::get())) {
+            Minv = Get<RCP<Matrix>>(currentLevel, "Minv");
+          } else {
+            auto M = Get<RCP<Matrix>>(currentLevel, "M");
+            // Create Minv via sparse approximate inverse
+            Minv = Utilities::SPAI(M);
+          }
+
+          // build MinvA matrix with same sparsity pattern as A.
+          A_drop      = Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildCopy(A);
+          auto params = Teuchos::rcp(new Teuchos::ParameterList());
+          params->set("MM Throw For Non-Existent Entries", false);
+          A_drop = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*Minv, false, *A, false, A_drop, GetOStream(Statistics2), true, true, std::string("MinvA"), params);
+
+#ifdef JustUsingDiagMforInverse
+          {
+            // could perhaps be useful for debugging?
+            //
+            // get the diagonal inverse of M (TODO: using InverseApproximationFactory is likely better)
+            Teuchos::RCP<Vector> MinvDiag = Utilities::GetMatrixDiagonalInverse(*M);
+            // build MinvA using the graph of A
+            A_drop = MatrixFactory::BuildCopy(A);
+            // multiply MinvDiag through
+            A_drop->leftScale(*MinvDiag);
+          }
+#endif
+        }
+      }
+    }
+  }
+
   auto crsA  = toCrsMatrix(A);
   auto lclA  = crsA->getLocalMatrixDevice();
   auto range = range_type(0, lclA.numRows());
@@ -426,18 +475,18 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
     SubFactoryMonitor mDropping(*this, "Dropping decisions", currentLevel);
 
     if (threshold != zero) {
-      if (socUsesMatrix == "A") {
+      if ((socUsesMatrix == "A") || (socUsesMatrix == "MinvA")) {
         if (socUsesMeasure == "unscaled") {
-          ScalarDroppingClassical<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::UnscaledMeasure>::runDroppingFunctors_on_A(*A, results, filtered_rowptr, nnz_filtered, boundaryNodes, droppingMethod, threshold,
+          ScalarDroppingClassical<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::UnscaledMeasure>::runDroppingFunctors_on_A(*A_drop, results, filtered_rowptr, nnz_filtered, boundaryNodes, droppingMethod, threshold,
                                                                                                                               aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, currentLevel, *this);
         } else if (socUsesMeasure == "smoothed aggregation") {
-          ScalarDroppingClassical<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SmoothedAggregationMeasure>::runDroppingFunctors_on_A(*A, results, filtered_rowptr, nnz_filtered, boundaryNodes, droppingMethod, threshold,
+          ScalarDroppingClassical<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SmoothedAggregationMeasure>::runDroppingFunctors_on_A(*A_drop, results, filtered_rowptr, nnz_filtered, boundaryNodes, droppingMethod, threshold,
                                                                                                                                          aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, currentLevel, *this);
         } else if (socUsesMeasure == "signed ruge-stueben") {
-          ScalarDroppingClassical<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SignedRugeStuebenMeasure>::runDroppingFunctors_on_A(*A, results, filtered_rowptr, nnz_filtered, boundaryNodes, droppingMethod, threshold,
+          ScalarDroppingClassical<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SignedRugeStuebenMeasure>::runDroppingFunctors_on_A(*A_drop, results, filtered_rowptr, nnz_filtered, boundaryNodes, droppingMethod, threshold,
                                                                                                                                        aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, currentLevel, *this);
         } else if (socUsesMeasure == "signed smoothed aggregation") {
-          ScalarDroppingClassical<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SignedSmoothedAggregationMeasure>::runDroppingFunctors_on_A(*A, results, filtered_rowptr, nnz_filtered, boundaryNodes, droppingMethod, threshold,
+          ScalarDroppingClassical<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SignedSmoothedAggregationMeasure>::runDroppingFunctors_on_A(*A_drop, results, filtered_rowptr, nnz_filtered, boundaryNodes, droppingMethod, threshold,
                                                                                                                                                aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, currentLevel, *this);
         }
       } else if (socUsesMatrix == "distance laplacian") {

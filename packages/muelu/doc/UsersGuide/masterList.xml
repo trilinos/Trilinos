@@ -456,7 +456,7 @@
       <name>aggregation: strength-of-connection: matrix</name>
       <type>string</type>
       <default>"A"</default>
-      <description>The matrix that is used for constructing the graph used for aggregation. Possible values: "A" (meaning the level matrix itself) and "distance laplacian".</description>
+      <description>The matrix that is used for constructing the graph used for aggregation. Possible values: "A" (meaning the level matrix itself), "distance laplacian", and "MinvA".</description>
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 

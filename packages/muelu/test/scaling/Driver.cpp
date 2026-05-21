@@ -250,6 +250,8 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   clp.setOption("blocknumber", &blockNumberFile, "block number data file");
   std::string materialFile;
   clp.setOption("material", &materialFile, "material data file");
+  std::string massFile;
+  clp.setOption("mass", &massFile, "mass matrix data file");
   bool tensorMaterialCoefficient = true;
   clp.setOption("tensorCoefficient", "scalarCoefficient", &tensorMaterialCoefficient, "Generate a tensor or scalar material coefficient if none is passed in from file");
   bool setNullSpace = true;
@@ -440,11 +442,12 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   RCP<Xpetra::MultiVector<SC, LO, GO, NO>> nullspace;
   RCP<Xpetra::MultiVector<SC, LO, GO, NO>> material;
   RCP<Xpetra::Vector<LO, LO, GO, NO>> blocknumber;
+  RCP<Matrix> mass;
   RCP<MultiVector> X;
   RCP<MultiVector> B;
 
   // Load the matrix off disk (or generate it via Galeri)
-  MatrixLoad<SC, LO, GO, NO>(comm, lib, binaryFormat, matrixFile, rhsFile, rowMapFile, colMapFile, domainMapFile, rangeMapFile, coordFile, coordMapFile, nullFile, materialFile, blockNumberFile, map, A, coordinates, nullspace, material, blocknumber, X, B, numVectors, galeriParameters, xpetraParameters, galeriStream, repartitionParamList);
+  MatrixLoad<SC, LO, GO, NO>(comm, lib, binaryFormat, matrixFile, rhsFile, rowMapFile, colMapFile, domainMapFile, rangeMapFile, coordFile, coordMapFile, nullFile, materialFile, blockNumberFile, massFile, map, A, coordinates, nullspace, material, blocknumber, mass, X, B, numVectors, galeriParameters, xpetraParameters, galeriStream, repartitionParamList);
   comm->barrier();
   tm = Teuchos::null;
 
@@ -602,7 +605,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
         RCP<Operator> Prec;
         // Build the preconditioner numRebuilds+1 times
         if (solvePreconditioned) {
-          PreconditionerSetup(A, coordinates, nullspace, material, blocknumber, mueluList, profileSetup, useAMGX, setNullSpace, numRebuilds, H, Prec, performSacrificeSetup);
+          PreconditionerSetup(A, coordinates, nullspace, material, blocknumber, mass, mueluList, profileSetup, useAMGX, setNullSpace, numRebuilds, H, Prec, out, performSacrificeSetup);
         }
         comm->barrier();
         tm = Teuchos::null;

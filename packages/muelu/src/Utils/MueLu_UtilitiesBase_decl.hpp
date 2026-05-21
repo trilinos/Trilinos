@@ -44,6 +44,8 @@
 #include <Xpetra_Vector_fwd.hpp>
 #include <Xpetra_VectorFactory_fwd.hpp>
 
+#include <MueLu_InverseApproximationFactory_fwd.hpp>
+
 namespace MueLu {
 
 // MPI helpers
@@ -452,6 +454,9 @@ class UtilitiesBase {
   //! Creates a copy of a matrix where the non-zero entries are replaced by ones.
   // You can use this to de-normalize a tenative prolongator, for instance
   static RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> ReplaceNonZerosWithOnes(const RCP<Matrix>& original);
+
+  //! Creates a sparse approximate inverse of a matrix with the same nonzero pattern as the input matrix
+  static RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> SPAI(const RCP<Matrix>& original);
 
   // This routine takes a BlockedMap and an Importer (assuming that the BlockedMap matches the source of the importer) and generates a BlockedMap corresponding
   // to the Importer's target map.  We assume that the targetMap is unique (which, is not a strict requirement of an Importer, but is here and no, we don't check)

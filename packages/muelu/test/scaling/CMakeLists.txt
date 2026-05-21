@@ -104,6 +104,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(
     isorropia.xml
     material.mm
     material.xml
+    MinvA.xml
     multiPhys4x4.mat
     multiPhys4x4.mat
     multiphys_monolithic_smoother.xml
@@ -613,6 +614,15 @@ ELSE()
     #do not check for convergence
   )
 ENDIF()
+
+MUELU_ADD_SERIAL_AND_MPI_TEST(
+  Driver
+  NAME "MinvA"
+  ARGS "--xml=MinvA.xml --its=30 --matrixType=Laplace1D --nx=1000 --tol=1e-6"
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "Belos converged"
+)
 
 # Reading a matrix saved in real format as complex does not work.
 IF(NOT ${PACKAGE_NAME}_INST_COMPLEX_INT_INT)
