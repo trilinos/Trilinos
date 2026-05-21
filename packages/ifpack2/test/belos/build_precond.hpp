@@ -26,10 +26,11 @@ build_precond(Teuchos::ParameterList& test_params,
   using Teuchos::RCP;
   using Teuchos::rcpFromRef;
   typedef Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> row_matrix_type;
+  typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> crs_matrix_type;
   typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
   typedef Tpetra::MultiVector<magnitude_type, LocalOrdinal, GlobalOrdinal, Node> coord_type;
-  typedef Tpetra::MatrixMarket::Reader<MatrixType> reader_type;
+  typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
   Teuchos::Time timer_init("Init preconditioner");
   Teuchos::Time timer("Compute preconditioner");
   Teuchos::Time timer2("Compute preconditioner (reuse)");
