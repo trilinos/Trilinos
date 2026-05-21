@@ -322,7 +322,7 @@ StepperEPI<Scalar>::computeRemf(
   Thyra::Vp_StV(MJ_xd.ptr(), Scalar(-1.0), *Mf_old);
 
   // Time derivative remainder term only nonzero in nonautonomous case
-  // add  (M * F') * (tr - t0) = (dt * M * F') * ((tr - t0) / dt)
+  // add  -(M * F') * (tr - t0) = -(dt * M * F') * ((tr - t0) / dt)
   if (dt_Mf_deriv != Teuchos::null) {
     Thyra::Vp_StV(MJ_xd.ptr(), Scalar((tr - t0) / dt), *dt_Mf_deriv);
   }

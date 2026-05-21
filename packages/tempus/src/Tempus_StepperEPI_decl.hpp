@@ -152,7 +152,11 @@ private:
     const int deriv_index = 0) const;
 
   /// Compute the nonlinear remainder
-  ///   R = F(xr,tr) - F(x0,t0) - J_{x0}*(xr-x0)
+  ///   R = F(xr,tr) - F(x0,t0) - J_{x0}*(xr-x0) - (d/dt)F(x0,t0)(tr-t0)
+  /// the following extra arguments are used:
+  ///  xrDot a temp. vector that is used internally
+  ///  dt is the new timestep (from current to working)
+  ///  dt_Mf_deriv = - (d/dt)F(x0,t0) * dt (the dt from above, not tr-t0)
   Teuchos::RCP<Thyra::VectorBase<Scalar>> computeRemf(
     const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& xr,
     const Teuchos::RCP<Thyra::VectorBase<Scalar>>& xrDot,
