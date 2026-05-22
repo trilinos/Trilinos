@@ -966,9 +966,13 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                              "Utils::PowerMethod: operator must have domain and range maps that are equivalent.");
 
   // Create three vectors, fill z with random numbers
-  RCP<Vector> q = Xpetra::VectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(A.getDomainMap(), true);
+  auto q_z      = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(A.getDomainMap(), 2, true);
+  RCP<Vector> q = q_z->getVectorNonConst(0);
+  RCP<Vector> z = q_z->getVectorNonConst(1);
   RCP<Vector> r = Xpetra::VectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(A.getRangeMap(), true);
-  RCP<Vector> z = Xpetra::VectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(A.getRangeMap(), false);
+
+  auto replicated_map = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::createLocalMap(A.getDomainMap()->lib(), 2, A.getDomainMap()->getComm());
+  auto prod           = Xpetra::VectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(replicated_map, false);
 
   z->setSeed(seed);    // seed random number generator
   z->randomize(true);  // use Xpetra implementation: -> same results for Epetra and Tpetra
@@ -979,19 +983,27 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   const Scalar zero = STS::zero(), one = STS::one();
 
-  Scalar lambda      = zero;
-  Magnitude residual = STS::magnitude(zero);
+  Scalar lambda = zero;
+  z->norm2(norms);
+  Magnitude normz    = norms[0];
+  Magnitude residual = Teuchos::ScalarTraits<Magnitude>::rmax();
 
   // power iteration
   for (int iter = 0; iter < niters; ++iter) {
-    z->norm2(norms);                      // Compute 2-norm of z
-    q->update(one / norms[0], *z, zero);  // Set q = z / normz
-    A.apply(*q, *z);                      // Compute z = A*q
+    q->update(one / normz, *z, zero);  // Set q = z / normz
+    A.apply(*q, *z);                   // Compute z = A*q
     if (diagInvVec != Teuchos::null)
       z->elementWiseMultiply(one, *diagInvVec, *z, zero);
-    lambda = q->dot(*z);  // Approximate maximum eigenvalue: lamba = dot(q,z)
 
-    if (iter % 100 == 0 || iter + 1 == niters) {
+    // Approximate maximum eigenvalue: lamba = dot(q,z)
+    prod->multiply(Teuchos::CONJ_TRANS, Teuchos::NO_TRANS, one, *q_z, *z, zero);
+    {
+      auto dots = prod->getLocalViewHost(Tpetra::Access::ReadOnly);
+      lambda    = dots(0, 0);
+      normz     = Teuchos::ScalarTraits<Magnitude>::squareroot(STS::magnitude(dots(1, 0)));
+    }
+
+    if (((iter > 0) && (iter % 100 == 0)) || ((iter + 1 == niters) && verbose)) {
       r->update(1.0, *z, -lambda, *q, zero);  // Compute A*q - lambda*q
       r->norm2(norms);
       residual = STS::magnitude(norms[0] / lambda);
