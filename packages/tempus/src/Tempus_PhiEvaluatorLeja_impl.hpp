@@ -253,7 +253,7 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
      << " achieved in it. " << k << ".";
   sStatus.message = ss.str();
 
-  std::cout << sStatus.message << std::endl;
+  // std::cout << sStatus.message << std::endl;
 
   return sStatus;
 }

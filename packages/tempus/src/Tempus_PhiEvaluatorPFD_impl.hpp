@@ -54,28 +54,16 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorPFD<Scalar>::computePhi(const Teuchos::Pt
       std::invalid_argument,
       "PhiEvaluatorPFD<Scalar>::computePhi is only implemented for k=1");
 
+  // check that model and PhiLinearSolver have been initialized properly
+  this->checkInitialized();
+
   const Scalar alpha = Scalar(1.0);
   const Scalar beta  = Scalar(0.5) * cdt;
 
-  Thyra::SolveStatus<Scalar> sStatus = this->phiLinSolv_->solveMpJ(*this->inArgs_lin_, phiv, Mrhs_b, alpha, beta);
-
-  //TODO: make this configurable
-  Teuchos::RCP<Teuchos::FancyOStream> out =
-    Teuchos::VerboseObjectBase::getDefaultOStream();
-  out->setOutputToRootOnly(0);
-
-  int current_iters= -1;
-  if(!sStatus.extraParameters.is_null()) {
-    current_iters = sStatus.extraParameters->get("Iteration Count", 0);
-  }
-  Scalar achieved_tol = sStatus.achievedTol;
-
-  if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED) {
-    *out << "PhiPFD converged: iters: " << current_iters << " tol: " << achieved_tol << std::endl;
-  }
-  else if (sStatus.solveStatus == ::Thyra::SOLVE_STATUS_UNCONVERGED) {
-    *out << sStatus.message << std::endl;
-  }
+  // TODO: we call solveMpJ without inArgs, it will use the existing Mass and Jacobian.
+  //       check if there is aperformance penalty
+  //Thyra::SolveStatus<Scalar> sStatus = this->phiLinSolv_->assembleAndsolveMpJ(this->inArgs_lin_, phiv, Mrhs_b, alpha, beta);
+  Thyra::SolveStatus<Scalar> sStatus = this->phiLinSolv_->solveMpJ(phiv, Mrhs_b, alpha, beta);
 
   return sStatus;
 }
