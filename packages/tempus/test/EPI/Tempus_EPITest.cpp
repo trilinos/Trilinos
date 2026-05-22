@@ -93,7 +93,7 @@ TEUCHOS_UNIT_TEST(EPI, SinCos)
     pl->sublist("Demo Integrator")
         .sublist("Time Step Control")
         .set("Initial Time Step", dt);
-    // Read the Taylor order from the xml file with a default of expected_order 
+    // Read the Taylor order from the xml file with a default of expected_order
     // and make them the same.
     expected_order = pl->sublist("Demo Stepper").sublist("PhiEvaluator")
       .get("Expansion Order", 3);
@@ -569,7 +569,6 @@ TEUCHOS_UNIT_TEST(EPI, NonAutoSrc)
     const int nTimeStepSizes = 7;
     double dt                = 0.2;
     double time              = 0.0;
-    // int expected_order;
     for (int n = 0; n < nTimeStepSizes; n++) {
       // Read params from .xml file
       RCP<ParameterList> pList = getParametersFromXmlFile(xml_case + ".xml");
@@ -591,10 +590,6 @@ TEUCHOS_UNIT_TEST(EPI, NonAutoSrc)
       else
         pl->sublist("Demo Stepper")
             .set("Epsilon for RHS finite difference", 1e-4);
-      // Read the Taylor order from the xml file with a default of expected_order
-      // and make them the same.
-      // expected_order = pl->sublist("Demo Stepper").sublist("PhiEvaluator")
-      //  .get("Expansion Order", 6);
 
       integrator = Tempus::createIntegratorBasic<double>(pl, model);
       // Initial Conditions
@@ -681,11 +676,11 @@ TEUCHOS_UNIT_TEST(EPI, NonAutoSrc)
     {
       // Without nonautonomous correction, expect order ~1.0
       TEST_FLOATING_EQUALITY(xSlope, 1.0, 0.2);
-    } 
+    }
     else
     {
-      // With nonautonomous correction, expect order ~2.0
-      TEST_FLOATING_EQUALITY(xSlope, 2.0, 0.2);
+      // With nonautonomous correction, expect full order
+      TEST_FLOATING_EQUALITY(xSlope, stepper->getOrder(), 0.2);
     }
     for (int i=0; i < nTimeStepSizes - 1; ++i) {
       TEST_COMPARE(xErrorNorm[i], <=, 1.0e-10);

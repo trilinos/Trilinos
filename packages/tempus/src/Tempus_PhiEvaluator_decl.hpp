@@ -24,12 +24,23 @@ template <class Scalar>
 class PhiLinearSolver {
  public:
   PhiLinearSolver(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>> appModel, bool lumpMass=false)
-    : appModel_(appModel), lumpMass_(lumpMass) {
+    : appModel_(appModel), lumpMass_(lumpMass), isInitialized_(false) {
   }
 
   ~PhiLinearSolver() {}
 
   void setLumpMassMatrix(const bool lump);
+
+  /** \brief Initialize PhiSolver
+   *
+   *  This function will check if mass matrix and Jacobian have been computed.
+   *  This function does not make member data consistent, but just checks it.
+   *  This ensures it is inexpensive.
+   */
+  void initialize();
+  /// Return if PhiSolver is initialized.
+  bool isInitialized() const { return isInitialized_; }
+  void checkInitialized() const;
 
   void computeMassMatrix(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs);
   void applyMass(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> Mf, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> f) const;
@@ -38,27 +49,37 @@ class PhiLinearSolver {
   void computeJacobian(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs);
   void applyJacobian(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> Jf, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> f) const;
 
-  Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> buildL(const Scalar dt);
+  Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> buildL(const Scalar dt) const;
 
+  // TODO: make that one public function
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> buildATilde(const Scalar dt);
   void buildK(const Thyra::Ordinal n);
   void buildb(const Teuchos::ArrayView<const Teuchos::RCP<const Thyra::VectorBase<Scalar>>> &rhs_B);
   Teuchos::RCP<Thyra::ProductVectorBase<Scalar>> buildv(const Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar>> space,
-							const Teuchos::RCP<const Thyra::VectorBase<Scalar>> x0);
+							const Teuchos::RCP<const Thyra::VectorBase<Scalar>> x0) const;
 
-  Thyra::SolveStatus<Scalar> solveMpJ(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
-				      const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
-				      const Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mf, Scalar alpha=1., Scalar beta=0.) const;
+  // Solve Mass plus Jacobian, for given inArgs (recompute matrices from from ModelEvaluator)
+  Thyra::SolveStatus<Scalar> assembleAndsolveMpJ(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+                                                 const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
+                                                 const Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mf,
+                                                 Scalar alpha = 1., Scalar beta = 0.) const;
+
+  // Solve Mass plus Jacobian, for precomputed Mass and Jacobian
+  Thyra::SolveStatus<Scalar> solveMpJ(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
+                                      const Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mf,
+                                      Scalar alpha=1., Scalar beta=0.) const;
 
  private:
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > appModel_;
   bool lumpMass_;
+  bool isInitialized_;
 
   Teuchos::RCP<Thyra::LinearOpBase<Scalar>> fullMassMatrix_;
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> lumpedMassMatrix_;
   Teuchos::RCP<Thyra::VectorBase<Scalar> > lumpedMassDiagonal_;
 
-  // the inverseMassMatrix_ is either lumped, or not, depending on bool lumpMass_
+  // massMatrix_ and inverseMassMatrix_ are either lumped, or not, depending on bool lumpMass_
+  Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> massMatrix_;
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> inverseMassMatrix_;
 
   Teuchos::RCP<Thyra::LinearOpBase<Scalar>> jacobianMatrix_;
@@ -68,11 +89,8 @@ class PhiLinearSolver {
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> Atilde_;
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> KMatrix_;
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> bMatrix_;
-
-  Thyra::ModelEvaluatorBase::InArgs<Scalar> prototypeInArgs_;
-  Thyra::ModelEvaluatorBase::OutArgs<Scalar> prototypeOutArgs_;
-
 };
+
 
 /** \brief PhiEvaluator evaluates
  *
@@ -133,19 +151,24 @@ class PhiEvaluator
    *  and is consistent.  This function does not make member data
    *  consistent, but just checks it.  This ensures it is inexpensive.
    */
-  void initialize() const;
+  void initialize();
 
   /// Return if PhiEvaluator is initialized.
-  bool isInitialized() { return isInitialized_; }
+  bool isInitialized() const { return isInitialized_; }
 
-  void checkInitialized();
+  void checkInitialized() const;
 
   void setLumpMassMatrix(bool lumpMassMatrix);
 
   /// set the ModelEvaluator
   void setModel(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > appModel);
 
-  /// Set the linearization point for the Jacobian calculation
+
+  /** \brief   Set the linearization point for the Jacobian calculation
+   *
+   *  The linearization point x and time t are taken from inArgs.
+   *  This computes the Mass and Jacobian matrix for future use.
+   */
   void setLinearizationPoint(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs);
 
   /** \brief  Compute the Phi_k function of cdt*Jacobian for right hand side Mrhs_b
@@ -170,14 +193,21 @@ class PhiEvaluator
                                                  const Scalar cdt,
                                                  const Teuchos::ArrayView<const Teuchos::RCP<const Thyra::VectorBase<Scalar>>> &Mrhs_B);
 
-  // TODO: refactor int -> Thyra::Ordinal?
+  // Multiply the mass matrix (lumped or not) with right hand side f
+  void applyMass(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> Mf, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> f) const;
+
+  // Invert the mass matrix (lumped or not) with right hand side Mf
+  void solveMass(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> f, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mf) const;
+
+  // Multiply the MassJacobian matrix with right hand side Mf
+  void applyJacobian(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> MJf, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> f) const;
 
  protected:
   std::string name_;
   bool lumpMassMatrix_;
   bool useAtildeForSingleRHS_;
 
-  mutable bool isInitialized_;  ///< Bool if PhiEvaluator is initialized.
+  bool isInitialized_;  ///< Bool if PhiEvaluator is initialized.
 
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>> appModel_;
   Teuchos::RCP<Tempus::PhiLinearSolver<Scalar>> phiLinSolv_;
