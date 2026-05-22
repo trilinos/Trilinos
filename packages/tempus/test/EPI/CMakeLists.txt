@@ -20,6 +20,7 @@ IF (TEMPUS_ENABLE_EPETRA_STACK OR TEMPUS_ENABLE_TPETRA_STACK)
     Tempus_EPI_NonAutoSrc.xml
     Tempus_EPI_LotkaVolterra.xml
     Tempus_RK4_LotkaVolterra.xml
+    Tempus_SDIRK_CDR.xml
     EXEDEPS EPI
     )
 ENDIF()

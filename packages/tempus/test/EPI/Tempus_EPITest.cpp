@@ -529,6 +529,76 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
   // TEST_FLOATING_EQUALITY(xSlope,              order, 0.01 );
   // TEST_FLOATING_EQUALITY(xDotSlope,           order, 0.01 );
 
+  // ---------------------------------------------------------------
+  // Run SDIRK 3 Stage 4th order at the finest EPI step as a baseline
+  // and verify that the fine EPI solution is close to it.
+  // ---------------------------------------------------------------
+  RCP<Thyra::VectorBase<double>> xSDIRK;
+  {
+    const double dt_sdirk = StepSize[nTimeStepSizes - 1] / 4.;  // finest EPI dt / 4
+
+    RCP<ParameterList> pListS =
+        getParametersFromXmlFile("Tempus_SDIRK_CDR.xml");
+
+    RCP<ParameterList> model_plS = sublist(pListS, "CDR Model", true);
+    const auto num_elemS  = model_plS->get<int>("num elements");
+    const auto left_endS  = model_plS->get<SC>("left end");
+    const auto right_endS = model_plS->get<SC>("right end");
+    const auto a_convS    = model_plS->get<SC>("a (convection)");
+    const auto k_srcS     = model_plS->get<SC>("k (source)");
+
+    auto modelSDIRK = rcp(new Model(comm, num_elemS, left_endS, right_endS,
+                                    a_convS, k_srcS));
+
+    ::Stratimikos::DefaultLinearSolverBuilder builderS;
+    auto pS = rcp(new ParameterList);
+    pS->set("Linear Solver Type", "Belos");
+    pS->set("Preconditioner Type", "None");
+    builderS.setParameterList(pS);
+    modelSDIRK->set_W_factory(builderS.createLinearSolveStrategy(""));
+
+    RCP<ParameterList> plS = sublist(pListS, "Tempus", true);
+    plS->sublist("Demo Integrator")
+        .sublist("Time Step Control")
+        .set("Initial Time Step", dt_sdirk);
+    plS->sublist("Demo Integrator")
+        .sublist("Time Step Control")
+        .set("Maximum Time Step", dt_sdirk);
+
+    auto integratorSDIRK =
+        Tempus::createIntegratorBasic<double>(plS, modelSDIRK);
+    bool sdirkStatus = integratorSDIRK->advanceTime();
+    TEST_ASSERT(sdirkStatus);
+
+    double timeS      = integratorSDIRK->getTime();
+    double timeFinalS = plS->sublist("Demo Integrator")
+                            .sublist("Time Step Control")
+                            .get<double>("Final Time");
+
+    double tol = 100.0 * std::numeric_limits<double>::epsilon();
+    TEST_FLOATING_EQUALITY(timeS, timeFinalS, tol);
+
+    xSDIRK = Thyra::createMember(modelSDIRK->get_x_space());
+    Thyra::copy(*(integratorSDIRK->getX()), xSDIRK.ptr());
+
+    out << "  SDIRK 3 Stage 4th order reference computed at dt = "
+        << dt_sdirk << std::endl;
+  }
+
+  // Compare finest EPI solution to SDIRK 4th-order reference
+  {
+    auto xDiff = Thyra::createMember(xSDIRK->space());
+    Thyra::V_StVpStV(xDiff.ptr(), 1.0, *xSDIRK,
+                     -1.0, *(solutions[nTimeStepSizes - 1]));
+    double sdirkDiffNorm = Thyra::norm_2(*xDiff);
+    double epiNorm = Thyra::norm_2(*(solutions[nTimeStepSizes - 1]));
+    double sdirkNorm = Thyra::norm_2(*xSDIRK);
+    out << "  ||EPI_fine||_2 = " << epiNorm << std::endl;
+    out << "  ||SDIRK_fine||_2 = " << sdirkNorm << std::endl;
+    out << "  ||EPI_fine - SDIRK_fine||_2 = " << sdirkDiffNorm << std::endl;
+    TEST_COMPARE(sdirkDiffNorm, <=, 1.0e-2);
+  }
+
   // Write fine mesh solution at final time
   // This only works for ONE MPI process
   if (commSize == 1) {
@@ -546,7 +616,7 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
       const double dx =
           std::fabs(left_end - right_end) / static_cast<double>(num_elements);
       const double x_coord = left_end + static_cast<double>(n) * dx;
-      ftmp << x_coord << "   " << Thyra::get_ele(x, n) << std::endl;
+      ftmp << x_coord << "   " << Thyra::get_ele(x, n) << "   " << Thyra::get_ele(*xSDIRK, n) << std::endl;
     }
     ftmp.close();
   }
