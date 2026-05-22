@@ -158,11 +158,27 @@ void StepperEPI<Scalar>::takeStep(
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
 
-    RCP<Thyra::VectorBase<Scalar> > xOld = currentState->getX();
-    // TODO: Figure out why we need this hack:
-    // We must have applied Dirichlet BCs to the workingState on first step
-    if (workingState->getIndex() == 1)
-      Thyra::assign(xOld.ptr(), *workingState->getX());
+    // On the first step, currentState is the raw initial condition (index 0)
+    // and may not have Dirichlet BCs applied: setInitialConditions() only
+    // solves for xDot (SOLVE_FOR_XDOT_CONST_X), leaving x unchanged from
+    // getNominalValues(). An application observer (observeBeforeTakeStep) may
+    // have applied BCs to workingState->getX() before takeStep is called; use
+    // that as the linearization point.
+    //
+    // For all subsequent steps, currentState->getX() was previously an
+    // accepted working state and already carries the correct t_n BCs. Using
+    // currentState (not workingState) is correct for time-varying BCs, since
+    // the observer may have written t_{n+1} BC values into workingState->getX()
+    // and the EPI linearization must be evaluated at t_n.
+    //
+    // We always clone to produce an independent buffer, avoiding any mutation
+    // of currentState->getX() as a side effect of takeStep.
+    RCP<Thyra::VectorBase<Scalar>> xOld;
+    if (currentState->getIndex() == 0) {
+      xOld = workingState->getX()->clone_v();
+    } else {
+      xOld = currentState->getX()->clone_v();
+    }
 
     RCP<Thyra::VectorBase<Scalar> > x = workingState->getX();
     if (workingState->getXDot() != Teuchos::null)
