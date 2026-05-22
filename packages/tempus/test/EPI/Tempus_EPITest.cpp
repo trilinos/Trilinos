@@ -23,6 +23,7 @@
 #include "../TestModels/ReactionModel.hpp"
 #include "../TestModels/NonAutoSrcModel.hpp"
 #include "../TestModels/VanDerPolModel.hpp"
+#include "../TestModels/LotkaVolterraModel.hpp"
 #include "../TestUtils/Tempus_ConvergenceTestUtils.hpp"
 #include "Thyra_VectorStdOps_decl.hpp"
 
@@ -689,6 +690,128 @@ TEUCHOS_UNIT_TEST(EPI, NonAutoSrc)
     Teuchos::TimeMonitor::summarize();
   }
 }
+
+TEUCHOS_UNIT_TEST(EPI, LotkaVolterra)
+{
+  // Convergence study for EPI3 (third-order exponential propagation iterative).
+  // A RK4 solution at dt_ref = 1e-3 is pre-computed and used
+  // as the reference.
+
+  // Compute the fine RK4 reference solution
+  const double dt_ref = 1.0e-3;
+
+  RCP<Thyra::VectorBase<double>> xRef;
+  double timeFinal = 0.0;
+  {
+    RCP<ParameterList> pList =
+        getParametersFromXmlFile("Tempus_RK4_LotkaVolterra.xml");
+
+    RCP<ParameterList> lvm_pl = sublist(pList, "LotkaVolterraModel", true);
+    auto modelRef             = rcp(new LotkaVolterraModel<double>(lvm_pl));
+
+    RCP<ParameterList> pl = sublist(pList, "Tempus", true);
+    pl->sublist("Demo Integrator")
+        .sublist("Time Step Control")
+        .set("Initial Time Step", dt_ref);
+    pl->sublist("Demo Integrator")
+        .sublist("Time Step Control")
+        .set("Maximum Time Step", dt_ref);
+
+    auto integratorRef = Tempus::createIntegratorBasic<double>(pl, modelRef);
+
+    RCP<Thyra::VectorBase<double>> x0 =
+        modelRef->getNominalValues().get_x()->clone_v();
+    integratorRef->initializeSolutionHistory(0.0, x0);
+    integratorRef->initialize();
+
+    bool status = integratorRef->advanceTime();
+    TEST_ASSERT(status)
+
+    timeFinal = pl->sublist("Demo Integrator")
+                    .sublist("Time Step Control")
+                    .get<double>("Final Time");
+    TEST_FLOATING_EQUALITY(integratorRef->getTime(), timeFinal, 1.0e-14);
+
+    xRef = Thyra::createMember(modelRef->get_x_space());
+    Thyra::copy(*(integratorRef->getX()), xRef.ptr());
+
+    out << "  RK4 reference computed at dt_ref = " << dt_ref << std::endl;
+  }
+
+  // EPI3 convergence study
+  RCP<Tempus::IntegratorBasic<double>> integrator;
+  std::vector<RCP<Thyra::VectorBase<double>>> solutions;
+  std::vector<double> StepSize;
+  std::vector<double> xErrorNorm;
+
+  const int nTimeStepSizes = 5;
+  double dt                = 0.2;
+
+  for (int n = 0; n < nTimeStepSizes; n++) {
+    RCP<ParameterList> pList =
+        getParametersFromXmlFile("Tempus_EPI_LotkaVolterra.xml");
+
+    RCP<ParameterList> lvm_pl = sublist(pList, "LotkaVolterraModel", true);
+    auto model                = rcp(new LotkaVolterraModel<double>(lvm_pl));
+
+    dt /= 2.0;
+
+    RCP<ParameterList> pl = sublist(pList, "Tempus", true);
+    pl->sublist("Demo Integrator")
+        .sublist("Time Step Control")
+        .set("Initial Time Step", dt);
+    pl->sublist("Demo Integrator")
+        .sublist("Time Step Control")
+        .set("Maximum Time Step", dt);
+
+    integrator = Tempus::createIntegratorBasic<double>(pl, model);
+
+    RCP<Thyra::VectorBase<double>> x0 =
+        model->getNominalValues().get_x()->clone_v();
+    integrator->initializeSolutionHistory(0.0, x0);
+    integrator->initialize();
+
+    bool integratorStatus = integrator->advanceTime();
+    TEST_ASSERT(integratorStatus)
+
+    double time = integrator->getTime();
+    TEST_FLOATING_EQUALITY(time, timeFinal, 1.0e-14);
+
+    // Write trajectory for the coarsest run
+    if (n == 0) {
+      RCP<const SolutionHistory<double>> solutionHistory =
+          integrator->getSolutionHistory();
+      writeSolution("Tempus_EPI_LotkaVolterra.dat", solutionHistory);
+    }
+
+    StepSize.push_back(dt);
+    auto solution = Thyra::createMember(model->get_x_space());
+    Thyra::copy(*(integrator->getX()), solution.ptr());
+    solutions.push_back(solution);
+  }
+
+  // Append the RK4 reference as the last entry.
+  StepSize.push_back(0.0);
+  solutions.push_back(xRef);
+
+  // ----------------------------------------------------------
+  // NOTE: EPI methods do not populate xDot
+  // at the final state, so only the state convergence slope is checked.
+  // EPI methods do not compute xDot at the final state; only check x slope.
+  double xSlope                        = 0.0;
+  RCP<Tempus::Stepper<double>> stepper = integrator->getStepper();
+  double order                         = stepper->getOrder();
+  writeOrderError("Tempus_EPI_LotkaVolterra-Error.dat", stepper, StepSize,
+                  solutions, xErrorNorm, xSlope, out);
+
+  std::cout << "Estimated Order: " << xSlope << std::endl;
+  std::cout << "Expected  Order: " << order << std::endl;
+
+  TEST_COMPARE(xSlope, >=, order * 0.9);  // at least ~order, super-convergence OK
+
+  Teuchos::TimeMonitor::summarize();
+}
+
 
 #ifdef TEMPUS_ENABLE_EPETRA_STACK
 // ************************************************************

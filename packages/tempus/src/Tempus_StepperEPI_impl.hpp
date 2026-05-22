@@ -158,7 +158,7 @@ void StepperEPI<Scalar>::takeStep(
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
 
-    RCP<const Thyra::VectorBase<Scalar> > xOld = currentState->getX();
+    RCP<Thyra::VectorBase<Scalar> > xOld = currentState->getX();
     // TODO: Figure out why we need this hack:
     // We must have applied Dirichlet BCs to the workingState on first step
     if (workingState->getIndex() == 1)
@@ -186,7 +186,7 @@ void StepperEPI<Scalar>::takeStep(
 
     // set the right hand side for the Phi_1 function
     RCP<Thyra::VectorBase<Scalar>> Mf = x->clone_v();
-    this->evaluateImplicitODE(Mf, x, xDot, t0, p);
+    this->evaluateImplicitODE(Mf, xOld, xDot, t0, p);
 
     Teuchos::ArrayRCP<RCP<const Thyra::VectorBase<Scalar>>> Mrhs_B(3);
     // Mrhs_B is default initialized with Teuchos::null
@@ -196,7 +196,7 @@ void StepperEPI<Scalar>::takeStep(
     RCP<const Thyra::ModelEvaluator<Scalar>> appModel = this->getModel();
     Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs = appModel->createInArgs();
     // Model evaluator builds: alpha*u_dot + beta*F(u) = 0
-    inArgs.set_x(x);
+    inArgs.set_x(xOld);
     inArgs.set_t(t0);
     // set x_dot == 0 to signal to some model evaluators that we want the implicit version
     inArgs.set_x_dot(xDot);
@@ -213,7 +213,7 @@ void StepperEPI<Scalar>::takeStep(
     if (temporal_finite_difference_eps_ > 0.0) {
       dt_Mf_deriv = Mf->clone_v();
       this->evaluateImplicitODE(
-          dt_Mf_deriv, x, xDot, t0 + dt*temporal_finite_difference_eps_, p);
+          dt_Mf_deriv, xOld, xDot, t0 + dt*temporal_finite_difference_eps_, p);
       // compute dt times the temporal finite difference of Mf:
       // dt_Mf_deriv = (Mf(t + eps*dt) - Mf(t)) / eps
       Scalar one_over_eps = Scalar(1. / temporal_finite_difference_eps_);
