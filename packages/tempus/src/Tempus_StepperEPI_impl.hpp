@@ -162,7 +162,7 @@ void StepperEPI<Scalar>::takeStep(
     // TODO: Figure out why we need this hack:
     // We must have applied Dirichlet BCs to the workingState on first step
     if (workingState->getIndex() == 1)
-      xOld = workingState->getX();
+      Thyra::assign(xOld.ptr(), *workingState->getX());
 
     RCP<Thyra::VectorBase<Scalar> > x = workingState->getX();
     if (workingState->getXDot() != Teuchos::null)
