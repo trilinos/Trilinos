@@ -41,7 +41,7 @@ TimeMonitor::TimeMonitor(const BaseClass& object, const std::string& msg, MsgTyp
   SetProcRankVerbose(object.GetProcRankVerbose());
 
 #ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
-  useStackedTimer_ = !Teuchos::TimeMonitor::stackedTimerNameIsDefault();
+  useStackedTimer_ = !Teuchos::TimeMonitor::stackedTimerHasDefaultState();
 #else
   useStackedTimer_ = false;
 #endif

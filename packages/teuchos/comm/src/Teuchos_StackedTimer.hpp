@@ -389,6 +389,15 @@ protected:
       return my_name;
     }
 
+    std::string get_parent_name() const {
+      std::string my_parent_name;
+      if (parent_ != nullptr)
+        my_parent_name = parent_->get_name();
+      else
+        my_parent_name = "NULL STACKED TIMER PARENT";
+      return my_parent_name;
+    }
+
     /**
      * Return the number of timers on this level
      * @return the number of timers and sub timers
@@ -580,6 +589,10 @@ public:
 
   std::string name() {
     return timer_.get_full_name();
+  }
+
+  std::string parent_name() {
+    return timer_.get_parent_name();
   }
 
   /**
