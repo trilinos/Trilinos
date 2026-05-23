@@ -62,7 +62,9 @@ public:
        // set ghosted container (work space for assembly)
        linObjFactory_->initializeGhostedContainer(panzer::LinearObjContainer::X,*ghostedContainer_);
 
-       using Teuchos::rcp_dynamic_cast;
+      if constexpr (std::is_same<EvalT,panzer::Traits::Jacobian>::value) {
+        this->setDerivativeVectorSpace(thyraObjFactory_->getThyraDomainSpace());
+      }
      }
    }
 

@@ -45,8 +45,17 @@ buildAndRegisterEvaluators(const std::string & responseName,
 
    // build scatter evaluator
    {
+     // If blocked, pull out the local indexer for the particular field
+     auto tmp_global_indexer = globalIndexer_;
+     auto blocked_dof_manager = Teuchos::rcp_dynamic_cast<const panzer::BlockedDOFManager>(globalIndexer_);
+     if (nonnull(blocked_dof_manager)) {
+       int field_number = blocked_dof_manager->getFieldNum(this->fieldName_);
+       int product_vector_block_index = blocked_dof_manager->getFieldBlock(field_number);
+       tmp_global_indexer = (blocked_dof_manager->getFieldDOFManagers()[product_vector_block_index]);
+     }
+
      Teuchos::RCP<ProbeScatterBase> scatterObj =
-         (globalIndexer_!=Teuchos::null) ?  Teuchos::rcp(new ProbeScatter<LO,GO>(globalIndexer_)) : Teuchos::null;
+         (tmp_global_indexer != Teuchos::null) ?  Teuchos::rcp(new ProbeScatter<LO,GO>(tmp_global_indexer)) : Teuchos::null;
      std::string field = (fieldName_=="" ? responseName : fieldName_);
 
      // Get basis and integration rule associated with field
@@ -82,13 +91,34 @@ template <typename EvalT,typename LO,typename GO>
 bool ResponseEvaluatorFactory_Probe<EvalT,LO,GO>::
 typeSupported() const
 {
-  if(PHX::print<EvalT>()==PHX::print<panzer::Traits::Residual>()  ||
-     PHX::print<EvalT>()==PHX::print<panzer::Traits::Tangent>() ||
-     PHX::print<EvalT>()==PHX::print<panzer::Traits::Jacobian>()
+  // TODO BWR does this need to happen??
+  if(   PHX::print<EvalT>()==PHX::print<panzer::Traits::Residual>()// ||
+        //PHX::print<EvalT>()==PHX::print<panzer::Traits::Tangent>()
     )
     return true;
 
+  if(PHX::print<EvalT>()==PHX::print<panzer::Traits::Jacobian>())
+    return linearObjFactory_!=Teuchos::null;
+
+  if(PHX::print<EvalT>()==PHX::print<panzer::Traits::Tangent>())
+    return linearObjFactory_!=Teuchos::null;
+
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+  if(PHX::print<EvalT>()==PHX::print<panzer::Traits::Hessian>()) {
+    return linearObjFactory_!=Teuchos::null;
+  }
+#endif
+
   return false;
+
+  // TODO BWR REMOVE ME IF WE KEEP ABOVE
+//  if(PHX::print<EvalT>()==PHX::print<panzer::Traits::Residual>()  ||
+//     PHX::print<EvalT>()==PHX::print<panzer::Traits::Tangent>() ||
+//     PHX::print<EvalT>()==PHX::print<panzer::Traits::Jacobian>()
+//    )
+//    return true;
+//
+//  return false;
 }
 
 }

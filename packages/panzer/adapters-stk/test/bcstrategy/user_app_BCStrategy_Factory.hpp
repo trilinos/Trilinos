@@ -22,6 +22,7 @@
 #include "user_app_BCStrategy_Dirichlet_Constant.hpp"
 #include "user_app_BCStrategy_Neumann_Constant.hpp"
 #include "user_app_BCStrategy_Neumann_WeakDirichletEnergy.hpp"
+#include "user_app_BCStrategy_Dirichlet_Parameter.hpp"
 
 namespace user_app {
   
@@ -31,7 +32,9 @@ namespace user_app {
     user_app::BCStrategy_Neumann_Constant, BCStrategy_Neumann_Constant)
   PANZER_DECLARE_BCSTRATEGY_TEMPLATE_BUILDER(
     user_app::BCStrategy_Neumann_WeakDirichletEnergy, BCStrategy_Neumann_WeakDirichletEnergy)
-
+  PANZER_DECLARE_BCSTRATEGY_TEMPLATE_BUILDER(
+    user_app::BCStrategy_Dirichlet_Parameter, BCStrategy_Dirichlet_Parameter)
+ 
   struct BCFactory : public panzer::BCStrategyFactory {
 
     Teuchos::RCP<panzer::BCStrategy_TemplateManager<panzer::Traits> >
@@ -49,7 +52,9 @@ namespace user_app {
         BCStrategy_Neumann_Constant)
       PANZER_BUILD_BCSTRATEGY_OBJECTS("Weak Dirichlet Energy",
         BCStrategy_Neumann_WeakDirichletEnergy)
-
+      PANZER_BUILD_BCSTRATEGY_OBJECTS("Parameter",
+        BCStrategy_Dirichlet_Parameter)
+ 
       TEUCHOS_TEST_FOR_EXCEPTION(!found, std::logic_error, 
 			 "Error - the BC Strategy called \"" << bc.strategy() <<
 			 "\" is not a valid identifier in the BCStrategyFactory.  Either add a valid implementation to your factory or fix your input file.  The relevant boundary condition is:\n\n" << bc << std::endl);
