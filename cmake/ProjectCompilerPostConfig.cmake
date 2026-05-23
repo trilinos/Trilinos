@@ -60,7 +60,6 @@ set(upcoming_warnings
     # deprecated-copy  # -Wextra, lots of warnings
     implicit-fallthrough=3  # -Wextra
     maybe-uninitialized  # -Wall
-    mismatched-new-delete  # -Wall
     pessimizing-move  # -Wall
     restrict
     #unused-parameter  # -Wextra, lots of warnings
@@ -117,6 +116,7 @@ set(promoted_warnings
     memset-transposed-args
     misleading-indentation
     mismatched-dealloc
+    mismatched-new-delete  # -Wall
     missing-attributes
     missing-field-initializers  # -Wextra
     multistatement-macros
