@@ -523,12 +523,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( asSafe, realToUnsignedIntTypeOverflow, RealTy
   // body of TEST_NOTHROW below actually did the assignment.
   UnsignedIntType val = 42;
   // Make sure that val starts off with a different value than what
-  // its final value should be.
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    val == static_cast<UnsignedIntType> (maxVal),
-    std::logic_error,
-    "Dear test author, please pick a different marker value.  "
-    "Please report this bug to the Teuchos developers.");
+  // its final value should be.  Only compare via static_cast when
+  // maxVal is representable as UnsignedIntType (otherwise UB).
+  if (static_cast<RealType>(maxUnsignedIntVal) >= maxVal) {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      val == static_cast<UnsignedIntType> (maxVal),
+      std::logic_error,
+      "Dear test author, please pick a different marker value.  "
+      "Please report this bug to the Teuchos developers.");
+  }
 
   // Conversion from any negative value should throw.
   TEST_THROW(val = asSafe<UnsignedIntType> (minVal), std::range_error);
