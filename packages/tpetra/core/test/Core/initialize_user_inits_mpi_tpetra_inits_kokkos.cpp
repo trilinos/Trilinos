@@ -158,11 +158,13 @@ void testMain(bool& success, int argc, char* argv[]) {
   if (myRank == 0) {
     cout << "Called Tpetra::finalize" << endl;
   }
-  // Tpetra::finalize was responsible for calling Kokkos::finalize.
-  if (Kokkos::is_initialized()) {
+  // Tpetra::finalize should NOT call Kokkos::finalize.
+  // Kokkos::finalize is now called via atexit hook. See issue #15294.
+  if (!Kokkos::is_initialized()) {
     success = false;
-    cout << "Kokkos::is_initialized() is true, "
-            "after Tpetra::initialize was called."
+    cout << "Kokkos::is_initialized() is false, "
+            "but Tpetra::finalize should not have called Kokkos::finalize. "
+            "See issue #15294."
          << endl;
   }
   // Since the "user" is responsible for calling MPI_Finalize,

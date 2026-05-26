@@ -55,9 +55,13 @@ void testMain(bool& success, int argc, char* argv[]) {
   // initialized and was not finalized."  That differs from MPI, where
   // MPI_Initialized only refers to MPI_Init and MPI_Finalized only
   // refers to MPI_Finalize.
-  if (Kokkos::is_initialized()) {
+  // Tpetra::ScopeGuard::~ScopeGuard should NOT call Kokkos::finalize.
+  // Kokkos::finalize is now called via atexit hook. See issue #15294.
+  if (!Kokkos::is_initialized()) {
     success = false;
-    cout << "Tpetra::ScopeGuard::~ScopeGuard did not call Kokkos::finalize." << endl;
+    cout << "Tpetra::ScopeGuard::~ScopeGuard was not supposed to call "
+         << "Kokkos::finalize, but apparently did. See issue #15294."
+         << endl;
     return;
   }
 

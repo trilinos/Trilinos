@@ -179,6 +179,16 @@ void testMain(bool& success, int argc, char* argv[]) {
     return;
   }
 
+  // Tpetra::finalize should NOT have called Kokkos::finalize.
+  // Kokkos::finalize is now called via atexit hook. See issue #15294.
+  if (!Kokkos::is_initialized()) {
+    success = false;
+    cout << "TEST FAILED: Tpetra::finalize() seems to have called "
+            "Kokkos::finalize, but it should not have. See issue #15294."
+         << endl;
+    return;
+  }
+
   // MPI is still initialized, so we can check whether processes are
   // consistent.
   const bool tpetraGloballyFinalized =
