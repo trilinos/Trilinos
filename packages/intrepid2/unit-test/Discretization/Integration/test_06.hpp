@@ -92,9 +92,9 @@ namespace Intrepid2 {
       typedef CubatureDirectTetDefault<DeviceType,pointValueType,weightValueType> CubatureTetType;
       typedef CubatureDirectTetSymmetric<DeviceType,pointValueType,weightValueType> CubatureTetSymType;
       
-      // tolerence is too tight to test upto order 20
+      // tolerance is too tight to test upto order 20
       // tol factor increased by 1000 due to cubature order 20 test failure
-      const auto tol = 2000.0 * tolerence();
+      const auto tol = 2000.0 * tolerance();
 
       int errorFlag = 0;
 

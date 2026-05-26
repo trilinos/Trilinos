@@ -138,7 +138,7 @@
     {
       //Intrepid2::CellTools<Kokkos::HostSpace>::mapToPhysicalFrame(images, preImages, triNodes, triangle_3);
       auto basis = BasisTable::getInstance()->getBasis(*m_im.m_topo);
-      Intrepid2::CellTools<Kokkos::HostSpace>::mapToPhysicalFrame(*this, xi, c, basis);
+      Intrepid2::CellTools<Kokkos::HostSpace>::mapToPhysicalFrame(this->getArray(), xi.getArray(), c.getArray(), basis);
     }
 
     //------------------------------------------------------------------------------------------------------------------------
@@ -155,7 +155,7 @@
 
     operator()(CubaturePoints& xi, CellWorkSet& c, CellTopology& topo)
     {
-      CellTools<Kokkos::HostSpace>::setJacobian(*this, xi, c, topo);           // compute cell Jacobians
+      CellTools<Kokkos::HostSpace>::setJacobian(this->getArray(), xi.getArray(), c.getArray(), topo);           // compute cell Jacobians
     }
 
     //------------------------------------------------------------------------------------------------------------------------
@@ -171,7 +171,7 @@
     IntrepidManager::FaceNormal::
     operator()(Jacobian& jac, int i_face, CellTopology& topo)
     {
-      Intrepid2::CellTools<Kokkos::HostSpace>::getPhysicalFaceNormals(*this, jac, i_face, topo);
+      Intrepid2::CellTools<Kokkos::HostSpace>::getPhysicalFaceNormals(this->getArray(), jac.getArray(), i_face, topo);
     }
 
 
@@ -187,7 +187,7 @@
     void    IntrepidManager::JacobianInverse::
     operator()(Jacobian& jac)
     {
-      CellTools<Kokkos::HostSpace>::setJacobianInv(*this, jac);
+      CellTools<Kokkos::HostSpace>::setJacobianInv(this->getArray(), jac.getArray());
     }
 
 
@@ -204,7 +204,7 @@
     IntrepidManager::JacobianDet::
     operator()(Jacobian& jac)
     {
-      Intrepid2::CellTools<Kokkos::HostSpace>::setJacobianDet(*this, jac);
+      Intrepid2::CellTools<Kokkos::HostSpace>::setJacobianDet(this->getArray(), jac.getArray());
     }
 
     //------------------------------------------------------------------------------------------------------------------------
@@ -220,7 +220,7 @@
     IntrepidManager::WeightedMeasure::
     operator()(CubatureWeights& w, JacobianDet& dJ)
     {
-      FunctionSpaceTools<Kokkos::HostSpace>::computeCellMeasure(*this, dJ, w);
+      FunctionSpaceTools<Kokkos::HostSpace>::computeCellMeasure(this->getArray(), dJ.getArray(), w.getArray());
     }
 
     //------------------------------------------------------------------------------------------------------------------------

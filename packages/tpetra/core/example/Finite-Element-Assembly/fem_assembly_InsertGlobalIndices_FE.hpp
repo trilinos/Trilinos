@@ -269,7 +269,7 @@ int executeInsertGlobalIndicesFESP_(const Teuchos::RCP<const Teuchos::Comm<int> 
     std::ofstream ofs("crsMatrix_InsertGlobalIndices_FESP.out", std::ofstream::out);
     Tpetra::MatrixMarket::Writer<crs_matrix_type>::writeSparse(ofs, fe_matrix);
     std::ofstream ofs2("rhs_InsertGlobalIndices_FESP.out", std::ofstream::out);
-    Tpetra::MatrixMarket::Writer<multivector_type>::writeDense(ofs2, rhs);
+    Tpetra::MatrixMarket::Writer<crs_matrix_type>::writeDense(ofs2, rhs);
   }
 
   return 0;
@@ -505,7 +505,7 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
     std::ofstream ofs("crsMatrix_InsertGlobalIndices_FESPKokkos.out", std::ofstream::out);
     Tpetra::MatrixMarket::Writer<crs_matrix_type>::writeSparse(ofs, fe_matrix);
     std::ofstream ofs2("rhs_InsertGlobalIndices_FESPKokkos.out", std::ofstream::out);
-    Tpetra::MatrixMarket::Writer<multivector_type>::writeDense(ofs2, rhs);
+    Tpetra::MatrixMarket::Writer<crs_matrix_type>::writeDense(ofs2, rhs);
   }
 
   return 0;

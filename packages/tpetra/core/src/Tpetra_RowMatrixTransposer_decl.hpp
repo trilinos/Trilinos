@@ -68,7 +68,12 @@ class RowMatrixTransposer {
   //! @name Methods for computing the explicit transpose.
   //@{
 
-  //! Compute and return the transpose of the matrix given to the constructor.
+  /// \brief Compute and return the transpose of the matrix given to the constructor.
+  ///
+  /// \param params [in] Optional list of parameters. "compute global constants" (bool, default "true") determines
+  ///   if the the resulting matrix will have global constants. "conjugate values" (bool) determines if the values
+  ///   of the transposed matrix should also be complex conjugated. For complex matrices the default behavior is to
+  ///   conjugate the values.
   Teuchos::RCP<crs_matrix_type> createTranspose(const Teuchos::RCP<Teuchos::ParameterList> &params = Teuchos::null);
 
   /// \brief Compute and return the transpose of the matrix given to the constructor.

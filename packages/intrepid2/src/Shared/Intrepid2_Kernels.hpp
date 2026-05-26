@@ -233,11 +233,11 @@ namespace Intrepid2 {
 
       template<typename AViewType>
       KOKKOS_INLINE_FUNCTION
-      static double
+      static typename AViewType::non_const_value_type
       norm(const AViewType &A, const ENorm normType) {
         typedef typename AViewType::non_const_value_type value_type;
         const ordinal_type m = A.extent(0), n = A.extent(1);
-        double r_val = 0;
+        value_type r_val = 0;
         switch(normType) {
         case NORM_TWO:{
           for (ordinal_type i=0;i<m;++i)

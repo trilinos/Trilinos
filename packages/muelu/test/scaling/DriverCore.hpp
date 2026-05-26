@@ -79,6 +79,7 @@ void PreconditionerSetup(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, Globa
                          Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& nullspace,
                          Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& material,
                          Teuchos::RCP<Xpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>>& blocknumber,
+                         Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& mass,
                          Teuchos::ParameterList& mueluList,
                          bool profileSetup,
                          bool useAMGX,
@@ -86,6 +87,7 @@ void PreconditionerSetup(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, Globa
                          int numRebuilds,
                          Teuchos::RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& H,
                          Teuchos::RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& Prec,
+                         Teuchos::FancyOStream& out,
                          bool sacrifice = false) {
 #include <MueLu_UseShortNames.hpp>
   using Teuchos::RCP;
@@ -125,6 +127,13 @@ void PreconditionerSetup(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, Globa
       if (!nullspace.is_null() && setNullSpace)
         userParamList.set<RCP<Xpetra::MultiVector<SC, LO, GO, NO>>>("Nullspace", nullspace);
       userParamList.set<Teuchos::Array<LO>>("Array<LO> lNodesPerDim", lNodesPerDim);
+      if (!mass.is_null())
+        userParamList.set("M", mass);
+      else if (mueluList.isParameter("aggregation: strength-of-connection: matrix") && (mueluList.get<std::string>("aggregation: strength-of-connection: matrix") == "MinvA")) {
+        // This is really not what we want to do, but it allows us to test the method.
+        out << "*** WARNING ***\nLacking a mass matrix, we are using the system matrix to construct the inverse of the mass matrix.\n";
+        userParamList.set("M", A);
+      }
       H = MueLu::CreateXpetraPreconditioner(A, mueluList);
     }
   }

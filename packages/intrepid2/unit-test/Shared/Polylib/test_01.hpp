@@ -235,7 +235,7 @@ namespace Intrepid2 {
 
       const ordinal_type npLower = 5, npUpper = Polylib::MaxPolylibPoint;
       const ordinal_type npUpperStep1 = 21; // we cover all np values from npLower to npUpperStep1; we only cover every 5th one after that
-      const ValueType tol = 1000.0 * tolerence();
+      const ValueType tol = 1000.0 * tolerance();
       const double  lowOrderTol = tol;
       const double highOrderTol = tol * 100;
 

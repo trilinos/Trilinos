@@ -84,7 +84,7 @@ namespace Intrepid2 {
       typedef ValueType weightValueType;
       typedef CubaturePolylib<DeviceSpaceType,pointValueType,weightValueType> CubatureLineType;
 
-      const auto tol = 100.0 * tolerence(); // relaxing this as we support higher-order cubature
+      const auto tol = 100.0 * tolerance(); // relaxing this as we support higher-order cubature
 
       int errorFlag = 0;
 
