@@ -30,7 +30,7 @@ KOKKOS_INLINE_FUNCTION int SerialApplyQ<Side::Left, Trans::NoTranspose, Algo::Ap
   static_assert(Kokkos::is_view_v<wViewType>, "KokkosBatched::SerialApplyQ::invoke: wViewType must be a Kokkos::View");
   static_assert(wViewType::rank() == 1, "KokkosBatched::SerialApplyQ::invoke: wViewType must have rank 1");
 
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#ifndef NDEBUG
   if (!w.span_is_contiguous()) {
     Kokkos::printf("KokkosBatched::SerialApplyQ::invoke: w must have a contiguous span.");
     return 1;
@@ -62,7 +62,7 @@ KOKKOS_INLINE_FUNCTION int SerialApplyQ<Side::Left, Trans::Transpose, Algo::Appl
   static_assert(Kokkos::is_view_v<wViewType>, "KokkosBatched::SerialApplyQ::invoke: wViewType must be a Kokkos::View");
   static_assert(wViewType::rank() == 1, "KokkosBatched::SerialApplyQ::invoke: wViewType must have rank 1");
 
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#ifndef NDEBUG
   if (!w.span_is_contiguous()) {
     Kokkos::printf("KokkosBatched::SerialApplyQ::invoke: w must have a contiguous span.");
     return 1;
@@ -94,7 +94,7 @@ KOKKOS_INLINE_FUNCTION int SerialApplyQ<Side::Right, Trans::NoTranspose, Algo::A
   static_assert(Kokkos::is_view_v<wViewType>, "KokkosBatched::SerialApplyQ::invoke: wViewType must be a Kokkos::View");
   static_assert(wViewType::rank() == 1, "KokkosBatched::SerialApplyQ::invoke: wViewType must have rank 1");
 
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#ifndef NDEBUG
   if (!w.span_is_contiguous()) {
     Kokkos::printf("KokkosBatched::SerialApplyQ::invoke: w must have a contiguous span.");
     return 1;

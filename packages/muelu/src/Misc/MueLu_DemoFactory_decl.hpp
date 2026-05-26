@@ -17,7 +17,7 @@
 namespace MueLu {
 
 /*!
-  @class DemoFactory class.
+  @class DemoFactory
   @brief empty factory for demonstration
 */
 

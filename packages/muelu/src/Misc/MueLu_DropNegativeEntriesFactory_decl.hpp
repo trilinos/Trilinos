@@ -19,7 +19,7 @@
 namespace MueLu {
 
 /*!
-  @class DropNegativeEntriesFactory class.
+  @class DropNegativeEntriesFactory
   @brief Application-specific filtering for A. Can be used in context of graph coarsening and aggregation.
 
   This factory drops all negative entries (or entries with a magnitude < 0). Only weak positive connections are kept.

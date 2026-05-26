@@ -1,7 +1,4 @@
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+kokkoskernels_include_directories(${CMAKE_CURRENT_BINARY_DIR})
+kokkoskernels_include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-KOKKOSKERNELS_ADD_BENCHMARK(
-  lapack_svd
-  SOURCES KokkosLapack_SVD_benchmark.cpp
-)
+kokkoskernels_add_benchmark(lapack_svd SOURCES KokkosLapack_SVD_benchmark.cpp)

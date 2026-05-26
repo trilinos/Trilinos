@@ -17,6 +17,7 @@
 #include "Ifpack2_LocalSparseTriangularSolver.hpp"
 #include "Ifpack2_Details_getParamTryingTypes.hpp"
 #include "Ifpack2_Details_getCrsMatrix.hpp"
+#include "Ifpack2_Details_Behavior.hpp"
 #include "Kokkos_Sort.hpp"
 #include "KokkosSparse_spiluk.hpp"
 #include "KokkosSparse_Utils.hpp"
@@ -570,15 +571,33 @@ void RILUK<MatrixType>::initialize() {
             TEUCHOS_TEST_FOR_EXCEPTION(A_coordinates_.is_null(), std::runtime_error, prefix << "The coordinates associated with rows of the input matrix is null while RILUK uses streams with RCB.  Please call setCoord() with a nonnull input before calling this method.");
             auto A_coordinates_lcl = A_coordinates_->getLocalViewDevice(Tpetra::Access::ReadOnly);
             perm_rcb_              = perm_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "perm_rcb_"), A_coordinates_lcl.extent(0));
-            coors_rcb_             = coors_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "coors_rcb_"), A_coordinates_lcl.extent(0), A_coordinates_lcl.extent(1));
+#if KOKKOS_VERSION >= 50100
+            reverse_perm_rcb_ = perm_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "reverse_perm_rcb_"), A_coordinates_lcl.extent(0));
+#endif
+            coors_rcb_ = coors_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "coors_rcb_"), A_coordinates_lcl.extent(0), A_coordinates_lcl.extent(1));
             Kokkos::deep_copy(coors_rcb_, A_coordinates_lcl);
+#if KOKKOS_VERSION >= 50100
+            local_ordinal_type n_levels = static_cast<local_ordinal_type>(std::log2(static_cast<double>(num_streams_)) + 1);
+            partition_sizes_rcb_        = KokkosGraph::Experimental::recursive_coordinate_bisection(coors_rcb_, perm_rcb_, reverse_perm_rcb_, n_levels);
+            KokkosSparse::Experimental::kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential(lclMtx, perm_rcb_, reverse_perm_rcb_, partition_sizes_rcb_,
+                                                                                                 A_local_diagblks_v_);
+#else
             KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential(lclMtx, coors_rcb_,
                                                                                          A_local_diagblks_v_, perm_rcb_);
+#endif
           } else {
+#if KOKKOS_VERSION >= 50100
+            KokkosSparse::Experimental::kk_extract_diagonal_blocks_crsmatrix_sequential(lclMtx, A_local_diagblks_v_);
+#else
             KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_sequential(lclMtx, A_local_diagblks_v_);
+#endif
           }
         } else {
+#if KOKKOS_VERSION >= 50100
+          perm_v_ = KokkosSparse::Experimental::kk_extract_diagonal_blocks_crsmatrix_sequential(lclMtx, A_local_diagblks_v_, true);
+#else
           perm_v_ = KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_sequential(lclMtx, A_local_diagblks_v_, true);
+#endif
           reverse_perm_v_.resize(perm_v_.size());
           for (size_t istream = 0; istream < perm_v_.size(); ++istream) {
             using perm_type        = typename lno_nonzero_view_t::non_const_type;
@@ -1138,12 +1157,21 @@ void RILUK<MatrixType>::compute() {
       // If streams are on, we potentially have to refresh A_local_diagblks_values_v_
       auto lclMtx = A_local_crs_->getLocalMatrixDevice();
       if (!hasStreamsWithRCB_) {
+#if KOKKOS_VERSION >= 50100
+        KokkosSparse::Experimental::kk_extract_diagonal_blocks_crsmatrix_sequential(lclMtx, A_local_diagblks_v_, hasStreamReordered_);
+#else
         KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_sequential(lclMtx, A_local_diagblks_v_, hasStreamReordered_);
+#endif
       } else {
+#if KOKKOS_VERSION >= 50100
+        KokkosSparse::Experimental::kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential(lclMtx, perm_rcb_, reverse_perm_rcb_, partition_sizes_rcb_,
+                                                                                             A_local_diagblks_v_);
+#else
         auto A_coordinates_lcl = A_coordinates_->getLocalViewDevice(Tpetra::Access::ReadOnly);
         Kokkos::deep_copy(coors_rcb_, A_coordinates_lcl);
         KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential(lclMtx, coors_rcb_,
                                                                                      A_local_diagblks_v_, perm_rcb_);
+#endif
       }
       for (int i = 0; i < num_streams_; i++) {
         A_local_diagblks_values_v_[i] = A_local_diagblks_v_[i].values;
@@ -1197,8 +1225,7 @@ void RILUK<MatrixType>::
       "Ifpack2::RILUK::apply: mode = Teuchos::CONJ_TRANS is not implemented for "
       "complex Scalar type.  Please talk to the Ifpack2 developers to get this "
       "fixed.  There is a FIXME in this file about this very issue.");
-#ifdef HAVE_IFPACK2_DEBUG
-  {
+  if (Ifpack2::Details::Behavior::debug()) {
     if (!isKokkosKernelsStream_) {
       const magnitude_type D_nrm1 = D_->norm1();
       TEUCHOS_TEST_FOR_EXCEPTION(STM::isnaninf(D_nrm1), std::runtime_error, "Ifpack2::RILUK::apply: The 1-norm of the stored diagonal is NaN or Inf.");
@@ -1214,7 +1241,6 @@ void RILUK<MatrixType>::
     }
     TEUCHOS_TEST_FOR_EXCEPTION(!good, std::runtime_error, "Ifpack2::RILUK::apply: The 1-norm of the input X is NaN or Inf.");
   }
-#endif  // HAVE_IFPACK2_DEBUG
 
   const scalar_type one  = STS::one();
   const scalar_type zero = STS::zero();
@@ -1383,8 +1409,7 @@ void RILUK<MatrixType>::
     }
   }  // end timing
 
-#ifdef HAVE_IFPACK2_DEBUG
-  {
+  if (Ifpack2::Details::Behavior::debug()) {
     Teuchos::Array<magnitude_type> norms(Y.getNumVectors());
     Y.norm1(norms());
     bool good = true;
@@ -1396,7 +1421,6 @@ void RILUK<MatrixType>::
     }
     TEUCHOS_TEST_FOR_EXCEPTION(!good, std::runtime_error, "Ifpack2::RILUK::apply: The 1-norm of the output Y is NaN or Inf.");
   }
-#endif  // HAVE_IFPACK2_DEBUG
 
   ++numApply_;
   applyTime_ += (timer.wallTime() - startTime);

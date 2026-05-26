@@ -107,7 +107,7 @@ void test_chem() {
 
     auto y_new_h = Kokkos::create_mirror(y_new);
     Kokkos::deep_copy(y_new_h, y_new);
-#if defined(HAVE_KOKKOSKERNELS_DEBUG)
+#ifndef NDEBUG
     const double dt = (chem_model.tend - chem_model.tstart) / params.num_steps;
     std::cout << "\nChem model 1" << std::endl;
     std::cout << "  t0=" << chem_model.tstart << ", tn=" << chem_model.tend << std::endl;
@@ -149,7 +149,7 @@ void test_chem() {
 
     auto y_new_h = Kokkos::create_mirror(y_new);
     Kokkos::deep_copy(y_new_h, y_new);
-#if defined(HAVE_KOKKOSKERNELS_DEBUG)
+#ifndef NDEBUG
     const double dt = (chem_model.tend - chem_model.tstart) / params.num_steps;
     std::cout << "\nChem model 2" << std::endl;
     std::cout << "  t0=" << chem_model.tstart << ", tn=" << chem_model.tend << std::endl;

@@ -1024,42 +1024,6 @@ Phase_Support::get_blocks_touching_surface(const std::string & /*surface_name*/,
   }
 }
 
-stk::mesh::Part & Phase_Support::debug_find_conformal_io_part(const stk::mesh::Part & part, const PhaseTag & phase) const
-{
-  // If part is not decomposed, or not specific to phase, then just return input part
-  if (!myPhasePartInfo.is_decomposed(part.mesh_meta_data_ordinal()))
-    return const_cast<stk::mesh::Part &>(part);
-
-  const stk::mesh::Part & nonconf_part = find_nonconformal_part(part);
-  auto entry = nonconformal_to_phase_conformal_map.find(&nonconf_part);
-  if(entry == nonconformal_to_phase_conformal_map.end())
-    return const_cast<stk::mesh::Part &>(part);
-  PhaseTagToPartMap & tag_to_conformal_map = (*entry).second;
-
-  const auto find_part = tag_to_conformal_map.find(phase);
-  if(find_part != tag_to_conformal_map.end())
-  {
-    auto & tag_part_pair = *find_part;
-    return const_cast<stk::mesh::Part &>(*tag_part_pair.second);
-  }
-
-  // This search is to handle the case where the phase passed in contains additional LS side tags that the
-  // conformal part phase tag doesn't care about. For example if the conformal phase is defined as "where LS1 is negative"
-  // it should match a phase tag that has (0,1) (1,-1) even though the tags are not ==
-  // TODO: If we knew about all the LS's in the problem when decompose_blocks was called we could populate all the necessary entries
-  // then and wouldn't need this search.
-  for(auto && tag_part_pair : tag_to_conformal_map)
-  {
-    if(phase.contain(tag_part_pair.first))
-    {
-      tag_to_conformal_map[phase] = tag_part_pair.second;
-      return const_cast<stk::mesh::Part &>(*tag_part_pair.second);
-    }
-  }
-
-  return const_cast<stk::mesh::Part &>(part);
-}
-
 //--------------------------------------------------------------------------------
 stk::mesh::Part & Phase_Support::find_conformal_io_part(const stk::mesh::Part & part, const PhaseTag & phase) const
 {

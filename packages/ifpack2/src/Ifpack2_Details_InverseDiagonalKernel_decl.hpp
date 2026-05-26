@@ -7,8 +7,8 @@
 // *****************************************************************************
 // @HEADER
 
-/// \file Ifpack2_Details_DiagonalKernel_decl.hpp
-/// \brief Declaration of Ifpack2::Details::DiagonalKernel
+/// \file Ifpack2_Details_InverseDiagonalKernel_decl.hpp
+/// \brief Declaration of Ifpack2::Details::InverseDiagonalKernel
 ///
 /// \note This file and its contents are implementation details of
 ///   Ifpack2.

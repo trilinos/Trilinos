@@ -135,6 +135,7 @@ class Vector : public MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
   ///
   /// \param source [in] The Vector to view.
   /// \param map [in] The Map to use to interpret the local data.
+  /// \param rowOffset [in] The row offset.
   Vector(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
          const Teuchos::RCP<const map_type>& map,
          const local_ordinal_type rowOffset = 0);
@@ -281,7 +282,7 @@ class Vector : public MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
   /// getLocalView().  Please see modify(), sync(), and the discussion
   /// of DualView semantics elsewhere in the documentation.
   ///
-  /// \param localRow [in] Local row index of the entry to modify.
+  /// \param myRow [in] Local row index of the entry to modify.
   /// \param value [in] Incoming value to add to the entry.
   /// \param atomic [in] Whether to use an atomic update.  If this
   ///   class' execution space is not Kokkos::Serial, then this is

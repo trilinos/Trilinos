@@ -21,7 +21,7 @@
 namespace MueLu {
 
 /*!
-  @class NoFactory class.
+  @class NoFactory
   @brief NoFactory that is used for data stored in level class for that no generating factory is available/necessary.
 
   This should be used as the "generating" factory for user-data.  Uses Singleton pattern.

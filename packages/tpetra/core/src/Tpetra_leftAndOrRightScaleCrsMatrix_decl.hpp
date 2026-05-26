@@ -51,7 +51,7 @@ enum EScaling {
 /// \param rightScale [in] Whether to right-scale A.  Right scaling
 ///   happens last.
 ///
-/// \param Whether to assume symmetric scaling, that is, whether to
+/// \param assumeSymmetric [in] Whether to assume symmetric scaling, that is, whether to
 ///   take square roots of scaling factors before scaling.
 ///
 /// \param scaling [in] If SCALING_DIVIDE, "scale" means "divide by";
@@ -91,7 +91,7 @@ void leftAndOrRightScaleCrsMatrix(Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
 /// \param rightScale [in] Whether to right-scale A.  Right scaling
 ///   happens last.
 ///
-/// \param Whether to assume symmetric scaling, that is, whether to
+/// \param assumeSymmetric [in] Whether to assume symmetric scaling, that is, whether to
 ///   take square roots of scaling factors before scaling.
 ///
 /// \param scaling [in] If SCALING_DIVIDE, "scale" means "divide by";

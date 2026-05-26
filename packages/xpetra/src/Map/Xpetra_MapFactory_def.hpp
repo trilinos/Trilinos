@@ -59,11 +59,12 @@ MapFactory<LocalOrdinal, GlobalOrdinal, Node>::
           global_size_t numGlobalElements,
           const Teuchos::ArrayView<const GlobalOrdinal>& elementList,
           GlobalOrdinal indexBase,
-          const Teuchos::RCP<const Teuchos::Comm<int>>& comm) {
+          const Teuchos::RCP<const Teuchos::Comm<int>>& comm,
+          const Teuchos::RCP<Teuchos::ParameterList>& params) {
   XPETRA_MONITOR("MapFactory::Build");
 
   if (lib == UseTpetra)
-    return rcp(new TpetraMap<LocalOrdinal, GlobalOrdinal, Node>(numGlobalElements, elementList, indexBase, comm));
+    return rcp(new TpetraMap<LocalOrdinal, GlobalOrdinal, Node>(numGlobalElements, elementList, indexBase, comm, params));
 
   XPETRA_FACTORY_END;
 }
@@ -108,10 +109,11 @@ MapFactory<LocalOrdinal, GlobalOrdinal, Node>::
           global_size_t numGlobalElements,
           const Kokkos::View<const GlobalOrdinal*, typename Node::device_type>& indexList,
           GlobalOrdinal indexBase,
-          const Teuchos::RCP<const Teuchos::Comm<int>>& comm) {
+          const Teuchos::RCP<const Teuchos::Comm<int>>& comm,
+          const Teuchos::RCP<Teuchos::ParameterList>& params) {
   XPETRA_MONITOR("MapFactory::Build");
   if (lib == UseTpetra)
-    return rcp(new TpetraMap<LocalOrdinal, GlobalOrdinal, Node>(numGlobalElements, indexList, indexBase, comm));
+    return rcp(new TpetraMap<LocalOrdinal, GlobalOrdinal, Node>(numGlobalElements, indexList, indexBase, comm, params));
   XPETRA_FACTORY_END;
 }
 

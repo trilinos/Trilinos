@@ -27,6 +27,8 @@ struct LSPerInterfacePolicy
       const bool registerFields,
       CDFEM_Inequality_Spec* deathSpec = nullptr);
   static std::vector<LS_Field> setup_levelsets_on_all_blocks(stk::mesh::MetaData & meta, const unsigned numLevelSets);
+  static std::vector<LS_Field> setup_levelsets_on_blocks_with_void_phase_for_any_negative_levelset(stk::mesh::MetaData & meta, 
+    const unsigned numLevelSets, const stk::mesh::PartVector & blocks);
   static std::vector<LS_Field> setup_levelsets_on_all_blocks_with_void_phase_for_any_negative_levelset(stk::mesh::MetaData & meta, const unsigned numLevelSets);
 };
 

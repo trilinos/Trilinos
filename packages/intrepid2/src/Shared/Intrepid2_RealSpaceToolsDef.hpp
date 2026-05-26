@@ -259,9 +259,9 @@ namespace Intrepid2 {
     
     using MemSpaceType = typename DeviceType::memory_space;
     constexpr bool are_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(output)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(input)::memory_space>::accessible;
     static_assert(are_accessible, "RealSpaceTools<DeviceType>::extractScalarValues(..): input/output views' memory spaces are not compatible with DeviceType");
 
@@ -358,9 +358,9 @@ namespace Intrepid2 {
 #endif
     using MemSpaceType = typename DeviceType::memory_space;
     constexpr bool are_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(output)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(input)::memory_space>::accessible;
     static_assert(are_accessible, "RealSpaceTools<DeviceType>::clone(..): input/output views' memory spaces are not compatible with DeviceType");
 
@@ -433,9 +433,9 @@ namespace Intrepid2 {
 #endif
     using MemSpaceType = typename DeviceType::memory_space;
     constexpr bool are_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(absArray)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(inArray)::memory_space>::accessible;
     static_assert(are_accessible, "RealSpaceTools<DeviceType>::absval(..): input/output views' memory spaces are not compatible with DeviceType");
 
@@ -515,9 +515,9 @@ namespace Intrepid2 {
 
     using MemSpaceType = typename DeviceType::memory_space;
     constexpr bool are_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(normArray)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(inVecs)::memory_space>::accessible;
     static_assert(are_accessible, "RealSpaceTools<DeviceType>::vectorNorm(..): input/output views' memory spaces are not compatible with DeviceType");
     using FunctorType = FunctorRealSpaceTools::F_vectorNorm<decltype(normArray),decltype(inVecs)>;
@@ -603,9 +603,9 @@ namespace Intrepid2 {
 
     using MemSpaceType = typename DeviceType::memory_space;
     constexpr bool are_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(transposeMats)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(inMats)::memory_space>::accessible;
     static_assert(are_accessible, "RealSpaceTools<DeviceType>::transpose(..): input/output views' memory spaces are not compatible with DeviceType");
     using FunctorType = FunctorRealSpaceTools::F_transpose<decltype(transposeMats),decltype(inMats)>;
@@ -980,11 +980,11 @@ det( DeterminantArrayViewType detArray, const MatrixViewType inMats );
 #endif
     using MemSpaceType = typename DeviceType::memory_space;
     constexpr bool are_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(sumArray)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(inArray1)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(inArray2)::memory_space>::accessible;
     static_assert(are_accessible, "RealSpaceTools<DeviceType>::add(..): input/output views' memory spaces are not compatible with DeviceType");
 
@@ -1079,11 +1079,11 @@ det( DeterminantArrayViewType detArray, const MatrixViewType inMats );
 #endif
     using MemSpaceType = typename DeviceType::memory_space;
     constexpr bool are_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(diffArray)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(inArray1)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(inArray2)::memory_space>::accessible;
     static_assert(are_accessible, "RealSpaceTools<DeviceType>::subtract(..): input/output views' memory spaces are not compatible with DeviceType");
 
@@ -1179,9 +1179,9 @@ det( DeterminantArrayViewType detArray, const MatrixViewType inMats );
 
     using MemSpaceType = typename DeviceType::memory_space;
     constexpr bool are_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(scaledArray)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(inArray)::memory_space>::accessible;
     static_assert(are_accessible, "RealSpaceTools<DeviceType>::scale(..): input/output views' memory spaces are not compatible with DeviceType");
 
@@ -1276,11 +1276,11 @@ det( DeterminantArrayViewType detArray, const MatrixViewType inMats );
 #endif
     using MemSpaceType = typename DeviceType::memory_space;
     constexpr bool are_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(dotArray)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(inVecs1)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(inVecs2)::memory_space>::accessible;
     static_assert(are_accessible, "RealSpaceTools<DeviceType>::dot(..): input/output views' memory spaces are not compatible with DeviceType");
 
@@ -1460,11 +1460,11 @@ det( DeterminantArrayViewType detArray, const MatrixViewType inMats );
 #endif
     using MemSpaceType = typename DeviceType::memory_space;
     constexpr bool are_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(matVecs)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(inMats)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(inVecs)::memory_space>::accessible;
     static_assert(are_accessible, "RealSpaceTools<DeviceType>::matvec(..): input/output views' memory spaces are not compatible with DeviceType");
 
@@ -1507,9 +1507,9 @@ det( DeterminantArrayViewType detArray, const MatrixViewType inMats );
 #endif
     using MemSpaceType = typename DeviceType::memory_space;
     constexpr bool are_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(outMats)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(inMats)::memory_space>::accessible;
     static_assert(are_accessible, "RealSpaceTools<DeviceType>::AtA(..): input/output views' memory spaces are not compatible with DeviceType");
 
@@ -1628,11 +1628,11 @@ det( DeterminantArrayViewType detArray, const MatrixViewType inMats );
 #endif
     using MemSpaceType = typename DeviceType::memory_space;
     constexpr bool are_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(vecProd)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(inLeft)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(inRight)::memory_space>::accessible;
     static_assert(are_accessible, "RealSpaceTools<DeviceType>::vecprod(..): input/output views' memory spaces are not compatible with DeviceType");
 

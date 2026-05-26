@@ -72,7 +72,7 @@ class myVec2 {
 };
 
 /*!
-  @class VisualizationHelpers class.
+  @class VisualizationHelpers
   @brief Base class providing routines to visualize aggregates and coarsening information.
 
   This class is the base class for the CoarseningVisualizationFactory as well as the AggregationExporterFactory to

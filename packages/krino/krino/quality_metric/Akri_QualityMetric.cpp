@@ -12,38 +12,23 @@
 namespace krino
 {
 
-double calculate_tet_volume_using_sides(const stk::math::Vector3d &side0, const stk::math::Vector3d &side2, const stk::math::Vector3d &side3)
-{
-    return Dot(side3, Cross(side2, side0))/6.0;
-}
-
 template <typename CONTAINER>
 double tet4_mean_ratio(const CONTAINER &nodeLocations)
 {
   STK_ThrowAssert(nodeLocations.size() == 4 || nodeLocations.size() == 10);
 
-  const stk::math::Vector3d side0 = nodeLocations[1] - nodeLocations[0];
-  const stk::math::Vector3d side2 = nodeLocations[0] - nodeLocations[2];
-  const stk::math::Vector3d side3 = nodeLocations[3] - nodeLocations[0];
+  const stk::math::Vector3d edge0 = nodeLocations[1] - nodeLocations[0];
+  const stk::math::Vector3d edge1 = nodeLocations[2] - nodeLocations[1];
+  const stk::math::Vector3d edge2 = nodeLocations[0] - nodeLocations[2];
+  const stk::math::Vector3d edge3 = nodeLocations[3] - nodeLocations[0];
+  const stk::math::Vector3d edge4 = nodeLocations[3] - nodeLocations[1];
+  const stk::math::Vector3d edge5 = nodeLocations[3] - nodeLocations[2];
 
-  const double volumeMin = 1.0E-30;
-  const double tetVolume = calculate_tet_volume_using_sides(side0, side2, side3);
-  if( std::abs( tetVolume ) < volumeMin )
-      return 0.0;
-
-  const stk::math::Vector3d side1 = nodeLocations[2] - nodeLocations[1];
-  const stk::math::Vector3d side4 = nodeLocations[3] - nodeLocations[1];
-  const stk::math::Vector3d side5 = nodeLocations[3] - nodeLocations[2];
-
-  const double side0_length_squared = side0.length_squared();
-  const double side1_length_squared = side1.length_squared();
-  const double side2_length_squared = side2.length_squared();
-  const double side3_length_squared = side3.length_squared();
-  const double side4_length_squared = side4.length_squared();
-  const double side5_length_squared = side5.length_squared();
-
-  const int sign = tetVolume < 0. ? -1 : 1;
-  return sign * 12. * std::pow(3.*std::abs(tetVolume), 2./3.) / (side0_length_squared + side1_length_squared + side2_length_squared + side3_length_squared + side4_length_squared + side5_length_squared);
+  static const double sqrt2 = std::sqrt(2.);
+  const double tetVolumeTimes6 = Dot(edge3, Cross(edge2, edge0));
+  const double sum = (edge0.length_squared() + edge1.length_squared() + edge2.length_squared() +
+      edge3.length_squared() + edge4.length_squared() + edge5.length_squared()) / 6;
+  return sqrt2 * tetVolumeTimes6 / std::pow(sum, 3. / 2.);
 }
 
 double MeanRatioQualityMetric::tet_mean_ratio(const std::vector<stk::math::Vector3d> &nodeLocations)

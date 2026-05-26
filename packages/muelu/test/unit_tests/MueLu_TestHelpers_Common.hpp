@@ -23,7 +23,6 @@
   (typeid(TYPE1).name() == typeid(TYPE2).name())
 
 #define MUELU_TESTING_LIMIT_SCOPE(SC, GO, NO)
-#define MUELU_TESTING_LIMIT_EPETRA_SCOPE_TPETRA_IS_DEFAULT(SC, GO, NO)
 
 // Macro to set MueLu's internal oh-so FancyOStream to be the same as the one used by Teuchos' unit testing framework.
 // This prevents MueLu's output from intermingling with with the unit test pass/fail summary lines.

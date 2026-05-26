@@ -204,6 +204,54 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(OneToOne, LargeOverlap, LO, GO, NT) {
   }
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(OneToOne, Fitted, LO, GO, NT) {
+  // Creates a map with large overlaps
+  using Map                           = Tpetra::Map<LO, GO, NT>;
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+  const int myRank                    = comm->getRank();
+  const int numProc                   = comm->getSize();
+  if (numProc < 3)
+    return;
+
+  // Set up a map where rank 0 and numProc-1 share all GIDs
+  int unit = 10;
+  Array<GO> elementList;
+  if (myRank == 0) {
+    elementList = Array<GO>(2 * unit);
+    for (int i = 0, j = 0; i < (2 * unit); ++i, ++j) {
+      elementList[j] = i;
+    }
+  } else if (myRank == numProc - 1) {
+    elementList = Array<GO>(2 * unit);
+    for (int i = 0, j = 0; i < (2 * unit); ++i, ++j) {
+      elementList[j] = 2 * unit - 1 - i;
+    }
+  } else {
+    elementList = Array<GO>(0);
+  }
+  RCP<const Map> map = Tpetra::createNonContigMapWithNode<LO, GO, NT>(elementList, comm);
+
+  {
+    RCP<const Map> new_map = Tpetra::createOneToOne<LO, GO, NT>(map);
+
+    // Check that the map that was generated is not locally fitted to the overlapping map
+    const int locallyFitted   = map->isLocallyFitted(*new_map);
+    int globallyLocallyFitted = 0;
+    reduceAll(*comm, Teuchos::REDUCE_MIN, locallyFitted, Teuchos::outArg(globallyLocallyFitted));
+    TEUCHOS_ASSERT_EQUALITY(globallyLocallyFitted, 0);
+  }
+
+  {
+    RCP<const Map> new_map = Tpetra::createOneToOneAndMakeOverlappingMapFitted<LO, GO, NT>(map);
+
+    // Check that the map that was generated is locally fitted to the overlapping map
+    const int locallyFitted   = map->isLocallyFitted(*new_map);
+    int globallyLocallyFitted = 0;
+    reduceAll(*comm, Teuchos::REDUCE_MIN, locallyFitted, Teuchos::outArg(globallyLocallyFitted));
+    TEUCHOS_ASSERT_EQUALITY(globallyLocallyFitted, 1);
+  }
+}
+
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(OneToOne, AllOnOneProc, LO, GO, NT) {
   // Will create a non-contig map with all of the elements on a single
   // processor. Nothing should change.
@@ -329,6 +377,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(OneToOne, TieBreak, LO, GO, NT) {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(OneToOne, AlreadyOneToOneContig, LO, GO, NT)                 \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(OneToOne, AlreadyOneToOneNonContigIndexBaseOne, LO, GO, NT)  \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(OneToOne, LargeOverlap, LO, GO, NT)                          \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(OneToOne, Fitted, LO, GO, NT)                                \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(OneToOne, AllOnOneProc, LO, GO, NT)                          \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(OneToOne, NoIDs, LO, GO, NT)                                 \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(OneToOne, AllOwnEvery, LO, GO, NT)                           \

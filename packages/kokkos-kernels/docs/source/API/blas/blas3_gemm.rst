@@ -3,7 +3,7 @@ KokkosBlas::gemm
 
 Defined in header: :code:`KokkosBlas3_gemm.hpp`
 
-.. code:: cppkokkos
+.. code:: c++
 
   template <class execution_space, class AViewType, class BViewType, class CViewType>
   void gemm(const execution_space& space, const char transA[], const char transB[],
@@ -61,7 +61,7 @@ Type Requirements
 Example
 =======
 
-.. code:: cppkokkos
+.. code:: c++
 
   #include<Kokkos_Core.hpp>
   #include<KokkosBlas3_gemm.hpp>

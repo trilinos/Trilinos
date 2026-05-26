@@ -7,9 +7,13 @@
 #include <Kokkos_Macros.hpp>
 #ifdef KOKKOS_ENABLE_EXPERIMENTAL_CXX20_MODULES
 import kokkos.core;
+import kokkos.core_impl;
 #else
 #include <Kokkos_Core.hpp>
 #endif
+#include <impl/Kokkos_SIMD_Impl_Macros.hpp>
+#include <impl/Kokkos_SIMD_RangesCtorSupport.hpp>
+#include <cstdint>
 #include <cstring>
 #include <functional>
 #include <utility>
@@ -21,6 +25,10 @@ namespace Experimental {
 
 namespace simd_abi {
 class scalar;
+}
+
+namespace Impl {
+using simd_size_t = std::int32_t;
 }
 
 template <class T, class Abi>
@@ -121,6 +129,14 @@ concept NonScalarAbi = !std::same_as<Abi, simd_abi::scalar>;
 template <typename G, typename R, typename... Args>
 concept InvocableWithReturnType = std::is_invocable_r_v<R, G, Args...>;
 
+template <typename V>
+concept SimdVecType =
+    std::same_as<V, basic_simd<typename V::value_type, typename V::abi_type>> &&
+    std::is_default_constructible_v<V>;
+
+template <typename V>
+concept SimdIntegral = SimdVecType<V> && std::integral<typename V::value_type>;
+
 }  // namespace Impl
 
 #ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
@@ -219,7 +235,7 @@ KOKKOS_IMPL_DISABLE_DEPRECATED_WARNINGS_POP()
 // operator@(Arithmetic, basic_simd<T, Abi>)
 // operator@=(basic_simd<T, Abi>&, U&&)
 
-template <class T, Impl::Arithmetic U, class Abi>
+template <class T, Impl::Arithmetic U, Impl::NonScalarAbi Abi>
 KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION auto operator+(
     Experimental::basic_simd<T, Abi> const& lhs, U rhs) {
   using result_member = decltype(lhs[0] + rhs);
@@ -227,7 +243,7 @@ KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION auto operator+(
          Experimental::basic_simd<result_member, Abi>(rhs);
 }
 
-template <class T, Impl::Arithmetic U, class Abi>
+template <class T, Impl::Arithmetic U, Impl::NonScalarAbi Abi>
 KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION auto operator+(
     U lhs, Experimental::basic_simd<T, Abi> const& rhs) {
   using result_member = decltype(lhs + rhs[0]);
@@ -253,7 +269,7 @@ operator+=(where_expression<M, T>& lhs, U&& rhs) {
 KOKKOS_IMPL_DISABLE_DEPRECATED_WARNINGS_POP()
 #endif
 
-template <class T, Impl::Arithmetic U, class Abi>
+template <class T, Impl::Arithmetic U, Impl::NonScalarAbi Abi>
 KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION auto operator-(
     Experimental::basic_simd<T, Abi> const& lhs, U rhs) {
   using result_member = decltype(lhs[0] - rhs);
@@ -261,7 +277,7 @@ KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION auto operator-(
          Experimental::basic_simd<result_member, Abi>(rhs);
 }
 
-template <class T, Impl::Arithmetic U, class Abi>
+template <class T, Impl::Arithmetic U, Impl::NonScalarAbi Abi>
 KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION auto operator-(
     U lhs, Experimental::basic_simd<T, Abi> const& rhs) {
   using result_member = decltype(lhs - rhs[0]);
@@ -287,7 +303,7 @@ operator-=(where_expression<M, T>& lhs, U&& rhs) {
 KOKKOS_IMPL_DISABLE_DEPRECATED_WARNINGS_POP()
 #endif
 
-template <class T, Impl::Arithmetic U, class Abi>
+template <class T, Impl::Arithmetic U, Impl::NonScalarAbi Abi>
 KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION auto operator*(
     Experimental::basic_simd<T, Abi> const& lhs, U rhs) {
   using result_member = decltype(lhs[0] * rhs);
@@ -295,7 +311,7 @@ KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION auto operator*(
          Experimental::basic_simd<result_member, Abi>(rhs);
 }
 
-template <class T, Impl::Arithmetic U, class Abi>
+template <class T, Impl::Arithmetic U, Impl::NonScalarAbi Abi>
 KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION auto operator*(
     U lhs, Experimental::basic_simd<T, Abi> const& rhs) {
   using result_member = decltype(lhs * rhs[0]);
@@ -321,15 +337,15 @@ operator*=(where_expression<M, T>& lhs, U&& rhs) {
 KOKKOS_IMPL_DISABLE_DEPRECATED_WARNINGS_POP()
 #endif
 
-template <std::integral T, class Abi>
+template <std::integral T, Impl::NonScalarAbi Abi>
 KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION auto operator/(
     Experimental::basic_simd<T, Abi> const& lhs,
     Experimental::basic_simd<T, Abi> const& rhs) {
   return Experimental::basic_simd<T, Abi>(
-      [&](std::size_t i) { return lhs[i] / rhs[i]; });
+      [&](Impl::simd_size_t i) { return lhs[i] / rhs[i]; });
 }
 
-template <class T, Impl::Arithmetic U, class Abi>
+template <class T, Impl::Arithmetic U, Impl::NonScalarAbi Abi>
 KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION auto operator/(
     Experimental::basic_simd<T, Abi> const& lhs, U rhs) {
   using result_member = decltype(lhs[0] / rhs);
@@ -337,7 +353,7 @@ KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION auto operator/(
          Experimental::basic_simd<result_member, Abi>(rhs);
 }
 
-template <class T, Impl::Arithmetic U, class Abi>
+template <class T, Impl::Arithmetic U, Impl::NonScalarAbi Abi>
 KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION auto operator/(
     U lhs, Experimental::basic_simd<T, Abi> const& rhs) {
   using result_member = decltype(lhs / rhs[0]);
@@ -362,6 +378,48 @@ operator/=(where_expression<M, T>& lhs, U&& rhs) {
 }
 KOKKOS_IMPL_DISABLE_DEPRECATED_WARNINGS_POP()
 #endif
+
+template <class T, Impl::NonScalarAbi Abi>
+KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION basic_simd_mask<T, Abi>& operator&=(
+    basic_simd_mask<T, Abi>& lhs, basic_simd_mask<T, Abi> const& rhs) {
+  lhs = lhs & rhs;
+  return lhs;
+}
+
+template <class T, Impl::NonScalarAbi Abi>
+KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION basic_simd_mask<T, Abi>& operator|=(
+    basic_simd_mask<T, Abi>& lhs, basic_simd_mask<T, Abi> const& rhs) {
+  lhs = lhs | rhs;
+  return lhs;
+}
+
+template <class T, Impl::NonScalarAbi Abi>
+KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION basic_simd_mask<T, Abi>& operator^=(
+    basic_simd_mask<T, Abi>& lhs, basic_simd_mask<T, Abi> const& rhs) {
+  lhs = lhs ^ rhs;
+  return lhs;
+}
+
+template <class T, Impl::NonScalarAbi Abi>
+KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION basic_simd<T, Abi>& operator&=(
+    basic_simd<T, Abi>& lhs, basic_simd<T, Abi> const& rhs) {
+  lhs = lhs & rhs;
+  return lhs;
+}
+
+template <class T, Impl::NonScalarAbi Abi>
+KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION basic_simd<T, Abi>& operator|=(
+    basic_simd<T, Abi>& lhs, basic_simd<T, Abi> const& rhs) {
+  lhs = lhs | rhs;
+  return lhs;
+}
+
+template <class T, Impl::NonScalarAbi Abi>
+KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION basic_simd<T, Abi>& operator^=(
+    basic_simd<T, Abi>& lhs, basic_simd<T, Abi> const& rhs) {
+  lhs = lhs ^ rhs;
+  return lhs;
+}
 
 template <class T, class U, Impl::NonScalarAbi Abi>
 KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION basic_simd<T, Abi>& operator>>=(
@@ -391,7 +449,7 @@ KOKKOS_FORCEINLINE_FUNCTION bool none_of(bool a) { return !a; }
 template <class T, class Abi>
 KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION bool all_of(
     basic_simd_mask<T, Abi> const& a) {
-  for (size_t i = 0; i < basic_simd_mask<T, Abi>::size(); ++i) {
+  for (Impl::simd_size_t i = 0; i < basic_simd_mask<T, Abi>::size(); ++i) {
     if (!a[i]) return false;
   }
   return true;
@@ -400,7 +458,7 @@ KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION bool all_of(
 template <class T, class Abi>
 KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION bool any_of(
     basic_simd_mask<T, Abi> const& a) {
-  for (size_t i = 0; i < basic_simd_mask<T, Abi>::size(); ++i) {
+  for (Impl::simd_size_t i = 0; i < basic_simd_mask<T, Abi>::size(); ++i) {
     if (a[i]) return true;
   }
   return false;
@@ -427,10 +485,11 @@ KOKKOS_FORCEINLINE_FUNCTION auto round_half_to_nearest_even(T const& x) {
 
 // common implementations of host only simd reductions:
 template <class T, class Abi, class BinaryOperation = std::plus<>>
+  requires requires(T x, BinaryOperation op) { op(x, x); }
 KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION T reduce(const basic_simd<T, Abi>& x,
                                                BinaryOperation binary_op = {}) {
   T result = x[0];
-  for (std::size_t i = 1; i < x.size(); ++i) {
+  for (Impl::simd_size_t i = 1; i < x.size(); ++i) {
     result = binary_op(result, x[i]);
   }
   return result;

@@ -1,7 +1,5 @@
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/..)
+kokkoskernels_include_directories(${CMAKE_CURRENT_BINARY_DIR})
+kokkoskernels_include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+kokkoskernels_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/..)
 
-KOKKOSKERNELS_ADD_EXECUTABLE(KokkosBatched_Test_CG
-  SOURCES KokkosBatched_Test_CG.cpp
-)
+kokkoskernels_add_executable(KokkosBatched_Test_CG SOURCES KokkosBatched_Test_CG.cpp)

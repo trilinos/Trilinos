@@ -21,7 +21,7 @@
 namespace MueLu {
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-CoupledRBMFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~CoupledRBMFactory() {}
+CoupledRBMFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~CoupledRBMFactory() = default;
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void CoupledRBMFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& currentLevel) const {

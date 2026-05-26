@@ -330,7 +330,7 @@ template <class Scalar,
           class LocalOrdinal,
           class GlobalOrdinal,
           class Node>
-void Jacobi(Scalar omega,
+void Jacobi(typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega,
             const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Dinv,
             const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
             const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
@@ -807,7 +807,7 @@ void add(const Scalar& alpha,
                          ConvertGlobalToLocalFunctor<LocalOrdinal, GlobalOrdinal,
                                                      col_inds_array, global_col_inds_array,
                                                      typename map_type::local_map_type>(localColinds, globalColinds, CcolMap->getLocalMap()));
-    KokkosSparse::sort_crs_matrix<exec_space, row_ptrs_array, col_inds_array, values_array>(rowptrs, localColinds, vals);
+    Import_Util::sortCrsEntries(rowptrs, localColinds, vals);
     C.setAllValues(rowptrs, localColinds, vals);
     C.fillComplete(CDomainMap, CRangeMap, params);
     if (!doFillComplete)
@@ -2099,8 +2099,10 @@ void KernelWrappers<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalOrdinalViewT
     Tpetra::Details::ProfilingRegion MM3("TpetraExt: MMM: Newmatrix Final Sort");
 
     // Final sort & set of CRS arrays
-    if (params.is_null() || params->get("sort entries", true))
+    if (params.is_null() || params->get("sort entries", true)) {
+      // Tpetra's serial SpGEMM results in almost sorted matrices. Use shell sort.
       Import_Util::sortCrsEntries(Crowptr, Ccolind, Cvals);
+    }
     C.setAllValues(Crowptr, Ccolind, Cvals);
   }
 
@@ -2231,7 +2233,7 @@ void KernelWrappers<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalOrdinalViewT
                                                                                                                     CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
                                                                                                                     Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node>> /* Cimport */,
                                                                                                                     const std::string& label,
-                                                                                                                    const Teuchos::RCP<Teuchos::ParameterList>& /* params */) {
+                                                                                                                    const Teuchos::RCP<Teuchos::ParameterList>& params) {
   using Teuchos::RCP;
   using Teuchos::rcp;
 
@@ -2250,6 +2252,12 @@ void KernelWrappers<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalOrdinalViewT
   const size_t ST_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
   const LO LO_INVALID     = Teuchos::OrdinalTraits<LO>::invalid();
   const SC SC_ZERO        = Teuchos::ScalarTraits<Scalar>::zero();
+
+  // By default, if A*B results in an entry that is not supported by the graph of C, we throw.
+  // This option allows to override this behavior and silently ignores such entries.
+  bool throwOnInsert = true;
+  if (!params.is_null() && params->isType<bool>("MM Throw For Non-Existent Entries"))
+    throwOnInsert = params->get<bool>("MM Throw For Non-Existent Entries");
 
   Tpetra::Details::ProfilingRegion MM("TpetraExt: MMM: Reuse SerialCore");
   (void)label;
@@ -2318,11 +2326,13 @@ void KernelWrappers<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalOrdinalViewT
           LO Bkj = Bcolind[j];
           LO Cij = Bcol2Ccol[Bkj];
 
-          TEUCHOS_TEST_FOR_EXCEPTION(c_status[Cij] < OLD_ip || c_status[Cij] >= CSR_ip,
-                                     std::runtime_error, "Trying to insert a new entry (" << i << "," << Cij << ") into a static graph "
-                                                                                          << "(c_status = " << c_status[Cij] << " of [" << OLD_ip << "," << CSR_ip << "))");
-
-          Cvals[c_status[Cij]] += Aval * Bvals[j];
+          const bool badInsert = c_status[Cij] < OLD_ip || c_status[Cij] >= CSR_ip;
+          if (!badInsert)
+            Cvals[c_status[Cij]] += Aval * Bvals[j];
+          else if (throwOnInsert)
+            TEUCHOS_TEST_FOR_EXCEPTION(badInsert,
+                                       std::runtime_error, "Trying to insert a new entry (" << i << "," << Cij << ") into a static graph "
+                                                                                            << "(c_status = " << c_status[Cij] << " of [" << OLD_ip << "," << CSR_ip << "))");
         }
 
       } else {
@@ -2332,11 +2342,13 @@ void KernelWrappers<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalOrdinalViewT
           LO Ikj = Icolind[j];
           LO Cij = Icol2Ccol[Ikj];
 
-          TEUCHOS_TEST_FOR_EXCEPTION(c_status[Cij] < OLD_ip || c_status[Cij] >= CSR_ip,
-                                     std::runtime_error, "Trying to insert a new entry (" << i << "," << Cij << ") into a static graph "
-                                                                                          << "(c_status = " << c_status[Cij] << " of [" << OLD_ip << "," << CSR_ip << "))");
-
-          Cvals[c_status[Cij]] += Aval * Ivals[j];
+          const bool badInsert = c_status[Cij] < OLD_ip || c_status[Cij] >= CSR_ip;
+          if (!badInsert)
+            Cvals[c_status[Cij]] += Aval * Ivals[j];
+          else if (throwOnInsert)
+            TEUCHOS_TEST_FOR_EXCEPTION(badInsert,
+                                       std::runtime_error, "Trying to insert a new entry (" << i << "," << Cij << ") into a static graph "
+                                                                                            << "(c_status = " << c_status[Cij] << " of [" << OLD_ip << "," << CSR_ip << "))");
         }
       }
     }
@@ -2355,7 +2367,7 @@ template <class Scalar,
           class GlobalOrdinal,
           class Node>
 void jacobi_A_B_newmatrix(
-    Scalar omega,
+    typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega,
     const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Dinv,
     CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
     CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
@@ -2516,7 +2528,7 @@ template <class Scalar,
           class GlobalOrdinal,
           class Node,
           class LocalOrdinalViewType>
-void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalOrdinalViewType>::jacobi_A_B_newmatrix_kernel_wrapper(Scalar omega,
+void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalOrdinalViewType>::jacobi_A_B_newmatrix_kernel_wrapper(typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega,
                                                                                                                            const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Dinv,
                                                                                                                            CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
                                                                                                                            CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
@@ -2717,8 +2729,10 @@ void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalOrdinalView
     // TODO (mfh 27 Sep 2016) Will the thread-parallel "local" sparse
     // matrix-matrix multiply routine sort the entries for us?
     // Final sort & set of CRS arrays
-    if (params.is_null() || params->get("sort entries", true))
+    if (params.is_null() || params->get("sort entries", true)) {
+      // Tpetra's serial SpGEMM results in almost sorted matrices. Use shell sort.
       Import_Util::sortCrsEntries(Crowptr, Ccolind, Cvals);
+    }
     C.setAllValues(Crowptr, Ccolind, Cvals);
   }
   {
@@ -2747,7 +2761,7 @@ template <class Scalar,
           class GlobalOrdinal,
           class Node>
 void jacobi_A_B_reuse(
-    Scalar omega,
+    typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega,
     const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Dinv,
     CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
     CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
@@ -2847,7 +2861,7 @@ template <class Scalar,
           class GlobalOrdinal,
           class Node,
           class LocalOrdinalViewType>
-void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalOrdinalViewType>::jacobi_A_B_reuse_kernel_wrapper(Scalar omega,
+void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalOrdinalViewType>::jacobi_A_B_reuse_kernel_wrapper(typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega,
                                                                                                                        const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Dinv,
                                                                                                                        CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
                                                                                                                        CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
@@ -3071,7 +3085,7 @@ void import_and_extract_views(
         remoteRows[i] = targetMap->getGlobalElement(remoteLIDs[i]);
 
       remoteRowMap = rcp(new map_type(Teuchos::OrdinalTraits<global_size_t>::invalid(), remoteRows(),
-                                      rowMap->getIndexBase(), rowMap->getComm()));
+                                      rowMap->getIndexBase(), rowMap->getComm(), params));
       mode         = 1;
 
     } else if (prototypeImporter.is_null()) {
@@ -3090,7 +3104,7 @@ void import_and_extract_views(
       }
       remoteRows.resize(numRemote);
       remoteRowMap = rcp(new map_type(Teuchos::OrdinalTraits<global_size_t>::invalid(), remoteRows(),
-                                      rowMap->getIndexBase(), rowMap->getComm()));
+                                      rowMap->getIndexBase(), rowMap->getComm(), params));
       mode         = 2;
 
     } else {
@@ -3106,16 +3120,9 @@ void import_and_extract_views(
     }
 
     //
-    // Now we will import the needed remote rows of A, if the global maximum
-    // value of numRemote is greater than 0.
+    // Now we will import the needed remote rows of A, if the remoteRowMap has entries
     //
-    MM = Teuchos::null;
-    MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: MMM: I&X Collective-0"));
-
-    global_size_t globalMaxNumRemote = 0;
-    Teuchos::reduceAll(*(rowMap->getComm()), Teuchos::REDUCE_MAX, (global_size_t)numRemote, Teuchos::outArg(globalMaxNumRemote));
-
-    if (globalMaxNumRemote > 0) {
+    if (!remoteRowMap.is_null() && (remoteRowMap->getGlobalNumElements() > 0)) {
       MM = Teuchos::null;
       MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: MMM: I&X Import-2"));
 
@@ -3282,14 +3289,11 @@ void import_and_extract_views(
     return;
   }
 
-  // Now we will import the needed remote rows of M, if the global maximum
-  // value of numRemote is greater than 0.
-  global_size_t globalMaxNumRemote = 0;
-  Teuchos::reduceAll(*(rowMap->getComm()), Teuchos::REDUCE_MAX, (global_size_t)numRemote, Teuchos::outArg(globalMaxNumRemote));
+  // Now we will import the needed remote rows of M, if the remoteRowMap has entries
 
   RCP<const import_type> importer;
 
-  if (globalMaxNumRemote > 0) {
+  if (!remoteRowMap.is_null() && (remoteRowMap->getGlobalNumElements() > 0)) {
     // Create an importer with target-map remoteRowMap and source-map rowMap.
     if (mode == 1)
       importer = prototypeImporter->createRemoteOnlyImport(remoteRowMap);
@@ -3699,7 +3703,7 @@ namespace Tpetra {
       const std::string& label);                                                                                                      \
                                                                                                                                       \
   template void MatrixMatrix::Jacobi(                                                                                                 \
-      SCALAR omega,                                                                                                                   \
+      typename Teuchos::ScalarTraits<SCALAR>::magnitudeType omega,                                                                    \
       const Vector<SCALAR, LO, GO, NODE>& Dinv,                                                                                       \
       const CrsMatrix<SCALAR, LO, GO, NODE>& A,                                                                                       \
       const CrsMatrix<SCALAR, LO, GO, NODE>& B,                                                                                       \

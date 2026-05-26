@@ -36,11 +36,13 @@ public:
   virtual void build_local_facets(const BoundingBox & proc_bbox) override;
 
 protected:
-  void add_facet2d(const stk::mesh::BulkData& mesh, stk::mesh::Entity side, unsigned p0, unsigned p1);
-  void add_facet3d(const stk::mesh::BulkData& mesh, stk::mesh::Entity side, unsigned p0, unsigned p1, unsigned p2);
-  void add_quad3d(const stk::mesh::BulkData& mesh, stk::mesh::Entity side, unsigned p0, unsigned p1, unsigned p2, unsigned p3);
-  void add_facet2d(stk::math::Vector3d & p0, stk::math::Vector3d & p1);
-  void add_facet3d(stk::math::Vector3d & p0, stk::math::Vector3d & p1, stk::math::Vector3d & p2);
+  void add_side_facet(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & volumeSelector, const stk::topology sideTopology, const stk::mesh::Entity side);
+  void add_selected_side_facets(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & volumeSelector, const stk::mesh::Selector & sideSelector);
+  void add_facet2d(const stk::mesh::BulkData& mesh, const stk::mesh::Entity side, const bool doFlip, unsigned p0, unsigned p1);
+  void add_facet3d(const stk::mesh::BulkData& mesh, const stk::mesh::Entity side, const bool doFlip, unsigned p0, unsigned p1, unsigned p2);
+  void add_quad3d(const stk::mesh::BulkData& mesh, const stk::mesh::Entity side, const bool doFlip, unsigned p0, unsigned p1, unsigned p2, unsigned p3);
+  void add_facet2d(const stk::math::Vector3d & p0, const stk::math::Vector3d & p1);
+  void add_facet3d(const stk::math::Vector3d & p0, const stk::math::Vector3d & p1, const stk::math::Vector3d & p2);
   
 private:
   int my_sign;

@@ -6,18 +6,14 @@
 
 #include <Kokkos_Printf.hpp>
 #if defined(KOKKOS_ENABLE_SYCL)
-// FIXME_SYCL
-#if __has_include(<sycl/sycl.hpp>)
 #include <sycl/sycl.hpp>
-#else
-#include <CL/sycl.hpp>
-#endif
 
 namespace Kokkos {
 namespace Impl {
 
 inline void sycl_abort(char const* msg) {
-#ifdef NDEBUG
+// FIXME_WINDOWS __assert_fail isn't defined
+#if defined(NDEBUG) || defined(_MSC_VER)
   Kokkos::printf("Aborting with message %s.\n", msg);
 #else
   // Choosing "" here causes problems but a single whitespace character works.

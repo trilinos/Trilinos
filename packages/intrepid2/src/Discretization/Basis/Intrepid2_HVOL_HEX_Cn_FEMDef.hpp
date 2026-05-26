@@ -51,8 +51,7 @@ namespace Intrepid2 {
 
       typedef typename Kokkos::DynRankView<typename InputViewType::value_type, typename WorkViewType::memory_space> ViewType;
 
-      switch (OpType) {
-      case OPERATOR_VALUE: {
+      if constexpr (OpType == OPERATOR_VALUE) {
         ViewType work_line = createMatchingUnmanagedView<ViewType>(input, ptr0, cardLine, npts);
         ViewType output_x = createMatchingUnmanagedView<ViewType>(input, ptr1, cardLine, npts);
         ViewType output_y = createMatchingUnmanagedView<ViewType>(input, ptr2, cardLine, npts);
@@ -73,23 +72,13 @@ namespace Intrepid2 {
           for (ordinal_type j=0;j<cardLine;++j) // y
             for (ordinal_type i=0;i<cardLine;++i,++idx)  // x
               for (ordinal_type l=0;l<npts;++l)
-                output.access(idx,l) = output_x.access(i,l)*output_y.access(j,l)*output_z.access(k,l);
-        break;
+                output(idx,l) = output_x(i,l)*output_y(j,l)*output_z(k,l);
       }
-      case OPERATOR_GRAD:
-      case OPERATOR_D1:
-      case OPERATOR_D2:
-      case OPERATOR_D3:
-      case OPERATOR_D4:
-      case OPERATOR_D5:
-      case OPERATOR_D6:
-      case OPERATOR_D7:
-      case OPERATOR_D8:
-      case OPERATOR_D9:
-      case OPERATOR_D10:
-        opDn = getOperatorOrder(OpType);
-        [[fallthrough]];
-      case OPERATOR_Dn: {
+      else if constexpr ((OpType == OPERATOR_GRAD) || (OpType == OPERATOR_D1) || (OpType == OPERATOR_D2) || (OpType == OPERATOR_D3) || (OpType == OPERATOR_D4) || (OpType == OPERATOR_D5) ||
+                         (OpType == OPERATOR_D6) || (OpType == OPERATOR_D7) || (OpType == OPERATOR_D8) || (OpType == OPERATOR_D9)  || (OpType == OPERATOR_D10) || (OpType == OPERATOR_Dn)) {
+        if constexpr (OpType != OPERATOR_Dn) 
+          opDn = getOperatorOrder(OpType);
+          
         const ordinal_type dkcard = opDn + 1;
 
         ordinal_type d = 0;
@@ -144,17 +133,14 @@ namespace Intrepid2 {
                 for (ordinal_type j=0;j<cardLine;++j) // y
                   for (ordinal_type i=0;i<cardLine;++i,++idx)  // x
                     for (ordinal_type l=0;l<npts;++l)
-                      output.access(idx,l,d) = output_x.access(i,l,0)*output_y.access(j,l,0)*output_z.access(k,l,0);
+                      output(idx,l,d) = output_x(i,l,0)*output_y(j,l,0)*output_z(k,l,0);
               ++d;
             }
           }
-        break;
       }
-      default: {
+      else {
         INTREPID2_TEST_FOR_ABORT( true ,
                                   ">>> ERROR (Basis_HVOL_HEX_Cn_FEM): Operator type not implemented");
-        break;
-      }
       }
     }
 
@@ -316,12 +302,12 @@ namespace Intrepid2 {
   template<typename DT, typename OT, typename PT>
   void
   Basis_HVOL_HEX_Cn_FEM<DT,OT,PT>::getScratchSpaceSize(
-                                    ordinal_type& perTeamSpaceSize,
                                     ordinal_type& perThreadSpaceSize,
                               const PointViewType inputPoints,
                               const EOperator operatorType) const {
-    perTeamSpaceSize = 0;
-    perThreadSpaceSize = 4*this->vinv_.extent(0)*get_dimension_scalar(inputPoints)*sizeof(typename BasisBase::scalarType);
+    using ScalarType = typename ScalarTraits<typename PointViewType::value_type>::scalar_type;
+    using ScratchViewType = Kokkos::DynRankView<ScalarType, typename DT::execution_space::scratch_memory_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+    perThreadSpaceSize = ScratchViewType::shmem_size(4*this->vinv_.extent(0)*get_dimension_scalar(inputPoints));
   }
 
   template<typename DT, typename OT, typename PT>
@@ -332,7 +318,7 @@ namespace Intrepid2 {
       const PointViewType  inputPoints,
       const EOperator operatorType,
       const typename Kokkos::TeamPolicy<typename DT::execution_space>::member_type& team_member,
-      const typename DT::execution_space::scratch_memory_space & scratchStorage,
+      const int threadScratchLevel,
       const ordinal_type subcellDim,
       const ordinal_type subcellOrdinal) const {
 
@@ -343,14 +329,14 @@ namespace Intrepid2 {
       using ScalarType = typename ScalarTraits<typename PointViewType::value_type>::scalar_type;
       using WorkViewType = Kokkos::DynRankView< ScalarType,typename DT::execution_space::scratch_memory_space,Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
       auto sizePerPoint = 4*this->vinv_.extent(0)*get_dimension_scalar(inputPoints);
-      WorkViewType workView(scratchStorage, sizePerPoint*team_member.team_size());
+      
+      WorkViewType  work(team_member.thread_scratch(threadScratchLevel), sizePerPoint);
       using range_type = Kokkos::pair<ordinal_type,ordinal_type>;
       switch(operatorType) {
         case OPERATOR_VALUE:
           Kokkos::parallel_for (Kokkos::TeamThreadRange (team_member, numPoints), [=, &vinv_ = this->vinv_, basisDegree_ = this->basisDegree_] (ordinal_type& pt) {
             auto       output = Kokkos::subview( outputValues, Kokkos::ALL(), range_type  (pt,pt+1), Kokkos::ALL() );
             const auto input  = Kokkos::subview( inputPoints,                 range_type(pt, pt+1), Kokkos::ALL() );
-            WorkViewType  work(workView.data() + sizePerPoint*team_member.team_rank(), sizePerPoint);
             Impl::Basis_HVOL_HEX_Cn_FEM::Serial<OPERATOR_VALUE>::getValues( output, input, work, vinv_, basisDegree_);
           });
           break;

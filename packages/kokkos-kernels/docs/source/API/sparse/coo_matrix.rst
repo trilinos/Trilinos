@@ -9,7 +9,7 @@ KokkosSparse::CooMatrix
 
 Defined in header ``KokkosSparse_CooMatrix.hpp``
 
-.. code:: cppkokkos
+.. code:: c++
 
   template <class ScalarType, class OrdinalType, class Device, class MemoryTraits = void,
             class SizeType = typename Kokkos::ViewTraits<OrdinalType*, Device, void, void>::size_type>
@@ -118,7 +118,7 @@ Member Functions
 numRows
 ^^^^^^^
 
-.. code:: cppkokkos
+.. code:: c++
 
   KOKKOS_INLINE_FUNCTION ordinal_type numRows() const;
 
@@ -129,7 +129,7 @@ Returns the number of rows in the matrix.
 numCols
 ^^^^^^^
 
-.. code:: cppkokkos
+.. code:: c++
 
   KOKKOS_INLINE_FUNCTION ordinal_type numCols() const;
 
@@ -140,7 +140,7 @@ Returns the number of columns in the matrix.
 setNumRows
 ^^^^^^^^^^
 
-.. code:: cppkokkos
+.. code:: c++
 
   void setNumRows(ordinal_type r);
 
@@ -152,7 +152,7 @@ This invalidates any algorithm handles which previously used this matrix.
 setNumCols
 ^^^^^^^^^^
 
-.. code:: cppkokkos
+.. code:: c++
 
   void setNumCols(ordinal_type c);
 
@@ -164,7 +164,7 @@ This invalidates any algorithm handles which previously used this matrix.
 nnz
 ^^^
 
-.. code:: cppkokkos
+.. code:: c++
 
   KOKKOS_INLINE_FUNCTION size_type nnz() const;
 
@@ -175,7 +175,7 @@ Returns the number of non-zero entries in the matrix.
 row
 ^^^
 
-.. code:: cppkokkos
+.. code:: c++
 
   KOKKOS_INLINE_FUNCTION size_type row() const;
 
@@ -186,7 +186,7 @@ Returns the row indices view.
 col
 ^^^
 
-.. code:: cppkokkos
+.. code:: c++
 
   KOKKOS_INLINE_FUNCTION size_type col() const;
 
@@ -197,7 +197,7 @@ Returns the column indices view.
 data
 ^^^^
 
-.. code:: cppkokkos
+.. code:: c++
 
   KOKKOS_INLINE_FUNCTION size_type data() const;
 

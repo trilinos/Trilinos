@@ -818,6 +818,9 @@ class AdditiveSchwarz : virtual public Preconditioner<typename MatrixType::scala
   std::string ReorderingAlgorithm_ = "none";
   //! Whether to filter singleton rows.
   bool FilterSingletons_ = false;
+  //! Whether to equilibrate the innermost reduced reordered local matrix
+  //! using row/column 1-norm scaling.
+  bool EquilibrateSubdomainMatrix_ = false;
   //! Matrix from which singleton rows have been filtered.
   Teuchos::RCP<row_matrix_type> SingletonMatrix_;
   //! The number of iterations to be done.

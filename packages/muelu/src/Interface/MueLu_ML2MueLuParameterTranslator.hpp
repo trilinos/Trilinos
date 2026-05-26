@@ -25,7 +25,7 @@
 namespace MueLu {
 
 /*!
-  @class ML2MueLuParameterTranslator class.
+  @class ML2MueLuParameterTranslator
   @brief Class that accepts ML-style parameters and builds a MueLu parameter list (easy input deck)
 
   This interpreter class is meant to make the transition from ML to MueLu easier.

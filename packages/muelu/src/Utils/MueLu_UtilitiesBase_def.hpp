@@ -10,9 +10,17 @@
 #ifndef MUELU_UTILITIESBASE_DEF_HPP
 #define MUELU_UTILITIESBASE_DEF_HPP
 
+#include "KokkosKernels_ArithTraits.hpp"
 #include "MueLu_ConfigDefs.hpp"
 
 #include "MueLu_UtilitiesBase_decl.hpp"
+
+#include "MueLu_PerfUtils.hpp"
+#include "MueLu_Monitor.hpp"
+#include <Xpetra_MatrixMatrix.hpp>
+#include <Xpetra_MatrixFactory.hpp>
+#include <Xpetra_MatrixUtils.hpp>
+#include <Xpetra_TripleMatrixMultiply.hpp>
 
 #include <Kokkos_Core.hpp>
 #include <KokkosSparse_CrsMatrix.hpp>
@@ -29,13 +37,16 @@
 #include <Xpetra_CrsGraph.hpp>
 #include <Xpetra_CrsGraphFactory.hpp>
 #include <Xpetra_CrsMatrixWrap.hpp>
+#include <Xpetra_MatrixFactory.hpp>
 #include <Xpetra_StridedMap.hpp>
 
 #include "MueLu_Exceptions.hpp"
+#include "MueLu_Behavior.hpp"
 #include "Xpetra_CrsMatrixFactory.hpp"
 
 #include <KokkosKernels_Handle.hpp>
 #include <KokkosGraph_RCM.hpp>
+#include "MueLu_Behavior.hpp"
 
 namespace MueLu {
 
@@ -79,57 +90,106 @@ removeSmallEntries(Teuchos::RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOr
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
+RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
 UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    GetThresholdedMatrix(const RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& Ain, const typename Teuchos::ScalarTraits<Scalar>::magnitudeType threshold, const bool keepDiagonal, const GlobalOrdinal expectedNNZperRow) {
-  auto crsWrap = rcp_dynamic_cast<CrsMatrixWrap>(Ain);
-  if (!crsWrap.is_null()) {
-    auto crsMat      = crsWrap->getCrsMatrix();
-    auto filteredMat = removeSmallEntries(crsMat, threshold, keepDiagonal);
-    return rcp_static_cast<CrsMatrixWrap>(filteredMat);
-  }
+    GetThresholdedMatrix(const RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& Ain, const typename Teuchos::ScalarTraits<Scalar>::magnitudeType threshold, const bool keepDiagonal) {
+  RCP<Matrix> Aout;
+  {
+    using matrix_type       = Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    using local_matrix_type = typename matrix_type::local_matrix_type;
+    using local_graph_type  = typename matrix_type::local_graph_type;
+    using execution_space   = typename Node::execution_space;
+    using rowmap_type       = typename local_graph_type::row_map_type::non_const_type;
+    using entries_type      = typename local_graph_type::entries_type::non_const_type;
+    using values_type       = typename local_matrix_type::values_type::non_const_type;
+    using range_type        = Kokkos::RangePolicy<execution_space, LocalOrdinal>;
+    using implATS           = KokkosKernels::ArithTraits<typename matrix_type::impl_scalar_type>;
+    auto lclA               = Ain->getLocalMatrixDevice();
+    auto lclRowmap          = Ain->getRowMap()->getLocalMap();
+    auto lclColmap          = Ain->getColMap()->getLocalMap();
 
-  RCP<const Map> rowmap   = Ain->getRowMap();
-  RCP<const Map> colmap   = Ain->getColMap();
-  RCP<CrsMatrixWrap> Aout = rcp(new CrsMatrixWrap(rowmap, expectedNNZperRow <= 0 ? Ain->getGlobalMaxNumRowEntries() : expectedNNZperRow));
-  // loop over local rows
-  for (size_t row = 0; row < Ain->getLocalNumRows(); row++) {
-    size_t nnz = Ain->getNumEntriesInLocalRow(row);
-
-    Teuchos::ArrayView<const LocalOrdinal> indices;
-    Teuchos::ArrayView<const Scalar> vals;
-    Ain->getLocalRowView(row, indices, vals);
-
-    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(indices.size()) != nnz, Exceptions::RuntimeError, "MueLu::ThresholdAFilterFactory::Build: number of nonzeros not equal to number of indices? Error.");
-
-    Teuchos::ArrayRCP<GlobalOrdinal> indout(indices.size(), Teuchos::ScalarTraits<GlobalOrdinal>::zero());
-    Teuchos::ArrayRCP<Scalar> valout(indices.size(), Teuchos::ScalarTraits<Scalar>::zero());
-    size_t nNonzeros = 0;
+    local_matrix_type thresholdedLocalMatrix;
     if (keepDiagonal) {
-      GlobalOrdinal glbRow   = rowmap->getGlobalElement(row);
-      LocalOrdinal lclColIdx = colmap->getLocalElement(glbRow);
-      for (size_t i = 0; i < (size_t)indices.size(); i++) {
-        if (Teuchos::ScalarTraits<Scalar>::magnitude(vals[i]) > Teuchos::ScalarTraits<Scalar>::magnitude(threshold) || indices[i] == lclColIdx) {
-          indout[nNonzeros] = colmap->getGlobalElement(indices[i]);  // LID -> GID (column)
-          valout[nNonzeros] = vals[i];
-          nNonzeros++;
-        }
-      }
-    } else
-      for (size_t i = 0; i < (size_t)indices.size(); i++) {
-        if (Teuchos::ScalarTraits<Scalar>::magnitude(vals[i]) > Teuchos::ScalarTraits<Scalar>::magnitude(threshold)) {
-          indout[nNonzeros] = colmap->getGlobalElement(indices[i]);  // LID -> GID (column)
-          valout[nNonzeros] = vals[i];
-          nNonzeros++;
-        }
-      }
+      rowmap_type rowptr("MueLu::GetThresholdedMatrix::rowptr", lclA.numRows() + 1);
+      LocalOrdinal nnz = 0;
+      Kokkos::parallel_scan(
+          range_type(0, lclA.numRows()), KOKKOS_LAMBDA(const LocalOrdinal rlid, LocalOrdinal& my_nnz, const bool is_final) {
+            auto row   = lclA.rowConst(rlid);
+            auto rclid = lclColmap.getLocalElement(lclRowmap.getGlobalElement(rlid));
 
-    indout.resize(nNonzeros);
-    valout.resize(nNonzeros);
+            for (LocalOrdinal offset = 0; offset < row.length; ++offset) {
+              auto clid = row.colidx(offset);
+              auto val  = row.value(offset);
+              if ((rclid == clid) || implATS::magnitude(val) > threshold) {
+                ++my_nnz;
+                if (is_final && (rlid + 1 < lclA.numRows())) {
+                  rowptr(rlid + 2) = my_nnz;
+                }
+              }
+            }
+          },
+          nnz);
 
-    Aout->insertGlobalValues(Ain->getRowMap()->getGlobalElement(row), indout.view(0, indout.size()), valout.view(0, valout.size()));
+      entries_type entries(Kokkos::ViewAllocateWithoutInitializing("MueLu::GetThresholdedGraph::indices"), nnz);
+      values_type values(Kokkos::ViewAllocateWithoutInitializing("MueLu::GetThresholdedGraph::values"), nnz);
+      Kokkos::parallel_for(
+          range_type(0, lclA.numRows()), KOKKOS_LAMBDA(const LocalOrdinal rlid) {
+            auto row   = lclA.rowConst(rlid);
+            auto rclid = lclColmap.getLocalElement(lclRowmap.getGlobalElement(rlid));
+
+            for (LocalOrdinal offset = 0; offset < row.length; ++offset) {
+              auto clid = row.colidx(offset);
+              auto val  = row.value(offset);
+              if ((rclid == clid) || implATS::magnitude(val) > threshold) {
+                entries(rowptr(rlid + 1)) = clid;
+                values(rowptr(rlid + 1))  = val;
+                ++rowptr(rlid + 1);
+              }
+            }
+          });
+
+      thresholdedLocalMatrix = local_matrix_type("thresholdedLocalMatrix", lclA.numRows(), lclA.numCols(), nnz, values, rowptr, entries);
+    } else {
+      rowmap_type rowptr("MueLu::GetThresholdedMatrix::rowptr", lclA.numRows() + 1);
+      LocalOrdinal nnz = 0;
+      Kokkos::parallel_scan(
+          range_type(0, lclA.numRows()), KOKKOS_LAMBDA(const LocalOrdinal rlid, LocalOrdinal& my_nnz, const bool is_final) {
+            auto row = lclA.rowConst(rlid);
+
+            for (LocalOrdinal offset = 0; offset < row.length; ++offset) {
+              auto val = row.value(offset);
+              if (implATS::magnitude(val) > threshold) {
+                ++my_nnz;
+                if (is_final && (rlid + 1 < lclA.numRows())) {
+                  rowptr(rlid + 2) = my_nnz;
+                }
+              }
+            }
+          },
+          nnz);
+
+      entries_type entries(Kokkos::ViewAllocateWithoutInitializing("MueLu::GetThresholdedGraph::indices"), nnz);
+      values_type values(Kokkos::ViewAllocateWithoutInitializing("MueLu::GetThresholdedGraph::values"), nnz);
+      Kokkos::parallel_for(
+          range_type(0, lclA.numRows()), KOKKOS_LAMBDA(const LocalOrdinal rlid) {
+            auto row = lclA.rowConst(rlid);
+
+            for (LocalOrdinal offset = 0; offset < row.length; ++offset) {
+              auto clid = row.colidx(offset);
+              auto val  = row.value(offset);
+              if (implATS::magnitude(val) > threshold) {
+                entries(rowptr(rlid + 1)) = clid;
+                values(rowptr(rlid + 1))  = val;
+                ++rowptr(rlid + 1);
+              }
+            }
+          });
+
+      thresholdedLocalMatrix = local_matrix_type("thresholdedLocalMatrix", lclA.numRows(), lclA.numCols(), nnz, values, rowptr, entries);
+    }
+
+    Aout = MatrixFactory::Build(thresholdedLocalMatrix, Ain->getRowMap(), Ain->getColMap(), Ain->getDomainMap(), Ain->getRangeMap());
   }
-  Aout->fillComplete(Ain->getDomainMap(), Ain->getRangeMap());
 
   return Aout;
 }
@@ -137,32 +197,82 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>>
 UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    GetThresholdedGraph(const RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& A, const Magnitude threshold, const GlobalOrdinal expectedNNZperRow) {
-  using STS                     = Teuchos::ScalarTraits<Scalar>;
-  RCP<CrsGraph> sparsityPattern = CrsGraphFactory::Build(A->getRowMap(), expectedNNZperRow <= 0 ? A->getGlobalMaxNumRowEntries() : expectedNNZperRow);
+    GetThresholdedGraph(const RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& A, const Magnitude threshold) {
+  RCP<CrsGraph> sparsityPattern;
+  {
+    using matrix_type      = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    using graph_type       = Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>;
+    using local_graph_type = typename graph_type::local_graph_device_type;
+    using execution_space  = typename Node::execution_space;
+    using rowmap_type      = typename local_graph_type::row_map_type::non_const_type;
+    using entries_type     = typename local_graph_type::entries_type::non_const_type;
+    using range_type       = Kokkos::RangePolicy<execution_space, LocalOrdinal>;
+    using implATS          = KokkosKernels::ArithTraits<typename matrix_type::impl_scalar_type>;
+    using magATS           = KokkosKernels::ArithTraits<typename implATS::magnitudeType>;
+    auto lclA              = A->getLocalMatrixDevice();
+    auto lclRowmap         = A->getRowMap()->getLocalMap();
+    auto lclColmap         = A->getColMap()->getLocalMap();
 
-  RCP<Vector> diag         = GetMatrixOverlappedDiagonal(*A);
-  ArrayRCP<const Scalar> D = diag->getData(0);
+    rowmap_type rowptr("MueLu::GetThresholdedGraph::rowptr", lclA.numRows() + 1);
 
-  for (size_t row = 0; row < A->getLocalNumRows(); row++) {
-    ArrayView<const LocalOrdinal> indices;
-    ArrayView<const Scalar> vals;
-    A->getLocalRowView(row, indices, vals);
+    LocalOrdinal nnz = 0;
+    Kokkos::parallel_scan(
+        range_type(0, lclA.numRows()), KOKKOS_LAMBDA(const LocalOrdinal rlid, LocalOrdinal& my_nnz, const bool is_final) {
+          auto row   = lclA.rowConst(rlid);
+          auto rclid = lclColmap.getLocalElement(lclRowmap.getGlobalElement(rlid));
 
-    GlobalOrdinal globalRow = A->getRowMap()->getGlobalElement(row);
-    LocalOrdinal col        = A->getColMap()->getLocalElement(globalRow);
+          typename implATS::magnitudeType d = magATS::one();
+          for (LocalOrdinal offset = 0; offset < row.length; ++offset) {
+            auto clid = row.colidx(offset);
+            if (rclid == clid) {
+              auto val = implATS::magnitude(row.value(offset));
+              if (val > implATS::epsilon())
+                d = val;
+            }
+          }
 
-    const Scalar Dk = STS::magnitude(D[col]) > 0.0 ? STS::magnitude(D[col]) : 1.0;
-    Array<GlobalOrdinal> indicesNew;
+          for (LocalOrdinal offset = 0; offset < row.length; ++offset) {
+            auto clid = row.colidx(offset);
+            auto val  = row.value(offset);
+            if ((rclid == clid) || implATS::magnitude(val) > d * threshold) {
+              ++my_nnz;
+              if (is_final && (rlid + 1 < lclA.numRows())) {
+                rowptr(rlid + 2) = my_nnz;
+              }
+            }
+          }
+        },
+        nnz);
 
-    for (size_t i = 0; i < size_t(indices.size()); i++)
-      // keep diagonal per default
-      if (col == indices[i] || STS::magnitude(STS::squareroot(Dk) * vals[i] * STS::squareroot(Dk)) > STS::magnitude(threshold))
-        indicesNew.append(A->getColMap()->getGlobalElement(indices[i]));
+    entries_type entries(Kokkos::ViewAllocateWithoutInitializing("MueLu::GetThresholdedGraph::indices"), nnz);
+    Kokkos::parallel_for(
+        range_type(0, lclA.numRows()), KOKKOS_LAMBDA(const LocalOrdinal rlid) {
+          auto row   = lclA.rowConst(rlid);
+          auto rclid = lclColmap.getLocalElement(lclRowmap.getGlobalElement(rlid));
 
-    sparsityPattern->insertGlobalIndices(globalRow, ArrayView<const GlobalOrdinal>(indicesNew.data(), indicesNew.length()));
+          typename implATS::magnitudeType d = magATS::one();
+          for (LocalOrdinal offset = 0; offset < row.length; ++offset) {
+            auto clid = row.colidx(offset);
+            if (rclid == clid) {
+              auto val = implATS::magnitude(row.value(offset));
+              if (val > implATS::epsilon())
+                d = val;
+            }
+          }
+
+          for (LocalOrdinal offset = 0; offset < row.length; ++offset) {
+            auto clid = row.colidx(offset);
+            auto val  = row.value(offset);
+            if ((rclid == clid) || implATS::magnitude(val) > d * threshold) {
+              entries(rowptr(rlid + 1)) = clid;
+              ++rowptr(rlid + 1);
+            }
+          }
+        });
+
+    sparsityPattern = CrsGraphFactory::Build(A->getRowMap(), A->getColMap(), rowptr, entries);
+    sparsityPattern->fillComplete(A->getDomainMap(), A->getRangeMap());
   }
-  sparsityPattern->fillComplete();
 
   return sparsityPattern;
 }
@@ -830,14 +940,14 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Scalar
 UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     PowerMethod(const Matrix& A, bool scaleByDiag,
-                LocalOrdinal niters, typename Teuchos::ScalarTraits<Scalar>::magnitudeType tolerance, bool verbose, unsigned int seed) {
+                LocalOrdinal niters, typename Teuchos::ScalarTraits<Scalar>::magnitudeType tolerance, typename Teuchos::ScalarTraits<Scalar>::magnitudeType diagonalReplacementTolerance, bool verbose, unsigned int seed) {
   TEUCHOS_TEST_FOR_EXCEPTION(!(A.getRangeMap()->isSameAs(*(A.getDomainMap()))), Exceptions::Incompatible,
                              "Utils::PowerMethod: operator must have domain and range maps that are equivalent.");
 
   // power iteration
   RCP<Vector> diagInvVec;
   if (scaleByDiag) {
-    diagInvVec = GetMatrixDiagonalInverse(A);
+    diagInvVec = GetMatrixDiagonalInverse(A, diagonalReplacementTolerance);
   }
 
   Scalar lambda = PowerMethod(A, diagInvVec, niters, tolerance, verbose, seed);
@@ -1144,9 +1254,8 @@ void UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   LocalOrdinal numRows    = A.getLocalNumRows();
   LocalOrdinal numVectors = RHS.getNumVectors();
   TEUCHOS_ASSERT_EQUALITY(numVectors, Teuchos::as<LocalOrdinal>(InitialGuess.getNumVectors()));
-#ifdef MUELU_DEBUG
-  TEUCHOS_ASSERT(RHS.getMap()->isCompatible(InitialGuess.getMap()));
-#endif
+  if (Behavior::debug())
+    TEUCHOS_ASSERT(RHS.getMap()->isCompatible(*InitialGuess.getMap()));
 
   auto lclRHS          = RHS.getLocalViewDevice(Tpetra::Access::ReadOnly);
   auto lclInitialGuess = InitialGuess.getLocalViewDevice(Tpetra::Access::ReadWrite);
@@ -1616,10 +1725,6 @@ void UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   std::srand(mySeed);
   // For Tpetra, we could use Kokkos' random number generator here.
   Teuchos::ScalarTraits<Scalar>::seedrandom(mySeed);
-  // Epetra
-  //   MultiVector::Random() -> Epetra_Util::RandomDouble() -> Epetra_Utils::RandomInt()
-  // Its own random number generator, based on Seed_. Seed_ is initialized in Epetra_Util constructor with std::rand()
-  // So our setting std::srand() affects that too
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -2093,6 +2198,207 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         view1D(rcmOrder(numRows - 1 - rowIdx)) = rowIdx;
       });
   return retval;
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    TripleMatrixProduct(const Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& R,
+                        const Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& A,
+                        const Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& P,
+                        Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& Ac,
+                        const Teuchos::ParameterList& pL,
+                        const MueLu::BaseClass& verbObj,
+                        Teuchos::RCP<Teuchos::ParameterList>& APparams,
+                        Teuchos::RCP<Teuchos::ParameterList>& RAPparams,
+                        Level* coarseLevel) {
+  using Matrix        = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using MatrixMatrix  = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using MatrixFactory = Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using PerfUtils     = MueLu::PerfUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+
+  const bool doTranspose       = true;
+  const bool doFillComplete    = true;
+  const bool doOptimizeStorage = true;
+
+  const bool useImplicit = pL.get<bool>("transpose: use implicit");
+
+  const std::string matrixName      = (pL.isType<std::string>("Matrix name")) ? pL.get<std::string>("Matrix name") : "A";
+  const std::string prolongatorName = (pL.isType<std::string>("Prolongator name")) ? pL.get<std::string>("Prolongator name") : "P";
+  const std::string restrictorName  = (pL.isType<std::string>("Restrictor name")) ? pL.get<std::string>("Restrictor name") : "R";
+  std::string coarseMatrixName;
+  if (pL.isType<std::string>("coarseMatrixName"))
+    coarseMatrixName = pL.get<std::string>("coarseMatrixName");
+  else {
+    if (matrixName.size() == 1)
+      coarseMatrixName = matrixName + "c";
+    else
+      coarseMatrixName = matrixName + "_coarse";
+  }
+
+  std::string levelstr, labelstr;
+  if (coarseLevel != nullptr) {
+    std::ostringstream levelss;
+    levelss << coarseLevel->GetLevelID();
+    levelstr = levelss.str();
+    labelstr = FormattingHelper::getColonLabel(coarseLevel->getObjectLabel());
+  }
+
+  bool isGPU = Node::is_gpu;
+
+  // Reuse coarse matrix memory if available (multiple solve)
+  if (RAPparams.is_null())
+    RAPparams = rcp(new ParameterList);
+  if (pL.isSublist("matrixmatrix: kernel params"))
+    RAPparams->setParameters(pL.sublist("matrixmatrix: kernel params"));
+
+  if (RAPparams->isParameter("graph")) {
+    Ac = RAPparams->get<RCP<Matrix>>("graph");
+
+    // Some eigenvalue may have been cached with the matrix in the previous run.
+    // As the matrix values will be updated, we need to reset the eigenvalue.
+    Ac->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<Scalar>::one());
+  }
+
+  // We *always* need global constants for the RAP, but not for the temps
+  RAPparams->set("compute global constants: temporaries", RAPparams->get("compute global constants: temporaries", false));
+  RAPparams->set("compute global constants", true);
+
+  if (pL.get<bool>("rap: triple product") == false || isGPU) {
+    if (pL.get<bool>("rap: triple product") && isGPU)
+      verbObj.GetOStream(Warnings1) << "Switching from triple product to R x (A x P) since triple product has not been implemented for "
+                                    << Node::execution_space::name() << std::endl;
+
+    RCP<Matrix> AP;
+
+    // Reuse pattern if available (multiple solve)
+    if (APparams.is_null())
+      APparams = rcp(new ParameterList);
+    if (pL.isSublist("matrixmatrix: kernel params"))
+      APparams = rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
+
+    // By default, we don't need global constants for A*P
+    APparams->set("compute global constants: temporaries", APparams->get("compute global constants: temporaries", false));
+    APparams->set("compute global constants", APparams->get("compute global constants", false));
+
+    if (APparams->isParameter("graph"))
+      AP = APparams->get<RCP<Matrix>>("graph");
+
+    std::string monitorstrAP = "MxM: " + matrixName + " x " + prolongatorName;
+    std::string timerstrAP   = "MueLu::" + matrixName + "*" + prolongatorName;
+    if (!labelstr.empty())
+      timerstrAP = labelstr + timerstrAP;
+    if (!levelstr.empty())
+      timerstrAP = timerstrAP + "-" + levelstr;
+
+    {
+      SubFactoryMonitor subM(verbObj, monitorstrAP, *coarseLevel);
+
+      AP = MatrixMatrix::Multiply(*A, !doTranspose, *P, !doTranspose, AP, verbObj.GetOStream(Statistics2),
+                                  doFillComplete, doOptimizeStorage, timerstrAP, APparams);
+    }
+
+    // Allow optimization of storage.
+    // This is necessary for new faster Epetra MM kernels.
+    // Seems to work with matrix modifications to repair diagonal entries.
+
+    std::string timerstrRAP, monitorstrRAP;
+    if (useImplicit) {
+      monitorstrRAP = "MxM: " + prolongatorName + "' x (" + matrixName + prolongatorName + ") (implicit)";
+      timerstrRAP   = "MueLu::" + restrictorName + "*(" + matrixName + "*" + prolongatorName + ")-implicit";
+    } else {
+      monitorstrRAP = "MxM: " + restrictorName + " x (" + matrixName + prolongatorName + ") (explicit)";
+      timerstrRAP   = "MueLu::" + restrictorName + "*(" + matrixName + "*" + prolongatorName + ")-explicit";
+    }
+    if (!labelstr.empty())
+      timerstrRAP = labelstr + timerstrRAP;
+    if (!levelstr.empty())
+      timerstrRAP = timerstrRAP + "-" + levelstr;
+
+    if (useImplicit) {
+      SubFactoryMonitor m2(verbObj, monitorstrRAP, *coarseLevel);
+
+      Ac = MatrixMatrix::Multiply(*P, doTranspose, *AP, !doTranspose, Ac, verbObj.GetOStream(Statistics2),
+                                  doFillComplete, doOptimizeStorage, timerstrRAP, RAPparams);
+
+    } else {
+      SubFactoryMonitor m2(verbObj, monitorstrRAP, *coarseLevel);
+
+      Ac = MatrixMatrix::Multiply(*R, !doTranspose, *AP, !doTranspose, Ac, verbObj.GetOStream(Statistics2),
+                                  doFillComplete, doOptimizeStorage, timerstrRAP, RAPparams);
+    }
+
+    if (!isGPU) {
+      APparams->set("graph", AP);
+    }
+
+  } else {
+    std::string monitorstrRAP;
+    std::string timerstrRAP;
+    if (useImplicit) {
+      monitorstrRAP = "MxMxM: " + restrictorName + " x " + matrixName + " x " + prolongatorName + " (implicit)";
+      timerstrRAP   = "MueLu::" + restrictorName + "*" + matrixName + "*" + prolongatorName + "-implicit";
+    } else {
+      monitorstrRAP = "MxMxM: " + restrictorName + " x " + matrixName + " x " + prolongatorName + " (explicit)";
+      timerstrRAP   = "MueLu::" + restrictorName + "*" + matrixName + "*" + prolongatorName + "-explicit";
+    }
+    if (!labelstr.empty())
+      timerstrRAP = labelstr + timerstrRAP;
+    if (!levelstr.empty())
+      timerstrRAP = timerstrRAP + "-" + levelstr;
+
+    if (useImplicit) {
+      Ac = MatrixFactory::Build(P->getDomainMap(), Teuchos::as<LocalOrdinal>(0));
+
+      SubFactoryMonitor m2(verbObj, monitorstrRAP, *coarseLevel);
+
+      Xpetra::TripleMatrixMultiply<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+          MultiplyRAP(*P, doTranspose, *A, !doTranspose, *P, !doTranspose, *Ac, doFillComplete,
+                      doOptimizeStorage, timerstrRAP,
+                      RAPparams);
+    } else {
+      Ac = MatrixFactory::Build(R->getRowMap(), Teuchos::as<LocalOrdinal>(0));
+
+      SubFactoryMonitor m2(verbObj, monitorstrRAP, *coarseLevel);
+
+      Xpetra::TripleMatrixMultiply<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+          MultiplyRAP(*R, !doTranspose, *A, !doTranspose, *P, !doTranspose, *Ac, doFillComplete,
+                      doOptimizeStorage, timerstrRAP,
+                      RAPparams);
+    }
+  }
+
+  Teuchos::ArrayView<const double> relativeFloor = pL.get<Teuchos::Array<double>>("rap: relative diagonal floor")();
+  if (relativeFloor.size() > 0) {
+    Xpetra::MatrixUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::RelativeDiagonalBoost(Ac, relativeFloor, verbObj.GetOStream(Statistics2));
+  }
+
+  bool repairZeroDiagonals = pL.get<bool>("RepairMainDiagonal") || pL.get<bool>("rap: fix zero diagonals");
+  bool checkAc             = pL.get<bool>("CheckMainDiagonal") || pL.get<bool>("rap: fix zero diagonals");
+
+  if (checkAc || repairZeroDiagonals) {
+    using magnitudeType = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+    magnitudeType threshold;
+    if (pL.isType<magnitudeType>("rap: fix zero diagonals threshold"))
+      threshold = pL.get<magnitudeType>("rap: fix zero diagonals threshold");
+    else
+      threshold = Teuchos::as<magnitudeType>(pL.get<double>("rap: fix zero diagonals threshold"));
+    Scalar replacement = Teuchos::as<Scalar>(pL.get<double>("rap: fix zero diagonals replacement"));
+    Xpetra::MatrixUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CheckRepairMainDiagonal(Ac, repairZeroDiagonals, verbObj.GetOStream(Warnings1), threshold, replacement);
+  }
+
+  if (verbObj.IsPrint(Statistics2)) {
+    RCP<ParameterList> params = rcp(new ParameterList());
+    params->set("printLoadBalancingInfo", true);
+    params->set("printCommInfo", true);
+    verbObj.GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*Ac, coarseMatrixName, params);
+  }
+
+  if (!isGPU) {
+    RAPparams->set("graph", Ac);
+  }
+
+  if (Behavior::debug())
+    MatrixUtils::checkLocalRowMapMatchesColMap(*Ac);
 }
 
 }  // namespace MueLu

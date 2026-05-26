@@ -23,7 +23,7 @@
 namespace MueLu {
 
 /*!
-  @class RigidBodyModeFactory class.
+  @class RigidBodyModeFactory
   @brief Nullspace Factory for building rigid body modes.
   @ingroup MueLuTransferClasses
 */

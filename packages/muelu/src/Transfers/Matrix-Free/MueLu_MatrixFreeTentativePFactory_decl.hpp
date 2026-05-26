@@ -26,7 +26,7 @@
 namespace MueLu {
 
 /*!
-  @class MatrixFreeTentativePFactory class.
+  @class MatrixFreeTentativePFactory
   @brief Factory for building the matrix-free tentative restrictor.
 
   Factory for creating the matrix-free tentative restrictor.   Nullspace vectors are split across aggregates so that they

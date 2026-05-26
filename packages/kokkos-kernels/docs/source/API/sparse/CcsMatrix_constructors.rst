@@ -1,7 +1,7 @@
 KokkosSparse::CcsMatrix<>::CcsMatrix
 ####################################
 
-.. code:: cppkokkos
+.. code:: c++
 
   KOKKOS_INLINE_FUNCTION CcsMatrix();
 

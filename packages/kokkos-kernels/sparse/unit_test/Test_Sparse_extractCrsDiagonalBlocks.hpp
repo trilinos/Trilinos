@@ -70,9 +70,9 @@ void run_test_extract_diagonal_blocks(int nrows, int nblocks) {
   }
 
   // Extract
-  KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_sequential(A, DiagBlks);
+  KokkosSparse::Experimental::kk_extract_diagonal_blocks_crsmatrix_sequential(A, DiagBlks);
 
-  auto perm = KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_sequential(A, DiagBlks_rcm, true);
+  auto perm = KokkosSparse::Experimental::kk_extract_diagonal_blocks_crsmatrix_sequential(A, DiagBlks_rcm, true);
 
   // Checking
   lno_t numRows = 0;

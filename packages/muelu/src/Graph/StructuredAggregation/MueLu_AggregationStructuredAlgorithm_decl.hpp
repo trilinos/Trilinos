@@ -25,7 +25,7 @@
 
 namespace MueLu {
 /*!
-  @class AggregationStructuredAlgorithm class.
+  @class AggregationStructuredAlgorithm
   @brief Algorithm for coarsening a graph with structured aggregation.
 
   @ingroup Aggregation

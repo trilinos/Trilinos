@@ -4,8 +4,7 @@
     <Parameter name="Source" type="string" value="Inline Mesh" />
     <ParameterList name="Inline Mesh">
       <Parameter name="final time" type="double" value="5e-9"/>
-      <Parameter name="Mesh Dimension" type="int" value="3"/>
-      <Parameter name="Mesh Type" type="string" value="quad"/>
+      <Parameter name="Mesh Type" type="string" value="hex"/>
       <Parameter name="CFL" type="double" value="4.0"/>
       <ParameterList name="Mesh Factory Parameter List">
         <Parameter name="X Procs" type="int" value="-1" />

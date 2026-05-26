@@ -155,12 +155,12 @@ struct TeamVectorXpayInternal {
 /// ===========
 template <typename ViewType, typename alphaViewType>
 KOKKOS_INLINE_FUNCTION int SerialXpay::invoke(const alphaViewType& alpha, const ViewType& X, const ViewType& Y) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
   static_assert(Kokkos::is_view<ViewType>::value, "KokkosBatched::xpay: ViewType is not a Kokkos::View.");
   static_assert(Kokkos::is_view<alphaViewType>::value, "KokkosBatched::xpay: alphaViewType is not a Kokkos::View.");
   static_assert(ViewType::rank == 2, "KokkosBatched::xpay: ViewType must have rank 2.");
   static_assert(alphaViewType::rank == 1, "KokkosBatched::xpay: alphaViewType must have rank 1.");
 
+#ifndef NDEBUG
   // Check compatibility of dimensions at run time.
   if (X.extent(0) != Y.extent(0) || X.extent(1) != Y.extent(1)) {
     Kokkos::printf(
@@ -192,12 +192,12 @@ template <typename MemberType>
 template <typename ViewType, typename alphaViewType>
 KOKKOS_INLINE_FUNCTION int TeamXpay<MemberType>::invoke(const MemberType& member, const alphaViewType& alpha,
                                                         const ViewType& X, const ViewType& Y) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
   static_assert(Kokkos::is_view<ViewType>::value, "KokkosBatched::xpay: ViewType is not a Kokkos::View.");
   static_assert(Kokkos::is_view<alphaViewType>::value, "KokkosBatched::xpay: alphaViewType is not a Kokkos::View.");
   static_assert(ViewType::rank == 2, "KokkosBatched::xpay: ViewType must have rank 2.");
   static_assert(alphaViewType::rank == 1, "KokkosBatched::xpay: alphaViewType must have rank 1.");
 
+#ifndef NDEBUG
   // Check compatibility of dimensions at run time.
   if (X.extent(0) != Y.extent(0) || X.extent(1) != Y.extent(1)) {
     Kokkos::printf(
@@ -229,12 +229,12 @@ template <typename MemberType>
 template <typename ViewType, typename alphaViewType>
 KOKKOS_INLINE_FUNCTION int TeamVectorXpay<MemberType>::invoke(const MemberType& member, const alphaViewType& alpha,
                                                               const ViewType& X, const ViewType& Y) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
   static_assert(Kokkos::is_view<ViewType>::value, "KokkosBatched::xpay: ViewType is not a Kokkos::View.");
   static_assert(Kokkos::is_view<alphaViewType>::value, "KokkosBatched::xpay: alphaViewType is not a Kokkos::View.");
   static_assert(ViewType::rank == 2, "KokkosBatched::xpay: ViewType must have rank 2.");
   static_assert(alphaViewType::rank == 1, "KokkosBatched::xpay: alphaViewType must have rank 1.");
 
+#ifndef NDEBUG
   // Check compatibility of dimensions at run time.
   if (X.extent(0) != Y.extent(0) || X.extent(1) != Y.extent(1)) {
     Kokkos::printf(

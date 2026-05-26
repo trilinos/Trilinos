@@ -28,6 +28,7 @@ public:
     
     meta = bulk->mesh_meta_data_ptr();
     AuxMetaData::create(*meta);
+    meta->declare_field<double>(stk::topology::NODE_RANK, "coordinates", 1);
   }
   void commit() { meta->commit(); }
   void write_results(const std::string & filename) { write_results(filename, *bulk); }

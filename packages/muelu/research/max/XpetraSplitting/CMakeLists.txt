@@ -6,11 +6,7 @@ APPEND_GLOB(SOURCES ${DIR}/*.cpp)
 # Executables
 #
 
-IF(${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
-
-  #TRIBITS_ADD_EXECUTABLE(
-  #  Test_xpetra
-  #  SOURCES Test_xpetra.cpp
-  #  )
-
-ENDIF()
+#TRIBITS_ADD_EXECUTABLE(
+#  Test_xpetra
+#  SOURCES Test_xpetra.cpp
+#  )

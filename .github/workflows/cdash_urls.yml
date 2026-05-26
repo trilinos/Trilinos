@@ -12,10 +12,24 @@ jobs:
           pull-requests: write
         steps:
         - name: Post CDash URLs
-          uses: mshick/add-pr-comment@b8f338c590a895d50bcbfa6c5859251edc8952fc # v2.8.2
+          uses: mshick/add-pr-comment@8e4927817251f1ff60c001f04568532b38e0b4a0 # v3.11.0.8.3.11.0
           env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           with:
             message-id: cdash
             message: |
               [CDash for AT2 results](https://sems-cdash-son.sandia.gov/cdash/index.php?project=Trilinos&display=project&filtercount=2&showfilters=1&filtercombine=and&field1=buildname&compare1=65&value1=PR-${{ github.event.number }}&field2=buildstarttime&compare2=84&value2=now) [Currently only accessible from Sandia networks]
+
+              <details>
+
+              <summary>Reproducing CI builds locally</summary>
+
+              CI builds can be reproduced locally in a container.
+
+              Requirements: Python 3.9+, [Podman](https://podman.io/docs/installation), CMake
+
+              Steps:
+              - Check out the branch of the PR locally.
+              - Run `commonTools/pr_reproducer/reproducer.sh`.
+
+              </details>

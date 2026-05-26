@@ -20,7 +20,7 @@
 namespace MueLu {
 
 /*!
-  @class LocalOrdinalTransferFactory class.
+  @class LocalOrdinalTransferFactory
   @brief Class for transferring a vector of local ordinals from a finer level to a coarser one, where each aggregate has a unique one
 
 

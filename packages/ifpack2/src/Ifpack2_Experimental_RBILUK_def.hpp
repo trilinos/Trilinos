@@ -428,7 +428,11 @@ void RBILUK<MatrixType>::initialize() {
 
       if (!this->hasStreamReordered_) {
         auto lclCrsMtx = convertBsrToCrs<local_matrix_device_type, local_crs_matrix_device_type>(lclMtx);
+#if KOKKOS_VERSION >= 50100
+        KokkosSparse::Experimental::kk_extract_diagonal_blocks_crsmatrix_sequential(lclCrsMtx, A_crs_local_diagblks_v);
+#else
         KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_sequential(lclCrsMtx, A_crs_local_diagblks_v);
+#endif
       } else {
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, prefix << "Stream reordering is not currently supported for RBILUK");
       }
@@ -1082,7 +1086,11 @@ void RBILUK<MatrixType>::compute() {
         auto lclMtx    = A_local_bcrs_->getLocalMatrixDevice();
         auto lclCrsMtx = convertBsrToCrs<local_matrix_device_type, local_crs_matrix_device_type>(lclMtx);
         std::vector<local_crs_matrix_device_type> A_crs_local_diagblks_v(this->num_streams_);
+#if KOKKOS_VERSION >= 50100
+        KokkosSparse::Experimental::kk_extract_diagonal_blocks_crsmatrix_sequential(lclCrsMtx, A_crs_local_diagblks_v);
+#else
         KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_sequential(lclCrsMtx, A_crs_local_diagblks_v);
+#endif
 
         for (int i = 0; i < this->num_streams_; i++) {
           A_block_local_diagblks_v_[i] = local_matrix_device_type(A_crs_local_diagblks_v[i], blockSize_);

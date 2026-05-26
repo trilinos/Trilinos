@@ -31,7 +31,7 @@ unsigned num_new_child_elements_hex8(const int caseId)
     default:
     {
       std::ostringstream errorMsg;
-      errorMsg << "Case " << caseId << " non-uniform refinement not yet support for quads in num_new_child_elements_hex8.";
+      errorMsg << "Case " << caseId << " non-uniform refinement not yet supported for quads in num_new_child_elements_hex8.";
       throw std::runtime_error(errorMsg.str());
     }
   }

@@ -13,12 +13,14 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_TwoLevelFactoryBase.hpp"
 #include "MueLu_Constraint_fwd.hpp"
+#include "MueLu_SparseConstraint_fwd.hpp"
+#include "MueLu_DenseConstraint_fwd.hpp"
 #include "MueLu_Level_fwd.hpp"
 
 namespace MueLu {
 
 /*!
-  @class ConstraintFactory class.
+  @class ConstraintFactory
   @brief Factory for building the constraint operator
 
   Factory for creating the constraint operator.

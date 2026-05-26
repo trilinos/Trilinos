@@ -84,6 +84,12 @@ class Operator : virtual public Teuchos::Describable {
       vary according to the values of \c alpha and \c beta. Specifically
       - if <tt>beta == 0</tt>, apply() <b>must</b> overwrite \c Y, so that any values in \c Y (including NaNs) are ignored.
       - if <tt>alpha == 0</tt>, apply() <b>may</b> short-circuit the operator, so that any values in \c X (including NaNs) are ignored.
+
+      \param X [in] Input MultiVector.
+      \param Y [in/out] Output MultiVector.
+      \param mode [in] Whether to apply the transpose (Teuchos::NO_TRANS, Teuchos::TRANS, Teuchos::CONJ_TRANS).
+      \param alpha [in] Scaling factor for the result.
+      \param beta [in] Scaling factor for Y before adding the result.
    */
   virtual void
   apply(const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &X,

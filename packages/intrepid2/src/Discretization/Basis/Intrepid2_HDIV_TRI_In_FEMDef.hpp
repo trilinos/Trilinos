@@ -55,8 +55,7 @@ getValues(      OutputViewType  output,
   typedef typename Kokkos::DynRankView<typename InputViewType::value_type, typename WorkViewType::memory_space> ViewType;
   auto ptr = work.data();
 
-  switch (OpType) {
-  case OPERATOR_VALUE: {
+  if constexpr (OpType == OPERATOR_VALUE) {
     const ViewType phis = createMatchingUnmanagedView<ViewType>(input, ptr, card, npts);
     ViewType dummyView;
 
@@ -66,15 +65,14 @@ getValues(      OutputViewType  output,
     for (ordinal_type i=0;i<card;++i)
       for (ordinal_type j=0;j<npts;++j)
         for (ordinal_type d=0;d<spaceDim;++d) {
-          output.access(i,j,d) = 0.0;
+          output(i,j,d) = 0.0;
           for (ordinal_type k=0;k<cardPn;++k)
-            output.access(i,j,d) += coeffs(k+d*cardPn,i) * phis.access(k,j);
+            output(i,j,d) += coeffs(k+d*cardPn,i) * phis(k,j);
         }
-    break;
   }
-  case OPERATOR_DIV: {
+  else if constexpr (OpType == OPERATOR_DIV) {
     const ViewType phis = createMatchingUnmanagedView<ViewType>(input, ptr, card, npts, spaceDim);
-    ptr += card*npts*spaceDim*get_dimension_scalar(work);
+    ptr += card*npts*spaceDim*get_dimension_scalar(input);
     const ViewType workView = createMatchingUnmanagedView<ViewType>(input, ptr, card, npts, spaceDim+1);
 
     Impl::Basis_HGRAD_TRI_Cn_FEM_ORTH::
@@ -82,17 +80,15 @@ getValues(      OutputViewType  output,
 
     for (ordinal_type i=0;i<card;++i)
       for (ordinal_type j=0;j<npts;++j) {
-        output.access(i,j) = 0.0;
+        output(i,j) = 0.0;
         for (ordinal_type k=0; k<cardPn; ++k)
           for (ordinal_type d=0; d<spaceDim; ++d)
-            output.access(i,j) += coeffs(k+d*cardPn,i)*phis.access(k,j,d);
+            output(i,j) += coeffs(k+d*cardPn,i)*phis(k,j,d);
       }
-    break;
   }
-  default: {
+  else {
     INTREPID2_TEST_FOR_ABORT( true,
         ">>> ERROR (Basis_HDIV_TRI_In_FEM): Operator type not implemented");
-  }
   }
 }
 
@@ -444,14 +440,14 @@ Basis_HDIV_TRI_In_FEM( const ordinal_type order,
 
   template<typename DT, typename OT, typename PT>
   void 
-  Basis_HDIV_TRI_In_FEM<DT,OT,PT>::getScratchSpaceSize(       
-                                    ordinal_type& perTeamSpaceSize,
+  Basis_HDIV_TRI_In_FEM<DT,OT,PT>::getScratchSpaceSize(        
                                     ordinal_type& perThreadSpaceSize,
                               const PointViewType inputPoints,
                               const EOperator operatorType) const {
-    perTeamSpaceSize = 0;
+    using ScalarType = typename ScalarTraits<typename PointViewType::value_type>::scalar_type;
+    using ScratchViewType = Kokkos::DynRankView<ScalarType, typename DT::execution_space::scratch_memory_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
     ordinal_type scalarWorkViewExtent = (operatorType == OPERATOR_VALUE) ? this->basisCardinality_ : 5*this->basisCardinality_;
-    perThreadSpaceSize = scalarWorkViewExtent*get_dimension_scalar(inputPoints)*sizeof(scalarType);
+    perThreadSpaceSize = ScratchViewType::shmem_size(scalarWorkViewExtent*get_dimension_scalar(inputPoints));
   }
 
   template<typename DT, typename OT, typename PT>
@@ -462,7 +458,7 @@ Basis_HDIV_TRI_In_FEM( const ordinal_type order,
       const PointViewType  inputPoints,
       const EOperator operatorType,
       const typename Kokkos::TeamPolicy<typename DT::execution_space>::member_type& team_member,
-      const typename DT::execution_space::scratch_memory_space & scratchStorage, 
+      const int threadScratchLevel, 
       const ordinal_type subcellDim,
       const ordinal_type subcellOrdinal) const {
 
@@ -473,15 +469,15 @@ Basis_HDIV_TRI_In_FEM( const ordinal_type order,
       using WorkViewType = Kokkos::DynRankView< scalarType, typename DT::execution_space::scratch_memory_space,Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
       ordinal_type scalarSizePerPoint = (operatorType == OPERATOR_VALUE) ? this->basisCardinality_ : 5*this->basisCardinality_;
       ordinal_type sizePerPoint = scalarSizePerPoint*get_dimension_scalar(inputPoints);
-      WorkViewType workView(scratchStorage, sizePerPoint*team_member.team_size());
+      
+      WorkViewType  work(team_member.thread_scratch(threadScratchLevel), sizePerPoint);
       using range_type = Kokkos::pair<ordinal_type,ordinal_type>;
-
+      
       switch(operatorType) {
         case OPERATOR_VALUE:
           Kokkos::parallel_for (Kokkos::TeamThreadRange (team_member, numPoints), [=, &coeffs_ = this->coeffs_] (ordinal_type& pt) {
             auto       output = Kokkos::subview( outputValues, Kokkos::ALL(), range_type  (pt,pt+1), Kokkos::ALL() );
             const auto input  = Kokkos::subview( inputPoints,                 range_type(pt, pt+1), Kokkos::ALL() );
-            WorkViewType  work(workView.data() + sizePerPoint*team_member.team_rank(), sizePerPoint);
             Impl::Basis_HDIV_TRI_In_FEM::Serial<OPERATOR_VALUE>::getValues( output, input, work, coeffs_ );
           });
           break;
@@ -489,7 +485,6 @@ Basis_HDIV_TRI_In_FEM( const ordinal_type order,
           Kokkos::parallel_for (Kokkos::TeamThreadRange (team_member, numPoints), [=, &coeffs_ = this->coeffs_] (ordinal_type& pt) {
             auto       output = Kokkos::subview( outputValues, Kokkos::ALL(), range_type(pt,pt+1), Kokkos::ALL() );
             const auto input  = Kokkos::subview( inputPoints,                 range_type(pt,pt+1), Kokkos::ALL() );
-            WorkViewType  work(workView.data() + sizePerPoint*team_member.team_rank(), sizePerPoint);
             Impl::Basis_HDIV_TRI_In_FEM::Serial<OPERATOR_DIV>::getValues( output, input, work, coeffs_ );
           });
           break;

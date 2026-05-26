@@ -161,6 +161,7 @@ private:
 
   ordinal_type_array_host _h_factorize_mode, _h_solve_mode;
   ordinal_type_array _factorize_mode, _solve_mode;
+  ordinal_type_array_host _h_num_device_calls_factor, _h_num_device_calls_solve;
 
   // level details on host
   ordinal_type _nlevel;
@@ -205,6 +206,7 @@ private:
 
   // cuda stream
   int _nstreams;
+  bool _team_on_user_stream;
 
   // workspace for SpMV
   bool _is_spmv_extracted;
@@ -252,14 +254,15 @@ private:
 
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
   stream_array_host _streams;
+#endif
   using exec_instance_array_host = std::vector<exec_space>;
   exec_instance_array_host _exec_instances;
-#endif
 
   ///
   /// statistics
   ///
   struct {
+    int n_level;
     int n_device_factorize, n_team_factorize, n_kernel_launching_factorize;
     int n_device_solve, n_team_solve, n_kernel_launching_solve;
     int n_kernel_launching;
@@ -322,6 +325,7 @@ private:
     printf("             peak memory used:                                %10.3f MB\n", stat.m_peak / kilo / kilo);
     printf("\n");
     printf("  Compute Mode in Factorize with a Threshold(%d)\n", _device_factorize_thres);
+    printf("             # of levels:                                     %6d\n", _nlevel);
     printf("             # of subproblems using device functions:         %6d\n", stat_level.n_device_factorize);
     printf("             # of subproblems using team functions:           %6d\n", stat_level.n_team_factorize);
     printf("             total # of subproblems:                          %6d\n",
@@ -416,8 +420,9 @@ public:
   /// initialization / release
   ///
   inline void initialize(const ordinal_type device_level_cut, const ordinal_type device_factorize_thres,
-                         const ordinal_type device_solve_thres, const int nstreams_in = 1,
+                         const ordinal_type device_solve_thres, const int nstreams_in = 1, const bool team_on_user_stream = false,
                          const bool store_transpose = false, const ordinal_type verbose = 0) {
+    stat_level.n_level = 0;
     stat_level.n_device_factorize = 0;
     stat_level.n_device_solve = 0;
     stat_level.n_team_factorize = 0;
@@ -446,6 +451,7 @@ public:
         _nlevel = max(_stree_level(sid), _nlevel);
       ++_nlevel;
     }
+    stat_level.n_level = _nlevel;
 
     // create level ptr
     _h_level_ptr = size_type_array_host("h_level_ptr", _nlevel + 1);
@@ -636,8 +642,14 @@ public:
     _h_solve_mode = ordinal_type_array_host(do_not_initialize_tag("h_solve_mode"), _nsupernodes);
     Kokkos::deep_copy(_h_solve_mode, -1);
 
+    _h_num_device_calls_factor = ordinal_type_array_host(do_not_initialize_tag("h_num_device_calls_factor"), _nlevel);
+    _h_num_device_calls_solve = ordinal_type_array_host(do_not_initialize_tag("h_num_device_calls_solve"), _nlevel);
+
     if (_device_level_cut > 0) {
       for (ordinal_type lvl = 0; lvl < _device_level_cut; ++lvl) {
+        _h_num_device_calls_solve(lvl) = 0;
+        _h_num_device_calls_factor(lvl) = 0;
+
         const ordinal_type pbeg = _h_level_ptr(lvl), pend = _h_level_ptr(lvl + 1);
         for (ordinal_type p = pbeg; p < pend; ++p) {
           const ordinal_type sid = _h_level_sids(p);
@@ -645,6 +657,15 @@ public:
           _h_factorize_mode(sid) = 0;
           ++stat_level.n_device_solve;
           ++stat_level.n_device_factorize;
+
+          const auto s = _h_supernodes(sid);
+          const ordinal_type m = s.m;
+          if (m > _device_solve_thres) {
+            _h_num_device_calls_solve(lvl) ++;
+          }
+          if (m > _device_factorize_thres) {
+            _h_num_device_calls_factor(lvl) ++;
+          }
         }
       }
     }
@@ -652,6 +673,9 @@ public:
     _team_serial_level_cut = _nlevel;
     {
       for (ordinal_type lvl = _device_level_cut; lvl < _team_serial_level_cut; ++lvl) {
+        _h_num_device_calls_solve(lvl) = 0;
+        _h_num_device_calls_factor(lvl) = 0;
+
         const ordinal_type pbeg = _h_level_ptr(lvl), pend = _h_level_ptr(lvl + 1);
         for (ordinal_type p = pbeg; p < pend; ++p) {
           const ordinal_type sid = _h_level_sids(p);
@@ -659,6 +683,7 @@ public:
           const ordinal_type m = s.m;    //, n_m = s.n-s.m;
           if (m > _device_solve_thres) { // || n > _device_solve_thres)
             _h_solve_mode(sid) = 0;
+            _h_num_device_calls_solve(lvl) ++;
             ++stat_level.n_device_solve;
           } else {
             _h_solve_mode(sid) = 1;
@@ -666,6 +691,7 @@ public:
           }
           if (m > _device_factorize_thres) { // || n_m > _device_factorize_thres)
             _h_factorize_mode(sid) = 0;
+            _h_num_device_calls_factor(lvl) ++;
             ++stat_level.n_device_factorize;
           } else {
             _h_factorize_mode(sid) = 1;
@@ -681,6 +707,7 @@ public:
     _solve_mode = Kokkos::create_mirror_view_and_copy(exec_memory_space(), _h_solve_mode);
     track_alloc(_solve_mode.span() * sizeof(ordinal_type));
 
+    _team_on_user_stream = team_on_user_stream;
     createStream(nstreams, verbose);
     if (variant == 3 && _keep_zeros) {
       // compress each partitioned inverse at each level into CRS matrix
@@ -712,6 +739,10 @@ public:
       }
       }
       print_stat_init();
+      printf("  Execution Mode\n");
+      printf("             # of streams:                                      %d\n",nstreams);
+      printf("               Team kernels on %s\n",(_team_on_user_stream ? "User Stream-0" : "Default Stream"));
+      printf("\n");
       fflush(stdout);
     }
   }
@@ -746,6 +777,7 @@ public:
     _bufsize_factorize = 0;
     _bufsize_solve = 0;
     _nstreams = 0;
+    _team_on_user_stream = false;
     _keep_zeros = false;
     stat_level = stat_level();
   }
@@ -767,6 +799,7 @@ public:
                   blk_colidx, stree_parent, stree_ptr, stree_children, stree_level, stree_roots) {
     _keep_zeros = false;
     _nstreams = 0;
+    _team_on_user_stream = false;
     _is_spmv_extracted = 0;
 #if defined(KOKKOS_ENABLE_CUDA)
     _is_cublas_created = 0;
@@ -778,12 +811,12 @@ public:
   }
 
   virtual ~NumericToolsLevelSet() {
-#if defined(KOKKOS_ENABLE_CUDA)
     /// kokkos execution space may fence and it uses the wrapped stream when it is deallocated   
     /// on cuda, deallocting streams first does not cause any errors while hip generates errors.
     /// here, we just follow the consistent destruction process as hip does.
     _exec_instances.clear();
 
+#if defined(KOKKOS_ENABLE_CUDA)
     if (_is_cusolver_dn_created) {
       _status = cusolverDnDestroy(_handle_lapack);
       checkDeviceLapackStatus("cusolverDnDestroy");
@@ -800,9 +833,6 @@ public:
     _streams.clear();
 #endif
 #if defined(KOKKOS_ENABLE_HIP)
-    /// kokkos execution space may fence and it uses the wrapped stream when it is deallocated   
-    _exec_instances.clear();
-
     if (_is_rocblas_created) {
       _status = rocblas_destroy_handle(_handle_lapack);
       checkDeviceLapackStatus("rocblasDestroy");
@@ -824,16 +854,19 @@ public:
   inline void createStream(const ordinal_type nstreams, const ordinal_type verbose = 0) {
     // # of streams needs to be at least 1
     if (nstreams <= 0) return;
-#if defined(KOKKOS_ENABLE_CUDA)
     _nstreams = nstreams;
-    if (_streams.size() == size_t(nstreams)) return;
+
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+    if (_streams.size() == size_t(nstreams)) return; // nothing to do
+
+#if defined(KOKKOS_ENABLE_CUDA)
     // destroy previously created streams
     for (size_t i = 0; i < _streams.size(); ++i) {
       _status = cudaStreamDestroy(_streams[i]);
       checkDeviceStatus("cudaStreamDestroy");
     }
-    // new streams
     _streams.clear();
+    // new streams
     _streams.resize(_nstreams);
     for (ordinal_type i = 0; i < _nstreams; ++i) {
       _status = cudaStreamCreateWithFlags(&_streams[i], cudaStreamNonBlocking);
@@ -841,13 +874,10 @@ public:
     }
 #endif
 #if defined(KOKKOS_ENABLE_HIP)
-    _nstreams = nstreams;
-    if (_streams.size() == size_t(nstreams)) return;
     // destroy previously created streams
     for (size_t i = 0; i < _streams.size(); ++i) {
       _status = rocblas_destroy_handle(_handles[i]);
       checkDeviceLapackStatus("rocblasDestroy");
-
       _status = hipStreamDestroy(_streams[i]);
       checkDeviceStatus("hipStreamDestroy");
     }
@@ -865,19 +895,23 @@ public:
       checkDeviceBlasStatus("rocblasSetStream(handles[qid])");
     }
 #endif
-#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+    // reinitialize execution instances with the streams
     _exec_instances.clear();
     _exec_instances.resize(_nstreams);
     for (ordinal_type i = 0; i < _nstreams; ++i) {
       ExecSpaceFactory<exec_space>::createInstance(_streams[i], _exec_instances[i]);
     }
-
+#else
+    // just one default execution space..
+    _exec_instances.clear();
+    _exec_instances.resize(1);
+    _exec_instances[0] = exec_space();
+#endif
     if (verbose) {
       printf("Summary: CreateStream : %3d\n", _nstreams);
       printf("===========================\n");
       fflush(stdout);
     }
-#endif
   }
 
   inline void setStreamOnHandle(const ordinal_type qid) {
@@ -964,9 +998,9 @@ public:
                   handle_blas, minus_one, ATR, T, zero, ABR);
               checkDeviceBlasStatus("gemm");
             }
+            num_device_calls ++;
           }
         }
-        num_device_calls ++;
       }
     }
     return num_device_calls;
@@ -1055,9 +1089,9 @@ public:
               _status = Copy<Algo::OnDevice>::invoke(exec_instance, ATL, T);
               checkDeviceBlasStatus("Copy");
             }
+            num_device_calls ++;
           }
         }
-        num_device_calls ++;
       }
     }
     return num_device_calls;
@@ -1165,9 +1199,9 @@ public:
               });
               checkDeviceBlasStatus("trsm");
             }
+            num_device_calls ++;
           }
         }
-        num_device_calls ++;
       }
     }
     return num_device_calls;
@@ -1268,9 +1302,9 @@ public:
               _status = Herk<Uplo::Upper, Trans::ConjTranspose, Algo::OnDevice>::invoke(handle_blas, minus_one, ATR,
                                                                                         zero, ABR);
             }
+            num_device_calls ++;
           }
         }
-        num_device_calls ++;
       }
     }
     return num_device_calls;
@@ -1375,9 +1409,9 @@ public:
               _status = Copy<Algo::OnDevice>::invoke(exec_instance, ATL, T);
               checkDeviceBlasStatus("Copy");
             }
+            num_device_calls ++;
           }
         }
-        num_device_calls ++;
       }
     }
     return num_device_calls;
@@ -1490,9 +1524,9 @@ public:
                   handle_blas, Diag::NonUnit(), one, T, ATL);
               checkDeviceBlasStatus("trsm");
             }
+            num_device_calls ++;
           }
         }
-        num_device_calls ++;
       }
     }
     return num_device_calls;
@@ -1797,12 +1831,13 @@ public:
   /// 
   /// LU
   ///
-  inline void factorizeLU_OnDeviceVar0(const ordinal_type pbeg, const ordinal_type pend,
-                                       const size_type_array_host &h_buf_factor_ptr, const value_type_array &work) {
+  inline int factorizeLU_OnDeviceVar0(const ordinal_type pbeg, const ordinal_type pend,
+                                      const size_type_array_host &h_buf_factor_ptr, const value_type_array &work) {
     const value_type one(1), minus_one(-1), zero(0);
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
+    int num_device_calls = 0;
     exec_space exec_instance;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
@@ -1855,18 +1890,21 @@ public:
                                                                                              ABL, ATR, zero, ABR);
               checkDeviceBlasStatus("gemm");
             }
+            num_device_calls ++;
           }
         }
       }
     }
+    return num_device_calls;
   }
 
-  inline void factorizeLU_OnDeviceVar1(const ordinal_type pbeg, const ordinal_type pend,
-                                       const size_type_array_host &h_buf_factor_ptr, const value_type_array &work) {
+  inline int factorizeLU_OnDeviceVar1(const ordinal_type pbeg, const ordinal_type pend,
+                                      const size_type_array_host &h_buf_factor_ptr, const value_type_array &work) {
     const value_type one(1), minus_one(-1), zero(0);
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
+    int num_device_calls = 0;
     exec_space exec_instance;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
@@ -1949,18 +1987,21 @@ public:
                   handle_blas, Diag::Unit(), one, T, ATL2);
               checkDeviceBlasStatus("trsm");
             }
+            num_device_calls ++;
           }
         }
       }
     }
+    return num_device_calls;
   }
 
-  inline void factorizeLU_OnDeviceVar2(const ordinal_type pbeg, const ordinal_type pend,
-                                       const size_type_array_host &h_buf_factor_ptr, const value_type_array &work) {
+  inline int factorizeLU_OnDeviceVar2(const ordinal_type pbeg, const ordinal_type pend,
+                                      const size_type_array_host &h_buf_factor_ptr, const value_type_array &work) {
     const value_type one(1), minus_one(-1), zero(0);
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
+    int num_device_calls = 0;
     exec_space exec_instance;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
@@ -2044,25 +2085,28 @@ public:
                   handle_blas, Diag::Unit(), one, T, ATL2);
               checkDeviceBlasStatus("trsm");
             }
+            num_device_calls ++;
           }
         }
       }
     }
+    return num_device_calls;
   }
 
-  inline void factorizeLU_OnDevice(const ordinal_type pbeg, const ordinal_type pend,
-                                   const size_type_array_host &h_buf_factor_ptr, const value_type_array &work) {
+  inline int factorizeLU_OnDevice(const ordinal_type pbeg, const ordinal_type pend,
+                                  const size_type_array_host &h_buf_factor_ptr, const value_type_array &work) {
     if (variant == 0)
-      factorizeLU_OnDeviceVar0(pbeg, pend, h_buf_factor_ptr, work);
+      return factorizeLU_OnDeviceVar0(pbeg, pend, h_buf_factor_ptr, work);
     else if (variant == 1)
-      factorizeLU_OnDeviceVar1(pbeg, pend, h_buf_factor_ptr, work);
+      return factorizeLU_OnDeviceVar1(pbeg, pend, h_buf_factor_ptr, work);
     else if (variant == 2 || variant == 3)
-      factorizeLU_OnDeviceVar2(pbeg, pend, h_buf_factor_ptr, work);
+      return factorizeLU_OnDeviceVar2(pbeg, pend, h_buf_factor_ptr, work);
     else {
       std::string msg = "Error: LevelSetTools::factorizeLU_OnDevice, algorithm variant ("
                         + std::to_string(variant) + ") is not supported.\n";
       TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, msg.c_str());
     }
+    return 0;
   }
 
   ///
@@ -2105,6 +2149,8 @@ public:
     }
     // create cusparse handle
     cusparseCreate(&cusparseHandle);
+    // attach handle to stream-0
+    cusparseSetStream(cusparseHandle, _streams[0]);
     // attach to Cusparse data struct
     cusparseCreateDnMat(&matW, m, nrhs, ldw, (void*)(_w_vec.data()), computeType, CUSPARSE_ORDER_COL);
     cusparseCreateDnVec(&vecW, m, (void*)(_w_vec.data()), computeType);
@@ -2120,21 +2166,24 @@ public:
     }
     // create rocsparse handle
     _status = rocsparse_create_handle(&rocsparseHandle);
-    checkDeviceBlasStatus("rocblas_create_handle");
+    checkDeviceBlasStatus("rocsparse_create_handle");
+    // attach handle to stream-0
+    rocsparse_set_stream(rocsparseHandle, _streams[0]);
+    checkDeviceBlasStatus("rocsparse_create_handle");
     // attach to Rocsparse data struct
     _status = rocsparse_create_dnmat_descr(&matW, m, nrhs, ldw, (void*)(_w_vec.data()), rocsparse_compute_type, rocsparse_order_column);
-    checkDeviceBlasStatus("rocblas_dnmat_descr");
+    checkDeviceBlasStatus("rocsparse_dnmat_descr");
     _status = rocsparse_create_dnvec_descr(&vecW, m, (void*)(_w_vec.data()), rocsparse_compute_type);
-    checkDeviceBlasStatus("rocblas_dnmat_descr");
+    checkDeviceBlasStatus("rocsparse_dnmat_descr");
     // also to T, to be destroyed before each SpMV call
     _status = rocsparse_create_dnmat_descr(&matL, m, nrhs, ldw, (void*)(_w_vec.data()), rocsparse_compute_type, rocsparse_order_column);
-    checkDeviceBlasStatus("rocblas_dnmat_descr");
+    checkDeviceBlasStatus("rocsparse_dnmat_descr");
     _status = rocsparse_create_dnvec_descr(&vecL, m, (void*)(_w_vec.data()), rocsparse_compute_type);
-    checkDeviceBlasStatus("rocblas_dnmat_descr");
+    checkDeviceBlasStatus("rocsparse_dnvec_descr");
     _status = rocsparse_create_dnmat_descr(&matU, m, nrhs, ldw, (void*)(_w_vec.data()), rocsparse_compute_type, rocsparse_order_column);
-    checkDeviceBlasStatus("rocblas_dnmat_descr");
+    checkDeviceBlasStatus("rocsparse_dnmat_descr");
     _status = rocsparse_create_dnvec_descr(&vecU, m, (void*)(_w_vec.data()), rocsparse_compute_type);
-    checkDeviceBlasStatus("rocblas_dnmat_descr");
+    checkDeviceBlasStatus("rocsparse_dnvec_descr");
 #endif
 #endif
 
@@ -2691,7 +2740,7 @@ public:
         track_alloc(_buf.span() * sizeof(value_type));
       }
       if (nrhs > _nrhs) {
-        // update pointer to solver-workspace with differet nrhs
+        // update **pointer** to solver-workspace with differet nrhs
         const Kokkos::RangePolicy<exec_space> policy(0, _buf_solve_ptr.extent(0));
         const auto buf_solve_nrhs_ptr = _buf_solve_nrhs_ptr;
         const auto buf_solve_ptr = _buf_solve_ptr;
@@ -3127,9 +3176,11 @@ public:
             // Apply D^{-1} on off-diagonal
             _status = Scale_BlockInverseDiagonals<Side::Left, Algo::OnDevice>::invoke(exec_instance, ATL, tT);
             checkDeviceBlasStatus("scale");
+
+            // increment num device calls
+            num_device_calls ++;
           }
         }
-        num_device_calls ++;
       }
     }
     return num_device_calls;
@@ -3192,9 +3243,11 @@ public:
             // Apply D^{-1} on off-diagonal
             _status = Scale_BlockInverseDiagonals<Side::Left, Algo::OnDevice>::invoke(exec_instance, ATL, bT);
             checkDeviceBlasStatus("scale");
+
+            // increment num device calls
+            num_device_calls ++;
           }
         }
-        num_device_calls ++;
       }
     }
     return num_device_calls;
@@ -3248,9 +3301,11 @@ public:
             UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
             _status = Scale_BlockInverseDiagonals<Side::Left, Algo::OnDevice>::invoke(exec_instance, ATL, dx);
             checkDeviceBlasStatus("scale");
+
+            // increment num device calls
+            num_device_calls ++;
           }
         }
-        num_device_calls ++;
       }
     }
     return num_device_calls;
@@ -3276,7 +3331,7 @@ public:
         const UnmanagedViewType<nzvals_view> matD(s0.nzvalsD, _m);
 
         using policy_type = Kokkos::RangePolicy<exec_space>;
-        const auto policy = policy_type(0, _m);
+        const auto policy = policy_type(_exec_instances[0], 0, _m);
         Kokkos::parallel_for(
             policy, KOKKOS_LAMBDA(const ordinal_type &i) {
               for (ordinal_type j = 0; j < nrhs; j++) matY(i,j) = matY(i, j) / matD(i); 
@@ -3334,9 +3389,11 @@ public:
             _status =
                 Trsv<Uplo::Upper, Trans::NoTranspose, Algo::OnDevice>::invoke(handle_blas, Diag::Unit(), ATL, tT);
             checkDeviceBlasStatus("trsv");
+
+            // increment num device calls
+            num_device_calls ++;
           }
         }
-        num_device_calls ++;
       }
     }
     return num_device_calls;
@@ -3396,9 +3453,11 @@ public:
 
             _status = Copy<Algo::OnDevice>::invoke(exec_instance, tT, bT);
             checkDeviceBlasStatus("Copy");
+
+            // increment num device calls
+            num_device_calls ++;
           }
         }
-        num_device_calls ++;
       }
     }
     return num_device_calls;
@@ -3444,9 +3503,11 @@ public:
 
             _status = Trmv<Uplo::Upper, Trans::NoTranspose, Algo::OnDevice>::invoke(handle_blas, Diag::Unit(), AT, b, tT);
             checkDeviceBlasStatus("trmv");
+
+            // increment num device calls
+            num_device_calls ++;
           }
         }
-        num_device_calls ++;
       }
     }
     return num_device_calls;
@@ -3517,9 +3578,10 @@ public:
               _status = Gemv<Trans::ConjTranspose, Algo::OnDevice>::invoke(handle_blas, minus_one, ATR, tT, zero, bB);
               checkDeviceBlasStatus("gemv");
             }
+            // increment num device calls
+            num_device_calls ++;
           }
         }
-        num_device_calls ++;
       }
     }
     return num_device_calls;
@@ -3572,9 +3634,10 @@ public:
               _status = Gemv<Trans::ConjTranspose, Algo::OnDevice>::invoke(handle_blas, minus_one, ATR, bT, zero, bB);
               checkDeviceBlasStatus("gemv");
             }
+            // increment num device calls
+            num_device_calls ++;
           }
         }
-        num_device_calls ++;
       }
     }
     return num_device_calls;
@@ -3617,9 +3680,11 @@ public:
 
             _status = Gemv<Trans::ConjTranspose, Algo::OnDevice>::invoke(handle_blas, one, AT, tT, zero, b);
             checkDeviceBlasStatus("gemv");
+
+            // increment num device calls
+            num_device_calls ++;
           }
         }
-        num_device_calls ++;
       }
     }
     return num_device_calls;
@@ -3672,7 +3737,7 @@ public:
           const ordinal_type m = s.m, n = s.n, n_m = n - m;
           if (m > 0) {
             value_type *aptr = s.u_buf, *bptr = _buf.data() + h_buf_solve_ptr(p - pbeg);
-            ;
+
             const UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
             aptr += m * m;
             const UnmanagedViewType<value_type_matrix> bB(bptr, n_m, nrhs);
@@ -3688,9 +3753,11 @@ public:
             _status =
                 Trsv<Uplo::Upper, Trans::NoTranspose, Algo::OnDevice>::invoke(handle_blas, Diag::NonUnit(), ATL, tT);
             checkDeviceBlasStatus("trsv");
+
+            // increment num device calls
+            num_device_calls ++;
           }
         }
-        num_device_calls ++;
       }
     }
     return num_device_calls;
@@ -3746,9 +3813,11 @@ public:
 
             _status = Copy<Algo::OnDevice>::invoke(exec_instance, tT, bT);
             checkDeviceBlasStatus("Copy");
+
+            // increment num device calls
+            num_device_calls ++;
           }
         }
-        num_device_calls ++;
       }
     }
     return num_device_calls;
@@ -3790,9 +3859,11 @@ public:
 
             _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(handle_blas, one, AT, b, zero, tT);
             checkDeviceBlasStatus("gemv");
+
+            // increment num device calls
+            num_device_calls ++;
           }
         }
-        num_device_calls ++;
       }
     }
     return num_device_calls;
@@ -4235,13 +4306,14 @@ public:
   /// 
   /// LU Lower
   ///
-  inline void solveLU_LowerOnDeviceVar0(const ordinal_type pbeg, const ordinal_type pend,
-                                        const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
+  inline int solveLU_LowerOnDeviceVar0(const ordinal_type pbeg, const ordinal_type pend,
+                                       const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     const ordinal_type nrhs = t.extent(1);
     const value_type minus_one(-1), zero(0);
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
+    int num_device_calls = 0;
     exec_space exec_instance;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
@@ -4249,8 +4321,8 @@ public:
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
         blas_handle_type handle_blas = getBlasHandle(qid);
-        setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
+        setStreamOnHandle(qid);
         ++q;
 #else
         blas_handle_type handle_blas = getBlasHandle();
@@ -4281,19 +4353,22 @@ public:
               _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(handle_blas, minus_one, ABL, tT, zero, bB);
               checkDeviceBlasStatus("gemv");
             }
+            num_device_calls ++;
           }
         }
       }
     }
+    return num_device_calls;
   }
 
-  inline void solveLU_LowerOnDeviceVar1(const ordinal_type pbeg, const ordinal_type pend,
-                                        const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
+  inline int solveLU_LowerOnDeviceVar1(const ordinal_type pbeg, const ordinal_type pend,
+                                       const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     const ordinal_type nrhs = t.extent(1);
     const value_type one(1), minus_one(-1), zero(0);
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
+    int num_device_calls = 0;
     exec_space exec_instance;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
@@ -4339,19 +4414,22 @@ public:
               _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(handle_blas, minus_one, ABL, tT, zero, bB);
               checkDeviceBlasStatus("gemv");
             }
+            num_device_calls ++;
           }
         }
       }
     }
+    return num_device_calls;
   }
 
-  inline void solveLU_LowerOnDeviceVar2(const ordinal_type pbeg, const ordinal_type pend,
-                                        const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
+  inline int solveLU_LowerOnDeviceVar2(const ordinal_type pbeg, const ordinal_type pend,
+                                       const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     const ordinal_type nrhs = t.extent(1);
     const value_type one(1), zero(0);
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
+    int num_device_calls = 0;
     exec_space exec_instance;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
@@ -4387,21 +4465,23 @@ public:
             }
             _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(handle_blas, one, AL, tT, zero, b);
             checkDeviceBlasStatus("gemv");
+            num_device_calls ++;
           }
         }
       }
     }
+    return num_device_calls;
   }
 
-  inline void solveLU_LowerOnDevice(const ordinal_type lvl, const ordinal_type nlvls,
-                                    const ordinal_type pbeg, const ordinal_type pend,
-                                    const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
+  inline int solveLU_LowerOnDevice(const ordinal_type lvl, const ordinal_type nlvls,
+                                   const ordinal_type pbeg, const ordinal_type pend,
+                                   const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     if (variant == 0)
-      solveLU_LowerOnDeviceVar0(pbeg, pend, h_buf_solve_ptr, t);
+      return solveLU_LowerOnDeviceVar0(pbeg, pend, h_buf_solve_ptr, t);
     else if (variant == 1)
-      solveLU_LowerOnDeviceVar1(pbeg, pend, h_buf_solve_ptr, t);
+      return solveLU_LowerOnDeviceVar1(pbeg, pend, h_buf_solve_ptr, t);
     else if (variant == 2)
-      solveLU_LowerOnDeviceVar2(pbeg, pend, h_buf_solve_ptr, t);
+      return solveLU_LowerOnDeviceVar2(pbeg, pend, h_buf_solve_ptr, t);
     else if (variant == 3) {
       // L (stored by cols) incorporate partial-pivoting
       solveGenericLowerOnDeviceVar2_SpMV(lvl, nlvls, pbeg, t);
@@ -4410,18 +4490,20 @@ public:
                         + std::to_string(variant) + ") is not supported.\n";
       TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, msg.c_str());
     }
+    return 0;
   }
 
   /// 
-  /// LDL Upper
+  /// LU Upper
   ///
-  inline void solveLU_UpperOnDeviceVar0(const ordinal_type pbeg, const ordinal_type pend,
-                                        const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
+  inline int solveLU_UpperOnDeviceVar0(const ordinal_type pbeg, const ordinal_type pend,
+                                       const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     const ordinal_type nrhs = t.extent(1);
     const value_type minus_one(-1), one(1);
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
+    int num_device_calls = 0;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
       if (_h_solve_mode(sid) == 0) {
@@ -4455,18 +4537,21 @@ public:
                 Trsv<Uplo::Upper, Trans::NoTranspose, Algo::OnDevice>::invoke(handle_blas, Diag::NonUnit(), ATL, tT);
             checkDeviceBlasStatus("trsv");
           }
+          num_device_calls ++;
         }
       }
     }
+    return num_device_calls;
   }
 
-  inline void solveLU_UpperOnDeviceVar1(const ordinal_type pbeg, const ordinal_type pend,
-                                        const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
+  inline int solveLU_UpperOnDeviceVar1(const ordinal_type pbeg, const ordinal_type pend,
+                                       const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     const ordinal_type nrhs = t.extent(1);
     const value_type minus_one(-1), one(1), zero(0);
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
+    int num_device_calls = 0;
     exec_space exec_instance;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
@@ -4504,19 +4589,22 @@ public:
 
             _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(handle_blas, one, ATL, bT, zero, tT);
             checkDeviceBlasStatus("gemv");
+            num_device_calls ++;
           }
         }
       }
     }
+    return num_device_calls;
   }
 
-  inline void solveLU_UpperOnDeviceVar2(const ordinal_type pbeg, const ordinal_type pend,
-                                        const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
+  inline int solveLU_UpperOnDeviceVar2(const ordinal_type pbeg, const ordinal_type pend,
+                                       const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     const ordinal_type nrhs = t.extent(1);
     const value_type one(1), zero(0);
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
+    int num_device_calls = 0;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
       if (_h_solve_mode(sid) == 0) {
@@ -4542,21 +4630,23 @@ public:
             const auto tT = Kokkos::subview(t, range_type(offm, offm + m), Kokkos::ALL());
             _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(handle_blas, one, AT, b, zero, tT);
             checkDeviceBlasStatus("gemv");
+            num_device_calls ++;
           }
         }
       }
     }
+    return num_device_calls;
   }
 
-  inline void solveLU_UpperOnDevice(const ordinal_type lvl, const ordinal_type nlvls,
-                                    const ordinal_type pbeg, const ordinal_type pend,
-                                    const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
+  inline int solveLU_UpperOnDevice(const ordinal_type lvl, const ordinal_type nlvls,
+                                   const ordinal_type pbeg, const ordinal_type pend,
+                                   const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     if (variant == 0)
-      solveLU_UpperOnDeviceVar0(pbeg, pend, h_buf_solve_ptr, t);
+      return solveLU_UpperOnDeviceVar0(pbeg, pend, h_buf_solve_ptr, t);
     else if (variant == 1)
-      solveLU_UpperOnDeviceVar1(pbeg, pend, h_buf_solve_ptr, t);
+      return solveLU_UpperOnDeviceVar1(pbeg, pend, h_buf_solve_ptr, t);
     else if (variant == 2)
-      solveLU_UpperOnDeviceVar2(pbeg, pend, h_buf_solve_ptr, t);
+      return solveLU_UpperOnDeviceVar2(pbeg, pend, h_buf_solve_ptr, t);
     else if (variant == 3) {
       solveGenericUpperOnDeviceVar2_SpMV(lvl, nlvls, pbeg, t);
     } else {
@@ -4564,6 +4654,7 @@ public:
                         + std::to_string(variant) + ") is not supported.\n";
       TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, msg.c_str());
     }
+    return 0;
   }
 
   ///
@@ -4576,6 +4667,7 @@ public:
   inline void factorizeCholesky(const value_type_array &ax, const bool store_transpose,
                                 const mag_type shift, const mag_type pivot_tol,
                                 const ordinal_type verbose) {
+
     constexpr bool is_host = std::is_same<exec_memory_space, Kokkos::HostSpace>::value;
     Kokkos::Timer timer;
     Kokkos::Timer tick;
@@ -4694,12 +4786,11 @@ public:
             if (verbose) {
               Kokkos::fence(); tick.reset();
             }
-            int num_device_calls = 0;
             const auto h_buf_factor_ptr = Kokkos::subview(_h_buf_factor_ptr, range_buf_factor_ptr);
             if (this->getSolutionMethod() == 0) {
-              num_device_calls = factorizeNoPivotLDLOnDevice(pbeg, pend, h_buf_factor_ptr, _work);
+              factorizeNoPivotLDLOnDevice(pbeg, pend, h_buf_factor_ptr, _work);
             } else {
-              num_device_calls = factorizeCholeskyOnDevice(pbeg, pend, h_buf_factor_ptr, _work);
+              factorizeCholeskyOnDevice(pbeg, pend, h_buf_factor_ptr, _work);
             }
             if (verbose) {
               Kokkos::fence(); time_device += tick.seconds();
@@ -4710,10 +4801,12 @@ public:
             if (rval != 0) {
               TACHO_TEST_FOR_EXCEPTION(true, std::runtime_error, "POTRF (team) returns non-zero error code.");
             }
-            if (num_device_calls > 0)
-                Kokkos::fence(); // sync device-calls
+            if (_h_num_device_calls_factor(lvl) > 0)
+              Kokkos::fence(); // sync device-calls before calling update
+
             Kokkos::parallel_for("update factor", policy_update, functor);
-            exec_space().fence(); // sync default, for potential device calls
+            if (lvl == 0 || _h_num_device_calls_factor(lvl-1) > 0)
+              exec_space().fence(); // sync default, before next device factor calls
             if (verbose) {
               Kokkos::fence(); time_update += tick.seconds();
             }
@@ -4767,10 +4860,14 @@ public:
     timer.reset();
     allocateWorkspaceSolve(nrhs);
 
+    // execution spaces for non-device calls
+    const bool need_fence = (!_team_on_user_stream || _nstreams > 1);
+    const auto perm_exec_instance = _exec_instances[0];
+    const auto team_exec_instance = (_team_on_user_stream ? _exec_instances[0] : exec_space());
+
     // 0. permute (from METIS) and copy b -> t
-    const auto exec_instance = exec_space();
-    ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, b, _perm, t);
-    exec_space().fence();
+    ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(perm_exec_instance, b, _perm, t);
+    if (variant != 3 && need_fence) perm_exec_instance.fence();
     stat.t_extra = timer.seconds();
 
     timer.reset();
@@ -4821,8 +4918,8 @@ public:
               policy_update = team_policy_update(pcnt, 1, 1);
             } else {
               const ordinal_type idx = lvl > half_level;
-              policy_solve = team_policy_solve(pcnt, team_size_solve[idx], vector_size_solve[idx]);
-              policy_update = team_policy_update(pcnt, team_size_update[idx], vector_size_update[idx]);
+              policy_solve = team_policy_solve(team_exec_instance, pcnt, team_size_solve[idx], vector_size_solve[idx]);
+              policy_update = team_policy_update(team_exec_instance, pcnt, team_size_update[idx], vector_size_update[idx]);
             }
 #if defined(TACHO_ENABLE_SOLVE_CHOLESKY_USE_LIGHT_KERNEL)
             const auto policy_solve_with_work_property =
@@ -4842,20 +4939,20 @@ public:
                 ++stat_level.n_kernel_launching;
               }
             }
-            int num_device_calls = 0;
             const auto h_buf_solve_ptr = Kokkos::subview(_h_buf_solve_nrhs_ptr, range_solve_buf_ptr);
             if (this->getSolutionMethod() == 0) {
-              num_device_calls = solveNoPivotLDLLowerOnDevice(lvl, _team_serial_level_cut, pbeg, pend, h_buf_solve_ptr, t);
+              solveNoPivotLDLLowerOnDevice(lvl, _team_serial_level_cut, pbeg, pend, h_buf_solve_ptr, t);
             } else {
-              num_device_calls = solveCholeskyLowerOnDevice(lvl, _team_serial_level_cut, pbeg, pend, h_buf_solve_ptr, t);
+              solveCholeskyLowerOnDevice(lvl, _team_serial_level_cut, pbeg, pend, h_buf_solve_ptr, t);
             }
             if (variant != 3) {
-              if (num_device_calls > 0)
-                Kokkos::fence(); // synch device calls
+              if (need_fence && _h_num_device_calls_solve(lvl) > 0)
+                Kokkos::fence(); // synch device calls before batched update
 
               // copy from buffer to t
               Kokkos::parallel_for("update lower", policy_update_with_work_property, functor);
-              exec_space().fence(); // sync default, for potential device-calls
+              if (need_fence && (lvl == 0 || _h_num_device_calls_solve(lvl-1) > 0))
+                team_exec_instance.fence(); // sync default, for next device solve calls
               ++stat_level.n_kernel_launching;
             }
           }
@@ -4897,8 +4994,8 @@ public:
               policy_update = team_policy_update(pcnt, 1, 1);
             } else {
               const ordinal_type idx = lvl > half_level;
-              policy_solve = team_policy_solve(pcnt, team_size_solve[idx], vector_size_solve[idx]);
-              policy_update = team_policy_update(pcnt, team_size_update[idx], vector_size_update[idx]);
+              policy_solve = team_policy_solve(team_exec_instance, pcnt, team_size_solve[idx], vector_size_solve[idx]);
+              policy_update = team_policy_update(team_exec_instance, pcnt, team_size_update[idx], vector_size_update[idx]);
             }
 #if defined(TACHO_ENABLE_SOLVE_CHOLESKY_USE_LIGHT_KERNEL)
             const auto policy_solve_with_work_property =
@@ -4911,7 +5008,8 @@ public:
 #endif
             if (variant != 3) {
               Kokkos::parallel_for("update upper", policy_update_with_work_property, functor);
-              exec_space().fence(); // sync default, for potential device-calls
+              if (need_fence && _h_num_device_calls_solve(lvl) > 0)
+                team_exec_instance.fence(); // sync default, before next device solve-upper calls
               ++stat_level.n_kernel_launching;
 
               if (lvl < _device_level_cut) {
@@ -4919,19 +5017,17 @@ public:
                 // Kokkos::parallel_for("solve upper", policy_solve, functor);
               } else {
                 Kokkos::parallel_for("solve upper", policy_solve_with_work_property, functor);
-                ++stat_level.n_kernel_launching;
+                ++stat_level.n_kernel_launching; // no need to synch because synched after next update if needed
               }
             }
-            int num_device_calls = 0;
             const auto h_buf_solve_ptr = Kokkos::subview(_h_buf_solve_nrhs_ptr, range_solve_buf_ptr);
             if (this->getSolutionMethod() == 0) {
-              num_device_calls = solveNoPivotLDLUpperOnDevice(lvl, _team_serial_level_cut, pbeg, pend, h_buf_solve_ptr, t);
+              solveNoPivotLDLUpperOnDevice(lvl, _team_serial_level_cut, pbeg, pend, h_buf_solve_ptr, t);
             } else {
-              num_device_calls = solveCholeskyUpperOnDevice(lvl, _team_serial_level_cut, pbeg, pend, h_buf_solve_ptr, t);
+              solveCholeskyUpperOnDevice(lvl, _team_serial_level_cut, pbeg, pend, h_buf_solve_ptr, t);
             }
-            if (num_device_calls > 0 || 1+lvl == _team_serial_level_cut) {
-              Kokkos::fence();
-            }
+            if (need_fence && _h_num_device_calls_solve(lvl) > 0)
+              Kokkos::fence(); // synch device calls before next update
           }
         }
       } /// end of upper tri solve
@@ -4940,8 +5036,10 @@ public:
     stat.t_solve = timer.seconds();
 
     // permute (from METIS) and copy t -> x
+    if (variant != 3 && need_fence) Kokkos::fence(); // synch user or default streams
     timer.reset();
-    ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, t, _peri, x);
+    ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(perm_exec_instance, t, _peri, x);
+    perm_exec_instance.fence();
     stat.t_extra += timer.seconds();
 
     if (verbose) {
@@ -5097,7 +5195,7 @@ public:
             exec_space().fence();
             ++stat_level.n_kernel_launching;
           }
-	  // NOTE: device info not needed on host?
+          // NOTE: device info not needed on host?
           //const auto exec_instance = exec_space();
           //Kokkos::deep_copy(exec_instance, _h_supernodes, _info.supernodes);
         }
@@ -5142,10 +5240,14 @@ public:
     timer.reset();
     allocateWorkspaceSolve(nrhs);
 
+    // execution spaces for non-device calls
+    const bool need_fence = (!_team_on_user_stream || _nstreams > 1);
+    const auto perm_exec_instance = _exec_instances[0];
+    const auto team_exec_instance = (_team_on_user_stream ? _exec_instances[0] : exec_space());
+
     // 0. permute (from METIS) and copy b -> t
-    const auto exec_instance = exec_space();
-    ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, b, _perm, t);
-    exec_space().fence();
+    ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(perm_exec_instance, b, _perm, t);
+    if(variant != 3 && need_fence) perm_exec_instance.fence();
     stat.t_extra = timer.seconds();
 
     timer.reset();
@@ -5198,8 +5300,8 @@ public:
               policy_update = team_policy_update(pcnt, 1, 1);
             } else {
               const ordinal_type idx = lvl > half_level;
-              policy_solve = team_policy_solve(pcnt, team_size_solve[idx], vector_size_solve[idx]);
-              policy_update = team_policy_update(pcnt, team_size_update[idx], vector_size_update[idx]);
+              policy_solve = team_policy_solve(team_exec_instance, pcnt, team_size_solve[idx], vector_size_solve[idx]);
+              policy_update = team_policy_update(team_exec_instance, pcnt, team_size_update[idx], vector_size_update[idx]);
             }
 #if defined(TACHO_ENABLE_SOLVE_CHOLESKY_USE_LIGHT_KERNEL)
             const auto policy_solve_with_work_property =
@@ -5221,12 +5323,14 @@ public:
             }
             const auto h_buf_solve_ptr = Kokkos::subview(_h_buf_solve_nrhs_ptr, range_solve_buf_ptr);
             solveLDL_LowerOnDevice(lvl, _team_serial_level_cut, pbeg, pend, h_buf_solve_ptr, t);
-            Kokkos::fence();
+            if (need_fence && _h_num_device_calls_solve(lvl) > 0)
+              Kokkos::fence(); // fence solve on device before updating on default
 
             if (variant != 3) {
               Kokkos::parallel_for("update lower", policy_update_with_work_property, functor);
               ++stat_level.n_kernel_launching;
-              exec_space().fence();
+              if (need_fence && (lvl == 0 || _h_num_device_calls_solve(lvl-1) > 0))
+                team_exec_instance.fence(); // synch update on default before next solve on device
             }
           }
         }
@@ -5266,8 +5370,8 @@ public:
               policy_update = team_policy_update(pcnt, 1, 1);
             } else {
               const ordinal_type idx = lvl > half_level;
-              policy_solve = team_policy_solve(pcnt, team_size_solve[idx], vector_size_solve[idx]);
-              policy_update = team_policy_update(pcnt, team_size_update[idx], vector_size_update[idx]);
+              policy_solve = team_policy_solve(team_exec_instance, pcnt, team_size_solve[idx], vector_size_solve[idx]);
+              policy_update = team_policy_update(team_exec_instance, pcnt, team_size_update[idx], vector_size_update[idx]);
             }
 #if defined(TACHO_ENABLE_SOLVE_CHOLESKY_USE_LIGHT_KERNEL)
             const auto policy_solve_with_work_property =
@@ -5281,7 +5385,8 @@ public:
             if (variant != 3) {
               Kokkos::parallel_for("update upper", policy_update_with_work_property, functor);
               ++stat_level.n_kernel_launching;
-              exec_space().fence();
+              if (need_fence && _h_num_device_calls_solve(lvl) > 0)
+                team_exec_instance.fence(); // synch update befor solve on device
 
               if (lvl < _device_level_cut) {
                 // do nothing
@@ -5294,7 +5399,8 @@ public:
 
             const auto h_buf_solve_ptr = Kokkos::subview(_h_buf_solve_nrhs_ptr, range_solve_buf_ptr);
             solveLDL_UpperOnDevice(lvl, _team_serial_level_cut, pbeg, pend, h_buf_solve_ptr, t);
-            Kokkos::fence();
+            if (need_fence && _h_num_device_calls_solve(lvl) > 0)
+              Kokkos::fence(); // synch solve on device before next update
           }
         }
       } /// end of upper tri solve
@@ -5302,8 +5408,10 @@ public:
     stat.t_solve = timer.seconds();
 
     // permute (from METIS) and copy t -> x
+    if (variant != 3 && need_fence) Kokkos::fence(); // synch user or default streams
     timer.reset();
-    ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, t, _peri, x);
+    ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(perm_exec_instance, t, _peri, x);
+    perm_exec_instance.fence();
     stat.t_extra += timer.seconds();
 
     if (verbose) {
@@ -5452,16 +5560,18 @@ public:
             if (rval != 0) {
               TACHO_TEST_FOR_EXCEPTION(rval, std::runtime_error, "GETRF (team) returns non-zero error code.");
             }
-            Kokkos::fence(); // sync device calls
+            if (_h_num_device_calls_factor(lvl) > 0)
+              Kokkos::fence(); // sync device calls before update
 
             Kokkos::parallel_for("update factor", policy_update, functor);
             if (verbose) {
               Kokkos::fence(); time_update += tick.seconds();
             }
-            exec_space().fence();
+            if (lvl == 0 || _h_num_device_calls_factor(lvl-1) > 0)
+              exec_space().fence(); // synch default before the next device factor call
             ++stat_level.n_kernel_launching;
           }
-	  // NOTE: device info not needed on host?
+          // NOTE: device info not needed on host?
           //const auto exec_instance = exec_space();
           //Kokkos::deep_copy(exec_instance, _h_supernodes, _info.supernodes);
         }
@@ -5511,10 +5621,14 @@ public:
     timer.reset();
     allocateWorkspaceSolve(nrhs);
 
+    // execution spaces for non-device calls
+    const bool need_fence = (!_team_on_user_stream || _nstreams > 1);
+    const auto perm_exec_instance = _exec_instances[0];
+    const auto team_exec_instance = (_team_on_user_stream ? _exec_instances[0] : exec_space());
+
     // 0. permute (from METIS) and copy b -> t
-    const auto exec_instance = exec_space();
-    ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, b, _perm, t);
-    exec_instance.fence();
+    ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(perm_exec_instance, b, _perm, t);
+    if (variant != 3 && need_fence) perm_exec_instance.fence();
     stat.t_extra = timer.seconds();
 
     timer.reset();
@@ -5566,8 +5680,8 @@ public:
               policy_update = team_policy_update(pcnt, 1, 1);
             } else {
               const ordinal_type idx = lvl > half_level;
-              policy_solve = team_policy_solve(pcnt, team_size_solve[idx], vector_size_solve[idx]);
-              policy_update = team_policy_update(pcnt, team_size_update[idx], vector_size_update[idx]);
+              policy_solve = team_policy_solve(team_exec_instance, pcnt, team_size_solve[idx], vector_size_solve[idx]);
+              policy_update = team_policy_update(team_exec_instance, pcnt, team_size_update[idx], vector_size_update[idx]);
             }
 #if defined(TACHO_ENABLE_SOLVE_CHOLESKY_USE_LIGHT_KERNEL)
             const auto policy_solve_with_work_property =
@@ -5590,11 +5704,13 @@ public:
             const auto h_buf_solve_ptr = Kokkos::subview(_h_buf_solve_nrhs_ptr, range_solve_buf_ptr);
             solveLU_LowerOnDevice(lvl, _team_serial_level_cut, pbeg, pend, h_buf_solve_ptr, t);
             if (variant != 3) {
-              Kokkos::fence();
+              if (need_fence && _h_num_device_calls_solve(lvl) > 0)
+                Kokkos::fence(); // synch solve device before update
 
               Kokkos::parallel_for("update lower", policy_update_with_work_property, functor);
               ++stat_level.n_kernel_launching;
-              exec_space().fence();
+              if (need_fence && (lvl == 0 || _h_num_device_calls_solve(lvl-1) > 0))
+                team_exec_instance.fence(); // synch update on default before next solve on device
             }
           }
         }
@@ -5634,8 +5750,8 @@ public:
               policy_update = team_policy_update(pcnt, 1, 1);
             } else {
               const ordinal_type idx = lvl > half_level;
-              policy_solve = team_policy_solve(pcnt, team_size_solve[idx], vector_size_solve[idx]);
-              policy_update = team_policy_update(pcnt, team_size_update[idx], vector_size_update[idx]);
+              policy_solve = team_policy_solve(team_exec_instance, pcnt, team_size_solve[idx], vector_size_solve[idx]);
+              policy_update = team_policy_update(team_exec_instance, pcnt, team_size_update[idx], vector_size_update[idx]);
             }
 #if defined(TACHO_ENABLE_SOLVE_CHOLESKY_USE_LIGHT_KERNEL)
             const auto policy_solve_with_work_property =
@@ -5649,7 +5765,8 @@ public:
             if (variant != 3) {
               Kokkos::parallel_for("update upper", policy_update_with_work_property, functor);
               ++stat_level.n_kernel_launching;
-              exec_space().fence();
+              if (need_fence && _h_num_device_calls_solve(lvl) > 0)
+                team_exec_instance.fence(); // synch update on default before solve on device
 
               if (lvl < _device_level_cut) {
                 // do nothing
@@ -5662,7 +5779,10 @@ public:
             const auto h_buf_solve_ptr = Kokkos::subview(_h_buf_solve_nrhs_ptr, range_solve_buf_ptr);
             solveLU_UpperOnDevice(lvl, _team_serial_level_cut, pbeg, pend, h_buf_solve_ptr, t);
             if (variant != 3) {
-              Kokkos::fence();
+              if (need_fence && _h_num_device_calls_solve(lvl) > 0)
+                Kokkos::fence(); // synch solve on device before the next update on default
+              //else if (lvl == _team_serial_level_cut-1 || _h_num_device_calls_solve(lvl+1) > 0)
+              //  exec_space().fence(); // synch bached solve-upper calls
             }
           }
         }
@@ -5672,9 +5792,10 @@ public:
     stat.t_solve = timer.seconds();
 
     // permute (from METIS) and copy t -> x
+    if (variant != 3 && need_fence) Kokkos::fence();
     timer.reset();
-    ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, t, _peri, x);
-    exec_instance.fence();
+    ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(perm_exec_instance, t, _peri, x);
+    perm_exec_instance.fence();
     stat.t_extra += timer.seconds();
 
     if (verbose) {

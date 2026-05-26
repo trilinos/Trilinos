@@ -36,6 +36,7 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
   Teuchos::RCP<Vector>       X,
   Teuchos::RCP<const Vector> B )
   : SolverCore<Amesos2::ShyLUBasker,Matrix,Vector>(A, X, B)
+  , schur_out_ptr(nullptr)
   , is_contiguous_(true)
   , use_gather_(true)
 {
@@ -79,6 +80,10 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
   num_threads = 1;
 #endif
   ShyLUbasker->Options.worker_threads = false;
+  // partial factorization
+  ShyLUbasker->Options.partial_facto = 0;
+  ShyLUbasker->Options.only_forward_solve = false;
+  ShyLUbasker->Options.only_backward_solve = false;
 
 #else
  TEUCHOS_TEST_FOR_EXCEPTION(1 != 0,
@@ -127,9 +132,19 @@ ShyLUBasker<Matrix,Vector>::symbolicFactorization_impl()
   if(this->root_)
   {
     int nthreads = num_threads;
+    if (ShyLUbasker->Options.partial_facto != 0) {
+      // User needs to provide 2x threads, to avoid dead-lock due to busy-wait
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (nthreads < 2, std::runtime_error,
+         "ShyLU-Basker dense Schur option requires # of threads (2x # of leaves) to be greater than 1 (" << nthreads << ")");
+    }
     if (ShyLUbasker->Options.worker_threads) {
       if (nthreads > 1) {
         // keep one worker-thread / subdomain (where originally subdomain = num_threads)
+        if (ShyLUbasker->Options.verbose && this->root_) {
+          std::cout << "Amesos2::ShyLUBasker:: reduce num threads from " << nthreads << " to " << nthreads/2
+                    << " for worker threads" << std::endl;
+        }
         nthreads /= 2;
       } else {
         // turn off worker threads if one thread
@@ -164,14 +179,26 @@ ShyLUBasker<Matrix,Vector>::symbolicFactorization_impl()
           std::runtime_error, "Amesos2 Runtime Error: sp_values returned null ");
 
       // In this case, colptr_, rowind_, nzvals_ are invalid
-      info = ShyLUbasker->Symbolic(this->globalNumRows_,
-          this->globalNumCols_,
-          this->globalNumNonZeros_,
-          sp_rowptr.data(),
-          sp_colind.data(),
-          sp_values,
-          true); // true = _crs_transpose_needed
-
+      if (ShyLUbasker->Options.partial_facto != 0) {
+        shylubasker_dtype * sp_schur_out = function_map::convert_scalar(schur_out.data());
+        info = ShyLUbasker->Symbolic(this->globalNumRows_,
+            this->globalNumCols_,
+            this->globalNumNonZeros_,
+            sp_rowptr.data(),
+            sp_colind.data(),
+            sp_values,
+            schur_part.data(),
+            sp_schur_out,
+            true); // true = _crs_transpose_needed
+      } else {
+        info = ShyLUbasker->Symbolic(this->globalNumRows_,
+            this->globalNumCols_,
+            this->globalNumNonZeros_,
+            sp_rowptr.data(),
+            sp_colind.data(),
+            sp_values,
+            true); // true = _crs_transpose_needed
+      }
       TEUCHOS_TEST_FOR_EXCEPTION(info != 0,
           std::runtime_error, "Error in ShyLUBasker Symbolic");
     }
@@ -179,13 +206,24 @@ ShyLUBasker<Matrix,Vector>::symbolicFactorization_impl()
     { //follow original code path if conditions not met
       // In this case, loadA_impl updates colptr_, rowind_, nzvals_
       shylubasker_dtype * sp_values = function_map::convert_scalar(nzvals_view_.data());
-      info = ShyLUbasker->Symbolic(this->globalNumRows_,
-          this->globalNumCols_,
-          this->globalNumNonZeros_,
-          colptr_view_.data(),
-          rowind_view_.data(),
-          sp_values);
-
+      if (ShyLUbasker->Options.partial_facto != 0) {
+        shylubasker_dtype * sp_schur_out = function_map::convert_scalar(schur_out.data());
+        info = ShyLUbasker->Symbolic(this->globalNumRows_,
+            this->globalNumCols_,
+            this->globalNumNonZeros_,
+            colptr_view_.data(),
+            rowind_view_.data(),
+            sp_values,
+            schur_part.data(),
+            sp_schur_out);
+      } else {
+        info = ShyLUbasker->Symbolic(this->globalNumRows_,
+            this->globalNumCols_,
+            this->globalNumNonZeros_,
+            colptr_view_.data(),
+            rowind_view_.data(),
+            sp_values);
+      }
       TEUCHOS_TEST_FOR_EXCEPTION(info != 0,
           std::runtime_error, "Error in ShyLUBasker Symbolic");
     }
@@ -253,6 +291,16 @@ ShyLUBasker<Matrix,Vector>::numericFactorization_impl()
             colptr_view_.data(),
             rowind_view_.data(),
             sp_values);
+      }
+      if (ShyLUbasker->Options.partial_facto != 0) {
+        if (schur_out_ptr != nullptr) {
+          // copy schur out if the output pointer is valid (assuming enough space has been allocated)
+          for (size_t i = 0; i < schur_size; i++) {
+            for (size_t j = 0; j < schur_size; j++) {
+              schur_out_ptr[i+j*schur_size] = schur_out[i+j*schur_size];
+            }
+          }
+        }
       }
 
       //ShyLUbasker->DEBUG_PRINT();
@@ -524,6 +572,37 @@ ShyLUBasker<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Param
     {
       ShyLUbasker->Options.min_block_size = parameterList->get<int>("min_block_size");
     }
+
+  if(parameterList->isParameter("PartialFacto"))
+    {
+      ShyLUbasker->Options.partial_facto = parameterList->get<int>("PartialFacto");
+    }
+  if(parameterList->isParameter("SchurPart"))
+    {
+      // copy schur-part to the internal view (in case the user-pointer go out of scope?)
+      auto schur_part_ptr = parameterList->get<const local_ordinal_type*>("SchurPart");
+      Kokkos::resize(schur_part, this->globalNumCols_);
+      schur_size = 0;
+      for (global_size_type i=0; i<this->globalNumCols_; i++) {
+        schur_part(i) = schur_part_ptr[i];
+        if (schur_part(i) == 1) schur_size ++;
+      }
+      // allocate internal storage to store the schur complement (user may not want it and may not provide a valid pointer?)
+      Kokkos::resize(schur_out, schur_size*schur_size);
+    }
+  if(parameterList->isParameter("SchurOut"))
+    {
+      // store schur-part to the internal view (if user wants the output, then the pointer should stay, so no need for internal view?)
+      schur_out_ptr = parameterList->get<scalar_type*>("SchurOut");
+    }
+  if(parameterList->isParameter("OnlyForwardSolve"))
+    {
+      ShyLUbasker->Options.only_forward_solve = parameterList->get<bool>("OnlyForwardSolve");
+    }
+  if(parameterList->isParameter("OnlyBackwardSolve"))
+    {
+      ShyLUbasker->Options.only_backward_solve = parameterList->get<bool>("OnlyBackwardSolve");
+    }
 }
 
 template <class Matrix, class Vector>
@@ -593,6 +672,20 @@ ShyLUBasker<Matrix,Vector>::getValidParameters_impl() const
               "Use sequential algorithm to factor each diagonal block");
       pl->set("user_fill", (double)BASKER_FILL_USER,
               "User-provided padding for the fill ratio");
+
+      // TODO: should these be const or not
+      scalar_type *dummy_scalar_ptr;
+      const local_ordinal_type *dummy_ordinal_ptr;
+      pl->set("PartialFacto", 0,
+              "Perform partial factorization to extract dense Schur complement (0: no, 1: form + factor Schur, 2: ony form");
+      pl->set("SchurPart", dummy_ordinal_ptr,
+              "Specify rows/columns belonging to Schur complement for partial factorization");
+      pl->set("SchurOut", dummy_scalar_ptr,
+              "Store output Schur complement from partial factorization");
+      pl->set("OnlyForwardSolve", false,
+              "Perform only the forward substitution");
+      pl->set("OnlyBackwardSolve", false,
+              "Perform only the backward substitution");
       valid_params = pl;
     }
   return valid_params;
@@ -618,7 +711,6 @@ ShyLUBasker<Matrix,Vector>::loadA_impl(EPhase current_phase)
   }
   else 
   {
-
     // Only the root image needs storage allocated
     if( this->root_ && current_phase == SYMBFACT )
     {
@@ -700,6 +792,7 @@ ShyLUBasker<Matrix,Vector>::describe_impl(Teuchos::FancyOStream &out,
   out << "  > btf_matching       = " << (ShyLUbasker->Options.btf_matching ? "YES" : "NO") << std::endl;
   out << "  > blk_matching       = " << (ShyLUbasker->Options.blk_matching ? "YES" : "NO") << std::endl;
   out << "  > use_sequential_diag_facto = " << (ShyLUbasker->Options.use_sequential_diag_facto ? "YES" : "NO") << std::endl;
+  out << "  > partial_facto      = " << ShyLUbasker->Options.partial_facto << std::endl;
   out << std::endl;
 }
 

@@ -31,8 +31,8 @@ namespace Tpetra {
 /// \tparam Node The Kokkos Node type.  See the documentation of Map
 ///   for requirements.
 ///
-/// \param[in/out] matrix Tpetra::CrsMatrix to be modified
-/// \param[in] newDiag Tpetra::Vector with new values for the diagonal; must have same Tpetra::Map as matrix's rowMap
+/// \param matrix [in/out] Tpetra::CrsMatrix to be modified
+/// \param newDiag [in] Tpetra::Vector with new values for the diagonal; must have same Tpetra::Map as matrix's rowMap
 ///
 ///
 /// \return Local number of successfully replaced diagonal entries

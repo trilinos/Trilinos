@@ -20,8 +20,9 @@ static_assert(false,
 #include <Kokkos_ScratchSpace.hpp>
 #include <Kokkos_Layout.hpp>
 #include <Kokkos_MemoryTraits.hpp>
-#include <impl/Kokkos_Profiling_Interface.hpp>
+#include <impl/Kokkos_CheckUsage.hpp>
 #include <impl/Kokkos_InitializationSettings.hpp>
+#include <impl/Kokkos_Profiling_Interface.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -109,6 +110,18 @@ class Threads {
   }
 
   uint32_t impl_instance_id() const noexcept { return 1; }
+
+  KOKKOS_DEFAULTED_FUNCTION Threads(const Threads&) = default;
+  KOKKOS_FUNCTION Threads(Threads&& other)
+      : Threads(static_cast<const Threads&>(other)) {}
+  KOKKOS_DEFAULTED_FUNCTION Threads& operator=(const Threads&) = default;
+  KOKKOS_FUNCTION Threads& operator=(Threads&& other) {
+    return *this = static_cast<const Threads&>(other);
+  }
+
+  ~Threads() { Impl::check_execution_space_destructor_precondition(name()); }
+
+  Threads() { Impl::check_execution_space_constructor_precondition(name()); }
 
   static const char* name();
   //@}

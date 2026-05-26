@@ -22,7 +22,7 @@
 namespace MueLu {
 
 /*!
-  @class BlockedPFactory class.
+  @class BlockedPFactory
   @brief Factory for building blocked, segregated prolongation operators.
 
   Factory for building blocked, segregated prolongation operators of the form

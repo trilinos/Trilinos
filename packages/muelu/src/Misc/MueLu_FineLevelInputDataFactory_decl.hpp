@@ -30,7 +30,7 @@ class FineLevelInputDataFactoryTester;
 namespace MueLu {
 
 /*!
-  @class FineLevelInputData class.
+  @class FineLevelInputData
   @brief Factory for piping in input data from the finest level into the MueLu data dependency system
 */
 

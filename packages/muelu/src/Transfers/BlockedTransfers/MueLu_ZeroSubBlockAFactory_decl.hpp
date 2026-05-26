@@ -19,7 +19,7 @@
 namespace MueLu {
 
 /*!
-  @class ZeroSubBlockAFactory class.
+  @class ZeroSubBlockAFactory
   @brief Factory for extracting a zero block from a BlockedCrsMatrix.
 
   This is a very simple class to access a single matrix block in a blocked operator A,

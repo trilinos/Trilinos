@@ -1,3 +1,3 @@
-ADD_SUBDIRECTORY(blas)
-ADD_SUBDIRECTORY(sparse)
-ADD_SUBDIRECTORY(graph)
+add_subdirectory(blas)
+add_subdirectory(sparse)
+add_subdirectory(graph)

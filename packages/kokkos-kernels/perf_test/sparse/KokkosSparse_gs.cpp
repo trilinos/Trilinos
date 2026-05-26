@@ -189,7 +189,7 @@ void runGS(const GS_Parameters& params) {
          numericComputeTimeTotal = 0, applyLaunchTimeTotal = 0, applyComputeTimeTotal = 0;
 
   timer.reset();
-  KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_sequential(A, DiagBlks);
+  KokkosSparse::Experimental::kk_extract_diagonal_blocks_crsmatrix_sequential(A, DiagBlks);
   Kokkos::fence();
   blockExtractionTime = timer.seconds();
 

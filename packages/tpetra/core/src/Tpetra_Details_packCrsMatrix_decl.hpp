@@ -147,12 +147,14 @@ void packCrsMatrixNew(const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
 ///
 /// \param sourceMatrix [in] the CrsMatrix source
 ///
-/// \param exports [in/out] Output pack buffer; resized if needed.
+/// \param exports_dv [in/out] Output pack buffer; resized if needed.
 ///
 /// \param numPacketsPerLID [out] Entry k gives the number of bytes
 ///   packed for row exportLIDs[k] of the local matrix.
 ///
 /// \param exportLIDs [in] Local indices of the rows to pack.
+///
+/// \param sourcePIDs [in] Process IDs of the source entries.
 ///
 /// \param constantNumPackets [out] Setting this to zero tells the caller
 ///   to expect a possibly /// different ("nonconstant") number of packets per local index

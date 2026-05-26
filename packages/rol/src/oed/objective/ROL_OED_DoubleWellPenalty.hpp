@@ -20,6 +20,7 @@ namespace OED {
 template<typename Real>
 class DoubleWellPenalty : public Objective<Real>, public ProfiledClass<Real,std::string> {
 private:
+  const unsigned type_;
 
   std::vector<Real>& getData(Vector<Real> &x) const;
   const std::vector<Real>& getConstData(const Vector<Real> &x) const;
@@ -29,7 +30,7 @@ private:
   using ProfiledClass<Real,std::string>::stopTimer;
 
 public:
-  DoubleWellPenalty();
+  DoubleWellPenalty(unsigned type = 1u);
 
   Real value( const Vector<Real> &x, Real &tol ) override;
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) override;

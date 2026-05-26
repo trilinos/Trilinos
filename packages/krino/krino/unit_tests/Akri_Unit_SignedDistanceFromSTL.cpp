@@ -1,5 +1,6 @@
 #include <Akri_BoundingBox.hpp>
 #include <Akri_MeshSurface.hpp>
+#include <Akri_OutputUtils.hpp>
 #include <gtest/gtest.h>
 #include <Akri_Unit_CreateFacetedSphere.hpp>
 
@@ -53,11 +54,6 @@ compute_random_locations_in_box(const krino::BoundingBox & boundingBox, const un
   return queryPoints;
 }
 
-static bool does_file_exist(const std::string& filename)
-{
-  std::ifstream f(filename);
-  return f.good();
-}
 
 TEST(ComputeDistanceToSTL, randomQueryPointsBothInsideAndOutsideSphereInSerial_getExpectedSignedDistance)
 {
@@ -88,7 +84,7 @@ void compute_training_data(const std::string filename, const unsigned numQueryPo
   krino::STLSurface distanceSurface(filename);
 
   krino::BoundingBox boundingBox = distanceSurface.get_bounding_box();
-  boundingBox.scale(2.0); // TODO: play with this scaling factor
+  boundingBox.scale(1.2); // TODO: play with this scaling factor
 
   const std::vector<stk::math::Vector3d> queryPoints = compute_random_locations_in_box(boundingBox, numQueryPoints);
   const std::vector<double> signedDistances = compute_surface_signed_distance_values(distanceSurface, queryPoints);
@@ -107,13 +103,27 @@ void compute_training_data(const std::string filename, const unsigned numQueryPo
   file.close();
 }
 
+int get_num_samples()
+{
+  const char* p = std::getenv("KRINO_SDF_NUM_SAMPLES");
+  return p ? std::stoi(p) : 5000;          // default = 5000 if not set
+}
+
+std::string get_stl_filename()
+{
+  const char* p = std::getenv("KRINO_STL_FILENAME");
+  return p ? std::string(p) : "vehicle.stl";   // default = "vehicle.stl" if not set
+}
+
 TEST(ComputeDistanceToSTL, computeTrainingData)
 {
   stk::ParallelMachine comm(MPI_COMM_WORLD);
-  const std::string filename = "vehicle.stl";
+  const std::string filename = get_stl_filename();
 
-  if (1 == stk::parallel_machine_size(comm) && does_file_exist(filename))
+  if (1 == stk::parallel_machine_size(comm) && krino::does_file_exist(filename))
   {
-    compute_training_data(filename, 5000);
+    int num_data_points = get_num_samples();
+    std::cout<<"Computing " << num_data_points << " samples from " << filename << std::endl;
+    compute_training_data(filename, num_data_points);
   }
 }

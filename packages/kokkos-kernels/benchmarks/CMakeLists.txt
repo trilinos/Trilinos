@@ -1,7 +1,6 @@
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../test_common)
+kokkoskernels_include_directories(${CMAKE_CURRENT_BINARY_DIR})
+kokkoskernels_include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+kokkoskernels_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../test_common)
 
 #At some point, we may wish to make this into real "performance
 #tests, " in the sense that they can pass or fail.  At that point, use
@@ -10,10 +9,10 @@ KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../test_common)
 #build correctly with or without MPI, but only run them with a single
 #MPI process.
 
-# ADD_COMPONENT_SUBDIRECTORY(batched)
-ADD_COMPONENT_SUBDIRECTORY(blas)
-# ADD_SUBDIRECTORY(common)
-# ADD_COMPONENT_SUBDIRECTORY(graph)
-ADD_COMPONENT_SUBDIRECTORY(lapack)
-ADD_COMPONENT_SUBDIRECTORY(ode)
-ADD_COMPONENT_SUBDIRECTORY(sparse)
+# add_component_subdirectory(batched)
+add_component_subdirectory(blas)
+# add_subdirectory(common)
+# add_component_subdirectory(graph)
+add_component_subdirectory(lapack)
+add_component_subdirectory(ode)
+add_component_subdirectory(sparse)

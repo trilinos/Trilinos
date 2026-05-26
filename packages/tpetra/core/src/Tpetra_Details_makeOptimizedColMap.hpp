@@ -320,7 +320,7 @@ class OptColMap {
 /// \brief Return an optimized reordering of the given column Map.
 /// \tparam MapType A specialization of Map.
 ///
-/// \param err [out] Output stream for human-readable error
+/// \param errStream [out] Output stream for human-readable error
 ///   reporting.  This is local to the calling process and may
 ///   differ on different processes.
 /// \param lclErr [out] On output: true if anything went wrong on
@@ -376,7 +376,7 @@ makeOptimizedColMap(std::ostream& errStream,
 /// Import requires some of the same information that optimizing the
 /// column Map does.
 ///
-/// \param err [out] Output stream for human-readable error
+/// \param errStream [out] Output stream for human-readable error
 ///   reporting.  This is local to the calling process and may
 ///   differ on different processes.
 /// \param lclErr [out] On output: true if anything went wrong on

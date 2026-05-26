@@ -180,7 +180,15 @@ Kokkos::Cuda make_instance() {
   }
   TPETRA_DETAILS_SPACES_CUDA_RUNTIME(
       cudaStreamCreateWithPriority(&stream, cudaStreamNonBlocking, prio));
-  return Kokkos::Cuda(stream, true /*Kokkos will manage this stream*/);
+
+  Kokkos::push_finalize_hook([=] {
+    if (stream != nullptr) {
+      TPETRA_DETAILS_SPACES_CUDA_RUNTIME(cudaStreamSynchronize(stream));
+      TPETRA_DETAILS_SPACES_CUDA_RUNTIME(cudaStreamDestroy(stream));
+    }
+  });
+
+  return Kokkos::Cuda(stream);
 }
 #endif  // KOKKOS_ENABLE_CUDA
 
@@ -371,10 +379,11 @@ Teuchos::RCP<const ExecSpace> space_instance(int i = 0) {
 }
 #endif
 
-/*! \brief get a strong Teuchos::RCP to Tpetra-managed Kokkos execution space
-   instance \c i \param priority the priority of the execution space instance
-    \tparam ExecSpace the type of Execution
-    \returns a strong RCP<ExecSpace>
+/*! \brief get a strong Teuchos::RCP to Tpetra-managed Kokkos execution space instance
+    \param priority the priority of the execution space instance
+    \param i the index of the execution space instance
+     \tparam ExecSpace the type of Execution
+     \returns a strong RCP<ExecSpace>
 */
 template <typename ExecSpace>
 Teuchos::RCP<const ExecSpace> space_instance(const Priority &priority,

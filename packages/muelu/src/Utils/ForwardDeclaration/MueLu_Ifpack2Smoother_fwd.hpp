@@ -10,8 +10,6 @@
 #ifndef MUELU_IFPACK2SMOOTHER_FWD_HPP
 #define MUELU_IFPACK2SMOOTHER_FWD_HPP
 
-#include "MueLu_ConfigDefs.hpp"
-
 namespace MueLu {
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 class Ifpack2Smoother;

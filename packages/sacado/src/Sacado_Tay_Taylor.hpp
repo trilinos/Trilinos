@@ -310,7 +310,9 @@ namespace Sacado {
     template <typename T> Taylor<T> operator/(const Base< Taylor<T> >& a,
                                               const typename Taylor<T>::value_type& b);
     template <typename T> Taylor<T> exp(const Base< Taylor<T> >& a);
+    template <typename T> Taylor<T> expm1(const Base< Taylor<T> >& a);
     template <typename T> Taylor<T> log(const Base< Taylor<T> >& a);
+    template <typename T> Taylor<T> log1p(const Base< Taylor<T> >& a);
     template <typename T> Taylor<T> log10(const Base< Taylor<T> >& a);
     template <typename T> Taylor<T> sqrt(const Base< Taylor<T> >& a);
     template <typename T> Taylor<T> cbrt(const Base< Taylor<T> >& a);

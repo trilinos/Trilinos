@@ -7,6 +7,7 @@
 // *****************************************************************************
 // @HEADER
 
+#include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_Details_iallreduce.hpp"
 
 #ifdef HAVE_TPETRACORE_MPI
@@ -97,19 +98,29 @@ void allreduceRaw(const void* sendbuf,
 
 }  // namespace Impl
 
+template <class ValueType>
 std::shared_ptr<CommRequest>
-iallreduce(const int localValue,
-           int& globalValue,
+iallreduce(const ValueType localValue,
+           ValueType& globalValue,
            const ::Teuchos::EReductionType op,
            const ::Teuchos::Comm<int>& comm) {
   // Input: needs to be an owning view containing localValue
-  Kokkos::View<int*, Kokkos::HostSpace> localView(
+  Kokkos::View<ValueType*, Kokkos::HostSpace> localView(
       Kokkos::ViewAllocateWithoutInitializing("localValue"), 1);
   localView(0) = localValue;
-  Kokkos::View<int*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>
+  Kokkos::View<ValueType*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>
       globalView(&globalValue, 1);
   return ::Tpetra::Details::iallreduce<decltype(localView), decltype(globalView)>(localView, globalView, op, comm);
 }
 
 }  // namespace Details
 }  // namespace Tpetra
+
+template std::shared_ptr<Tpetra::Details::CommRequest> Tpetra::Details::iallreduce(const int,
+                                                                                   int&,
+                                                                                   const ::Teuchos::EReductionType,
+                                                                                   const ::Teuchos::Comm<int>&);
+template std::shared_ptr<Tpetra::Details::CommRequest> Tpetra::Details::iallreduce(const Tpetra::global_size_t,
+                                                                                   Tpetra::global_size_t&,
+                                                                                   const ::Teuchos::EReductionType,
+                                                                                   const ::Teuchos::Comm<int>&);

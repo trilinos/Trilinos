@@ -28,6 +28,7 @@
 #include "ROL_StochasticProblem.hpp"
 #include "ROL_Solver.hpp"
 #include "ROL_TpetraTeuchosBatchManager.hpp"
+#include "ROL_StdTeuchosBatchManager.hpp"
 
 #include "../TOOLS/meshmanagerK.hpp"
 #include "../TOOLS/pdeconstraintK.hpp"
@@ -106,13 +107,13 @@ int main(int argc, char *argv[]) {
     u_ptr->randomize();  //u_ptr->putScalar(static_cast<RealT>(1));
     p_ptr->randomize();  //p_ptr->putScalar(static_cast<RealT>(1));
     du_ptr->randomize(); //du_ptr->putScalar(static_cast<RealT>(0));
-    auto up  = ROL::makePtr<PDE_PrimalSimVector<RealT,DeviceT>>(u_ptr,pde,assembler);
-    auto pp  = ROL::makePtr<PDE_PrimalSimVector<RealT,DeviceT>>(p_ptr,pde,assembler);
-    auto dup = ROL::makePtr<PDE_PrimalSimVector<RealT,DeviceT>>(du_ptr,pde,assembler);
+    auto up  = ROL::makePtr<PDE_PrimalSimVector<RealT,DeviceT>>(u_ptr,pde,assembler,*parlist);
+    auto pp  = ROL::makePtr<PDE_PrimalSimVector<RealT,DeviceT>>(p_ptr,pde,assembler,*parlist);
+    auto dup = ROL::makePtr<PDE_PrimalSimVector<RealT,DeviceT>>(du_ptr,pde,assembler,*parlist);
     // Create residual vectors
     auto r_ptr = assembler->createResidualVector();
     r_ptr->randomize(); //r_ptr->putScalar(static_cast<RealT>(1));
-    auto rp = ROL::makePtr<PDE_DualSimVector<RealT,DeviceT>>(r_ptr,pde,assembler);
+    auto rp = ROL::makePtr<PDE_DualSimVector<RealT,DeviceT>>(r_ptr,pde,assembler,*parlist);
     // Create control vector and set to ones
     auto  z_ptr = ROL::makePtr<std::vector<RealT>>(controlDim);
     auto dz_ptr = ROL::makePtr<std::vector<RealT>>(controlDim);
@@ -123,9 +124,9 @@ int main(int argc, char *argv[]) {
       (*dz_ptr)[i] = 1e-3*random<RealT>(*comm);
       (*yz_ptr)[i] = random<RealT>(*comm);
     }
-    auto zp  = ROL::makePtr<PDE_OptVector<RealT>>(ROL::makePtr<ROL::StdVector<RealT>>(z_ptr));
-    auto dzp = ROL::makePtr<PDE_OptVector<RealT>>(ROL::makePtr<ROL::StdVector<RealT>>(dz_ptr));
-    auto yzp = ROL::makePtr<PDE_OptVector<RealT>>(ROL::makePtr<ROL::StdVector<RealT>>(yz_ptr));
+    auto zp  = ROL::makePtr<ROL::StdVector<RealT>>(z_ptr);
+    auto dzp = ROL::makePtr<ROL::StdVector<RealT>>(dz_ptr);
+    auto yzp = ROL::makePtr<ROL::StdVector<RealT>>(yz_ptr);
     // Create ROL SimOpt vectors
     ROL::Vector_SimOpt<RealT> x(up,zp);
     ROL::Vector_SimOpt<RealT> d(dup,dzp);
@@ -147,8 +148,8 @@ int main(int argc, char *argv[]) {
     RealT lower = parlist->sublist("Problem").get("Lower Advection Bound",-100.0);
     auto zlo_ptr = ROL::makePtr<std::vector<RealT>>(controlDim,lower);
     auto zhi_ptr = ROL::makePtr<std::vector<RealT>>(controlDim,upper);
-    auto zlop = ROL::makePtr<PDE_OptVector<RealT>>(ROL::makePtr<ROL::StdVector<RealT>>(zlo_ptr));
-    auto zhip = ROL::makePtr<PDE_OptVector<RealT>>(ROL::makePtr<ROL::StdVector<RealT>>(zhi_ptr));
+    auto zlop = ROL::makePtr<ROL::StdVector<RealT>>(zlo_ptr);
+    auto zhip = ROL::makePtr<ROL::StdVector<RealT>>(zhi_ptr);
     auto bnd = ROL::makePtr<ROL::Bounds<RealT>>(zlop,zhip);
 
     /*************************************************************************/
@@ -157,7 +158,7 @@ int main(int argc, char *argv[]) {
     int nsamp = parlist->sublist("Problem").get("Number of Samples",100);
     std::vector<RealT> tmp = {-one,one};
     std::vector<std::vector<RealT>> bounds(stochDim,tmp);
-    auto bman = ROL::makePtr<PDE_OptVector_BatchManager<RealT>>(comm);
+    auto bman = ROL::makePtr<ROL::StdTeuchosBatchManager<RealT,int>>(comm);
     auto sampler = ROL::makePtr<ROL::MonteCarloGenerator<RealT>>(nsamp,bounds,bman);
 
     /*************************************************************************/

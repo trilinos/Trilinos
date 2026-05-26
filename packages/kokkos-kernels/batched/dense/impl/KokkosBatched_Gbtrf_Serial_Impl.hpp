@@ -18,7 +18,7 @@ KOKKOS_INLINE_FUNCTION static int checkGbtrfInput([[maybe_unused]] const ABViewT
   static_assert(Kokkos::is_view_v<PivViewType>, "KokkosBatched::gbtrf: PivViewType is not a Kokkos::View.");
   static_assert(ABViewType::rank == 2, "KokkosBatched::gbtrf: ABViewType must have rank 2.");
   static_assert(PivViewType::rank == 1, "KokkosBatched::gbtrf: PivViewType must have rank 1.");
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#ifndef NDEBUG
   const int n    = AB.extent(1);
   const int npiv = ipiv.extent(0);
   if (npiv != Kokkos::min(m, n)) {

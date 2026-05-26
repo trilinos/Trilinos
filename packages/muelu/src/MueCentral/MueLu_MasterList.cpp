@@ -89,16 +89,19 @@ namespace MueLu {
     if (name == "print initial parameters") { ss << "<Parameter name=\"print initial parameters\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "print unused parameters") { ss << "<Parameter name=\"print unused parameters\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "sa: damping factor") { ss << "<Parameter name=\"sa: damping factor\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "sa: nodal damping factor") { ss << "<Parameter name=\"sa: nodal damping factor\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
     if (name == "sa: use filtered matrix") { ss << "<Parameter name=\"sa: use filtered matrix\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "sa: eigen-analysis type") { ss << "<Parameter name=\"sa: eigen-analysis type\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
     if (name == "sa: eigenvalue estimate num iterations") { ss << "<Parameter name=\"sa: eigenvalue estimate num iterations\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
     if (name == "sa: use rowsumabs diagonal scaling") { ss << "<Parameter name=\"sa: use rowsumabs diagonal scaling\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "sa: enforce constraints") { ss << "<Parameter name=\"sa: enforce constraints\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "sa: max eigenvalue") { ss << "<Parameter name=\"sa: max eigenvalue\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "sa: diagonal replacement tolerance") { ss << "<Parameter name=\"sa: diagonal replacement tolerance\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
     if (name == "sa: rowsumabs diagonal replacement tolerance") { ss << "<Parameter name=\"sa: rowsumabs diagonal replacement tolerance\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
     if (name == "sa: rowsumabs use automatic diagonal tolerance") { ss << "<Parameter name=\"sa: rowsumabs use automatic diagonal tolerance\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "sa: rowsumabs diagonal replacement value") { ss << "<Parameter name=\"sa: rowsumabs diagonal replacement value\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
     if (name == "sa: rowsumabs replace single entry row with zero") { ss << "<Parameter name=\"sa: rowsumabs replace single entry row with zero\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "sa: keep tentative prolongator") { ss << "<Parameter name=\"sa: keep tentative prolongator\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "replicate: npdes") { ss << "<Parameter name=\"replicate: npdes\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
     if (name == "combine: numBlks") { ss << "<Parameter name=\"combine: numBlks\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
     if (name == "combine: useMaxLevels") { ss << "<Parameter name=\"combine: useMaxLevels\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
@@ -120,6 +123,7 @@ namespace MueLu {
     if (name == "repartition: put on single proc") { ss << "<Parameter name=\"repartition: put on single proc\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
     if (name == "use external multigrid package") { ss << "<Parameter name=\"use external multigrid package\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
     if (name == "maxwell1: dump matrices") { ss << "<Parameter name=\"maxwell1: dump matrices\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "maxwell1: check and fix D0 scaling") { ss << "<Parameter name=\"maxwell1: check and fix D0 scaling\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "refmaxwell: mode") { ss << "<Parameter name=\"refmaxwell: mode\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
     if (name == "refmaxwell: disable addon") { ss << "<Parameter name=\"refmaxwell: disable addon\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "refmaxwell: use as preconditioner") { ss << "<Parameter name=\"refmaxwell: use as preconditioner\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
@@ -268,6 +272,7 @@ namespace MueLu {
   "<Parameter name=\"linedetection: orientation\" type=\"string\" value=\"vertical\"/>"
   "<Parameter name=\"linedetection: num layers\" type=\"int\" value=\"-1\"/>"
   "<Parameter name=\"sa: damping factor\" type=\"double\" value=\"1.33\"/>"
+  "<Parameter name=\"sa: nodal damping factor\" type=\"double\" value=\"1.33\"/>"
   "<Parameter name=\"sa: use filtered matrix\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"sa: calculate eigenvalue estimate\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"sa: eigen-analysis type\" type=\"string\" value=\"power-method\"/>"
@@ -275,10 +280,12 @@ namespace MueLu {
   "<Parameter name=\"sa: use rowsumabs diagonal scaling\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"sa: enforce constraints\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"sa: max eigenvalue\" type=\"double\" value=\"-1.0\"/>"
+  "<Parameter name=\"sa: diagonal replacement tolerance\" type=\"double\" value=\"-1.0\"/>"
   "<Parameter name=\"sa: rowsumabs diagonal replacement tolerance\" type=\"double\" value=\"-1.0\"/>"
   "<Parameter name=\"sa: rowsumabs use automatic diagonal tolerance\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"sa: rowsumabs diagonal replacement value\" type=\"double\" value=\"0.0\"/>"
   "<Parameter name=\"sa: rowsumabs replace single entry row with zero\" type=\"bool\" value=\"true\"/>"
+  "<Parameter name=\"sa: keep tentative prolongator\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"replicate: npdes\" type=\"int\" value=\"1\"/>"
   "<Parameter name=\"combine: numBlks\" type=\"int\" value=\"1\"/>"
   "<Parameter name=\"combine: useMaxLevels\" type=\"bool\" value=\"false\"/>"
@@ -306,6 +313,8 @@ namespace MueLu {
   "<Parameter name=\"emin: pattern\" type=\"string\" value=\"AkPtent\"/>"
   "<Parameter name=\"emin: pattern order\" type=\"int\" value=\"1\"/>"
   "<Parameter name=\"emin: use filtered matrix\" type=\"bool\" value=\"true\"/>"
+  "<Parameter name=\"emin: constraint type\" type=\"string\" value=\"nullspace\"/>"
+  "<Parameter name=\"emin: least squares solver type\" type=\"string\" value=\"direct\"/>"
   "<Parameter name=\"tentative: calculate qr\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"tentative: constant column sums\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"tentative: build coarse coordinates\" type=\"bool\" value=\"true\"/>"
@@ -355,6 +364,7 @@ namespace MueLu {
   "<ParameterList name=\"maxwell1: 11list\"/>"
   "<ParameterList name=\"maxwell1: 22list\"/>"
   "<Parameter name=\"maxwell1: dump matrices\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"maxwell1: check and fix D0 scaling\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"maxwell1: nodal smoother fix zero diagonal threshold\" type=\"double\" value=\"1e-10\"/>"
   "<Parameter name=\"refmaxwell: mode\" type=\"string\" value=\"additive\"/>"
   "<Parameter name=\"refmaxwell: disable addon\" type=\"bool\" value=\"true\"/>"
@@ -814,6 +824,8 @@ namespace MueLu {
       
          ("aggregation: damping factor","sa: damping factor")
       
+         ("sa: nodal damping factor","sa: nodal damping factor")
+      
          ("aggregation aux: enable","sa: use filtered matrix")
       
          ("sa: calculate eigenvalue estimate","sa: calculate eigenvalue estimate")
@@ -828,6 +840,8 @@ namespace MueLu {
       
          ("not supported by ML","sa: max eigenvalue")
       
+         ("not supported by ML","sa: diagonal replacement tolerance")
+      
          ("not supported by ML","sa: rowsumabs diagonal replacement tolerance")
       
          ("not supported by ML","sa: rowsumabs use automatic diagonal tolerance")
@@ -835,6 +849,8 @@ namespace MueLu {
          ("not supported by ML","sa: rowsumabs diagonal replacement value")
       
          ("not supported by ML","sa: rowsumabs replace single entry row with zero")
+      
+         ("not supported by ML","sa: keep tentative prolongator")
       
          ("not supported by ML","replicate: npdes")
       
@@ -889,6 +905,10 @@ namespace MueLu {
          ("emin: pattern order","emin: pattern order")
       
          ("emin: use filtered matrix","emin: use filtered matrix")
+      
+         ("emin: constraint type","emin: constraint type")
+      
+         ("emin: least squares solver type","emin: least squares solver type")
       
          ("tentative: calculate qr","tentative: calculate qr")
       
@@ -987,6 +1007,8 @@ namespace MueLu {
          ("maxwell1: 22list","maxwell1: 22list")
       
          ("maxwell1: dump matrices","maxwell1: dump matrices")
+      
+         ("maxwell1: check and fix D0 scaling","maxwell1: check and fix D0 scaling")
       
          ("maxwell1: nodal smoother fix zero diagonal threshold","maxwell1: nodal smoother fix zero diagonal threshold")
       

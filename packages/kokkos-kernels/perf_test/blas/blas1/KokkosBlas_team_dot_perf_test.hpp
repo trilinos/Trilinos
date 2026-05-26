@@ -8,9 +8,6 @@
 #include "KokkosBlas1_team_dot.hpp"
 #include <Kokkos_Random.hpp>
 
-#ifdef KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
-#include <PerfTestUtilities.hpp>
-#endif
 //  Team Dot documenation
 //  https://github.com/kokkos/kokkos-kernels/wiki/BLAS-1%3A%3Ateam-dot
 
@@ -46,10 +43,6 @@ struct testData_rps_team_dot {
 };
 
 // Instantiate the machinery needed to run as an RPS test
-
-#ifdef KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
-test_list construct_team_dot_kernel_base(const rajaperf::RunParams& params);
-#endif
 
 // Templated function
 template <typename ExecSpace, typename Layout>

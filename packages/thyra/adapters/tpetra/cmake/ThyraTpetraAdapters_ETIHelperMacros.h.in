@@ -1,0 +1,40 @@
+// @HEADER
+// *****************************************************************************
+//    Thyra: Interfaces and Support for Abstract Numerical Algorithms
+//
+// Copyright 2004 NTESS and the Thyra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
+#ifndef THYRATPETRAADAPTERS_ETIHELPERMACROS_H_
+#define THYRATPETRAADAPTERS_ETIHELPERMACROS_H_
+
+#include "ThyraTpetraAdapters_config.h"
+#include <Tpetra_ConfigDefs.hpp>
+#include <Tpetra_CrsMatrix.hpp>
+#include <Tpetra_CrsGraph.hpp>
+
+@THYRATPETRAADAPTERS_ETIMACRO_SL@
+
+@THYRATPETRAADAPTERS_ETIMACRO_SL_REAL@
+
+@THYRATPETRAADAPTERS_ETIMACRO_L@
+
+@THYRATPETRAADAPTERS_ETIMACRO_SLG@
+
+@THYRATPETRAADAPTERS_ETIMACRO_SLG_REAL@
+
+@THYRATPETRAADAPTERS_ETIMACRO_LG@
+
+@THYRATPETRAADAPTERS_ETIMACRO_SLGN@
+
+@THYRATPETRAADAPTERS_ETIMACRO_SLGN_REAL@
+
+@THYRATPETRAADAPTERS_ETIMACRO_LGN@
+
+@THYRATPETRAADAPTERS_ETIMACRO_N@
+
+@THYRATPETRAADAPTERS_ETI_TYPEDEFS@
+
+#endif // THYRATPETRAADAPTERS_ETIHELPERMACROS_H_

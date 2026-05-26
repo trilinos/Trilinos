@@ -47,7 +47,6 @@
 #include "MueLu_InitialBlockNumberFactory.hpp"
 #include "MueLu_IndefBlockedDiagonalSmoother.hpp"
 #include "MueLu_InverseApproximationFactory.hpp"
-#include "MueLu_IsorropiaInterface.hpp"
 #include "MueLu_LineDetectionFactory.hpp"
 #include "MueLu_LocalOrdinalTransferFactory.hpp"
 #include "MueLu_RepartitionInterface.hpp"
@@ -116,7 +115,7 @@
 #include "MueLu_MatlabSmoother.hpp"
 #endif
 
-#ifdef HAVE_MUELU_INTREPID2
+#if defined(HAVE_MUELU_INTREPID2) && defined(HAVE_MUELU_EXPERIMENTAL)
 #include "MueLu_IntrepidPCoarsenFactory.hpp"
 #endif
 
@@ -230,9 +229,6 @@ RCP<const FactoryBase> FactoryFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>
     TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory:BuildFactory(): Cannot create a Zoltan2Interface object: Zoltan2 is disabled: HAVE_MUELU_ZOLTAN2 && HAVE_MPI == false.");
 #endif  // HAVE_MUELU_ZOLTAN2 && HAVE_MPI
   }
-  if (factoryName == "IsorropiaInterface") {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory:BuildFactory(): Cannot create a IsorropiaInterface object: Isorropia is disabled: HAVE_MUELU_ISORROPIA && HAVE_MPI == false.");
-  }
 
   if (factoryName == "NodePartitionInterface") {
 #if defined(HAVE_MPI)
@@ -284,7 +280,7 @@ RCP<const FactoryBase> FactoryFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   if (factoryName == "MatlabSmoother") return BuildMatlabSmoother(paramList, factoryMapIn, factoryManagersIn);
 #endif
 
-#ifdef HAVE_MUELU_INTREPID2
+#if defined(HAVE_MUELU_INTREPID2) && defined(HAVE_MUELU_EXPERIMENTAL)
   if (factoryName == "IntrepidPCoarsenFactory") return Build2<IntrepidPCoarsenFactory>(paramList, factoryMapIn, factoryManagersIn);
 #endif
 

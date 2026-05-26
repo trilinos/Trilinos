@@ -684,7 +684,7 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
     def test_TrilinosPRConfigurationBase_prepare_test_skip_create_package_enables_file(self):
         """
         Test that the prepare_test method does not call the member function create_package_enables_file
-        when skip_create_packageenables is True
+        when skip_create_packageenables is True, but ensure the expected files are still present.
         """
         args = self.dummy_args()
         args.skip_create_packageenables = True
@@ -694,6 +694,47 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         pr_config.prepare_test()
 
         pr_config.create_package_enables_file.assert_not_called()
+        self.assertTrue(os.path.isfile(pr_config.arg_filename_packageenables))
+        self.assertTrue(os.path.isfile(pr_config.arg_filename_subprojects))
+
+
+    def test_TrilinosPRConfigurationBase_prepare_test_all_enabled_skips_packageenables(self):
+        """
+        Test that the prepare_test method does not call the member function create_package_enables_file
+        if the GenConfig key would enable all packages (no need to decide which packages then).
+        """
+        args = self.dummy_args()
+        args.genconfig_build_name = "rhel8_sems-gnu-openmpi_release_static_no-kokkos-arch_no-asan_no-complex_no-fpic_mpi_no-pt_no-rdc_all"
+        pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
+
+        pr_config.create_package_enables_file = Mock()
+        pr_config.prepare_test()
+
+        pr_config.create_package_enables_file.assert_not_called()
+        self.assertTrue(os.path.isfile(pr_config.arg_filename_packageenables))
+        self.assertTrue(os.path.isfile(pr_config.arg_filename_subprojects))
+
+
+    def test_TrilinosPRConfigurationBase_using_asan_true(self):
+        """
+        Test that the `using_address_sanitizer` property is True if the build key contains `_asan_`.
+        """
+        args = self.dummy_args()
+        args.genconfig_build_name = "rhel8_sems-gnu-openmpi_release_static_no-kokkos-arch_asan_no-complex_no-fpic_mpi_no-pt_no-rdc_all"
+        pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
+
+        self.assertTrue(pr_config.using_address_sanitizer)
+
+
+    def test_TrilinosPRConfigurationBase_using_asan_false(self):
+        """
+        Test that the `using_address_sanitizer` property is False if the build key contains `_no-asan_`.
+        """
+        args = self.dummy_args()
+        args.genconfig_build_name = "rhel8_sems-gnu-openmpi_release_static_no-kokkos-arch_no-asan_no-complex_no-fpic_mpi_no-pt_no-rdc_all"
+        pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
+
+        self.assertFalse(pr_config.using_address_sanitizer)
 
 
     def test_TrilinosPRConfigurationBase_prepare_test_FAIL(self):

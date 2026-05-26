@@ -28,7 +28,7 @@
 
 namespace MueLu {
 /*!
-  @class InterfaceAggregationAlgorithm class.
+  @class InterfaceAggregationAlgorithm
   @brief Algorithm for coarsening a graph with uncoupled aggregation.
   creates aggregates along an interface using specified root nodes.
 

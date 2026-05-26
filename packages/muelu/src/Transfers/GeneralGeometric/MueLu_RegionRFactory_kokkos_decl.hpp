@@ -22,7 +22,7 @@
 namespace MueLu {
 
 /*!
-  @class RegionRFactory_kokkos class
+  @class RegionRFactory_kokkos
   @brief Factory that builds a restriction operator for region multigrid
 */
 

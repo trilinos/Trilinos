@@ -10,13 +10,6 @@
 #include "KokkosBlas1_dot.hpp"
 #include <Kokkos_Random.hpp>
 
-// These headers are required for RPS perf test implementation
-//
-#ifdef KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
-#include <PerfTestUtilities.hpp>
-test_list construct_dot_kernel_base(const rajaperf::RunParams& run_params);
-#endif  // KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
-
 template <class ExecSpace>
 struct testData {
   // type aliases

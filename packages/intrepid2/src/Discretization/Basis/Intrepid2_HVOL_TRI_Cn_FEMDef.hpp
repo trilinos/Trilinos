@@ -52,8 +52,7 @@ namespace Impl {
   typedef typename Kokkos::DynRankView<typename InputViewType::value_type, typename WorkViewType::memory_space> ViewType;
   auto ptr = work.data();
 
-  switch (OpType) {
-  case OPERATOR_VALUE: {
+  if constexpr (OpType == OPERATOR_VALUE) {
     const ViewType phis = createMatchingUnmanagedView<ViewType>(input, ptr, card, npts);
       ViewType dummyView;
 
@@ -62,14 +61,12 @@ namespace Impl {
 
     for (ordinal_type i=0;i<card;++i)
       for (ordinal_type j=0;j<npts;++j) {
-        output.access(i,j) = 0.0;
+        output(i,j) = 0.0;
         for (ordinal_type k=0;k<card;++k)
-          output.access(i,j) += vinv(k,i)*phis.access(k,j);
+          output(i,j) += vinv(k,i)*phis(k,j);
       }
-    break;
   }
-  case OPERATOR_GRAD:
-  case OPERATOR_D1: {
+  else if constexpr ((OpType == OPERATOR_GRAD) || (OpType == OPERATOR_D1)) {
     const ViewType phis = createMatchingUnmanagedView<ViewType>(input, ptr, card, npts, spaceDim);
     ptr += card*npts*spaceDim*get_dimension_scalar(input);
     const ViewType workView = createMatchingUnmanagedView<ViewType>(input, ptr, card, npts, spaceDim+1);
@@ -79,21 +76,13 @@ namespace Impl {
     for (ordinal_type i=0;i<card;++i)
       for (ordinal_type j=0;j<npts;++j)
         for (ordinal_type k=0;k<spaceDim;++k) {
-          output.access(i,j,k) = 0.0;
+          output(i,j,k) = 0.0;
           for (ordinal_type l=0;l<card;++l)
-            output.access(i,j,k) += vinv(l,i)*phis.access(l,j,k);
+            output(i,j,k) += vinv(l,i)*phis(l,j,k);
         }
-    break;
   }
-  case OPERATOR_D2:
-  case OPERATOR_D3:
-  case OPERATOR_D4:
-  case OPERATOR_D5:
-  case OPERATOR_D6:
-  case OPERATOR_D7:
-  case OPERATOR_D8:
-  case OPERATOR_D9:
-  case OPERATOR_D10: {
+  else if constexpr ((OpType == OPERATOR_D2) || (OpType == OPERATOR_D3) || (OpType == OPERATOR_D4) || (OpType == OPERATOR_D5) ||
+                     (OpType == OPERATOR_D6) || (OpType == OPERATOR_D7) || (OpType == OPERATOR_D8) || (OpType == OPERATOR_D9)  || (OpType == OPERATOR_D10)) {
     const ordinal_type dkcard = getDkCardinality<OpType,spaceDim>(); //(orDn + 1);
     const ViewType phis = createMatchingUnmanagedView<ViewType>(input, ptr, card, npts, dkcard);
     ViewType dummyView;
@@ -104,16 +93,14 @@ namespace Impl {
     for (ordinal_type i=0;i<card;++i)
       for (ordinal_type j=0;j<npts;++j)
         for (ordinal_type k=0;k<dkcard;++k) {
-          output.access(i,j,k) = 0.0;
+          output(i,j,k) = 0.0;
           for (ordinal_type l=0;l<card;++l)
-            output.access(i,j,k) += vinv(l,i)*phis.access(l,j,k);
+            output(i,j,k) += vinv(l,i)*phis(l,j,k);
         }
-    break;
   }
-  default: {
+  else {
     INTREPID2_TEST_FOR_ABORT( true,
         ">>> ERROR (Basis_HVOL_TRI_Cn_FEM): Operator type not implemented");
-  }
   }
 }
 
@@ -301,13 +288,13 @@ Basis_HVOL_TRI_Cn_FEM( const ordinal_type order,
 
   template<typename DT, typename OT, typename PT>
   void 
-  Basis_HVOL_TRI_Cn_FEM<DT,OT,PT>::getScratchSpaceSize(       
-                                    ordinal_type& perTeamSpaceSize,
+  Basis_HVOL_TRI_Cn_FEM<DT,OT,PT>::getScratchSpaceSize(        
                                     ordinal_type& perThreadSpaceSize,
                               const PointViewType inputPoints,
                               const EOperator operatorType) const {
-    perTeamSpaceSize = 0;
-    perThreadSpaceSize = this->vinv_.extent(0)*get_dimension_scalar(inputPoints)*sizeof(typename BasisBase::scalarType);
+    using ScalarType = typename ScalarTraits<typename PointViewType::value_type>::scalar_type;
+    using ScratchViewType = Kokkos::DynRankView<ScalarType, typename DT::execution_space::scratch_memory_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+    perThreadSpaceSize = ScratchViewType::shmem_size(this->vinv_.extent(0)*get_dimension_scalar(inputPoints));
   }
 
   template<typename DT, typename OT, typename PT>
@@ -318,7 +305,7 @@ Basis_HVOL_TRI_Cn_FEM( const ordinal_type order,
       const PointViewType  inputPoints,
       const EOperator operatorType,
       const typename Kokkos::TeamPolicy<typename DT::execution_space>::member_type& team_member,
-      const typename DT::execution_space::scratch_memory_space & scratchStorage, 
+      const int threadScratchLevel, 
       const ordinal_type subcellDim,
       const ordinal_type subcellOrdinal) const {
       
@@ -329,14 +316,14 @@ Basis_HVOL_TRI_Cn_FEM( const ordinal_type order,
       using ScalarType = typename ScalarTraits<typename PointViewType::value_type>::scalar_type;
       using WorkViewType = Kokkos::DynRankView< ScalarType,typename DT::execution_space::scratch_memory_space,Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
       auto sizePerPoint = this->vinv_.extent(0)*get_dimension_scalar(inputPoints);
-      WorkViewType workView(scratchStorage, sizePerPoint*team_member.team_size());
+      
+      WorkViewType  work(team_member.thread_scratch(threadScratchLevel), sizePerPoint);
       using range_type = Kokkos::pair<ordinal_type,ordinal_type>;
       switch(operatorType) {
         case OPERATOR_VALUE:
           Kokkos::parallel_for (Kokkos::TeamThreadRange (team_member, numPoints), [=, &vinv_ = this->vinv_] (ordinal_type& pt) {
             auto       output = Kokkos::subview( outputValues, Kokkos::ALL(), range_type  (pt,pt+1), Kokkos::ALL() );
             const auto input  = Kokkos::subview( inputPoints,                 range_type(pt, pt+1), Kokkos::ALL() );
-            WorkViewType  work(workView.data() + sizePerPoint*team_member.team_rank(), sizePerPoint);
             Impl::Basis_HVOL_TRI_Cn_FEM::Serial<OPERATOR_VALUE>::getValues( output, input, work, vinv_);
           });
           break;

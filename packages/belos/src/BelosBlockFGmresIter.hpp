@@ -274,6 +274,11 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
   // generated without the right-hand side or solution vectors.
   bool stateStorageInitialized_;
 
+  // keepHessenberg_ specifies that the upper Hessenberg matrix should be stored separately
+  // from the QR-factored least squares system (R_).  When false, H_ and R_ point to the
+  // same object and only the QR-rotated form is available via getState().
+  bool keepHessenberg_;
+
   // Current subspace dimension, and number of iterations performed.
   int curDim_, iter_;
 
@@ -312,9 +317,16 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
     numBlocks_(0),
     initialized_(false),
     stateStorageInitialized_(false),
+    keepHessenberg_(false),
     curDim_(0),
     iter_(0)
   {
+    // Find out whether we are saving the Hessenberg matrix separately from R.
+    if (om_->isVerbosity(Debug))
+      keepHessenberg_ = true;
+    else
+      keepHessenberg_ = params.get("Keep Hessenberg", false);
+
     // Get the maximum number of blocks allowed for this Krylov subspace
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! params.isParameter ("Num Blocks"), std::invalid_argument,
@@ -426,16 +438,29 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
           }
         }
 
-        // Generate H_ only if it doesn't exist, otherwise resize it.
-        if (H_ == Teuchos::null) {
-          H_ = rcp (new SDM (newsd, newsd-blockSize_));
+        // R_ holds the QR-factored least squares system. Always allocated.
+        if (R_ == Teuchos::null) {
+          R_ = rcp (new SDM (newsd, newsd-blockSize_));
         }
         else {
-          H_->shapeUninitialized (newsd, newsd - blockSize_);
+          R_->shapeUninitialized (newsd, newsd - blockSize_);
         }
 
-        // TODO:  Insert logic so that Hessenberg matrix can be saved and reduced matrix is stored in R_
-        //R_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( newsd, newsd-blockSize_ ) );
+        // H_ holds the raw (pre-QR) upper Hessenberg matrix.
+        // When keepHessenberg_ is false, H_ and R_ point to the same object
+        // (matching BlockGmresIter behavior).
+        if (keepHessenberg_) {
+          if (H_ == Teuchos::null) {
+            H_ = rcp (new SDM (newsd, newsd-blockSize_));
+          }
+          else {
+            H_->shapeUninitialized (newsd, newsd - blockSize_);
+          }
+        }
+        else {
+          H_ = R_;
+        }
+
         // Generate z_ only if it doesn't exist, otherwise resize it.
         if (z_ == Teuchos::null) {
           z_ = rcp (new SDM (newsd, blockSize_));
@@ -476,7 +501,7 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
       // Solve the least squares problem.
       blas.TRSM (Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
                  Teuchos::NON_UNIT_DIAG, curDim_, blockSize_, one,
-                 H_->values (), H_->stride (), y.values (), y.stride ());
+                 R_->values (), R_->stride (), y.values (), y.stride ());
 
       // Compute the current update.
       std::vector<int> index (curDim_);
@@ -668,13 +693,14 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
       Array<RCP<const MV> > AVprev (1, Vprev);
 
       // Get a view of the part of the Hessenberg matrix needed to hold the ortho coeffs.
+      // Ortho always writes into H_ (the raw Hessenberg).
       RCP<SDM> subH = rcp (new SDM (View, *H_, lclDim, blockSize_, 0, curDim_));
       Array<RCP<SDM> > AsubH;
       AsubH.append (subH);
 
       // Get a view of the part of the Hessenberg matrix needed to hold the norm coeffs.
-      RCP<SDM> subR = rcp (new SDM (View, *H_, blockSize_, blockSize_, lclDim, curDim_));
-      const int rank = ortho_->projectAndNormalize (*Vnext, AsubH, subR, AVprev);
+      RCP<SDM> subH2 = rcp (new SDM (View, *H_, blockSize_, blockSize_, lclDim, curDim_));
+      const int rank = ortho_->projectAndNormalize (*Vnext, AsubH, subH2, AVprev);
       TEUCHOS_TEST_FOR_EXCEPTION(
         rank != blockSize_, GmresIterationOrthoFailure,
         "Belos::BlockFGmresIter::iterate(): After orthogonalization, the new "
@@ -682,10 +708,19 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
         << " vector" << (blockSize_ != 1 ? "s" : "")
         << ", but its rank is " << rank << ".");
 
+      // If keeping the Hessenberg separately, copy the new columns into R_
+      // before updateLSQR() overwrites them with the QR factorization.
+      if (keepHessenberg_) {
+        RCP<SDM> subR = rcp (new SDM (View, *R_, lclDim, blockSize_, 0, curDim_));
+        subR->assign (*subH);
+        RCP<SDM> subR2 = rcp (new SDM (View, *R_, blockSize_, blockSize_, lclDim, curDim_));
+        subR2->assign (*subH2);
+      }
+
       //
       // V has been extended, and H has been extended.
       //
-      // Update the QR factorization of the upper Hessenberg matrix
+      // Update the QR factorization of the upper Hessenberg matrix (applied to R_).
       //
       updateLSQR ();
       //
@@ -726,11 +761,11 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
       // QR factorization of upper Hessenberg matrix using Givens rotations
       for (int i = 0; i < curDim; ++i) {
         // Apply previous Givens rotations to new column of Hessenberg matrix
-        blas.ROT (1, &(*H_)(i, curDim), 1, &(*H_)(i+1, curDim), 1, &cs[i], &sn[i]);
+        blas.ROT (1, &(*R_)(i, curDim), 1, &(*R_)(i+1, curDim), 1, &cs[i], &sn[i]);
       }
       // Calculate new Givens rotation
-      blas.ROTG (&(*H_)(curDim, curDim), &(*H_)(curDim+1, curDim), &cs[curDim], &sn[curDim]);
-      (*H_)(curDim+1, curDim) = zero;
+      blas.ROTG (&(*R_)(curDim, curDim), &(*R_)(curDim+1, curDim), &cs[curDim], &sn[curDim]);
+      (*R_)(curDim+1, curDim) = zero;
 
       // Update RHS w/ new transformation
       blas.ROT (1, &(*z_)(curDim,0), 1, &(*z_)(curDim+1,0), 1, &cs[curDim], &sn[curDim]);
@@ -740,44 +775,44 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
       for (int j = 0; j < blockSize_; ++j) {
         // Apply previous Householder reflectors to new block of Hessenberg matrix
         for (int i = 0; i < curDim + j; ++i) {
-          sigma = blas.DOT (blockSize_, &(*H_)(i+1,i), 1, &(*H_)(i+1,curDim+j), 1);
-          sigma += (*H_)(i,curDim+j);
+          sigma = blas.DOT (blockSize_, &(*R_)(i+1,i), 1, &(*R_)(i+1,curDim+j), 1);
+          sigma += (*R_)(i,curDim+j);
           sigma *= beta[i];
-          blas.AXPY (blockSize_, ScalarType(-sigma), &(*H_)(i+1,i), 1, &(*H_)(i+1,curDim+j), 1);
-          (*H_)(i,curDim+j) -= sigma;
+          blas.AXPY (blockSize_, ScalarType(-sigma), &(*R_)(i+1,i), 1, &(*R_)(i+1,curDim+j), 1);
+          (*R_)(i,curDim+j) -= sigma;
         }
 
         // Compute new Householder reflector
-        const int maxidx = blas.IAMAX (blockSize_+1, &(*H_)(curDim+j,curDim+j), 1);
-        maxelem = (*H_)(curDim + j + maxidx - 1, curDim + j);
+        const int maxidx = blas.IAMAX (blockSize_+1, &(*R_)(curDim+j,curDim+j), 1);
+        maxelem = (*R_)(curDim + j + maxidx - 1, curDim + j);
         for (int i = 0; i < blockSize_ + 1; ++i) {
-          (*H_)(curDim+j+i,curDim+j) /= maxelem;
+          (*R_)(curDim+j+i,curDim+j) /= maxelem;
         }
-        sigma = blas.DOT (blockSize_, &(*H_)(curDim + j + 1, curDim + j), 1,
-                          &(*H_)(curDim + j + 1, curDim + j), 1);
+        sigma = blas.DOT (blockSize_, &(*R_)(curDim + j + 1, curDim + j), 1,
+                          &(*R_)(curDim + j + 1, curDim + j), 1);
         if (sigma == zero) {
           beta[curDim + j] = zero;
         } else {
-          mu = STS::squareroot ((*H_)(curDim+j,curDim+j)*(*H_)(curDim+j,curDim+j)+sigma);
-          if (STS::real ((*H_)(curDim + j, curDim + j)) < STM::zero ()) {
-            vscale = (*H_)(curDim+j,curDim+j) - mu;
+          mu = STS::squareroot ((*R_)(curDim+j,curDim+j)*(*R_)(curDim+j,curDim+j)+sigma);
+          if (STS::real ((*R_)(curDim + j, curDim + j)) < STM::zero ()) {
+            vscale = (*R_)(curDim+j,curDim+j) - mu;
           } else {
-            vscale = -sigma / ((*H_)(curDim+j, curDim+j) + mu);
+            vscale = -sigma / ((*R_)(curDim+j, curDim+j) + mu);
           }
           beta[curDim+j] = two * vscale * vscale / (sigma + vscale*vscale);
-          (*H_)(curDim+j, curDim+j) = maxelem*mu;
+          (*R_)(curDim+j, curDim+j) = maxelem*mu;
           for (int i = 0; i < blockSize_; ++i) {
-            (*H_)(curDim+j+1+i,curDim+j) /= vscale;
+            (*R_)(curDim+j+1+i,curDim+j) /= vscale;
           }
         }
 
         // Apply new Householder reflector to the right-hand side.
         for (int i = 0; i < blockSize_; ++i) {
-          sigma = blas.DOT (blockSize_, &(*H_)(curDim+j+1,curDim+j),
+          sigma = blas.DOT (blockSize_, &(*R_)(curDim+j+1,curDim+j),
                             1, &(*z_)(curDim+j+1,i), 1);
           sigma += (*z_)(curDim+j,i);
           sigma *= beta[curDim+j];
-          blas.AXPY (blockSize_, ScalarType(-sigma), &(*H_)(curDim+j+1,curDim+j),
+          blas.AXPY (blockSize_, ScalarType(-sigma), &(*R_)(curDim+j+1,curDim+j),
                      1, &(*z_)(curDim+j+1,i), 1);
           (*z_)(curDim+j,i) -= sigma;
         }

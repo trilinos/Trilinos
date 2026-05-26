@@ -20,7 +20,7 @@
 
 namespace MueLu {
 /*!
-  @class AggregationPhase3Algorithm class.
+  @class AggregationPhase3Algorithm
   @brief Handle leftover nodes. Try to avoid singleton nodes
   @ingroup Aggregation
 

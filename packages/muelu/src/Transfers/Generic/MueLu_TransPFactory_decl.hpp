@@ -23,7 +23,7 @@
 namespace MueLu {
 
 /*!
-  @class TransPFactory class.
+  @class TransPFactory
   @brief Factory for building restriction operators.
 
   This factory currently depends on an underlying matrix-matrix multiply with the identity

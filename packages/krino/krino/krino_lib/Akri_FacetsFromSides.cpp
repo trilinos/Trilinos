@@ -119,22 +119,31 @@ static void append_owned_facets_with_velocity_from_line_sides(const stk::mesh::B
   }
 }
 
-void build_interface_conforming_facets(const stk::mesh::BulkData & mesh,
+void append_interface_conforming_facets(const stk::mesh::BulkData & mesh,
     const stk::mesh::Selector interfaceSelector,
     const stk::mesh::Selector negativeSideBlockSelector,
     const stk::mesh::Part & activePart,
     const FieldRef coordsField,
-    const Surface_Identifier lsIdentifier,
     FacetedSurfaceBase & facets)
 {
   const stk::mesh::Selector sideSelector = interfaceSelector & activePart;
   const stk::mesh::Selector ownedSideSelector = sideSelector & mesh.mesh_meta_data().locally_owned_part();
 
-  facets.clear();
   if (3 == mesh.mesh_meta_data().spatial_dimension())
     append_owned_facets_from_triangle_sides(mesh, coordsField, sideSelector, negativeSideBlockSelector, facets.as_derived_type<Facet3d>().get_facets());
   else
     append_owned_facets_from_line_sides(mesh, coordsField, sideSelector, negativeSideBlockSelector, facets.as_derived_type<Facet2d>().get_facets());
+}
+
+void build_interface_conforming_facets(const stk::mesh::BulkData & mesh,
+    const stk::mesh::Selector interfaceSelector,
+    const stk::mesh::Selector negativeSideBlockSelector,
+    const stk::mesh::Part & activePart,
+    const FieldRef coordsField,
+    FacetedSurfaceBase & facets)
+{
+  facets.clear();
+  append_interface_conforming_facets(mesh, interfaceSelector, negativeSideBlockSelector, activePart, coordsField, facets);
 }
 
 void build_interface_conforming_facets_with_interface_velocity(const stk::mesh::BulkData & mesh,
@@ -144,7 +153,6 @@ void build_interface_conforming_facets_with_interface_velocity(const stk::mesh::
     const FieldRef coordsField,
     const FieldRef interfaceVelocity,
     const unsigned numVelocityStates,
-    const Surface_Identifier lsIdentifier,
     FacetedSurfaceBase & facets)
 {
   const stk::mesh::Selector sideSelector = interfaceSelector & activePart;

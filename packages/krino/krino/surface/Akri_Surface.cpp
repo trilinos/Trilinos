@@ -36,4 +36,9 @@ std::pair<int, double> Surface::compute_intersection_with_segment(const stk::mat
   return compute_surface_intersection_with_segment_from_signed_distance(*this, pt0, pt1, edgeCrossingTol);
 }
 
+stk::math::Vector3d Surface::closest_point_normal(const stk::math::Vector3d &x) const
+{
+  ThrowRuntimeError("This surface with type (" << type() << ") has not implemented closest_point_normal().");
+}
+
 } // namespace krino

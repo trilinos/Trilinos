@@ -73,9 +73,6 @@ KOKKOS_INLINE_FUNCTION int TeamGemmInternal<Algo::Gemm::Blocked>::invoke(
   // C = beta C + alpha A B
   // C (m x n), A(m x k), B(k x n)
 
-  constexpr int mbAlgo = Algo::Gemm::Blocked::mb();
-  constexpr int nbAlgo = Algo::Gemm::Blocked::mb();
-
   const ScalarType one(1.0), zero(0.0);
 
   if (beta == zero)
@@ -88,57 +85,59 @@ KOKKOS_INLINE_FUNCTION int TeamGemmInternal<Algo::Gemm::Blocked>::invoke(
 
     if (beta != one) member.team_barrier();
 
-    ///
-    /// GPU case: team size is large and blocksize (mb,nb) is small
-    InnerGemmFixC<mbAlgo, nbAlgo> inner(as0, as1, bs0, bs1, cs0, cs1);
-    auto gemm = [&](const int ib, const int jb, const int pb, const ValueType *KOKKOS_RESTRICT AA,
-                    const ValueType *KOKKOS_RESTRICT BB,
-                    /**/ ValueType *KOKKOS_RESTRICT CC) {
-      // Made this non-const in order to WORKAROUND issue #349
-      int mb = mbAlgo, mp = (ib % mb), mq = (ib / mb) + (mp > 0), nb = nbAlgo, np = (jb % nb),
-          nq = (jb / nb) + (np > 0);
+    auto host_or_device = [&](auto tag) {
+      constexpr int mb = Algo::Gemm::Blocked::Impl::mb<decltype(tag)>();
+      constexpr int nb = Algo::Gemm::Blocked::Impl::mb<decltype(tag)>();
+      InnerGemmFixC<mb, nb> inner(as0, as1, bs0, bs1, cs0, cs1);
+      auto gemm = [&](const int ib, const int jb, const int pb, const ValueType *KOKKOS_RESTRICT AA,
+                      const ValueType *KOKKOS_RESTRICT BB,
+                      /**/ ValueType *KOKKOS_RESTRICT CC) {
+        int mp = (ib % mb), mq = (ib / mb) + (mp > 0), np = (jb % nb), nq = (jb / nb) + (np > 0);
 
-      // square tiling
-      Kokkos::parallel_for(Kokkos::TeamThreadRange(member, mq * nq), [&](const int &ij) {
-        int i, j;
-        // note: the condition is constexpr
-        if (KokkosKernels::Impl::is_gpu_exec_space_v<typename MemberType::execution_space>) {
-          i = ij % mq * mb;
-          j = ij / mq * nb;
-        } else {
-          i = ij / nq * mb;
-          j = ij % nq * nb;
-        }
-        inner.serial_invoke(KokkosBlas::Impl::OpID(), KokkosBlas::Impl::OpID(), alpha, AA + i * as0, BB + j * bs1,
-                            (i + mb) > ib ? mp : mb, (j + nb) > jb ? np : nb, pb, CC + i * cs0 + j * cs1);
-      });
+        // square tiling
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(member, mq * nq), [&](const int &ij) {
+          int i, j;
+          // note: the condition is constexpr
+          if (KokkosKernels::Impl::is_gpu_exec_space_v<typename MemberType::execution_space>) {
+            i = ij % mq * mb;
+            j = ij / mq * nb;
+          } else {
+            i = ij / nq * mb;
+            j = ij % nq * nb;
+          }
+          inner.serial_invoke(KokkosBlas::Impl::OpID(), KokkosBlas::Impl::OpID(), alpha, AA + i * as0, BB + j * bs1,
+                              (i + mb) > ib ? mp : mb, (j + nb) > jb ? np : nb, pb, CC + i * cs0 + j * cs1);
+        });
+      };
+
+      const bool is_small = true;  //(m*n*k <= 64*64*64);
+      if (is_small) {
+        gemm(m, n, k, A, B, C);
+      } else {
+        // // cache blocking
+        // const int
+        //   nc = nb*10, kc = mb*4, mc = mb*4;
+
+        // for (int jj=0;jj<n;jj+=nc) {
+        //   const int tj = n-jj, jb = (tj < nc ? tj : nc);
+        //   for (int pp=0;pp<k;pp+=kc) {
+        //     const int tp = k-pp, pb = (tp < kc ? tp : kc);
+        //     //const int pb = k, pp = 0;
+        //     for (int ii=0;ii<m;ii+=mc) {
+        //       const int ti = m-ii, ib = (ti < mc ? ti : mc);
+
+        //       const ValueType *KOKKOS_RESTRICT AA = A+ii*as0+pp*as1;
+        //       const ValueType *KOKKOS_RESTRICT BB = B+pp*bs0+jj*bs1;
+        //       /**/  ValueType *KOKKOS_RESTRICT CC = C+ii*cs0+jj*cs1;
+
+        //       gemm(ib, jb, pb, AA, BB, CC);
+        //     } // for ii
+        //   } // for pp
+        // } // for jj
+      }
     };
-
-    const bool is_small = true;  //(m*n*k <= 64*64*64);
-    if (is_small) {
-      gemm(m, n, k, A, B, C);
-    } else {
-      // // cache blocking
-      // const int
-      //   nc = nb*10, kc = mb*4, mc = mb*4;
-
-      // for (int jj=0;jj<n;jj+=nc) {
-      //   const int tj = n-jj, jb = (tj < nc ? tj : nc);
-      //   for (int pp=0;pp<k;pp+=kc) {
-      //     const int tp = k-pp, pb = (tp < kc ? tp : kc);
-      //     //const int pb = k, pp = 0;
-      //     for (int ii=0;ii<m;ii+=mc) {
-      //       const int ti = m-ii, ib = (ti < mc ? ti : mc);
-
-      //       const ValueType *KOKKOS_RESTRICT AA = A+ii*as0+pp*as1;
-      //       const ValueType *KOKKOS_RESTRICT BB = B+pp*bs0+jj*bs1;
-      //       /**/  ValueType *KOKKOS_RESTRICT CC = C+ii*cs0+jj*cs1;
-
-      //       gemm(ib, jb, pb, AA, BB, CC);
-      //     } // for ii
-      //   } // for pp
-      // } // for jj
-    }
+    KOKKOS_IF_ON_HOST((host_or_device(Algo::Gemm::Blocked::Impl::Host{});))
+    KOKKOS_IF_ON_DEVICE((host_or_device(Algo::Gemm::Blocked::Impl::Device{});))
   }
   return 0;
 }

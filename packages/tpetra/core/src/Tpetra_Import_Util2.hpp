@@ -90,6 +90,12 @@ template <typename rowptr_array_type, typename colind_array_type>
 void sortCrsEntries(const rowptr_array_type& CRS_rowptr,
                     const colind_array_type& CRS_colind);
 
+template <typename local_crs_matrix>
+void sortCrsMatrix(local_crs_matrix& lclMatrix);
+
+template <typename local_crs_graph>
+void sortCrsGraph(local_crs_graph& lclGraph);
+
 /// \brief Sort and merge the entries of the (raw CSR) matrix by
 ///   column index within each row.
 ///
@@ -104,9 +110,10 @@ void sortAndMergeCrsEntries(const Teuchos::ArrayView<size_t>& CRS_rowptr,
                             const Teuchos::ArrayView<Ordinal>& CRS_colind);
 
 template <class rowptr_view_type, class colind_view_type, class vals_view_type>
-void sortAndMergeCrsEntries(const rowptr_view_type& CRS_rowptr,
-                            const colind_view_type& CRS_colind,
-                            const vals_view_type& CRS_vals);
+void sortAndMergeCrsEntries(rowptr_view_type& CRS_rowptr,
+                            colind_view_type& CRS_colind,
+                            vals_view_type& CRS_vals,
+                            const ::KokkosSparse::SortAlgorithm option);
 
 /// \brief lowCommunicationMakeColMapAndReindex
 ///
@@ -131,7 +138,8 @@ void lowCommunicationMakeColMapAndReindex(
     const Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>& domainMapRCP,
     const Teuchos::ArrayView<const int>& owningPIDs,
     Teuchos::Array<int>& remotePIDs,
-    Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>& colMap);
+    Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>& colMap,
+    const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
 /// \brief lowCommunicationMakeColMapAndReindex
 ///
@@ -145,7 +153,8 @@ void lowCommunicationMakeColMapAndReindex(
     const Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>& domainMapRCP,
     const Kokkos::View<const int*, typename Node::device_type> owningPIDs_view,
     Teuchos::Array<int>& remotePIDs,
-    Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>& colMap);
+    Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>& colMap,
+    const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
 /// \brief Generates an list of owning PIDs based on two transfer (aka import/export objects)
 /// Let:
@@ -472,13 +481,37 @@ template <typename rowptr_array_type, typename colind_array_type, typename vals_
 void sortCrsEntries(const rowptr_array_type& CRS_rowptr,
                     const colind_array_type& CRS_colind,
                     const vals_array_type& CRS_vals) {
-  KokkosSparse::sort_crs_matrix(CRS_rowptr, CRS_colind, CRS_vals);
+  KokkosSparse::SortAlgorithm option = KokkosSparse::SortAlgorithm::DEFAULT;
+  static constexpr bool is_cpu       = std::is_same_v<typename rowptr_array_type::memory_space, Kokkos::HostSpace>;
+  if constexpr (is_cpu)
+    option = KokkosSparse::SortAlgorithm::SHELL;
+  KokkosSparse::sort_crs_matrix(CRS_rowptr, CRS_colind, CRS_vals,
+                                KokkosKernels::ArithTraits<typename colind_array_type::non_const_value_type>::max(),
+                                option);
+}
+
+template <typename local_crs_matrix>
+void sortCrsMatrix(local_crs_matrix& lclMatrix) {
+  KokkosSparse::SortAlgorithm option = KokkosSparse::SortAlgorithm::DEFAULT;
+  static constexpr bool is_cpu       = std::is_same_v<typename local_crs_matrix::device_type::memory_space, Kokkos::HostSpace>;
+  if constexpr (is_cpu)
+    option = KokkosSparse::SortAlgorithm::SHELL;
+  KokkosSparse::sort_crs_matrix(lclMatrix, option);
+}
+
+template <typename local_crs_graph>
+void sortCrsGraph(local_crs_graph& lclGraph) {
+  KokkosSparse::SortAlgorithm option = KokkosSparse::SortAlgorithm::DEFAULT;
+  KokkosSparse::sort_crs_graph(lclGraph, KokkosKernels::ArithTraits<typename local_crs_graph::entries_type::non_const_value_type>::max(), option);
 }
 
 template <typename rowptr_array_type, typename colind_array_type>
 void sortCrsEntries(const rowptr_array_type& CRS_rowptr,
                     const colind_array_type& CRS_colind) {
-  KokkosSparse::sort_crs_graph(CRS_rowptr, CRS_colind);
+  KokkosSparse::SortAlgorithm option = KokkosSparse::SortAlgorithm::DEFAULT;
+  KokkosSparse::sort_crs_graph(CRS_rowptr, CRS_colind,
+                               KokkosKernels::ArithTraits<typename colind_array_type::non_const_value_type>::max(),
+                               option);
 }
 
 // Note: This should get merged with the other Tpetra sort routines eventually.
@@ -563,7 +596,8 @@ void sortAndMergeCrsEntries(const Teuchos::ArrayView<size_t>& CRS_rowptr,
 template <class rowptr_view_type, class colind_view_type, class vals_view_type>
 void sortAndMergeCrsEntries(rowptr_view_type& CRS_rowptr,
                             colind_view_type& CRS_colind,
-                            vals_view_type& CRS_vals) {
+                            vals_view_type& CRS_vals,
+                            const ::KokkosSparse::SortAlgorithm option) {
   using execution_space = typename vals_view_type::execution_space;
 
   auto CRS_rowptr_in = CRS_rowptr;
@@ -572,7 +606,9 @@ void sortAndMergeCrsEntries(rowptr_view_type& CRS_rowptr,
 
   KokkosSparse::sort_and_merge_matrix<execution_space, rowptr_view_type,
                                       colind_view_type, vals_view_type>(CRS_rowptr_in, CRS_colind_in, CRS_vals_in,
-                                                                        CRS_rowptr, CRS_colind, CRS_vals);
+                                                                        CRS_rowptr, CRS_colind, CRS_vals,
+                                                                        KokkosKernels::ArithTraits<typename colind_view_type::non_const_value_type>::max(),
+                                                                        option);
 }
 
 template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
@@ -582,7 +618,8 @@ void lowCommunicationMakeColMapAndReindexSerial(const Teuchos::ArrayView<const s
                                                 const Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>& domainMapRCP,
                                                 const Teuchos::ArrayView<const int>& owningPIDs,
                                                 Teuchos::Array<int>& remotePIDs,
-                                                Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>& colMap) {
+                                                Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>& colMap,
+                                                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) {
   using Teuchos::rcp;
   typedef LocalOrdinal LO;
   typedef GlobalOrdinal GO;
@@ -681,9 +718,14 @@ void lowCommunicationMakeColMapAndReindexSerial(const Teuchos::ArrayView<const s
     }
   }
 
+  // Launch reduction to get global num entries in the column map
+  const LO numMyCols = NumLocalColGIDs + NumRemoteColGIDs;
+  GST numMyColsGST   = static_cast<GST>(numMyCols);
+  GST numGlobalCols;
+  auto req = Details::iallreduce(numMyColsGST, numGlobalCols, Teuchos::REDUCE_SUM, *domainMap.getComm());
+
   // Now build the array containing column GIDs
   // Build back end, containing remote GIDs, first
-  const LO numMyCols = NumLocalColGIDs + NumRemoteColGIDs;
   Teuchos::Array<GO> ColIndices;
   GO* RemoteColIndices = NULL;
   if (numMyCols > 0) {
@@ -780,11 +822,6 @@ void lowCommunicationMakeColMapAndReindexSerial(const Teuchos::ArrayView<const s
         std::runtime_error, prefix << "Local ID count test failed.");
   }
 
-  // Make column Map
-  const GST minus_one = Teuchos::OrdinalTraits<GST>::invalid();
-  colMap              = rcp(new map_type(minus_one, ColIndices, domainMap.getIndexBase(),
-                                         domainMap.getComm()));
-
   // Low-cost reindex of the matrix
   for (size_t i = 0; i < numMyRows; ++i) {
     for (size_t j = rowptr[i]; j < rowptr[i + 1]; ++j) {
@@ -801,6 +838,12 @@ void lowCommunicationMakeColMapAndReindexSerial(const Teuchos::ArrayView<const s
       }
     }
   }
+
+  // Make column Map
+  req->wait();
+  colMap = rcp(new map_type(numGlobalCols, ColIndices, domainMap.getIndexBase(),
+                            domainMap.getComm(),
+                            params));
 }
 
 template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
@@ -811,7 +854,8 @@ void lowCommunicationMakeColMapAndReindex(
     const Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>& domainMapRCP,
     const Teuchos::ArrayView<const int>& owningPIDs,
     Teuchos::Array<int>& remotePIDs,
-    Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>& colMap) {
+    Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>& colMap,
+    const Teuchos::RCP<Teuchos::ParameterList>& params) {
   using DT              = typename Node::device_type;
   using execution_space = typename DT::execution_space;
   execution_space exec;
@@ -826,7 +870,7 @@ void lowCommunicationMakeColMapAndReindex(
 
   typename decltype(colind_LID_view)::host_mirror_type colind_LID_host(colind_LID.getRawPtr(), colind_LID.size());
 
-  lowCommunicationMakeColMapAndReindex(rowptr_view, colind_LID_view, colind_GID_view, domainMapRCP, owningPIDs_view, remotePIDs, colMap);
+  lowCommunicationMakeColMapAndReindex(rowptr_view, colind_LID_view, colind_GID_view, domainMapRCP, owningPIDs_view, remotePIDs, colMap, params);
 
   // For now, we copy back into colind_LID_host (which also overwrites the colind_LID Teuchos array)
   // When colind_LID becomes a Kokkos View we can delete this
@@ -841,7 +885,8 @@ void lowCommunicationMakeColMapAndReindex(
     const Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>& domainMapRCP,
     const Kokkos::View<const int*, typename Node::device_type> owningPIDs_view,
     Teuchos::Array<int>& remotePIDs,
-    Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>& colMap) {
+    Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>& colMap,
+    const Teuchos::RCP<Teuchos::ParameterList>& params) {
   using Teuchos::rcp;
   typedef LocalOrdinal LO;
   typedef GlobalOrdinal GO;
@@ -973,9 +1018,15 @@ void lowCommunicationMakeColMapAndReindex(
         numEnteredRemotes);
     TEUCHOS_ASSERT(numEnteredRemotes == NumRemoteColGIDs);
   }
+
+  // Launch reduction to get global num entries in the column map
+  const size_t numMyCols = NumLocalColGIDs + NumRemoteColGIDs;
+  GST numMyColsGST       = static_cast<GST>(numMyCols);
+  GST numGlobalCols;
+  auto req = Details::iallreduce(numMyColsGST, numGlobalCols, Teuchos::REDUCE_SUM, *domainMap.getComm());
+
   // Now build the array containing column GIDs
   // Build back end, containing remote GIDs, first
-  const size_t numMyCols = NumLocalColGIDs + NumRemoteColGIDs;
   Kokkos::View<GO*, DT> ColMapIndices(Kokkos::ViewAllocateWithoutInitializing("ColMapIndices"), numMyCols);
 
   // We don't need to load the back end of ColMapIndices or sort if there are no remote GIDs
@@ -1054,10 +1105,9 @@ void lowCommunicationMakeColMapAndReindex(
   }
 
   // Make column Map
-  const GST minus_one = Teuchos::OrdinalTraits<GST>::invalid();
-
-  colMap = rcp(new map_type(minus_one, ColMapIndices, domainMap.getIndexBase(),
-                            domainMap.getComm()));
+  req->wait();
+  colMap = rcp(new map_type(numGlobalCols, ColMapIndices, domainMap.getIndexBase(),
+                            domainMap.getComm(), params));
 
   // Fill out colind_LID using local map
   auto localColMap = colMap->getLocalMap();

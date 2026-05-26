@@ -22,7 +22,7 @@
 namespace MueLu {
 
 /*!
-  @class MultiVectorTransferFactory class.
+  @class MultiVectorTransferFactory
   @brief Class for restricting a MultiVector from a finer to a coarser level.
 
   This is to be used in conjunction with Muelu::RAPFactory::AddTransferFactory().

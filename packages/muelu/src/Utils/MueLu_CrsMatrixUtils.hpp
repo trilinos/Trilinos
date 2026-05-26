@@ -1,8 +1,8 @@
 // @HEADER
 // *****************************************************************************
-//             Xpetra: A linear algebra interface package
+//        MueLu: A package for multigrid based preconditioning
 //
-// Copyright 2012 NTESS and the Xpetra contributors.
+// Copyright 2012 NTESS and the MueLu contributors.
 // SPDX-License-Identifier: BSD-3-Clause
 // *****************************************************************************
 // @HEADER
@@ -42,8 +42,6 @@ class CrsMatrixUtils {
     if (lib == Xpetra::UseTpetra) {
       Tpetra::Import_Util::sortCrsEntries(CRS_rowptr, CRS_colind, CRS_vals);
     }
-
-    return;
   }
 
   /// \brief Sort and merge the entries of the (raw CSR) matrix by column index
@@ -55,8 +53,6 @@ class CrsMatrixUtils {
     if (lib == Xpetra::UseTpetra) {
       Tpetra::Import_Util::sortAndMergeCrsEntries(CRS_rowptr, CRS_colind, CRS_vals);
     }
-
-    return;
   }
 
 };  // end class CrsMatrixUtils

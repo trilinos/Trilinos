@@ -28,7 +28,7 @@
 #include "MueLu_MasterList.hpp"
 #include "MueLu_PerfUtils.hpp"
 
-#ifdef HAVE_MUELU_INTREPID2
+#if defined(HAVE_MUELU_INTREPID2) && defined(HAVE_MUELU_EXPERIMENTAL)
 #include "Kokkos_DynRankView.hpp"
 #endif
 

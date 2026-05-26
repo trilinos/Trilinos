@@ -117,7 +117,7 @@ MuemexType strToDataType(const char* str, char* typeName, bool complexFlag = fal
     return GRAPH;
   if (myStr == "Coordinates")
     return XPETRA_MULTIVECTOR_DOUBLE;
-#ifdef HAVE_MUELU_INTREPID2
+#if defined(HAVE_MUELU_INTREPID2) && defined(HAVE_MUELU_EXPERIMENTAL)
   if (myStr == "pcoarsen: element to node map")
     return FIELDCONTAINER_ORDINAL;
 #endif
@@ -471,7 +471,7 @@ mxArray* MuemexSystem::getHierarchyData(string dataName, MuemexType dataType, in
         return saveDataToMatlab(level->Get<RCP<MAggregates>>(dataName, factory));
       case GRAPH:
         return saveDataToMatlab(level->Get<RCP<MGraph>>(dataName, factory));
-#ifdef HAVE_MUELU_INTREPID2
+#if defined(HAVE_MUELU_INTREPID2) && defined(HAVE_MUELU_EXPERIMENTAL)
         return saveDataToMatlab(level->Get<RCP<FieldContainer_ordinal>>(dataName, factory));
 #endif
       default:
@@ -978,7 +978,7 @@ void parse_list_item(RCP<ParameterList> List, char* option_name, const mxArray* 
       opt_int = (int*)mxGetData(prhs);
       if (M == 1 && N == 1)
         List->set(option_name, *opt_int);
-#ifdef HAVE_MUELU_INTREPID2
+#if defined(HAVE_MUELU_INTREPID2) && defined(HAVE_MUELU_EXPERIMENTAL)
       else if (strcmp(option_name, "pcoarsen: element to node map") == 0)
         List->set(option_name, loadDataFromMatlab<RCP<FieldContainer_ordinal>>(prhs));
 #endif

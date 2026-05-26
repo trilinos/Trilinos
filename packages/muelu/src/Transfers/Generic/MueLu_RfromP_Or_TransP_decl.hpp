@@ -23,7 +23,7 @@
 namespace MueLu {
 
 /*!
-  @class RfromP_Or_TransP class.
+  @class RfromP_Or_TransP
   @brief Factory for building restriction operators.
 
   This factory currently depends on an underlying matrix-matrix multiply with the identity

@@ -66,7 +66,20 @@ getConstTpetraMultiVector(const RCP<const MultiVectorBase<Scalar> >& mv) const
 }
 
 
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<const TpetraEuclideanScalarProd<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+tpetraEuclideanScalarProd()
+{
+  return  Teuchos::rcp(new TpetraEuclideanScalarProd<Scalar,LocalOrdinal,GlobalOrdinal,Node>);
+}
+
+
 } // end namespace Thyra
 
+#define THYRATPETRAADAPTERS_TPETRAEUCLIDEANSCALARPROD_INSTANT(S, LO, GO, N)    \
+  template class Thyra::TpetraEuclideanScalarProd<S, LO, GO, N>;               \
+                                                                               \
+  template Teuchos::RCP<const Thyra::TpetraEuclideanScalarProd<S, LO, GO, N>>  \
+  Thyra::tpetraEuclideanScalarProd();
 
 #endif  // THYRA_EUCLIDEAN_SCALAR_PROD_DEF_HPP

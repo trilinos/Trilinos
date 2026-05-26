@@ -307,9 +307,9 @@ class RowMatrix : virtual public Operator<Scalar, LocalOrdinal, GlobalOrdinal, N
   /// \post <tt>indices.size () == getNumEntriesInGlobalRow (GlobalRow)</tt>
   ///
   /// \param GlobalRow [in] Global index of the row.
-  /// \param Indices [out] Global indices of the columns
+  /// \param indices [out] Global indices of the columns
   ///   corresponding to values.
-  /// \param Values [out] Matrix values.
+  /// \param values [out] Matrix values.
   ///
   /// If \c GlobalRow does not belong to this node, then \c indices
   /// is set to \c null.
@@ -336,9 +336,9 @@ class RowMatrix : virtual public Operator<Scalar, LocalOrdinal, GlobalOrdinal, N
   /// \post <tt>indices.size () == getNumEntriesInGlobalRow (LocalRow)</tt>
   ///
   /// \param LocalRow [in] Local index of the row.
-  /// \param Indices [out] Local indices of the columns
+  /// \param indices [out] Local indices of the columns
   ///   corresponding to values.
-  /// \param Values [out] Matrix values.
+  /// \param values [out] Matrix values.
   ///
   /// If \c LocalRow does not belong to this node, then \c indices
   /// is set to \c null.

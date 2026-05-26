@@ -83,6 +83,7 @@ CheckCommutingProperty(MueLu::Level& nodeLevel_coarse, MueLu::Level& edgeLevel_f
 template <typename Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void read_matrix(Xpetra::UnderlyingLib& lib, RCP<const Teuchos::Comm<int> >& comm,
                  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& SM_Matrix,
+                 RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& S_Matrix,
                  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& D0_Matrix,
                  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& Kn_Matrix,
                  RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LocalOrdinal, GlobalOrdinal, Node> >& coords) {
@@ -127,7 +128,7 @@ void read_matrix(Xpetra::UnderlyingLib& lib, RCP<const Teuchos::Comm<int> >& com
 
   // build stiffness plus mass matrix (SM_Matrix)
   // edge stiffness matrix
-  RCP<Matrix> S_Matrix  = Xpetra::IO<SC, LO, GO, NO>::Read(S_file, edge_map);
+  S_Matrix              = Xpetra::IO<SC, LO, GO, NO>::Read(S_file, edge_map);
   RCP<Matrix> M1_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(M1_file, edge_map);
   Scalar one            = Teuchos::ScalarTraits<SC>::one();
   Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(*S_Matrix, false, one, *M1_Matrix, false, one, SM_Matrix, *out);
@@ -154,9 +155,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup2Level_Unsmoothed, Sc
   RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
   Xpetra::UnderlyingLib lib           = MueLuTests::TestHelpers::Parameters::getLib();
 
-  RCP<Matrix> SM_Matrix, D0_Matrix, Kn_Matrix;
+  RCP<Matrix> SM_Matrix, S_Matrix, D0_Matrix, Kn_Matrix;
   RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO> > coords;
-  read_matrix<SC, LO, GO, NO>(lib, comm, SM_Matrix, D0_Matrix, Kn_Matrix, coords);
+  read_matrix<SC, LO, GO, NO>(lib, comm, SM_Matrix, S_Matrix, D0_Matrix, Kn_Matrix, coords);
 
   int NumLevels = 2;
   // This guy works by generating a nodal hierarchy, copying the relevant data to the edge hierarchy
@@ -266,9 +267,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup2Level_AlphaSmoothed,
   RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
   Xpetra::UnderlyingLib lib           = MueLuTests::TestHelpers::Parameters::getLib();
 
-  RCP<Matrix> SM_Matrix, D0_Matrix, Kn_Matrix;
+  RCP<Matrix> SM_Matrix, S_Matrix, D0_Matrix, Kn_Matrix;
   RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO> > coords;
-  read_matrix<SC, LO, GO, NO>(lib, comm, SM_Matrix, D0_Matrix, Kn_Matrix, coords);
+  read_matrix<SC, LO, GO, NO>(lib, comm, SM_Matrix, S_Matrix, D0_Matrix, Kn_Matrix, coords);
 
   int NumLevels = 2;
   // This guy works by generating a nodal hierarchy, copying the relevant data to the edge hierarchy
@@ -374,9 +375,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup3Level_AlphaSmoothed,
   RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
   Xpetra::UnderlyingLib lib           = MueLuTests::TestHelpers::Parameters::getLib();
 
-  RCP<Matrix> SM_Matrix, D0_Matrix, Kn_Matrix;
+  RCP<Matrix> SM_Matrix, S_Matrix, D0_Matrix, Kn_Matrix;
   RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO> > coords;
-  read_matrix<SC, LO, GO, NO>(lib, comm, SM_Matrix, D0_Matrix, Kn_Matrix, coords);
+  read_matrix<SC, LO, GO, NO>(lib, comm, SM_Matrix, S_Matrix, D0_Matrix, Kn_Matrix, coords);
 
   int NumLevels = 3;
   // This guy works by generating a nodal hierarchy, copying the relevant data to the edge hierarchy
@@ -457,6 +458,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup3Level_AlphaSmoothed,
     if (i == 0) {
       EdgeL->Set("A", SM_Matrix);
       EdgeL->Set("D0", D0_Matrix);
+      EdgeL->Set("CurlCurl", S_Matrix);
     }
   }
 
@@ -522,9 +524,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup3Level_Unsmoothed, Sc
   RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
   Xpetra::UnderlyingLib lib           = MueLuTests::TestHelpers::Parameters::getLib();
 
-  RCP<Matrix> SM_Matrix, D0_Matrix, Kn_Matrix;
+  RCP<Matrix> SM_Matrix, S_Matrix, D0_Matrix, Kn_Matrix;
   RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO> > coords;
-  read_matrix<SC, LO, GO, NO>(lib, comm, SM_Matrix, D0_Matrix, Kn_Matrix, coords);
+  read_matrix<SC, LO, GO, NO>(lib, comm, SM_Matrix, S_Matrix, D0_Matrix, Kn_Matrix, coords);
 
   int NumLevels = 3;
   // This guy works by generating a nodal hierarchy, copying the relevant data to the edge hierarchy

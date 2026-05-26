@@ -3,7 +3,7 @@ KokkosSparse::SparseRowView
 
 Defined in header ``KokkosSparse_CrsMatrix.hpp``.
 
-.. code:: cppkokkos
+.. code:: c++
 
   template <class MatrixType>
   struct SparseRowView;
@@ -71,7 +71,7 @@ Member Functions
 constructor
 -----------
 
-.. code:: cppkokkos
+.. code:: c++
 
   KOKKOS_INLINE_FUNCTION
   SparseRowViewConst(value_type* const values, ordinal_type* const colidx__,
@@ -113,7 +113,7 @@ Parameters
 value
 -----
 
-.. code:: cppkokkos
+.. code:: c++
 
   KOKKOS_INLINE_FUNCTION
   value_type& value(const ordinal_type& i) const;
@@ -130,7 +130,7 @@ Parameters
 colidx
 ------
 
-.. code:: cppkokkos
+.. code:: c++
 
   KOKKOS_INLINE_FUNCTION
   ordinal_type& colidx(const ordinal_type& i) const;

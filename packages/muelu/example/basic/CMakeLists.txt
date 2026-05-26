@@ -7,19 +7,8 @@ TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../test/scaling)
 # Executables
 #
 
-IF(${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
-  SET(${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK YES)
-ENDIF()
+IF(${PACKAGE_NAME}_ENABLE_Belos)
 
-IF(${PACKAGE_NAME}_ENABLE_Epetra
-   AND ${PACKAGE_NAME}_ENABLE_EpetraExt
-   AND ${PACKAGE_NAME}_ENABLE_Ifpack
-   AND ${PACKAGE_NAME}_ENABLE_Amesos
-)
-  SET(${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK YES)
-ENDIF()
-
-IF(${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
   TRIBITS_ADD_EXECUTABLE(
     Simple
     SOURCES Simple.cpp
@@ -59,7 +48,7 @@ IF(${PACKAGE_NAME}_ENABLE_Stratimikos AND ${PACKAGE_NAME}_ENABLE_Thyra)
   )
 
   # Teko build
-  IF(${PACKAGE_NAME}_ENABLE_Teko AND ${PACKAGE_NAME}_ENABLE_Ifpack2)
+  IF(${PACKAGE_NAME}_ENABLE_Teko AND ${PACKAGE_NAME}_ENABLE_Belos)
     TRIBITS_ADD_EXECUTABLE(
       Teko
       SOURCES Teko.cpp
@@ -85,48 +74,44 @@ IF(${PACKAGE_NAME}_ENABLE_Stratimikos AND ${PACKAGE_NAME}_ENABLE_Thyra)
       stratimikos_ParameterList2.xml
   )
 
-  IF(${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
+  MUELU_ADD_SERIAL_AND_MPI_TEST(
+    Stratimikos
+    NAME Stratimikos
+    ARGS "--xml=stratimikos_ParameterList2.xml --linAlgebra=Tpetra"
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+  )
 
-    MUELU_ADD_SERIAL_AND_MPI_TEST(
-      Stratimikos
-      NAME Stratimikos
-      ARGS "--xml=stratimikos_ParameterList2.xml --linAlgebra=Tpetra"
-      NUM_MPI_PROCS 4
-      COMM serial mpi
-    )
+  MUELU_ADD_SERIAL_AND_MPI_TEST(
+    Stratimikos
+    NAME HandsOn
+    POSTFIX_AND_ARGS_0 "GMRES" "--xml=set1-gmres.xml"
+    POSTFIX_AND_ARGS_1 "CG" "--xml=set1-cg.xml"
+    WILL_FAIL
+    NUM_MPI_PROCS 1
+    COMM serial mpi
+  )
 
-    MUELU_ADD_SERIAL_AND_MPI_TEST(
-      Stratimikos
-      NAME HandsOn
-      POSTFIX_AND_ARGS_0 "GMRES" "--xml=set1-gmres.xml"
-      POSTFIX_AND_ARGS_1 "CG" "--xml=set1-cg.xml"
-      WILL_FAIL
-      NUM_MPI_PROCS 1
-      COMM serial mpi
-    )
+  MUELU_ADD_SERIAL_AND_MPI_TEST(
+    Stratimikos
+    NAME HandsOn
+    POSTFIX_AND_ARGS_0 "SGS1" "--xml=set2-sgs1.xml"
+    POSTFIX_AND_ARGS_1 "SGS3" "--xml=set2-sgs3.xml"
+    POSTFIX_AND_ARGS_2 "MG-Jacobi" "--xml=set3-mg-jacobi.xml"
+    POSTFIX_AND_ARGS_3 "MG-SGS" "--xml=set3-mg-sgs.xml"
+    POSTFIX_AND_ARGS_4 "MG-GS" "--xml=set3-mg-gs.xml"
+    POSTFIX_AND_ARGS_5 "MG-Chebyshev" "--xml=set3-mg-chebyshev.xml"
+    POSTFIX_AND_ARGS_6 "MG-SGS-reuse" "--xml=set3-mg-sgs-reuse.xml"
+    NUM_MPI_PROCS 1
+    COMM serial mpi
+  )
 
-    MUELU_ADD_SERIAL_AND_MPI_TEST(
-      Stratimikos
-      NAME HandsOn
-      POSTFIX_AND_ARGS_0 "SGS1" "--xml=set2-sgs1.xml"
-      POSTFIX_AND_ARGS_1 "SGS3" "--xml=set2-sgs3.xml"
-      POSTFIX_AND_ARGS_2 "MG-Jacobi" "--xml=set3-mg-jacobi.xml"
-      POSTFIX_AND_ARGS_3 "MG-SGS" "--xml=set3-mg-sgs.xml"
-      POSTFIX_AND_ARGS_4 "MG-GS" "--xml=set3-mg-gs.xml"
-      POSTFIX_AND_ARGS_5 "MG-Chebyshev" "--xml=set3-mg-chebyshev.xml"
-      POSTFIX_AND_ARGS_6 "MG-SGS-reuse" "--xml=set3-mg-sgs-reuse.xml"
-      NUM_MPI_PROCS 1
-      COMM serial mpi
-    )
-
-    MUELU_ADD_SERIAL_AND_MPI_TEST(
-      Stratimikos
-      NAME Stratimikos_direct
-      ARGS "--xml=set3-mg-jacobi.xml --linAlgebra=Tpetra --useDirectMatrixConstruction --matrixType=Laplace1D --nx=3000"
-      NUM_MPI_PROCS 4
-      COMM serial mpi
-    )
-
-  ENDIF()
+  MUELU_ADD_SERIAL_AND_MPI_TEST(
+    Stratimikos
+    NAME Stratimikos_direct
+    ARGS "--xml=set3-mg-jacobi.xml --linAlgebra=Tpetra --useDirectMatrixConstruction --matrixType=Laplace1D --nx=3000"
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+  )
 
 ENDIF()

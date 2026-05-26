@@ -41,11 +41,11 @@ namespace Intrepid2 {
                        const Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCell,
                        const shards::CellTopology cellTopo ) {
     constexpr bool are_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(refPoints)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(physPoints)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(worksetCell)::memory_space>::accessible;
 
     static_assert(are_accessible, "CellTools<DeviceType>::mapToReferenceFrame(..): input/output views' memory spaces are not compatible with DeviceType");
@@ -95,13 +95,13 @@ namespace Intrepid2 {
 #endif
 
     constexpr bool are_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(refPoints)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(initGuess)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(physPoints)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(worksetCell)::memory_space>::accessible;
 
     static_assert(are_accessible, "CellTools<DeviceType>::mapToReferenceFrameInitGuess(..): input/output views' memory spaces are not compatible with DeviceType");

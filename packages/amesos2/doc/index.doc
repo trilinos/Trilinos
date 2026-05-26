@@ -23,7 +23,7 @@ direct sparse solver libraries, such as SuperLU and KLU.
 Amesos2 is intended to supersede Amesos. While Amesos
 only supports Epetra double precision data types, Amesos2 allows
 a variety of data types through templating.
-Amesos2 supports both Epetra and Tpetra matrix and MultiVector types.
+Amesos2 supports Tpetra matrix and MultiVector types.
 It is fairly easy to extend the matrix and vector adapters to support
 other data types as well.
 
@@ -90,20 +90,11 @@ supported, please ask the Amesos2 developers about adding support.
           <li> Tpetra::CrsMatrix</li>
         </ul>
       </li>
-      <li> Epetra_RowMatrix implementing classes:
-        <ul>
-          <li> Epetra_CrsMatrix</li>
-<!--      <li> Epetra_JadMatrix</li>
-          <li> Epetra_MsrMatrix</li>
-          <li> Epetra_VbrMatrix</li> -->
-        </ul>
-      </li>
     </ul>
   </li>
   <li> MultiVector adapters exist for the following multi-vector classes
     <ul>
       <li> Tpetra::MultiVector</li>
-      <li> Epetra_MultiVector</li>
     </ul>
   </li>
 </ul>

@@ -69,7 +69,7 @@ class SmootherBase : public virtual BaseClass {
   //@}
 
  private:
-  bool constructionSuccessful_;
+  bool constructionSuccessful_ = false;
   std::string constructionErrorMsg_;
 
 };  // class SmootherBase

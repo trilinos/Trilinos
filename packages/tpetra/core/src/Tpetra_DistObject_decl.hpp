@@ -367,6 +367,7 @@ class DistObject : virtual public SrcDistObject,
   ///   and its target Map must be the same as <tt>this->getMap()</tt>.
   /// \param CM [in] How to combine incoming data with the same
   ///   global index.
+  /// \param restrictedMode [in] Whether to use restricted mode.
   void
   doImport(const SrcDistObject& source,
            const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
@@ -400,6 +401,7 @@ class DistObject : virtual public SrcDistObject,
   ///   and its target Map must be the same as <tt>this->getMap()</tt>.
   /// \param CM [in] How to combine incoming data with the same
   ///   global index.
+  /// \param restrictedMode [in] Whether to use restricted mode.
   void
   doExport(const SrcDistObject& source,
            const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
@@ -434,6 +436,7 @@ class DistObject : virtual public SrcDistObject,
   ///   (Note the difference from forward mode.)
   /// \param CM [in] How to combine incoming data with the same
   ///   global index.
+  /// \param restrictedMode [in] Whether to use restricted mode.
   void
   doImport(const SrcDistObject& source,
            const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
@@ -468,6 +471,7 @@ class DistObject : virtual public SrcDistObject,
   ///   (Note the difference from forward mode.)
   /// \param CM [in] How to combine incoming data with the same
   ///   global index.
+  /// \param restrictedMode [in] Whether to use restricted mode.
   void
   doExport(const SrcDistObject& source,
            const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
@@ -611,11 +615,6 @@ class DistObject : virtual public SrcDistObject,
   /// implies that subclasses' destructors must not contain
   /// communication operations.
   ///
-  /// \return The object's new Map.  Its communicator is a new
-  ///   communicator, distinct from the old Map's communicator,
-  ///   which contains a subset of the processes in the old
-  ///   communicator.
-  ///
   /// \note The name differs from Map's method
   ///   removeEmptyProcesses(), in order to emphasize that the
   ///   operation on DistObject happens in place, modifying the
@@ -683,6 +682,8 @@ class DistObject : virtual public SrcDistObject,
   ///
   /// \param CM [in] The combine mode that describes how to combine
   ///   values that map to the same global ID on the same process.
+  ///
+  /// \param restrictedMode [in] Whether to use restricted mode.
   virtual void
   doTransfer(const SrcDistObject& src,
              const ::Tpetra::Details::Transfer<local_ordinal_type, global_ordinal_type, node_type>& transfer,
@@ -793,7 +794,7 @@ class DistObject : virtual public SrcDistObject,
   ///   calling (MPI) process.
   ///
   /// Subclasses <i>must</i> reimplement this function.  Its default
-  /// implementation does nothing.  Note that the <t>target</i>
+  /// implementation does nothing.  Note that the <i>target</i>
   /// object of the Export or Import, namely <tt>*this</tt>, packs
   /// the <i>source</i> object's data.
   ///
@@ -838,7 +839,7 @@ class DistObject : virtual public SrcDistObject,
   /// \brief Pack data and metadata for communication (sends).
   ///
   /// Subclasses <i>must</i> reimplement this function.  Its default
-  /// implementation does nothing.  Note that the <t>target</i>
+  /// implementation does nothing.  Note that the <i>target</i>
   /// object of the Export or Import, namely <tt>*this</tt>, packs
   /// the <i>source</i> object's data.
   ///
@@ -901,7 +902,7 @@ class DistObject : virtual public SrcDistObject,
   ///   communication.
   ///
   /// Subclasses <i>must</i> reimplement this function.  Its default
-  /// implementation does nothing.  Note that the <t>target</i>
+  /// implementation does nothing.  Note that the <i>target</i>
   /// object of the Export or Import, namely <tt>*this</tt>, unpacks
   /// the received data into itself, possibly modifying its entries.
   ///
@@ -922,7 +923,7 @@ class DistObject : virtual public SrcDistObject,
   /// \param numPacketsPerLID [in/out] On input: If
   ///   <tt>constantNumPackets</tt> is zero, then
   ///   <tt>numPacketsPerLID[i]</tt> contains the number of packets
-  ///   imported for </tt>importLIDs[i]</tt>.  DistObject promises
+  ///   imported for <tt>importLIDs[i]</tt>.  DistObject promises
   ///   nothing about where this is sync'd.  Implementations may
   ///   sync this wherever they like, either to host or to device.
   ///   The allocation belongs to DistObject, not to subclasses;
@@ -988,6 +989,10 @@ class DistObject : virtual public SrcDistObject,
   /// \param prefix [in] If <tt>verbose</tt> is <tt>true</tt>, then
   ///   this is a nonnull prefix to print at the beginning of each
   ///   line of verbose debugging output.  Otherwise, not used.
+  /// \param remoteLIDsContiguous [in] Whether the remote LIDs are
+  ///   contiguous.  If true, the remote LIDs are stored
+  ///   contiguously.
+  /// \param CM [in] Combine mode used for importing.
   ///
   /// \return Whether we actually reallocated.
   ///

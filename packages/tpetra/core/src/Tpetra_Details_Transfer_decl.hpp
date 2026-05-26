@@ -65,7 +65,7 @@ class Transfer : public Teuchos::Describable {
 
   /// \brief Four-argument constructor (most often used).
   ///
-  /// \pre </tt> ! source.is_null() </tt>
+  /// \pre <tt>!source.is_null()</tt>
   ///
   /// \param source [in] Source Map of the Export or Import.
   /// \param target [in] Target Map of the Export or Import.

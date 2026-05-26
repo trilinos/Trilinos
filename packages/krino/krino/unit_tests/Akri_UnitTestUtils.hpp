@@ -8,7 +8,9 @@
 
 #ifndef KRINO_UNIT_TESTS_INCLUDE_AKRI_UNITTESTUTILS_H_
 #define KRINO_UNIT_TESTS_INCLUDE_AKRI_UNITTESTUTILS_H_
+#include <vector>
 #include <stk_math/StkVector.hpp>
+#include <gtest/gtest.h>
 
 namespace krino {
 
@@ -23,6 +25,34 @@ void expect_eq(const Facet2d & gold, const Facet2d & result, const double relati
 void expect_eq(const Facet3d & gold, const Facet3d & result, const double relativeTol=1.e-6);
 bool is_near_relative(const Facet2d & gold, const Facet2d & result, const double relativeTol=1.e-6);
 bool is_near_relative(const Facet3d & gold, const Facet3d & result, const double relativeTol=1.e-6);
+void expect_near_relative(const std::vector<double> & gold, const std::vector<double> & result, const double relativeTol=1.e-6);
+void expect_near_absolute(const std::vector<double> & gold, const std::vector<double> & result, const double absoluteTol=1.e-6);
+
+bool is_debug();
+
+int num_random_test_cases(const int numDebugCases, const int numOptimizedCases);
+
+class OptimizedOnlyTest : public ::testing::Test
+{
+protected:
+void SetUp() override
+{
+  if (is_debug())
+  {
+    GTEST_SKIP() << "Skipping all debug build tests for this fixture";
+  }
+}
+};
+
+#define SkipTestMsgIf(expr, message)    \
+  do {                                  \
+    if (expr)                           \
+    {                                   \
+      GTEST_SKIP() << message;          \
+    }                                   \
+  } while (false)
+
+#define SkipTestIf(expr) SkipTestMsgIf(expr, "")
 
 }
 

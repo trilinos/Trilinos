@@ -69,6 +69,7 @@ public:
   bool do_refinement(const int debugLevel = 0);
 
   bool do_uniform_refinement(const int numUniformRefinementLevels);
+  bool do_rebalance();
 
   void restore_after_restart();
   void set_marker_field(const std::string & markerFieldName);

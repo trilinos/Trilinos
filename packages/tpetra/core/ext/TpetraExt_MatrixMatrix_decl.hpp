@@ -13,6 +13,7 @@
 #include <string>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>
+#include <Teuchos_ScalarTraits.hpp>
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_BlockCrsMatrix.hpp"
@@ -59,6 +60,8 @@ namespace MatrixMatrix {
 /// \param call_FillComplete_on_result [in] Optional argument;
 ///   defaults to true.  If false, C will <i>not</i> be fill complete
 ///   on output.
+/// \param label [in] Label for \c Teuchos::TimeMonitor.
+/// \param params [in/out] List of parameters.
 template <class Scalar,
           class LocalOrdinal,
           class GlobalOrdinal,
@@ -88,6 +91,7 @@ void Multiply(
 /// \param transposeB [in] Whether to use transpose of matrix B. This is
 ///   currently not implemented.
 /// \param C [in/out] output matrix. Must be null.
+/// \param label [in] Label for \c Teuchos::TimeMonitor.
 template <class Scalar,
           class LocalOrdinal,
           class GlobalOrdinal,
@@ -135,11 +139,11 @@ void Add(
 /// \pre A and B must both be fillComplete and have matching domain and
 ///   range Maps.
 ///
-/// \param scalarA [in] Scalar multiplier for A in the sum.
+/// \param alpha [in] Scalar multiplier for A in the sum.
 /// \param transposeA [in] If true, use the transpose of A.
 /// \param A [in] The first input matrix.
 ///
-/// \param scalarB [in] Scalar multiplier for B in the sum.
+/// \param beta [in] Scalar multiplier for B in the sum.
 /// \param transposeB [in] If true, use the transpose of B.
 /// \param B [in] The second input matrix.
 ///
@@ -186,10 +190,10 @@ add(const Scalar& alpha,
 /// \pre A and B must both be fillComplete and have matching domain and
 ///   range Maps.
 ///
-/// \param scalarA [in] Scalar multiplier for A in the sum.
+/// \param alpha [in] Scalar multiplier for A in the sum.
 /// \param transposeA [in] If true, use the transpose of A.
 /// \param A [in] The first input matrix.
-/// \param scalarB [in] Scalar multiplier for B in the sum.
+/// \param beta [in] Scalar multiplier for B in the sum.
 /// \param transposeB [in] If true, use the transpose of B.
 /// \param B [in] The second input matrix.
 /// \param C [out] The result matrix, which we expect to be 'new' (no entries inserted) on input.
@@ -309,7 +313,7 @@ void Add(
     In a parallel setting, A and B need not have matching distributions,
     but C needs to have the same row-map as A.
 
-  @param omega Input, scalar multiplier for Dinverse A
+  @param omega Input, real-valued multiplier (\c Teuchos::ScalarTraits<Scalar>::magnitudeType ) for Dinverse A
   @param Dinv Input, Vector representing a diagonal matrix, must match A->getRowMap()
   @param A Input, must already have had 'fillComplete()' called.
   @param B Input, must already have had 'fillComplete()' called.
@@ -319,18 +323,20 @@ void Add(
            will be produced when forming the product A*B. On exit,
            C.FillComplete() will have been called, unless the last argument
            to this function is specified to be false.
-  @param call_fillComplete_on_result Optional argument, defaults to true.
+  @param call_FillComplete_on_result Optional argument, defaults to true.
          Power users may specify this argument to be false if they *DON'T*
          want this function to call C.fillComplete. (It is often useful
          to allow this function to call C.fillComplete, in cases where
          one or both of the input matrices are rectangular and it is not
          trivial to know which maps to use for the domain- and range-maps.)
+  @param label [in] Label for \c Teuchos::TimeMonitor.
+  @param params [in/out] List of parameters.
 */
 template <class Scalar,
           class LocalOrdinal,
           class GlobalOrdinal,
           class Node>
-void Jacobi(Scalar omega,
+void Jacobi(typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega,
             const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Dinv,
             const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
             const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
@@ -403,7 +409,7 @@ template <class Scalar,
           class GlobalOrdinal,
           class Node>
 void jacobi_A_B_newmatrix(
-    Scalar omega,
+    typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega,
     const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Dinv,
     CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
     CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
@@ -416,7 +422,7 @@ template <class Scalar,
           class GlobalOrdinal,
           class Node>
 void jacobi_A_B_reuse(
-    Scalar omega,
+    typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega,
     const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Dinv,
     CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
     CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
@@ -496,7 +502,7 @@ template <class Scalar,
           class Node,
           class LocalOrdinalViewType>
 struct KernelWrappers2 {
-  static inline void jacobi_A_B_newmatrix_kernel_wrapper(Scalar omega,
+  static inline void jacobi_A_B_newmatrix_kernel_wrapper(typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega,
                                                          const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Dinv,
                                                          CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
                                                          CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
@@ -509,7 +515,7 @@ struct KernelWrappers2 {
                                                          const std::string& label                           = std::string(),
                                                          const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
-  static inline void jacobi_A_B_reuse_kernel_wrapper(Scalar omega,
+  static inline void jacobi_A_B_reuse_kernel_wrapper(typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega,
                                                      const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Dinv,
                                                      CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
                                                      CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,

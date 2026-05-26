@@ -812,13 +812,12 @@ void BlockRelaxation<MatrixType, ContainerType>::
       // Rows in each partition are distributed round-robin to the blocks -
       // that's how MueLu stores DOFs in a non-block matrix
       for (local_ordinal_type i = 0; i < NumLocalBlocks_; i++) {
-        //#ifdef HAVE_IFPACK2_DEBUG
         TEUCHOS_TEST_FOR_EXCEPTION(Partitioner_->numRowsInPart(i) % dofs != 0, std::logic_error,
                                    "Expected size of all blocks (partitions) to be divisible by MueLu dofs/node.");
         size_t blockSize = Partitioner_->numRowsInPart(i) / dofs;
-        //#endif
-        // block i will be split into j different blocks,
-        // each corresponding to a different dof
+        // #endif
+        //  block i will be split into j different blocks,
+        //  each corresponding to a different dof
         for (local_ordinal_type j = 0; j < dofs; j++) {
           local_ordinal_type blockIndex = i * dofs + j;
           blockRows[blockIndex].resize(blockSize);

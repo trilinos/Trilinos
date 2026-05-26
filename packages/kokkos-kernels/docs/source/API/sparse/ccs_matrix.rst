@@ -9,7 +9,7 @@ KokkosSparse::CcsMatrix
 
 Defined in header ``KokkosSparse_CcsMatrix.hpp``
 
-.. code:: cppkokkos
+.. code:: c++
 
   template <class ScalarType, class OrdinalType, class Device, class MemoryTraits = void,
             class SizeType = typename Kokkos::ViewTraits<OrdinalType*, Device, void, void>::size_type>
@@ -130,7 +130,7 @@ Member Functions
 numRows
 ^^^^^^^
 
-.. code:: cppkokkos
+.. code:: c++
 
   KOKKOS_INLINE_FUNCTION ordinal_type numRows() const;
 
@@ -141,7 +141,7 @@ Returns the number of rows in the matrix.
 numCols
 ^^^^^^^
 
-.. code:: cppkokkos
+.. code:: c++
 
   KOKKOS_INLINE_FUNCTION ordinal_type numCols() const;
 
@@ -152,7 +152,7 @@ Returns the number of columns in the matrix.
 setNumRows
 ^^^^^^^^^^
 
-.. code:: cppkokkos
+.. code:: c++
 
   void setNumRows(ordinal_type r);
 
@@ -164,7 +164,7 @@ This invalidates any algorithm handles which previously used this matrix.
 numPointRows
 ^^^^^^^^^^^^
 
-.. code:: cppkokkos
+.. code:: c++
 
   KOKKOS_INLINE_FUNCTION ordinal_type numPointRows() const;
 
@@ -175,7 +175,7 @@ Equivalent to `numRows()`, since this is not a block matrix type.
 numPointCols
 ^^^^^^^^^^^^
 
-.. code:: cppkokkos
+.. code:: c++
 
   KOKKOS_INLINE_FUNCTION ordinal_type numPointCols() const;
 
@@ -186,7 +186,7 @@ Equivalent to `numCols()`, since this is not a block matrix type.
 nnz
 ^^^
 
-.. code:: cppkokkos
+.. code:: c++
 
   KOKKOS_INLINE_FUNCTION size_type nnz() const;
 

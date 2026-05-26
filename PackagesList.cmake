@@ -42,7 +42,6 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   Compadre              packages/compadre                 ST
   STK                   packages/stk                      PT # Depends on boost
   Percept               packages/percept                  PT # Depends on boost
-  Krino                 packages/krino                    PT # Depends on boost
   SCORECapf_zoltan      SCOREC/zoltan                     ST
   SCORECapf_stk         SCOREC/stk                        ST
   SCORECma              SCOREC/ma                         ST
@@ -60,6 +59,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   MOOCHO                packages/moocho                   ST
   Stokhos               packages/stokhos                  PT
   ROL                   packages/rol                      PT
+  Krino                 packages/krino                    PT # Depends on boost
   Piro                  packages/piro                     PT
   SGM                   packages/sgm                      ST
   UMR                   packages/umr                      ST

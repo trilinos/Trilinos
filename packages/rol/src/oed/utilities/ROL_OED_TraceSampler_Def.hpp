@@ -30,7 +30,7 @@ TraceSampler<Real>::TraceSampler()
 }
 
 template<typename Real>
-TraceSampler<Real>::TraceSampler(const Ptr<Vector<Real>> &theta)
+TraceSampler<Real>::TraceSampler(const Ptr<const Vector<Real>> &theta)
   : ProfiledClass<Real,std::string>("OED::TraceSampler") {
   startTimer("TraceSampler");
   Ptr<Vector<Real>> g = theta->dual().clone();

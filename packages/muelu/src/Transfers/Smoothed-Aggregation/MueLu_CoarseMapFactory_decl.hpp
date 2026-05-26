@@ -23,7 +23,7 @@
 namespace MueLu {
 
 /*!
-  @class CoarseMapFactory class.
+  @class CoarseMapFactory
   @brief Factory for generating coarse level map. Used by TentativePFactory.
 
   Factory is used by TentativePFactory to generate the coarse level map (=domain map) of

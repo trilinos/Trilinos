@@ -62,6 +62,7 @@ template <typename value_type> int driver(int argc, char *argv[]) {
   int device_solve_thres = 128;
   int variant = 0;
   int nstreams = 8;
+  bool team_on_user_stream = false;
   bool no_warmup = false;
   int niters = 1;
   int nfacts = 2;
@@ -84,6 +85,7 @@ template <typename value_type> int driver(int argc, char *argv[]) {
   opts.set_option<int>("graph-algo", "Type of graph algorithm (0: Natural, 1: AMD, 2: METIS)", &graph_algo_type);
   opts.set_option<bool>("store-trans", "Flag to store transpose", &storeTranspose);
   opts.set_option<bool>("perturb", "Flag to perturb tiny pivots", &perturbPivot);
+  opts.set_option<bool>("shift", "Flag to shift diagonal", &shiftDiag);
   opts.set_option<int>("nrhs", "Number of RHS vectors", &nrhs);
   opts.set_option<std::string>("method", "Solution method: ldl-nopiv, chol, ldl, lu", &method_name);
   opts.set_option<int>("small-problem-thres", "LAPACK is used smaller than this thres", &small_problem_thres);
@@ -92,6 +94,7 @@ template <typename value_type> int driver(int argc, char *argv[]) {
   opts.set_option<int>("device-solve-thres", "Device function is used above this subproblem size", &device_solve_thres);
   opts.set_option<int>("variant", "algorithm variant in levelset scheduling; 0, 1 and 2", &variant);
   opts.set_option<int>("nstreams", "# of streams used in CUDA; on host, it is ignored", &nstreams);
+  opts.set_option<bool>("team-on-user-stream", "Use stream-0 to launch team-kernels", &team_on_user_stream);
   opts.set_option<bool>("one-rhs", "Set RHS to be ones", &onesRHS);
   opts.set_option<bool>("random-rhs", "Set RHS to be random", &randomRHS);
   opts.set_option<bool>("no-warmup", "Flag to turn off warmup", &no_warmup);
@@ -137,7 +140,8 @@ template <typename value_type> int driver(int argc, char *argv[]) {
       std::cout << "   Using default Parameters " << std::endl;
     } else {
       std::cout << "   Using non default Parameters " << std::endl;
-      std::cout << "       # Streams:: " << nstreams << std::endl;
+      std::cout << "       # Streams:: " << nstreams
+                << (team_on_user_stream ? "(Team on stream-0)" : "(Team on default stream)") <<std::endl;
       std::cout << "    Small Poblem:: " << small_problem_thres << std::endl;
       std::cout << "   Device Thresh:: " << device_factor_thres << ", " << device_solve_thres << std::endl;
     }
@@ -210,6 +214,14 @@ template <typename value_type> int driver(int argc, char *argv[]) {
     solver.setVerbose(verbose);
     solver.setSolutionMethod(method);
     solver.setLevelSetOptionAlgorithmVariant(variant);
+    if (shiftDiag) {
+      if (verbose) std::cout << " > shift diagonals with a small pertubation" << std::endl;
+      solver.shiftDiagonal();
+    }
+    if (perturbPivot) {
+      if (verbose) std::cout << " > perturb tiny pivots" << std::endl;
+      solver.useDefaultPivotTolerance();
+    }
 
     if (!default_setup) {
       /// graph options
@@ -220,17 +232,9 @@ template <typename value_type> int driver(int argc, char *argv[]) {
         solver.setGraphAlgorithmType(graph_algo_type);
       }
       /// levelset options
-      solver.setLevelSetOptionNumStreams(nstreams);
+      solver.setLevelSetOptionNumStreams(nstreams, team_on_user_stream);
       solver.setSmallProblemThresholdsize(small_problem_thres);
       solver.setLevelSetOptionDeviceFunctionThreshold(device_factor_thres, device_solve_thres);
-      if (shiftDiag) {
-        if (verbose) std::cout << " > shift diagonals with a small pertubation" << std::endl;
-        solver.shiftDiagonal();
-      }
-      if (perturbPivot) {
-        if (verbose) std::cout << " > perturb tiny pivots" << std::endl;
-        solver.useDefaultPivotTolerance();
-      }
       solver.storeExplicitTranspose(storeTranspose);
       if (verbose) {
         if (storeTranspose) {
@@ -324,13 +328,16 @@ template <typename value_type> int driver(int argc, char *argv[]) {
         /// solve
         bool pass = true;
         double solve_time = 0.0;
+        mag_type shift = solver.currentShift();
         if (!no_warmup) {
           // warm-up
           timer.reset();
           solver.solve(x, b, t);
           solve_time = timer.seconds();
-          const double res = solver.computeRelativeResidual(values_on_device, x, b);
-          std::cout << "TachoSolver (warm-up): residual = " << res << " time " << solve_time << "\n";
+          const double res = solver.computeRelativeResidual(values_on_device, x, b, shift);
+          std::cout << "TachoSolver (warm-up): residual = " << res << " time " << solve_time;
+          if (shiftDiag) std::cout << " using shift = " << shift;
+          std::cout << "\n";
           if (res > tol) pass = false;
         }
 
@@ -345,9 +352,11 @@ template <typename value_type> int driver(int argc, char *argv[]) {
           solver.solve(x, b, t);
           solve_time += timer.seconds();
 #endif
-          const mag_type res = solver.computeRelativeResidual(values_on_device, x, b);
+          const mag_type res = solver.computeRelativeResidual(values_on_device, x, b, shift);
           if (res > tol) pass = false;
-          std::cout << "TachoSolver: residual = " << res << "\n";
+          std::cout << "TachoSolver: residual = " << res;
+          if (shiftDiag) std::cout << " using shift = " << shift;
+          std::cout << "\n";
         }
         if (!pass) success = false;
         std::cout << (pass ? " PASS" : " FAIL") << std::endl;

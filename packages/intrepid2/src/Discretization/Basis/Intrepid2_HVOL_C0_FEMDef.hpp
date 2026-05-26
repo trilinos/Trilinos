@@ -19,34 +19,29 @@ namespace Intrepid2 {
 
   namespace Impl {
 
-    template<EOperator opType>
+    template<EOperator OpType>
     template<typename OutputViewType,
              typename inputViewType>
     KOKKOS_INLINE_FUNCTION
     void
-    Basis_HVOL_C0_FEM::Serial<opType>::
+    Basis_HVOL_C0_FEM::Serial<OpType>::
     getValues(       OutputViewType output,
                const inputViewType /* input */ ) {
-      switch (opType) {
-      case OPERATOR_VALUE : {
-        output.access(0) = 1.0;
-        break;
-      }
-      case OPERATOR_MAX : {
+       
+       if constexpr (OpType == OPERATOR_VALUE) {
+        output(0) = 1.0;
+       } else if constexpr (OpType == OPERATOR_MAX) {
         const ordinal_type jend = output.extent(1);
         const ordinal_type iend = output.extent(0);
 
         for (ordinal_type j=0;j<jend;++j)
           for (ordinal_type i=0;i<iend;++i)
-            output.access(i, j) = 0.0;
-        break;
-      }
-      default: {
-        INTREPID2_TEST_FOR_ABORT( opType != OPERATOR_VALUE &&
-                                  opType != OPERATOR_MAX,
+            output(i, j) = 0.0;
+      } else {
+        INTREPID2_TEST_FOR_ABORT( OpType != OPERATOR_VALUE &&
+                                  OpType != OPERATOR_MAX,
                                   ">>> ERROR: (Intrepid2::Basis_HVOL_C0_FEM::Serial::getValues) operator is not supported");
-      }
-      }
+       }
     }
 
     template<typename DT,

@@ -66,6 +66,14 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Tpetra_BlockFGMRES_keep_hessenberg_test
+  SOURCES test_bl_fgmres_keep_hessenberg.cpp
+  ARGS "--verbose"
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Tpetra_HybridGMRES_hb_test
   SOURCES test_hybrid_gmres_hb.cpp
   ARGS "--verbose --max-degree=10 --poly-type=Arnoldi"

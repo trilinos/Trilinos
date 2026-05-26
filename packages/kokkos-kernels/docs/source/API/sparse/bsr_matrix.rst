@@ -10,7 +10,7 @@ KokkosSparse::BsrMatrix
 
 Defined in header ``KokkosSparse_BsrMatrix.hpp``
 
-.. code:: cppkokkos
+.. code:: c++
 
   template <class ScalarType, class OrdinalType, class Device, class MemoryTraits = void,
             class SizeType = KokkosKernels::default_size_type>
@@ -185,7 +185,7 @@ Member Functions
 operator=
 ^^^^^^^^^
 
-.. code:: cppkokkos
+.. code:: c++
 
   template <typename aScalarType, typename aOrdinalType, class aDevice, class aMemoryTraits, typename aSizeType>
   BsrMatrix& operator=(const BsrMatrix<aScalarType, aOrdinalType, aDevice, aMemoryTraits, aSizeType>& mtx);
@@ -197,7 +197,7 @@ Attempts to assign the underlying ``graph`` and ``values`` of the input matrix `
 numRows
 ^^^^^^^
 
-.. code:: cppkokkos
+.. code:: c++
 
   KOKKOS_INLINE_FUNCTION ordinal_type numRows() const;
 
@@ -208,7 +208,7 @@ Returns the number of rows in the matrix.
 numCols
 ^^^^^^^
 
-.. code:: cppkokkos
+.. code:: c++
 
   KOKKOS_INLINE_FUNCTION ordinal_type numCols() const;
 
@@ -219,7 +219,7 @@ Returns the number of columns in the matrix.
 setNumCols
 ^^^^^^^^^^
 
-.. code:: cppkokkos
+.. code:: c++
 
   void setNumCols(ordinal_type c);
 
@@ -231,7 +231,7 @@ This invalidates any algorithm handles which previously used this matrix.
 blockDim
 ^^^^^^^^
 
-.. code:: cppkokkos
+.. code:: c++
 
   KOKKOS_INLINE_FUNCTION ordinal_type blockDim() const;
 
@@ -242,7 +242,7 @@ Returns the dimension of the blocks stored by the matrix.
 numPointRows
 ^^^^^^^^^^^^
 
-.. code:: cppkokkos
+.. code:: c++
 
   KOKKOS_INLINE_FUNCTION ordinal_type numPointRows() const;
 
@@ -254,7 +254,7 @@ rows times the block size. It is also the dimension of the matrix's range.
 numPointCols
 ^^^^^^^^^^^^
 
-.. code:: cppkokkos
+.. code:: c++
 
   KOKKOS_INLINE_FUNCTION ordinal_type numPointCols() const;
 
@@ -266,7 +266,7 @@ columns times the block size. It is also the dimension of the matrix's domain.
 nnz
 ^^^
 
-.. code:: cppkokkos
+.. code:: c++
 
   KOKKOS_INLINE_FUNCTION size_type nnz() const;
 
@@ -277,7 +277,7 @@ Returns the number of non-zero entries in the matrix.
 block_row
 ^^^^^^^^^
 
-.. code:: cppkokkos
+.. code:: c++
 
   KOKKOS_INLINE_FUNCTION
   BsrRowView<BsrMatrix> block_row(const ordinal_type i) const;
@@ -289,7 +289,7 @@ Returns a view of the i-th block row of the matrix as a :doc:`BsrRowView <bsr_ro
 block_row_Const
 ^^^^^^^^^^^^^^^
 
-.. code:: cppkokkos
+.. code:: c++
 
   KOKKOS_INLINE_FUNCTION
   BsrRowViewConst<BsrMatrix> block_row_Const(const ordinal_type i) const;
@@ -301,7 +301,7 @@ Returns a view of the i-th block row of the matrix as a :doc:`BsrRowViewConst <b
 unmanaged_block
 ^^^^^^^^^^^^^^^
 
-.. code:: cppkokkos
+.. code:: c++
 
   KOKKOS_INLINE_FUNCTION
   block_type unmanaged_block(const size_type i) const;
@@ -313,7 +313,7 @@ Return a view of the i-th block in the matrix.
 unmanaged_block_const
 ^^^^^^^^^^^^^^^^^^^^^
 
-.. code:: cppkokkos
+.. code:: c++
 
   KOKKOS_INLINE_FUNCTION
   const_block_type unmanaged_block_const(const size_type i) const;
@@ -324,7 +324,7 @@ Return a const view of the i-th block in the matrix.
 convertToCrs
 ^^^^^^^^^^^^
 
-.. code:: cppkokkos
+.. code:: c++
 
   template <typename CrsMatrixType = KokkosSparse::CrsMatrix<ScalarType, OrdinalType, Device, MemoryTraits, SizeType>>
   CrsMatrixType convertToCrs() const;

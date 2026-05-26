@@ -331,6 +331,13 @@ class BlockCrsMatrix : virtual public ::Tpetra::RowMatrix<Scalar, LO, GO, Node>,
 
   /// \brief For this matrix A, compute <tt>Y := beta * Y + alpha * Op(A) * X</tt>.
   ///
+  /// \param X [in] Input MultiVector.
+  /// \param Y [in/out] Output MultiVector.
+  /// \param mode [in] Whether to apply the transpose (Teuchos::NO_TRANS,
+  ///   Teuchos::TRANS, Teuchos::CONJ_TRANS).
+  /// \param alpha [in] Scaling factor for the result.
+  /// \param beta [in] Scaling factor for Y before adding the result.
+  ///
   /// Op(A) is A if mode is Teuchos::NO_TRANS, the transpose of A if
   /// mode is Teuchos::TRANS, and the conjugate transpose of A if mode
   /// is Teuchos::CONJ_TRANS.
@@ -403,6 +410,13 @@ class BlockCrsMatrix : virtual public ::Tpetra::RowMatrix<Scalar, LO, GO, Node>,
   const crs_graph_type& getCrsGraph() const { return graph_; }
 
   /// \brief Version of apply() that takes BlockMultiVector input and output.
+  ///
+  /// \param X [in] Input MultiVector.
+  /// \param Y [in/out] Output MultiVector.
+  /// \param mode [in] Whether to apply the transpose (Teuchos::NO_TRANS,
+  ///   Teuchos::TRANS, Teuchos::CONJ_TRANS).
+  /// \param alpha [in] Scaling factor for the result.
+  /// \param beta [in] Scaling factor for Y before adding the result.
   ///
   /// This method is deliberately not marked const, because it may do
   /// lazy initialization of temporary internal block multivectors.
@@ -498,27 +512,18 @@ class BlockCrsMatrix : virtual public ::Tpetra::RowMatrix<Scalar, LO, GO, Node>,
   /// indices directly, since the column indices are not stored as
   /// global indices in the graph.
   ///
-  /// \param localRowInd [in] Local (mesh, i.e., block) row index.
+  /// \param LocalRow [in] Local (mesh, i.e., block) row index.
   ///
-  /// \param colInds [out] If \c localRowInd is valid on the calling
+  /// \param indices [out] If \c LocalRow is valid on the calling
   ///   process, then on output, this is a pointer to the local (mesh,
   ///   i.e., block) column indices in the given (mesh, i.e., block)
-  ///   row.  If localRowInd is <i>not</i> valid, then this is
+  ///   row.  If LocalRow is <i>not</i> valid, then this is
   ///   undefined.  (Please check the return value of this method.)
   ///
-  /// \param vals [out] If \c localRowInd is valid on the calling
+  /// \param values [out] If \c LocalRow is valid on the calling
   ///   process, then on output, this is a pointer to the row's
-  ///   values.  If localRowInd is <i>not</i> valid, then this is
+  ///   values.  If LocalRow is <i>not</i> valid, then this is
   ///   undefined.  (Please check the return value of this method.)
-  ///
-  /// \param numInds [in] The number of (mesh, i.e., block) indices in
-  ///   \c colInds on output.
-  ///
-  /// \return 0 if \c localRowInd is valid, else
-  ///   <tt>Teuchos::OrdinalTraits<LO>::invalid()</tt>.
-  /// KK: this is inherited from row matrix interface and it returns const
-  ///      this cannot replace the deprecated pointer interface
-  ///      we need nonconst version of this code
   void
   getLocalRowView(LO LocalRow,
                   local_inds_host_view_type& indices,
@@ -691,6 +696,9 @@ class BlockCrsMatrix : virtual public ::Tpetra::RowMatrix<Scalar, LO, GO, Node>,
   ///   row index within a block, then the column index within a
   ///   block.
   ///
+  /// \param offsets [in] Precomputed offsets of diagonal entries,
+  ///   as returned by getLocalDiagOffsets().
+  ///
   /// This method uses the offsets of the diagonal entries, as
   /// precomputed by getLocalDiagOffsets(), to speed up copying the
   /// diagonal of the matrix.
@@ -715,6 +723,10 @@ class BlockCrsMatrix : virtual public ::Tpetra::RowMatrix<Scalar, LO, GO, Node>,
   /// diagonal of the matrix.
  protected:
   //! Like sumIntoLocalValues, but for the ABSMAX combine mode.
+  /// \param localRowInd [in] Local row index.
+  /// \param colInds [in] Array of local column indices.
+  /// \param vals [in] Array of values to ABSMAX into the matrix.
+  /// \param numColInds [in] Number of column indices.
   LO absMaxLocalValues(const LO localRowInd,
                        const LO colInds[],
                        const Scalar vals[],
@@ -965,6 +977,13 @@ class BlockCrsMatrix : virtual public ::Tpetra::RowMatrix<Scalar, LO, GO, Node>,
   /// \brief Global sparse matrix-vector multiply for the transpose or
   ///   conjugate transpose cases.
   ///
+  /// \param X [in] Input MultiVector.
+  /// \param Y [in/out] Output MultiVector.
+  /// \param mode [in] Whether to apply the transpose (Teuchos::TRANS,
+  ///   or Teuchos::CONJ_TRANS).
+  /// \param alpha [in] Scaling factor for the result.
+  /// \param beta [in] Scaling factor for Y before adding the result.
+  ///
   /// This method computes Y := beta*Y + alpha*Op(A)*X, where A is
   /// *this (the block matrix), Op(A) signifies either the transpose
   /// or the conjugate transpose of A, and X and Y are block
@@ -1169,9 +1188,9 @@ class BlockCrsMatrix : virtual public ::Tpetra::RowMatrix<Scalar, LO, GO, Node>,
   /// \post <tt>indices.size () == getNumEntriesInGlobalRow (GlobalRow)</tt>
   ///
   /// \param GlobalRow [in] Global index of the row.
-  /// \param Indices [out] Global indices of the columns
+  /// \param indices [out] Global indices of the columns
   ///   corresponding to values.
-  /// \param Values [out] Matrix values.
+  /// \param values [out] Matrix values.
   ///
   /// If \c GlobalRow does not belong to this node, then \c indices
   /// is set to \c null.

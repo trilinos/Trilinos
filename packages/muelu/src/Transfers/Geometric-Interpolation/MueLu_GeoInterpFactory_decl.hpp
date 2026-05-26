@@ -44,7 +44,7 @@
 namespace MueLu {
 
 /*!
-  @class GeoInterpFactory class.
+  @class GeoInterpFactory
   @brief Factory for GMG Q2-Q1-Q2 interpolation
   @ingroup MueLuTransferClasses
 */

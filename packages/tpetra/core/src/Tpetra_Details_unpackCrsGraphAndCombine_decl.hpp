@@ -94,7 +94,9 @@ namespace Details {
 ///
 /// \warning The allowed \c combineMode are:
 ///   ADD, REPLACE, and ABSMAX. INSERT is not allowed.
-//
+///
+/// \param numSameIDs [in] Number of IDs that are the same.
+///
 /// \warning This method is intended for expert developer use
 ///   only, and should never be called by user code.
 ///

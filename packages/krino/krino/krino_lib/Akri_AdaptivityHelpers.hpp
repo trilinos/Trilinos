@@ -32,7 +32,8 @@ void
 perform_multilevel_adaptivity(RefinementManager & refinement,
     stk::mesh::BulkData & mesh,
     const std::function<void(int)> & marker_function,
-    const stk::mesh::Selector & do_not_refine_selector = stk::mesh::Selector());
+    const stk::mesh::Selector & do_not_refine_selector,
+    const int rebalanceInterval = -1);
 
 }
 

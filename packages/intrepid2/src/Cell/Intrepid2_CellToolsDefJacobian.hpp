@@ -773,7 +773,7 @@ namespace Intrepid2 {
                const BasisGradientsType gradients, const int startCell, const int endCell)
   {
     constexpr bool is_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(jacobian)::memory_space>::accessible;
     static_assert(is_accessible, "CellTools<DeviceType>::setJacobian(..): output view's memory space is not compatible with DeviceType");
 
@@ -802,9 +802,9 @@ namespace Intrepid2 {
                const Teuchos::RCP<HGradBasisType> basis,
                const int startCell, const int endCell) {
     constexpr bool are_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(jacobian)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(points)::memory_space>::accessible;
     static_assert(are_accessible, "CellTools<DeviceType>::setJacobian(..): input/output views' memory spaces are not compatible with DeviceType");
 

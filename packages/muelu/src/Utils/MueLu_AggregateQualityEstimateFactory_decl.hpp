@@ -27,7 +27,7 @@
 namespace MueLu {
 
 /*!
-  @class AggregateQualityEstimateFactory class.
+  @class AggregateQualityEstimateFactory
   @brief An factory which assigns each aggregate a quality
   estimate. Originally developed by Napov and Notay in the
   context of plain aggregation, while this quality estimate

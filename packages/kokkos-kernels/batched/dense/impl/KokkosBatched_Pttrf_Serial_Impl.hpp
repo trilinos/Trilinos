@@ -19,7 +19,7 @@ KOKKOS_INLINE_FUNCTION static int checkPttrfInput([[maybe_unused]] const DViewTy
   static_assert(DViewType::rank == 1, "KokkosBatched::pttrf: DViewType must have rank 1.");
   static_assert(EViewType::rank == 1, "KokkosBatched::pttrf: EViewType must have rank 1.");
 
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#ifndef NDEBUG
   const int nd = d.extent(0);
   const int ne = e.extent(0);
 

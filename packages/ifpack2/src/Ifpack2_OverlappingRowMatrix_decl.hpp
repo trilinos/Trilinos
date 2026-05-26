@@ -145,7 +145,7 @@ class OverlappingRowMatrix : virtual public Ifpack2::Details::RowMatrix<MatrixTy
   /// \brief The number of entries in the given local row that are
   ///   owned by the calling process.
   ///
-  /// \param globalRow [in] Local index of the row.
+  /// \param localRow [in] Local index of the row.
   ///
   /// \return Teuchos::OrdinalTraits<size_t>::invalid() if the
   ///   specified row (either in the input matrix or in the overlap
@@ -183,15 +183,15 @@ class OverlappingRowMatrix : virtual public Ifpack2::Details::RowMatrix<MatrixTy
 
   //! Extract a list of entries in a specified global row of this matrix. Put into pre-allocated storage.
   /*!
-    \param LocalRow - (In) Global row number for which indices are desired.
+    \param GlobalRow - (In) Global row number for which indices are desired.
     \param Indices - (Out) Global column indices corresponding to values.
     \param Values - (Out) Matrix values.
     \param NumEntries - (Out) Number of indices.
 
-    Note: A std::runtime_error exception is thrown if either \c Indices or \c Values is not large enough to hold the data associated
-    with row \c GlobalRow. If \c GlobalRow does not belong to this node, then \c Indices and \c Values are unchanged and \c NumIndices is
-    returned as Teuchos::OrdinalTraits<size_t>::invalid().
-  */
+      Note: A std::runtime_error exception is thrown if either \c Indices or \c Values is not large enough to hold the data associated
+      with row \c GlobalRow. If \c GlobalRow does not belong to this node, then \c Indices and \c Values are unchanged and \c NumEntries is
+      returned as Teuchos::OrdinalTraits<size_t>::invalid().
+    */
   virtual void
   getGlobalRowCopy(global_ordinal_type GlobalRow,
                    nonconst_global_inds_host_view_type &Indices,
@@ -203,12 +203,12 @@ class OverlappingRowMatrix : virtual public Ifpack2::Details::RowMatrix<MatrixTy
     \param LocalRow - (In) Local row number for which indices are desired.
     \param Indices - (Out) Local column indices corresponding to values.
     \param Values - (Out) Matrix values.
-    \param NumIndices - (Out) Number of indices.
+    \param NumEntries - (Out) Number of indices.
 
-    Note: A std::runtime_error exception is thrown if either \c Indices or \c Values is not large enough to hold the data associated
-    with row \c LocalRow. If \c LocalRow is not valid for this node, then \c Indices and \c Values are unchanged and \c NumIndices is
-    returned as Teuchos::OrdinalTraits<size_t>::invalid().
-  */
+      Note: A std::runtime_error exception is thrown if either \c Indices or \c Values is not large enough to hold the data associated
+      with row \c LocalRow. If \c LocalRow is not valid for this node, then \c Indices and \c Values are unchanged and \c NumEntries is
+      returned as Teuchos::OrdinalTraits<size_t>::invalid().
+    */
   virtual void
   getLocalRowCopy(local_ordinal_type LocalRow,
                   nonconst_local_inds_host_view_type &Indices,
@@ -218,13 +218,13 @@ class OverlappingRowMatrix : virtual public Ifpack2::Details::RowMatrix<MatrixTy
   //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
   /*!
     \param GlobalRow - (In) Global row number for which indices are desired.
-    \param Indices   - (Out) Global column indices corresponding to values.
-    \param Values    - (Out) Row values
-    \pre <tt>isLocallyIndexed() == false</tt>
-    \post <tt>indices.size() == getNumEntriesInGlobalRow(GlobalRow)</tt>
+    \param indices   - (Out) Global column indices corresponding to values.
+    \param values    - (Out) Row values
+      \pre <tt>isLocallyIndexed() == false</tt>
+      \post <tt>indices.size() == getNumEntriesInGlobalRow(GlobalRow)</tt>
 
-    Note: If \c GlobalRow does not belong to this node, then \c indices is set to null.
-  */
+      Note: If \c GlobalRow does not belong to this node, then \c indices is set to null.
+    */
   virtual void
   getGlobalRowView(global_ordinal_type GlobalRow,
                    global_inds_host_view_type &indices,
@@ -233,13 +233,13 @@ class OverlappingRowMatrix : virtual public Ifpack2::Details::RowMatrix<MatrixTy
   //! Extract a const, non-persisting view of local indices in a specified row of the matrix.
   /*!
     \param LocalRow - (In) Local row number for which indices are desired.
-    \param Indices  - (Out) Global column indices corresponding to values.
-    \param Values   - (Out) Row values
-    \pre <tt>isGloballyIndexed() == false</tt>
-    \post <tt>indices.size() == getNumEntriesInLocalRow(LocalRow)</tt>
+    \param indices  - (Out) Local column indices corresponding to values.
+    \param values   - (Out) Row values
+      \pre <tt>isGloballyIndexed() == false</tt>
+      \post <tt>indices.size() == getNumEntriesInLocalRow(LocalRow)</tt>
 
-    Note: If \c LocalRow does not belong to this node, then \c indices is set to null.
-  */
+      Note: If \c LocalRow does not belong to this node, then \c indices is set to null.
+    */
   virtual void
   getLocalRowView(local_ordinal_type LocalRow,
                   local_inds_host_view_type &indices,

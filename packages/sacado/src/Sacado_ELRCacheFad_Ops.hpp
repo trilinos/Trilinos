@@ -565,10 +565,18 @@ FAD_UNARYOP_MACRO(exp,
                   ExpOp,
                   a = std::exp(v),
                   a)
+FAD_UNARYOP_MACRO(expm1,
+                  ExpM1Op,
+                  a = std::exp(v),
+                  std::expm1(v))
 FAD_UNARYOP_MACRO(log,
                   LogOp,
                   a=scalar_type(1.0)/v,
                   std::log(v))
+FAD_UNARYOP_MACRO(log1p,
+                  Log1POp,
+                  a=scalar_type(1.0)/(value_type(1)+v),
+                  std::log1p(v))
 FAD_UNARYOP_MACRO(log10,
                   Log10Op,
                   a = scalar_type(1.0)/(std::log(scalar_type(10.0))*v),

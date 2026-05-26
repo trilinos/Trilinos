@@ -22,7 +22,7 @@
 namespace MueLu {
 
 /*!
-  @class Q2Q1Q2CoarseGridFactory class.
+  @class Q2Q1Q2CoarseGridFactory
   @brief Factory for GMG Q2-Q1-Q2 interpolation
   @ingroup MueLuTransferClasses
 */

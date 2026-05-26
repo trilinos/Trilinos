@@ -82,7 +82,7 @@ namespace BaskerNS
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  int Basker<Int,Entry, Exe_Space>::find_btf2
+  int Basker<Int,Entry, Exe_Space>::find_btf
   (
    BASKER_MATRIX &M
   )
@@ -96,6 +96,8 @@ namespace BaskerNS
 
     //================================================================
     //compute BTF
+    // Input M
+    // Output nblks, order, tabs
     strong_component(M, nblks, order_btf_array, btf_tabs);
     #ifdef BASKER_TIMER
     order_time = timer_order.seconds();
@@ -270,7 +272,7 @@ namespace BaskerNS
     //================================================================
     //Split the matrix M into blocks
     //NDE at this point, vals_perm_composition stores the permutation of the vals array; will be needed during break_into_parts
-    break_into_parts2(M, nblks, btf_tabs);
+    break_into_parts(M, nblks, btf_tabs);
     #ifdef BASKER_TIMER
     order_time = timer_order.seconds();
     std::cout << " >>> Basker order : partition time    : " << order_time << std::endl;
@@ -302,12 +304,12 @@ namespace BaskerNS
 #endif
 
     return BASKER_SUCCESS;
-  }//end find_btf2
+  }//end find_btf
 
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  int Basker<Int, Entry,Exe_Space>::break_into_parts2
+  int Basker<Int, Entry,Exe_Space>::break_into_parts
   (
    BASKER_MATRIX &M,
    Int           nblks,
@@ -315,7 +317,7 @@ namespace BaskerNS
   )
   {
   #ifdef BASKER_DEBUG_ORDER_BTF
-    printf("Basker: break_into_parts2 called \n");
+    printf("Basker: break_into_parts called \n");
     printf("nblks: %d \n", nblks);
   #endif
 
@@ -341,7 +343,7 @@ namespace BaskerNS
     if(nblks == 1)
     {
     #ifdef BASKER_DEBUG_ORDER_BTF
-      printf("Basker: break_into_parts2 - short circuit for single block case\n");
+      printf("Basker: break_into_parts - short circuit for single block case\n");
     #endif
       #if !defined (HAVE_SHYLU_NODEBASKER_METIS) && !defined(HAVE_SHYLU_NODEBASKER_SCOTCH)
       if (Options.run_nd_on_leaves == BASKER_TRUE) {
@@ -363,7 +365,7 @@ namespace BaskerNS
     if(Options.incomplete == BASKER_TRUE)
     {
     #ifdef BASKER_DEBUG_ORDER_BTF
-      printf("Basker: break_into_parts2 - short ciruit incomplete\n");
+      printf("Basker: break_into_parts - short ciruit incomplete\n");
     #endif
       BTF_A = A;
       btf_nblks = 1;
@@ -403,7 +405,6 @@ namespace BaskerNS
       //           ((double)BASKER_BTF_IMBALANCE));
       #if 0 // forcing to have the big A bloock for debug
       double break_work_size = 0.0;
-      //double break_block_size = 0.0;
       double break_block_size = 0.0;
       printf( " > debug: break_size = %f, %f\n",break_work_size,break_block_size );
       #else
@@ -412,6 +413,19 @@ namespace BaskerNS
       double break_work_size = ceil(total_work_estimate*(break_fact * ((double)1.0/num_threads) + ((double)BASKER_BTF_IMBALANCE)));
       double break_block_size = 20 * num_threads; //0;
       #endif
+      if (Options.partial_facto != 0)
+      {
+        if(Options.verbose == BASKER_TRUE) {
+          printf("Basker: Forcing to perform ND factorization of one BTF block for partial factorization %d\n",Options.partial_facto);
+        }
+        break_work_size = 0.0;
+        break_block_size = 0.0;
+        #if !defined (HAVE_SHYLU_NODEBASKER_METIS)
+        if (Options.partial_facto == 2) {
+          BASKER_ASSERT(1==0, "Basker: partial factorization requires METIS.");
+        }
+        #endif
+      }
       if(Options.verbose == BASKER_TRUE) {
         printf("Basker: Break size for workspace and size: %d and %d with %d threads (total work estimate = %f)\n",
                 (int)break_work_size, (int)break_block_size, (int)num_threads, total_work_estimate);
@@ -815,7 +829,7 @@ namespace BaskerNS
     #endif
 
     return 0;
-  }//end break_into_parts2 (based on imbalance)
+  }//end break_into_parts (based on imbalance)
 
 
   template <class Int,class Entry, class Exe_Space>
@@ -829,22 +843,16 @@ namespace BaskerNS
   )
   {
     //printf("===Basker this strong comp called====");
-
-    typedef long int   l_int;
-    
-    INT_1DARRAY perm_in;
-    MALLOC_INT_1DARRAY(perm_in, M.ncol);
     MALLOC_INT_1DARRAY(perm, M.ncol);
     //JDB:Note, this needs to be changed just fixed for int/long
     MALLOC_INT_1DARRAY(CC, M.ncol+1);
 
-    for(l_int i = 0; i < M.ncol; i++)
+    if(Options.incomplete == BASKER_TRUE || Options.partial_facto != 0)
     {
-      perm_in(i) = i;
-    }
-
-    if(Options.incomplete == BASKER_TRUE)
-    {
+      if (Options.partial_facto != 0 && Options.verbose == BASKER_TRUE)
+      {
+        printf("Basker: Forcing one strong-component for partial factorization\n");
+      }
       for(Int i = 0; i < M.ncol; i++)
       {
         perm(i) = i;
@@ -855,7 +863,16 @@ namespace BaskerNS
       return 0;
     }
 
-    BaskerSSWrapper<Int>::my_strong_component(M.ncol,
+    INT_1DARRAY perm_in;
+    MALLOC_INT_1DARRAY(perm_in, M.ncol);
+
+    typedef long int   l_int;
+    for(l_int i = 0; i < M.ncol; i++)
+    {
+      perm_in(i) = i;
+    }
+
+    BaskerSSWrapper<Int>::strong_component(M.ncol,
                         &(M.col_ptr(0)),
                         &(M.row_idx(0)),
                         nblks,

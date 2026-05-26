@@ -35,7 +35,7 @@ namespace Intrepid2 {
                                  const cellVertViewType cellVertices,
                                  const ordinal_type subCellDim,
                                  const ordinal_type subCellOrd) {
-    static_assert(Kokkos::Impl::MemorySpaceAccess
+    static_assert(Kokkos::SpaceAccessibility
                   <Kokkos::HostSpace,typename cellVertViewType::device_type::memory_space>::accessible,
                   "host space cannot access cellVertViewType");
     switch (subCellDim) {
@@ -107,7 +107,7 @@ namespace Intrepid2 {
   Orientation::getOrientation(const shards::CellTopology cellTopo,
                               const cellVertViewType cellVertices,
                               bool isSide) {
-    static_assert(Kokkos::Impl::MemorySpaceAccess
+    static_assert(Kokkos::SpaceAccessibility
                   <Kokkos::HostSpace,typename cellVertViewType::device_type::memory_space>::accessible,
                   "host space cannot access cellVertViewType");
 

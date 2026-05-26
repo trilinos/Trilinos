@@ -5,11 +5,14 @@ API: Batched Dense (DLA)
    :maxdepth: 2
    :hidden:
    
+   dense/batched_axpy
+   dense/batched_copy
    dense/batched_iamax
    dense/batched_trsv
    dense/batched_tbsv
    dense/batched_ger
    dense/batched_syr
+   dense/batched_syr2
    dense/batched_getrf
    dense/batched_getrs
    dense/batched_gbtrf
@@ -22,6 +25,7 @@ API: Batched Dense (DLA)
    dense/batched_laswp
    dense/batched_apply_householder
    dense/batched_householder
+   dense/batched_trsm
 
 Our implementation of batched dense linear algebra (DLA) allows user to compose various batched DLA operations.
 For example, consider a case where small element matrices are created via `gemm` and those matrices are triangular solved by `lu` and `trsv`.
@@ -123,13 +127,13 @@ BLAS 1
      - `Blas::TeamScale`
      - `Blas::TeamVectorScale`
    * - COPY
-     - `SerialCopy`
-     - `TeamCopy`
-     - `TeamVectorCopy`
+     - :doc:`SerialCopy <dense/batched_copy>`
+     - :doc:`TeamCopy <dense/batched_copy>`
+     - :doc:`TeamVectorCopy <dense/batched_copy>`
    * - AXPY
-     - `SerialAxpy`
-     - `TeamAxpy`
-     - `TeamVectorAxpy`
+     - :doc:`SerialAxpy <dense/batched_axpy>`
+     - :doc:`TeamAxpy <dense/batched_axpy>`
+     - :doc:`TeamVectorAxpy <dense/batched_axpy>`
    * - DOT*
      - `SerialDot`
      - `TeamDot`
@@ -235,7 +239,11 @@ BLAS 2
      - --
      - --
    * - SYR2
+     - :doc:`SerialSyr2 <dense/batched_syr2>`
      - --
+     - --
+   * - HER2
+     - :doc:`SerialSyr2 <dense/batched_syr2>`
      - --
      - --
 
@@ -283,9 +291,9 @@ BLAS 3
      - `TeamTrmm`
      - `TeamVectorTrmm`
    * - TRSM
-     - `SerialTrsm`
-     - `TeamTrsm`
-     - `TeamVectorTrsm`
+     - :doc:`SerialTrsm <dense/batched_trsm>`
+     - :doc:`TeamTrsm <dense/batched_trsm>`
+     - :doc:`TeamVectorTrsm <dense/batched_trsm>`
 
 LAPACK support
 ==============

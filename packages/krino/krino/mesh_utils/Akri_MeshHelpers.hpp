@@ -85,6 +85,17 @@ std::array<double,4> get_tetrahedron_scalar(const stk::mesh::BulkData & mesh, co
   return {{ get_scalar_field(mesh, field, tetNodes[0]), get_scalar_field(mesh, field, tetNodes[1]), get_scalar_field(mesh, field, tetNodes[2]), get_scalar_field(mesh, field, tetNodes[3]) }};
 }
 
+template<class CONTAINER>
+double compute_simplex_RMS_edge_lengths(const CONTAINER & elementNodeCoords)
+{
+  double sum = 0.;
+  for ( size_t inode = 0; inode < elementNodeCoords.size(); ++inode )
+    for ( size_t jnode = inode+1; jnode < elementNodeCoords.size(); ++jnode )
+      sum += (elementNodeCoords[inode] - elementNodeCoords[jnode]).length_squared();
+  const unsigned numEdges = elementNodeCoords.size() * (elementNodeCoords.size()-1) / 2;
+  return std::sqrt(sum/numEdges);
+}
+
 void fill_nodes_attached_to_node(const stk::mesh::BulkData& mesh, const stk::mesh::Entity node, std::vector<stk::mesh::Entity> &nbrNodes);
 void populate_stk_local_ids(stk::mesh::BulkData & mesh);
 void fill_node_ids_for_nodes(const stk::mesh::BulkData & mesh, const std::vector<stk::mesh::Entity> & parentNodes, std::vector<stk::mesh::EntityId> & parentNodeIds);
@@ -303,6 +314,7 @@ void batch_convert_elements_and_their_sides(stk::mesh::BulkData & mesh, const st
 void parallel_sync_fields(const stk::mesh::BulkData & mesh, const std::vector<const stk::mesh::FieldBase *> & fields);
 void parallel_sync_fields(const stk::mesh::BulkData & mesh, const stk::mesh::FieldVector & fields);
 void parallel_sync_all_fields(const stk::mesh::BulkData & mesh);
+bool mesh_has_selected_higher_order_elements(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & elementSelector);
 
 } // namespace krino
 

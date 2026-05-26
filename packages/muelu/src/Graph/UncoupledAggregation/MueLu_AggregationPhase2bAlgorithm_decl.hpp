@@ -21,7 +21,7 @@
 
 namespace MueLu {
 /*!
-  @class AggregationPhase2bAlgorithm class.
+  @class AggregationPhase2bAlgorithm
   @brief Add leftovers to existing aggregates
   @ingroup Aggregation
 

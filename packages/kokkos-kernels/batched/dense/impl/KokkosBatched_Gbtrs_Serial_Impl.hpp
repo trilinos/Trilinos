@@ -25,7 +25,7 @@ KOKKOS_INLINE_FUNCTION static int checkGbtrsInput([[maybe_unused]] const AViewTy
                 "KokkosBatched::gbtrs: Value type of PivViewType must be an integral type.");
   static_assert(std::is_same_v<typename BViewType::value_type, typename BViewType::non_const_value_type>,
                 "KokkosBatched::gbtrs: BViewType must have non-const value type.");
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#ifndef NDEBUG
   if (kl < 0) {
     Kokkos::printf(
         "KokkosBatched::gbtrs: input parameter kl must not be less than 0: kl "

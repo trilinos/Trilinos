@@ -138,12 +138,9 @@ class LinearProblem : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Nod
   /// Applies the scaling vector D to the left side of the
   /// matrix A() and to the right hand side B().
   ///
-  /// \param In
-  ///      D - Vector containing scaling values.  D[i] will
+  /// \param D Vector containing scaling values.  D[i] will
   ///          be applied to the ith row of A() and B().
-  ///   mode - Indicating if transposed.
-  /// \return Integer error code, set to 0 if successful.
-  ///         Return -1 if operator is not a matrix.
+  /// \param mode Indicating if transposed.
   void leftScale(const Teuchos::RCP<const vector_type>& D,
                  Teuchos::ETransp mode = Teuchos::NO_TRANS);
 
@@ -153,13 +150,10 @@ class LinearProblem : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Nod
   /// matrix A().  Apply the inverse of D to the initial
   /// guess.
   ///
-  /// \param In
-  ///      D - Vector containing scaling values.  D[i] will
+  /// \param D Vector containing scaling values.  D[i] will
   ///          be applied to the ith row of A().  1/D[i] will
   ///          be applied to the ith row of B().
-  ///   mode - Indicating if transposed.
-  /// \return Integer error code, set to 0 if successful.
-  ///         Return -1 if operator is not a matrix.
+  /// \param mode Indicating if transposed.
   void rightScale(const Teuchos::RCP<const vector_type>& D,
                   Teuchos::ETransp mode = Teuchos::NO_TRANS);
 

@@ -27,14 +27,12 @@ namespace KokkosSparse {
 // clang-format on
 template <class DimType, class RowViewType, class ColViewType, class DataViewType>
 auto coo2crs(DimType m, DimType n, RowViewType row, ColViewType col, DataViewType data) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
   static_assert(Kokkos::is_view<RowViewType>::value, "RowViewType must be a Kokkos::View.");
   static_assert(Kokkos::is_view<ColViewType>::value, "CalViewType must be a Kokkos::View.");
   static_assert(Kokkos::is_view<DataViewType>::value, "DataViewType must be a Kokkos::View.");
   static_assert(static_cast<int>(RowViewType::rank) == 1, "RowViewType must have rank 1.");
   static_assert(static_cast<int>(ColViewType::rank) == 1, "ColViewType must have rank 1.");
   static_assert(static_cast<int>(DataViewType::rank) == 1, "DataViewType must have rank 1.");
-#endif
 
   static_assert(std::is_integral<typename RowViewType::value_type>::value,
                 "RowViewType::value_type must be an integral.");

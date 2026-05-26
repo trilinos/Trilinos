@@ -26,6 +26,7 @@
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
 #include "ROL_TpetraTeuchosBatchManager.hpp"
+#include "ROL_StdTeuchosBatchManager.hpp"
 #include "ROL_Solver.hpp"
 #include "ROL_StochasticProblem.hpp"
 #include "ROL_PrimalDualRisk.hpp"
@@ -93,7 +94,7 @@ int main(int argc, char *argv[]) {
     auto u = ROL::makePtr<PDE_PrimalSimVector<RealT,DeviceT>>(u_ptr,pde,con->getAssembler());
     auto p = ROL::makePtr<PDE_PrimalSimVector<RealT,DeviceT>>(p_ptr,pde,con->getAssembler());
     auto r = ROL::makePtr<PDE_DualSimVector<RealT,DeviceT>>(r_ptr,pde,con->getAssembler());
-    auto z = ROL::makePtr<PDE_OptVector<RealT>>(ROL::makePtr<ROL::StdVector<RealT>>(z_ptr));
+    auto z = ROL::makePtr<ROL::StdVector<RealT>>(z_ptr);
 
     /*************************************************************************/
     /***************** BUILD COST FUNCTIONAL *********************************/
@@ -111,8 +112,8 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /***************** BUILD BOUND CONSTRAINT ********************************/
     /*************************************************************************/
-    auto zlo = ROL::makePtr<PDE_OptVector<RealT>>(ROL::makePtr<ROL::StdVector<RealT>>(controlDim, 0.0));
-    auto zup = ROL::makePtr<PDE_OptVector<RealT>>(ROL::makePtr<ROL::StdVector<RealT>>(controlDim, 1.0));
+    auto zlo = ROL::makePtr<ROL::StdVector<RealT>>(controlDim, 0.0);
+    auto zup = ROL::makePtr<ROL::StdVector<RealT>>(controlDim, 1.0);
     auto bnd = ROL::makePtr<ROL::Bounds<RealT>>(zlo, zup);
 
     /*************************************************************************/
@@ -121,7 +122,7 @@ int main(int argc, char *argv[]) {
     int nsamp = parlist->sublist("Problem").get("Number of Samples",100);
     std::vector<RealT> tmp = {-one,one};
     std::vector<std::vector<RealT>> bounds(stochDim,tmp);
-    auto bman = ROL::makePtr<PDE_OptVector_BatchManager<RealT>>(comm);
+    auto bman = ROL::makePtr<ROL::StdTeuchosBatchManager<RealT,int>>(comm);
     auto sampler = ROL::makePtr<ROL::MonteCarloGenerator<RealT>>(nsamp,bounds,bman);
 
     /*************************************************************************/

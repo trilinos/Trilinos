@@ -28,7 +28,7 @@ struct Stack {
 
   KOKKOS_INLINE_FUNCTION
   void push(int values[]) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#ifndef NDEBUG
     if (m_top >= STACK_SIZE - 1) {
       Kokkos::printf("Stack overflow: Cannot push, the stack is full.\n");
       return;
@@ -43,7 +43,7 @@ struct Stack {
 
   KOKKOS_INLINE_FUNCTION
   void pop(int values[]) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#ifndef NDEBUG
     if (m_top < 0) {
       // Check if the stack is empty
       Kokkos::printf("Stack underflow: Cannot pop, the stack is empty.");

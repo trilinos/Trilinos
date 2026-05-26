@@ -21,7 +21,7 @@
 namespace MueLu {
 
 /*!
-  @class LowPrecisionFactory class.
+  @class LowPrecisionFactory
   @brief Factory for converting matrices to half precision operators
 */
 

@@ -17,10 +17,9 @@
 #include "shylubasker_matrix_view_decl.hpp"
 #include "shylubasker_matrix_view_def.hpp"
 
-#include "shylubasker_nfactor_blk.hpp"
-#include "shylubasker_nfactor_col.hpp"
-#include "shylubasker_nfactor_col2.hpp"
-#include "shylubasker_nfactor_diag.hpp"
+#include "shylubasker_nfactor_dom.hpp"
+#include "shylubasker_nfactor_sep2.hpp"
+#include "shylubasker_nfactor_btf.hpp"
 
 #include "shylubasker_error_manager.hpp"
 
@@ -93,20 +92,25 @@ namespace BaskerNS
       // -------------------------------------------------------- //
       // -----------------------Domain--------------------------- //
       Int nworker_threads = (Options.worker_threads ? 2 : 1);
+      Int num_doms = num_threads;
       if(Options.verbose == BASKER_TRUE)
       {
-        printf("Factoring Dom num_threads: %ld with %ld worker threads\n", (long)num_threads,(long)nworker_threads);
-        //for (int tid = 0; tid < num_threads; tid ++) {
+        printf("Factoring Dom(# teams = %ld with # threads = %ld)\n", (long)num_doms,(long)nworker_threads);
+        //for (int tid = 0; tid < num_doms; tid ++) {
         //  printf( " error[%d] = %d\n",tid,thread_array(tid).error_type );
         //}
         fflush(stdout);
         timer.reset();
       }
+      //if(Options.partial_facto != 0) {
+      //  if(Options.verbose == BASKER_TRUE) printf( " > halving # teams for partial factorization (%d -> %d)\n",num_doms,num_doms/2 );
+      //  num_doms /= 2;
+      //}
 
       Int domain_restart = 0;
       kokkos_nfactor_domain <Int,Entry,Exe_Space>
         domain_nfactor(this);
-      Kokkos::parallel_for(TeamPolicy(num_threads,nworker_threads),
+      Kokkos::parallel_for(TeamPolicy(num_doms,nworker_threads),
           domain_nfactor);
       Kokkos::fence();
 
@@ -114,8 +118,8 @@ namespace BaskerNS
       while(info != BASKER_ERROR)
       {
         INT_1DARRAY thread_start;
-        MALLOC_INT_1DARRAY(thread_start, num_threads+1);
-        init_value(thread_start, num_threads+1, (Int) BASKER_MAX_IDX);
+        MALLOC_INT_1DARRAY(thread_start, num_doms+1);
+        init_value(thread_start, num_doms+1, (Int) BASKER_MAX_IDX);
 
         info = nfactor_domain_error(thread_start);
         if(Options.verbose == BASKER_TRUE) {
@@ -149,9 +153,9 @@ namespace BaskerNS
             printf("\n restart factorization\n");
           }
           kokkos_nfactor_domain_remalloc <Int, Entry, Exe_Space>
-            diag_nfactor_remalloc(this, thread_start);
-          Kokkos::parallel_for(TeamPolicy(num_threads,1),
-              diag_nfactor_remalloc);
+            nfactor_dom_remalloc(this, thread_start);
+          Kokkos::parallel_for(TeamPolicy(num_doms,nworker_threads),
+              nfactor_dom_remalloc);
           Kokkos::fence();
         }
       }//end while
@@ -168,6 +172,10 @@ namespace BaskerNS
       // -------------------------------------------------------- //
       // ---------------------------Sep-------------------------- //
       if(info == BASKER_SUCCESS) {
+        if(Options.partial_facto == 2) {
+          // zero out schur complement
+          for (Int i=0; i<schur_size*schur_size; i++) schur_out_ptr[i] = Entry(0.0);
+        }
         #ifdef BASKER_NO_LAMBDA
         for(Int l=1; l <= tree.nlvls; l++)
         {
@@ -183,14 +191,17 @@ namespace BaskerNS
           //#endif
 
           Int sep_restart = 0;
-
           if(Options.verbose == BASKER_TRUE)
           {
-            printf("Factoring Sep(lnteams = %ld, lthreads = %ld)\n",
-                   (long)lnteams, (long)lthreads);
+            printf("Factoring Sep(# teams = %ld with # threads = %ld) at level = %d\n",
+                   (long)lnteams, (long)lthreads, (int)l); fflush(stdout);
           }
+          //if(Options.partial_facto != 0) {
+          //  if(Options.verbose == BASKER_TRUE) printf( " > halving # teams for partial factorization (%d -> %d)\n",lnteams,lnteams/2 );
+          //  lnteams /= 2;
+          //}
 
-          kokkos_nfactor_sep2 <Int, Entry, Exe_Space> sep_nfactor(this, l);
+          kokkos_nfactor_sep2 <Int, Entry, Exe_Space> sep_nfactor(this, l, tree.nlvls);
           Kokkos::parallel_for(TeamPolicy(lnteams,lthreads),
                                sep_nfactor);
           Kokkos::fence();
@@ -203,7 +214,6 @@ namespace BaskerNS
             init_value(thread_start, num_threads+1, (Int) BASKER_MAX_IDX);
 
             info = nfactor_sep_error(thread_start);
-            //printf( "\n ***** nfactor_separator: info = %d *****\n",(int)info );
             if(info == BASKER_SUCCESS)
             {
               FREE_INT_1DARRAY(thread_start);
@@ -241,11 +251,18 @@ namespace BaskerNS
           printf(" > Time INNERSEP %ld: %lf \n", (long int)l, timer_inner_sep.seconds());
           #endif
         }//end over each level
+        if(Options.partial_facto == 2 && schur_out_ptr != nullptr) {
+          // copy out schur complement
+          for (Int i=0; i<schur_size; i++) {
+            for (Int j=0; j<schur_size; j++) schur_out_ptr[i+j*schur_size] = schur_out(i,j);
+          }
+        }
         #else //ELSE BASKER_NO_LAMBDA
         //Note: to be added
         #endif //end BASKER_NO_LAMBDA
         //-------------------------End Sep----------------//
       }// info != BASKER_ERROR
+
       //printf( " End Sep: info = %d (%d, %d)\n",info,BASKER_SUCCESS,BASKER_ERROR );
       if(Options.verbose == BASKER_TRUE)
       {
@@ -267,11 +284,11 @@ namespace BaskerNS
         timer.reset();
       }
 
-      //======Call diag factor====
-      kokkos_nfactor_diag <Int, Entry, Exe_Space> 
-        diag_nfactor(this);
+      //======Call BTF factor====
+      kokkos_nfactor_btf <Int, Entry, Exe_Space> 
+        nfactor_btf(this);
       Kokkos::parallel_for(TeamPolicy(num_threads,1),
-        diag_nfactor);
+        nfactor_btf);
       Kokkos::fence();
 
       //=====Check for error======
@@ -285,8 +302,8 @@ namespace BaskerNS
         MALLOC_INT_1DARRAY(thread_start_top, num_threads+1);
         init_value(thread_start_top, num_threads+1, (Int) BASKER_MAX_IDX);
 
-        info = nfactor_diag_error(thread_start_top, thread_start);
-        //printf( " nfactor_diag: info = %d\n\n",(int)info );
+        info = nfactor_btf_error(thread_start_top, thread_start);
+        //printf( " nfactor_btf: info = %d\n\n",(int)info );
         //printf("RETURNED: %d (success=%d, error=%d)\n", info, BASKER_SUCCESS, BASKER_ERROR);
         if(info == BASKER_SUCCESS)
         {
@@ -296,7 +313,7 @@ namespace BaskerNS
         {
           if(Options.verbose == BASKER_TRUE)
           {
-            printf("%s: nfactor_diagonal_error reports info=%d and max restartt reached (%d)\n",__FILE__, info, (int)btf_restart);
+            printf("%s: nfactor_btfonal_error reports info=%d and max restartt reached (%d)\n",__FILE__, info, (int)btf_restart);
           }
           break;
         }
@@ -304,7 +321,7 @@ namespace BaskerNS
         {
           if(Options.verbose == BASKER_TRUE)
           {
-            printf("%s: nfactor_diagonal_error reports BASKER_ERROR - numeric factorization failed\n",__FILE__);
+            printf("%s: nfactor_btfonal_error reports BASKER_ERROR - numeric factorization failed\n",__FILE__);
           }
           break;
         }
@@ -315,12 +332,12 @@ namespace BaskerNS
           {
             printf("\n restart factorization\n");
           }
-          kokkos_nfactor_diag_remalloc <Int, Entry, Exe_Space>
-            diag_nfactor_remalloc(this, thread_start_top, thread_start);
+          kokkos_nfactor_btf_remalloc <Int, Entry, Exe_Space>
+            nfactor_btf_remalloc(this, thread_start_top, thread_start);
           Kokkos::parallel_for(TeamPolicy(num_threads,1),
-            diag_nfactor_remalloc);
+            nfactor_btf_remalloc);
           Kokkos::fence();
-          //printf( " diag_nfactor_remalloc done\n\n" );
+          //printf( " nfactor_btf_remalloc done\n\n" );
         }
       }//end while
 
@@ -336,7 +353,7 @@ namespace BaskerNS
       A = ATEMP;
     }
     //printf("Switch back: %f \n",
-    //	    tzback.seconds());
+    //            tzback.seconds());
 
     return info;
   }//end factor_notoken()

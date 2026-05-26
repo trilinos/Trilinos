@@ -34,7 +34,7 @@ enum MinimizationNorm {
 };
 
 /*!
-  @class PgPFactory class.
+  @class PgPFactory
   @brief Factory for building Petrov-Galerkin Smoothed Aggregation prolongators.
   @ingroup MueLuTransferClasses
 */

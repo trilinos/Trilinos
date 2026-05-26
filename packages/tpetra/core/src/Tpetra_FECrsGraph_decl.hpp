@@ -335,6 +335,8 @@ class FECrsGraph : public CrsGraph<LocalOrdinal, GlobalOrdinal, Node> {
   ///
   /// \param ownedPlusSharedRowMap [in] ownedMap plus the list of shared rows to which off-processor insertion is allowed
   ///
+  /// \param ownedPlusSharedColMap [in] owned+shared column map.
+  ///
   /// \param numEntPerRow [in] Maximum number of graph entries to
   ///   allocate for each row.  You cannot exceed the allocated
   ///   number of entries for any row.
@@ -366,6 +368,8 @@ class FECrsGraph : public CrsGraph<LocalOrdinal, GlobalOrdinal, Node> {
   /// \param ownedRowMap [in] Distribution of rows of the owned graph.
   ///
   /// \param ownedPlusSharedRowMap [in] ownedMap plus the list of shared rows to which off-processor insertion is allowed
+  ///
+  /// \param ownedPlusSharedColMap [in] owned+shared column map.
   ///
   /// \param numEntPerRow [in] Maximum number of graph entries to
   ///   allocate for each row.  You cannot exceed the allocated
@@ -563,11 +567,9 @@ class FECrsGraph : public CrsGraph<LocalOrdinal, GlobalOrdinal, Node> {
  protected:
   /// \brief Insert global indices, using an input <i>local</i> row index.
   ///
-  /// \param rowInfo [in] Result of getRowInfo() on the row in which
-  ///   to insert.
+  /// \param lclRow [in] Local row index in which to insert.
   /// \param inputGblColInds [in] Input global column indices.
-  /// \param numInputInds [in] The number of input global column
-  ///   indices.
+  /// \param numInputInds [in] The number of input global column indices.
   ///
   /// \return The number of indices inserted.
   size_t
@@ -580,8 +582,8 @@ class FECrsGraph : public CrsGraph<LocalOrdinal, GlobalOrdinal, Node> {
   /// \param rowInfo [in] Result of getRowInfo() on the row in which
   ///   to insert.
   /// \param inputGblColInds [in] Input global column indices.
-  /// \param numInputInds [in] The number of input global column
-  ///   indices.
+  /// \param numInputInds [in] The number of input global column indices.
+  /// \param fun [in] Callback function called for each insertion.
   ///
   /// \return The number of indices inserted.
   size_t

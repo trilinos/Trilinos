@@ -42,6 +42,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(StratimikosSmoother, HardCodedResult_BlockCG, 
     return;
   }
 
+#ifdef HAVE_MUELU_BELOS
   Teuchos::ParameterList paramList;
   paramList.set("Linear Solver Type", "Belos");
   paramList.sublist("Linear Solver Types").sublist("Belos").set("Solver Type", "Block CG");
@@ -55,7 +56,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(StratimikosSmoother, HardCodedResult_BlockCG, 
   RCP<const Teuchos::Comm<int> > comm                                  = TestHelpers::Parameters::getDefaultComm();
   const typename Teuchos::ScalarTraits<SC>::magnitudeType expectedNorm = 0.02118661536508828144;
   TEST_FLOATING_EQUALITY(residualNorms, expectedNorm, 0.1);
-
+#endif
 }  // Block CG
 
 #define MUELU_ETI_GROUP(SC, LO, GO, NO)                                               \

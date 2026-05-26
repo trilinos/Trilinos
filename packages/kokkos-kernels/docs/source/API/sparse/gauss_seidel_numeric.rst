@@ -3,7 +3,7 @@ KokkosSparse::gauss_seidel_numeric
 
 Defined in header ``KokkosSparse_gauss_seidel.hpp``
 
-.. code:: cppkokkos
+.. code:: c++
 
   template <class ExecutionSpace, KokkosSparse::SparseMatrixFormat format = KokkosSparse::SparseMatrixFormat::CRS,
             typename KernelHandle, typename lno_row_view_t_, typename lno_nnz_view_t_, typename scalar_nnz_view_t_>

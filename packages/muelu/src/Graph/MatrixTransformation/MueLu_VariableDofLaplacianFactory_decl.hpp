@@ -20,7 +20,7 @@
 namespace MueLu {
 
 /*!
-  @class VariableDofLaplacianFactory class.
+  @class VariableDofLaplacianFactory
   @brief Factory for building scalar Laplace operator (that is used as fake operator for variable dof size problems)
 
   Build distance Laplacian associated with input matrix A (which might have a variable number of DOFs per node).

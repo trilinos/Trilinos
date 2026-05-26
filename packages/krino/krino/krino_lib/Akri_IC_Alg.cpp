@@ -25,16 +25,15 @@
 #include <Akri_RefinementSupport.hpp>
 #include <Akri_BoundingBox.hpp>
 #include <Akri_Composite_Surface.hpp>
+#include <Akri_MeshHelpers.hpp>
 #include <Akri_NodalSurfaceDistance.hpp>
 #include <Akri_Sign.hpp>
 
 namespace krino{
 
-namespace {
-double relative_crossing_position(const double ls0, const double ls1)
+static double relative_crossing_position(const double ls0, const double ls1)
 {
-  return sign_change(ls0, ls1) ? ls0 / ( ls0 - ls1 ) : -10.;
-}
+  return ls0 / ( ls0 - ls1 );
 }
 
 //----------------------------------------------------------------
@@ -63,7 +62,8 @@ void IC_Alg::execute(const double time)
     DistanceSweeper::fix_sign_by_sweeping(mesh, dField, surface_list.get_signed_narrow_band_size(levelSet.narrow_band_size()));
   }
 
-  if(RefinementSupport::get(levelSet.meta()).get_nonconformal_adapt_target_count() > 0)
+  const RefinementSupport & refinementSupport = RefinementSupport::get(levelSet.meta());
+  if(refinementSupport.get_nonconformal_adapt_target_count() > 0)
   {
     compute_IC_error_indicator();
   }
@@ -94,7 +94,7 @@ void IC_Alg::compute_IC_error_indicator()
   std::vector<double> nodal_signed_distances;
   std::vector<stk::math::Vector3d> nodal_coordinates;
   std::vector<stk::math::Vector3d> edge_midpoints;
-  std::vector<double> midpoint_signed_distances, midpoint_interp_signed_distances;
+  std::vector<double> midptSignDists, midptInterpolatedSignDists;
   int edge_nodes[] = {0, 0};
 
   for(auto && b_ptr : elem_buckets)
@@ -127,8 +127,8 @@ void IC_Alg::compute_IC_error_indicator()
       // if we add a node at the midpoint with the exact signed distance there.
       const int num_edges = topo.num_edges();
       edge_midpoints.resize(num_edges);
-      midpoint_signed_distances.resize(num_edges);
-      midpoint_interp_signed_distances.resize(num_edges);
+      midptSignDists.resize(num_edges);
+      midptInterpolatedSignDists.resize(num_edges);
       double err = 0.;
       for (int e=0; e < num_edges; ++e)
       {
@@ -138,40 +138,34 @@ void IC_Alg::compute_IC_error_indicator()
         const stk::math::Vector3d & x0 = nodal_coordinates[edge_nodes[0]];
         const stk::math::Vector3d & x1 = nodal_coordinates[edge_nodes[1]];
         edge_midpoints[e] = 0.5*(x0+x1);
-        const double edge_length_sqr = (x1-x0).length_squared();
+        const double sqrEdgeLen = (x1-x0).length_squared();
 
-        double midpoint_signed_distance =
-            surface_list.point_signed_distance_with_narrow_band(edge_midpoints[e], levelSet.narrow_band_size());
-        midpoint_signed_distances[e] = midpoint_signed_distance;
+        const double lsMid = surface_list.point_signed_distance_with_narrow_band(edge_midpoints[e], levelSet.narrow_band_size());
+        midptSignDists[e] = lsMid;
 
         const double ls0 = nodal_signed_distances[edge_nodes[0]];
         const double ls1 = nodal_signed_distances[edge_nodes[1]];
-        midpoint_interp_signed_distances[e] = 0.5 * (ls0 + ls1);
-        const double orig_crossing_pos = relative_crossing_position(ls0, ls1);
-        const double left_half_crossing_pos =
-            0.5 * relative_crossing_position(ls0, midpoint_signed_distance);
-        const double right_half_crossing_pos =
-            0.5 * (1. + relative_crossing_position(midpoint_signed_distance, ls1));
+        midptInterpolatedSignDists[e] = 0.5 * (ls0 + ls1);
 
-        if(orig_crossing_pos >= 0.)
+        if (sign_change(ls0,ls1))
         {
-          if(left_half_crossing_pos >= 0.)
+          const double edgeCrossingLoc = relative_crossing_position(ls0, ls1);
+          if (sign_change(ls0,lsMid))
           {
-            const double delta = orig_crossing_pos - left_half_crossing_pos;
-            err += edge_length_sqr * delta * delta;
+            const double leftCrossingLoc = 0.5 * relative_crossing_position(ls0, lsMid);
+            const double delta = edgeCrossingLoc - leftCrossingLoc;
+            err += sqrEdgeLen * delta * delta;
           }
-          if(right_half_crossing_pos >= 0.)
+          else if (sign_change(lsMid,ls1))
           {
-            const double delta = orig_crossing_pos - right_half_crossing_pos;
-            err += edge_length_sqr * delta * delta;
+            const double rightCrossingLoc = 0.5 * (1. + relative_crossing_position(lsMid, ls1));
+            const double delta = edgeCrossingLoc - rightCrossingLoc;
+            err += sqrEdgeLen * delta * delta;
           }
         }
-        else
+        else if (sign_change(ls0,lsMid))
         {
-          if(left_half_crossing_pos >= 0. || right_half_crossing_pos >= 0.)
-          {
-            err += edge_length_sqr;
-          }
+          err += sqrEdgeLen;
         }
       }
 
@@ -179,21 +173,20 @@ void IC_Alg::compute_IC_error_indicator()
       {
         for(int ej=ei+1; ej < num_edges; ++ej)
         {
-          const double edge_length_sqr = (edge_midpoints[ei] - edge_midpoints[ej]).length_squared();
-          const double interp_crossing_pos =
-              relative_crossing_position(midpoint_interp_signed_distances[ei],
-                  midpoint_interp_signed_distances[ej]);
-          const double crossing_pos =
-              relative_crossing_position(midpoint_signed_distances[ei],
-                  midpoint_signed_distances[ej]);
+          const double sqrEdgeLen = (edge_midpoints[ei] - edge_midpoints[ej]).length_squared();
+          const bool hasCrossingBasedOnInterpolatedVals = sign_change(midptInterpolatedSignDists[ei], midptInterpolatedSignDists[ej]);
+          const bool hasCrossingBasedOnActualVals = sign_change(midptSignDists[ei], midptSignDists[ej]);
 
-          const bool has_interp_crossing = interp_crossing_pos >= 0.;
-          const bool has_crossing = crossing_pos >= 0.;
-          if(has_interp_crossing != has_crossing) err += edge_length_sqr;
-          if(has_crossing && has_interp_crossing)
+          if(hasCrossingBasedOnInterpolatedVals != hasCrossingBasedOnActualVals)
           {
-            const double delta = crossing_pos - interp_crossing_pos;
-            err += edge_length_sqr * delta * delta;
+            err += sqrEdgeLen;
+          }
+          else if (hasCrossingBasedOnActualVals)
+          {
+            const double actualCrossingLoc = relative_crossing_position(midptSignDists[ei], midptSignDists[ej]);
+            const double interpolatedCrossingLoc = relative_crossing_position(midptInterpolatedSignDists[ei], midptInterpolatedSignDists[ej]);
+            const double delta = actualCrossingLoc - interpolatedCrossingLoc;
+            err += sqrEdgeLen * delta * delta;
           }
         }
       }

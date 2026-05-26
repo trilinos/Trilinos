@@ -67,7 +67,7 @@ void Simulation::execute()
 
   for (auto && region : my_regions)
   {
-    region->process_output(false);
+    region->process_output();
   }
 
   //=====================================
@@ -110,7 +110,7 @@ void Simulation::execute()
 
     for (auto && region : my_regions)
     {
-      region->process_output(false);
+      region->process_output();
     }
   }
 

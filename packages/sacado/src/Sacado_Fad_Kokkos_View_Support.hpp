@@ -226,7 +226,7 @@ KOKKOS_INLINE_FUNCTION size_t allocation_size_from_mapping_and_accessor(
   return mapping.required_span_size() * element_size;
 }
 
-template <class StorageType> struct GeneralFad;
+template <class StorageType> class GeneralFad;
 
 template <class T, class LayoutType, class DeviceType, class MemoryTraits>
 KOKKOS_INLINE_FUNCTION constexpr auto customize_view_arguments(
@@ -348,10 +348,16 @@ as_scalar_view(const Kokkos::View<DataType, Properties...> &view) {
     using value_type = typename view_t::value_type::value_type;
     return Kokkos::View<value_type *, Properties...>(
         view.data(),
-        view.mapping().required_span_size() * view.accessor().fad_size());
+        view.mapping().required_span_size() * (view.accessor().fad_size()+1));
   } else {
     return view;
   }
+}
+
+template <class... Args>
+KOKKOS_INLINE_FUNCTION auto
+as_scalar_view(const Kokkos::DynRankView<Args...> &dyn) {
+  return as_scalar_view(dyn.ConstDownCast());
 }
 
 KOKKOS_INLINE_FUNCTION size_t dimension_scalar() { return 0; }

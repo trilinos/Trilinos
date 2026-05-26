@@ -10,7 +10,7 @@ KokkosSparse::CrsMatrix
 
 Defined in header ``KokkosSparse_CrsMatrix.hpp``
 
-.. code:: cppkokkos
+.. code:: c++
 
   template <class ScalarType, class OrdinalType, class Device, class MemoryTraits = void,
             class SizeType = KokkosKernels::default_size_type>
@@ -167,7 +167,7 @@ Member Functions
 operator=
 ^^^^^^^^^
 
-.. code:: cppkokkos
+.. code:: c++
 
   template <typename aScalarType, typename aOrdinalType, class aDevice, class aMemoryTraits, typename aSizeType>
   CrsMatrix& operator=(const CrsMatrix<aScalarType, aOrdinalType, aDevice, aMemoryTraits, aSizeType>& mtx);
@@ -179,7 +179,7 @@ Attempts to assign the underlying ``graph`` and ``values`` of the input matrix `
 numRows
 ^^^^^^^
 
-.. code:: cppkokkos
+.. code:: c++
 
   KOKKOS_INLINE_FUNCTION ordinal_type numRows() const;
 
@@ -190,7 +190,7 @@ Returns the number of rows in the matrix.
 numCols
 ^^^^^^^
 
-.. code:: cppkokkos
+.. code:: c++
 
   KOKKOS_INLINE_FUNCTION ordinal_type numCols() const;
 
@@ -201,7 +201,7 @@ Returns the number of columns in the matrix.
 setNumCols
 ^^^^^^^^^^
 
-.. code:: cppkokkos
+.. code:: c++
 
   void setNumCols(ordinal_type c);
 
@@ -213,7 +213,7 @@ This invalidates any algorithm handles which previously used this matrix.
 numPointRows
 ^^^^^^^^^^^^
 
-.. code:: cppkokkos
+.. code:: c++
 
   KOKKOS_INLINE_FUNCTION ordinal_type numPointRows() const;
 
@@ -224,7 +224,7 @@ Equivalent to `numRows()`, since this is not a block matrix type.
 numPointCols
 ^^^^^^^^^^^^
 
-.. code:: cppkokkos
+.. code:: c++
 
   KOKKOS_INLINE_FUNCTION ordinal_type numPointCols() const;
 
@@ -235,7 +235,7 @@ Equivalent to `numCols()`, since this is not a block matrix type.
 nnz
 ^^^
 
-.. code:: cppkokkos
+.. code:: c++
 
   KOKKOS_INLINE_FUNCTION size_type nnz() const;
 
@@ -246,7 +246,7 @@ Returns the number of non-zero entries in the matrix.
 row
 ^^^
 
-.. code:: cppkokkos
+.. code:: c++
 
   KOKKOS_INLINE_FUNCTION
   SparseRowView<CrsMatrix> row(const ordinal_type i) const;
@@ -258,7 +258,7 @@ Returns a view of the i-th row of the matrix as a :doc:`SparseRowView <sparse_ro
 rowConst
 ^^^^^^^^
 
-.. code:: cppkokkos
+.. code:: c++
 
   KOKKOS_INLINE_FUNCTION
   SparseRowViewConst<CrsMatrix> row(const ordinal_type i) const;

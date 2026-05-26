@@ -337,6 +337,7 @@ RCP<const ParameterList> TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOr
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
   SET_VALID_ENTRY("tentative: calculate qr");
   SET_VALID_ENTRY("tentative: build coarse coordinates");
+  SET_VALID_ENTRY("sa: keep tentative prolongator");
 #undef SET_VALID_ENTRY
 
   validParamList->set<RCP<const FactoryBase>>("A", Teuchos::null, "Generating factory of the matrix A");
@@ -497,8 +498,6 @@ void TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP
   // coarsest levels.
   if (A->IsView("stridedMaps") == true)
     Ptentative->CreateView("stridedMaps", A->getRowMap("stridedMaps"), coarseMap);
-  else
-    Ptentative->CreateView("stridedMaps", Ptentative->getRangeMap(), coarseMap);
 
   if (bTransferCoordinates_) {
     Set(coarseLevel, "Coordinates", coarseCoords);
@@ -512,6 +511,11 @@ void TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP
 
   Set(coarseLevel, "Nullspace", coarseNullspace);
   Set(coarseLevel, "P", Ptentative);
+
+  if (pL.get<bool>("sa: keep tentative prolongator")) {
+    coarseLevel.Set("Ptent", Ptentative, NoFactory::get());
+    coarseLevel.AddKeepFlag("Ptent", NoFactory::get(), MueLu::Final);
+  }
 
   if (IsPrint(Statistics2)) {
     RCP<ParameterList> params = rcp(new ParameterList());

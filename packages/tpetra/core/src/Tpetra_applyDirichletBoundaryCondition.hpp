@@ -75,6 +75,7 @@ void applyDirichletBoundaryConditionToLocalMatrixRows(CrsMatrixType& A,
 ///
 /// \tparam CrsMatrixType Specialization of Tpetra::CrsMatrix.
 ///
+/// \param execSpace [in] Execution space instance.
 /// \param A [in/out] Sparse matrix to modify.
 /// \param lclRowInds [in] Local indices of the rows of A to modify.
 template <class CrsMatrixType>

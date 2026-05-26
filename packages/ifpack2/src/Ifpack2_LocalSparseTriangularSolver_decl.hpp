@@ -158,7 +158,7 @@ class LocalSparseTriangularSolver : virtual public Ifpack2::Preconditioner<typen
 
   /// \brief Set this object's parameters.
   ///
-  /// \param plist [in] List of parameters.
+  /// \param params [in] List of parameters.
   ///
   /// - "trisolver: reverse U" (\c bool): reverse storage for upper triangular matrices
   ///   to be more cache-efficient

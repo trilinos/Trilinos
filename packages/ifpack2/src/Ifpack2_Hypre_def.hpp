@@ -574,7 +574,7 @@ void Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_BigInt, Node> >::ap
       SameVectors = true;
     }
 
-    // NOTE: Here were assuming that the local ordering of Epetra's X/Y-vectors and
+    // NOTE: Here were assuming that the local ordering of Tpetra's X/Y-vectors and
     // Hypre's X/Y-vectors are the same.  Seeing as as this is more or less how we constructed
     // the Hypre matrices, this seems pretty reasoanble.
 
@@ -590,7 +590,7 @@ void Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_BigInt, Node> >::ap
       }
       // Temporarily make a pointer to data in Hypre for end
       SC *XTemp = XLocal_->data;
-      // Replace data in Hypre vectors with Epetra data
+      // Replace data in Hypre vectors with Tpetra data
       XLocal_->data = XValues;
       SC *YTemp     = YLocal_->data;
       YLocal_->data = YValues;
@@ -926,7 +926,7 @@ Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_BigInt, Node> >::MakeCon
 
   // Must create GloballyContiguous DomainMap (which is a permutation of Matrix_'s
   // DomainMap) and the corresponding permuted ColumnMap.
-  //   Epetra_GID  --------->   LID   ----------> HYPRE_GID
+  //   Tpetra_GID  --------->   LID   ----------> HYPRE_GID
   //           via DomainMap.LID()       via GloballyContiguousDomainMap.GID()
   if (Matrix.is_null())
     throw std::runtime_error("Hypre<Tpetra::RowMatrix<HYPRE_Real, HYPRE_Int, long long, Node>: Unsupported matrix configuration: Tpetra::CrsMatrix required");

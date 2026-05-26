@@ -362,7 +362,6 @@ class BlockMultiVector : public Tpetra::DistObject<Scalar, LO, GO, Node> {
   ///   leftmost index indicates which block, the middle index the row
   ///   within a block, and the rightmost index the column within a
   ///   block.
-  /// \param pivots [in] Pivots (from LU factorization of the blocks)
   /// \param X [in] Input Block(Multi)Vector; may alias \c *this.
   ///
   /// D is really the inverse of some BlockCrsMatrix's block diagonal.
@@ -378,7 +377,7 @@ class BlockMultiVector : public Tpetra::DistObject<Scalar, LO, GO, Node> {
   ///
   /// This method computes the block Jacobi update
   /// \f$Y = \beta * Y + \alpha D (X - Z)\f$, where Y is
-  /// <tt>*this<\tt>, D the (explicitly stored) inverse block
+  /// <tt>*this</tt>, D the (explicitly stored) inverse block
   /// diagonal of a BlockCrsMatrix A, and \f$Z = A*Y\f$.
   /// The method may use Z as scratch space.
   ///

@@ -11,7 +11,15 @@
 #define TPETRA_FEMULTIVECTOR_DECL_HPP
 
 /// \file Tpetra_FEMultiVector_decl.hpp
-/// \brief Declaration of the Tpetra::MultiVector class
+/// \brief Declaration of the Tpetra::FEMultiVector class
+
+/// \class FEMultiVector
+/// \brief A distributed MultiVector for finite element assembly.
+///
+/// \tparam Scalar The type of each entry of the MultiVector.
+/// \tparam LocalOrdinal The type of local indices.
+/// \tparam GlobalOrdinal The type of global indices.
+/// \tparam Node The Kokkos Node type.
 
 #include "Tpetra_FEMultiVector_fwd.hpp"
 #include "Tpetra_MultiVector_decl.hpp"
@@ -96,7 +104,7 @@ class FEMultiVector : public MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, No
   ///   Import object is to take the Import object associated with
   ///   the CrsGraph for your finite element matrix.
   ///
-  /// \param numVectors [in] Number of columns of the resulting
+  /// \param numVecs [in] Number of columns of the resulting
   ///   MultiVector.
   ///
   /// \note A Map AND an Import need to be arguments because in

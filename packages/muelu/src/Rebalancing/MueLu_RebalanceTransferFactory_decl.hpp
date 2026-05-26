@@ -30,7 +30,7 @@
 namespace MueLu {
 
 /*!
-  @class RebalanceTransferFactory class.
+  @class RebalanceTransferFactory
   @brief Applies permutation to grid transfer operators.
   @ingroup MueLuTransferClasses
 */

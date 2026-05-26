@@ -239,7 +239,7 @@ parse_cylinder(const Parser::Node & ic_node)
     }
   }
 
-  return new Cylinder(p1.data(), p2.data(), radius, sign);
+  return new Cylinder(stk::math::Vector3d(p1.data()), stk::math::Vector3d(p2.data()), radius, sign);
 }
 
 Surface *
@@ -367,6 +367,19 @@ parse_string_function(const Parser::Node & ic_node)
   return surf;
 }
 
+Implicit_Neural_Representation *
+parse_implicit_neural_representation(const Parser::Node & ic_node)
+{
+  std::string model_filename;
+  if (!ic_node.get_if_present("filename", model_filename))
+  {
+    stk::RuntimeDoomedAdHoc() << "Missing model filename for implicit neural representation.\n";
+  }
+
+  Implicit_Neural_Representation * surf = new Implicit_Neural_Representation(model_filename);
+  return surf;
+}
+
 }
 
 Surface *
@@ -414,6 +427,10 @@ Surface_Parser::parse(const Parser::Node & parserNode, const stk::mesh::MetaData
   else if ( parserNode.get_scalar_if_present("mesh") )
   {
     return parse_mesh_surface(parserNode, meta);
+  }
+  else if ( parserNode.get_null_if_present("implicit_neural_representation") )
+  {
+    return parse_implicit_neural_representation(parserNode);
   }
   else if ( parserNode.get_null_if_present("random") )
   {

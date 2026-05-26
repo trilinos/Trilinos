@@ -9,7 +9,7 @@ KokkosKernels::Experimental::KokkosKernelsHandle
 
 Defined in header ``KokkosKernels_Handle.hpp``
 
-.. code:: cppkokkos
+.. code:: c++
 
   template <class size_type_, class lno_t_, class scalar_t_, class ExecutionSpace,
             class TemporaryMemorySpace, class PersistentMemorySpace>

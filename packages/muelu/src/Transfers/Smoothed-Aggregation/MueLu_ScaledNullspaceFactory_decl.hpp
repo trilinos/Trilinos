@@ -23,7 +23,7 @@
 namespace MueLu {
 
 /*!
-   @class ScaledNullspaceFactory class.
+   @class ScaledNullspaceFactory
    @brief Factory for generating a very special nullspace
 
     The ScaledNullspaceFactory is meant to generate a default approximation for

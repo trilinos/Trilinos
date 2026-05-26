@@ -33,7 +33,7 @@
 namespace MueLu {
 
 /*!
-  @class RepartitionFactory class.
+  @class RepartitionFactory
   @brief Factory for building permutation matrix that can be be used to shuffle data (matrices, vectors) among processes
 
   This factory acts on both the number of partitions and a vector (usually created by Zoltan) that indicates to which partitions

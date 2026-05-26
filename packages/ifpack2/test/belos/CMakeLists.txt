@@ -85,6 +85,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(Ifpack2BelosCopyFiles
   test_4_RILUK_4streams_nos1_hb.xml
   test_4_RILUK_2streams_rcm_nos1_hb.xml
   test_4_RILUK_4streams_rcm_nos1_hb.xml
+  test_schwarz_equil_nos1_hb.xml
   test_schwarz_RILUK_2streams_rcb_nos1_hb.xml
   test_schwarz_RILUK_4streams_rcb_nos1_hb.xml
   test_Jacobi_coords_nos1_hb.xml
@@ -464,6 +465,15 @@ TRIBITS_ADD_TEST(
   ARGS "--xml_file=test_4_RILUK_4streams_rcm_nos1_hb.xml"
   COMM serial mpi
   NUM_MPI_PROCS 4
+  STANDARD_PASS_OUTPUT
+)
+
+TRIBITS_ADD_TEST(
+  tif_belos
+  NAME SCHWARZ_RILUK_equil_hb_belos
+  ARGS "--xml_file=test_schwarz_equil_nos1_hb.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 2
   STANDARD_PASS_OUTPUT
 )
 

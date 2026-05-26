@@ -71,41 +71,42 @@ template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int SerialLU_Internal<Algo::LU::Blocked>::invoke(
     const int m, const int n, ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
     const typename MagnitudeScalarType<ValueType>::type /*tiny*/) {
-  constexpr int mbAlgo = Algo::LU::Blocked::mb();
   const typename MagnitudeScalarType<ValueType>::type one(1.0), minus_one(-1.0);
 
   const int k = (m < n ? m : n);
   if (k <= 0) return 0;
 
-  InnerLU<mbAlgo> lu(as0, as1);
-
-  InnerTrsmLeftLowerUnitDiag<mbAlgo> trsm_llu(as0, as1, as0, as1);
-  InnerTrsmLeftLowerNonUnitDiag<mbAlgo> trsm_run(as1, as0, as1, as0);
-
   auto lu_factorize = [&](const int ib, const int jb, ValueType *KOKKOS_RESTRICT AA) {
-    const int mb = mbAlgo;
-    const int kb = ib < jb ? ib : jb;
-    for (int p = 0; p < kb; p += mb) {
-      const int pb = (p + mb) > kb ? (kb - p) : mb;
+    auto host_or_device = [&](auto tag) {
+      constexpr int mb = Algo::LU::Blocked::Impl::mb<decltype(tag)>();
+      InnerLU<mb> lu(as0, as1);
+      InnerTrsmLeftLowerUnitDiag<mb> trsm_llu(as0, as1, as0, as1);
+      InnerTrsmLeftLowerNonUnitDiag<mb> trsm_run(as1, as0, as1, as0);
+      const int kb = ib < jb ? ib : jb;
+      for (int p = 0; p < kb; p += mb) {
+        const int pb = (p + mb) > kb ? (kb - p) : mb;
 
-      // diagonal block
-      ValueType *KOKKOS_RESTRICT Ap = AA + p * as0 + p * as1;
+        // diagonal block
+        ValueType *KOKKOS_RESTRICT Ap = AA + p * as0 + p * as1;
 
-      // lu on a block
-      lu.serial_invoke(pb, Ap);
+        // lu on a block
+        lu.serial_invoke(pb, Ap);
 
-      // dimension ABR
-      const int m_abr = ib - p - mb, n_abr = jb - p - mb;
+        // dimension ABR
+        const int m_abr = ib - p - mb, n_abr = jb - p - mb;
 
-      // trsm update
-      trsm_llu.serial_invoke(Ap, pb, n_abr, Ap + mb * as1);
-      trsm_run.serial_invoke(Ap, pb, m_abr, Ap + mb * as0);
+        // trsm update
+        trsm_llu.serial_invoke(Ap, pb, n_abr, Ap + mb * as1);
+        trsm_run.serial_invoke(Ap, pb, m_abr, Ap + mb * as0);
 
-      // gemm update
-      Impl::SerialGemmInternal<Algo::Gemm::Blocked>::invoke(
-          KokkosBlas::Impl::OpID(), KokkosBlas::Impl::OpID(), m_abr, n_abr, pb, minus_one, Ap + mb * as0, as0, as1,
-          Ap + mb * as1, as0, as1, one, Ap + mb * as0 + mb * as1, as0, as1);
-    }
+        // gemm update
+        Impl::SerialGemmInternal<Algo::Gemm::Blocked>::invoke(
+            KokkosBlas::Impl::OpID(), KokkosBlas::Impl::OpID(), m_abr, n_abr, pb, minus_one, Ap + mb * as0, as0, as1,
+            Ap + mb * as1, as0, as1, one, Ap + mb * as0 + mb * as1, as0, as1);
+      }
+    };
+    KOKKOS_IF_ON_HOST((host_or_device(Algo::LU::Blocked::Impl::Host{});))
+    KOKKOS_IF_ON_DEVICE((host_or_device(Algo::LU::Blocked::Impl::Device{});))
   };
 
   const bool is_small = true;  //(m*n <= 64*64);

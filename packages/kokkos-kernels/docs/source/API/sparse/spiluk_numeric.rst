@@ -3,7 +3,7 @@ KokkosSparse::spiluk_numeric
 
 Defined in header ``KokkosSparse_spiluk.hpp``
 
-.. code:: cppkokkos
+.. code:: c++
 
   template <typename KernelHandle, typename ARowMapType, typename AEntriesType, typename AValuesType,
             typename LRowMapType, typename LEntriesType, typename LValuesType, typename URowMapType,
@@ -81,7 +81,7 @@ Two main requirements are that the types of the ``rowmap``, ``entries`` and ``va
 Example
 =======
 
-.. code:: cppkokkos
+.. code:: c++
 
   #include <Kokkos_Core.hpp>
   #include <KokkosSparse_CrsMatrix.hpp>

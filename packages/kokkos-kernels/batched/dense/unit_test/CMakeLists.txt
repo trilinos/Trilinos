@@ -4,29 +4,29 @@
 #                   #
 #####################
 
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR}/test_common)
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_SOURCE_DIR}/test_common)
+kokkoskernels_include_directories(${CMAKE_BINARY_DIR}/test_common)
+kokkoskernels_include_directories(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_SOURCE_DIR}/test_common)
 
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR}/src)
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_SOURCE_DIR}/src)
+kokkoskernels_include_directories(${CMAKE_BINARY_DIR}/src)
+kokkoskernels_include_directories(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_SOURCE_DIR}/src)
 
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/batched)
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/batched)
+kokkoskernels_include_directories(${CMAKE_CURRENT_BINARY_DIR}/batched)
+kokkoskernels_include_directories(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/batched)
 
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/batched/dense/src)
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/batched/dense/src)
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/batched/dense/impl)
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/batched/dense/impl)
+kokkoskernels_include_directories(${CMAKE_CURRENT_BINARY_DIR}/batched/dense/src)
+kokkoskernels_include_directories(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/batched/dense/src)
+kokkoskernels_include_directories(${CMAKE_CURRENT_BINARY_DIR}/batched/dense/impl)
+kokkoskernels_include_directories(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/batched/dense/impl)
 
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR})
+kokkoskernels_include_directories(${CMAKE_CURRENT_BINARY_DIR})
+kokkoskernels_include_directories(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR})
 
-IF (NOT KokkosKernels_ENABLE_COMPONENT_BLAS)
-  KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR}/blas/src)
-  KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_SOURCE_DIR}/blas/src)
-  KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR}/blas/impl)
-  KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_SOURCE_DIR}/blas/impl)
-ENDIF()
+if(NOT KokkosKernels_ENABLE_COMPONENT_BLAS)
+  kokkoskernels_include_directories(${CMAKE_BINARY_DIR}/blas/src)
+  kokkoskernels_include_directories(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_SOURCE_DIR}/blas/src)
+  kokkoskernels_include_directories(${CMAKE_BINARY_DIR}/blas/impl)
+  kokkoskernels_include_directories(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_SOURCE_DIR}/blas/impl)
+endif()
 
 #####################
 #                   #
@@ -39,136 +39,94 @@ ENDIF()
 # Add GPU backends  #
 #                   #
 #####################
-IF (KOKKOS_ENABLE_CUDA)
-  KOKKOSKERNELS_ADD_UNIT_TEST(
+set(TEST_MAIN ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp)
+if(KOKKOS_ENABLE_CUDA)
+  kokkoskernels_add_unit_test(
     batched_dla_cuda
-    SOURCES
-      ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
-      backends/Test_Cuda_Batched_Dense.cpp
-    COMPONENTS batched_dla
-  )
+    SOURCES ${TEST_MAIN} backends/Test_Cuda_Batched_Dense.cpp
+    COMPONENTS batched_dla)
 
-  KOKKOSKERNELS_ADD_UNIT_TEST(
+  kokkoskernels_add_unit_test(
     batched_gemm_cuda
-    SOURCES
-      ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
-      backends/Test_Cuda_Batched_GEMM.cpp
-    COMPONENTS batched_dla
-  )
-ENDIF ()
+    SOURCES ${TEST_MAIN} backends/Test_Cuda_Batched_GEMM.cpp
+    COMPONENTS batched_dla)
+endif()
 
-IF (KOKKOS_ENABLE_HIP)
-  KOKKOSKERNELS_ADD_UNIT_TEST(
+if(KOKKOS_ENABLE_HIP)
+  kokkoskernels_add_unit_test(
     batched_dla_hip
-    SOURCES
-      ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
-      backends/Test_HIP_Batched_Dense.cpp
-    COMPONENTS batched_dla
-  )
+    SOURCES ${TEST_MAIN} backends/Test_HIP_Batched_Dense.cpp
+    COMPONENTS batched_dla)
 
-  KOKKOSKERNELS_ADD_UNIT_TEST(
+  kokkoskernels_add_unit_test(
     batched_gemm_hip
-    SOURCES
-      ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
-      backends/Test_HIP_Batched_GEMM.cpp
-    COMPONENTS batched_dla
-  )
-ENDIF ()
+    SOURCES ${TEST_MAIN} backends/Test_HIP_Batched_GEMM.cpp
+    COMPONENTS batched_dla)
+endif()
 
-IF (KOKKOS_ENABLE_SYCL)
-  KOKKOSKERNELS_ADD_UNIT_TEST(
+if(KOKKOS_ENABLE_SYCL)
+  kokkoskernels_add_unit_test(
     batched_dla_sycl
-    SOURCES
-      ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
-      backends/Test_SYCL_Batched_Dense.cpp
-    COMPONENTS batched_dla
-  )
+    SOURCES ${TEST_MAIN} backends/Test_SYCL_Batched_Dense.cpp
+    COMPONENTS batched_dla)
 
-  KOKKOSKERNELS_ADD_UNIT_TEST(
+  kokkoskernels_add_unit_test(
     batched_gemm_sycl
-    SOURCES
-      ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
-      backends/Test_SYCL_Batched_GEMM.cpp
-    COMPONENTS batched_dla
-  )
-ENDIF ()
+    SOURCES ${TEST_MAIN} backends/Test_SYCL_Batched_GEMM.cpp
+    COMPONENTS batched_dla)
+endif()
 
-IF (KOKKOS_ENABLE_OPENMPTARGET)
+if(KOKKOS_ENABLE_OPENMPTARGET)
   # KOKKOSKERNELS_ADD_UNIT_TEST(
   #   batched_dla_openmptarget
-  #   SOURCES
-  #     ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
-  #     backends/Test_OpenMPTarget_Batched_Dense.cpp
+  #   SOURCES ${TEST_MAIN} backends/Test_OpenMPTarget_Batched_Dense.cpp
   #   COMPONENTS batched_dla
   # )
 
   # KOKKOSKERNELS_ADD_UNIT_TEST(
   #   batched_gemm_openmptarget
-  #   SOURCES
-  #     ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
-  #     backends/Test_OpenMPTarget_Batched_GEMM.cpp
+  #   SOURCES ${TEST_MAIN} backends/Test_OpenMPTarget_Batched_GEMM.cpp
   #   COMPONENTS batched_dla
   # )
-ENDIF ()
-
-
+endif()
 
 #####################
 #                   #
 # Add CPU backends  #
 #                   #
 #####################
-IF (KOKKOS_ENABLE_SERIAL)
-  KOKKOSKERNELS_ADD_UNIT_TEST(
+if(KOKKOS_ENABLE_SERIAL)
+  kokkoskernels_add_unit_test(
     batched_dla_serial
-    SOURCES
-      ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
-      backends/Test_Serial_Batched_Dense.cpp
-    COMPONENTS batched_dla
-  )
+    SOURCES ${TEST_MAIN} backends/Test_Serial_Batched_Dense.cpp
+    COMPONENTS batched_dla)
 
-  KOKKOSKERNELS_ADD_UNIT_TEST(
+  kokkoskernels_add_unit_test(
     batched_gemm_serial
-    SOURCES
-      ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
-      backends/Test_Serial_Batched_GEMM.cpp
-    COMPONENTS batched_dla
-  )
-ENDIF ()
+    SOURCES ${TEST_MAIN} backends/Test_Serial_Batched_GEMM.cpp
+    COMPONENTS batched_dla)
+endif()
 
-IF (KOKKOS_ENABLE_OPENMP)
-  KOKKOSKERNELS_ADD_UNIT_TEST(
+if(KOKKOS_ENABLE_OPENMP)
+  kokkoskernels_add_unit_test(
     batched_dla_openmp
-    SOURCES
-      ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
-      backends/Test_OpenMP_Batched_Dense.cpp
-    COMPONENTS batched_dla
-  )
+    SOURCES ${TEST_MAIN} backends/Test_OpenMP_Batched_Dense.cpp
+    COMPONENTS batched_dla)
 
-  KOKKOSKERNELS_ADD_UNIT_TEST(
+  kokkoskernels_add_unit_test(
     batched_gemm_openmp
-    SOURCES
-      ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
-      backends/Test_OpenMP_Batched_GEMM.cpp
-    COMPONENTS batched_dla
-  )
-ENDIF ()
+    SOURCES ${TEST_MAIN} backends/Test_OpenMP_Batched_GEMM.cpp
+    COMPONENTS batched_dla)
+endif()
 
-IF (KOKKOS_ENABLE_THREADS)
-  KOKKOSKERNELS_ADD_UNIT_TEST(
+if(KOKKOS_ENABLE_THREADS)
+  kokkoskernels_add_unit_test(
     batched_dla_threads
-    SOURCES
-      ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
-      backends/Test_Threads_Batched_Dense.cpp
-    COMPONENTS batched_dla
-  )
+    SOURCES ${TEST_MAIN} backends/Test_Threads_Batched_Dense.cpp
+    COMPONENTS batched_dla)
 
-  KOKKOSKERNELS_ADD_UNIT_TEST(
+  kokkoskernels_add_unit_test(
     batched_gemm_threads
-    SOURCES
-      ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
-      backends/Test_Threads_Batched_GEMM.cpp
-    COMPONENTS batched_dla
-  )
-ENDIF ()
-
+    SOURCES ${TEST_MAIN} backends/Test_Threads_Batched_GEMM.cpp
+    COMPONENTS batched_dla)
+endif()

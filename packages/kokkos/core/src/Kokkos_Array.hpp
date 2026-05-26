@@ -22,28 +22,11 @@ namespace Kokkos {
 
 #ifdef KOKKOS_ENABLE_DEBUG_BOUNDS_CHECK
 namespace Impl {
-template <typename Integral, bool Signed = std::is_signed_v<Integral>>
-struct ArrayBoundsCheck;
 
-template <typename Integral>
-struct ArrayBoundsCheck<Integral, true> {
+struct ArrayBoundsCheck {
   KOKKOS_INLINE_FUNCTION
-  constexpr ArrayBoundsCheck(Integral i, size_t N) {
-    if (i < 0) {
-      char err[128] = "Kokkos::Array: index ";
-      to_chars_i(err + strlen(err), err + 128, i);
-      strcat(err, " < 0");
-      Kokkos::abort(err);
-    }
-    ArrayBoundsCheck<Integral, false>(i, N);
-  }
-};
-
-template <typename Integral>
-struct ArrayBoundsCheck<Integral, false> {
-  KOKKOS_INLINE_FUNCTION
-  constexpr ArrayBoundsCheck(Integral i, size_t N) {
-    if (size_t(i) >= N) {
+  constexpr ArrayBoundsCheck(size_t i, size_t N) {
+    if (i >= N) {
       char err[128] = "Kokkos::Array: index ";
       to_chars_i(err + strlen(err), err + 128, i);
       strcat(err, " >= ");
@@ -54,8 +37,7 @@ struct ArrayBoundsCheck<Integral, false> {
 };
 }  // end namespace Impl
 
-#define KOKKOS_ARRAY_BOUNDS_CHECK(i, N) \
-  Kokkos::Impl::ArrayBoundsCheck<decltype(i)>(i, N)
+#define KOKKOS_ARRAY_BOUNDS_CHECK(i, N) Kokkos::Impl::ArrayBoundsCheck(i, N)
 
 #else  // !defined( KOKKOS_ENABLE_DEBUG_BOUNDS_CHECK )
 
@@ -100,19 +82,13 @@ struct Array {
     return N;
   }
 
-  template <typename iType>
-  KOKKOS_INLINE_FUNCTION constexpr reference operator[](const iType& i) {
-    static_assert((std::is_integral_v<iType> || std::is_enum_v<iType>),
-                  "Must be integral argument");
+  KOKKOS_INLINE_FUNCTION constexpr reference operator[](size_type i) {
     KOKKOS_ARRAY_BOUNDS_CHECK(i, N);
     return m_internal_implementation_private_member_data[i];
   }
 
-  template <typename iType>
   KOKKOS_INLINE_FUNCTION constexpr const_reference operator[](
-      const iType& i) const {
-    static_assert((std::is_integral_v<iType> || std::is_enum_v<iType>),
-                  "Must be integral argument");
+      size_type i) const {
     KOKKOS_ARRAY_BOUNDS_CHECK(i, N);
     return m_internal_implementation_private_member_data[i];
   }
@@ -301,14 +277,18 @@ struct KOKKOS_DEPRECATED
   KOKKOS_DEFAULTED_FUNCTION ~Array()                     = default;
   KOKKOS_INLINE_FUNCTION_DELETED Array()                 = delete;
   KOKKOS_INLINE_FUNCTION_DELETED Array(const Array& rhs) = delete;
-
-  // Some supported compilers are not sufficiently C++11 compliant
-  // for default move constructor and move assignment operator.
-  // Array( Array && rhs ) = default ;
-  // Array & operator = ( Array && rhs ) = delete ;
+  KOKKOS_INLINE_FUNCTION_DELETED Array(Array&& rhs)      = delete;
 
   KOKKOS_INLINE_FUNCTION
   Array& operator=(const Array& rhs) {
+    if (&rhs == this) return *this;
+    const size_t n = size() < rhs.size() ? size() : rhs.size();
+    for (size_t i = 0; i < n; ++i) m_elem[i] = rhs[i];
+    return *this;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  Array& operator=(Array&& rhs) {
     if (&rhs == this) return *this;
     const size_t n = size() < rhs.size() ? size() : rhs.size();
     for (size_t i = 0; i < n; ++i) m_elem[i] = rhs[i];
@@ -370,14 +350,18 @@ struct KOKKOS_DEPRECATED
   KOKKOS_DEFAULTED_FUNCTION ~Array()                 = default;
   KOKKOS_INLINE_FUNCTION_DELETED Array()             = delete;
   KOKKOS_INLINE_FUNCTION_DELETED Array(const Array&) = delete;
-
-  // Some supported compilers are not sufficiently C++11 compliant
-  // for default move constructor and move assignment operator.
-  // Array( Array && rhs ) = default ;
-  // Array & operator = ( Array && rhs ) = delete ;
+  KOKKOS_INLINE_FUNCTION_DELETED Array(Array&&)      = delete;
 
   KOKKOS_INLINE_FUNCTION
   Array& operator=(const Array& rhs) {
+    if (&rhs == this) return *this;
+    const size_t n = size() < rhs.size() ? size() : rhs.size();
+    for (size_t i = 0; i < n; ++i) m_elem[i * m_stride] = rhs[i];
+    return *this;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  Array& operator=(Array&& rhs) {
     if (&rhs == this) return *this;
     const size_t n = size() < rhs.size() ? size() : rhs.size();
     for (size_t i = 0; i < n; ++i) m_elem[i * m_stride] = rhs[i];

@@ -10,6 +10,7 @@
 #define KRINO_INCLUDE_AKRI_CDMESH_REFINEMENT_H_
 
 #include <stk_mesh/base/BulkData.hpp>
+#include <stk_math/StkVector.hpp>
 
 namespace krino {
 
@@ -18,6 +19,9 @@ class CDFEM_Support;
 class CDFEM_Snapper;
 class RefinementSupport;
 class Phase_Support;
+class Surface;
+
+double compute_element_interface_distance_error_estimate(const std::vector<stk::math::Vector3d> & elemNodeCoords, const std::vector<double> & elemNodeDist, const Surface & surface);
 
 void
 mark_possible_cut_elements_for_adaptivity(const stk::mesh::BulkData& mesh,

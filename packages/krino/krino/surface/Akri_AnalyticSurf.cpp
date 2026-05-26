@@ -9,24 +9,23 @@
 #include <Akri_AnalyticSurf.hpp>
 #include <Akri_Transformation.hpp>
 #include <Akri_IntersectionUtils.hpp>
+#include <Akri_ML_Models.hpp>
 
 #include <cmath>
+#include <stdexcept>
 
 namespace krino{
 
-Cylinder::Cylinder(const double e1[3],  // first endpoint of axis
-                   const double e2[3],  // second endpoint of axis
-                   const double r,      // radius of cylinder
+Cylinder::Cylinder(const stk::math::Vector3d endPt1,  // first endpoint of axis
+                   const stk::math::Vector3d endPt2,  // second endpoint of axis
+                   const double radius,
                    const int sign)
   : SurfaceThatDoesntTakeAdvantageOfNarrowBandAndThereforeHasCorrectSign(),
-    dist_sign(sign)
+    myEndPt1(endPt1),
+    myEndPt2(endPt2),
+    myRadius(radius),
+    myDistSign(sign)
 {
-  // initialize internal description of cylinder
-  radius = r;
-
-  p1 = stk::math::Vector3d(e1);
-  p2 = stk::math::Vector3d(e2);
-
   set_axis_and_bounding_box();
 }
 
@@ -39,89 +38,91 @@ Cylinder::prepare_to_compute(const double time, const BoundingBox & /*point_bbox
   }
 
   my_transformation->update(time);
-  my_transformation->apply(p1);
-  my_transformation->apply(p2);
+  my_transformation->apply(myEndPt1);
+  my_transformation->apply(myEndPt2);
 
   set_axis_and_bounding_box();
 }
 
 void Cylinder::set_axis_and_bounding_box()
 {
-  xi = p2 - p1;
+  myAxis = myEndPt2 - myEndPt1;
 
-  length = xi.unitize();
+  myLength = myAxis.unitize();
 
   myBoundingBox.clear();
-  myBoundingBox.accommodate(p1);
-  myBoundingBox.accommodate(p2);
-  myBoundingBox.pad(radius);
+  myBoundingBox.accommodate(myEndPt1);
+  myBoundingBox.accommodate(myEndPt2);
+  myBoundingBox.pad(myRadius);
 }
 
 double
 Cylinder::point_signed_distance(const stk::math::Vector3d &x) const
 {
-  double D = std::numeric_limits<double>::max();
+  double D = 0;
 
-  // convert x to cylindrical coordinates
+  const stk::math::Vector3d v = x - myEndPt1;
+  const double distAlongAxis = Dot(v, myAxis);
+  const double distFromAxis = (v - distAlongAxis*myAxis).length();
 
-  // v is the vector from p1 to x.
-  stk::math::Vector3d v = x - p1;
-
-  // Xix is the projection of v along the axis of the cylinder
-  const double Xix = Dot(v,xi);
-
-  // u is the associated vector
-  stk::math::Vector3d u = Xix*xi;
-
-  // Rx is the distance from the axis of the cylinder to x
-
-  const double Rx = (v - u).length();
-
-  if ( Xix <= 0 )
+  if( distAlongAxis >= 0 && distAlongAxis <= myLength)
   {
-    // x is behind the cylinder.
-    // The closest point on the cylinder lies on the rear circular face.
-
-    if ( Rx <= radius )
-    {
-      D = -Xix;
-    }
-    else
-    {
-      D = std::sqrt(Xix*Xix + (Rx-radius)*(Rx-radius));
-    }
-  }
-  else if( Xix > 0  && Xix < length)
-  {
-    // x is not in front of or behind the cylinder: it is alongside the cylinder.
-    // the signed distance is given by Rx - radius unless this point is closer
+    // the projection of x onto the axis of the cylinder is between the endpoints of the cylinder.
+    // the signed distance is given by Rx - myRadius unless this point is closer
     // to one of the circular faces
 
-    if ( Rx >= radius )
-    {
-      D = Rx - radius;
-    }
+    if ( distFromAxis >= myRadius )
+      D = distFromAxis - myRadius; // outside
     else
-    {
-      D = std::max( std::max(Rx - radius, -Xix), Xix-length );
-    }
+      D = -std::min(myRadius-distFromAxis, std::min(distAlongAxis, myLength-distAlongAxis)); // inside
   }
   else
   {
-    // x is in front of the cylinder.
-    // The closest point on the cylinder lies on the front circular face.
+    // the projection of x onto the axis of the cylinder is outside of the endpoints of the cylinder.
+    const double distAlongAxisFromFace =
+        (distAlongAxis <= 0) ?
+        (-distAlongAxis) :        // x is behind the cylinder, so the closest point on the cylinder lies on the rear circular face
+        (distAlongAxis-myLength); // x is in front of the cylinder, so the closest point on the cylinder lies on the front circular face.
 
-    if ( Rx <= radius )
-    {
-      D = Xix-length;
-    }
+    if ( distFromAxis <= myRadius )
+      D = distAlongAxisFromFace;
     else
-    {
-      D = std::sqrt((Xix-length)*(Xix-length) + (Rx-radius)*(Rx-radius));
-    }
+      D = std::sqrt(distAlongAxisFromFace*distAlongAxisFromFace + (distFromAxis-myRadius)*(distFromAxis-myRadius));
   }
 
-  return dist_sign*D;
+  return myDistSign*D;
+}
+
+stk::math::Vector3d
+Cylinder::closest_point_normal(const stk::math::Vector3d &x) const
+{
+  // If closest point is on a surface (end cap or cylindrical surface),
+  // then closest_point_normal is the surface normal at the closest point
+  // Otherwise (closest point is on the sharp curves of the can),
+  // the closest_point_normal is (x - closest_point).unit_vector().
+  const stk::math::Vector3d v = x - myEndPt1;
+  const double distAlongAxis = Dot(v, myAxis);
+  const double distFromAxis = (v - distAlongAxis*myAxis).length();
+
+  const stk::math::Vector3d closestPtOnAxis = myEndPt1 + distAlongAxis*myAxis;
+
+  if (distFromAxis < myRadius) // within infinite cylinder
+  {
+    if (distAlongAxis <= 0.5*myLength && distAlongAxis <= myRadius-distFromAxis) // closest point on bottom of can
+      return -myAxis;
+    if (distAlongAxis >= 0.5*myLength && distAlongAxis >= myLength-(myRadius-distFromAxis)) // closest point on bottom of can
+      return myAxis;
+    return (x-closestPtOnAxis).unit_vector(); // closest point on cylindrical surface
+  }
+
+  if( distAlongAxis >= 0 && distAlongAxis <= myLength)
+    return (x-closestPtOnAxis).unit_vector(); // closest point on cylindrical surface
+
+  const stk::math::Vector3d closestPointOnInfiniteCylinder = closestPtOnAxis + distFromAxis * (x-closestPtOnAxis).unit_vector();
+
+  if (distAlongAxis < 0)
+    return (x - (closestPointOnInfiniteCylinder - distAlongAxis*myAxis)).unit_vector(); // closest point on bottom rim
+  return (x - (closestPointOnInfiniteCylinder - (distAlongAxis-myLength)*myAxis)).unit_vector();  // closest point on top rim
 }
 
 Point::Point(const stk::math::Vector3d & coords)
@@ -182,6 +183,13 @@ bool Sphere::does_intersect(const BoundingBox & bbox) const
 
   BoundingBox sphereBbox(min, max);
   return bbox.intersects(sphereBbox);
+}
+
+stk::math::Vector3d Sphere::closest_point_normal(const stk::math::Vector3d &x) const
+{
+  stk::math::Vector3d normal = x-myCenter;
+  normal.unitize();
+  return normal;
 }
 
 double
@@ -412,6 +420,31 @@ double
 LevelSet_String_Function::point_signed_distance(const stk::math::Vector3d &coord) const
 {
   return myExpression.evaluate(coord);
+}
+
+Implicit_Neural_Representation::Implicit_Neural_Representation(const std::string & modelBaseName)
+    : SurfaceThatDoesntTakeAdvantageOfNarrowBandAndThereforeHasCorrectSign()
+{
+  myModel.create(modelBaseName);
+  if (myModelWithGradient.is_enabled())
+    myModelWithGradient.create(modelBaseName);
+}
+
+double
+Implicit_Neural_Representation::point_signed_distance(const stk::math::Vector3d &coord) const
+{
+  double dist = 0.;
+  myModel.evaluate(3, coord.data(), 1, &dist);
+  return dist;
+}
+
+stk::math::Vector3d
+Implicit_Neural_Representation::closest_point_normal(const stk::math::Vector3d &coord) const
+{
+  double dist = 0.;
+  stk::math::Vector3d grad;
+  myModelWithGradient.evaluate(3, coord.data(), 1, &dist, grad.data());
+  return grad.unit_vector();
 }
 
 } // namespace krino

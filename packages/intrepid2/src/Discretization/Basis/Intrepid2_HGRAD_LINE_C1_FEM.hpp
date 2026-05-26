@@ -90,27 +90,22 @@ namespace Intrepid2 {
 
         KOKKOS_INLINE_FUNCTION
         void operator()(const ordinal_type pt) const {
-          switch (opType) {
-          case OPERATOR_VALUE : {
+          if constexpr (opType == OPERATOR_VALUE) {
             auto       output = Kokkos::subview( _outputValues, Kokkos::ALL(), pt );
             const auto input  = Kokkos::subview( _inputPoints,                 pt, Kokkos::ALL() );
             Serial<opType>::getValues( output, input );
-            break;
           }
-          case OPERATOR_GRAD :
-          case OPERATOR_MAX : {
+          else if constexpr ((opType == OPERATOR_GRAD) || (opType == OPERATOR_MAX)) {
             auto       output = Kokkos::subview( _outputValues, Kokkos::ALL(), pt, Kokkos::ALL() );
             const auto input  = Kokkos::subview( _inputPoints,                 pt, Kokkos::ALL() );
             Serial<opType>::getValues( output, input );
-            break;
           }
-          default: {
+          else {
             INTREPID2_TEST_FOR_ABORT( opType != OPERATOR_VALUE &&
                                       opType != OPERATOR_GRAD &&
                                       opType != OPERATOR_MAX,
                                       ">>> ERROR: (Intrepid2::Basis_HGRAD_LINE_C1_FEM::Serial::getValues) operator is not supported");
 
-          }
           }
         }
       };
@@ -162,8 +157,7 @@ namespace Intrepid2 {
     }
 
     virtual void 
-    getScratchSpaceSize(      ordinal_type& perTeamSpaceSize,
-                              ordinal_type& perThreadSpaceSize,
+    getScratchSpaceSize(      ordinal_type& perThreadSpaceSize,
                         const PointViewType inputPointsconst,
                         const EOperator operatorType = OPERATOR_VALUE) const override;
 
@@ -174,7 +168,7 @@ namespace Intrepid2 {
       const PointViewType  inputPoints,
       const EOperator operatorType,
       const typename Kokkos::TeamPolicy<typename DeviceType::execution_space>::member_type& team_member,
-      const typename DeviceType::execution_space::scratch_memory_space & scratchStorage, 
+      const int threadScratchLevel, 
       const ordinal_type subcellDim = -1,
       const ordinal_type subcellOrdinal = -1) const override;
 

@@ -22,7 +22,7 @@
 namespace MueLu {
 
 /*!
-  @class SubBlockAFactory class.
+  @class SubBlockAFactory
   @brief Factory for building a thresholded operator.
 
   This is a very simple class to access a single matrix block in a blocked operator A.

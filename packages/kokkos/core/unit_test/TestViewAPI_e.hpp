@@ -29,8 +29,6 @@ TEST(TEST_CATEGORY, view_remap) {
 #define EXECSPACE                                                  \
   std::conditional_t<std::is_same_v<TEST_EXECSPACE, Kokkos::SYCL>, \
                      Kokkos::SYCLHostUSMSpace, TEST_EXECSPACE>
-#elif defined(KOKKOS_ENABLE_OPENMPTARGET)
-#define EXECSPACE Kokkos::HostSpace
 #else
 #define EXECSPACE TEST_EXECSPACE
 #endif
@@ -267,12 +265,15 @@ struct TestViewAllocationLargeRank {
 
 // Orin and other Jetson devices come with smaller memory capacity, 8GB total
 TEST(TEST_CATEGORY, view_allocation_large_rank) {
-#ifdef KOKKOS_ARCH_AMPERE87
-  GTEST_SKIP() << "skipping for Jetson devices that have only 8GB memory";
-#endif
 #ifdef KOKKOS_IMPL_32BIT
   GTEST_SKIP() << "skipping for 32-bit builds";
 #endif
+// NVC++ warned about unreachable code without the
+// if/else construct here. Not worrying about 32bit
+// since we are not testing with NVHPC on those
+#ifndef KOKKOS_ENABLE_LARGE_MEM_TESTS
+  GTEST_SKIP() << "skipping for GPUs with not enough memory";
+#else
   using ExecutionSpace = typename TEST_EXECSPACE::execution_space;
   using MemorySpace    = typename TEST_EXECSPACE::memory_space;
   constexpr int dim    = 15;
@@ -286,6 +287,7 @@ TEST(TEST_CATEGORY, view_allocation_large_rank) {
   auto result =
       Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, v_single);
   ASSERT_EQ(result(0, 0, 0, 0, 0, 0, 0, 0), 42);
+#endif
 }
 
 template <typename ExecSpace, typename ViewType>

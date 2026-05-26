@@ -1,5 +1,121 @@
 ###############################################################################
 #                                                                             #
+# Trilinos Release 17.1 Release Notes                            May 12, 2026 #
+#                                                                             #
+###############################################################################
+
+Compadre:
+
+  - Inclusion of version 1.7.0
+    https://github.com/trilinos/Trilinos/pull/15023
+
+
+Ifpack2:
+
+  - Added runtime debug control via the IFPACK2_DEBUG environment variable.
+    https://github.com/trilinos/Trilinos/pull/15166
+
+  - Fixed missing parILUT max-iteration setup.
+    https://github.com/trilinos/Trilinos/pull/15094
+
+  - Add optional row/column 1-norm equilibration of the inner subdomain matrix
+    in additive Schwarz
+    https://github.com/trilinos/Trilinos/pull/15241
+
+
+Kokkos, KokkosKernels:
+
+  - Inclusion of version 5.1.1 of Kokkos and Kokkos Kernels
+    https://github.com/trilinos/Trilinos/pull/15035
+    https://github.com/trilinos/Trilinos/pull/15198
+
+
+MueLu:
+
+  - Energy minimization multigrid has been completely refactored. The algorithm
+    now runs on device and uses Belos to solve the optimization problem.
+    https://github.com/trilinos/Trilinos/pull/14989
+
+  - An energy minimization preconditioner for Maxwell problems has been added.
+    https://github.com/trilinos/Trilinos/pull/15215
+    https://github.com/trilinos/Trilinos/pull/15216
+    https://github.com/trilinos/Trilinos/pull/15218
+
+  - Fixed several correctness issues in MultiPhys, Hierarchy setup, and TekoSmoother application.
+    https://github.com/trilinos/Trilinos/pull/15028
+    https://github.com/trilinos/Trilinos/pull/15082
+    https://github.com/trilinos/Trilinos/pull/15173
+    https://github.com/trilinos/Trilinos/pull/15178
+
+
+Rapid Optimization Library (ROL):
+
+  - Multi-objective optimization methods, including the sampling of
+    the Pareto frontier using convex combinations of objective
+    functions as well as the normal boundary intersection method.
+
+  - Interface for robust optimal experimental design (OED) which can
+    account for uncertainty in parameter estimates as well as randomly
+    failing experiments.
+
+  - Improved OED interface that enables OED for vector valued
+    estimation problems.
+
+  - Implementation of greedy OED that leverages fast numerical linear
+    algebra and that can be used for solution verification and
+    producing initial guesses for optimization.
+
+  - New methods for nonsmooth optimization represented as Type-P
+    "proximable" problems, where the objective function is a sum of a
+    smooth nonlinear nonconvex function and a nonsmooth convex
+    function.
+
+
+ShyLU:
+
+  - Performance improvements in Tacho
+    https://github.com/trilinos/Trilinos/pull/15120
+
+
+Tpetra:
+
+  - The computation of global constants in Map construction is now optional.
+    This allows skipping global reductions.
+    https://github.com/trilinos/Trilinos/pull/15093
+
+  - Ongoing effort to move more map and import/export computations to device.
+    https://github.com/trilinos/Trilinos/pull/14902
+    https://github.com/trilinos/Trilinos/pull/14908
+
+  - Added matrix-matrix product support for preserving explicit zeros in the
+    sparsity pattern when requested.
+    https://github.com/trilinos/Trilinos/pull/15019
+
+
+###############################################################################
+#                                                                             #
+# Trilinos Release 16.2.1 Release Notes                          May 12, 2026 #
+#                                                                             #
+###############################################################################
+
+This is a patch release with no new features.
+
+
+Kokkos, KokkosKernels:
+
+  - Inclusion of version 4.7.4 of Kokkos and Kokkos Kernels
+    https://github.com/trilinos/Trilinos/pull/15142
+
+
+Amesos2, Belos, Panzer, STK, Stokhos, Stratimikos, TrilinosCouplings, Tpetra, Gtest:
+
+  - Bug fixes. See
+    https://github.com/trilinos/Trilinos/issues/14866
+    for more details.
+
+
+###############################################################################
+#                                                                             #
 # Trilinos Release 17.0 Release Notes                        February 5, 2026 #
 #                                                                             #
 ###############################################################################

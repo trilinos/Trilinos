@@ -38,8 +38,20 @@ namespace Sacado {
 
     template <typename ValueT>
     SimpleFad<ValueT>
+    expm1(const SimpleFad<ValueT>& a) {
+      return SimpleFad<ValueT>(a, std::expm1(a.val()), std::exp(a.val()));
+    }
+
+    template <typename ValueT>
+    SimpleFad<ValueT>
     log(const SimpleFad<ValueT>& a) {
       return SimpleFad<ValueT>(a, std::log(a.val()), 1.0/a.val());
+    }
+
+    template <typename ValueT>
+    SimpleFad<ValueT>
+    log1p(const SimpleFad<ValueT>& a) {
+      return SimpleFad<ValueT>(a, std::log1p(a.val()), 1.0/(1.0+a.val()));
     }
 
     template <typename ValueT>

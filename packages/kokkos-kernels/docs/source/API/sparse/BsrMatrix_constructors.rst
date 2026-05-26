@@ -1,7 +1,7 @@
 KokkosSparse::BsrMatrix<>::BsrMatrix
 ####################################
 
-.. code:: cppkokkos
+.. code:: c++
 
   BsrMatrix();
 

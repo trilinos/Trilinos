@@ -1589,7 +1589,7 @@ class Reader {
   ///   wait for the final result.
   ///
   /// \param filename [in] Name of the Matrix Market file.
-  /// \param pComm [in] Communicator containing all processor(s)
+  /// \param comm [in] Communicator containing all processor(s)
   ///   over which the sparse matrix will be distributed.
   /// \param callFillComplete [in] Whether to call fillComplete()
   ///   on the Tpetra::CrsMatrix, after adding all the entries
@@ -1886,7 +1886,7 @@ class Reader {
   ///   wait for the final result.
   ///
   /// \param filename [in] Name of the Matrix Market file.
-  /// \param pComm [in] Communicator containing all processor(s)
+  /// \param comm [in] Communicator containing all processor(s)
   ///   over which the sparse matrix will be distributed.
   /// \param callFillComplete [in] Whether to call fillComplete()
   ///   on the Tpetra::CrsMatrix, after adding all the entries
@@ -1927,7 +1927,7 @@ class Reader {
   ///   participate and wait for the final result.
   ///
   /// \param filename [in] Name of the Matrix Market file.
-  /// \param pComm [in] Communicator containing all process(es)
+  /// \param comm [in] Communicator containing all process(es)
   ///   over which the sparse matrix will be distributed.
   /// \param constructorParams [in/out] Parameters for the
   ///   CrsMatrix constructor.
@@ -3768,7 +3768,7 @@ class Reader {
   /// \param debug [in] Whether to produce copious status output
   ///   useful for Tpetra developers, but probably not useful for
   ///   anyone else.
-  /// \param debug [in] If true, read in binary mode.
+  /// \param binary [in] If true, read in binary mode.
   static Teuchos::RCP<multivector_type>
   readDenseFile(const std::string& filename,
                 const trcp_tcomm_t& comm,
@@ -3924,7 +3924,7 @@ class Reader {
   /// \param debug [in] Whether to produce copious status output
   ///   useful for Tpetra developers, but probably not useful for
   ///   anyone else.
-  /// \param debug [in] If true, read in binary mode.
+  /// \param binary [in] If true, read in binary mode.
 
   static Teuchos::RCP<multivector_type>
   readDense(std::istream& in,
@@ -3970,7 +3970,7 @@ class Reader {
   /// \param debug [in] Whether to produce copious status output
   ///   useful for Tpetra developers, but probably not useful for
   ///   anyone else.
-  /// \param debug [in] If true, read in binary mode.
+  /// \param binary [in] If true, read in binary mode.
   static Teuchos::RCP<const map_type>
   readMapFile(const std::string& filename,
               const trcp_tcomm_t& comm,
@@ -5096,7 +5096,7 @@ class Reader {
   /// \param debug [in] Whether to produce copious status output
   ///   useful for Tpetra developers, but probably not useful for
   ///   anyone else.
-  /// \param debug [in] If true, read in binary mode.
+  /// \param binary [in] If true, read in binary mode.
   static Teuchos::RCP<const map_type>
   readMap(std::istream& in,
           const trcp_tcomm_t& comm,
@@ -5133,7 +5133,7 @@ class Reader {
   ///   from the file.
   /// \param debug [in] If true, write copious debugging output to
   ///   \c err on all processes in \c comm.
-  /// \param debug [in] If true, read in binary mode.
+  /// \param binary [in] If true, read in binary mode.
   static Teuchos::RCP<const map_type>
   readMap(std::istream& in,
           const trcp_tcomm_t& comm,
@@ -5517,7 +5517,7 @@ class Reader {
   //! the number of ranks hammering on the file system at once, but we don't
   //! make any guarantees.
   /// \param filename_prefix  [in] File for rank I is filename_prefix + to_string(I) + filename_suffix
-  /// \param filename_sufffix [in] File for rank I is filename_prefix + to_string(I) + filename_suffix
+  /// \param filename_suffix [in] File for rank I is filename_prefix + to_string(I) + filename_suffix
   /// \param rowMap [in] The Map over which to distribute rows
   ///   of the sparse matrix.  This must be nonnull.
   /// \param colMap [in/out] If nonnull: the Map over which to
@@ -5536,6 +5536,7 @@ class Reader {
   ///   matrix after reading it from a file.)
   /// \param tolerant [in] Whether to read the data tolerantly
   ///   from the file.
+  /// \param ranksToReadAtOnce [in] Number of ranks to read at once.
   /// \param debug [in] Whether to produce copious status output
   ///   useful for Tpetra developers, but probably not useful for
   ///   anyone else.
@@ -6039,6 +6040,15 @@ class Writer {
     RCP<const map_type> domainMap = matrix.getDomainMap();
     RCP<const map_type> rangeMap  = matrix.getRangeMap();
 
+    if (!rowMap->haveGlobalConstants())
+      Teuchos::rcp_const_cast<map_type>(rowMap)->computeGlobalConstants();
+    if (!colMap->haveGlobalConstants())
+      Teuchos::rcp_const_cast<map_type>(colMap)->computeGlobalConstants();
+    if (!domainMap->haveGlobalConstants())
+      Teuchos::rcp_const_cast<map_type>(domainMap)->computeGlobalConstants();
+    if (!rangeMap->haveGlobalConstants())
+      Teuchos::rcp_const_cast<map_type>(rangeMap)->computeGlobalConstants();
+
     const global_size_t numRows = rangeMap->getMaxAllGlobalIndex() + 1 - rangeMap->getIndexBase();
     const global_size_t numCols = domainMap->getMaxAllGlobalIndex() + 1 - domainMap->getIndexBase();
 
@@ -6331,6 +6341,15 @@ class Writer {
     auto colMap    = graph.getColMap();
     auto domainMap = graph.getDomainMap();
     auto rangeMap  = graph.getRangeMap();
+
+    if (!rowMap->haveGlobalConstants())
+      Teuchos::rcp_const_cast<map_type>(rowMap)->computeGlobalConstants();
+    if (!colMap->haveGlobalConstants())
+      Teuchos::rcp_const_cast<map_type>(colMap)->computeGlobalConstants();
+    if (!domainMap->haveGlobalConstants())
+      Teuchos::rcp_const_cast<map_type>(domainMap)->computeGlobalConstants();
+    if (!rangeMap->haveGlobalConstants())
+      Teuchos::rcp_const_cast<map_type>(rangeMap)->computeGlobalConstants();
 
     const global_size_t numRows = rangeMap->getGlobalNumElements();
     const global_size_t numCols = domainMap->getGlobalNumElements();

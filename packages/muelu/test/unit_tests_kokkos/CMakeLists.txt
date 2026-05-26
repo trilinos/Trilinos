@@ -38,17 +38,10 @@ APPEND_SET(
   Utilities_kokkos.cpp
 )
 
-APPEND_SET(SOURCES Galeri.cpp)
-
 ### Tests that require other Trilinos packages
 
 # First ensure that these cmake boolean variables are defined
-ASSERT_DEFINED(
-  ${PACKAGE_NAME}_ENABLE_Amesos2
-  ${PACKAGE_NAME}_ENABLE_Ifpack2
-  ${PACKAGE_NAME}_ENABLE_Belos
-  ${PACKAGE_NAME}_ENABLE_Zoltan
-)
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Belos ${PACKAGE_NAME}_ENABLE_Zoltan)
 
 TRIBITS_ADD_EXECUTABLE(
   UnitTests_kokkos
@@ -56,24 +49,20 @@ TRIBITS_ADD_EXECUTABLE(
   COMM serial mpi
 )
 
-IF(${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
+TRIBITS_ADD_TEST(
+  UnitTests_kokkos
+  NAME "UnitTestsTpetra_kokkos"
+  ARGS "--linAlgebra=Tpetra"
+  PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
+  NUM_MPI_PROCS 1
+  COMM serial mpi
+)
 
-  TRIBITS_ADD_TEST(
-    UnitTests_kokkos
-    NAME "UnitTestsTpetra_kokkos"
-    ARGS "--linAlgebra=Tpetra"
-    PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
-    NUM_MPI_PROCS 1
-    COMM serial mpi
-  )
-
-  TRIBITS_ADD_TEST(
-    UnitTests_kokkos
-    NAME "UnitTestsTpetra_kokkos"
-    ARGS "--linAlgebra=Tpetra"
-    PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
-    NUM_MPI_PROCS 4
-    COMM mpi
-  )
-
-ENDIF()
+TRIBITS_ADD_TEST(
+  UnitTests_kokkos
+  NAME "UnitTestsTpetra_kokkos"
+  ARGS "--linAlgebra=Tpetra"
+  PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
+  NUM_MPI_PROCS 4
+  COMM mpi
+)

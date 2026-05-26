@@ -3,6 +3,8 @@
 #include <stk_math/StkVector.hpp>
 #include <Akri_UnitTestUtils.hpp>
 #include <Akri_AnalyticSurf.hpp>
+#include <Akri_ML_Models.hpp>
+#include <Akri_OutputUtils.hpp>
 
 namespace krino {
 
@@ -69,6 +71,28 @@ TEST(cuboid, rotatedAndTranslatedCuboid_correctSignedDistanceFromCenter)
 
   const double tol = 1.e-5;
   EXPECT_NEAR(-0.25, cuboid.point_signed_distance(center), tol);
+}
+
+TEST(INR, sphere_cone)
+{
+  if (!have_ML_Model_support())
+  {
+    GTEST_SKIP() << "Skipping because ML Model Support is not enabled.";
+  }
+
+  const std::string modelBaseName = "test";
+  if (!does_file_exist(modelBaseName + ".model"))
+  {
+    GTEST_SKIP() << "Skipping because file " << modelBaseName << ".model was not found.";
+  }
+
+  Implicit_Neural_Representation inr(modelBaseName);
+  const double tol = 1.e-6;
+
+  EXPECT_NEAR(-0.1795189, inr.point_signed_distance(stk::math::Vector3d(0., 0., 0.)), tol);
+  EXPECT_NEAR(0.52966934, inr.point_signed_distance(stk::math::Vector3d(1., 0., 0.)), tol);
+  EXPECT_NEAR(0.6886717, inr.point_signed_distance(stk::math::Vector3d(0., 1., 0.)), tol);
+  EXPECT_NEAR(0.6959222, inr.point_signed_distance(stk::math::Vector3d(0., 0., 1.)), tol);
 }
 
 }

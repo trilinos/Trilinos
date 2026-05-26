@@ -15,7 +15,7 @@
 namespace MueLu {
 
 /*!
-    @class  SegregatedAFactory class.
+    @class SegregatedAFactory
     @brief  Factory for building a new "segregated" A operator. Here, "segregated" means that the user
             provides some map(s) (containing a subset of GIDs of the input matrix A) and the factory
             drops entries depending on the dropping scheme.

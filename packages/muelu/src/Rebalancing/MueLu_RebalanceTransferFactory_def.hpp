@@ -150,13 +150,12 @@ void RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(
 
     {
       // This line must be after the Get call
-      SubFactoryMonitor m1(*this, "Rebalancing prolongator", coarseLevel);
-
       if (implicit || importer.is_null()) {
         GetOStream(Runtime0) << "Using original prolongator" << std::endl;
         Set(coarseLevel, "P", originalP);
 
       } else {
+        SubFactoryMonitor m1(*this, "Rebalancing prolongator", coarseLevel);
         // There are two version of an explicit rebalanced P and R.
         // The !reallyExplicit way, is sufficient for all MueLu purposes
         // with the exception of the CombinePFactory that needs true domain
@@ -263,6 +262,9 @@ void RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(
       return;
     }
 
+    RCP<const Map> subCommMap;
+    bool subCommMapConstructed = false;
+
     if (pL.isParameter("Coordinates") &&
         pL.get<RCP<const FactoryBase> >("Coordinates") != Teuchos::null &&
         IsAvailable(coarseLevel, "Coordinates")) {
@@ -271,12 +273,8 @@ void RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(
       // This line must be after the Get call
       SubFactoryMonitor subM(*this, "Rebalancing coordinates", coarseLevel);
 
-      // If a process has no matrix rows, then we can't calculate blocksize using the formula below.
-      LO nodeNumElts = coords->getMap()->getLocalNumElements();
-      LO myBlkSize = 0, blkSize = 0;
-      if (nodeNumElts > 0)
-        myBlkSize = importer->getSourceMap()->getLocalNumElements() / nodeNumElts;
-      MueLu_maxAll(coords->getMap()->getComm(), myBlkSize, blkSize);
+      GO numElts = coords->getMap()->getGlobalNumElements();
+      LO blkSize = Teuchos::as<LO>(importer->getSourceMap()->getGlobalNumElements() / numElts);
 
       RCP<const Import> coordImporter;
 
@@ -296,8 +294,17 @@ void RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(
       RCP<xdMV> permutedCoords = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO>::Build(coordImporter->getTargetMap(), coords->getNumVectors(), false);
       permutedCoords->doImport(*coords, *coordImporter, Xpetra::INSERT);
 
-      if (pL.isParameter("repartition: use subcommunicators") == true && pL.get<bool>("repartition: use subcommunicators") == true)
-        permutedCoords->replaceMap(permutedCoords->getMap()->removeEmptyProcesses());
+      if (pL.isParameter("repartition: use subcommunicators") && pL.get<bool>("repartition: use subcommunicators")) {
+        if (blkSize == 1) {
+          if (!subCommMapConstructed) {
+            subCommMap            = permutedCoords->getMap()->removeEmptyProcesses();
+            subCommMapConstructed = true;
+          }
+          permutedCoords->replaceMap(subCommMap);
+        } else {
+          permutedCoords->replaceMap(permutedCoords->getMap()->removeEmptyProcesses());
+        }
+      }
 
       if (permutedCoords->getMap() == Teuchos::null)
         permutedCoords = Teuchos::null;
@@ -315,12 +322,8 @@ void RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(
       // This line must be after the Get call
       SubFactoryMonitor subM(*this, "Rebalancing material", coarseLevel);
 
-      // If a process has no matrix rows, then we can't calculate blocksize using the formula below.
-      LO nodeNumElts = material->getMap()->getLocalNumElements();
-      LO myBlkSize = 0, blkSize = 0;
-      if (nodeNumElts > 0)
-        myBlkSize = importer->getSourceMap()->getLocalNumElements() / nodeNumElts;
-      MueLu_maxAll(material->getMap()->getComm(), myBlkSize, blkSize);
+      GO numElts = material->getMap()->getGlobalNumElements();
+      LO blkSize = Teuchos::as<LO>(importer->getSourceMap()->getGlobalNumElements() / numElts);
 
       RCP<const Import> materialImporter;
 
@@ -340,8 +343,17 @@ void RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(
       RCP<MultiVector> permutedMaterial = MultiVectorFactory::Build(materialImporter->getTargetMap(), material->getNumVectors(), false);
       permutedMaterial->doImport(*material, *materialImporter, Xpetra::INSERT);
 
-      if (pL.get<bool>("repartition: use subcommunicators") == true)
-        permutedMaterial->replaceMap(permutedMaterial->getMap()->removeEmptyProcesses());
+      if (pL.get<bool>("repartition: use subcommunicators")) {
+        if (blkSize == 1) {
+          if (!subCommMapConstructed) {
+            subCommMap            = permutedMaterial->getMap()->removeEmptyProcesses();
+            subCommMapConstructed = true;
+          }
+          permutedMaterial->replaceMap(subCommMap);
+        } else {
+          permutedMaterial->replaceMap(permutedMaterial->getMap()->removeEmptyProcesses());
+        }
+      }
 
       if (permutedMaterial->getMap() == Teuchos::null)
         permutedMaterial = Teuchos::null;
@@ -360,8 +372,13 @@ void RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(
       RCP<LocalOrdinalVector> permutedBlockNumber = LocalOrdinalVectorFactory::Build(importer->getTargetMap(), false);
       permutedBlockNumber->doImport(*BlockNumber, *importer, Xpetra::INSERT);
 
-      if (pL.isParameter("repartition: use subcommunicators") == true && pL.get<bool>("repartition: use subcommunicators") == true)
-        permutedBlockNumber->replaceMap(permutedBlockNumber->getMap()->removeEmptyProcesses());
+      if (pL.isParameter("repartition: use subcommunicators") && pL.get<bool>("repartition: use subcommunicators")) {
+        if (!subCommMapConstructed) {
+          subCommMap            = permutedBlockNumber->getMap()->removeEmptyProcesses();
+          subCommMapConstructed = true;
+        }
+        permutedBlockNumber->replaceMap(subCommMap);
+      }
 
       if (permutedBlockNumber->getMap() == Teuchos::null)
         permutedBlockNumber = Teuchos::null;
@@ -382,8 +399,13 @@ void RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(
       RCP<MultiVector> permutedNullspace = MultiVectorFactory::Build(importer->getTargetMap(), nullspace->getNumVectors(), false);
       permutedNullspace->doImport(*nullspace, *importer, Xpetra::INSERT);
 
-      if (pL.get<bool>("repartition: use subcommunicators") == true)
-        permutedNullspace->replaceMap(permutedNullspace->getMap()->removeEmptyProcesses());
+      if (pL.get<bool>("repartition: use subcommunicators")) {
+        if (!subCommMapConstructed) {
+          subCommMap            = permutedNullspace->getMap()->removeEmptyProcesses();
+          subCommMapConstructed = true;
+        }
+        permutedNullspace->replaceMap(subCommMap);
+      }
 
       if (permutedNullspace->getMap() == Teuchos::null)
         permutedNullspace = Teuchos::null;
@@ -392,16 +414,16 @@ void RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(
     }
 
   } else {
-    if (pL.get<bool>("transpose: use implicit") == false) {
+    if (!pL.get<bool>("transpose: use implicit")) {
       RCP<Matrix> originalR = Get<RCP<Matrix> >(coarseLevel, "R");
-
-      SubFactoryMonitor m2(*this, "Rebalancing restrictor", coarseLevel);
 
       if (implicit || importer.is_null()) {
         GetOStream(Runtime0) << "Using original restrictor" << std::endl;
         Set(coarseLevel, "R", originalR);
 
       } else {
+        SubFactoryMonitor m2(*this, "Rebalancing restrictor", coarseLevel);
+
         RCP<Matrix> rebalancedR;
         {
           SubFactoryMonitor subM(*this, "Rebalancing restriction -- fusedImport", coarseLevel);

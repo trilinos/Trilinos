@@ -22,7 +22,7 @@
 namespace MueLu {
 
 /*!
-    @class StructuredAggregationFactory_kokkos class.
+    @class StructuredAggregationFactory_kokkos
     @brief Factory for building structured aggregates or CrsGraph for interpolation base prolongator.
 
     Factory for creating structured aggregates or CrsGraph of the prolongator from the amalgamated graph of A.

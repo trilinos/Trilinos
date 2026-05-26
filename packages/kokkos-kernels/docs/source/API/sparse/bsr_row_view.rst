@@ -3,7 +3,7 @@ KokkosSparse::BsrRowView
 
 Defined in header ``KokkosSparse_BsrMatrix.hpp``.
 
-.. code:: cppkokkos
+.. code:: c++
 
   template <class MatrixType>
   struct BsrRowView;
@@ -81,7 +81,7 @@ Member Functions
 constructor
 -----------
 
-.. code:: cppkokkos
+.. code:: c++
 
   KOKKOS_INLINE_FUNCTION
   BsrRowView(value_type* const values, ordinal_type* const colidx,
@@ -126,7 +126,7 @@ Parameters
 local_row_in_block
 ------------------
 
-.. code:: cppkokkos
+.. code:: c++
 
   KOKKOS_INLINE_FUNCTION
   value_type* local_row_in_block(const ordinal_type& K, const ordinal_type& i) const;
@@ -145,7 +145,7 @@ Parameters
 local_block_value
 -----------------
 
-.. code:: cppkokkos
+.. code:: c++
 
   KOKKOS_INLINE_FUNCTION
   value_type& local_block_value(const ordinal_type& K, const ordinal_type& i,
@@ -167,7 +167,7 @@ Parameters
 block
 -----
 
-.. code:: cppkokkos
+.. code:: c++
 
   KOKKOS_INLINE_FUNCTION
   block_values_type block(const ordinal_type& K) const;
@@ -184,7 +184,7 @@ Parameters
 findRelBlockOffset
 ------------------
 
-.. code:: cppkokkos
+.. code:: c++
 
   KOKKOS_INLINE_FUNCTION
   ordinal_type findRelBlockOffset(const ordinal_type idx_to_match, bool /*is_sorted*/ = false) const;

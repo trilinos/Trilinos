@@ -19,6 +19,7 @@
 #include "Panzer_TpetraLinearObjFactory.hpp"
 #include "Panzer_Traits.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
+#include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
 
 // for testing gather/scatter construction
 #include "Panzer_PureBasis.hpp"
