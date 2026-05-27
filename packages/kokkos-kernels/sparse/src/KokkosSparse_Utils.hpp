@@ -4,7 +4,6 @@
 #define KOKKOSKERNELS_SPARSEUTILS_HPP
 #include <vector>
 
-#include "KokkosKernels_ArithTraits.hpp"
 #include "Kokkos_Core.hpp"
 #include "KokkosKernels_SimpleUtils.hpp"
 #include "KokkosKernels_IOUtils.hpp"
@@ -231,8 +230,7 @@ void kk_create_bsr_from_bsr_formatted_point_crs(int block_size, size_t num_rows,
 }
 
 template <typename in_row_view_t, typename in_nnz_view_t, typename in_scalar_view_t, typename out_row_view_t,
-          typename out_nnz_view_t, typename out_scalar_view_t, typename MyExecSpace, bool transpose_values,
-          bool conjugate_values>
+          typename out_nnz_view_t, typename out_scalar_view_t, typename MyExecSpace, bool transpose_values>
 struct TransposeMatrix {
   struct CountTag {};
   struct FillTag {};
@@ -245,8 +243,6 @@ struct TransposeMatrix {
 
   using nnz_lno_t = typename in_nnz_view_t::non_const_value_type;
   using size_type = typename in_row_view_t::non_const_value_type;
-
-  using KAT = KokkosKernels::ArithTraits<typename in_scalar_view_t::non_const_value_type>;
 
   nnz_lno_t num_rows;
   nnz_lno_t num_cols;
@@ -310,11 +306,7 @@ struct TransposeMatrix {
 
                              t_adj(pos) = row_index;
                              if constexpr (transpose_values) {
-                               if constexpr (conjugate_values) {
-                                 t_vals(pos) = KAT::conj(vals[adjind]);
-                               } else {
-                                 t_vals(pos) = vals[adjind];
-                               }
+                               t_vals(pos) = vals[adjind];
                              }
                            });
                            //}
@@ -327,10 +319,18 @@ template <typename in_row_view_t, typename in_nnz_view_t, typename in_scalar_vie
 void transpose_matrix(typename in_nnz_view_t::non_const_value_type num_rows,
                       typename in_nnz_view_t::non_const_value_type num_cols, in_row_view_t xadj, in_nnz_view_t adj,
                       in_scalar_view_t vals,
-                      out_row_view_t t_xadj,     // pre-allocated -- initialized with 0
-                      out_nnz_view_t t_adj,      // pre-allocated -- no need for initialize
-                      out_scalar_view_t t_vals,  // pre-allocated -- no need for initialize
-                      const bool conjugate_values = false) {
+                      out_row_view_t t_xadj,    // pre-allocated -- initialized with 0
+                      out_nnz_view_t t_adj,     // pre-allocated -- no need for initialize
+                      out_scalar_view_t t_vals  // pre-allocated -- no need for initialize
+) {
+  // create the functor for transpose.
+  typedef TransposeMatrix<in_row_view_t, in_nnz_view_t, in_scalar_view_t, out_row_view_t, out_nnz_view_t,
+                          out_scalar_view_t, MyExecSpace, true>
+      TransposeFunctor_t;
+
+  typedef typename TransposeFunctor_t::team_count_policy_t count_tp_t;
+  typedef typename TransposeFunctor_t::team_fill_policy_t fill_tp_t;
+
   typename in_row_view_t::non_const_value_type nnz = adj.extent(0);
 
   // determine vector lanes per thread
@@ -340,48 +340,21 @@ void transpose_matrix(typename in_nnz_view_t::non_const_value_type num_rows,
   // determine threads per team
   int team_size = kk_get_suggested_team_size(thread_size, KokkosKernels::Impl::kk_get_exec_space_type<MyExecSpace>());
 
-  if (!conjugate_values) {
-    // create the functor for transpose.
-    typedef TransposeMatrix<in_row_view_t, in_nnz_view_t, in_scalar_view_t, out_row_view_t, out_nnz_view_t,
-                            out_scalar_view_t, MyExecSpace, true, false>
-        TransposeFunctor_t;
+  TransposeFunctor_t tm(num_rows, num_cols, xadj, adj, vals, t_xadj, t_adj, t_vals, team_size);
 
-    typedef typename TransposeFunctor_t::team_count_policy_t count_tp_t;
-    typedef typename TransposeFunctor_t::team_fill_policy_t fill_tp_t;
+  Kokkos::parallel_for("KokkosSparse::Impl::transpose_matrix::S0",
+                       count_tp_t((num_rows + team_size - 1) / team_size, team_size, thread_size), tm);
 
-    TransposeFunctor_t tm(num_rows, num_cols, xadj, adj, vals, t_xadj, t_adj, t_vals, team_size);
+  KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<MyExecSpace>(num_cols + 1, t_xadj);
 
-    Kokkos::parallel_for("KokkosSparse::Impl::transpose_matrix::S0",
-                         count_tp_t((num_rows + team_size - 1) / team_size, team_size, thread_size), tm);
+  Kokkos::parallel_for("KokkosSparse::Impl::transpose_matrix::S1",
+                       fill_tp_t((num_rows + team_size - 1) / team_size, team_size, thread_size), tm);
 
-    KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<MyExecSpace>(num_cols + 1, t_xadj);
-
-    Kokkos::parallel_for("KokkosSparse::Impl::transpose_matrix::S1",
-                         fill_tp_t((num_rows + team_size - 1) / team_size, team_size, thread_size), tm);
-  } else {
-    // create the functor for transpose.
-    typedef TransposeMatrix<in_row_view_t, in_nnz_view_t, in_scalar_view_t, out_row_view_t, out_nnz_view_t,
-                            out_scalar_view_t, MyExecSpace, true, true>
-        TransposeFunctor_t;
-
-    typedef typename TransposeFunctor_t::team_count_policy_t count_tp_t;
-    typedef typename TransposeFunctor_t::team_fill_policy_t fill_tp_t;
-
-    TransposeFunctor_t tm(num_rows, num_cols, xadj, adj, vals, t_xadj, t_adj, t_vals, team_size);
-
-    Kokkos::parallel_for("KokkosSparse::Impl::transpose_matrix::S0",
-                         count_tp_t((num_rows + team_size - 1) / team_size, team_size, thread_size), tm);
-
-    KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<MyExecSpace>(num_cols + 1, t_xadj);
-
-    Kokkos::parallel_for("KokkosSparse::Impl::transpose_matrix::S1",
-                         fill_tp_t((num_rows + team_size - 1) / team_size, team_size, thread_size), tm);
-  }
   MyExecSpace().fence();
 }
 
 template <typename crsMat_t>
-crsMat_t transpose_matrix(const crsMat_t &A, const bool conjugate_values = false) {
+crsMat_t transpose_matrix(const crsMat_t &A) {
   // Allocate views and call the other version of transpose_matrix
   using c_rowmap_t  = typename crsMat_t::row_map_type;
   using c_entries_t = typename crsMat_t::index_type;
@@ -394,7 +367,7 @@ crsMat_t transpose_matrix(const crsMat_t &A, const bool conjugate_values = false
   values_t AT_values(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Transpose values"), A.nnz());
   transpose_matrix<c_rowmap_t, c_entries_t, c_values_t, rowmap_t, entries_t, values_t, rowmap_t,
                    typename crsMat_t::execution_space>(A.numRows(), A.numCols(), A.graph.row_map, A.graph.entries,
-                                                       A.values, AT_rowmap, AT_entries, AT_values, conjugate_values);
+                                                       A.values, AT_rowmap, AT_entries, AT_values);
   // And construct the transpose crsMat_t
   return crsMat_t("Transpose", A.numCols(), A.numRows(), A.nnz(), AT_values, AT_rowmap, AT_entries);
 }
@@ -411,7 +384,7 @@ void transpose_graph(typename in_nnz_view_t::non_const_value_type num_rows,
 
   // create the functor for transpose.
   typedef TransposeMatrix<in_row_view_t, in_nnz_view_t, in_nnz_view_t, out_row_view_t, out_nnz_view_t, out_nnz_view_t,
-                          MyExecSpace, false, false>
+                          MyExecSpace, false>
       TransposeFunctor_t;
 
   typedef typename TransposeFunctor_t::team_count_policy_t count_tp_t;
