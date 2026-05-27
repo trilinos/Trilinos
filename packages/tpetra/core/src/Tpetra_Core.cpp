@@ -26,27 +26,6 @@ namespace Tpetra {
 
 namespace {  // (anonymous)
 
-class HideOutputExceptOnProcess0 {
- public:
-  HideOutputExceptOnProcess0(std::ostream& stream,
-                             const int myRank)
-    : stream_(stream)
-    , originalBuffer_(stream.rdbuf()) {
-    if (myRank != 0) {
-      stream.rdbuf(blackHole_.rdbuf());
-    }
-  }
-
-  ~HideOutputExceptOnProcess0() {
-    stream_.rdbuf(originalBuffer_);
-  }
-
- private:
-  std::ostream& stream_;
-  decltype(std::cout.rdbuf()) originalBuffer_;
-  Teuchos::oblackholestream blackHole_;
-};
-
 #if defined(HAVE_TPETRACORE_MPI)
 bool mpiIsInitializedAndNotFinalized() {
   int isInitialized = 0;
@@ -88,6 +67,20 @@ bool tpetraInitializedMpi_ = false;
 Teuchos::RCP<const Teuchos::Comm<int> > wrappedDefaultComm_;
 
 #ifdef HAVE_TPETRACORE_MPI
+
+int getRankHarmlessly(MPI_Comm comm) {
+  int myRank = 0;
+  if (mpiIsInitializedAndNotFinalized()) {
+    try {
+      (void)MPI_Comm_rank(comm, &myRank);
+    } catch (...) {
+      // Not sure if MPI_Comm_rank meets strong exception guarantee
+      myRank = 0;
+    }
+  }
+  return myRank;
+}
+
 // This takes the same arguments as MPI_Init and the first two
 // arguments of initialize().
 void initMpiIfNeeded(int* argc, char*** argv) {
@@ -161,7 +154,7 @@ void initialize(int* argc, char*** argv) {
 
     // Initialize Kokkos using the new function
     if (!Kokkos::is_initialized()) {
-      Tpetra::Details::initializeKokkos();
+      Tpetra::Details::initializeKokkos(argc, argv);
       tpetraInitializedKokkos_ = true;
     }
 
@@ -175,11 +168,17 @@ void initialize(int* argc, char*** argv, MPI_Comm comm) {
   if (!tpetraIsInitialized_) {
 #if defined(HAVE_TPETRACORE_MPI)
     initMpiIfNeeded(argc, argv);
+    // It's technically legal to initialize Tpetra after
+    // MPI_Finalize has been called.  This means that we can't call
+    // MPI_Comm_rank without first checking MPI_Finalized.
+    const int myRank = getRankHarmlessly(comm);
+#else
+    const int myRank = 0;
 #endif  // defined(HAVE_TPETRACORE_MPI)
 
     // Initialize Kokkos using the new function
     if (!Kokkos::is_initialized()) {
-      Tpetra::Details::initializeKokkos();
+      Tpetra::Details::initializeKokkos(argc, argv, myRank);
       tpetraInitializedKokkos_ = true;
     }
 
@@ -222,7 +221,7 @@ void initialize(int* argc, char*** argv,
 
     // Initialize Kokkos using the new function
     if (!Kokkos::is_initialized()) {
-      Tpetra::Details::initializeKokkos();
+      Tpetra::Details::initializeKokkos(argc, argv, !comm.is_null() ? comm->getRank() : 0);
       tpetraInitializedKokkos_ = true;
     }
 
