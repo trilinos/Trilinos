@@ -44,9 +44,7 @@ namespace Intrepid2 {
     //TODO: check this. not working for composite tet
     //INTREPID2_TEST_FOR_EXCEPTION( worksetCell.extent(1) != cellTopo.getSubcellCount(0), std::invalid_argument,
     //                              ">>> ERROR (Intrepid2::CellTools::setJacobian): dim 1 (number of cell nodes) of worksetCell array does not match cell topology." );
-  
-    INTREPID2_TEST_FOR_EXCEPTION( worksetCell.extent(2) != cellTopo.getDimension(), std::invalid_argument,
-                                  ">>> ERROR (Intrepid2::CellTools::setJacobian): dim 2 (spatial dimension) of worksetCell array  does not match cell dimension." );
+ 
     
     // Validate points array: can be rank-2 (P,D) or rank-3 (C,P,D)
     // If rank-2: admissible jacobians: rank-3 (P,D,D) or rank-4 (C,P,D,D); admissible whichCell: -1 (default) or cell ordinal.
@@ -64,8 +62,6 @@ namespace Intrepid2 {
     
     switch (pointRank) {
     case 2: {
-      INTREPID2_TEST_FOR_EXCEPTION( points.extent(1) != cellTopo.getDimension(), std::invalid_argument,
-                                    ">>> ERROR (Intrepid2::CellTools::setJacobian): dim 1 (spatial dimension) of points array does not match cell dimension." );
       
       INTREPID2_TEST_FOR_EXCEPTION( jacobian.rank() != 4, std::invalid_argument, 
                                     ">>> ERROR (Intrepid2::CellTools::setJacobian): rank = 4 required for jacobian array." );
@@ -76,11 +72,11 @@ namespace Intrepid2 {
       INTREPID2_TEST_FOR_EXCEPTION( jacobian.extent(1) != points.extent(0), std::invalid_argument,
                                     ">>> ERROR (Intrepid2::CellTools::setJacobian): dim 1 (number of points) of jacobian array must equal dim 0 of points array." );
       
-      INTREPID2_TEST_FOR_EXCEPTION( jacobian.extent(2) != points.extent(1), std::invalid_argument,
-                                    ">>> ERROR (Intrepid2::CellTools::setJacobian): dim 2 (spatial dimension) of jacobian array must equal dim 1 of points array." );
+      INTREPID2_TEST_FOR_EXCEPTION( jacobian.extent(2) != worksetCell.extent(2), std::invalid_argument,
+                                    ">>> ERROR (Intrepid2::CellTools::setJacobian): dim 2 (range dimension) of jacobian array must equal dim 2 of worksetCell (phys points) array");
       
-      INTREPID2_TEST_FOR_EXCEPTION( jacobian.extent(2) != jacobian.extent(3), std::invalid_argument,
-                                    ">>> ERROR (Intrepid2::CellTools::setJacobian): dim 2 = dim 3 (same spatial dimensions) required for jacobian array." );
+      INTREPID2_TEST_FOR_EXCEPTION( jacobian.extent(3) != points.extent(1), std::invalid_argument,
+                                    ">>> ERROR (Intrepid2::CellTools::setJacobian): dim 3 (domain dimension) of Jacobian array must equal dim 1 (spatial dimension) of points array. " );
       
       INTREPID2_TEST_FOR_EXCEPTION( jacobian.extent(3) < 1 || jacobian.extent(3) > 3, std::invalid_argument,
                                     ">>> ERROR (Intrepid2::CellTools::setJacobian): dim 2 and dim 3 (spatial dimensions) must be between 1 and 3." );
@@ -90,8 +86,6 @@ namespace Intrepid2 {
       INTREPID2_TEST_FOR_EXCEPTION( points.extent_int(0) != numCells, std::invalid_argument,
                                     ">>> ERROR (Intrepid2::CellTools::setJacobian): dim 0 (number of cells) of points array must equal number of cells requested from in the workset.");
 
-      INTREPID2_TEST_FOR_EXCEPTION( points.extent(2) != cellTopo.getDimension(), std::invalid_argument,
-                                    ">>> ERROR (Intrepid2::CellTools::setJacobian): dim 2 (spatial dimension) of points array does not match cell dimension");
       
       // rank-4 (C,P,D,D) jacobian required for rank-3 (C,P,D) input points
       INTREPID2_TEST_FOR_EXCEPTION( jacobian.rank() != 4, std::invalid_argument,
@@ -103,11 +97,11 @@ namespace Intrepid2 {
       INTREPID2_TEST_FOR_EXCEPTION( jacobian.extent(1) != points.extent(1), std::invalid_argument,
                                     ">>> ERROR (Intrepid2::CellTools::setJacobian): dim 1 (number of points) of jacobian array must equal dim 1 of points array");
       
-      INTREPID2_TEST_FOR_EXCEPTION( jacobian.extent(2) != points.extent(2), std::invalid_argument,
-                                    ">>> ERROR (Intrepid2::CellTools::setJacobian): dim 2 (spatial dimension) of jacobian array must equal dim 2 of points array");
+      INTREPID2_TEST_FOR_EXCEPTION( jacobian.extent(2) != worksetCell.extent(2), std::invalid_argument,
+                                    ">>> ERROR (Intrepid2::CellTools::setJacobian): dim 2 (range dimension) of jacobian array must equal dim 2 of worksetCell (phys points) array");
       
-      INTREPID2_TEST_FOR_EXCEPTION( jacobian.extent(2) != jacobian.extent(3), std::invalid_argument,
-                                    ">>> ERROR (Intrepid2::CellTools::setJacobian): dim 2 = dim 3 (same spatial dimensions) required for jacobian array. ");
+      INTREPID2_TEST_FOR_EXCEPTION( jacobian.extent(3) != points.extent(2), std::invalid_argument,
+                                    ">>> ERROR (Intrepid2::CellTools::setJacobian): dim 3 (domain dimension) of Jacobian array must equal dim 2 (spatial dimension) of points array. ");
 
       INTREPID2_TEST_FOR_EXCEPTION( jacobian.extent(3) < 1 || jacobian.extent(3) > 3, std::invalid_argument,
                                     ">>> ERROR (Intrepid2::CellTools::setJacobian): dim 2 and dim 3 (spatial dimensions) must be between 1 and 3." );
@@ -223,6 +217,9 @@ namespace Intrepid2 {
       
       INTREPID2_TEST_FOR_EXCEPTION( physPoints.rank() != 3, std::invalid_argument,
                                     ">>> ERROR (Intrepid2::CellTools::mapToPhysicalFrame): rank = 3 required for physPoints array for the default whichCell value." );
+
+      INTREPID2_TEST_FOR_EXCEPTION( cellTopo.getDimension() > worksetCell.extent(2), std::invalid_argument,
+                                    ">>> ERROR (Intrepid2::CellTools::mapToPhysicalFrame): reference dimension cannot exceed physical dimension." );
       
       INTREPID2_TEST_FOR_EXCEPTION( physPoints.extent(0) != worksetCell.extent(0), std::invalid_argument,
                                     ">>> ERROR (Intrepid2::CellTools::mapToPhysicalFrame): dim 0 (number of cells) of physPoints array must equal dim 0 of worksetCell array." );
@@ -241,6 +238,9 @@ namespace Intrepid2 {
       
       INTREPID2_TEST_FOR_EXCEPTION( refPoints.extent(2) != cellTopo.getDimension(), std::invalid_argument,
                                     ">>> ERROR (Intrepid2::CellTools::mapToPhysicalFrame): dim 2 (spatial dimension) of refPoints array does not match cell dimension." );
+
+      INTREPID2_TEST_FOR_EXCEPTION( cellTopo.getDimension() > worksetCell.extent(2), std::invalid_argument,
+                                    ">>> ERROR (Intrepid2::CellTools::mapToPhysicalFrame): reference dimension cannot exceed physical dimension." );
     
       // physPoints must match rank and dimensions of refPoints
       INTREPID2_TEST_FOR_EXCEPTION( refPointRank != physPointRank, std::invalid_argument, 
@@ -271,25 +271,32 @@ namespace Intrepid2 {
     // INTREPID2_TEST_FOR_EXCEPTION( worksetCell.extent(1) != cellTopo.getSubcellCount(0), std::invalid_argument,
     //                              ">>> ERROR (Intrepid2::CellTools::mapToReferenceFrame): dim 1 (number of cell nodes) of worksetCell array does not match cell topology" );
   
-    INTREPID2_TEST_FOR_EXCEPTION( worksetCell.extent(2) != cellTopo.getDimension(), std::invalid_argument,
-                                  ">>> ERROR (Intrepid2::CellTools::mapToReferenceFrame): dim 2 (spatial dimension) of worksetCell array  does not match cell dimension" );
-    
     // Admissible ranks and dimensions of refPoints and physPoints depend on whichCell value:
     // default is to map multiple sets of points to multiple sets of points. (C,P,D) arrays required
     
     const ordinal_type physPointRank = physPoints.rank();
     const ordinal_type refPointRank = refPoints.rank();
     
-    INTREPID2_TEST_FOR_EXCEPTION( refPointRank != 2 &&
-                                  refPointRank != 3, std::invalid_argument, 
-                                  ">>> ERROR (Intrepid2::CellTools::mapToReferenceFrame): refPoint must have rank 2 or 3." );
+    INTREPID2_TEST_FOR_EXCEPTION( refPointRank != 3, std::invalid_argument, 
+                                  ">>> ERROR (Intrepid2::CellTools::mapToReferenceFrame): refPoint must have rank 3." );
     
-    INTREPID2_TEST_FOR_EXCEPTION( physPointRank != refPointRank, std::invalid_argument, 
-                                  ">>> ERROR (Intrepid2::CellTools::mapToReferenceFrame): physPoints rank does not match refPoints rank." );
-    for (ordinal_type i=0;i<refPointRank;++i) {
+    INTREPID2_TEST_FOR_EXCEPTION( physPointRank != 3, std::invalid_argument, 
+                                  ">>> ERROR (Intrepid2::CellTools::mapToReferenceFrame): physPoints must have rank 3." );
+    for (ordinal_type i=0;i<refPointRank-1;++i) {
       INTREPID2_TEST_FOR_EXCEPTION( refPoints.extent(i) != physPoints.extent(i), std::invalid_argument, 
                                     ">>> ERROR (Intrepid2::CellTools::mapToReferenceFrame): physPoints dimension (i) does not match refPoints dimension (i)." );
     }
+    
+    const ordinal_type physDim = worksetCell.extent_int(2);
+
+    INTREPID2_TEST_FOR_EXCEPTION( physPoints.extent_int(2) != physDim, std::invalid_argument,
+                                  ">>> ERROR (Intrepid2::CellTools::mapToReferenceFrame): "
+                                  "physPoints.extent(2) must match worksetCell.extent(2)." );
+
+    INTREPID2_TEST_FOR_EXCEPTION( refPoints.extent(2) != cellTopo.getDimension(), std::invalid_argument,
+                                  ">>> ERROR (Intrepid2::CellTools::mapToReferenceFrame): "
+                                  "refPoints.extent(2) must match the expected reference output dimension for cellTopo." );
+
   }
 
   template<typename refPointViewType, 
@@ -304,14 +311,14 @@ namespace Intrepid2 {
     // Call the method that validates arguments with the default initial guess selection
     CellTools_mapToReferenceFrameArgs(refPoints, physPoints, worksetCell, cellTopo);
   
-    // Then check initGuess: its rank and dimensions must match those of physPoints.
-    INTREPID2_TEST_FOR_EXCEPTION( initGuess.rank() != physPoints.rank(), std::invalid_argument, 
-                                  ">>> ERROR (Intrepid2::CellTools::mapToReferenceFrame): InitGuess must have the same rank as physPoints");         
+    // Then check initGuess: its rank and dimensions must match those of refPoints.
+    INTREPID2_TEST_FOR_EXCEPTION( initGuess.rank() != refPoints.rank(), std::invalid_argument, 
+                                  ">>> ERROR (Intrepid2::CellTools::mapToReferenceFrameInitGuess): InitGuess must have the same rank as refPoints");         
 
     const ordinal_type r = initGuess.rank();
     for (ordinal_type i=0;i<r;++i) {
-      INTREPID2_TEST_FOR_EXCEPTION( initGuess.extent(i) != physPoints.extent(i), std::invalid_argument, 
-                                    ">>> ERROR (Intrepid2::CellTools::mapToReferenceFrame): InitGuess dimension (i) does not match ot physPoints dimension(i).");
+      INTREPID2_TEST_FOR_EXCEPTION( initGuess.extent(i) != refPoints.extent(i), std::invalid_argument, 
+                                    ">>> ERROR (Intrepid2::CellTools::mapToReferenceFrameInitGuess): InitGuess dimension (i) does not match ot refPoints dimension(i).");
     }         
   }
 

@@ -2,8 +2,8 @@
 Trilinos Configure, Build, Test, and Install Reference Guide
 ============================================================
 
-:Author: Roscoe A. Bartlett (bartlettra@orn.gov)
-:Contact: trilinos-framework@software.sandia.gov
+:Author: Roscoe A. Bartlett (rabartl@sandia.gov)
+:Contact: @trilinos/framework (github)
 
 :Abstract: This document contains reference information on how to configure, build, test, and install Trilinos using the TriBITS CMake build system.  The primary audience are users of Trilinos that need to configure and build the software.  The secondary audience are actual developers of Trilinos.
 
@@ -90,7 +90,7 @@ when setting this option.
 Enabling/disabling time monitors
 --------------------------------
 
-I order to enable instrumentation of select code to generate timing statistics, set::
+In order to enable instrumentation of select code to generate timing statistics, set::
 
  -D Trilinos_ENABLE_TEUCHOS_TIME_MONITOR:BOOL=ON
 
@@ -101,7 +101,7 @@ that support them.  To print the timers at the end of the program, call
 Select different TriBITS implementation
 ----------------------------------------
 
-When co-developing TriBTS and Trilinos (after cloning the TriBITS repo
+When co-developing TriBITS and Trilinos (after cloning the TriBITS repo
 https://github.com/TriBITSPub/TriBITS under the local Trilinos git repo)
 configure Trilinos to use that TriBITS implementation using, for example::
 
@@ -118,7 +118,7 @@ Kokkos (https://github.com/kokkos/kokkos) is a C++ implementation of a
 cross-platform shared-memory parallel programming model. Many Trilinos packages,
 and other stand-alone applications, use it to implement parallel algorithms.
 
-The Kokkos package is enabled with ``-DTrilinos_ENABLE_Kokkos=ON``), then
+The Kokkos package is enabled with ``-DTrilinos_ENABLE_Kokkos=ON``, then
 the native configuration options of the Kokkos package are available such as
 ``-DKokkos_ENABLE_OPENMP=ON`` or ``-DKokkos_ENABLE_CUDA=ON``.
 For comprehensive information on how to configure Kokkos for your specific build,
@@ -132,7 +132,7 @@ Kokkos variable
 Functionality                   CMake Cache Variable                     Kokkos Variable
 ============================    ======================================   ============================
 Device options:
-* Enable Cuda                   ``TPL_ENABLE_CUDA``                      ``Kokkos_ENABLE_CUDA``
+* Enable CUDA                   ``TPL_ENABLE_CUDA``                      ``Kokkos_ENABLE_CUDA``
 * Enable OpenMP                 ``Trilinos_ENABLE_OpenMP``               ``Kokkos_ENABLE_OPENMP``
 * Enable Pthread                ``TPL_ENABLE_PThread``                   ``Kokkos_ENABLE_THREADS``
 ============================    ======================================   ============================
@@ -148,11 +148,11 @@ To see more documentation for each of these options, run a configure with
 Setting the C++ language standard for Trilinos
 ----------------------------------------------
 
-Trilinos currently supports building with the C++17 language standard as
+Trilinos currently supports building with the C++20 language standard as
 supported by a wide range of C++ compilers.  In addition, the library targets
 imported from the installed ``<Package>Config.cmake`` files (also pulled in
 through ``TrilinosConfig.cmake``) will automatically require downstream CMake
-projects turn on C++17 or later standard support in the compiler options
+projects turn on C++20 or later standard support in the compiler options
 (using the CMake ``INTERFACE_COMPILE_FEATURES`` properties of the Trilinos
 library targets).  Building Trilinos with C++14 or lower C++ language
 standards is not supported.
@@ -167,7 +167,7 @@ on, configure with::
 As mentioned above, that will also result in all downstream C++ software built
 with CMake to be built with C++20 compiler options turned on as well.
 
-However, Trilinos is currently only rigorously tested with C++17 compiler
+However, Trilinos is currently only rigorously tested with C++20 compiler
 options so trying to build and use with a higher language standard may not
 give satisfactory results.
 
@@ -176,7 +176,7 @@ Addressing problems with large builds of Trilinos
 -------------------------------------------------
 
 Trilinos is a large collection of complex software.  Depending on what gets
-enabled when building Trlinos, one can experience build and installation
+enabled when building Trilinos, one can experience build and installation
 problems due to this large size.
 
 When running into problems like these, the first thing that should be tried is
@@ -190,7 +190,7 @@ are mentioned below.
 
 **Command-line too long errors:**
 
-When turning on some options and enabling some set of package's one may
+When turning on some options and enabling some set of packages one may
 encounter command-lines that are too long for the OS shell or the tool being
 called.  For example, on some systems, enabling CUDA and COMPLEX variable
 types (e.g. ``-D TPL_ENABLE_CUDA=ON -D Trilinos_ENABLE_COMPLEX=ON``) can
@@ -246,7 +246,7 @@ CDash).  To enable support for these build statistics, configure with::
 This will do the following:
 
 * Generate wrappers ``build_stats_<op>_wrapper.sh`` for C, C++, and Fortran
-  (and for static builds also ``ar``, ``randlib`` and ``ld``) in the build
+  (and for static builds also ``ar``, ``ranlib`` and ``ld``) in the build
   tree that will compute statics as a byproduct of every invocation of these
   commands.  (The wrappers create a file ``<output-file>.timing`` for every
   generated object, library and executable ``<output-file>`` file.)
@@ -350,7 +350,7 @@ targets getting (re)built after an initial configure, then configure with::
 This will remove **all** of the ``*.timing`` files under the base build
 directory during a fresh configure (i.e. where the ``CMakeCache.txt`` file
 does not exist).  But this will not remove ``*.timing`` files on reconfigures
-(i..e where a ``CMakeCache.txt`` file is preserved).  Timing stats for targets
+(i.e., where a ``CMakeCache.txt`` file is preserved).  Timing stats for targets
 that are already built and don't need to be rebuilt after the last fresh
 configure will not get reported.  (But this can be useful for CI builds where
 one only wants to see build stats for the files updated in the last PR

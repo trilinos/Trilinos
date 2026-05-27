@@ -102,7 +102,7 @@ namespace Intrepid2 {
       typedef CubatureTensor                 <DeviceType,pointValueType,weightValueType> CubatureTensorType;
       //typedef CubatureTensorPyr              <DeviceType,pointValueType,weightValueType> CubatureTensorPyrType;
 
-      const auto tol = 100.0 * tolerence();
+      const auto tol = 100.0 * tolerance();
 
       int errorFlag  = 0;
 

@@ -63,7 +63,7 @@ namespace Intrepid2 {
         << "===============================================================================\n";
 
       int errorFlag = 0;
-      //const double tol = tolerence();
+      //const double tol = tolerance();
 
       typedef OrientationTools<DeviceType> ots;
       try {

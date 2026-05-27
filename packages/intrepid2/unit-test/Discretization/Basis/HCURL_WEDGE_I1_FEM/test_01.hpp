@@ -72,7 +72,7 @@ namespace Test {
       typedef Kokkos::DynRankView<ValueType,DeviceType> DynRankView;
       typedef Kokkos::DynRankView<ValueType,HostSpaceType> DynRankViewHost;
 
-      const ValueType tol = tolerence();
+      const ValueType tol = tolerance();
 
       int errorFlag = 0;
 

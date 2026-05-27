@@ -18,7 +18,7 @@
 namespace Tpetra {
 
 // Forward definition
-template <typename gno_t, typename scalar_t>
+template <typename gno_t, typename scalar_t, typename node_t>
 class DistributionLowerTriangularBlock;
 
 /////////////////////////////////////////////////////////////////////////////
@@ -62,7 +62,7 @@ class Distribution1D : public Distribution<gno_t, scalar_t> {
 };
 
 /////////////////////////////////////////////////////////////////////////////
-template <typename gno_t, typename scalar_t>
+template <typename gno_t, typename scalar_t, typename node_t>
 class Distribution1DLinear : public Distribution1D<gno_t, scalar_t> {
  public:
   using Distribution<gno_t, scalar_t>::me;
@@ -95,7 +95,7 @@ class Distribution1DLinear : public Distribution1D<gno_t, scalar_t> {
   }
 
   // DistributionLowerTriangularBlock class needs a 1DLinear distribution
-  friend class DistributionLowerTriangularBlock<gno_t, scalar_t>;
+  friend class DistributionLowerTriangularBlock<gno_t, scalar_t, node_t>;
 };
 
 /////////////////////////////////////////////////////////////////////////////

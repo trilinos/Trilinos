@@ -61,7 +61,7 @@ namespace Intrepid2 {
 
       typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
       
-      const auto tol = tolerence();
+      const auto tol = tolerance();
 
       int errorFlag = 0;
       try {
@@ -167,7 +167,7 @@ namespace Intrepid2 {
       typedef ValueType weightValueType;
       typedef CubatureControlVolume<DeviceSpaceType,pointValueType,weightValueType> CubatureControlVolumeType;
       
-      const auto tol = tolerence();
+      const auto tol = tolerance();
 
       int errorFlag = 0;
       try {
@@ -759,7 +759,7 @@ namespace Intrepid2 {
         typedef CubatureControlVolume<DeviceSpaceType,pointValueType,weightValueType> CubatureControlVolumeType;
         typedef CubatureControlVolumeSide<DeviceSpaceType,pointValueType,weightValueType> CubatureControlVolumeSideType;
         
-        const auto tol = tolerence();
+        const auto tol = tolerance();
 
         *outStream << " - Quadrilateral cell testing \n";
         {

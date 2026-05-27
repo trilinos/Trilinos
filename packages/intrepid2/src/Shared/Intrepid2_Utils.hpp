@@ -248,6 +248,15 @@ namespace Intrepid2 {
       return (a > b ? a : b);
     }
 
+    template <typename... Args>
+    requires (std::is_same_v<T, Args> && ...)
+    KOKKOS_FORCEINLINE_FUNCTION
+    static T max(const T a, const T b, Args... args) {
+        // Recursively find the max of everything after the first argument
+        T tmp_max = max(b, args...);
+        return (a > tmp_max) ? a : tmp_max;
+    }
+
     KOKKOS_FORCEINLINE_FUNCTION
     static T abs(const T a) {
       return (a > 0 ? a : T(-a));

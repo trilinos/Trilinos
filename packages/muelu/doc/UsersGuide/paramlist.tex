@@ -67,7 +67,7 @@
 \cbb{aggregation: drop scheme}{string}{"classical"}{Connectivity dropping scheme for a graph used in
       aggregation. Possible values: "point-wise" and "cut-drop". "signed classical sa", "classical", "distance laplacian", "signed classical", "block diagonal", "block diagonal classical", "block diagonal distance laplacian", "block diagonal signed classical", "block diagonal colored signed classical", "signed classical distance laplacian", "signed classical sa distance laplacian" are also allowed, but discouraged. Instead, the corresponding combination of "aggregation: strength-of-connection: matrix", "aggregation: strength-of-connection: measure" and "aggregation: drop scheme" should be used.}
           
-\cbb{aggregation: strength-of-connection: matrix}{string}{"A"}{The matrix that is used for constructing the graph used for aggregation. Possible values: "A" (meaning the level matrix itself) and "distance laplacian".}
+\cbb{aggregation: strength-of-connection: matrix}{string}{"A"}{The matrix that is used for constructing the graph used for aggregation. Possible values: "A" (meaning the level matrix itself), "distance laplacian", and "MinvA".}
           
 \cbb{aggregation: strength-of-connection: measure}{string}{"smoothed aggregation"}{The strength measure used for constructing the graph. Possible values: "smoothed aggregation", "signed smoothed aggregation", "signed ruge-stueben", "unscaled".}
           
@@ -212,7 +212,7 @@
           
 \cbb{filtered matrix: reuse eigenvalue}{bool}{true}{Skip eigenvalue calculation during the construction of a filtered matrix by reusing eigenvalue estimate from the original matrix. This allows us to skip heavy computation, but may lead to poorer convergence.}
           
-\cbb{emin: iterative method}{string}{"cg"}{Iterative method to use for energy minimization of initial prolongator in energy-minimization. Possible values: "cg" (conjugate gradient), "gmres" (generalized minimum residual), "sd" (steepest descent).}
+\cbb{emin: iterative method}{string}{"cg"}{Iterative method to use for energy minimization of initial prolongator in energy-minimization. Possible values: "cg" (conjugate gradient), "gmres" (generalized minimum residual).}
           
 \cbb{emin: num iterations}{int}{2}{Number of iterations to minimize initial prolongator energy in energy-minimization.}
           

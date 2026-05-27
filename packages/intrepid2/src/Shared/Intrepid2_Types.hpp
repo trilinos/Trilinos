@@ -67,13 +67,13 @@ namespace Intrepid2 {
 
   template<typename ValueType>
   KOKKOS_FORCEINLINE_FUNCTION
-  ValueType tolerence() {
+  ValueType tolerance() {
     return 100.0*epsilon<ValueType>();
   }
 
   KOKKOS_FORCEINLINE_FUNCTION
-  double tolerence() {
-    return tolerence<double>();
+  double tolerance() {
+    return tolerance<double>();
   }
 
   template<typename ValueType>
@@ -123,7 +123,7 @@ namespace Intrepid2 {
     /// Maximum number of families that a VectorData object will store -- 3 corresponds to H(div) and H(curl) on a hexahedron.
     static constexpr ordinal_type MaxBasisFamilies = 3;
 
-    // we do not want to use hard-wired epsilon, threshold and tolerence. 
+    // we do not want to use hard-wired epsilon, threshold and tolerance. 
     // static constexpr double Epsilon   = 1.0e-16; 
     // static constexpr double Threshold = 1.0e-15;
     // static constexpr double Tolerence = 1.0e-14;
