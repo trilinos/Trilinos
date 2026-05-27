@@ -241,9 +241,6 @@ void finalize() {
   // Note: Kokkos finalization is now handled by the atexit hook set up in
   // Tpetra::Details::initializeKokkos(), so we don't need to call it here.
   // The atexit hook ensures Kokkos::finalize() is called automatically.
-  if (tpetraInitializedKokkos_) {
-    // Kokkos finalization is handled by atexit hook
-  }
 
   // Make sure that no outstanding references to the communicator
   // remain.  If users gave initialize() an MPI_Comm, _they_ are
