@@ -21,7 +21,7 @@ jobs:
   cuda-kokkos-bounds-check:
     uses: ./.github/workflows/ci.yml
     with:
-      target-runner-labels: "['self-hosted', 'cuda-12.4.1-gcc-12.3.0-openmpi-4.1.6', '20251204', 'gpu:A100']"
+      target-runner-labels: "['self-hosted', 'cuda-12.4.1-gcc-12.3.0-openmpi-4.1.6', '20260507', 'gpu:A100']"
       genconfig-string: "rhel_cuda-12-gcc-openmpi_debug_static_Ampere80_no-asan_complex_no-fpic_mpi_pt_no-rdc_no-uvm_deprecated-on_all"
       cdash-track: "Nightly"
       dashboard-build-name: ${AT2_IMAGE}_release_static_bounds-check
@@ -32,7 +32,7 @@ jobs:
   address-sanitizer:
     uses: ./.github/workflows/ci.yml
     with:
-      target-runner-labels: "['self-hosted', 'clang-19.1.6-openmpi-4.1.6', '20251204']"
+      target-runner-labels: "['self-hosted', 'clang-19.1.7-openmpi-4.1.6', '20260507']"
       genconfig-string: "rhel_clang-openmpi_debug_shared_no-kokkos-arch_asan_no-complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_all"
       cdash-track: "Nightly"
       dashboard-build-name: ${AT2_IMAGE}_debug_shared_address-sanitizer
