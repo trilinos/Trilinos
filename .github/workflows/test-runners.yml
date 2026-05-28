@@ -1,0 +1,18 @@
+name: Test runners
+
+on:
+  push:
+    branches:
+      - testRunners
+  workflow_dispatch:
+
+
+jobs:
+  test-runners:
+    runs-on: [self-hosted, clang-19.1.7-openmpi-4.1.6, 20260507]
+    container:
+      image: docker.io/library/ubuntu:24.04
+    steps:
+      - run: |
+          uname -a
+          cat /etc/os-release
