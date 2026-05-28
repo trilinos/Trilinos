@@ -38,3 +38,13 @@ jobs:
       dashboard-build-name: ${AT2_IMAGE}_debug_shared_address-sanitizer
       max-cores-allowed: 29
       num-concurrent-tests: 16
+
+  coverage-check:
+    uses: ./.github/workflows/ci.yml
+    with:
+      target-runner-labels: "['self-hosted', 'gcc-12.3.0-openmpi-4.1.6']"
+      genconfig-string: "rhel8_gcc-openmpi_debug-coverage_shared_no-kokkos-arch_no-asan_no-complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_all"
+      cdash-track: "Nightly"
+      dashboard-build-name: ${AT2_IMAGE}_debug_shared_coverage
+      max-cores-allowed: 29
+      num-concurrent-tests: 16
