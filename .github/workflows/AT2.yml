@@ -34,9 +34,9 @@ jobs:
 
   gcc12-openmpi4:
     needs: pre-checks
-    runs-on: [self-hosted, gcc-12.3.0-openmpi-4.1.6, 20251204]
+    runs-on: [self-hosted, gcc-12.3.0-openmpi-4.1.6, 20260507]
     env:
-      IMAGE: registry-ex.sandia.gov/trilinos-project/trilinos-containers/experimental/ubi8-gcc-12.3.0-openmpi-4.1.6:20251204
+      IMAGE: registry-ex.sandia.gov/trilinos-project/trilinos-containers/production/ubi8-gcc-12.3.0-openmpi-4.1.6:20260507
       GENCONFIG_BUILD_NAME: rhel8_gcc-openmpi_debug_shared_no-kokkos-arch_no-asan_complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables
     if: ${{ needs.pre-checks.outputs.should_skip != 'true' && (github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED') }}
     steps:
@@ -148,9 +148,9 @@ jobs:
 
   clang19-openmpi4:
     needs: pre-checks
-    runs-on: [self-hosted, clang-19.1.6-openmpi-4.1.6, 20251204]
+    runs-on: [self-hosted, clang-19.1.7-openmpi-4.1.6, 20260507]
     env:
-      IMAGE: registry-ex.sandia.gov/trilinos-project/trilinos-containers/production/ubi9-clang-19.1.6-openmpi-4.1.6:20251204
+      IMAGE: registry-ex.sandia.gov/trilinos-project/trilinos-containers/production/ubi9-clang-19.1.6-openmpi-4.1.6:20260507
       GENCONFIG_BUILD_NAME: rhel_clang-openmpi_release-debug_shared_no-kokkos-arch_no-asan_no-complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables
     if: ${{ needs.pre-checks.outputs.should_skip != 'true' && (github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED') }}
     steps:
@@ -262,9 +262,9 @@ jobs:
 
   cuda12:
     needs: pre-checks
-    runs-on: [self-hosted, cuda-12.4.1-gcc-12.3.0-openmpi-4.1.6, 20251204, gpu:A100]
+    runs-on: [self-hosted, cuda-12.4.1-gcc-12.3.0-openmpi-4.1.6, 20260507, gpu:A100]
     env:
-      IMAGE: registry-ex.sandia.gov/trilinos-project/trilinos-containers/production/ubi8-cuda-12.4.1-gcc-12.3.0-openmpi-4.1.6:20251204
+      IMAGE: registry-ex.sandia.gov/trilinos-project/trilinos-containers/production/ubi8-cuda-12.4.1-gcc-12.3.0-openmpi-4.1.6:20260507
       GENCONFIG_BUILD_NAME: rhel_cuda-12-gcc-openmpi_release_static_Ampere80_no-asan_complex_no-fpic_mpi_pt_no-rdc_no-uvm_deprecated-on_no-package-enables
     if: ${{ needs.pre-checks.outputs.should_skip != 'true' && (github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED') }}
     steps:
@@ -377,9 +377,9 @@ jobs:
 
   gcc14:
     needs: pre-checks
-    runs-on: [self-hosted, gcc-14, 20251204]
+    runs-on: [self-hosted, gcc-14, 20260507]
     env:
-      IMAGE: registry-ex.sandia.gov/trilinos-project/trilinos-containers/production/ubi10-gcc-14:20251204
+      IMAGE: registry-ex.sandia.gov/trilinos-project/trilinos-containers/production/ubi10-gcc-14:20260507
       GENCONFIG_BUILD_NAME: rhel_gcc_release-debug_shared_no-kokkos-arch_no-asan_no-complex_no-fpic_no-mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables
     if: ${{ needs.pre-checks.outputs.should_skip != 'true' && (github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED') }}
     steps:
@@ -492,9 +492,9 @@ jobs:
 
   cuda12-uvm:
     needs: pre-checks
-    runs-on: [self-hosted, cuda-12.4.1-gcc-12.3.0-openmpi-4.1.6, 20251204]
+    runs-on: [self-hosted, cuda-12.4.1-gcc-12.3.0-openmpi-4.1.6, 20260507]
     env:
-      IMAGE: registry-ex.sandia.gov/trilinos-project/trilinos-containers/production/ubi8-cuda-12.4.1-gcc-12.3.0-openmpi-4.1.6:20251204
+      IMAGE: registry-ex.sandia.gov/trilinos-project/trilinos-containers/production/ubi8-cuda-12.4.1-gcc-12.3.0-openmpi-4.1.6:20260507
       GENCONFIG_BUILD_NAME: rhel_cuda-gcc-openmpi_release_static_Ampere80_no-asan_complex_no-fpic_mpi_pt_no-rdc_uvm_deprecated-on_no-package-enables
     if: ${{ needs.pre-checks.outputs.should_skip != 'true' && (github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED') }}
     steps:
@@ -606,9 +606,9 @@ jobs:
 
   oneapi2024:
     needs: pre-checks
-    runs-on: [self-hosted, oneapi-2024.2, 20251204]
+    runs-on: [self-hosted, oneapi-2024.2, 20260507]
     env:
-      IMAGE: registry-ex.sandia.gov/trilinos-project/trilinos-containers/production/ubi9-oneapi-2024.2:20251204
+      IMAGE: registry-ex.sandia.gov/trilinos-project/trilinos-containers/production/ubi9-oneapi-2024.2:20260507
       GENCONFIG_BUILD_NAME: rhel_oneapi-intelmpi_release-debug_shared_no-kokkos-arch_no-asan_no-complex_fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables
     if: ${{ needs.pre-checks.outputs.should_skip != 'true' && (github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED') }}
     steps:
@@ -717,9 +717,9 @@ jobs:
 
   openmp:
     needs: pre-checks
-    runs-on: [self-hosted, gcc-12.3.0-openmpi-4.1.6, 20251204]
+    runs-on: [self-hosted, gcc-12.3.0-openmpi-4.1.6, 20260507]
     env:
-      IMAGE: registry-ex.sandia.gov/trilinos-project/trilinos-containers/experimental/ubi8-gcc-12.3.0-openmpi-4.1.6:20251204
+      IMAGE: registry-ex.sandia.gov/trilinos-project/trilinos-containers/production/ubi8-gcc-12.3.0-openmpi-4.1.6:20260507
       GENCONFIG_BUILD_NAME: rhel8_gcc-openmpi-openmp_release-debug_static_no-kokkos-arch_no-asan_no-complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables
     if: ${{ needs.pre-checks.outputs.should_skip != 'true' && (github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED') }}
     steps:
@@ -830,7 +830,7 @@ jobs:
 
   framework-tests:
     needs: pre-checks
-    runs-on: [self-hosted, python-3.9, 20250811]
+    runs-on: [self-hosted, python-3.9, 20260507]
     if: ${{ needs.pre-checks.outputs.should_skip != 'true' && (github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED') }}
     steps:
       - name: env
