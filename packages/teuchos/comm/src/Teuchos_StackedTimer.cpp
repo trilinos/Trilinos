@@ -751,10 +751,10 @@ StackedTimer::reportXML(std::ostream &os, const std::string& datestamp, const st
 
 std::string
 StackedTimer::reportWatchrXML(const std::string& name, Teuchos::RCP<const Teuchos::Comm<int> > comm) {
-  const char* rawWatchrDir = getenv("WATCHR_PERF_DIR");
-  const char* rawBuildName = getenv("WATCHR_BUILD_NAME");
+  const char* rawWatchrDir = Teuchos::getEnvironmentVariableValue("WATCHR_PERF_DIR");
+  const char* rawBuildName = Teuchos::getEnvironmentVariableValue("WATCHR_BUILD_NAME");
   std::string gitSHA(Trilinos::TRILINOS_GIT_SHA);
-  const char* rawBuildDateOverride = getenv("WATCHR_BUILD_DATE");
+  const char* rawBuildDateOverride = Teuchos::getEnvironmentVariableValue("WATCHR_BUILD_DATE");
   //WATCHR_PERF_DIR is required (will also check nonempty below)
   if(!rawWatchrDir)
     return "";
