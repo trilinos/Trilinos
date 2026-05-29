@@ -27,14 +27,15 @@ TRIBITS_ADD_EXECUTABLE(
   CATEGORIES BASIC PERFORMANCE
   COMM serial mpi
 )
-TRIBITS_ADD_EXECUTABLE(
-  Tacho_ExampleDriverDoubleComplex.x
-  NOEXESUFFIX
-  NOEXEPREFIX
-  SOURCES Tacho_ExampleDriver_dcomplex.cpp
-  COMM serial mpi
-)
-
+IF (Trilinos_ENABLE_COMPLEX_DOUBLE)
+  TRIBITS_ADD_EXECUTABLE(
+    Tacho_ExampleDriverDoubleComplex.x
+    NOEXESUFFIX
+    NOEXEPREFIX
+    SOURCES Tacho_ExampleDriver_dcomplex.cpp
+    COMM serial mpi
+  )
+ENDIF()
 #
 # External Interface
 # 
