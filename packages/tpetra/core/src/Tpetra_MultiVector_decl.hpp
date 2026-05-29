@@ -65,6 +65,9 @@ namespace Tpetra {
 /// is because the method reserves the right to check for
 /// compatibility of the two Maps, at least in debug mode, and throw
 /// if they are not compatible.
+///
+/// \brief MPI synchronization: sometimes - may perform Map compatibility checks in debug mode which require collective operations
+/// \brief Kokkos synchronization: sometimes - may synchronize device data when copying between different memory spaces
 template <class DS, class DL, class DG, class DN,
           class SS, class SL, class SG, class SN>
 void deep_copy(MultiVector<DS, DL, DG, DN>& dst,
@@ -112,6 +115,9 @@ createCopy(const MultiVector<ST, LO, GO, NT>& src);
 ///   resulting MultiVector.
 /// \param numVectors [in] Number of columns of the resulting
 ///   MultiVector.
+///
+/// \brief MPI synchronization: sometimes - may require collective operations if Map has distributed communicator
+/// \brief Kokkos synchronization: never
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
 createMultiVector(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& map,
@@ -794,6 +800,8 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   virtual ~MultiVector() = default;
 
   //! Swap contents of \c mv with contents of \c *this.
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: never
   void swap(MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& mv);
 
   //@}
@@ -842,6 +850,9 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   ///   process with respect to the MultiVector's Map.
   /// \param col [in] Column index of the entry to modify.
   /// \param value [in] Incoming value to add to the entry.
+  ///
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: sometimes - calls sync_host() to ensure host data is up-to-date before modification, then modify_host() to mark host data as modified
   void
   replaceGlobalValue(const GlobalOrdinal gblRow,
                      const size_t col,
@@ -911,6 +922,9 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   /// \param atomic [in] Whether to use an atomic update.  If this
   ///   class' execution space is not Kokkos::Serial, then this is
   ///   true by default, else it is false by default.
+  ///
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: sometimes - calls sync_host() to ensure host data is up-to-date before modification, then modify_host() to mark host data as modified
   void
   sumIntoGlobalValue(const GlobalOrdinal gblRow,
                      const size_t col,
@@ -983,6 +997,9 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   ///   calling process.
   /// \param col [in] Column index of the entry to modify.
   /// \param value [in] Incoming value to add to the entry.
+  ///
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: sometimes - calls sync_host() to ensure host data is up-to-date before modification, then modify_host() to mark host data as modified
   void
   replaceLocalValue(const LocalOrdinal lclRow,
                     const size_t col,
@@ -1053,6 +1070,9 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   /// \param atomic [in] Whether to use an atomic update.  If this
   ///   class' execution space is not Kokkos::Serial, then this is
   ///   true by default, else it is false by default.
+  ///
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: sometimes - calls sync_host() to ensure host data is up-to-date before modification, then modify_host() to mark host data as modified
   void
   sumIntoLocalValue(const LocalOrdinal lclRow,
                     const size_t col,
@@ -1095,6 +1115,12 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   }
 
   //! Set all values in the multivector with the given value.
+  ///
+  /// \brief MPI synchronization: never, Kokkos synchronization: sometimes
+  ///
+  /// Synchronization details:
+  /// - MPI synchronization: This method never requires MPI synchronization
+  /// - Kokkos synchronization: Performs operation in the most recently updated memory space (device or host) to avoid unnecessary synchronization; uses Access::OverwriteAll to bypass sync when appropriate
   void putScalar(const Scalar& value);
 
   /// \brief Set all values in the multivector with the given value.
@@ -1123,6 +1149,9 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   ///   Corresponding values on different processes might be
   ///   correlated.  It also does not promise to use a high-quality
   ///   pseudorandom number generator within each process.
+  ///
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: sometimes - may synchronize device to host if device data is more recent, then generate random values on host and sync back to device
   void randomize();
 
   /// \brief Set all values in the multivector to pseudorandom
@@ -1138,6 +1167,9 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   ///   Corresponding values on different processes might be
   ///   correlated.  It also does not promise to use a high-quality
   ///   pseudorandom number generator within each process.
+  ///
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: sometimes - may synchronize device to host if device data is more recent, then generate random values on host and sync back to device
   void randomize(const Scalar& minVal, const Scalar& maxVal);
 
   /// \brief Replace the underlying Map in place.
@@ -1205,6 +1237,9 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   ///
   /// \note This method does <i>not</i> do data redistribution.  If
   ///   you need to move data around, use Import or Export.
+  ///
+  /// \brief MPI synchronization: always - must be called collectively on all processes in the communicator
+  /// \brief Kokkos synchronization: never
   void replaceMap(const Teuchos::RCP<const map_type>& map);
 
   /// \brief Sum values of a locally replicated multivector across all processes.
@@ -1213,6 +1248,9 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   ///   MultiVectors.
   ///
   /// \pre isDistributed() == false
+  ///
+  /// \brief MPI synchronization: always - uses MPI_Allreduce to sum values across all processes
+  /// \brief Kokkos synchronization: always - uses Kokkos::fence() for UVM synchronization before MPI operations
   void reduce();
 
   //@}
@@ -1245,26 +1283,38 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   //@{
 
   //! Return a MultiVector with copies of selected columns.
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: sometimes - may synchronize device to host or host to device depending on which memory space contains the most recent data
   Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
   subCopy(const Teuchos::Range1D& colRng) const;
 
   //! Return a MultiVector with copies of selected columns.
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: sometimes - may synchronize device to host or host to device depending on which memory space contains the most recent data
   Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
   subCopy(const Teuchos::ArrayView<const size_t>& cols) const;
 
   //! Return a const MultiVector with const views of selected columns.
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: sometimes - may synchronize device to host or host to device depending on which memory space contains the most recent data
   Teuchos::RCP<const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
   subView(const Teuchos::Range1D& colRng) const;
 
   //! Return a const MultiVector with const views of selected columns.
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: sometimes - may synchronize device to host or host to device depending on which memory space contains the most recent data
   Teuchos::RCP<const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
   subView(const Teuchos::ArrayView<const size_t>& cols) const;
 
   //! Return a MultiVector with views of selected columns.
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: sometimes - may synchronize device to host or host to device depending on which memory space contains the most recent data
   Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
   subViewNonConst(const Teuchos::Range1D& colRng);
 
   //! Return a MultiVector with views of selected columns.
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: sometimes - may synchronize device to host or host to device depending on which memory space contains the most recent data
   Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
   subViewNonConst(const Teuchos::ArrayView<const size_t>& cols);
 
@@ -1330,43 +1380,42 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   /// number of entries in \c subMap (in this case, zero) and the \c
   /// offset may equal the number of local entries in
   /// <tt>*this</tt>.
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: sometimes - may synchronize device to host or host to device depending on which memory space contains the most recent data
   Teuchos::RCP<const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
   offsetView(const Teuchos::RCP<const map_type>& subMap,
              const size_t offset) const;
 
   /// \brief Return a nonconst view of a subset of rows.
   ///
-  /// Return a nonconst (modifiable) view of this MultiVector
-  /// consisting of a subset of the rows, as specified by an offset
-  /// and a subset Map of this MultiVector's current row Map.  If
-  /// you want X1 or X2 to be const (nonmodifiable) views, use
-  /// offsetView() with the same arguments.  "View" means "alias":
-  /// if the original (this) MultiVector's data change, the view
-  /// will see the changed data, and if the view's data change, the
-  /// original MultiVector will see the changed data.
-  ///
-  /// \param subMap [in] The row Map for the new MultiVector.  This
-  ///   must be a subset Map of this MultiVector's row Map.
-  /// \param offset [in] The local row offset at which to start the view.
-  ///
   /// See the documentation of offsetView() for a code example and
   /// an explanation of edge cases.
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: sometimes - may synchronize device to host or host to device depending on which memory space contains the most recent data
   Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
   offsetViewNonConst(const Teuchos::RCP<const map_type>& subMap,
                      const size_t offset);
 
   //! Return a Vector which is a const view of column j.
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: sometimes - may synchronize device to host or host to device depending on which memory space contains the most recent data
   Teuchos::RCP<const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
   getVector(const size_t j) const;
 
   //! Return a Vector which is a nonconst view of column j.
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: sometimes - may synchronize device to host or host to device depending on which memory space contains the most recent data
   Teuchos::RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
   getVectorNonConst(const size_t j);
 
   //! Const view of the local values in a particular vector of this multivector.
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: sometimes - synchronizes device to host if device data is more recent (checked via need_sync_host())
   Teuchos::ArrayRCP<const Scalar> getData(size_t j) const;
 
   //! View of the local values in a particular vector of this multivector.
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: sometimes - synchronizes device to host if device data is more recent (checked via need_sync_host())
   Teuchos::ArrayRCP<Scalar> getDataNonConst(size_t j);
 
   /// \brief Fill the given array with a copy of this multivector's
@@ -1376,6 +1425,9 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   ///   matrix with column-major storage.
   ///
   /// \param LDA [in] Leading dimension of the matrix A.
+  ///
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: sometimes - synchronizes device to host if device data is more recent (checked via need_sync_host())
   void
   get1dCopy(const Teuchos::ArrayView<Scalar>& A,
             const size_t LDA) const;
@@ -1386,6 +1438,9 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   /// \param ArrayOfPtrs [out] Array of arrays, one for each column
   ///   of the multivector.  On output, we fill ArrayOfPtrs[j] with
   ///   the data for column j of this multivector.
+  ///
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: sometimes - synchronizes device to host if device data is more recent (checked via need_sync_host())
   void
   get2dCopy(const Teuchos::ArrayView<const Teuchos::ArrayView<Scalar>>& ArrayOfPtrs) const;
 
@@ -1394,9 +1449,13 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   /// This method assumes that the columns of the multivector are
   /// stored contiguously.  If not, this method throws
   /// std::runtime_error.
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: sometimes - synchronizes device to host if device data is more recent (checked via need_sync_host())
   Teuchos::ArrayRCP<const Scalar> get1dView() const;
 
   //! Return const persisting pointers to values.
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: sometimes - synchronizes device to host if device data is more recent (checked via need_sync_host())
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar>> get2dView() const;
 
   /// \brief Nonconst persisting (1-D) view of this multivector's local values.
@@ -1404,51 +1463,82 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   /// This method assumes that the columns of the multivector are
   /// stored contiguously.  If not, this method throws
   /// std::runtime_error.
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: sometimes - synchronizes device to host if device data is more recent (checked via need_sync_host())
   Teuchos::ArrayRCP<Scalar> get1dViewNonConst();
 
   //! Return non-const persisting pointers to values.
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: sometimes - synchronizes device to host if device data is more recent (checked via need_sync_host())
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar>> get2dViewNonConst();
 
   /// \brief Return a read-only, up-to-date view of this MultiVector's local data on host.
   /// This requires that there are no live device-space views.
+  ///
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: sometimes - synchronizes device to host if device data is more recent (checked via need_sync_host())
   typename dual_view_type::t_host::const_type getLocalViewHost(Access::ReadOnlyStruct) const;
 
   /// \brief Return a mutable, up-to-date view of this MultiVector's local data on host.
   /// This requires that there are no live device-space views.
+  ///
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: sometimes - synchronizes device to host if device data is more recent (checked via need_sync_host())
   typename dual_view_type::t_host getLocalViewHost(Access::ReadWriteStruct);
 
   /// \brief Return a mutable view of this MultiVector's local data on host, assuming all existing data will be overwritten.
   /// This requires that there are no live device-space views.
+  ///
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: sometimes - synchronizes device to host if device data is more recent (checked via need_sync_host())
   typename dual_view_type::t_host getLocalViewHost(Access::OverwriteAllStruct);
 
   /// \brief Return a read-only, up-to-date view of this MultiVector's local data on device.
   /// This requires that there are no live host-space views.
+  ///
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: sometimes - synchronizes host to device if host data is more recent (checked via need_sync_device())
   typename dual_view_type::t_dev::const_type getLocalViewDevice(Access::ReadOnlyStruct) const;
 
   /// \brief Return a mutable, up-to-date view of this MultiVector's local data on device.
   /// This requires that there are no live host-space views.
+  ///
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: sometimes - synchronizes host to device if host data is more recent (checked via need_sync_device())
   typename dual_view_type::t_dev getLocalViewDevice(Access::ReadWriteStruct);
 
   /// \brief Return a mutable view of this MultiVector's local data on device, assuming all existing data will be overwritten.
   /// This requires that there are no live host-space views.
+  ///
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: sometimes - synchronizes host to device if host data is more recent (checked via need_sync_device())
   typename dual_view_type::t_dev getLocalViewDevice(Access::OverwriteAllStruct);
 
   /// \brief Return the wrapped dual view holding this MultiVector's local data.
   ///
   /// \warning This method is ONLY for use by experts. We highly recommend accessing the local data
   /// by using the member functions getLocalViewHost and getLocalViewDevice.
+  ///
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: sometimes - may synchronize device to host or host to device depending on which memory space contains the most recent data
   wrapped_dual_view_type getWrappedDualView() const;
 
   //! Whether this MultiVector needs synchronization to the given space.
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: never
   template <class TargetDeviceType>
   bool need_sync() const {
     return view_.getDualView().template need_sync<TargetDeviceType>();
   }
 
   //! Whether this MultiVector needs synchronization to the host.
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: never
   bool need_sync_host() const;
 
   //! Whether this MultiVector needs synchronization to the device.
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: never
   bool need_sync_device() const;
 
   /// \brief Return a view of the local data on a specific device, with the given access mode.
@@ -1479,18 +1569,24 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   /// typedef typename dual_view_type::t_host host_view_type;
   /// host_view_type hostView = DV.getLocalView<host_execution_space> (Access::ReadWrite);
   /// \endcode
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: sometimes - may synchronize device to host or host to device depending on which memory space contains the most recent data
   template <class TargetDeviceType>
   typename std::remove_reference<decltype(std::declval<dual_view_type>().template view<TargetDeviceType>())>::type::const_type
   getLocalView(Access::ReadOnlyStruct s) const {
     return view_.template getView<TargetDeviceType>(s);
   }
 
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: sometimes - may synchronize device to host or host to device depending on which memory space contains the most recent data
   template <class TargetDeviceType>
   typename std::remove_reference<decltype(std::declval<dual_view_type>().template view<TargetDeviceType>())>::type
   getLocalView(Access::ReadWriteStruct s) {
     return view_.template getView<TargetDeviceType>(s);
   }
 
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: sometimes - may synchronize device to host or host to device depending on which memory space contains the most recent data
   template <class TargetDeviceType>
   typename std::remove_reference<decltype(std::declval<dual_view_type>().template view<TargetDeviceType>())>::type
   getLocalView(Access::OverwriteAllStruct s) {
@@ -1514,6 +1610,9 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   /// \pre \c dots has at least as many entries as the number of columns in A.
   ///
   /// \post <tt>dots[j] == (this->getVector[j])->dot (* (A.getVector[j]))</tt>
+  ///
+  /// \brief MPI synchronization: always - uses MPI_Allreduce for global dot product computation
+  /// \brief Kokkos synchronization: sometimes - may use Kokkos::fence() when device data needs synchronization
   void
   dot(const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
       const Teuchos::ArrayView<dot_type>& dots) const;
@@ -1621,9 +1720,13 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   }
 
   //! Put element-wise absolute values of input Multi-vector in target: A = abs(this)
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: sometimes - may synchronize device to host or host to device depending on which memory space contains the most recent data
   void abs(const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A);
 
   //! Put element-wise reciprocal values of input Multi-vector in target, this(i,j) = 1/A(i,j).
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: sometimes - may synchronize device to host or host to device depending on which memory space contains the most recent data
   void reciprocal(const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A);
 
   /// \brief Scale in place: <tt>this = alpha*this</tt>.
@@ -1633,6 +1736,9 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   /// means, for example, that if \c *this contains NaN entries
   /// before calling this method, the NaN entries will remain after
   /// this method finishes.
+  ///
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: sometimes - may synchronize device to host or host to device depending on which memory space contains the most recent data
   void scale(const Scalar& alpha);
 
   /// \brief Scale each column in place: <tt>this[j] = alpha[j]*this[j]</tt>.
@@ -1643,6 +1749,9 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   /// the entries of alpha are zero.  That means, for example, that
   /// if \c *this contains NaN entries before calling this method,
   /// the NaN entries will remain after this method finishes.
+  ///
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: sometimes - may synchronize device to host or host to device depending on which memory space contains the most recent data
   void scale(const Teuchos::ArrayView<const Scalar>& alpha);
 
   /// \brief Scale each column in place: <tt>this[j] = alpha[j]*this[j]</tt>.
@@ -1653,6 +1762,9 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   /// the entries of alpha are zero.  That means, for example, that
   /// if \c *this contains NaN entries before calling this method,
   /// the NaN entries will remain after this method finishes.
+  ///
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: sometimes - may synchronize device to host or host to device depending on which memory space contains the most recent data
   void scale(const Kokkos::View<const impl_scalar_type*, device_type>& alpha);
 
   /// \brief Scale in place: <tt>this = alpha * A</tt>.
@@ -1663,6 +1775,9 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   /// this method, the NaN entries will remain after this method
   /// finishes.  It is legal for the input A to alias this
   /// MultiVector.
+  ///
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: sometimes - may synchronize device to host or host to device depending on which memory space contains the most recent data
   void
   scale(const Scalar& alpha,
         const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A);
@@ -1673,6 +1788,9 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   /// zero, overwrite \c *this unconditionally, even if it contains
   /// NaN entries.  It is legal for the input A to alias this
   /// MultiVector.
+  ///
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: sometimes - may synchronize device to host or host to device depending on which memory space contains the most recent data
   void
   update(const Scalar& alpha,
          const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
@@ -1684,6 +1802,9 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   /// gamma is zero, overwrite \c *this unconditionally, even if it
   /// contains NaN entries.  It is legal for the inputs A or B to
   /// alias this MultiVector.
+  ///
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: sometimes - may synchronize device to host or host to device depending on which memory space contains the most recent data
   void
   update(const Scalar& alpha,
          const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
@@ -1702,6 +1823,9 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   /// The one-norm of a vector is the sum of the magnitudes of the
   /// vector's entries.  On exit, norms(j) is the one-norm of column
   /// j of this MultiVector.
+  ///
+  /// \brief MPI synchronization: always - uses MPI_Allreduce for global norm computation
+  /// \brief Kokkos synchronization: sometimes - may use Kokkos::fence() when device data needs synchronization
   void
   norm1(const Kokkos::View<mag_type*, Kokkos::HostSpace>& norms) const;
 
@@ -1753,6 +1877,9 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   /// \brief Compute the one-norm of each vector (column).
   ///
   /// See the uppermost norm1() method above for documentation.
+  ///
+  /// \brief MPI synchronization: always - uses MPI_Allreduce for global norm computation
+  /// \brief Kokkos synchronization: sometimes - may use Kokkos::fence() when device data needs synchronization
   void norm1(const Teuchos::ArrayView<mag_type>& norms) const;
 
   /// \brief Compute the one-norm of each vector (column).
@@ -1794,6 +1921,9 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   /// square root of the sum of squares of the magnitudes of the
   /// vector's entries.  On exit, norms(k) is the two-norm of column
   /// k of this MultiVector.
+  ///
+  /// \brief MPI synchronization: always - uses MPI_Allreduce for global norm computation
+  /// \brief Kokkos synchronization: sometimes - may use Kokkos::fence() when device data needs synchronization
   void
   norm2(const Kokkos::View<mag_type*, Kokkos::HostSpace>& norms) const;
 
@@ -1878,6 +2008,9 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   /// The infinity-norm of a vector is the maximum of the magnitudes
   /// of the vector's entries.  On exit, norms(j) is the
   /// infinity-norm of column j of this MultiVector.
+  ///
+  /// \brief MPI synchronization: always - uses MPI_Allreduce for global norm computation
+  /// \brief Kokkos synchronization: sometimes - may use Kokkos::fence() when device data needs synchronization
   void normInf(const Kokkos::View<mag_type*, Kokkos::HostSpace>& norms) const;
 
   template <class ViewType>
@@ -1927,6 +2060,9 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   ///   storing the result in a Teuchos::ArrayView.
   ///
   /// See the uppermost normInf() method above for documentation.
+  ///
+  /// \brief MPI synchronization: always - uses MPI_Allreduce for global norm computation
+  /// \brief Kokkos synchronization: sometimes - may use Kokkos::fence() when device data needs synchronization
   void normInf(const Teuchos::ArrayView<mag_type>& norms) const;
 
   /// \brief Compute the infinity-norm of each vector (column),
@@ -1961,6 +2097,9 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   ///
   /// The outcome of this routine is undefined for non-floating
   /// point scalar types (e.g., int).
+  ///
+  /// \brief MPI synchronization: always - uses MPI reduce operations for global mean computation
+  /// \brief Kokkos synchronization: sometimes - may use Kokkos::fence() when device data needs synchronization
   void meanValue(const Teuchos::ArrayView<impl_scalar_type>& means) const;
 
   template <typename T>
@@ -1981,6 +2120,9 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   /// If beta is zero, overwrite \c *this unconditionally, even if
   /// it contains NaN entries.  This imitates the semantics of
   /// analogous BLAS routines like DGEMM.
+  ///
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: sometimes - may synchronize device to host or host to device depending on which memory space contains the most recent data
   void
   multiply(Teuchos::ETransp transA,
            Teuchos::ETransp transB,
@@ -2009,6 +2151,9 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   /// or a Map with a local communicator (<tt>MPI_COMM_SELF</tt>).
   /// This case may occur in block relaxation algorithms when
   /// applying a diagonal scaling.
+  ///
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: sometimes - may synchronize device to host or host to device depending on which memory space contains the most recent data
   void
   elementWiseMultiply(Scalar scalarAB,
                       const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
@@ -2019,12 +2164,18 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   //@{
 
   //! Number of columns in the multivector.
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: never
   size_t getNumVectors() const;
 
   //! Local number of rows on the calling process.
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: never
   size_t getLocalLength() const;
 
   //! Global number of rows in the multivector.
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: never
   global_size_t getGlobalLength() const;
 
   /// \brief Stride between columns in the multivector.
@@ -2032,16 +2183,22 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   /// This is only meaningful if \c isConstantStride() returns true.
   ///
   /// \warning This may be different on different processes.
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: never
   size_t getStride() const;
 
   /// \brief Whether this multivector has constant stride between columns.
   ///
   /// \warning This may be different on different processes.
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: never
   bool isConstantStride() const;
 
   /// \brief Whether this multivector's memory might alias other. This is conservative: if either this or other
   ///     is not constant stride, then it simply checks whether the contiguous memory allocations overlap. It
   ///     doesn't check whether the sets of columns overlap. This is a symmetric relation: X.aliases(Y) == Y.aliases(X).
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: never
   bool aliases(const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& other) const;
 
   //@}
@@ -2050,6 +2207,8 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   //@{
 
   //! A simple one-line description of this object.
+  /// \brief MPI synchronization: sometimes - may require collective operations at higher verbosity levels
+  /// \brief Kokkos synchronization: never
   virtual std::string description() const override;
 
   /// \brief Print the object with the given verbosity level to a FancyOStream.
@@ -2080,6 +2239,9 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   ///   part of the multivector.  This will print out as many rows
   ///   of data as the global number of rows in the multivector, so
   ///   beware.
+  ///
+  /// \brief MPI synchronization: sometimes - may require collective operations at higher verbosity levels
+  /// \brief Kokkos synchronization: never
   virtual void
   describe(Teuchos::FancyOStream& out,
            const Teuchos::EVerbosityLevel verbLevel =
@@ -2099,6 +2261,9 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   ///   the removeEmptyProcesses() method on the row Map.  If it
   ///   is not, this method's behavior is undefined.  This pointer
   ///   will be null on excluded processes.
+  ///
+  /// \brief MPI synchronization: always - collective operation that changes the communicator
+  /// \brief Kokkos synchronization: never
   virtual void
   removeEmptyProcessesInPlace(const Teuchos::RCP<const map_type>& newMap) override;
 
@@ -2112,6 +2277,9 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   ///
   /// \warning This method is only for expert use.  It may change or
   ///   disappear at any time.
+  ///
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: never
   void setCopyOrView(const Teuchos::DataAccess copyOrView) {
     TEUCHOS_TEST_FOR_EXCEPTION(
         copyOrView == Teuchos::Copy, std::invalid_argument,
@@ -2129,6 +2297,9 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   ///
   /// \warning This method is only for expert use.  It may change or
   ///   disappear at any time.
+  ///
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: never
   Teuchos::DataAccess getCopyOrView() const {
     return Teuchos::View;
   }
@@ -2147,11 +2318,17 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   ///   or otherwise change its dimensions.  This is <i>not</i> an
   ///   assignment operator; it does not change anything in \c *this
   ///   other than the contents of storage.
+  ///
+  /// \brief MPI synchronization: sometimes - may perform Map compatibility checks in debug mode which require collective operations
+  /// \brief Kokkos synchronization: sometimes - may synchronize device to host or host to device depending on which memory space contains the most recent data
   void
   assign(const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& src);
 
   /// \brief Return another MultiVector with the same entries, but
   ///   converted to a different Scalar type \c T.
+  ///
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: sometimes - may synchronize device to host or host to device depending on which memory space contains the most recent data
   template <class T>
   Teuchos::RCP<MultiVector<T, LocalOrdinal, GlobalOrdinal, Node>>
   convert() const;
@@ -2164,6 +2341,8 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   ///
   /// \post Any outstanding views of \c src or \c *this remain valid.
   ///
+  /// \brief MPI synchronization: sometimes - may perform Map compatibility checks in debug mode which require collective operations
+  /// \brief Kokkos synchronization: never
   bool isSameSize(const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& vec) const;
 
  private:
@@ -2386,6 +2565,8 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
                          const CombineMode CM               = INSERT) override;
 
  public:
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: never
   bool importsAreAliased();
 
  protected:
