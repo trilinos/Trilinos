@@ -129,8 +129,20 @@ void testGemmVsTeuchosBlasForOneTransComb(Teuchos::FancyOStream& out,
 
   {
     typedef KokkosKernels::ArithTraits<entry_type> KATE;
-    const entry_type maxVal =
-        Kokkos::rand<generator_type, entry_type>::max();
+    // For integer types, A_ij * B_jk is computed in the same type with no
+    // wider accumulator, so large values cause signed-overflow UB.
+    // Worst case: |alpha|=2, k=M=13 (default), |beta|=2.
+    // Need: 2*13*maxVal^2 + 2*maxVal <= max(entry_type), i.e.
+    // 26*maxVal^2 + 2*maxVal <= max(entry_type).
+    // Using the exact positive root:
+    // maxVal <= floor((-2 + sqrt(4 + 104*max(entry_type))) / 52).
+    // - 64-bit: floor((-2 + sqrt(4 + 104*INT64_MAX)) / 52) = 595604800
+    // - 32-bit: floor((-2 + sqrt(4 + 104*INT32_MAX)) / 52) = 9088
+    const entry_type maxVal = std::is_integral<entry_type>::value
+                                  ? (sizeof(entry_type) >= 8
+                                         ? entry_type(595604800)
+                                         : entry_type(9088))
+                                  : Kokkos::rand<generator_type, entry_type>::max();
     const entry_type minVal =
         KATE::is_signed ? entry_type(-maxVal) : KATE::zero();
     Kokkos::fill_random(A_orig, randPool, minVal, maxVal);
@@ -209,9 +221,13 @@ void testGemmVsTeuchosBlasForOneTransComb(Teuchos::FancyOStream& out,
   // enough for complex.
   const mag_type fudgeFactor = KokkosKernels::ArithTraits<entry_type>::is_complex ? static_cast<mag_type>(8) : static_cast<mag_type>(4);
 
-  const mag_type boundOrig =
-      eps * fudgeFactor * (A_norm * B_norm * static_cast<mag_type>(k));
-  const mag_type bound = boundOrig < (fudgeFactor * eps) ? (fudgeFactor * eps) : boundOrig;
+  // Skip the floating-point roundoff bound for exact-integer types: eps == 0
+  // makes the whole product zero anyway, and computing A_norm * B_norm for
+  // full-range integer entries overflows mag_type (signed-overflow UB).
+  const mag_type boundOrig = (eps == static_cast<mag_type>(0))
+                                 ? static_cast<mag_type>(0)
+                                 : eps * fudgeFactor * (A_norm * B_norm * static_cast<mag_type>(k));
+  const mag_type bound     = boundOrig < (fudgeFactor * eps) ? (fudgeFactor * eps) : boundOrig;
   out << "bound: " << bound << endl;
 
   // This needs to be EntryType and not
@@ -296,7 +312,7 @@ void testGemmVsTeuchosBlasForOneTransComb(Teuchos::FancyOStream& out,
         return;
       }
     }  // beta
-  }    // alpha
+  }  // alpha
 }
 
 template <class EntryType, class CoeffType, class DeviceType>

@@ -680,7 +680,7 @@ struct Random_UniqueIndex<Kokkos::Device<Kokkos::SYCL, MemorySpace>> {
     KOKKOS_COMPILER_INTEL_LLVM >= 20250000
     auto item = sycl::ext::oneapi::this_work_item::get_nd_item<3>();
 #else
-    auto item           = sycl::ext::oneapi::experimental::this_nd_item<3>();
+    auto item = sycl::ext::oneapi::experimental::this_nd_item<3>();
 #endif
     std::size_t threadIdx[3] = {item.get_local_id(2), item.get_local_id(1),
                                 item.get_local_id(0)};
@@ -823,7 +823,12 @@ class Random_XorShift64 {
 
   KOKKOS_INLINE_FUNCTION
   int rand(const int& start, const int& end) {
-    return rand(end - start) + start;
+    // Unsigned subtraction avoids signed-overflow UB when end-start > INT_MAX.
+    const uint32_t urange =
+        static_cast<uint32_t>(end) - static_cast<uint32_t>(start);
+    if (urange <= static_cast<uint32_t>(MAX_RAND))
+      return rand(static_cast<int>(urange)) + start;
+    return static_cast<int>(urand(urange) + static_cast<uint32_t>(start));
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -839,7 +844,14 @@ class Random_XorShift64 {
 
   KOKKOS_INLINE_FUNCTION
   int64_t rand64(const int64_t& start, const int64_t& end) {
-    return rand64(end - start) + start;
+    // Unsigned subtraction avoids signed-overflow UB when end-start >
+    // INT64_MAX. The signed path is preserved when the range fits, keeping PRNG
+    // streams identical for previously-valid inputs.
+    const uint64_t urange =
+        static_cast<uint64_t>(end) - static_cast<uint64_t>(start);
+    if (urange <= static_cast<uint64_t>(MAX_RAND64))
+      return rand64(static_cast<int64_t>(urange)) + start;
+    return static_cast<int64_t>(urand64(urange) + static_cast<uint64_t>(start));
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -908,7 +920,7 @@ class Random_XorShift64_Pool {
 #ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
   KOKKOS_DEFAULTED_FUNCTION Random_XorShift64_Pool() = default;
 #else
-  Random_XorShift64_Pool()   = default;
+  Random_XorShift64_Pool() = default;
 #endif
 
   Random_XorShift64_Pool(uint64_t seed) {
@@ -1094,7 +1106,12 @@ class Random_XorShift1024 {
 
   KOKKOS_INLINE_FUNCTION
   int rand(const int& start, const int& end) {
-    return rand(end - start) + start;
+    // Unsigned subtraction avoids signed-overflow UB when end-start > INT_MAX.
+    const uint32_t urange =
+        static_cast<uint32_t>(end) - static_cast<uint32_t>(start);
+    if (urange <= static_cast<uint32_t>(MAX_RAND))
+      return rand(static_cast<int>(urange)) + start;
+    return static_cast<int>(urand(urange) + static_cast<uint32_t>(start));
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -1110,7 +1127,14 @@ class Random_XorShift1024 {
 
   KOKKOS_INLINE_FUNCTION
   int64_t rand64(const int64_t& start, const int64_t& end) {
-    return rand64(end - start) + start;
+    // Unsigned subtraction avoids signed-overflow UB when end-start >
+    // INT64_MAX. The signed path is preserved when the range fits, keeping PRNG
+    // streams identical for previously-valid inputs.
+    const uint64_t urange =
+        static_cast<uint64_t>(end) - static_cast<uint64_t>(start);
+    if (urange <= static_cast<uint64_t>(MAX_RAND64))
+      return rand64(static_cast<int64_t>(urange)) + start;
+    return static_cast<int64_t>(urand64(urange) + static_cast<uint64_t>(start));
   }
 
   KOKKOS_INLINE_FUNCTION

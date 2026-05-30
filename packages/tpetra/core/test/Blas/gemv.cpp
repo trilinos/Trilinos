@@ -109,8 +109,20 @@ void testGemvVsTeuchosBlas(Teuchos::FancyOStream& out,
 
   {
     typedef KokkosKernels::ArithTraits<entry_type> KATE;
-    const entry_type maxVal =
-        Kokkos::rand<generator_type, entry_type>::max();
+    // For integer types the dot product A_row·x is computed in the same type
+    // with no wider accumulator, so large values cause signed-overflow UB.
+    // Worst case: |alpha|=2, numCols=13 (max tested), |beta|=2.
+    // Need: 2*13*maxVal^2 + 2*maxVal <= max(entry_type), i.e.
+    // 26*maxVal^2 + 2*maxVal <= max(entry_type).
+    // Using the exact positive root:
+    // maxVal <= floor((-2 + sqrt(4 + 104*max(entry_type))) / 52).
+    // - 64-bit: floor((-2 + sqrt(4 + 104*INT64_MAX)) / 52) = 595604800
+    // - 32-bit: floor((-2 + sqrt(4 + 104*INT32_MAX)) / 52) = 9088
+    const entry_type maxVal = std::is_integral<entry_type>::value
+                                  ? (sizeof(entry_type) >= 8
+                                         ? entry_type(595604800)
+                                         : entry_type(9088))
+                                  : Kokkos::rand<generator_type, entry_type>::max();
     const entry_type minVal =
         KATE::is_signed ? entry_type(-maxVal) : KATE::zero();
     Kokkos::fill_random(A_orig, randPool, minVal, maxVal);
@@ -189,11 +201,19 @@ void testGemvVsTeuchosBlas(Teuchos::FancyOStream& out,
       << "y_norm: " << y_norm << endl;
   // Add a little "fudge factor."  2 is enough for real, and 4 is
   // enough for complex.
-  const mag_type fudgeFactor    = KokkosKernels::ArithTraits<entry_type>::is_complex ? static_cast<mag_type>(4) : static_cast<mag_type>(2);
-  const mag_type nonTransFactor = A_norm * x_norm > fudgeFactor ? A_norm * x_norm : fudgeFactor;
+  const mag_type fudgeFactor = KokkosKernels::ArithTraits<entry_type>::is_complex ? static_cast<mag_type>(4) : static_cast<mag_type>(2);
+  // For exact-integer types eps == 0, so the bound is 0 and we must skip
+  // A_norm * x_norm / A_norm * y_norm, which would overflow mag_type for
+  // full-range integer entries (signed-overflow UB).
+  const bool exactInteger       = (eps == static_cast<mag_type>(0));
+  const mag_type nonTransFactor = exactInteger
+                                      ? fudgeFactor
+                                      : (A_norm * x_norm > fudgeFactor ? A_norm * x_norm : fudgeFactor);
   const mag_type nonTransBound  = nonTransFactor *
                                  static_cast<mag_type>(numCols) * eps;
-  const mag_type transFactor = A_norm * y_norm > fudgeFactor ? A_norm * y_norm : fudgeFactor;
+  const mag_type transFactor = exactInteger
+                                   ? fudgeFactor
+                                   : (A_norm * y_norm > fudgeFactor ? A_norm * y_norm : fudgeFactor);
   const mag_type transBound  = transFactor *
                               static_cast<mag_type>(numRows) * eps;
   out << "nonTransBound: " << nonTransBound << endl
