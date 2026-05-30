@@ -17,7 +17,7 @@
 #include "Tpetra_Details_ExecutionSpaces.hpp"
 #include <sstream>
 
-//#define DEBUG_UVM_REMOVAL  // Works only with gcc > 4.8
+// #define DEBUG_UVM_REMOVAL  // Works only with gcc > 4.8
 
 #ifdef DEBUG_UVM_REMOVAL
 
@@ -95,16 +95,16 @@ sync_device(DualViewType dualView) {}
 /// Since the DualView sync functions are not thread-safe, tracking should be disabled
 /// during host-parallel regions where WrappedDualView is used.
 
-extern bool wdvTrackingEnabled;
+extern TPETRACORE_LIB_DLL_EXPORT bool wdvTrackingEnabled;
 
 /// \brief Disable WrappedDualView reference-count tracking and syncing.
 /// Call this before entering a host-parallel region that uses WrappedDualView.
 /// For each WrappedDualView used in the parallel region, its view must be accessed
 /// (e.g. getHostView...) before disabling the tracking, so that it may be synced and marked modified correctly.
-void disableWDVTracking();
+TPETRACORE_LIB_DLL_EXPORT void disableWDVTracking();
 
 //! Enable WrappedDualView reference-count tracking and syncing. Call this after exiting a host-parallel region that uses WrappedDualView.
-void enableWDVTracking();
+TPETRACORE_LIB_DLL_EXPORT void enableWDVTracking();
 
 /// \brief A wrapper around Kokkos::DualView to safely manage data
 ///        that might be replicated between host and device.

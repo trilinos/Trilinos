@@ -22,7 +22,12 @@ TRIBITS_ADD_LIBRARY(
   kokkostsqr
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
+  ADDED_LIB_TARGET_NAME_OUT KOKKOSTSQR_LIBNAME
   )
+
+if(BUILD_SHARED_LIBS)
+  target_compile_definitions(${KOKKOSTSQR_LIBNAME} INTERFACE KOKKOSTSQR_SHARED_BUILD)
+endif()
 
 #
 # Make a trivial change to this comment if you add / remove a file either to
