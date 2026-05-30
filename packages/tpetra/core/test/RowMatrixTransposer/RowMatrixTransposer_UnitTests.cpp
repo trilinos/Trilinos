@@ -64,6 +64,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(RowMatrixTransposer, RectangularTranspose, LO,
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(RowMatrixTransposer, ComplexRectangularTranspose, LO, GO, Node) {
   typedef CrsMatrix<>::scalar_type Scalar;
   typedef CrsMatrix<Scalar, LO, GO, Node> MAT;
+#if KOKKOSKERNELS_VERSION < 50199
+  // KokkosKernels does not yet support conjugating the values.
+  return;
+#endif
   if (!Teuchos::ScalarTraits<Scalar>::isComplex)
     return;
   auto comm = Tpetra::getDefaultComm();

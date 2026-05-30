@@ -437,14 +437,6 @@ namespace BaskerNS
           #ifdef BASKER_TIMER
           printf( " >> LL(%d,%d).init_matrix done <<\n",b,row ); fflush(stdout);
           init_matrixL_time += timer_init_matrixL.seconds();
-          #endif
-
-          //Fix when this all happens in the future
-          if(Options.incomplete == BASKER_TRUE)
-          {
-            LL(b)(row).init_inc_lvl();
-          }
-          #ifdef BASKER_TIMER
           timer_fill_matrixL.reset();
           printf( " ++ zero out (%d) ++\n",int(LL(b)(row).col_ptr.extent(0)) ); fflush(stdout);
           #endif
@@ -557,12 +549,6 @@ namespace BaskerNS
           //LU(U_col)(U_row).fill();
           LU(U_col)(U_row).init_ptr();
           //Kokkos::deep_copy(LU(U_col)(U_row).col_ptr, 0);
-
-          if(Options.incomplete == BASKER_TRUE)
-          {
-            LU(U_col)(U_row).init_inc_lvl();
-          }
-
         }//over inner lvls
       }//if KID
 
@@ -767,7 +753,6 @@ namespace BaskerNS
     Int max_sep_size = 0;
 
     //printf( " *** kid=%d :: t_init_worksppace(%d, %d) ***\n",kid, flag,btf_tabs_offset );
-    #ifdef BASKER_2DL
     if(flag)
     {
       if(btf_tabs_offset != 0)
@@ -784,7 +769,7 @@ namespace BaskerNS
             {
               //defining here
               LL(b)(l).iws_size = LL(b)(l).nrow;
-              //This can be made smaller, see notes in Sfactor_old
+              //This can be made smaller, see notes in sfactor_old
               LL(b)(l).iws_mult = 5;
               LL(b)(l).ews_size = LL(b)(l).nrow;
               //This can be made smaller, see notes in sfactor_old
@@ -877,30 +862,6 @@ namespace BaskerNS
         }
       }//else
     }
-    #else //ifdef basker_2dl
-    if(flag)
-    {
-      if(btf_tabs_offset != 0)
-      {
-        INT_1DARRAY  &ws = thread_array(kid).iws;
-        ENTRY_1DARRAY &X = thread_array(kid).ews;
-        Int iws_size     = thread_array(kid).iws_size;
-        Int iws_mult     = thread_array(kid).iws_mult;
-        Int ews_size     = thread_array(kid).ews_size;
-        Int ews_mult     = thread_array(kid).ews_mult;
-      }
-    }
-    printf("init_workspace 1d, kid: %d size: %d %d %d %d \n",
-           kid, iws_mult, iws_size, ews_mult, ews_size);
-    for(Int i=0; i< iws_mult*iws_size; i++)
-    {
-      thread_array(kid).iws[i] = 0;
-    }
-    for(Int i = 0; i < ews_mult*ews_size; i++)
-    {
-      thread_array(kid).ews[i] = 0;
-    }
-    #endif  //endif def basker_2dl
     //return 0;
   }//end init_workspace
   

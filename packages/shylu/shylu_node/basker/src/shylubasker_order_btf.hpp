@@ -361,18 +361,6 @@ namespace BaskerNS
       }
     }
 
-    //Short circuit for incomplete
-    if(Options.incomplete == BASKER_TRUE)
-    {
-    #ifdef BASKER_DEBUG_ORDER_BTF
-      printf("Basker: break_into_parts - short ciruit incomplete\n");
-    #endif
-      BTF_A = A;
-      btf_nblks = 1;
-      btf_tabs_offset = 1;
-      return 0;
-    }
-
     Int scol_top          = 0;      // starting column of the BTF_A bloc
     Int scol              = M.ncol; // starting column of the BTF_C blocks (end of BTF_A block)
     Int blk_idx           = nblks;  // start at lower right corner block, move left and up the diagonal
@@ -847,7 +835,7 @@ namespace BaskerNS
     //JDB:Note, this needs to be changed just fixed for int/long
     MALLOC_INT_1DARRAY(CC, M.ncol+1);
 
-    if(Options.incomplete == BASKER_TRUE || Options.partial_facto != 0)
+    if(Options.partial_facto != 0)
     {
       if (Options.partial_facto != 0 && Options.verbose == BASKER_TRUE)
       {

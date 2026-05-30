@@ -231,7 +231,7 @@ template <typename T> struct LapackSerial {
   }
 
   // uplo = upper
-  inline static int sytrf_nopiv(const char uplo, const int m, T *A, const int lda, int *info) {
+  inline static int sytrf_nopiv(const char uplo, const bool conjugate, const int m, T *A, const int lda, int *info) {
       
     *info = 0; 
     if (m <= 0) 
@@ -252,7 +252,7 @@ template <typename T> struct LapackSerial {
       for (int j = i+1; j < m; j++) {
         const T aa = alpha * A[i + j*lda];
         for (int l = i+1; l <= j; l++) {
-          const T bb = arith_traits::conj(A[i + l*lda]);
+          const T bb = (conjugate ? arith_traits::conj(A[i + l*lda]) : A[i + l*lda]);
           A[l + j*lda] -= aa * bb;
         }
       }

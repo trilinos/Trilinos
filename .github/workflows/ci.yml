@@ -41,6 +41,10 @@ on:
         required: false
         type: number
         default: -1
+      skip-create-packageenables:
+        required: false
+        type: boolean
+        default: false
       extra-pr-driver-args:
         description: 'Extra arguments to be used when calling PullRequestLinuxDriverTest.py'
         required: false
@@ -126,6 +130,20 @@ jobs:
             slots_per_gpu=""
           fi
 
+          if [ "${{ inputs.skip-create-packageenables }}" == "true" ]
+          then
+            skip_create_packageenables="--skip-create-packageenables"
+          else
+            skip_create_packageenabels=""
+          fi
+
+          if [ -n "${{ inputs.extra-pr-driver-args }}" ]
+          then
+            extra_pr_driver_args="${{ inputs.extra-pr-driver-args }}"
+          else
+            extra_pr_driver_args=""
+          fi
+
           python3 ${TRILINOS_DIR}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
             --genconfig-build-name ${{ inputs.genconfig-string }} \
             ${{ inputs.target-branch && '--target-branch-name ' || '' }}${{ inputs.target-branch }} \
@@ -138,13 +156,14 @@ jobs:
             ${{ inputs.dashboard-build-name && '--dashboard-build-name ' || '' }}${{ inputs.dashboard-build-name }} \
             --ctest-driver ${TRILINOS_DIR}/cmake/SimpleTesting/cmake/ctest-driver.cmake \
             --ctest-drop-site ${{ inputs.ctest-drop-site }} \
-            --pullrequest-cdash-track ${{ inputs.cdash-track }} \
+            --pullrequest-cdash-track "${{ inputs.cdash-track }}" \
             --filename-subprojects ./package_subproject_list.cmake \
             --filename-packageenables ./packageEnables.cmake \
             ${num_concurrent_tests} \
             ${max_cores_allowed} \
             ${slots_per_gpu} \
-            ${{ inputs.extra-pr-driver-args }}
+            ${skip_create_packageenables} \
+            "${extra_pr_driver_args}"
       - name: Filtered build error logs
         if: success() || failure()
         shell: bash -l {0}
@@ -169,7 +188,7 @@ jobs:
         env:
           NODE_USE_SYSTEM_CA: 1
         with:
-          name: ${{ github.job }}-artifacts
+          name: ${{ inputs.dashboard-build-name }}-artifacts
           path: /home/runner/artifacts/*
           retention-days: 90
       - name: Write Summary

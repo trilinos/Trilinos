@@ -37,11 +37,12 @@ template <> struct Scale2x2_BlockInverseDiagonals<Side::Left, Algo::OnDevice> {
                   /// do nothing
                 } else if (pval < 0) {
                   /// take 2x2 block to D
-                  const value_type a00 = D(i - 1, 0), a01 = D(i - 1, 1), a10 = D(i, 0), a11 = D(i, 1);
+                  const value_type a00 = D(i - 1, 0), a01 = D(i - 1, 1),
+                                   a10 = D(i, 0), a11 = D(i, 1);
                   const value_type det = a00 * a11 - a10 * a01;
                   const value_type x0 = A(i - 1, 0), x1 = A(i, 0);
 
-                  A(i - 1, 0) = (a11 * x0 - a10 * x1) / det;
+                  A(i - 1, 0) = (a11 * x0 - a01 * x1) / det;
                   A(i, 0) = (-a10 * x0 + a00 * x1) / det;
                 } else {
                   const value_type a00 = D(i, 0);
@@ -59,11 +60,12 @@ template <> struct Scale2x2_BlockInverseDiagonals<Side::Left, Algo::OnDevice> {
                   /// do nothing
                 } else if (pval < 0) {
                   /// take 2x2 block to D
-                  const value_type a00 = D(i - 1, 0), a01 = D(i - 1, 1), a10 = D(i, 0), a11 = D(i, 1);
+                  const value_type a00 = D(i - 1, 0), a01 = D(i - 1, 1),
+                                   a10 = D(i, 0), a11 = D(i, 1);
                   const value_type det = a00 * a11 - a10 * a01;
                   Kokkos::parallel_for(Kokkos::TeamVectorRange(member, n), [=](const ordinal_type &j) {
                     const value_type x0 = A(i - 1, j), x1 = A(i, j);
-                    A(i - 1, j) = (a11 * x0 - a10 * x1) / det;
+                    A(i - 1, j) = (a11 * x0 - a01 * x1) / det;
                     A(i, j) = (-a10 * x0 + a00 * x1) / det;
                   });
                 } else {

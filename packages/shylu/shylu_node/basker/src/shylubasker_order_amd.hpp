@@ -138,17 +138,6 @@ namespace BaskerNS
     printf("\n"); 
     #endif
 
-    //If doing  iluk, we will not want this.
-    //See amd blk notes
-    if(Options.incomplete == BASKER_TRUE)
-    {
-      for(Int i = 0; i < M.ncol; i++)
-      {
-        p(i) = i;
-      }
-      return;
-    }
-
     INT_1DARRAY temp_p;
     BASKER_ASSERT(M.ncol > 0, "AMD perm not long enough");
     MALLOC_INT_1DARRAY(temp_p, M.ncol+1);
@@ -337,33 +326,13 @@ namespace BaskerNS
   )
   {
     // printf("=============BTF_BLK_AMD_CALLED========\n");
-    Int b_end = b_start+b_num;
-    if(Options.incomplete == BASKER_TRUE)
-    {
-      //We note that AMD on incomplete ILUK
-      //Seems realy bad and leads to a zero on the diag
-      //Therefore, we simply return the natural ordering
-      for(Int i = 0 ; i < M.ncol; i++)
-      {
-        p_amd(i) = i;
-      }
-
-      //We will makeup work to be 1, 
-      //Since BTF is not supported in our iluk
-      for(Int b = b_start; b < b_end; b++)
-      {
-        btf_nnz(b) = 1;
-        btf_work(b) = 1;
-      }
-
-      return BASKER_SUCCESS;
-    }
-
     #ifdef BASKER_TIMER
     Kokkos::Timer timer_order;
     double mwm_time = 0.0;
     double amd_time = 0.0;
     #endif
+
+    Int b_end = b_start+b_num;
 
     //p == length(M)
     //Scan over all blks

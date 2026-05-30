@@ -808,13 +808,7 @@ namespace BaskerNS
       //BTF Options
       btf_prune_size = (Int)BASKER_BTF_PRUNE_SIZE;
 
-      //Incomplete Factorization Options
-      //incomplete = (Int) BASKER_INCOMPLETE_LVL;
-      incomplete = BASKER_FALSE;
-      incomplete_type = BASKER_INCOMPLETE_LVL;
-      //incomplete_type = BASKER_INCOMPLETE_RLVL_LIMITED;
-      inc_lvl    = BASKER_INC_LVL_VALUE;
-      inc_tol    = BASKER_INC_TOL_VALUE;
+      //Memory allocation Option
       user_fill  = BASKER_FILL_USER;
 
       // Partial Factorization Option, 0: no, 1: form + factor, 2: only form
@@ -889,13 +883,9 @@ namespace BaskerNS
     //BTF Options
     BASKER_INT   btf_prune_size;
   
-    //Incomplete Factorization Options
-    BASKER_BOOL  incomplete;
-    BASKER_INT   incomplete_type;
-    BASKER_INT   inc_lvl;
-    BASKER_MAGNITUDE inc_tol;    //Not Used
+    //Memory allocation Option
     BASKER_MAGNITUDE user_fill;
-    
+
     // Partial Factorization Option
     int partial_facto;
     bool only_forward_solve;
