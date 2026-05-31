@@ -312,7 +312,7 @@ void testGemmVsTeuchosBlasForOneTransComb(Teuchos::FancyOStream& out,
         return;
       }
     }  // beta
-  }  // alpha
+  }    // alpha
 }
 
 template <class EntryType, class CoeffType, class DeviceType>
