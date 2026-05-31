@@ -559,9 +559,9 @@ struct LocalGraphFill {
     const auto num_remote_elements = _remote_gids.extent(0);
 
     const auto owned_first  = _owned_gids.data();
-    const auto owned_last   = owned_first + (num_owned_elements - 1);
+    const auto owned_last   = owned_first + num_owned_elements;
     const auto remote_first = _remote_gids.data();
-    const auto remote_last  = remote_first + (num_remote_elements - 1);
+    const auto remote_last  = remote_first + num_remote_elements;
 
     // sides on i
     {
