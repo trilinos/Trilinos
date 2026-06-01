@@ -2,6 +2,7 @@ Clearing old data (if any)
 
 Level 0
 Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
+"Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
 smoother -> 
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
@@ -14,6 +15,8 @@ Matrix filtering (MueLu::FilteredAFactory)
 Build (MueLu::BrickAggregationFactory)
 Using brick size: 3
 Generating Graph (trivial) (MueLu::BrickAggregationFactory)
+Detected 0 Dirichlet nodes
+"Brick": MueLu::Aggregates{nGlobalAggregates = not computed}
 aggregation: brick x size = 3
 Filtered matrix is not being constructed as no filtering is being done
 Build (MueLu::TentativePFactory)
@@ -24,6 +27,8 @@ Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
+Calculating max eigenvalue estimate now (max iters = 10, use point diagonal)
+Prolongator damping factor = 0.682215 (|1.33 / 1.94953|)
 matrixmatrix: kernel params -> 
  [empty list]
 Transpose P (MueLu::TransPFactory)
@@ -36,6 +41,7 @@ Transferring coordinates
 matrixmatrix: kernel params -> 
  [empty list]
 Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
+"Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [3333, 3333], Global nnz: 9997}
 smoother -> 
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
@@ -48,6 +54,8 @@ Matrix filtering (MueLu::FilteredAFactory)
 Build (MueLu::BrickAggregationFactory)
 Using brick size: 3
 Generating Graph (trivial) (MueLu::BrickAggregationFactory)
+Detected 0 Dirichlet nodes
+"Brick": MueLu::Aggregates{nGlobalAggregates = not computed}
 aggregation: brick x size = 3
 Filtered matrix is not being constructed as no filtering is being done
 Build (MueLu::TentativePFactory)
@@ -58,6 +66,8 @@ Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
+Calculating max eigenvalue estimate now (max iters = 10, use point diagonal)
+Prolongator damping factor = 0.682372 (|1.33 / 1.94908|)
 matrixmatrix: kernel params -> 
  [empty list]
 Transpose P (MueLu::TransPFactory)
@@ -83,10 +93,10 @@ Operator complexity = 1.44
 Smoother complexity = <ignored>
 Cycle type          = V
 
-level  rows  nnz    nnz/row  c ratio  procs
-  0  9999  29995  3.00                  1  
-  1  3333  9997   3.00     3.00         1  
-  2  1111  3331   3.00     3.00         1  
+level  rows    nnz  nnz/row  c ratio  procs
+  0    9999  29995     3.00               1
+  1    3333   9997     3.00     3.00      1
+  2    1111   3331     3.00     3.00      1
 
 Smoother (level 0) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
 

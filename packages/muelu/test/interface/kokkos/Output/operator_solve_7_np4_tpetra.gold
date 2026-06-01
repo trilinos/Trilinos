@@ -2,6 +2,7 @@ Clearing old data (if any)
 
 Level 0
 Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
+"Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [10000, 10000], Global nnz: 49600}
 smoother -> 
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
@@ -23,12 +24,12 @@ presmoother ->
 --------------------------------------------------------------------------------
 Number of levels    = 2
 Operator complexity = 1.31
-Smoother complexity = 2.91
+Smoother complexity = <ignored>
 Cycle type          = V
 
-level  rows   nnz    nnz/row  c ratio  procs
-  0  10000  49600  4.96                  4  
-  1  1700   15318  9.01     5.88         4  
+level   rows    nnz  nnz/row  c ratio  procs
+  0    10000  49600     4.96               4
+  1     1700  15318     9.01     5.88      4
 
 Smoother (level 0) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [10000, 10000], Global nnz: 49600}
 

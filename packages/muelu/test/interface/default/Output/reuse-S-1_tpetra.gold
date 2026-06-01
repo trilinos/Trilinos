@@ -2,6 +2,7 @@ Clearing old data (if any)
 
 Level 0
 Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
+"Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
 keep smoother data = 1
 smoother -> 
  relaxation: type = Symmetric Gauss-Seidel
@@ -17,6 +18,8 @@ Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 algorithm = "classical" classical algorithm = "default": threshold = 0, blocksize = 1
+Detected 0 Dirichlet nodes
+Number of dropped entries in unamalgamated matrix graph: 0/29995 (0%)
 lightweight wrap = 1
 Filtered matrix is not being constructed as no filtering is being done
 Build (MueLu::TentativePFactory)
@@ -25,11 +28,33 @@ BuildAggregatesNonKokkos (Phase - (Dirichlet))
 BuildAggregatesNonKokkos (Phase 1 (main))
 BuildAggregatesNonKokkos (Phase 2a (secondary))
 BuildAggregatesNonKokkos (Phase 2b (expansion))
+Algo "Phase - (Dirichlet)"
+  aggregated : 0 (phase), 0/9999 [0.00%] (total)
+  remaining  : 9999
+  aggregates : 0 (phase), 0 (total)
+Algo "Phase 1 (main)"
+  aggregated : 9998 (phase), 9998/9999 [99.99%] (total)
+  remaining  : 1
+  aggregates : 3333 (phase), 3333 (total)
+Algo "Phase 2a (secondary)"
+  aggregated : 0 (phase), 9998/9999 [99.99%] (total)
+  remaining  : 1
+  aggregates : 0 (phase), 3333 (total)
+Algo "Phase 2b (expansion)"
+  aggregated : 1 (phase), 9999/9999 [100.00%] (total)
+  remaining  : 0
+  aggregates : 0 (phase), 3333 (total)
+Algo "Phase 3 (cleanup)" [skipped since no nodes are left to aggregate]
+  aggregated : 0 (phase), 9999/9999 [100.00%] (total)
+  remaining  : 0
+  aggregates : 0 (phase), 3333 (total)
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
+Calculating max eigenvalue estimate now (max iters = 10, use point diagonal)
+Prolongator damping factor = 0.682215 (|1.33 / 1.94953|)
 matrixmatrix: kernel params -> 
  [empty list]
 Build (MueLu::RepartitionFactory)
@@ -43,6 +68,8 @@ Transferring coordinates
 matrixmatrix: kernel params -> 
  [empty list]
 Build (MueLu::RepartitionHeuristicFactory)
+Repartitioning?  NO:
+  current level = 1, first level where repartitioning can happen is 2
 Build (MueLu::Zoltan2Interface)
 ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{<ignored>}   [unused]
 No repartitioning necessary: partitions were left unchanged by the repartitioner
@@ -55,6 +82,7 @@ repartition: rebalance P and R = 1
 type = Restriction
 Computing Ac (MueLu::RebalanceAcFactory)
 Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
+"Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [3333, 3333], Global nnz: 9997}
 keep smoother data = 1
 smoother -> 
  relaxation: type = Symmetric Gauss-Seidel
@@ -70,6 +98,8 @@ Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 algorithm = "classical" classical algorithm = "default": threshold = 0, blocksize = 1
+Detected 0 Dirichlet nodes
+Number of dropped entries in unamalgamated matrix graph: 0/9997 (0%)
 lightweight wrap = 1
 Filtered matrix is not being constructed as no filtering is being done
 Build (MueLu::TentativePFactory)
@@ -78,11 +108,33 @@ BuildAggregatesNonKokkos (Phase - (Dirichlet))
 BuildAggregatesNonKokkos (Phase 1 (main))
 BuildAggregatesNonKokkos (Phase 2a (secondary))
 BuildAggregatesNonKokkos (Phase 2b (expansion))
+Algo "Phase - (Dirichlet)"
+  aggregated : 0 (phase), 0/3333 [0.00%] (total)
+  remaining  : 3333
+  aggregates : 0 (phase), 0 (total)
+Algo "Phase 1 (main)"
+  aggregated : 3332 (phase), 3332/3333 [99.97%] (total)
+  remaining  : 1
+  aggregates : 1111 (phase), 1111 (total)
+Algo "Phase 2a (secondary)"
+  aggregated : 0 (phase), 3332/3333 [99.97%] (total)
+  remaining  : 1
+  aggregates : 0 (phase), 1111 (total)
+Algo "Phase 2b (expansion)"
+  aggregated : 1 (phase), 3333/3333 [100.00%] (total)
+  remaining  : 0
+  aggregates : 0 (phase), 1111 (total)
+Algo "Phase 3 (cleanup)" [skipped since no nodes are left to aggregate]
+  aggregated : 0 (phase), 3333/3333 [100.00%] (total)
+  remaining  : 0
+  aggregates : 0 (phase), 1111 (total)
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
+Calculating max eigenvalue estimate now (max iters = 10, use point diagonal)
+Prolongator damping factor = 0.682371 (|1.33 / 1.94909|)
 matrixmatrix: kernel params -> 
  [empty list]
 Build (MueLu::RepartitionFactory)
@@ -96,6 +148,8 @@ Transferring coordinates
 matrixmatrix: kernel params -> 
  [empty list]
 Build (MueLu::RepartitionHeuristicFactory)
+Repartitioning?  NO:
+  comm size = 1
 Build (MueLu::Zoltan2Interface)
 ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{<ignored>}   [unused]
 No repartitioning necessary: partitions were left unchanged by the repartitioner
@@ -122,10 +176,10 @@ Operator complexity = 1.44
 Smoother complexity = <ignored>
 Cycle type          = V
 
-level  rows  nnz    nnz/row  c ratio  procs
-  0  9999  29995  3.00                  1  
-  1  3333  9997   3.00     3.00         1  
-  2  1111  3331   3.00     3.00         1  
+level  rows    nnz  nnz/row  c ratio  procs
+  0    9999  29995     3.00               1
+  1    3333   9997     3.00     3.00      1
+  2    1111   3331     3.00     3.00      1
 
 Smoother (level 0) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
 
@@ -138,6 +192,7 @@ Clearing old data (if any)
 
 Level 0
 Setup Smoother ("Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [9999, 9999], Global nnz: 29995})
+"Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
 keep smoother data = 1
 smoother -> 
  relaxation: type = Symmetric Gauss-Seidel
@@ -153,6 +208,8 @@ Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 algorithm = "classical" classical algorithm = "default": threshold = 0, blocksize = 1
+Detected 0 Dirichlet nodes
+Number of dropped entries in unamalgamated matrix graph: 0/29995 (0%)
 lightweight wrap = 1
 Filtered matrix is not being constructed as no filtering is being done
 Build (MueLu::TentativePFactory)
@@ -161,11 +218,33 @@ BuildAggregatesNonKokkos (Phase - (Dirichlet))
 BuildAggregatesNonKokkos (Phase 1 (main))
 BuildAggregatesNonKokkos (Phase 2a (secondary))
 BuildAggregatesNonKokkos (Phase 2b (expansion))
+Algo "Phase - (Dirichlet)"
+  aggregated : 0 (phase), 0/9999 [0.00%] (total)
+  remaining  : 9999
+  aggregates : 0 (phase), 0 (total)
+Algo "Phase 1 (main)"
+  aggregated : 9998 (phase), 9998/9999 [99.99%] (total)
+  remaining  : 1
+  aggregates : 3333 (phase), 3333 (total)
+Algo "Phase 2a (secondary)"
+  aggregated : 0 (phase), 9998/9999 [99.99%] (total)
+  remaining  : 1
+  aggregates : 0 (phase), 3333 (total)
+Algo "Phase 2b (expansion)"
+  aggregated : 1 (phase), 9999/9999 [100.00%] (total)
+  remaining  : 0
+  aggregates : 0 (phase), 3333 (total)
+Algo "Phase 3 (cleanup)" [skipped since no nodes are left to aggregate]
+  aggregated : 0 (phase), 9999/9999 [100.00%] (total)
+  remaining  : 0
+  aggregates : 0 (phase), 3333 (total)
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
+Calculating max eigenvalue estimate now (max iters = 10, use point diagonal)
+Prolongator damping factor = 0.682215 (|1.33 / 1.94953|)
 matrixmatrix: kernel params -> 
  [empty list]
 Build (MueLu::RepartitionFactory)
@@ -179,6 +258,8 @@ Transferring coordinates
 matrixmatrix: kernel params -> 
  [empty list]
 Build (MueLu::RepartitionHeuristicFactory)
+Repartitioning?  NO:
+  current level = 1, first level where repartitioning can happen is 2
 Build (MueLu::Zoltan2Interface)
 ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{<ignored>}   [unused]
 No repartitioning necessary: partitions were left unchanged by the repartitioner
@@ -191,6 +272,7 @@ repartition: rebalance P and R = 1
 type = Restriction
 Computing Ac (MueLu::RebalanceAcFactory)
 Setup Smoother ("Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [3333, 3333], Global nnz: 9997})
+"Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [3333, 3333], Global nnz: 9997}
 keep smoother data = 1
 smoother -> 
  relaxation: type = Symmetric Gauss-Seidel
@@ -206,6 +288,8 @@ Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 algorithm = "classical" classical algorithm = "default": threshold = 0, blocksize = 1
+Detected 0 Dirichlet nodes
+Number of dropped entries in unamalgamated matrix graph: 0/9997 (0%)
 lightweight wrap = 1
 Filtered matrix is not being constructed as no filtering is being done
 Build (MueLu::TentativePFactory)
@@ -214,11 +298,33 @@ BuildAggregatesNonKokkos (Phase - (Dirichlet))
 BuildAggregatesNonKokkos (Phase 1 (main))
 BuildAggregatesNonKokkos (Phase 2a (secondary))
 BuildAggregatesNonKokkos (Phase 2b (expansion))
+Algo "Phase - (Dirichlet)"
+  aggregated : 0 (phase), 0/3333 [0.00%] (total)
+  remaining  : 3333
+  aggregates : 0 (phase), 0 (total)
+Algo "Phase 1 (main)"
+  aggregated : 3332 (phase), 3332/3333 [99.97%] (total)
+  remaining  : 1
+  aggregates : 1111 (phase), 1111 (total)
+Algo "Phase 2a (secondary)"
+  aggregated : 0 (phase), 3332/3333 [99.97%] (total)
+  remaining  : 1
+  aggregates : 0 (phase), 1111 (total)
+Algo "Phase 2b (expansion)"
+  aggregated : 1 (phase), 3333/3333 [100.00%] (total)
+  remaining  : 0
+  aggregates : 0 (phase), 1111 (total)
+Algo "Phase 3 (cleanup)" [skipped since no nodes are left to aggregate]
+  aggregated : 0 (phase), 3333/3333 [100.00%] (total)
+  remaining  : 0
+  aggregates : 0 (phase), 1111 (total)
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
+Calculating max eigenvalue estimate now (max iters = 10, use point diagonal)
+Prolongator damping factor = 0.682371 (|1.33 / 1.94909|)
 matrixmatrix: kernel params -> 
  [empty list]
 Build (MueLu::RepartitionFactory)
@@ -232,6 +338,8 @@ Transferring coordinates
 matrixmatrix: kernel params -> 
  [empty list]
 Build (MueLu::RepartitionHeuristicFactory)
+Repartitioning?  NO:
+  comm size = 1
 Build (MueLu::Zoltan2Interface)
 ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{<ignored>}   [unused]
 No repartitioning necessary: partitions were left unchanged by the repartitioner
@@ -257,10 +365,10 @@ Operator complexity = 1.44
 Smoother complexity = <ignored>
 Cycle type          = V
 
-level  rows  nnz    nnz/row  c ratio  procs
-  0  9999  29995  3.00                  1  
-  1  3333  9997   3.00     3.00         1  
-  2  1111  3331   3.00     3.00         1  
+level  rows    nnz  nnz/row  c ratio  procs
+  0    9999  29995     3.00               1
+  1    3333   9997     3.00     3.00      1
+  2    1111   3331     3.00     3.00      1
 
 Smoother (level 0) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
 

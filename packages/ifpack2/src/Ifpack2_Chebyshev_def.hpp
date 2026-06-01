@@ -297,8 +297,10 @@ std::string Chebyshev<MatrixType>::description() const {
   } else {
     out << "Global matrix dimensions: ["
         << impl_.getMatrix()->getGlobalNumRows() << ", "
-        << impl_.getMatrix()->getGlobalNumCols() << "]"
-        << ", Global nnz: " << impl_.getMatrix()->getGlobalNumEntries();
+        << impl_.getMatrix()->getGlobalNumCols() << "]";
+    auto crs = getCrsMatrix();
+    if (!crs.is_null() && crs->haveGlobalConstants())
+      out << ", Global nnz: " << impl_.getMatrix()->getGlobalNumEntries();
   }
 
   out << "}";

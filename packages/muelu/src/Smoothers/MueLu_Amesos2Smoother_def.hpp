@@ -290,7 +290,9 @@ void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(Level& cu
     factorA = A;
   }
 
-  RCP<const Tpetra_CrsMatrix> tA = toTpetra(factorA);
+  RCP<Tpetra_CrsMatrix> tA = toTpetra(factorA);
+  if (!tA->haveGlobalConstants())
+    Teuchos::rcp_const_cast<typename Tpetra_CrsMatrix::crs_graph_type>(tA->getCrsGraph())->computeGlobalConstants();
 
   prec_ = Amesos2::create<Tpetra_CrsMatrix, Tpetra_MultiVector>(type_, tA);
   TEUCHOS_TEST_FOR_EXCEPTION(prec_ == Teuchos::null, Exceptions::RuntimeError, "Amesos2::create returns Teuchos::null");

@@ -2286,9 +2286,9 @@ void UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     Ac->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<Scalar>::one());
   }
 
-  // We *always* need global constants for the RAP, but not for the temps
+  // We compute global constants by default for the RAP, but not for the temps
   RAPparams->set("compute global constants: temporaries", RAPparams->get("compute global constants: temporaries", false));
-  RAPparams->set("compute global constants", true);
+  RAPparams->set("compute global constants", RAPparams->get("compute global constants", true));
 
   if (pL.get<bool>("rap: triple product") == false || isGPU) {
     if (pL.get<bool>("rap: triple product") && isGPU)
