@@ -22,7 +22,7 @@ Parameters<GO>::Parameters(Teuchos::CommandLineProcessor& clp, GO nx, GO ny, GO 
                            double h, double delta,
                            int PMLXL, int PMLXR, int PMLYL, int PMLYR, int PMLZL, int PMLZR,
                            double omega, double shift, GO mx, GO my, GO mz, int model,
-                           double lx, double ly, double conv, double diff)
+                           double lx, double ly, double lz, double conv, double diff)
   : nx_(nx)
   , ny_(ny)
   , nz_(nz)
@@ -52,6 +52,7 @@ Parameters<GO>::Parameters(Teuchos::CommandLineProcessor& clp, GO nx, GO ny, GO 
   , model_(model)
   , lx_(lx)
   , ly_(ly)
+  , lz_(lz)
   , conv_(conv)
   , diff_(diff) {
   clp.setOption("nx", &nx_, "mesh points in x-direction.");
@@ -86,6 +87,7 @@ Parameters<GO>::Parameters(Teuchos::CommandLineProcessor& clp, GO nx, GO ny, GO 
   clp.setOption("model", &model_, "velocity model");
   clp.setOption("lx", &lx_, "length in x-direction");
   clp.setOption("ly", &ly_, "length in y-direction");
+  clp.setOption("lz", &lz_, "length in z-direction");
   clp.setOption("convection", &conv_, "convection coefficient");
   clp.setOption("diffusion", &diff_, "diffusion coefficient");
 }
@@ -124,6 +126,9 @@ GO Parameters<GO>::GetNumGlobalElements() const {
 
   else if (matrixType == "Laplace3D" ||
            matrixType == "Brick3D" ||
+           matrixType == "Scalar3D_27PtSten" ||
+           matrixType == "HexFEM_LapStiff" ||
+           matrixType == "HexFEM_Mass" ||
            matrixType == "BigStar2D" ||
            matrixType == "Elasticity3D" ||
            matrixType == "Helmholtz3D")
@@ -180,6 +185,7 @@ Teuchos::ParameterList& Parameters<GO>::GetParameterList() const {
   paramList_->set("shift", shift_);
   paramList_->set("lx", lx_);
   paramList_->set("ly", ly_);
+  paramList_->set("lz", lz_);
   paramList_->set("convection", conv_);
   paramList_->set("diffusion", diff_);
 

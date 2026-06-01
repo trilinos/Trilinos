@@ -19,11 +19,11 @@
   <Parameter        name="tentative: calculate qr"              type="bool" value="false"/>
 
   <Parameter        name="aggregation: strength-of-connection: matrix" type="string"  value="MinvA"  />
-  <Parameter        name="aggregation: strength-of-connection: measure" type="string" value="smoothed aggregation"/>
+  <Parameter        name="aggregation: strength-of-connection: measure" type="string" value="signed ruge-stueben"/>
   <Parameter        name="aggregation: drop scheme" type="string"                     value="point-wise"          />
   <Parameter        name="filtered matrix: lumping choice"  type="string"             value="distributed lumping" />
   <Parameter        name="aggregation: symmetrize graph after dropping" type="bool"   value="false"               />
-  <Parameter        name="aggregation: drop tol" type="double"                        value=".02"                />
+  <Parameter        name="aggregation: drop tol" type="double"                        value=".1"                />
 
   <!-- ===========  SMOOTHING  =========== -->
   <Parameter        name="smoother: type"                       type="string"   value="RELAXATION"/>

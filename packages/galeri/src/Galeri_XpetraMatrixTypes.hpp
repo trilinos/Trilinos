@@ -781,6 +781,331 @@ class Brick3DStencil {
   }
 };
 
+template <class Scalar, class Map, bool keepBCs, bool scaleNeumBCstencil>
+class Scalar3D_27PtStencil {
+  //  low z plane      mid z plane      high z plane
+  // S111 S211 S311   S112 S212 S312   S113 S213 S313   low y
+  // S121 S221 S321   S122 S222 S322   S123 S223 S323
+  // S131 S231 S331   S132 S232 S332   S133 S233 S333   high y
+  // x-->             x-->             x-->
+
+  using ATS               = KokkosKernels::ArithTraits<Scalar>;
+  using impl_scalar_type  = typename ATS::val_type;
+  using LocalOrdinal      = typename Map::local_ordinal_type;
+  using GlobalOrdinal     = typename Map::global_ordinal_type;
+  using Node              = typename Map::node_type;
+  using local_map_type    = typename Map::local_map_type;
+  using local_matrix_type = typename ::Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type;
+  using rowptr_type       = typename local_matrix_type::row_map_type::non_const_type;
+  using colidx_type       = typename local_matrix_type::index_type::non_const_type;
+  using values_type       = typename local_matrix_type::values_type::non_const_type;
+  using exec_space        = typename Node::execution_space;
+  using memory_space      = typename Node::memory_space;
+  using hashmap_type      = typename Kokkos::UnorderedMap<GlobalOrdinal, void, exec_space>;
+  using StencilIndices    = GlobalOrdinal[3][3][3];
+
+  GlobalOrdinal nx = -1, ny = -1, nz = -1;
+  impl_scalar_type S111, S211, S311, S121, S221, S321, S131, S231, S331,
+      S112, S212, S312, S122, S222, S322, S132, S232, S332,
+      S113, S213, S313, S123, S223, S323, S133, S233, S333;
+  DirBC DirichletBC;
+  local_map_type lclMap;
+
+  const impl_scalar_type one  = KokkosKernels::ArithTraits<impl_scalar_type>::one();
+  const impl_scalar_type zero = KokkosKernels::ArithTraits<impl_scalar_type>::zero();
+  GlobalOrdinal INVALID;
+
+  Kokkos::View<impl_scalar_type[3][3][3], memory_space> stencil_entries;
+
+  const size_t LOW  = 0;
+  const size_t MID  = 1;
+  const size_t HIGH = 2;
+
+ public:
+  hashmap_type off_rank_indices;
+  local_map_type lclColMap;
+  colidx_type colidx;
+  values_type values;
+
+  Scalar3D_27PtStencil(const Map& map, GlobalOrdinal nx_, GlobalOrdinal ny_, GlobalOrdinal nz_,
+                       Scalar S111_, Scalar S211_, Scalar S311_,
+                       Scalar S121_, Scalar S221_, Scalar S321_,
+                       Scalar S131_, Scalar S231_, Scalar S331_,
+                       Scalar S112_, Scalar S212_, Scalar S312_,
+                       Scalar S122_, Scalar S222_, Scalar S322_,
+                       Scalar S132_, Scalar S232_, Scalar S332_,
+                       Scalar S113_, Scalar S213_, Scalar S313_,
+                       Scalar S123_, Scalar S223_, Scalar S323_,
+                       Scalar S133_, Scalar S233_, Scalar S333_, DirBC DirichletBC_)
+    : nx(nx_)
+    , ny(ny_)
+    , nz(nz_)
+    , S111(S111_)
+    , S211(S211_)
+    , S311(S311_)
+    , S121(S121_)
+    , S221(S221_)
+    , S321(S321_)
+    , S131(S131_)
+    , S231(S231_)
+    , S331(S331_)
+    , S112(S112_)
+    , S212(S212_)
+    , S312(S312_)
+    , S122(S122_)
+    , S222(S222_)
+    , S322(S322_)
+    , S132(S132_)
+    , S232(S232_)
+    , S332(S332_)
+    , S113(S113_)
+    , S213(S213_)
+    , S313(S313_)
+    , S123(S123_)
+    , S223(S223_)
+    , S323(S323_)
+    , S133(S133_)
+    , S233(S233_)
+    , S333(S333_)
+    , DirichletBC(DirichletBC_) {
+    lclMap  = map.getLocalMap();
+    INVALID = Teuchos::OrdinalTraits<GlobalOrdinal>::invalid();
+
+    stencil_entries        = Kokkos::View<impl_scalar_type[3][3][3], memory_space>("stencil_entries");
+    auto stencil_entries_h = Kokkos::create_mirror_view(stencil_entries);
+
+    // left plane
+    stencil_entries_h(LOW, LOW, LOW)   = S111;
+    stencil_entries_h(LOW, LOW, MID)   = S112;
+    stencil_entries_h(LOW, LOW, HIGH)  = S113;
+    stencil_entries_h(LOW, MID, LOW)   = S121;
+    stencil_entries_h(LOW, MID, MID)   = S122;
+    stencil_entries_h(LOW, MID, HIGH)  = S123;
+    stencil_entries_h(LOW, HIGH, LOW)  = S131;
+    stencil_entries_h(LOW, HIGH, MID)  = S132;
+    stencil_entries_h(LOW, HIGH, HIGH) = S133;
+
+    // middle plane
+    stencil_entries_h(MID, LOW, LOW)   = S211;
+    stencil_entries_h(MID, LOW, MID)   = S212;
+    stencil_entries_h(MID, LOW, HIGH)  = S213;
+    stencil_entries_h(MID, MID, LOW)   = S221;
+    stencil_entries_h(MID, MID, MID)   = S222;
+    stencil_entries_h(MID, MID, HIGH)  = S223;
+    stencil_entries_h(MID, HIGH, LOW)  = S231;
+    stencil_entries_h(MID, HIGH, MID)  = S232;
+    stencil_entries_h(MID, HIGH, HIGH) = S233;
+
+    // right plane
+    stencil_entries_h(HIGH, LOW, LOW)   = S311;
+    stencil_entries_h(HIGH, LOW, MID)   = S312;
+    stencil_entries_h(HIGH, LOW, HIGH)  = S313;
+    stencil_entries_h(HIGH, MID, LOW)   = S321;
+    stencil_entries_h(HIGH, MID, MID)   = S322;
+    stencil_entries_h(HIGH, MID, HIGH)  = S323;
+    stencil_entries_h(HIGH, HIGH, LOW)  = S331;
+    stencil_entries_h(HIGH, HIGH, MID)  = S332;
+    stencil_entries_h(HIGH, HIGH, HIGH) = S333;
+
+    Kokkos::deep_copy(stencil_entries, stencil_entries_h);
+  }
+
+  KOKKOS_FORCEINLINE_FUNCTION
+  void GetNeighbours(const GlobalOrdinal i,
+                     StencilIndices stencil_indices,
+                     bool& isDirichlet) const {
+    GlobalOrdinal low_x, low_y, low_z, high_x, high_y, high_z;
+
+    // still using this function as opposed to just computing this directly
+    GetNeighboursCartesian3dKokkos(i, nx, ny, nz, low_x, high_x, low_y, high_y, low_z, high_z, INVALID);
+
+    stencil_indices[0][0][0] = low_z - nx - 1;
+    stencil_indices[1][0][0] = low_z - nx;
+    stencil_indices[2][0][0] = low_z - nx + 1;
+    stencil_indices[0][1][0] = low_z - 1;
+    stencil_indices[1][1][0] = low_z;
+    stencil_indices[2][1][0] = low_z + 1;
+    stencil_indices[0][2][0] = low_z + nx - 1;
+    stencil_indices[1][2][0] = low_z + nx;
+    stencil_indices[2][2][0] = low_z + nx + 1;
+
+    stencil_indices[0][0][1] = i - nx - 1;
+    stencil_indices[1][0][1] = i - nx;
+    stencil_indices[2][0][1] = i - nx + 1;
+    stencil_indices[0][1][1] = i - 1;
+    stencil_indices[1][1][1] = i;
+    stencil_indices[2][1][1] = i + 1;
+    stencil_indices[0][2][1] = i + nx - 1;
+    stencil_indices[1][2][1] = i + nx;
+    stencil_indices[2][2][1] = i + nx + 1;
+
+    stencil_indices[0][0][2] = high_z - nx - 1;
+    stencil_indices[1][0][2] = high_z - nx;
+    stencil_indices[2][0][2] = high_z - nx + 1;
+    stencil_indices[0][1][2] = high_z - 1;
+    stencil_indices[1][1][2] = high_z;
+    stencil_indices[2][1][2] = high_z + 1;
+    stencil_indices[0][2][2] = high_z + nx - 1;
+    stencil_indices[1][2][2] = high_z + nx;
+    stencil_indices[2][2][2] = high_z + nx + 1;
+
+    // remove stencil entries that cross over boundary
+
+    if (low_z == INVALID) {
+      for (size_t k0 = 0; k0 < 3; ++k0)
+        for (size_t k1 = 0; k1 < 3; ++k1)
+          stencil_indices[k0][k1][0] = INVALID;
+    }
+    if (high_z == INVALID) {
+      for (size_t k0 = 0; k0 < 3; ++k0)
+        for (size_t k1 = 0; k1 < 3; ++k1)
+          stencil_indices[k0][k1][2] = INVALID;
+    }
+    if (low_y == INVALID) {
+      for (size_t k0 = 0; k0 < 3; ++k0)
+        for (size_t k2 = 0; k2 < 3; ++k2)
+          stencil_indices[k0][0][k2] = INVALID;
+    }
+    if (high_y == INVALID) {
+      for (size_t k0 = 0; k0 < 3; ++k0)
+        for (size_t k2 = 0; k2 < 3; ++k2)
+          stencil_indices[k0][2][k2] = INVALID;
+    }
+    if (low_x == INVALID) {
+      for (size_t k1 = 0; k1 < 3; ++k1)
+        for (size_t k2 = 0; k2 < 3; ++k2)
+          stencil_indices[0][k1][k2] = INVALID;
+    }
+    if (high_x == INVALID) {
+      for (size_t k1 = 0; k1 < 3; ++k1)
+        for (size_t k2 = 0; k2 < 3; ++k2)
+          stencil_indices[2][k1][k2] = INVALID;
+    }
+
+    // keeping the original LEFT,RIGHT,BOTTOM ... notation
+    isDirichlet = (low_x == INVALID && (DirichletBC & DIR_LEFT)) ||
+                  (high_x == INVALID && (DirichletBC & DIR_RIGHT)) ||
+                  (low_z == INVALID && (DirichletBC & DIR_BOTTOM)) ||
+                  (high_z == INVALID && (DirichletBC & DIR_TOP)) ||
+                  (low_y == INVALID && (DirichletBC & DIR_FRONT)) ||
+                  (high_y == INVALID && (DirichletBC & DIR_BACK));
+  }
+
+  KOKKOS_FORCEINLINE_FUNCTION
+  bool IsBoundary(const GlobalOrdinal i) const {
+    GlobalOrdinal ix  = i % nx;
+    GlobalOrdinal ixy = i % (nx * ny);
+    GlobalOrdinal iy  = (ixy - ix) / nx;
+    GlobalOrdinal iz  = (i - ixy) / (nx * ny);
+    return (ix == 0 || ix == nx - 1 || iy == 0 || iy == ny - 1 || iz == 0 || iz == nz - 1);
+  }
+
+  KOKKOS_FORCEINLINE_FUNCTION
+  void CountRowNNZ(const GlobalOrdinal i, LocalOrdinal& partial_nnz, const bool is_final) const {
+    GlobalOrdinal center;
+    StencilIndices stencil_indices;
+    bool isDirichlet;
+
+    center = lclMap.getGlobalElement(i);
+    GetNeighbours(center, stencil_indices, isDirichlet);
+
+    if (isDirichlet && keepBCs) {
+      // Dirichlet unknown we want to keep
+      Galeri_processEntry(center);
+    } else {
+      for (size_t k0 = 0; k0 < 3; ++k0)
+        for (size_t k1 = 0; k1 < 3; ++k1)
+          for (size_t k2 = 0; k2 < 3; ++k2)
+            Galeri_processEntry(stencil_indices[k0][k1][k2]);
+    }
+  }
+
+  // This version adjust stencil near Neumman boundaries to match a standard FE code
+  // For interior stencil points, scale factor will be 1. On a Neumann boundary
+  // the scale factor migth be 1, 1/2, 1/4, 1/8 depending on the location of the
+  // off diagonal.
+  KOKKOS_FORCEINLINE_FUNCTION
+  void EnterValues(const LocalOrdinal i, typename rowptr_type::value_type& entryPtr) const {
+    GlobalOrdinal center;
+    StencilIndices stencil_indices;
+    bool isDirichlet;
+    typename rowptr_type::value_type rowStart = entryPtr;
+
+    center = lclMap.getGlobalElement(i);
+    GetNeighbours(center, stencil_indices, isDirichlet);
+    impl_scalar_type offDiagonalSum = zero;
+    if (isDirichlet && keepBCs) {  // just a Dirichlet point
+      // Dirichlet unknown we want to keep
+      Galeri_enterValue(rowStart, center, one);
+    } else if (!isDirichlet && scaleNeumBCstencil) {  // interior or Neum. BC
+      GlobalOrdinal ii, jj, kk, remainder;
+      // compute grid location (ii,jj,kk) corresponding to center
+      ii        = (center % nx);
+      remainder = (center - ii) / nx;
+      jj        = (remainder % ny);
+      kk        = (remainder - jj) / ny;
+
+      for (size_t k0 = 0; k0 < 3; ++k0) {
+        for (size_t k1 = 0; k1 < 3; ++k1) {
+          for (size_t k2 = 0; k2 < 3; ++k2) {
+            // To handle Neum. BCs, we must scale certain stencil
+            // coefficients near the boundary.  The basic idea is to
+            // divide scaleFactor by 2 for each coord direction on boundary
+            impl_scalar_type scaleFactor = one;
+            if (ii == 0) {
+              if (k0 == 0)
+                scaleFactor = zero;
+              else if (k0 == 1)
+                scaleFactor /= 2.;
+            }
+            if (ii == nx - 1) {
+              if (k0 == 2)
+                scaleFactor = zero;
+              else if (k0 == 1)
+                scaleFactor /= 2.;
+            }
+            if (jj == 0) {
+              if (k1 == 0)
+                scaleFactor = zero;
+              else if (k1 == 1)
+                scaleFactor /= 2.;
+            }
+            if (jj == ny - 1) {
+              if (k1 == 2)
+                scaleFactor = zero;
+              else if (k1 == 1)
+                scaleFactor /= 2.;
+            }
+            if (kk == 0) {
+              if (k2 == 0)
+                scaleFactor = zero;
+              else if (k2 == 1)
+                scaleFactor /= 2.;
+            }
+            if (kk == nz - 1) {
+              if (k2 == 2)
+                scaleFactor = zero;
+              else if (k2 == 1)
+                scaleFactor /= 2.;
+            }
+            Galeri_enterValue(rowStart, stencil_indices[k0][k1][k2], (scaleFactor * stencil_entries(k0, k1, k2)));
+          }
+        }
+      }
+    } else {  // Implicitly handled Dirichlet bcs. Truncate stencil for entries that fall over the boundary
+      for (size_t k0 = 0; k0 < 3; ++k0) {
+        for (size_t k1 = 0; k1 < 3; ++k1) {
+          for (size_t k2 = 0; k2 < 3; ++k2) {
+            if ((k0 != MID) || (k1 != MID) || (k2 != MID))
+              Galeri_enterValue(rowStart, stencil_indices[k0][k1][k2], (stencil_entries(k0, k1, k2)));
+          }
+        }
+      }
+      Galeri_enterValue(rowStart, center, (IsBoundary(center) && !isDirichlet) ? -offDiagonalSum : stencil_entries(MID, MID, MID));
+    }
+  }
+};
+
 #undef Galeri_processEntry
 #undef Galeri_enterValue
 
@@ -1427,6 +1752,51 @@ Brick3D(const Teuchos::RCP<const Map>& map,
                                                nx, ny, nz,
                                                a, b, c, d, e, f, g,
                                                DirichletBC);
+    return StencilMatrix<Matrix>(map, stencil, label);
+  }
+}
+
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix>
+Teuchos::RCP<Matrix>
+Scalar3D_27Pt(const Teuchos::RCP<const Map>& map,
+              const GlobalOrdinal nx, const GlobalOrdinal ny, const GlobalOrdinal nz,
+              const Scalar S111, const Scalar S211, const Scalar S311,
+              const Scalar S121, const Scalar S221, const Scalar S321,
+              const Scalar S131, const Scalar S231, const Scalar S331,
+              const Scalar S112, const Scalar S212, const Scalar S312,
+              const Scalar S122, const Scalar S222, const Scalar S322,
+              const Scalar S132, const Scalar S232, const Scalar S332,
+              const Scalar S113, const Scalar S213, const Scalar S313,
+              const Scalar S123, const Scalar S223, const Scalar S323,
+              const Scalar S133, const Scalar S233, const Scalar S333,
+              const DirBC DirichletBC = 0, const bool keepBCs = false, const std::string& label = "Scalar3D_27Pt", bool scaleNeumBCstencil = false) {
+  if ((keepBCs) && (scaleNeumBCstencil)) {
+    Scalar3D_27PtStencil<Scalar, Map, true, true> stencil(*map, nx, ny, nz,
+                                                          S111, S211, S311, S121, S221, S321, S131, S231, S331,
+                                                          S112, S212, S312, S122, S222, S322, S132, S232, S332,
+                                                          S113, S213, S313, S123, S223, S323, S133, S233, S333,
+                                                          DirichletBC);
+    return StencilMatrix<Matrix>(map, stencil, label);
+  } else if ((!keepBCs) && (scaleNeumBCstencil)) {
+    Scalar3D_27PtStencil<Scalar, Map, false, true> stencil(*map, nx, ny, nz,
+                                                           S111, S211, S311, S121, S221, S321, S131, S231, S331,
+                                                           S112, S212, S312, S122, S222, S322, S132, S232, S332,
+                                                           S113, S213, S313, S123, S223, S323, S133, S233, S333,
+                                                           DirichletBC);
+    return StencilMatrix<Matrix>(map, stencil, label);
+  } else if ((keepBCs) && (!scaleNeumBCstencil)) {
+    Scalar3D_27PtStencil<Scalar, Map, true, false> stencil(*map, nx, ny, nz,
+                                                           S111, S211, S311, S121, S221, S321, S131, S231, S331,
+                                                           S112, S212, S312, S122, S222, S322, S132, S232, S332,
+                                                           S113, S213, S313, S123, S223, S323, S133, S233, S333,
+                                                           DirichletBC);
+    return StencilMatrix<Matrix>(map, stencil, label);
+  } else {
+    Scalar3D_27PtStencil<Scalar, Map, false, false> stencil(*map, nx, ny, nz,
+                                                            S111, S211, S311, S121, S221, S321, S131, S231, S331,
+                                                            S112, S212, S312, S122, S222, S322, S132, S232, S332,
+                                                            S113, S213, S313, S123, S223, S323, S133, S233, S333,
+                                                            DirichletBC);
     return StencilMatrix<Matrix>(map, stencil, label);
   }
 }

@@ -454,6 +454,325 @@ Teuchos::RCP<typename Problem<Map, Matrix, MultiVector>::RealValuedMultiVector> 
   return this->Coords_;
 }
 
+// =============================================  Scalar3D_27Pt =============================================
+
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
+Scalar3D_27PtProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, MultiVector>::Scalar3D_27PtProblem(Teuchos::ParameterList& list, const Teuchos::RCP<const Map>& map)
+  : ScalarProblem<Map, Matrix, MultiVector>(list, map) {}
+
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
+Teuchos::RCP<Matrix> Scalar3D_27PtProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, MultiVector>::BuildMatrix() {
+  Teuchos::ParameterList list = this->list_;
+  GlobalOrdinal nx            = -1;
+  GlobalOrdinal ny            = -1;
+  GlobalOrdinal nz            = -1;
+
+  if (list.isParameter("nx")) {
+    if (list.isType<int>("nx"))
+      nx = Teuchos::as<GlobalOrdinal>(list.get<int>("nx"));
+    else
+      nx = list.get<GlobalOrdinal>("nx");
+  }
+  if (list.isParameter("ny")) {
+    if (list.isType<int>("ny"))
+      ny = Teuchos::as<GlobalOrdinal>(list.get<int>("ny"));
+    else
+      ny = list.get<GlobalOrdinal>("ny");
+  }
+  if (list.isParameter("nz")) {
+    if (list.isType<int>("nz"))
+      nz = Teuchos::as<GlobalOrdinal>(list.get<int>("nz"));
+    else
+      nz = list.get<GlobalOrdinal>("nz");
+  }
+
+  if (nx == -1 || ny == -1 || nz == -1) {
+    GlobalOrdinal n = this->Map_->getGlobalNumElements();
+    nx              = (GlobalOrdinal)Teuchos::ScalarTraits<double>::pow(n, 0.33334);
+    ny              = nx;
+    nz              = nx;
+    TEUCHOS_TEST_FOR_EXCEPTION(nx * ny * nz != n, std::logic_error, "You need to specify nx, ny, and nz");
+  }
+  Scalar S111 = -1.0, S211 = -1.0, S311 = -1.0;
+  Scalar S121 = -1.0, S221 = -1.0, S321 = -1.0;
+  Scalar S131 = -1.0, S231 = -1.0, S331 = -1.0;
+  Scalar S112 = -1.0, S212 = -1.0, S312 = -1.0;
+  Scalar S122 = -1.0, S222 = 26.0, S322 = -1.0;
+  Scalar S132 = -1.0, S232 = -1.0, S332 = -1.0;
+  Scalar S113 = -1.0, S213 = -1.0, S313 = -1.0;
+  Scalar S123 = -1.0, S223 = -1.0, S323 = -1.0;
+  Scalar S133 = -1.0, S233 = -1.0, S333 = -1.0;
+
+  // 27-pt stencil given by
+  //
+  //            ^    S131  S231 S331
+  //     z=-1   |y   S121  S221 S321
+  //            |    S111  S211 S311
+  //                 ----- x ------>
+  //
+  //            ^    S132  S232 S332
+  //     z= 0   |y   S122  S222 S322
+  //            |    S112  S212 S312
+  //                 ----- x ------>
+  //
+  //            ^    S133  S233 S333
+  //     z=+1   |y   S123  S223 S323
+  //            |    S113  S213 S313
+  //                 ----- x ------>
+  //
+  if ((list.isParameter("S111")) && (list.isType<Scalar>("S111"))) S111 = list.get("S111", -1);
+  if ((list.isParameter("S112")) && (list.isType<Scalar>("S112"))) S112 = list.get("S112", -1);
+  if ((list.isParameter("S113")) && (list.isType<Scalar>("S113"))) S113 = list.get("S113", -1);
+  if ((list.isParameter("S121")) && (list.isType<Scalar>("S121"))) S121 = list.get("S121", -1);
+  if ((list.isParameter("S122")) && (list.isType<Scalar>("S122"))) S122 = list.get("S122", -1);
+  if ((list.isParameter("S123")) && (list.isType<Scalar>("S123"))) S123 = list.get("S123", -1);
+  if ((list.isParameter("S131")) && (list.isType<Scalar>("S131"))) S131 = list.get("S131", -1);
+  if ((list.isParameter("S132")) && (list.isType<Scalar>("S132"))) S132 = list.get("S132", -1);
+  if ((list.isParameter("S133")) && (list.isType<Scalar>("S133"))) S133 = list.get("S133", -1);
+
+  if ((list.isParameter("S211")) && (list.isType<Scalar>("S211"))) S211 = list.get("S211", -1);
+  if ((list.isParameter("S212")) && (list.isType<Scalar>("S212"))) S212 = list.get("S212", -1);
+  if ((list.isParameter("S213")) && (list.isType<Scalar>("S213"))) S213 = list.get("S213", -1);
+  if ((list.isParameter("S221")) && (list.isType<Scalar>("S221"))) S221 = list.get("S221", -1);
+  if ((list.isParameter("S222")) && (list.isType<Scalar>("S222"))) S222 = list.get("S222", 26.0);
+  if ((list.isParameter("S223")) && (list.isType<Scalar>("S223"))) S223 = list.get("S223", -1);
+  if ((list.isParameter("S231")) && (list.isType<Scalar>("S231"))) S231 = list.get("S231", -1);
+  if ((list.isParameter("S232")) && (list.isType<Scalar>("S232"))) S232 = list.get("S232", -1);
+  if ((list.isParameter("S233")) && (list.isType<Scalar>("S233"))) S233 = list.get("S233", -1);
+
+  if ((list.isParameter("S311")) && (list.isType<Scalar>("S311"))) S311 = list.get("S311", -1);
+  if ((list.isParameter("S312")) && (list.isType<Scalar>("S312"))) S312 = list.get("S312", -1);
+  if ((list.isParameter("S313")) && (list.isType<Scalar>("S313"))) S313 = list.get("S313", -1);
+  if ((list.isParameter("S321")) && (list.isType<Scalar>("S321"))) S321 = list.get("S321", -1);
+  if ((list.isParameter("S322")) && (list.isType<Scalar>("S322"))) S322 = list.get("S322", -1);
+  if ((list.isParameter("S323")) && (list.isType<Scalar>("S323"))) S323 = list.get("S323", -1);
+  if ((list.isParameter("S331")) && (list.isType<Scalar>("S331"))) S331 = list.get("S331", -1);
+  if ((list.isParameter("S332")) && (list.isType<Scalar>("S332"))) S332 = list.get("S332", -1);
+  if ((list.isParameter("S333")) && (list.isType<Scalar>("S333"))) S333 = list.get("S333", -1);
+
+  bool keepBCs = this->list_.get("keepBCs", false);
+
+  this->A_ = Scalar3D_27Pt<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix>(this->Map_, nx, ny, nz,
+                                                                             S111, S211, S311, S121, S221, S321, S131, S231, S331,
+                                                                             S112, S212, S312, S122, S222, S322, S132, S232, S332,
+                                                                             S113, S213, S313, S123, S223, S323, S133, S233, S333,
+                                                                             this->DirichletBC_, keepBCs, "3D 27 point stencil", false);
+  this->A_->setObjectLabel(this->getObjectLabel());
+  return this->A_;
+}
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
+Teuchos::RCP<typename Problem<Map, Matrix, MultiVector>::RealValuedMultiVector> Scalar3D_27PtProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, MultiVector>::BuildCoords() {
+  Teuchos::ParameterList list = this->list_;
+  this->Coords_               = Utils::CreateCartesianCoordinates<typename RealValuedMultiVector::scalar_type, LocalOrdinal, GlobalOrdinal, Map, RealValuedMultiVector>("3D", this->Map_, this->list_);
+
+  return this->Coords_;
+}
+
+// =============================================  HexFEM_LapStiff =============================================
+
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
+HexFEM_LapStiffProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, MultiVector>::HexFEM_LapStiffProblem(Teuchos::ParameterList& list, const Teuchos::RCP<const Map>& map)
+  : ScalarProblem<Map, Matrix, MultiVector>(list, map) {}
+
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
+Teuchos::RCP<Matrix> HexFEM_LapStiffProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, MultiVector>::BuildMatrix() {
+  Teuchos::ParameterList list = this->list_;
+  GlobalOrdinal nx            = -1;
+  GlobalOrdinal ny            = -1;
+  GlobalOrdinal nz            = -1;
+
+  if (list.isParameter("nx")) {
+    if (list.isType<int>("nx"))
+      nx = Teuchos::as<GlobalOrdinal>(list.get<int>("nx"));
+    else
+      nx = list.get<GlobalOrdinal>("nx");
+  }
+  if (list.isParameter("ny")) {
+    if (list.isType<int>("ny"))
+      ny = Teuchos::as<GlobalOrdinal>(list.get<int>("ny"));
+    else
+      ny = list.get<GlobalOrdinal>("ny");
+  }
+  if (list.isParameter("nz")) {
+    if (list.isType<int>("nz"))
+      nz = Teuchos::as<GlobalOrdinal>(list.get<int>("nz"));
+    else
+      nz = list.get<GlobalOrdinal>("nz");
+  }
+
+  if (nx == -1 || ny == -1 || nz == -1) {
+    GlobalOrdinal n = this->Map_->getGlobalNumElements();
+    nx              = (GlobalOrdinal)Teuchos::ScalarTraits<double>::pow(n, 0.33334);
+    ny              = nx;
+    nz              = nx;
+    TEUCHOS_TEST_FOR_EXCEPTION(nx * ny * nz != n, std::logic_error, "You need to specify nx, ny, and nz");
+  }
+  Scalar one      = Teuchos::ScalarTraits<Scalar>::one();
+  Scalar stretchx = (Scalar)this->list_.get("stretchx", one);
+  Scalar stretchy = (Scalar)this->list_.get("stretchy", one);
+  Scalar stretchz = (Scalar)this->list_.get("stretchz", one);
+  Scalar lx       = (Scalar)this->list_.get("lx", one);
+  Scalar ly       = (Scalar)this->list_.get("ly", one);
+  Scalar lz       = (Scalar)this->list_.get("lz", one);
+  Scalar hx, hy, hz;
+
+  // not sure why in other galeri spots nx+1,ny+1,nz+1 are used. When
+  // coordinates printed, nx-1,ny-1,nz-1 must be used to match coordinates
+  hx = stretchx * lx / (nx - 1);
+  hy = stretchy * ly / (ny - 1);
+  hz = stretchz * lz / (nz - 1);
+
+  // Unassembled stiffness matrix coefficients
+
+  Scalar Sdiag     = (hy * hz) / (9. * hx) + (hx * (hy * hy + hz * hz)) / (9. * hy * hz);  // good
+  Scalar Sxneigh   = (-1. / 9.) * (hy * hz) / hx + (hx * (hy * hy + hz * hz)) / (18. * hy * hz);
+  Scalar Syneigh   = (hx * hy) / (18. * hz) - (hx * hz) / (9. * hy) + (hy * hz) / (18. * hx);  // good
+  Scalar Szneigh   = (-1 / 9.) * (hx * hy) / hz + (hx * hz) / (18. * hy) + (hy * hz) / (18. * hx);
+  Scalar Sxyneigh  = (hx * hy) / (36. * hz) - (hx * hz) / (18. * hy) - (hy * hz) / (18. * hx);  // good
+  Scalar Sxzneigh  = (-1 / 18.) * (hx * hy) / hz + (hx * hz) / (36. * hy) - (hy * hz) / (18. * hx);
+  Scalar Syzneigh  = (hy * hz) / (36. * hx) - (hx * (hy * hy + hz * hz)) / (18. * hy * hz);  // good
+  Scalar Sxyzneigh = (-1 / 36.) * (hy * hz) / hx - (hx * (hy * hy + hz * hz)) / (36. * hy * hz);
+
+  // We assume an interior stencil. So the diagonal entry has 8
+  // contributions, while off-diagonals have either 1, 2, or 4
+  // contributions
+  Scalar S111 = Sxyzneigh, S211 = Syzneigh * 2., S311 = Sxyzneigh;
+  Scalar S121 = Sxzneigh * 2.0, S221 = Szneigh * 4., S321 = Sxzneigh * 2.0;
+  Scalar S131 = Sxyzneigh, S231 = Syzneigh * 2., S331 = Sxyzneigh;
+
+  Scalar S112 = Sxyneigh * 2., S212 = Syneigh * 4., S312 = Sxyneigh * 2.;
+  Scalar S122 = Sxneigh * 4., S222 = Sdiag * 8., S322 = Sxneigh * 4.;
+  Scalar S132 = Sxyneigh * 2., S232 = Syneigh * 4, S332 = Sxyneigh * 2;
+
+  Scalar S113 = Sxyzneigh, S213 = Syzneigh * 2., S313 = Sxyzneigh;
+  Scalar S123 = Sxzneigh * 2.0, S223 = Szneigh * 4., S323 = Sxzneigh * 2.0;
+  Scalar S133 = Sxyzneigh, S233 = Syzneigh * 2., S333 = Sxyzneigh;
+
+  // 27-pt stencil given by
+  //
+  //            ^    S131  S231 S331
+  //     z=-1   |y   S121  S221 S321
+  //            |    S111  S211 S311
+  //                 ----- x ------>
+  //
+  //            ^    S132  S232 S332
+  //     z= 0   |y   S122  S222 S322
+  //            |    S112  S212 S312
+  //                 ----- x ------>
+  //
+  //            ^    S133  S233 S333
+  //     z=+1   |y   S123  S223 S323
+  //            |    S113  S213 S313
+  //                 ----- x ------>
+  //
+
+  bool keepBCs = this->list_.get("keepBCs", false);
+
+  this->A_ = Scalar3D_27Pt<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix>(this->Map_, nx, ny, nz,
+                                                                             S111, S211, S311, S121, S221, S321, S131, S231, S331,
+                                                                             S112, S212, S312, S122, S222, S322, S132, S232, S332,
+                                                                             S113, S213, S313, S123, S223, S323, S133, S233, S333,
+                                                                             this->DirichletBC_, keepBCs, "HexFEM_LapStiff", true);
+  this->A_->setObjectLabel(this->getObjectLabel());
+  return this->A_;
+}
+
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
+Teuchos::RCP<typename Problem<Map, Matrix, MultiVector>::RealValuedMultiVector> HexFEM_LapStiffProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, MultiVector>::BuildCoords() {
+  Teuchos::ParameterList list = this->list_;
+  this->Coords_               = Utils::CreateCartesianCoordinates<typename RealValuedMultiVector::scalar_type, LocalOrdinal, GlobalOrdinal, Map, RealValuedMultiVector>("3D", this->Map_, this->list_);
+
+  return this->Coords_;
+}
+
+// =============================================  HexFEM_Mass =============================================
+
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
+HexFEM_MassProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, MultiVector>::HexFEM_MassProblem(Teuchos::ParameterList& list, const Teuchos::RCP<const Map>& map)
+  : ScalarProblem<Map, Matrix, MultiVector>(list, map) {}
+
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
+Teuchos::RCP<Matrix> HexFEM_MassProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, MultiVector>::BuildMatrix() {
+  Teuchos::ParameterList list = this->list_;
+  GlobalOrdinal nx            = -1;
+  GlobalOrdinal ny            = -1;
+  GlobalOrdinal nz            = -1;
+
+  if (list.isParameter("nx")) {
+    if (list.isType<int>("nx"))
+      nx = Teuchos::as<GlobalOrdinal>(list.get<int>("nx"));
+    else
+      nx = list.get<GlobalOrdinal>("nx");
+  }
+  if (list.isParameter("ny")) {
+    if (list.isType<int>("ny"))
+      ny = Teuchos::as<GlobalOrdinal>(list.get<int>("ny"));
+    else
+      ny = list.get<GlobalOrdinal>("ny");
+  }
+  if (list.isParameter("nz")) {
+    if (list.isType<int>("nz"))
+      nz = Teuchos::as<GlobalOrdinal>(list.get<int>("nz"));
+    else
+      nz = list.get<GlobalOrdinal>("nz");
+  }
+
+  if (nx == -1 || ny == -1 || nz == -1) {
+    GlobalOrdinal n = this->Map_->getGlobalNumElements();
+    nx              = (GlobalOrdinal)Teuchos::ScalarTraits<double>::pow(n, 0.33334);
+    ny              = nx;
+    nz              = nx;
+    TEUCHOS_TEST_FOR_EXCEPTION(nx * ny * nz != n, std::logic_error, "You need to specify nx, ny, and nz");
+  }
+  Scalar M111 = 1.0, M211 = 4.0, M311 = 1.0;
+  Scalar M121 = 4.0, M221 = 16.0, M321 = 4.0;
+  Scalar M131 = 1.0, M231 = 4.0, M331 = 1.0;
+
+  Scalar M112 = 4.0, M212 = 16.0, M312 = 4.0;
+  Scalar M122 = 16.0, M222 = 64.0, M322 = 16.0;
+  Scalar M132 = 4.0, M232 = 16.0, M332 = 4.0;
+
+  Scalar M113 = 1.0, M213 = 4.0, M313 = 1.0;
+  Scalar M123 = 4.0, M223 = 16.0, M323 = 4.0;
+  Scalar M133 = 1.0, M233 = 4.0, M333 = 1.0;
+
+  // 27-pt stencil given by
+  //
+  //            ^    M131  M231 M331
+  //     z=-1   |y   M121  M221 M321
+  //            |    M111  M211 M311
+  //                 ----- x ------>
+  //
+  //            ^    M132  M232 M332
+  //     z= 0   |y   M122  M222 M322
+  //            |    M112  M212 M312
+  //                 ----- x ------>
+  //
+  //            ^    M133  M233 M333
+  //     z=+1   |y   M123  M223 M323
+  //            |    M113  M213 M313
+  //                 ----- x ------>
+  //
+
+  bool keepBCs = this->list_.get("keepBCs", false);
+
+  this->A_ = Scalar3D_27Pt<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix>(this->Map_, nx, ny, nz,
+                                                                             M111, M211, M311, M121, M221, M321, M131, M231, M331,
+                                                                             M112, M212, M312, M122, M222, M322, M132, M232, M332,
+                                                                             M113, M213, M313, M123, M223, M323, M133, M233, M333,
+                                                                             this->DirichletBC_, keepBCs, "HexFEM_Mass", true);
+  this->A_->setObjectLabel(this->getObjectLabel());
+  return this->A_;
+}
+
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
+Teuchos::RCP<typename Problem<Map, Matrix, MultiVector>::RealValuedMultiVector> HexFEM_MassProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, MultiVector>::BuildCoords() {
+  Teuchos::ParameterList list = this->list_;
+  this->Coords_               = Utils::CreateCartesianCoordinates<typename RealValuedMultiVector::scalar_type, LocalOrdinal, GlobalOrdinal, Map, RealValuedMultiVector>("3D", this->Map_, this->list_);
+
+  return this->Coords_;
+}
+
 // =============================================  Identity  =============================================
 
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
@@ -626,6 +945,9 @@ Teuchos::RCP<Matrix> Recirc2DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, M
   template class Galeri::Xpetra::Star2DProblem<S, LO, GO, Tpetra::Map<LO, GO, N>, Tpetra::CrsMatrix<S, LO, GO, N>, Tpetra::MultiVector<S, LO, GO, N>>;                 \
   template class Galeri::Xpetra::BigStar2DProblem<S, LO, GO, Tpetra::Map<LO, GO, N>, Tpetra::CrsMatrix<S, LO, GO, N>, Tpetra::MultiVector<S, LO, GO, N>>;              \
   template class Galeri::Xpetra::Brick3DProblem<S, LO, GO, Tpetra::Map<LO, GO, N>, Tpetra::CrsMatrix<S, LO, GO, N>, Tpetra::MultiVector<S, LO, GO, N>>;                \
+  template class Galeri::Xpetra::Scalar3D_27PtProblem<S, LO, GO, Tpetra::Map<LO, GO, N>, Tpetra::CrsMatrix<S, LO, GO, N>, Tpetra::MultiVector<S, LO, GO, N>>;          \
+  template class Galeri::Xpetra::HexFEM_LapStiffProblem<S, LO, GO, Tpetra::Map<LO, GO, N>, Tpetra::CrsMatrix<S, LO, GO, N>, Tpetra::MultiVector<S, LO, GO, N>>;        \
+  template class Galeri::Xpetra::HexFEM_MassProblem<S, LO, GO, Tpetra::Map<LO, GO, N>, Tpetra::CrsMatrix<S, LO, GO, N>, Tpetra::MultiVector<S, LO, GO, N>>;            \
   template class Galeri::Xpetra::IdentityProblem<S, LO, GO, Tpetra::Map<LO, GO, N>, Tpetra::CrsMatrix<S, LO, GO, N>, Tpetra::MultiVector<S, LO, GO, N>>;               \
   template class Galeri::Xpetra::Recirc2DProblem<S, LO, GO, Tpetra::Map<LO, GO, N>, Tpetra::CrsMatrix<S, LO, GO, N>, Tpetra::MultiVector<S, LO, GO, N>>;
 
@@ -638,6 +960,9 @@ Teuchos::RCP<Matrix> Recirc2DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, M
   template class Galeri::Xpetra::Star2DProblem<S, LO, GO, Xpetra::Map<LO, GO, N>, Xpetra::CrsMatrixWrap<S, LO, GO, N>, Xpetra::MultiVector<S, LO, GO, N>>;                   \
   template class Galeri::Xpetra::BigStar2DProblem<S, LO, GO, Xpetra::Map<LO, GO, N>, Xpetra::CrsMatrixWrap<S, LO, GO, N>, Xpetra::MultiVector<S, LO, GO, N>>;                \
   template class Galeri::Xpetra::Brick3DProblem<S, LO, GO, Xpetra::Map<LO, GO, N>, Xpetra::CrsMatrixWrap<S, LO, GO, N>, Xpetra::MultiVector<S, LO, GO, N>>;                  \
+  template class Galeri::Xpetra::Scalar3D_27PtProblem<S, LO, GO, Xpetra::Map<LO, GO, N>, Xpetra::CrsMatrixWrap<S, LO, GO, N>, Xpetra::MultiVector<S, LO, GO, N>>;            \
+  template class Galeri::Xpetra::HexFEM_LapStiffProblem<S, LO, GO, Xpetra::Map<LO, GO, N>, Xpetra::CrsMatrixWrap<S, LO, GO, N>, Xpetra::MultiVector<S, LO, GO, N>>;          \
+  template class Galeri::Xpetra::HexFEM_MassProblem<S, LO, GO, Xpetra::Map<LO, GO, N>, Xpetra::CrsMatrixWrap<S, LO, GO, N>, Xpetra::MultiVector<S, LO, GO, N>>;              \
   template class Galeri::Xpetra::IdentityProblem<S, LO, GO, Xpetra::Map<LO, GO, N>, Xpetra::CrsMatrixWrap<S, LO, GO, N>, Xpetra::MultiVector<S, LO, GO, N>>;                 \
   template class Galeri::Xpetra::Recirc2DProblem<S, LO, GO, Xpetra::Map<LO, GO, N>, Xpetra::CrsMatrixWrap<S, LO, GO, N>, Xpetra::MultiVector<S, LO, GO, N>>;                 \
                                                                                                                                                                              \
@@ -649,6 +974,9 @@ Teuchos::RCP<Matrix> Recirc2DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, M
   template class Galeri::Xpetra::Star2DProblem<S, LO, GO, Xpetra::Map<LO, GO, N>, Xpetra::TpetraCrsMatrix<S, LO, GO, N>, Xpetra::MultiVector<S, LO, GO, N>>;                 \
   template class Galeri::Xpetra::BigStar2DProblem<S, LO, GO, Xpetra::Map<LO, GO, N>, Xpetra::TpetraCrsMatrix<S, LO, GO, N>, Xpetra::MultiVector<S, LO, GO, N>>;              \
   template class Galeri::Xpetra::Brick3DProblem<S, LO, GO, Xpetra::Map<LO, GO, N>, Xpetra::TpetraCrsMatrix<S, LO, GO, N>, Xpetra::MultiVector<S, LO, GO, N>>;                \
+  template class Galeri::Xpetra::Scalar3D_27PtProblem<S, LO, GO, Xpetra::Map<LO, GO, N>, Xpetra::TpetraCrsMatrix<S, LO, GO, N>, Xpetra::MultiVector<S, LO, GO, N>>;          \
+  template class Galeri::Xpetra::HexFEM_LapStiffProblem<S, LO, GO, Xpetra::Map<LO, GO, N>, Xpetra::TpetraCrsMatrix<S, LO, GO, N>, Xpetra::MultiVector<S, LO, GO, N>>;        \
+  template class Galeri::Xpetra::HexFEM_MassProblem<S, LO, GO, Xpetra::Map<LO, GO, N>, Xpetra::TpetraCrsMatrix<S, LO, GO, N>, Xpetra::MultiVector<S, LO, GO, N>>;            \
   template class Galeri::Xpetra::IdentityProblem<S, LO, GO, Xpetra::Map<LO, GO, N>, Xpetra::TpetraCrsMatrix<S, LO, GO, N>, Xpetra::MultiVector<S, LO, GO, N>>;               \
   template class Galeri::Xpetra::Recirc2DProblem<S, LO, GO, Xpetra::Map<LO, GO, N>, Xpetra::TpetraCrsMatrix<S, LO, GO, N>, Xpetra::MultiVector<S, LO, GO, N>>;
 

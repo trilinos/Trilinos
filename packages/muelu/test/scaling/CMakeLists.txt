@@ -618,7 +618,7 @@ ENDIF()
 MUELU_ADD_SERIAL_AND_MPI_TEST(
   Driver
   NAME "MinvA"
-  ARGS "--xml=MinvA.xml --its=30 --matrixType=Laplace1D --nx=1000 --tol=1e-6"
+  ARGS "--xml=MinvA.xml --its=30 --matrixType=HexFEM_LapStiff --nx=50 --ny=40 --nz=10   --stretchx=.013 --stretchy=.94 --stretchz=.97  --tol=1e-6 "
   NUM_MPI_PROCS 4
   COMM serial mpi
   PASS_REGULAR_EXPRESSION "Belos converged"
