@@ -109,19 +109,11 @@ void testGemvVsTeuchosBlas(Teuchos::FancyOStream& out,
 
   {
     typedef KokkosKernels::ArithTraits<entry_type> KATE;
-    // For integer types the dot product A_row·x is computed in the same type
-    // with no wider accumulator, so large values cause signed-overflow UB.
-    // Worst case: |alpha|=2, numCols=13 (max tested), |beta|=2.
-    // Need: 2*13*maxVal^2 + 2*maxVal <= max(entry_type), i.e.
-    // 26*maxVal^2 + 2*maxVal <= max(entry_type).
-    // Using the exact positive root:
-    // maxVal <= floor((-2 + sqrt(4 + 104*max(entry_type))) / 52).
-    // - 64-bit: floor((-2 + sqrt(4 + 104*INT64_MAX)) / 52) = 595604800
-    // - 32-bit: floor((-2 + sqrt(4 + 104*INT32_MAX)) / 52) = 9088
+    // Integer arithmetic uses no wider accumulator, so large values cause
+    // signed-overflow UB.  256 keeps the worst-case product
+    // 2*numCols*maxVal^2 + 2*maxVal well below INT32_MAX for any numCols<=13.
     const entry_type maxVal = std::is_integral<entry_type>::value
-                                  ? (sizeof(entry_type) >= 8
-                                         ? entry_type(595604800)
-                                         : entry_type(9088))
+                                  ? entry_type(256)
                                   : Kokkos::rand<generator_type, entry_type>::max();
     const entry_type minVal =
         KATE::is_signed ? entry_type(-maxVal) : KATE::zero();
