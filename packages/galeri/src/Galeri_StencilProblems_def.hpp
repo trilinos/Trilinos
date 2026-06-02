@@ -618,19 +618,19 @@ Teuchos::RCP<Matrix> HexFEM_LapStiffProblem<Scalar, LocalOrdinal, GlobalOrdinal,
 
   // not sure why in other galeri spots nx+1,ny+1,nz+1 are used. When
   // coordinates printed, nx-1,ny-1,nz-1 must be used to match coordinates
-  hx = stretchx * lx / (nx - 1);
-  hy = stretchy * ly / (ny - 1);
-  hz = stretchz * lz / (nz - 1);
+  hx = stretchx * lx / ((Scalar)(nx - 1));
+  hy = stretchy * ly / ( (Scalar) (ny - 1);
+  hz = stretchz * lz / ( (Scalar) (nz - 1);
 
   // Unassembled stiffness matrix coefficients
 
-  Scalar Sdiag     = (hy * hz) / (9. * hx) + (hx * (hy * hy + hz * hz)) / (9. * hy * hz);  // good
+  Scalar Sdiag     = (hy * hz) / (9. * hx) + (hx * (hy * hy + hz * hz)) / (9. * hy * hz);
   Scalar Sxneigh   = (-1. / 9.) * (hy * hz) / hx + (hx * (hy * hy + hz * hz)) / (18. * hy * hz);
-  Scalar Syneigh   = (hx * hy) / (18. * hz) - (hx * hz) / (9. * hy) + (hy * hz) / (18. * hx);  // good
+  Scalar Syneigh   = (hx * hy) / (18. * hz) - (hx * hz) / (9. * hy) + (hy * hz) / (18. * hx);
   Scalar Szneigh   = (-1 / 9.) * (hx * hy) / hz + (hx * hz) / (18. * hy) + (hy * hz) / (18. * hx);
-  Scalar Sxyneigh  = (hx * hy) / (36. * hz) - (hx * hz) / (18. * hy) - (hy * hz) / (18. * hx);  // good
+  Scalar Sxyneigh  = (hx * hy) / (36. * hz) - (hx * hz) / (18. * hy) - (hy * hz) / (18. * hx);
   Scalar Sxzneigh  = (-1 / 18.) * (hx * hy) / hz + (hx * hz) / (36. * hy) - (hy * hz) / (18. * hx);
-  Scalar Syzneigh  = (hy * hz) / (36. * hx) - (hx * (hy * hy + hz * hz)) / (18. * hy * hz);  // good
+  Scalar Syzneigh  = (hy * hz) / (36. * hx) - (hx * (hy * hy + hz * hz)) / (18. * hy * hz);
   Scalar Sxyzneigh = (-1 / 36.) * (hy * hz) / hx - (hx * (hy * hy + hz * hz)) / (36. * hy * hz);
 
   // We assume an interior stencil. So the diagonal entry has 8
@@ -642,7 +642,7 @@ Teuchos::RCP<Matrix> HexFEM_LapStiffProblem<Scalar, LocalOrdinal, GlobalOrdinal,
 
   Scalar S112 = Sxyneigh * 2., S212 = Syneigh * 4., S312 = Sxyneigh * 2.;
   Scalar S122 = Sxneigh * 4., S222 = Sdiag * 8., S322 = Sxneigh * 4.;
-  Scalar S132 = Sxyneigh * 2., S232 = Syneigh * 4, S332 = Sxyneigh * 2;
+  Scalar S132 = Sxyneigh * 2., S232 = Syneigh * 4., S332 = Sxyneigh * 2.;
 
   Scalar S113 = Sxyzneigh, S213 = Syzneigh * 2., S313 = Sxyzneigh;
   Scalar S123 = Sxzneigh * 2.0, S223 = Szneigh * 4., S323 = Sxzneigh * 2.0;

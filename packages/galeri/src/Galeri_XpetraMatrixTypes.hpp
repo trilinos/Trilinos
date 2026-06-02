@@ -1033,8 +1033,8 @@ class Scalar3D_27PtStencil {
 
     center = lclMap.getGlobalElement(i);
     GetNeighbours(center, stencil_indices, isDirichlet);
-    impl_scalar_type offDiagonalSum = zero;
-    if (isDirichlet && keepBCs) {  // just a Dirichlet point
+    impl_scalar_type offDiagonalSum = zero;  // sum accumulated in Galeri_enterValue() macro
+    if (isDirichlet && keepBCs) {            // just a Dirichlet point
       // Dirichlet unknown we want to keep
       Galeri_enterValue(rowStart, center, one);
     } else if (!isDirichlet && scaleNeumBCstencil) {  // interior or Neum. BC
