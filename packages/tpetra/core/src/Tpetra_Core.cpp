@@ -20,31 +20,11 @@
 #include "Tpetra_Details_KokkosTeuchosTimerInjection.hpp"
 #include "Tpetra_Details_Behavior.hpp"
 #include "KokkosKernels_EagerInitialize.hpp"
+#include "Tpetra_Details_initializeKokkos.hpp"
 
 namespace Tpetra {
 
 namespace {  // (anonymous)
-
-class HideOutputExceptOnProcess0 {
- public:
-  HideOutputExceptOnProcess0(std::ostream& stream,
-                             const int myRank)
-    : stream_(stream)
-    , originalBuffer_(stream.rdbuf()) {
-    if (myRank != 0) {
-      stream.rdbuf(blackHole_.rdbuf());
-    }
-  }
-
-  ~HideOutputExceptOnProcess0() {
-    stream_.rdbuf(originalBuffer_);
-  }
-
- private:
-  std::ostream& stream_;
-  decltype(std::cout.rdbuf()) originalBuffer_;
-  Teuchos::oblackholestream blackHole_;
-};
 
 #if defined(HAVE_TPETRACORE_MPI)
 bool mpiIsInitializedAndNotFinalized() {
@@ -63,19 +43,6 @@ bool mpiIsInitializedAndNotFinalized() {
     isFinalized = 0;
   }
   return isInitialized != 0 && isFinalized == 0;
-}
-
-int getRankHarmlessly(MPI_Comm comm) {
-  int myRank = 0;
-  if (mpiIsInitializedAndNotFinalized()) {
-    try {
-      (void)MPI_Comm_rank(comm, &myRank);
-    } catch (...) {
-      // Not sure if MPI_Comm_rank meets strong exception guarantee
-      myRank = 0;
-    }
-  }
-  return myRank;
 }
 #endif  // defined(HAVE_TPETRACORE_MPI)
 
@@ -99,36 +66,21 @@ bool tpetraInitializedMpi_ = false;
 // After Tpetra::finalize() is called, this GOES AWAY (is set to null).
 Teuchos::RCP<const Teuchos::Comm<int> > wrappedDefaultComm_;
 
-// This takes the same arguments as (the first two of) initialize().
-void initKokkosIfNeeded(int* argc, char*** argv, const int myRank) {
-  if (!tpetraInitializedKokkos_) {
-    // Kokkos doesn't have a global is_initialized().  However,
-    // Kokkos::initialize() always initializes the default execution
-    // space, so it suffices to check whether that was initialized.
-    const bool kokkosIsInitialized =
-        Kokkos::is_initialized();
-    if (!kokkosIsInitialized) {
-      HideOutputExceptOnProcess0 hideCerr(std::cerr, myRank);
-      HideOutputExceptOnProcess0 hideCout(std::cout, myRank);
+#ifdef HAVE_TPETRACORE_MPI
 
-      // Unlike MPI_Init, Kokkos promises not to modify argc and argv.
-      Kokkos::initialize(*argc, *argv);
-      tpetraInitializedKokkos_ = true;
+int getRankHarmlessly(MPI_Comm comm) {
+  int myRank = 0;
+  if (mpiIsInitializedAndNotFinalized()) {
+    try {
+      (void)MPI_Comm_rank(comm, &myRank);
+    } catch (...) {
+      // Not sure if MPI_Comm_rank meets strong exception guarantee
+      myRank = 0;
     }
   }
-  Details::checkOldCudaLaunchBlocking();
-  const bool kokkosIsInitialized =
-      Kokkos::is_initialized();
-  TEUCHOS_TEST_FOR_EXCEPTION(!kokkosIsInitialized, std::logic_error,
-                             "At the end of "
-                             "initKokkosIfNeeded, Kokkos is not initialized.  "
-                             "Please report this bug to the Tpetra developers.");
-  // Now that the Kokkos backend(s) are initialized,
-  // initialize all KokkosKernels TPLs.
-  KokkosKernels::eager_initialize();
+  return myRank;
 }
 
-#ifdef HAVE_TPETRACORE_MPI
 // This takes the same arguments as MPI_Init and the first two
 // arguments of initialize().
 void initMpiIfNeeded(int* argc, char*** argv) {
@@ -187,7 +139,7 @@ Teuchos::RCP<const Teuchos::Comm<int> > getDefaultComm() {
       comm = Teuchos::rcp(new Teuchos::SerialComm<int>());
     }
 #else
-    comm             = Teuchos::rcp(new Teuchos::SerialComm<int>());
+    comm = Teuchos::rcp(new Teuchos::SerialComm<int>());
 #endif  // HAVE_TPETRACORE_MPI
     wrappedDefaultComm_ = comm;
   }
@@ -198,19 +150,13 @@ void initialize(int* argc, char*** argv) {
   if (!tpetraIsInitialized_) {
 #if defined(HAVE_TPETRACORE_MPI)
     initMpiIfNeeded(argc, argv);
-    // It's technically legal to initialize Tpetra after
-    // MPI_Finalize has been called.  This means that we can't call
-    // MPI_Comm_rank without first checking MPI_Finalized.
-    const int myRank = getRankHarmlessly(MPI_COMM_WORLD);
-#else
-    const int myRank = 0;
 #endif  // defined(HAVE_TPETRACORE_MPI)
-    initKokkosIfNeeded(argc, argv, myRank);
 
-    // Add Kokkos calls to the TimeMonitor if the environment says so
-    Tpetra::Details::AddKokkosDeepCopyToTimeMonitor();
-    Tpetra::Details::AddKokkosFenceToTimeMonitor();
-    Tpetra::Details::AddKokkosFunctionsToTimeMonitor();
+    // Initialize Kokkos using the new function
+    if (!Kokkos::is_initialized()) {
+      Tpetra::Details::initializeKokkos(argc, argv);
+      tpetraInitializedKokkos_ = true;
+    }
 
     Tpetra::Details::Behavior::reject_unrecognized_env_vars();
   }
@@ -229,12 +175,12 @@ void initialize(int* argc, char*** argv, MPI_Comm comm) {
 #else
     const int myRank = 0;
 #endif  // defined(HAVE_TPETRACORE_MPI)
-    initKokkosIfNeeded(argc, argv, myRank);
 
-    // Add Kokkos::deep calls to the TimeMonitor if the environment says so
-    Tpetra::Details::AddKokkosDeepCopyToTimeMonitor();
-    Tpetra::Details::AddKokkosFenceToTimeMonitor();
-    Tpetra::Details::AddKokkosFunctionsToTimeMonitor();
+    // Initialize Kokkos using the new function
+    if (!Kokkos::is_initialized()) {
+      Tpetra::Details::initializeKokkos(argc, argv, myRank);
+      tpetraInitializedKokkos_ = true;
+    }
 
     Tpetra::Details::Behavior::reject_unrecognized_env_vars();
   }
@@ -272,16 +218,12 @@ void initialize(int* argc, char*** argv,
 #if defined(HAVE_TPETRACORE_MPI)
     initMpiIfNeeded(argc, argv);
 #endif  // defined(HAVE_TPETRACORE_MPI)
-    // It's technically legal to initialize Tpetra after
-    // MPI_Finalize has been called.  This means that we can't call
-    // MPI_Comm_rank without first checking MPI_Finalized.
-    const int myRank = comm->getRank();
-    initKokkosIfNeeded(argc, argv, myRank);
 
-    // Add Kokkos calls to the TimeMonitor if the environment says so
-    Tpetra::Details::AddKokkosDeepCopyToTimeMonitor();
-    Tpetra::Details::AddKokkosFenceToTimeMonitor();
-    Tpetra::Details::AddKokkosFunctionsToTimeMonitor();
+    // Initialize Kokkos using the new function
+    if (!Kokkos::is_initialized()) {
+      Tpetra::Details::initializeKokkos(argc, argv, !comm.is_null() ? comm->getRank() : 0);
+      tpetraInitializedKokkos_ = true;
+    }
 
     Tpetra::Details::Behavior::reject_unrecognized_env_vars();
   }
@@ -296,9 +238,9 @@ void finalize() {
 
   // Tpetra should only finalize Kokkos if it initialized Kokkos.
   // See Github Issue #434.
-  if (tpetraInitializedKokkos_ && !Kokkos::is_finalized()) {
-    Kokkos::finalize();
-  }
+  // Note: Kokkos finalization is now handled by the atexit hook set up in
+  // Tpetra::Details::initializeKokkos(), so we don't need to call it here.
+  // The atexit hook ensures Kokkos::finalize() is called automatically.
 
   // Make sure that no outstanding references to the communicator
   // remain.  If users gave initialize() an MPI_Comm, _they_ are

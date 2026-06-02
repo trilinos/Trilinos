@@ -27,7 +27,7 @@ namespace Details {
 ///
 /// \warning Prefer Tpetra::initialize.  Give it the actual
 ///   command-line arguments.
-void initializeKokkos();
+void initializeKokkos(int* argc = nullptr, char*** argv = nullptr, const int myRank = 0);
 
 }  // namespace Details
 }  // namespace Tpetra
