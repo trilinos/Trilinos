@@ -619,8 +619,8 @@ Teuchos::RCP<Matrix> HexFEM_LapStiffProblem<Scalar, LocalOrdinal, GlobalOrdinal,
   // not sure why in other galeri spots nx+1,ny+1,nz+1 are used. When
   // coordinates printed, nx-1,ny-1,nz-1 must be used to match coordinates
   hx = stretchx * lx / ((Scalar)(nx - 1));
-  hy = stretchy * ly / ( (Scalar) (ny - 1);
-  hz = stretchz * lz / ( (Scalar) (nz - 1);
+  hy = stretchy * ly / ((Scalar)(ny - 1));
+  hz = stretchz * lz / ((Scalar)(nz - 1));
 
   // Unassembled stiffness matrix coefficients
 
