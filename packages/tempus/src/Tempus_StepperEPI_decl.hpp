@@ -196,9 +196,8 @@ class StepperEPITimeDerivative
 public:
   // TODO: remove this, not needed for exponential.
   /// Constructor
-  StepperEPITimeDerivative(
-    Scalar s, Teuchos::RCP<const Thyra::VectorBase<Scalar> > xOld)
-  { initialize(s, xOld); }
+  StepperEPITimeDerivative()
+  { }
 
   /// Destructor
   virtual ~StepperEPITimeDerivative() {}
@@ -210,18 +209,10 @@ public:
     Teuchos::RCP<      Thyra::VectorBase<Scalar> > xDotDot = Teuchos::null)
   {
     xDotDot = Teuchos::null;
-    // Calculate the Backward Euler x dot vector
-    Thyra::V_StVpStV(xDot.ptr(),s_,*x,-s_,*xOld_);
+    // Always evaluate to zero, to ensure the model evaluator evaluates the correct residual
+    Thyra::assign(xDot.ptr(), Scalar(0.));
   }
 
-  virtual void initialize(Scalar s,
-    Teuchos::RCP<const Thyra::VectorBase<Scalar> > xOld)
-  { s_ = s; xOld_ = xOld; }
-
-private:
-
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> > xOld_;
-  Scalar                                         s_;    // = 1.0/dt
 };
 
 
