@@ -42,7 +42,12 @@ namespace Amesos2 {
     , n_(Teuchos::as<int_t>(this->globalNumRows_))
     , perm_(this->globalNumRows_)
     , nrhs_(0)
+    , partial_facto_ (0)
+    , schur_size_ (0)
+    , schur_out_ptr_(nullptr)
     , pardiso_initialized_(false)
+    , only_forward_solve_(false)
+    , only_backward_solve_(false)
     , is_contiguous_(true)
     , msglvl_(0)
     , debug_level_(0)
@@ -57,6 +62,7 @@ namespace Amesos2 {
     for( int i = 0; i < 64; ++i ){
       iparm_[i] = iparm_temp[i];
     }
+    iparm_[0] = 1; // do not use solver defaults
 
     // set single or double precision
     if constexpr ( std::is_same_v<solver_magnitude_type, PMKL::_REAL_t> ) {
@@ -111,33 +117,37 @@ namespace Amesos2 {
   int
   PardisoMKL<Matrix,Vector>::symbolicFactorization_impl()
   {
-    int_t error = 0;
+    using Teuchos::as;
 
+    int_t error = 0;
     if( this->root_ ){
 #ifdef HAVE_AMESOS2_TIMERS
       Teuchos::TimeMonitor symbFactTimer( this->timers_.symFactTime_ );
 #endif
-      void *bdummy, *xdummy;
 
+      solver_scalar_type bdummy, xdummy;
       if( pardiso_initialized_){
         int_t phase = -1;         // release all internal solver memory
         function_map::pardiso( pt_, const_cast<int_t*>(&maxfct_),
                                const_cast<int_t*>(&mnum_), &mtype_, &phase, &n_,
                                nzvals_view_.data(), rowptr_view_.data(),
                                colind_view_.data(), perm_.getRawPtr(), &nrhs_, iparm_,
-                               const_cast<int_t*>(&msglvl_), &bdummy, &xdummy, &error );
+                               const_cast<int_t*>(&msglvl_), as<void*>(&bdummy), as<void*>(&xdummy), &error );
         if (msglvl_ > 0 && error != 0) {
-          std::cout << " PardisoMKL::symbolicFactorization: clean-up failed with " << error << std::endl;
+          if (error != 0) {
+            std::cout << " PardisoMKL::symbolicFactorization: clean-up failed with " << error << std::endl;
+          } else {
+            std::cout << " PardisoMKL::symbolicFactorization: cleaned-up before calling symbolic" << error;
+          }
         }
         pardiso_initialized_ = false;
       }
-
       int_t phase = 11;
       function_map::pardiso( pt_, const_cast<int_t*>(&maxfct_),
                              const_cast<int_t*>(&mnum_), &mtype_, &phase, &n_,
                              nzvals_view_.data(), rowptr_view_.data(),
                              colind_view_.data(), perm_.getRawPtr(), &nrhs_, iparm_,
-                             const_cast<int_t*>(&msglvl_), &bdummy, &xdummy, &error );
+                             const_cast<int_t*>(&msglvl_), as<void*>(&bdummy), as<void*>(&xdummy), &error );
       pardiso_initialized_ = true;
     }
     check_pardiso_mkl_error(Amesos2::SYMBFACT, error);
@@ -164,20 +174,33 @@ namespace Amesos2 {
   int
   PardisoMKL<Matrix,Vector>::numericFactorization_impl()
   {
-    int_t error = 0;
+    using Teuchos::as;
 
+    int_t error = 0;
     if( this->root_ ){
 #ifdef HAVE_AMESOS2_TIMERS
       Teuchos::TimeMonitor numFactTimer( this->timers_.numFactTime_ );
 #endif
 
       int_t phase = 22;
-      void *bdummy, *xdummy;
+      solver_scalar_type bdummy;
+      solver_scalar_type *xdummy = schur_out_.data();
       function_map::pardiso( pt_, const_cast<int_t*>(&maxfct_),
                              const_cast<int_t*>(&mnum_), &mtype_, &phase, &n_,
                              nzvals_view_.data(), rowptr_view_.data(),
                              colind_view_.data(), perm_.getRawPtr(), &nrhs_, iparm_,
-                             const_cast<int_t*>(&msglvl_), &bdummy, &xdummy, &error );
+                             const_cast<int_t*>(&msglvl_), as<void*>(&bdummy), as<void*>(xdummy), &error );
+
+      if (error == 0 && partial_facto_ != 0) {
+        if (schur_out_ptr_ != nullptr) {
+          // copy schur out if the output pointer is valid (assuming enough space has been allocated)
+          for (size_t i = 0; i < schur_size_; i++) {
+            for (size_t j = 0; j < schur_size_; j++) {
+              schur_out_ptr_[i+j*schur_size_] = as<scalar_type>(schur_out_[i+j*schur_size_]);
+            }
+          }
+        }
+      }
     }
     check_pardiso_mkl_error(Amesos2::NUMFACT, error);
 
@@ -243,7 +266,14 @@ namespace Amesos2 {
       Teuchos::TimeMonitor solveTimer( this->timers_.solveTime_ );
 #endif
 
-      const int_t phase = 33;
+      int_t phase = 33; // forward & backward solve
+      if (only_forward_solve_) {
+        // forward solve
+        phase = 331;
+      } else if (only_backward_solve_) {
+        // backward solve
+        phase = 333;
+      }
       function_map::pardiso( pt_,
                              const_cast<int_t*>(&maxfct_),
                              const_cast<int_t*>(&mnum_),
@@ -386,7 +416,7 @@ namespace Amesos2 {
       iparm_[23] = getIntegralValue<int>(*parameterList, "IPARM(24)");
     }
   
-    // Parallelization scheme for the forward and backward solv
+    // Parallelization scheme for the forward and backward solve
     if( parameterList->isParameter("IPARM(25)") )
     {
       RCP<const ParameterEntryValidator> par_fbsolve_validator = valid_params->getEntry("IPARM(25)").validator();
@@ -402,6 +432,41 @@ namespace Amesos2 {
       iparm_[59] = getIntegralValue<int>(*parameterList, "IPARM(60)");
     } 
     
+    // Partial factorization
+    // Note: partial_facto_ == 1 means iparam_[35] = 2 (compute and factor Schur)
+    // while partial_facto_ == 2 means iparam_[35] = 1 (only compute Schur)
+    if(parameterList->isParameter("PartialFacto")) {
+      partial_facto_ = parameterList->get<int>("PartialFacto");
+      if (partial_facto_ == 1)
+        iparm_[35] = 2; // calculate and factor Schur complement
+      else if (partial_facto_ == 2)
+        iparm_[35] = 1; // calculate Schur complement
+    }
+    if(parameterList->isParameter("SchurPart")) {
+      // copy schur-part to the internal view (in case the user-pointer go out of scope?)
+      auto schur_part_ptr = parameterList->get<const local_ordinal_type*>("SchurPart");
+      schur_size_ = 0;
+      for (global_size_type i=0; i<this->globalNumCols_; i++) {
+        perm_[i] = schur_part_ptr[i];
+        if (perm_[i] == 1) schur_size_ ++;
+      }
+      // allocate internal storage to store the schur complement (user may not want it and may not provide a valid pointer?)
+      size_t schur_size_2 = schur_size_*schur_size_;
+      Kokkos::resize(schur_out_, (schur_size_2 > 0 ? schur_size_2 : 1));
+
+    }
+    if(parameterList->isParameter("SchurOut")) {
+      // store schur-part to the internal view (if user wants the output, then the pointer should stay, so no need for internal view?)
+      schur_out_ptr_ = parameterList->get<scalar_type*>("SchurOut");
+    }
+    if(parameterList->isParameter("OnlyForwardSolve")) {
+      only_forward_solve_ = parameterList->get<bool>("OnlyForwardSolve");
+    }
+    if(parameterList->isParameter("OnlyBackwardSolve")) {
+      only_backward_solve_ = parameterList->get<bool>("OnlyBackwardSolve");
+    }
+
+
     if( parameterList->isParameter("IsContiguous") ){
       is_contiguous_ = parameterList->get<bool>("IsContiguous");
     }
@@ -533,6 +598,19 @@ PardisoMKL<Matrix,Vector>::getValidParameters_impl() const
     pl->set("IPARM(18)", as<int>(iparm_temp[17]), "Report the number of non-zero elements in the factors",
             anyNumberParameterEntryValidator(preferred_int, accept_int));
 
+    scalar_type *dummy_scalar_ptr;
+    const local_ordinal_type *dummy_ordinal_ptr;
+    pl->set("PartialFacto", 0,
+            "Perform partial factorization to extract dense Schur complement (0: no, 1: form + factor Schur, 2: ony form");
+    pl->set("SchurPart", dummy_ordinal_ptr,
+            "Specify rows/columns belonging to Schur complement for partial factorization");
+    pl->set("SchurOut", dummy_scalar_ptr,
+            "Store output Schur complement from partial factorization");
+    pl->set("OnlyForwardSolve", false,
+            "Perform only the forward substitution");
+    pl->set("OnlyBackwardSolve", false,
+            "Perform only the backward substitution");
+
     pl->set("IsContiguous", true, "Whether GIDs contiguous");
     pl->set("MessageLevel", 0, "PardisoMKL message level (0 to turn off message, and 1 to turn on message");
     pl->set("DebugLevel", 0, "Debug message level (0 for no message, and >0 for more message");
@@ -608,6 +686,13 @@ PardisoMKL<Matrix,Vector>::describe_impl(Teuchos::FancyOStream &out,
   out << "  > IPARM(24) = " << iparm_[23] << std::endl;
   out << "  > IPARM(25) = " << iparm_[24] << std::endl;
   out << "  > IPARM(60) = " << iparm_[59] << std::endl;
+  out << "  > PartialFacto = " << partial_facto_;
+  if (partial_facto_ == 0)
+    out << " (no partial factorization)" << std::endl;
+  if (partial_facto_ == 1)
+    out << " (compute and factor schur complement : iparam_[35] = 2)" << std::endl;
+  if (partial_facto_ == 2)
+    out << " (only compute schur complement : iparam_[35] = 1)" << std::endl;
   out << "  > IsContiguous = " << (is_contiguous_ ? "YES" : "NO") << std::endl;
   out << "  > MessageLevel = " << msglvl_ << std::endl;
   out << "  > DebugLevel   = " << debug_level_ << std::endl;
@@ -623,10 +708,10 @@ PardisoMKL<Matrix,Vector>::check_pardiso_mkl_error(EPhase phase,
   int error_i = error;
   Teuchos::broadcast(*(this->getComm()), 0, &error_i); // We only care about root's value
 
-  if( error == 0 ) return;      // No error
+  if( error_i == 0 ) return;      // No error
 
   std::string errmsg = "Other error";
-  switch( error ){
+  switch( error_i ){
   case -1:
     errmsg = "PardisoMKL reported error: 'Input inconsistent'";
     break;

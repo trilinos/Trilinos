@@ -270,6 +270,15 @@ namespace Amesos2 {
     /// number of righthand-side vectors
     mutable int_t nrhs_;
 
+    // Partial factorization
+    size_t schur_size_;
+    int_t partial_facto_;
+    host_ordinal_type_array schur_part_;
+    host_value_type_array   schur_out_;
+    scalar_type* schur_out_ptr_;
+    bool only_forward_solve_;
+    bool only_backward_solve_;
+
     /// PardisoMKL parameter vector.  Note that the documentation uses
     /// 1-based indexing, but our interface must use 0-based indexing
     int_t iparm_[64];
