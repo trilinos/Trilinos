@@ -740,8 +740,6 @@ Teuchos::RCP<Matrix> HexFEM_MassProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map
   hy = stretchy * ly / ((Scalar)(ny - 1));
   hz = stretchz * lz / ((Scalar)(nz - 1));
 
-  std::cout << "mesh spacing is " << hx << "   " << hy << "   " << hz << std::endl;
-
   Scalar alpha = hx * hy * hz / 216.;
 
   Scalar M111 = alpha * 1.0, M211 = alpha * 4.0, M311 = alpha * 1.0;
