@@ -14,5 +14,4 @@
 
 #include "Intrepid2_IntegratedLegendreBasis_HGRAD_PYR.hpp"
 
-using DefaultDeviceType = Kokkos::DefaultExecutionSpace::device_type;
-template class Intrepid2::IntegratedLegendreBasis_HGRAD_PYR<Kokkos::DefaultExecutionSpace::device_type,double,double>;
+INTREPID2_ETI_DEVICE(INTEGRATEDLEGENDREBASIS_HGRAD_PYR_INSTANT);

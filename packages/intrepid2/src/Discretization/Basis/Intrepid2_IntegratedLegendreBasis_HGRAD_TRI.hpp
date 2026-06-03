@@ -595,4 +595,10 @@ namespace Intrepid2
   };
 } // end namespace Intrepid2
 
+#define INTEGRATEDLEGENDREBASIS_HGRAD_TRI_INSTANT(DEVICE, OUTPUT_TYPE, POINT_TYPE, EXTERN) \
+  EXTERN template class Intrepid2::IntegratedLegendreBasis_HGRAD_TRI<DEVICE, OUTPUT_TYPE,  \
+                                                         POINT_TYPE>;
+
+INTREPID2_ETI_DEVICE_DEF(INTEGRATEDLEGENDREBASIS_HGRAD_TRI_INSTANT);
+
 #endif /* Intrepid2_IntegratedLegendreBasis_HGRAD_TRI_h */

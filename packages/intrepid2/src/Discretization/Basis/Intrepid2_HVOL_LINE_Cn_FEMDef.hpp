@@ -204,7 +204,7 @@ namespace Intrepid2 {
 
     const double alpha = 0.0, beta = 0.0;
     Impl::Basis_HGRAD_LINE_Cn_FEM_JACOBI::
-      getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>
+      getValues<Kokkos::HostSpace::device_type,Parameters::MaxNumPtsPerBasisEval>
       (typename Kokkos::HostSpace::execution_space{}, vmat, dofCoords, order, alpha, beta, OPERATOR_VALUE);
 
     ordinal_type info = 0;
@@ -323,5 +323,11 @@ namespace Intrepid2 {
   }
 
 }// namespace Intrepid2
+
+#define HVOL_LINE_Cn_FEM_INSTANT(DEVICE, OUTPUT_TYPE, POINT_TYPE, EXTERN)      \
+  EXTERN template class Intrepid2::Basis_HVOL_LINE_Cn_FEM<DEVICE, OUTPUT_TYPE, \
+                                                          POINT_TYPE>;
+
+INTREPID2_ETI_DEVICE_DEF(HVOL_LINE_Cn_FEM_INSTANT);
 
 #endif

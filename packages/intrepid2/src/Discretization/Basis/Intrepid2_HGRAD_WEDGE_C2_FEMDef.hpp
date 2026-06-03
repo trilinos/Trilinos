@@ -1126,4 +1126,13 @@ namespace Intrepid2 {
   }
 
 }// namespace Intrepid2
+
+#define HGRAD_WEDGE_DEG2_FEM_INSTANT(DEVICE, OUTPUT_TYPE, POINT_TYPE, EXTERN)                           \
+  EXTERN template class Intrepid2::Basis_HGRAD_WEDGE_DEG2_FEM<true, DEVICE,    \
+                                                              double, double>; \
+  EXTERN template class Intrepid2::Basis_HGRAD_WEDGE_DEG2_FEM<false, DEVICE,   \
+                                                              double, double>;
+
+INTREPID2_ETI_DEVICE_DEF(HGRAD_WEDGE_DEG2_FEM_INSTANT);
+
 #endif
