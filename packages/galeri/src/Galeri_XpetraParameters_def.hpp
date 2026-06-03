@@ -126,7 +126,7 @@ GO Parameters<GO>::GetNumGlobalElements() const {
 
   else if (matrixType == "Laplace3D" ||
            matrixType == "Brick3D" ||
-           matrixType == "Scalar3D_27PtSten" ||
+           matrixType == "Scalar3D_27Pt" ||
            matrixType == "HexFEM_LapStiff" ||
            matrixType == "HexFEM_Mass" ||
            matrixType == "BigStar2D" ||

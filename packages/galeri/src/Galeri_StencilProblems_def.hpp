@@ -724,17 +724,37 @@ Teuchos::RCP<Matrix> HexFEM_MassProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map
     nz              = nx;
     TEUCHOS_TEST_FOR_EXCEPTION(nx * ny * nz != n, std::logic_error, "You need to specify nx, ny, and nz");
   }
-  Scalar M111 = 1.0, M211 = 4.0, M311 = 1.0;
-  Scalar M121 = 4.0, M221 = 16.0, M321 = 4.0;
-  Scalar M131 = 1.0, M231 = 4.0, M331 = 1.0;
+  // compute mesh spacing
+  Scalar one      = Teuchos::ScalarTraits<Scalar>::one();
+  Scalar stretchx = (Scalar)this->list_.get("stretchx", one);
+  Scalar stretchy = (Scalar)this->list_.get("stretchy", one);
+  Scalar stretchz = (Scalar)this->list_.get("stretchz", one);
+  Scalar lx       = (Scalar)this->list_.get("lx", one);
+  Scalar ly       = (Scalar)this->list_.get("ly", one);
+  Scalar lz       = (Scalar)this->list_.get("lz", one);
+  Scalar hx, hy, hz;
 
-  Scalar M112 = 4.0, M212 = 16.0, M312 = 4.0;
-  Scalar M122 = 16.0, M222 = 64.0, M322 = 16.0;
-  Scalar M132 = 4.0, M232 = 16.0, M332 = 4.0;
+  // not sure why in other galeri spots nx+1,ny+1,nz+1 are used. When
+  // coordinates printed, nx-1,ny-1,nz-1 must be used to match coordinates
+  hx = stretchx * lx / ((Scalar)(nx - 1));
+  hy = stretchy * ly / ((Scalar)(ny - 1));
+  hz = stretchz * lz / ((Scalar)(nz - 1));
 
-  Scalar M113 = 1.0, M213 = 4.0, M313 = 1.0;
-  Scalar M123 = 4.0, M223 = 16.0, M323 = 4.0;
-  Scalar M133 = 1.0, M233 = 4.0, M333 = 1.0;
+  std::cout << "mesh spacing is " << hx << "   " << hy << "   " << hz << std::endl;
+
+  Scalar alpha = hx * hy * hz / 216.;
+
+  Scalar M111 = alpha * 1.0, M211 = alpha * 4.0, M311 = alpha * 1.0;
+  Scalar M121 = alpha * 4.0, M221 = alpha * 16.0, M321 = alpha * 4.0;
+  Scalar M131 = alpha * 1.0, M231 = alpha * 4.0, M331 = alpha * 1.0;
+
+  Scalar M112 = alpha * 4.0, M212 = alpha * 16.0, M312 = alpha * 4.0;
+  Scalar M122 = alpha * 16.0, M222 = alpha * 64.0, M322 = alpha * 16.0;
+  Scalar M132 = alpha * 4.0, M232 = alpha * 16.0, M332 = alpha * 4.0;
+
+  Scalar M113 = alpha * 1.0, M213 = alpha * 4.0, M313 = alpha * 1.0;
+  Scalar M123 = alpha * 4.0, M223 = alpha * 16.0, M323 = alpha * 4.0;
+  Scalar M133 = alpha * 1.0, M233 = alpha * 4.0, M333 = alpha * 1.0;
 
   // 27-pt stencil given by
   //
