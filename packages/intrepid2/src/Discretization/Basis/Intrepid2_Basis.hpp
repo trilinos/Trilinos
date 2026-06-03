@@ -19,6 +19,7 @@
 #include "Intrepid2_ConfigDefs.hpp"
 #include "Intrepid2_Types.hpp"
 #include "Intrepid2_Utils.hpp"
+#include "Intrepid2_ETI_Macros.hpp"
 
 #include "Intrepid2_BasisValues.hpp"
 #include "Intrepid2_CellTopologyTags.hpp"
@@ -317,8 +318,11 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
     OrdinalTypeArray2DHost fieldOrdinalH1PolynomialDegree_;
   public:
 
-    Basis() = default;
-    virtual~Basis() = default;
+    Basis() {
+      static_assert(Kokkos::is_device_v<Device>);
+    };
+
+    virtual ~Basis() = default;
 
     // receives input arguments
     /** \brief Dummy array to receive input arguments

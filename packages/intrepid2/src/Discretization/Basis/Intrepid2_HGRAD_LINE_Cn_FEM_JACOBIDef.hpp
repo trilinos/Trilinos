@@ -108,6 +108,7 @@ namespace Intrepid2 {
                const double alpha,
                const double beta,
                const EOperator operatorType ) {
+      static_assert(Kokkos::is_device_v<DT>);
       typedef          Kokkos::DynRankView<outputValueValueType,outputValueProperties...>         outputValueViewType;
       typedef          Kokkos::DynRankView<inputPointValueType, inputPointProperties...>          inputPointViewType;
       typedef typename DT::execution_space ExecSpaceType;
@@ -216,5 +217,11 @@ namespace Intrepid2 {
 
 
 }
+
+#define HGRAD_LINE_Cn_FEM_JACOBI_INSTANT(DEVICE, OUTPUT_TYPE, POINT_TYPE, EXTERN)      \
+  EXTERN template class Intrepid2::Basis_HGRAD_LINE_Cn_FEM_JACOBI<DEVICE, OUTPUT_TYPE, \
+                                                          POINT_TYPE>;
+
+INTREPID2_ETI_DEVICE_DEF(HGRAD_LINE_Cn_FEM_JACOBI_INSTANT);
 
 #endif

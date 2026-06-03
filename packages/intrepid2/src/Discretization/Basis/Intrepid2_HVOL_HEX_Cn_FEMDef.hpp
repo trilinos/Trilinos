@@ -349,4 +349,10 @@ namespace Intrepid2 {
 
 } // namespace Intrepid2
 
+#define HVOL_HEX_Cn_FEM_INSTANT(DEVICE, OUTPUT_TYPE, POINT_TYPE, EXTERN)       \
+  EXTERN template class Intrepid2::Basis_HVOL_HEX_Cn_FEM<DEVICE, OUTPUT_TYPE,  \
+                                                         POINT_TYPE>;
+
+INTREPID2_ETI_DEVICE_DEF(HVOL_HEX_Cn_FEM_INSTANT);
+
 #endif

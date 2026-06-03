@@ -209,7 +209,7 @@ Basis_HVOL_TRI_Cn_FEM( const ordinal_type order,
   work("HVOL::Tri::Cn::work", lwork),
   ipiv("HVOL::Tri::Cn::ipiv", card);
 
-  Impl::Basis_HGRAD_TRI_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>(typename Kokkos::HostSpace::execution_space{},
+  Impl::Basis_HGRAD_TRI_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::device_type,Parameters::MaxNumPtsPerBasisEval>(typename Kokkos::HostSpace::execution_space{},
                                                                                                                      vmat,
                                                                                                                      dofCoords,
                                                                                                                      order,
@@ -335,4 +335,11 @@ Basis_HVOL_TRI_Cn_FEM( const ordinal_type order,
   }
 
 } // namespace Intrepid2
+
+#define HVOL_TRI_Cn_FEM_INSTANT(DEVICE, OUTPUT_TYPE, POINT_TYPE, EXTERN)       \
+  EXTERN template class Intrepid2::Basis_HVOL_TRI_Cn_FEM<DEVICE, OUTPUT_TYPE,  \
+                                                         POINT_TYPE>;
+
+INTREPID2_ETI_DEVICE_DEF(HVOL_TRI_Cn_FEM_INSTANT);
+
 #endif
