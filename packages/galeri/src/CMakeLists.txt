@@ -1,5 +1,8 @@
 INCLUDE(TrilinosCreateClientTemplateHeaders)
 
+# Include Tpetra ETI functions for separate package builds
+INCLUDE(${Galeri_SOURCE_DIR}/cmake/ETI_functions.cmake)
+
 TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 SET(HEADERS "")
