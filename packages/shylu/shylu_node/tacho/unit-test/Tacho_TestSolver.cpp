@@ -283,11 +283,17 @@ TEST( Solver, Chol ) {
   std::string file = ""; 
   const bool conj = true;
   TACHO_CHOL_TEST( double )
-  TACHO_CHOL_TEST( Kokkos::complex<double> )
-  #if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_SYCL)
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_SYCL)
   TACHO_CHOL_SEQ_TEST( double )
+#endif
+
+#ifdef TACHO_INST_COMPLEX_DOUBLE
+  //// > complex Hermitian
+  TACHO_CHOL_TEST( Kokkos::complex<double> )
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_SYCL)
   TACHO_CHOL_SEQ_TEST( Kokkos::complex<double> )
-  #endif
+#endif
+#endif
 }
 
 //  LU
@@ -332,20 +338,27 @@ TEST( Solver, LU ) {
   // > conjugate
   bool conj = true;
   TACHO_LU_TEST( double )
-  TACHO_LU_TEST( Kokkos::complex<double> )
   TACHO_LU_CHOL_TEST( double )
-  TACHO_LU_CHOL_TEST( Kokkos::complex<double> )
-  #if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_SYCL)
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_SYCL)
   TACHO_LU_SEQ_TEST( double )
+#endif
+
+#ifdef TACHO_INST_COMPLEX_DOUBLE
+  //// > complex Hermitian
+  TACHO_LU_TEST( Kokkos::complex<double> )
+  TACHO_LU_CHOL_TEST( Kokkos::complex<double> )
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_SYCL)
   TACHO_LU_SEQ_TEST( Kokkos::complex<double> )
-  #endif
-  // > complex symmetric
-  //   no LU_CHOL (chol is only for Hermitian)
+#endif
+  //// > complex symmetric
   conj = false;
   TACHO_LU_TEST( Kokkos::complex<double> )
-  #if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_SYCL)
+  //// no LU_CHOL for complex symmetric (chol is only for Hermitian)
+  /* TACHO_LU_CHOL_TEST( Kokkos::complex<double> ) */
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_SYCL)
   TACHO_LU_SEQ_TEST( Kokkos::complex<double> )
-  #endif
+#endif
+#endif
 }
 
 //  LDL
@@ -390,16 +403,23 @@ TEST( Solver, LDL ) {
   std::string file = "";
   const bool conj = false;
   TACHO_LDL_TEST( double )
-  TACHO_LDL_TEST( Kokkos::complex<double> )
-  // LDL + Chol (not for complex because Chol is for Hermitian, LDL is for complex symmetric)
   TACHO_LDL_CHOL_TEST( double )
-  #if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_SYCL)
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_SYCL)
   TACHO_LDL_SEQ_TEST( double )
+#endif
+
+#ifdef TACHO_INST_COMPLEX_DOUBLE
+  //// > complex
+  TACHO_LDL_TEST( Kokkos::complex<double> )
+  //// > LDL + Chol (not for complex because Chol is for Hermitian, LDL is for complex symmetric)
+  /* TACHO_LDL_CHOL_TEST( Kokkos::complex<double> ) */
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_SYCL)
   TACHO_LDL_SEQ_TEST( Kokkos::complex<double> )
-  #endif
+#endif
+#endif
 }
 
-//  Non-piv LDL
+// Non-piv LDL
 #define TACHO_NOPIV_TEST( SCALAR ) \
   /* > single RHS */                                                          \
   EXPECT_EQ(driver<SCALAR>(file, "ldl-nopiv", 0, 1, conj), 0);                \
@@ -432,14 +452,19 @@ TEST( Solver, NonPivLDL ) {
   std::string file = "";
   const bool conj = false;
   TACHO_NOPIV_TEST( double )
-  TACHO_NOPIV_TEST( Kokkos::complex<double> )
-  // Non-piv LDL + Chol (not for complex because Chol is for Hermitian, LDL is for complex symmetric)
   TACHO_NOPIV_CHOL_TEST( double ) 
   //#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_SYCL)
   //// > sequential path
   //EXPECT_EQ(driver<double>(file, "ldl-nopiv", -1, 1), 0);
   //EXPECT_EQ(driver<double>(file, "ldl-nopiv", -1, 5), 0);
   //#endif
+
+#ifdef TACHO_INST_COMPLEX_DOUBLE
+  //// > complex
+  TACHO_NOPIV_TEST( Kokkos::complex<double> )
+  //// > Non-piv LDL + Chol (not for complex because Chol is for Hermitian, LDL is for complex symmetric)
+  /* TACHO_NOPIV_CHOL_TEST( Kokkos::complex<double> ) */
+#endif
 }
 
 int main(int argc, char *argv[]) {
