@@ -129,9 +129,15 @@ void testGemmVsTeuchosBlasForOneTransComb(Teuchos::FancyOStream& out,
 
   {
     typedef KokkosKernels::ArithTraits<entry_type> KATE;
-    // Integer arithmetic uses no wider accumulator, so large values cause
-    // signed-overflow UB.  256 keeps the worst-case product
-    // 2*k*maxVal^2 + 2*maxVal well below INT32_MAX for any k<=13.
+    // For integer types, the operation C = alpha*A*B + beta*C computes elements in the same type
+    // without a wider accumulator, so large values can cause signed-overflow UB. The worst-case magnitude is:
+    //
+    // |alpha| * K * maxVal^2 + |beta| * maxVal
+    //
+    // where K is the shared inner dimension. In this test |alpha|,|beta| ≤ 2, and K ≤ 13
+    // (see the loop in the unit test). Choosing maxVal = 256 gives the upper bound 2*13*256^2 + 2*256 = 1704448,
+    // which is far below the minimum of INT32_MAX (2^31-1) and INT64_MAX (2^63-1),
+    // guaranteeing no overflow for any integer entry_type used.
     const entry_type maxVal = std::is_integral<entry_type>::value
                                   ? entry_type(256)
                                   : Kokkos::rand<generator_type, entry_type>::max();
@@ -304,7 +310,7 @@ void testGemmVsTeuchosBlasForOneTransComb(Teuchos::FancyOStream& out,
         return;
       }
     }  // beta
-  }    // alpha
+  }  // alpha
 }
 
 template <class EntryType, class CoeffType, class DeviceType>
