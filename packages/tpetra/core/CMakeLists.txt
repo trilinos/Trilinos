@@ -1,5 +1,4 @@
 INCLUDE(CombinedOption)
-INCLUDE(TribitsETISupport)
 
 #
 # Declare the subpackage
