@@ -189,18 +189,6 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
   MALLOC_INT_1DARRAY(gperm_array, A.nrow);        // perm
   MALLOC_INT_1DARRAY(gpermi_array, A.nrow);       // permi
 
-  //Incomplete Factor Setup
-  if(Options.incomplete == BASKER_TRUE)
-  {
-    Int lvl_nnz = 1.2*global_nnz;
-    MALLOC_INT_1DARRAY(INC_LVL_ARRAY, lvl_nnz);
-    init_value(INC_LVL_ARRAY, lvl_nnz, BASKER_MAX_IDX);
-    MALLOC_INT_1DARRAY(INC_LVL_ARRAY_CNT, A.nrow);
-    init_value(INC_LVL_ARRAY_CNT, A.nrow,(Int)0);
-    MALLOC_INT_1DARRAY(INC_LVL_TEMP, A.nrow);
-    init_value(INC_LVL_TEMP, A.nrow, BASKER_MAX_IDX);
-  }
-
   return 0;
 }//end default_symb()
 

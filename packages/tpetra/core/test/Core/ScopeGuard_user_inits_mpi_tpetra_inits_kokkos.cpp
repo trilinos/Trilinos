@@ -157,12 +157,13 @@ void testMain(bool& success, int argc, char* argv[]) {
   if (myRank == 0) {
     cout << "Left Tpetra scope" << endl;
   }
-  // Tpetra::ScopeGuard's destructor was responsible for calling
-  // Kokkos::finalize.
-  if (Kokkos::is_initialized()) {
+  // Tpetra::ScopeGuard's destructor should NOT call Kokkos::finalize.
+  // Kokkos::finalize is now called via atexit hook. See issue #15294.
+  if (!Kokkos::is_initialized()) {
     success = false;
-    cout << "Kokkos::is_initialized() is true, "
-            "after Tpetra::ScopeGuard::~ScopeGuard was called."
+    cout << "Kokkos::is_initialized() is false, "
+            "but Tpetra::ScopeGuard::~ScopeGuard should not have called Kokkos::finalize. "
+            "See issue #15294."
          << endl;
   }
   // Since the "user" is responsible for calling MPI_Finalize,

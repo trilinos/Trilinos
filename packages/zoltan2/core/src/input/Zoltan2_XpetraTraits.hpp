@@ -219,8 +219,6 @@ struct XpetraTraits<Xpetra::CrsMatrix<double, int, int, node_t> >
   static RCP<x_matrix_t> doMigration(const x_matrix_t &from,
       size_t numLocalRows, const gno_t *myNewRows)
   {
-    Xpetra::UnderlyingLib lib = from.getRowMap()->lib();
-
     {
       // Do the import with the Tpetra::CrsMatrix traits object
       const xt_matrix_t *xtm = dynamic_cast<const xt_matrix_t *>(&from);
@@ -365,8 +363,6 @@ struct XpetraTraits<Xpetra::CrsGraph<int, int, node_t> >
   static RCP<x_graph_t> doMigration(const x_graph_t &from,
       size_t numLocalRows, const gno_t *myNewRows)
   {
-    Xpetra::UnderlyingLib lib = from.getRowMap()->lib();
-
     {
       // Do the import with the Tpetra::CrsGraph traits object
       const xt_graph_t *xtg = dynamic_cast<const xt_graph_t *>(&from);
@@ -482,8 +478,6 @@ struct XpetraTraits<Xpetra::Vector<double, int, int, node_t> >
   static RCP<x_vector_t> doMigration(const x_vector_t &from,
       size_t numLocalRows, const gno_t *myNewRows)
   {
-    Xpetra::UnderlyingLib lib = from.getMap()->lib();
-
     {
       // Do the import with the Tpetra::Vector traits object
       const xt_vector_t *xtv = dynamic_cast<const xt_vector_t *>(&from);
@@ -599,8 +593,6 @@ struct XpetraTraits<Xpetra::MultiVector<double, int, int, node_t> >
   static RCP<x_mvector_t> doMigration(const x_mvector_t &from,
       size_t numLocalRows, const gno_t *myNewRows)
   {
-    Xpetra::UnderlyingLib lib = from.getMap()->lib();
-
     {
       // Do the import with the Tpetra::MultiVector traits object
       const xt_mvector_t *xtv = dynamic_cast<const xt_mvector_t *>(&from);

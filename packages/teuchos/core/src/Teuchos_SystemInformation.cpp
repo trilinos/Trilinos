@@ -288,12 +288,12 @@ std::map<std::string, std::string> collectSystemInformation() {
 
   auto &environmentVariables = getEnvironmentVariablesSet();
   for (auto &envVariable : environmentVariables) {
-    const char *varVal = std::getenv(envVariable.c_str());
-    if (varVal == nullptr)
+    const char* varVal = Teuchos::getEnvironmentVariableValue(envVariable);
+    if(varVal == nullptr) {
       data[envVariable] = "NOT SET";
+    }
     else {
-      data[envVariable] =
-          Teuchos::getEnvironmentVariable<std::string>(envVariable, "");
+      data[envVariable] = varVal;
     }
   }
 

@@ -377,6 +377,12 @@ void XMLParser::getSTag(unsigned char lookahead, std::string &tag, Teuchos::map<
           getReference(refstr);
           attval += refstr;
         }
+        else if ( c == '\r' ) {
+          // \link https://www.w3.org/TR/xml/#sec-line-ends
+          // XML spec p2.11: normalize \r\n and standalone \r to \n.
+          // Skip \r here; the \n that follows (in \r\n) will be appended normally,
+          // and a standalone \r at end-of-line is not encountered in well-formed XML.
+        }
         else if ( c!='<' ) {
           // valid character for attval
           attval.push_back(c);

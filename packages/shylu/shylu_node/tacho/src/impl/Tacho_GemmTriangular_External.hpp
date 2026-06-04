@@ -19,7 +19,8 @@
 
 namespace Tacho {
 
-template <> struct GemmTriangular<Trans::Transpose, Trans::NoTranspose, Uplo::Upper, Algo::External> {
+template <> 
+struct GemmTriangular<Trans::Transpose, Trans::NoTranspose, Uplo::Upper, Algo::External> {
   template <typename ScalarType, typename ViewTypeA, typename ViewTypeB, typename ViewTypeC>
   inline static int invoke(const ScalarType alpha, const ViewTypeA &A, const ViewTypeB &B, const ScalarType beta,
                            const ViewTypeC &C) {

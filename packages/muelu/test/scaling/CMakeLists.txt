@@ -104,8 +104,10 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(
     isorropia.xml
     material.mm
     material.xml
+    MinvA.xml
     multiPhys4x4.mat
     multiPhys4x4.mat
+    multiphys_monolithic_smoother.xml
     null1.mat
     null2.mat
     oLapSchwarzEquivBlkSmoo.xml
@@ -147,6 +149,14 @@ IF(${PACKAGE_NAME}_ENABLE_Belos)
   TRIBITS_ADD_EXECUTABLE(
     ComboPDriver
     SOURCES ComboPDriver.cpp
+    COMM mpi
+  )
+ENDIF()
+
+IF(${PACKAGE_NAME}_ENABLE_Belos)
+  TRIBITS_ADD_EXECUTABLE(
+    MultiphysicsDriver
+    SOURCES MultiphysDriver.cpp
     COMM mpi
   )
 ENDIF()
@@ -308,6 +318,15 @@ TRIBITS_ADD_TEST(
   NUM_MPI_PROCS 4
   COMM mpi
   PASS_REGULAR_EXPRESSION "Belos converged"
+)
+
+TRIBITS_ADD_TEST(
+  MultiphysicsDriver
+  NAME "MultiphysicsTest"
+  ARGS "--xml=multiphys_monolithic_smoother.xml --expected-iters=5"
+  NUM_MPI_PROCS 4
+  COMM mpi
+  PASS_REGULAR_EXPRESSION "Belos converged|Skipping test"
 )
 
 TRIBITS_ADD_TEST(
@@ -595,6 +614,15 @@ ELSE()
     #do not check for convergence
   )
 ENDIF()
+
+MUELU_ADD_SERIAL_AND_MPI_TEST(
+  Driver
+  NAME "MinvA"
+  ARGS "--xml=MinvA.xml --its=30 --matrixType=HexFEM_LapStiff --nx=50 --ny=40 --nz=10   --stretchx=.013 --stretchy=.94 --stretchz=.97  --tol=1e-6 "
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "Belos converged"
+)
 
 # Reading a matrix saved in real format as complex does not work.
 IF(NOT ${PACKAGE_NAME}_INST_COMPLEX_INT_INT)

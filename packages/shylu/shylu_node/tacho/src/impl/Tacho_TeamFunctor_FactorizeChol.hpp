@@ -87,15 +87,16 @@ public:
       value_type *aptr = s.u_buf;
       UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
       aptr += m * m;
-      LDL_nopiv<Uplo::Upper, CholAlgoType>::invoke(member, ATL);
+      bool conjugate = false;
+      LDL_nopiv<Uplo::Upper, CholAlgoType>::invoke(member, ATL, conjugate);
       member.team_barrier();
 
       if (n_m > 0) {
         const value_type one(1), minus_one(-1), zero(0);
         // Apply L^{-1} on off-diagonal
         UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m);
-        Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, ATL,
-                                                                                  ATR);
+        Trsm<Side::Left, Uplo::Upper, Trans::Transpose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, ATL,
+                                                                           ATR);
         member.team_barrier(); // TODO: check when we need barrier
 
         // Save in workspace
@@ -109,7 +110,7 @@ public:
 
         // ABR = -ATR*W
         GemmTriangular<Trans::Transpose, Trans::NoTranspose, Uplo::Upper, GemmAlgoType>::invoke(member, minus_one, ATR,
-                                                                                                W, zero, ABR);
+                                                                                             W, zero, ABR);
       }
     }
   }
@@ -129,15 +130,16 @@ public:
       aptr += m * m;
 
       // Factor diagonal block
-      LDL_nopiv<Uplo::Upper, CholAlgoType>::invoke(member, ATL);
+      bool conjugate = false;
+      LDL_nopiv<Uplo::Upper, CholAlgoType>::invoke(member, ATL, conjugate);
       member.team_barrier();
 
       if (n_m > 0) {
         // * Update off-diagonal block
         // Apply L^{-T} on off-diagonal (TODO: should we gemm after inversion?)
         UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m);
-        Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, ATL,
-                                                                                  ATR);
+        Trsm<Side::Left, Uplo::Upper, Trans::Transpose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, ATL,
+                                                                           ATR);
         member.team_barrier();
 
         // compute Inverse of diagobal block (NOTE: T and ABR point to the same address = need to compute inverse before gemm)
@@ -167,7 +169,7 @@ public:
         // * Update remaining block
         // ABR = -ATR*W
         GemmTriangular<Trans::Transpose, Trans::NoTranspose, Uplo::Upper, GemmAlgoType>::invoke(member, minus_one, ATR,
-                                                                                                W, zero, ABR);
+                                                                                             W, zero, ABR);
       } else {
         // compute Inverse of diagobal block
         Copy<Algo::Internal>::invoke(member, T, ATL);
@@ -201,14 +203,15 @@ public:
       UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
       aptr += m * m;
       // Factor diagonal block
-      LDL_nopiv<Uplo::Upper, CholAlgoType>::invoke(member, ATL);
+      bool conjugate = false;
+      LDL_nopiv<Uplo::Upper, CholAlgoType>::invoke(member, ATL, conjugate);
       member.team_barrier();
 
       if (n_m > 0) {
         // * Update off-diagonal block
         UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m);
-        Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, ATL,
-                                                                                  ATR);
+        Trsm<Side::Left, Uplo::Upper, Trans::Transpose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, ATL,
+                                                                           ATR);
         member.team_barrier();
 
         // Save ATR in workspace
@@ -223,7 +226,7 @@ public:
         // * Update remaining block
         // ABR = -ATR*W
         GemmTriangular<Trans::Transpose, Trans::NoTranspose, Uplo::Upper, HerkAlgoType>::invoke(member, minus_one, ATR,
-                                                                                                W, zero, ABR);
+                                                                                             W, zero, ABR);
         member.team_barrier();
       }
       // * Invert the whole block row
@@ -280,7 +283,6 @@ public:
         // chol
         Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, TrsmAlgoType>::invoke(member, Diag::NonUnit(), one, ATL,
                                                                                   ATR);
-
         member.team_barrier();
         Herk<Uplo::Upper, Trans::ConjTranspose, HerkAlgoType>::invoke(member, minus_one, ATR, zero, ABR);
       }

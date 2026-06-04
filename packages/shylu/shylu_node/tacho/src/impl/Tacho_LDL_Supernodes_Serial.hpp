@@ -70,7 +70,7 @@ template <> struct LDL_Supernodes<Algo::Workflow::Serial> {
       UnmanagedViewType<value_type_matrix> ATL(ptr, m, m);
       ptr += m * m;
 
-      Symmetrize<Uplo::Upper, Algo::Internal>::invoke(member, ATL);
+      Symmetrize<Uplo::Upper, Algo::Internal>::invoke(member, ATL, false);
 
       LDL<Uplo::Lower, LDL_AlgoType>::invoke(member, ATL, P, W);
       LDL<Uplo::Lower, LDL_AlgoType>::modify(member, ATL, P, D);

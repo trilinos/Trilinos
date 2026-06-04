@@ -209,7 +209,7 @@ namespace Intrepid2 {
 
       typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
 
-      const ValueType tol = tolerence();
+      const ValueType tol = tolerance();
       int errorFlag = 0;
 
       typedef ValueType pointValueType;

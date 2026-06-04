@@ -27,7 +27,6 @@ import logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-remote = "origin"
 repo = "trilinos/Trilinos"
 
 ##################################################
@@ -38,7 +37,9 @@ parser.add_argument("--pr", type=convert_to_pr_number, help="Number of the PR th
 parser.add_argument("--source", type=convert_to_valid_source_dir, help="Trilinos source directory. Allows to skip the interactive prompt.")
 parser.add_argument("--build", help="PR build that should be reproduced. Allows to skip the interactive prompt.")
 parser.add_argument("--debug", action="store_true", help="debug mode")
+parser.add_argument("--remote", default="origin", help="Name of the remote that points to the main Trilinos repository")
 args = parser.parse_args()
+remote = args.remote
 
 if args.debug:
     logger.parent.setLevel(logging.DEBUG)
@@ -68,13 +69,17 @@ questionary.print(logo)
 # Check that podman is available
 podman_cmd = which("podman")
 logger.debug(f"podman_cmd = {podman_cmd}")
-assert podman_cmd is not None, "No command \"podman\" in path"
+if podman_cmd is None:
+    logger.warning("No command \"podman\" in path. Aborting.")
+    exit(1)
 
 ##################################################
 # Check that cmake is available
 cmake_cmd = which("cmake")
 logger.debug(f"cmake_cmd = {cmake_cmd}")
-assert cmake_cmd is not None, "No command \"cmake\" in path"
+if cmake_cmd is None:
+    logger.warning("No command \"cmake\" in path. Aborting.")
+    exit(1)
 
 ##################################################
 # Trilinos source directory
@@ -94,6 +99,13 @@ logger.debug(f"trilinos_source = {trilinos_source}")
 local_git_sha = subprocess.run(["git", "rev-parse", "HEAD"],
                                capture_output=True, cwd=trilinos_source, universal_newlines=True).stdout[:-1]
 logger.debug(f"local_git_sha = {local_git_sha}")
+
+remote_url = subprocess.run(["git", "remote", "get-url", remote],
+                               capture_output=True, cwd=trilinos_source, universal_newlines=True).stdout[:-1]
+logger.debug(f"remote_url = {remote_url}")
+if remote_url.find("trilinos/Trilinos") < 0:
+    logger.warning(f"The remote \"{remote}\" points to \"{remote_url}\" and not the Trilinos main repository. The main Trilinos repository needs to be configured as a remote. If the main repository is configured under a different name, please run with the \"--remote\" flag. Aborting.")
+    exit(1)
 
 ##################################################
 # Available builds

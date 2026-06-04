@@ -81,7 +81,7 @@ namespace Intrepid2 {
       using ct = CellTools<DeviceType>;
       using DynRankView = Kokkos::DynRankView<ValueType,DeviceType>;
 
-      const ValueType tol = tolerence<ValueType>()*100.0;
+      const ValueType tol = tolerance<ValueType>()*100.0;
 
       int errorFlag = 0;
 

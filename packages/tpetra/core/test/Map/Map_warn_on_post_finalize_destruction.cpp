@@ -39,9 +39,8 @@ void testMain(bool& success, int argc, char* argv[]) {
   }
 
   // NOTE: This is INCORRECT BEHAVIOR, because the Map outlives
-  // Tpetra::finalize.  DO NOT WRITE CODE LIKE THIS!  The point is to
-  // test whether Map's destructor prints an error message per GitHub
-  // Issue #2372.  Map's destructor must print to std::cerr in this
+  // Kokkos::finalize.  DO NOT WRITE CODE LIKE THIS!
+  // The point here is to make sure Map's destructor must print to std::cerr in this
   // case; the code that calls testMain will capture std::cerr output
   // in order to check correct behavior.
   Tpetra::Map<> map(numProcs, 0, comm);
@@ -51,8 +50,9 @@ void testMain(bool& success, int argc, char* argv[]) {
   }
 
   Tpetra::finalize();
+  Kokkos::finalize();
   if (myRank == 0) {
-    cout << "Called Tpetra::finalize" << endl;
+    cout << "Called Tpetra::finalize and Kokkos::finalize" << endl;
   }
 
   if (Tpetra::isInitialized()) {

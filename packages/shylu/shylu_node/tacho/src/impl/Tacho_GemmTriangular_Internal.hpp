@@ -19,7 +19,8 @@
 
 namespace Tacho {
 
-template <> struct GemmTriangular<Trans::Transpose, Trans::NoTranspose, Uplo::Upper, Algo::Internal> {
+template <>
+struct GemmTriangular<Trans::Transpose, Trans::NoTranspose, Uplo::Upper, Algo::Internal> {
   template <typename MemberType, typename ScalarType, typename ViewTypeA, typename ViewTypeB, typename ViewTypeC>
   KOKKOS_INLINE_FUNCTION static int invoke(MemberType &member, const ScalarType alpha, const ViewTypeA &A,
                                            const ViewTypeB &B, const ScalarType beta, const ViewTypeC &C) {

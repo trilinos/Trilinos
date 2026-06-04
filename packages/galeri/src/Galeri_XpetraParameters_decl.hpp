@@ -34,7 +34,7 @@ class Parameters : public Teuchos::VerboseObject<Parameters<GO> >, public Teucho
              double h = 1.0, double delta = 0.0,
              int PMLXL = 0, int PMLXR = 0, int PMLYL = 0, int PMLYR = 0, int PMLZL = 0, int PMLZR = 0,
              double omega = 2.0 * M_PI, double shift = 0.5, GO mx = -1, GO my = -1, GO mz = -1, int model = 0,
-             double lx = 1., double ly = 1., double conv = 1., double diff = 1.);
+             double lx = 1., double ly = 1., double lz = 1., double conv = 1., double diff = 1.);
 
   GO GetNumGlobalElements() const;
 
@@ -79,6 +79,7 @@ class Parameters : public Teuchos::VerboseObject<Parameters<GO> >, public Teucho
 
   mutable double lx_;
   mutable double ly_;
+  mutable double lz_;
   mutable double conv_;
   mutable double diff_;
 

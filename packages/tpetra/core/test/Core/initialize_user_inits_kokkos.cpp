@@ -66,10 +66,13 @@ void testMain(bool& success, int argc, char* argv[]) {
 
   // Since the "user" is responsible for calling Kokkos::finalize,
   // Tpetra::finalize should NOT have called Kokkos::finalize.
+  // Tpetra::finalize should NOT call Kokkos::finalize.
+  // Kokkos::finalize is now called via atexit hook. See issue #15294.
   if (!Kokkos::is_initialized()) {
     success = false;
     cout << "Kokkos::is_initialized() is false, "
-            "after Tpetra::initialize was called."
+            "but Tpetra::finalize should not have called Kokkos::finalize. "
+            "See issue #15294."
          << endl;
   }
   Kokkos::finalize();

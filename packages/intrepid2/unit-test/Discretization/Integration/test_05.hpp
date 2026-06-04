@@ -93,7 +93,7 @@ namespace Intrepid2 {
       typedef CubatureDirectTriDefault<DeviceType,pointValueType,weightValueType> CubatureTriType;
       typedef CubatureDirectTriSymmetric<DeviceType,pointValueType,weightValueType> CubatureTriSymType;
 
-      const auto tol = 10.0 * tolerence();
+      const auto tol = 10.0 * tolerance();
 
       int errorFlag = 0;
 

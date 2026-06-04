@@ -170,6 +170,8 @@ int main(int argc, char* argv[]) {
   // spaces (like OpenMP) don't ever shut down (though Kokkos might
   // change the number of OpenMP threads to 1).  Thus, we don't try to
   // test for Kokkos finalization here.
+  // Note: Tpetra::finalize no longer calls Kokkos::finalize directly.
+  // Kokkos::finalize is now called via atexit hook. See issue #15294.
 
 EndOfTest:
 

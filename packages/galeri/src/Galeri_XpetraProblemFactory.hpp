@@ -45,6 +45,12 @@ RCP<Problem<Map, Matrix, MultiVector> > BuildProblem(const std::string& MatrixTy
     P.reset(new Laplace3DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, MultiVector>(list, map));
   else if (MatrixType == "Brick3D")
     P.reset(new Brick3DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, MultiVector>(list, map));
+  else if (MatrixType == "Scalar3D_27Pt")
+    P.reset(new Scalar3D_27PtProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, MultiVector>(list, map));
+  else if (MatrixType == "HexFEM_LapStiff")
+    P.reset(new HexFEM_LapStiffProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, MultiVector>(list, map));
+  else if (MatrixType == "HexFEM_Mass")
+    P.reset(new HexFEM_MassProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, MultiVector>(list, map));
   else if (MatrixType == "Elasticity2D")
     P.reset(new Elasticity2DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, MultiVector>(list, map));
   else if (MatrixType == "Elasticity3D")

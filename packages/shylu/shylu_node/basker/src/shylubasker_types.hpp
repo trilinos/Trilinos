@@ -19,7 +19,6 @@
 #define BASKER_ATOMIC         //Use Atomics (OLD)
 #define BASKER_ATOMIC_2       //Use Atomics (OLD)
 #define BASKER_NO_LAMBDA      //Do not use lambda
-#define BASKER_2DL            //Use a 2D L
 #define BASKER_MULTIPLE_UPPER //Use multiple threads for upper
 #define BASKER_MULTIPLE_LOWER //Use multiple threads for lower
 #define HAVE_AMESOS           //Use Amesos orderings
@@ -84,10 +83,6 @@ enum BASKER_INCOMPLETE_CODE
   BASKER_INCOMPLETE_LVL_TOL,
   BASKER_INCOMPLETE_EXP
 };
-
-//MACRO DEFAULT INC SETTINGS
-#define BASKER_INC_LVL_VALUE        0
-#define BASKER_INC_TOL_VALUE      0.0001
 
 //MACRO INC FILL (this will become dynamic in the future)
 #define BASKER_FILL_USER           0.00

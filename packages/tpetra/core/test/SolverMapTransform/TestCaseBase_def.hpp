@@ -71,33 +71,33 @@ void TestCaseBase<Scalar_t, LocalId_t, GlobalId_t, Node_t>::baseInstantiateLinea
   Teuchos::RCP<Map_t const> mapRCP = Teuchos::rcp<Map_t const>(m_matrix->getRowMap().get(), false);
 
   // Create lhs
-  Teuchos::RCP<MultiVector_t> lhs = Tpetra::MatrixMarket::Reader<MultiVector_t>::readDenseFile(lhsInputFileName  // const std::string            & filename
-                                                                                               ,
-                                                                                               m_comm  // const trcp_tcomm_t           & comm
-                                                                                               ,
-                                                                                               mapRCP  // Teuchos::RCP<const map_type> & map
-                                                                                               ,
-                                                                                               false  // const bool                     tolerant
-                                                                                               ,
-                                                                                               false  // const bool                     debug
-                                                                                               ,
-                                                                                               false  // const bool                     binary
+  Teuchos::RCP<MultiVector_t> lhs = Tpetra::MatrixMarket::Reader<Matrix_t>::readDenseFile(lhsInputFileName  // const std::string            & filename
+                                                                                          ,
+                                                                                          m_comm  // const trcp_tcomm_t           & comm
+                                                                                          ,
+                                                                                          mapRCP  // Teuchos::RCP<const map_type> & map
+                                                                                          ,
+                                                                                          false  // const bool                     tolerant
+                                                                                          ,
+                                                                                          false  // const bool                     debug
+                                                                                          ,
+                                                                                          false  // const bool                     binary
   );
   m_lhs                           = std::unique_ptr<MultiVector_t>(new MultiVector_t(*lhs));
   m_lhsRCP                        = Teuchos::rcp<MultiVector_t>(m_lhs.get(), false);
 
   // Create rhs
-  Teuchos::RCP<MultiVector_t> rhs = Tpetra::MatrixMarket::Reader<MultiVector_t>::readDenseFile(rhsInputFileName  // const std::string            & filename
-                                                                                               ,
-                                                                                               m_comm  // const trcp_tcomm_t           & comm
-                                                                                               ,
-                                                                                               mapRCP  // Teuchos::RCP<const map_type> & map
-                                                                                               ,
-                                                                                               false  // const bool                     tolerant
-                                                                                               ,
-                                                                                               false  // const bool                     debug
-                                                                                               ,
-                                                                                               false  // const bool                     binary
+  Teuchos::RCP<MultiVector_t> rhs = Tpetra::MatrixMarket::Reader<Matrix_t>::readDenseFile(rhsInputFileName  // const std::string            & filename
+                                                                                          ,
+                                                                                          m_comm  // const trcp_tcomm_t           & comm
+                                                                                          ,
+                                                                                          mapRCP  // Teuchos::RCP<const map_type> & map
+                                                                                          ,
+                                                                                          false  // const bool                     tolerant
+                                                                                          ,
+                                                                                          false  // const bool                     debug
+                                                                                          ,
+                                                                                          false  // const bool                     binary
   );
   m_rhs                           = std::unique_ptr<MultiVector_t>(new MultiVector_t(*rhs));
   m_rhsRCP                        = Teuchos::rcp<MultiVector_t>(m_rhs.get(), false);

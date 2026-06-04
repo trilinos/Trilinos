@@ -21,12 +21,6 @@
      )
 
      TRIBITS_ADD_EXECUTABLE(
-        basker_test_inc
-        NOEXEPREFIX
-        SOURCES basker_test_inc.cpp
-     )
-
-     TRIBITS_ADD_EXECUTABLE(
         basker_amesos2_interface_test
         NOEXEPREFIX
         SOURCES amesos2_interface_test.cpp test_util.hpp

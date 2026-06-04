@@ -104,7 +104,7 @@ int InterpolationProjectionWedge(const bool verbose) {
   *outStream << "\n";
 
   int errorFlag = 0;
-  const ValueType tol = tolerence();
+  const ValueType tol = tolerance();
 
   bool pickTest = false;
   int elemPermutation=0, sharedSidePermutation=0;

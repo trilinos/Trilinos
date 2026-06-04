@@ -1,5 +1,6 @@
 #include "user_app_Utilities.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
+#include "Panzer_ModelEvaluator_Utilities.hpp"
 
 namespace ROL {
 
@@ -48,8 +49,8 @@ TransientReducedObjective(const Teuchos::RCP<Teuchos::ParameterList>& input_para
   std::tie(model_,global_data_,mesh_,response_library_,stk_io_response_library_,lin_obj_factory_,global_indexer_) =
     user_app::buildModelEvaluator(input_params_,comm_);
 
-  param_index_ = std::get<0>(user_app::findParameterIndex(objective_params->get<std::string>("Parameter Name"),*model_));
-  response_index_ = std::get<0>(user_app::findResponseIndex(objective_params->get<std::string>("Response Name"),*model_));
+  param_index_ = std::get<0>(panzer::findParameterIndex(objective_params->get<std::string>("Parameter Name"),*model_));
+  response_index_ = std::get<0>(panzer::findResponseIndex(objective_params->get<std::string>("Response Name"),*model_));
 }
 
 template <typename Real>
