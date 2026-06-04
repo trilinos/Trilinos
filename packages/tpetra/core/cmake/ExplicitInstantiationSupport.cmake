@@ -1,5 +1,7 @@
 MESSAGE(STATUS "${PACKAGE_NAME}: Processing ETI / test support")
 
+INCLUDE(TribitsETISupport)
+
 # This CMake module generates the following header file, which gets
 # written to the build directory (like other header files that CMake
 # generates).  The file contains macros that do instantiation over a
