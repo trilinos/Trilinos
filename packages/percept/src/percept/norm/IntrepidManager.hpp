@@ -144,8 +144,9 @@ using namespace Intrepid2;
 #if (defined(__PGI) && defined(USE_PGI_7_1_COMPILER_BUG_WORKAROUND))
       // workaround for PGI compiler bug
 
-      using BasisType = Intrepid2::Basis<Kokkos::HostSpace, double, double >;
-      using BasisTypeRCP = Intrepid2::BasisPtr<Kokkos::HostSpace, double, double >;
+      using device_type = typename Kokkos::DefaultHostExecutionSpace::device_type;
+      using BasisType = Intrepid2::Basis<device_type, double, double >;
+      using BasisTypeRCP = Intrepid2::BasisPtr<device_type, double, double >;
 
       static void bootstrap();
 #endif
@@ -408,7 +409,7 @@ using namespace Intrepid2;
       // BasisFields_Tag m_BasisFields_Tag;
 
       CellTopology *m_topo;
-      Teuchos::RCP<Cubature<Kokkos::HostSpace, double, double > > m_cub;
+      Teuchos::RCP<Cubature<typename Kokkos::HostSpace::device_type, double, double > > m_cub;
 
     };
 

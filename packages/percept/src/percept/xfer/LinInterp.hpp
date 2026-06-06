@@ -71,7 +71,7 @@ LinInterp<FROM,TO>::filter_to_nearest (
   const MeshA     &FromElem,
   MeshB           &ToPoints) {
 
-  using DynRankView = Kokkos::DynRankView<double, Kokkos::HostSpace>;
+  using DynRankView = Kokkos::DynRankView<double, typename Kokkos::HostSpace::device_type>;
 
   typename MeshB::Adaptor adaptor;
   if (adaptor.filter_to_nearest(RangeToDomain, FromElem, ToPoints))
@@ -176,10 +176,10 @@ LinInterp<FROM,TO>::filter_to_nearest (
         std::cout << outputParametricPoints.size() << " "
                   << inputPhysicalPoints.size() << " "
                   << std::endl;*/
-        Intrepid2::CellTools<Kokkos::HostSpace>::mapToReferenceFrame(outputParametricPoints,
-                                                         inputPhysicalPoints,
-                                                         cellWorkset,
-                                                         topo);
+        Intrepid2::CellTools<typename Kokkos::HostSpace::device_type>::mapToReferenceFrame(outputParametricPoints,
+                                                                                           inputPhysicalPoints,
+                                                                                           cellWorkset,
+                                                                                           topo);
         
         dist = parametricDistanceToEntity(outputParametricPoints.data(), topo);
       }
@@ -316,7 +316,7 @@ LinInterp<FROM,TO>::apply_from_nodal_field (
   stk::mesh::Entity theNode,
   const std::vector<double> &isoParCoords)
 {
-  using DynRankView = Kokkos::DynRankView<double, Kokkos::HostSpace>;
+  using DynRankView = Kokkos::DynRankView<double, typename Kokkos::HostSpace::device_type>;
 
   const unsigned nDim = FromElem.fromMetaData_.spatial_dimension();
   const unsigned from_field_size = FromElem.fromFields_[0]->max_size();

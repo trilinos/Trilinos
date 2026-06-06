@@ -53,33 +53,33 @@
       // workaround for PGI compiler bug
     void IntrepidManager::bootstrap()
     {
-      static BasisTypeRCP a1 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_HEX_C1_FEM<Kokkos::HostSpace, double, double >() );
+      static BasisTypeRCP a1 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_HEX_C1_FEM<device_type, double, double >() );
 
       // FIXME
-      static BasisTypeRCP a2 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_LINE_C1_FEM<Kokkos::HostSpace, double, double >() );
-      static BasisTypeRCP a3 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_TRI_C1_FEM<Kokkos::HostSpace, double, double >() );
-      static BasisTypeRCP a4 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_TRI_C2_FEM<Kokkos::HostSpace, double, double >() );
+      static BasisTypeRCP a2 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_LINE_C1_FEM<device_type, double, double >() );
+      static BasisTypeRCP a3 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_TRI_C1_FEM<device_type, double, double >() );
+      static BasisTypeRCP a4 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_TRI_C2_FEM<device_type, double, double >() );
 
-      static BasisTypeRCP a5 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<Kokkos::HostSpace, double, double >() );
-      static BasisTypeRCP a6 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_QUAD_I2_FEM<Kokkos::HostSpace, double, double >() );
-      static BasisTypeRCP a7 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_QUAD_C2_FEM<Kokkos::HostSpace, double, double >() );
+      static BasisTypeRCP a5 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<device_type, double, double >() );
+      static BasisTypeRCP a6 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_QUAD_I2_FEM<device_type, double, double >() );
+      static BasisTypeRCP a7 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_QUAD_C2_FEM<device_type, double, double >() );
 
-      static BasisTypeRCP a8 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_HEX_C1_FEM<Kokkos::HostSpace, double, double >() );
-      static BasisTypeRCP a9 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_HEX_I2_FEM<Kokkos::HostSpace, double, double >() );
-      static BasisTypeRCP a10 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_HEX_C2_FEM<Kokkos::HostSpace, double, double >() );
+      static BasisTypeRCP a8 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_HEX_C1_FEM<device_type, double, double >() );
+      static BasisTypeRCP a9 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_HEX_I2_FEM<device_type, double, double >() );
+      static BasisTypeRCP a10 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_HEX_C2_FEM<device_type, double, double >() );
 
-      static BasisTypeRCP a11 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_TET_C1_FEM<Kokkos::HostSpace, double, double >() );
-      static BasisTypeRCP a12 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_TET_C2_FEM<Kokkos::HostSpace, double, double >() );
+      static BasisTypeRCP a11 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_TET_C1_FEM<device_type, double, double >() );
+      static BasisTypeRCP a12 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_TET_C2_FEM<device_type, double, double >() );
 
-      static BasisTypeRCP a13 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_WEDGE_C1_FEM<Kokkos::HostSpace, double, double >() );
-      static BasisTypeRCP a14 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_WEDGE_I2_FEM<Kokkos::HostSpace, double, double >() );
+      static BasisTypeRCP a13 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_WEDGE_C1_FEM<device_type, double, double >() );
+      static BasisTypeRCP a14 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_WEDGE_I2_FEM<device_type, double, double >() );
 
 
       // Shells
-      static BasisTypeRCP a15 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_TRI_C1_FEM<Kokkos::HostSpace, double, double >() );
-      static BasisTypeRCP a16 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_TRI_C2_FEM<Kokkos::HostSpace, double, double >() );
-      static BasisTypeRCP a17 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<Kokkos::HostSpace, double, double >() );
-      static BasisTypeRCP a18 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_QUAD_I2_FEM<Kokkos::HostSpace, double, double >() );
+      static BasisTypeRCP a15 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_TRI_C1_FEM<device_type, double, double >() );
+      static BasisTypeRCP a16 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_TRI_C2_FEM<device_type, double, double >() );
+      static BasisTypeRCP a17 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<device_type, double, double >() );
+      static BasisTypeRCP a18 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_QUAD_I2_FEM<device_type, double, double >() );
     }
 #endif
 
@@ -91,7 +91,7 @@
     void IntrepidManager::setupCubature( CellTopology& cell_topo, unsigned cubDegree)
     {
       DefaultCubatureFactory cubFactory;         // create cubature factory
-      m_cub = cubFactory.create<Kokkos::HostSpace, double, double >(cell_topo, cubDegree);                                    // create default cubature
+      m_cub = cubFactory.create<typename Kokkos::HostSpace::device_type, double, double >(cell_topo, cubDegree);                                    // create default cubature
       unsigned numCubPoints = m_cub->getNumPoints();                                      // retrieve number of cubature points
       m_Cub_Points_Tag = Cub_Points_Tag(numCubPoints);
     }
@@ -136,9 +136,9 @@
     IntrepidManager::PhysicalCoords::
     operator()(CellWorkSet& c, CubaturePoints& xi)
     {
-      //Intrepid2::CellTools<Kokkos::HostSpace>::mapToPhysicalFrame(images, preImages, triNodes, triangle_3);
+      //Intrepid2::CellTools<typename Kokkos::HostSpace::device_type>::mapToPhysicalFrame(images, preImages, triNodes, triangle_3);
       auto basis = BasisTable::getInstance()->getBasis(*m_im.m_topo);
-      Intrepid2::CellTools<Kokkos::HostSpace>::mapToPhysicalFrame(*this, xi, c, basis);
+      Intrepid2::CellTools<typename Kokkos::HostSpace::device_type>::mapToPhysicalFrame(*this, xi, c, basis);
     }
 
     //------------------------------------------------------------------------------------------------------------------------
@@ -155,7 +155,7 @@
 
     operator()(CubaturePoints& xi, CellWorkSet& c, CellTopology& topo)
     {
-      CellTools<Kokkos::HostSpace>::setJacobian(*this, xi, c, topo);           // compute cell Jacobians
+      CellTools<typename Kokkos::HostSpace::device_type>::setJacobian(*this, xi, c, topo);           // compute cell Jacobians
     }
 
     //------------------------------------------------------------------------------------------------------------------------
@@ -171,7 +171,7 @@
     IntrepidManager::FaceNormal::
     operator()(Jacobian& jac, int i_face, CellTopology& topo)
     {
-      Intrepid2::CellTools<Kokkos::HostSpace>::getPhysicalFaceNormals(*this, jac, i_face, topo);
+      Intrepid2::CellTools<typename Kokkos::HostSpace::device_type>::getPhysicalFaceNormals(*this, jac, i_face, topo);
     }
 
 
@@ -204,7 +204,7 @@
     IntrepidManager::JacobianDet::
     operator()(Jacobian& jac)
     {
-      Intrepid2::CellTools<Kokkos::HostSpace>::setJacobianDet(*this, jac);
+      Intrepid2::CellTools<typename Kokkos::HostSpace::device_type>::setJacobianDet(*this, jac);
     }
 
     //------------------------------------------------------------------------------------------------------------------------
@@ -446,10 +446,10 @@
             }
         }
 
-      Intrepid2::CellTools<Kokkos::HostSpace>::mapToReferenceFrame(found_parametric_coordinates, input_phy_points, cellWorkset, topo);
+      Intrepid2::CellTools<typename Kokkos::HostSpace::device_type>::mapToReferenceFrame(found_parametric_coordinates, input_phy_points, cellWorkset, topo);
       MDArrayUInt inclusion_results("inclusion_results", 1, 1);  // FIXME
       double threshold = 1.e-4; // (INTREPID_THRESHOLD default = 10*double_eps ~ 20e-16)
-      Intrepid2::CellTools<Kokkos::HostSpace>::checkPointwiseInclusion(inclusion_results, found_parametric_coordinates, topo, threshold);
+      Intrepid2::CellTools<typename Kokkos::HostSpace::device_type>::checkPointwiseInclusion(inclusion_results, found_parametric_coordinates, topo, threshold);
       found_it = inclusion_results(0,0);
     }
 
@@ -467,7 +467,7 @@
 
       DefaultCubatureFactory cubFactory;                                              // create cubature factory
       unsigned cubDegree = 2;                                                                      // set cubature degree, e.g. 2
-      auto myCub = cubFactory.create<Kokkos::HostSpace, double, double>(cell_topo, cubDegree);         // create default cubature
+      auto myCub = cubFactory.create<typename Kokkos::HostSpace::device_type, double, double>(cell_topo, cubDegree);         // create default cubature
 
       unsigned numCubPoints = myCub->getNumPoints();                                               // retrieve number of cubature points
 
@@ -483,9 +483,9 @@
 
       // Methods to compute cell Jacobians, their inverses and their determinants
 
-      CellTools<Kokkos::HostSpace>::setJacobian(jacobian, cub_points, cellNodes, cell_topo);           // compute cell Jacobians
-      CellTools<Kokkos::HostSpace>::setJacobianInv(jacobian_inv, jacobian);                            // compute inverses of cell Jacobians
-      CellTools<Kokkos::HostSpace>::setJacobianDet(jacobian_det, jacobian);                            // compute determinants of cell Jacobians
+      CellTools<typename Kokkos::HostSpace::device_type>::setJacobian(jacobian, cub_points, cellNodes, cell_topo);           // compute cell Jacobians
+      CellTools<typename Kokkos::HostSpace::device_type>::setJacobianInv(jacobian_inv, jacobian);                            // compute inverses of cell Jacobians
+      CellTools<typename Kokkos::HostSpace::device_type>::setJacobianDet(jacobian_det, jacobian);                            // compute determinants of cell Jacobians
 
       MDArray weightedMeasure("weightedMeasure", numCells, numCubPoints);
       MDArray onesLeft("onesLeft", numCells,  numCubPoints);
