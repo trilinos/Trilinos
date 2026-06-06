@@ -72,7 +72,7 @@ namespace panzer {
     auto dof_manager = make_rcp<panzer::DOFManager>(conn_manager,MPI_COMM_WORLD);
     {
       auto intrepid_basis =
-        panzer::createIntrepid2Basis<PHX::Device::execution_space,double,double>
+        panzer::createIntrepid2Basis<PHX::Device::device_type,double,double>
         ("HGrad",1,*mesh->getCellTopology(element_block));
 
       auto field_pattern = make_rcp<panzer::Intrepid2FieldPattern>(intrepid_basis);
