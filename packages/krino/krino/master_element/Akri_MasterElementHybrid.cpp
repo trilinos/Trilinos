@@ -81,8 +81,8 @@ MasterElementHybrid::MasterElementHybrid(stk::topology topology)
   m_Basis = get_basis_for_topology(m_topology);
   using PointType = double;
   using WeightType = double;
-  using ExecutionSpace = Kokkos::DefaultHostExecutionSpace;
-  auto intrepid2Cubature = Intrepid2::DefaultCubatureFactory().create<ExecutionSpace, PointType, WeightType>(stk::mesh::get_cell_topology(m_topology), 2*m_Basis->degree());
+  using Device = typename Kokkos::DefaultHostExecutionSpace::device_type;
+  auto intrepid2Cubature = Intrepid2::DefaultCubatureFactory().create<Device, PointType, WeightType>(stk::mesh::get_cell_topology(m_topology), 2*m_Basis->degree());
 
   m_numIntgPts = intrepid2Cubature->getNumPoints();
 
@@ -97,8 +97,8 @@ MasterElementHybrid::MasterElementHybrid(stk::topology topology)
   m_refCoords.resize(m_numNodes*m_numElemDims);
   m_refVolume = m_Basis->parametric_volume();
 
-  Kokkos::DynRankView<double, ExecutionSpace> refPoints(m_refPoints.data(), m_numIntgPts, m_numElemDims);
-  Kokkos::DynRankView<double, ExecutionSpace> refWeights(m_refWeights.data(), m_numIntgPts);
+  Kokkos::DynRankView<double, Device> refPoints(m_refPoints.data(), m_numIntgPts, m_numElemDims);
+  Kokkos::DynRankView<double, Device> refWeights(m_refWeights.data(), m_numIntgPts);
   intrepid2Cubature->getCubature(refPoints, refWeights);
 
   // compute the reference values and gradients at the integration points
