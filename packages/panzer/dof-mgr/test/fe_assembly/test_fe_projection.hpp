@@ -801,7 +801,7 @@ int feProjection(int argc, char *argv[]) {
         DynRankView physVerticesOnSide("physVerticesOnSide", numBoundarySides, numNodesPerElem, dim);
         DynRankView sideEvaluationPoints3d("sideEvaluationPoints3d", numBoundarySides, numSidePoints, dim);
         {
-          const auto subcellParametrization = Intrepid2::RefSubcellParametrization<DeviceSpaceType>::get(sideDim, cellTopoPtr->getKey());
+          const auto subcellParametrization = Intrepid2::RefSubcellParametrization<typename DeviceSpaceType::device_type>::get(sideDim, cellTopoPtr->getKey());
           ct::mapToReferenceSubcell(sideEvaluationPoints3d, sideEvaluationPoints, subcellParametrization, sideOrdinals);
 
           Kokkos::DynRankView<int,DeviceSpaceType> sideNodeMap("sideNodeMap", cellTopoPtr->getSideCount(), maxNumNodesPerSide);

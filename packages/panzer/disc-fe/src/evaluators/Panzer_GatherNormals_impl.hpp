@@ -75,7 +75,7 @@ postRegistrationSetup(typename Traits::SetupData d,
 
   const shards::CellTopology & parentCell = *basis_->getCellTopology();
   int sideDim = parentCell.getDimension()-1;
-  sideParam_ = Intrepid2::RefSubcellParametrization<PHX::Device>::get(sideDim, parentCell.getKey());
+  sideParam_ = Intrepid2::RefSubcellParametrization<typename PHX::Device::device_type>::get(sideDim, parentCell.getKey());
 
   int numFaces = gatherFieldNormals_.extent(1);
   keys_ = Kokkos::View<unsigned int*>("parentCell.keys",numFaces);
