@@ -36,7 +36,7 @@ using Teuchos::rcpFromRef;
 namespace panzer::unit_test {
 
 RCP<const panzer::FieldPattern> buildFieldPattern(
-  RCP<Intrepid2::Basis<PHX::Device, double, double>> basis
+  RCP<Intrepid2::Basis<PHX::Device::device_type, double, double>> basis
 ) {
   // build a geometric pattern from a single basis
   return Teuchos::make_rcp<panzer::Intrepid2FieldPattern>(basis);
@@ -169,7 +169,7 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_2d_1dpart_helpers)
   int rank = comm.getRank();
 
   // field pattern for basis required
-  RCP<const panzer::FieldPattern> fp = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<PHX::Device, double, double>>());
+  RCP<const panzer::FieldPattern> fp = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<PHX::Device::device_type, double, double>>());
   
   // mesh description
   panzer::GlobalOrdinal nx = 10, ny = 7;
@@ -291,7 +291,7 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_2d_1dpart)
   // test 2D nodal discretization
   {
     // field pattern for basis required
-    RCP<const panzer::FieldPattern> fp = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::Device, double, double>>());
+    RCP<const panzer::FieldPattern> fp = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::Device::device_type, double, double>>());
   
     // build the topology
     const auto connManager = Teuchos::make_rcp<CCM>();
@@ -325,7 +325,7 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_2d_1dpart)
     panzer::GlobalOrdinal totalEdges = (bx*nx+1)*(by*ny)+(bx*nx)*(by*ny+1);
 
     // field pattern for basis required
-    RCP<const panzer::FieldPattern> fp = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<PHX::Device, double, double>>());
+    RCP<const panzer::FieldPattern> fp = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<PHX::Device::device_type, double, double>>());
 
     // build the topology
     const auto connManager = Teuchos::make_rcp<CCM>();
@@ -381,7 +381,7 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_3d_1dpart_helpers)
   int rank = comm.getRank();
 
   // field pattern for basis required
-  RCP<const panzer::FieldPattern> fp = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HGRAD_HEX_C2_FEM<PHX::Device, double, double>>());
+  RCP<const panzer::FieldPattern> fp = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HGRAD_HEX_C2_FEM<PHX::Device::device_type, double, double>>());
 
   // mesh description
   panzer::GlobalOrdinal nx = 10, ny = 7, nz = 4;
@@ -508,7 +508,7 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_3d_1dpart)
   // test 3D nodal discretization
   {
     // field pattern for basis required
-    RCP<const panzer::FieldPattern> fp = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::Device, double, double>>());
+    RCP<const panzer::FieldPattern> fp = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::Device::device_type, double, double>>());
 
     // build the topology
     const auto connManager = Teuchos::make_rcp<CCM>();
@@ -548,7 +548,7 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_3d_1dpart)
     panzer::GlobalOrdinal totalFaces = (bx*nx+1)*(by*ny)*(bz*nz)+(bx*nx)*(by*ny+1)*(bz*nz)+(bx*nx)*(by*ny)*(bz*nz+1);
 
     // field pattern for basis required
-    RCP<const panzer::FieldPattern> fp = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HGRAD_HEX_C2_FEM<PHX::Device, double, double>>());
+    RCP<const panzer::FieldPattern> fp = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HGRAD_HEX_C2_FEM<PHX::Device::device_type, double, double>>());
 
     // build the topology
     const auto connManager = Teuchos::make_rcp<CCM>();

@@ -130,13 +130,13 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
   auto cellTopology = mesh->getCellTopology(eBlockNames[0]);
   auto dim = cellTopology->getDimension();
 
-  auto hgradBasis = panzer::createIntrepid2Basis<PHX::Device,double,double>(hgradBD.getType(),hgradBD.getOrder(),*cellTopology);
+  auto hgradBasis = panzer::createIntrepid2Basis<PHX::Device::device_type,double,double>(hgradBD.getType(),hgradBD.getOrder(),*cellTopology);
   RCP<const panzer::FieldPattern> hgradFP(new panzer::Intrepid2FieldPattern(hgradBasis));
 
-  auto curlBasis = panzer::createIntrepid2Basis<PHX::Device,double,double>(hcurlBD.getType(),hcurlBD.getOrder(),*cellTopology);
+  auto curlBasis = panzer::createIntrepid2Basis<PHX::Device::device_type,double,double>(hcurlBD.getType(),hcurlBD.getOrder(),*cellTopology);
   RCP<const panzer::FieldPattern> hcurlFP(new panzer::Intrepid2FieldPattern(curlBasis));
 
-  auto divBasis = panzer::createIntrepid2Basis<PHX::Device,double,double>(hdivBD.getType(),hdivBD.getOrder(),*cellTopology);
+  auto divBasis = panzer::createIntrepid2Basis<PHX::Device::device_type,double,double>(hdivBD.getType(),hdivBD.getOrder(),*cellTopology);
   RCP<const panzer::FieldPattern> hdivFP(new panzer::Intrepid2FieldPattern(divBasis));
 
   // ****************
@@ -457,7 +457,7 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
         DynRankView basisCoeffsE("basisCoeffsE", workset.numOwnedCells(), numBasisE);
         {
           int targetCubDegree(0);
-          Intrepid2::ProjectionStruct<PHX::Device,double> projStruct;
+          Intrepid2::ProjectionStruct<PHX::Device::device_type,double> projStruct;
           projStruct.createL2DGProjectionStruct(curlBasis, targetCubDegree);
           int numPoints = projStruct.getNumTargetEvalPoints();
           //DynRankView evalPoints("evalPoints", elemOrts, workset.numOwnedCells(), numPoints, dim);
@@ -874,10 +874,10 @@ TEUCHOS_UNIT_TEST(L2Projection, CurlMassMatrix)
   mesh->getElementBlockNames(eBlockNames);
   auto cellTopology = mesh->getCellTopology(eBlockNames[0]);
 
-  auto curlBasis = panzer::createIntrepid2Basis<PHX::Device,double,double>(hcurlBD.getType(),hcurlBD.getOrder(),*cellTopology);
+  auto curlBasis = panzer::createIntrepid2Basis<PHX::Device::device_type,double,double>(hcurlBD.getType(),hcurlBD.getOrder(),*cellTopology);
   RCP<const panzer::FieldPattern> hcurlFP(new panzer::Intrepid2FieldPattern(curlBasis));
 
-  auto divBasis = panzer::createIntrepid2Basis<PHX::Device,double,double>(hdivBD.getType(),hdivBD.getOrder(),*cellTopology);
+  auto divBasis = panzer::createIntrepid2Basis<PHX::Device::device_type,double,double>(hdivBD.getType(),hdivBD.getOrder(),*cellTopology);
   RCP<const panzer::FieldPattern> hdivFP(new panzer::Intrepid2FieldPattern(divBasis));
 
   // Build source DOF Manager for edge and face DOFs
@@ -1027,7 +1027,7 @@ TEUCHOS_UNIT_TEST(L2Projection, HighOrderTri)
   mesh->getElementBlockNames(eBlockNames);
   auto cellTopology = mesh->getCellTopology(eBlockNames[0]);
 
-  auto hgradBasis = panzer::createIntrepid2Basis<PHX::Device,double,double>(hgradBD.getType(),hgradBD.getOrder(),*cellTopology);
+  auto hgradBasis = panzer::createIntrepid2Basis<PHX::Device::device_type,double,double>(hgradBD.getType(),hgradBD.getOrder(),*cellTopology);
   RCP<const panzer::FieldPattern> hgradFP(new panzer::Intrepid2FieldPattern(hgradBasis));
 
   // Build source DOF Manager that mimics multi-fluid plasma dof manager
@@ -1455,7 +1455,7 @@ TEUCHOS_UNIT_TEST(L2Projection, ElementBlockMultiplier)
   mesh->getElementBlockNames(eBlockNames);
   auto cellTopology = mesh->getCellTopology(eBlockNames[0]);
 
-  auto hgradBasis = panzer::createIntrepid2Basis<PHX::Device,double,double>(hgradBD.getType(),hgradBD.getOrder(),*cellTopology);
+  auto hgradBasis = panzer::createIntrepid2Basis<PHX::Device::device_type,double,double>(hgradBD.getType(),hgradBD.getOrder(),*cellTopology);
   RCP<const panzer::FieldPattern> hgradFP(new panzer::Intrepid2FieldPattern(hgradBasis));
 
   // Build source DOF Manager that mimics multi-fluid plasma dof manager

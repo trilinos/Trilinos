@@ -17,7 +17,7 @@
 namespace panzer {
 
   Intrepid2FieldPattern::
-  Intrepid2FieldPattern(const Teuchos::RCP< Intrepid2::Basis<PHX::Device,double,double> > &intrepidBasis)
+  Intrepid2FieldPattern(const Teuchos::RCP< Intrepid2::Basis<PHX::Device::device_type,double,double> > &intrepidBasis)
     : intrepidBasis_(intrepidBasis) {
     const auto dofOrd = intrepidBasis_->getAllDofOrdinal(); // rank 3 view
     const auto dofTag = intrepidBasis_->getAllDofTags(); // rank 2 view
@@ -239,7 +239,7 @@ namespace panzer {
     }
   }
 
-  Teuchos::RCP< Intrepid2::Basis<PHX::Device,double,double> >
+  Teuchos::RCP< Intrepid2::Basis<PHX::Device::device_type,double,double> >
   Intrepid2FieldPattern::getIntrepidBasis() const
   { return intrepidBasis_; }
   
