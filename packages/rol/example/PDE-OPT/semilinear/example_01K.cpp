@@ -34,7 +34,7 @@
 #include "ROL_Solver.hpp"
 
 using RealT = double;
-using DeviceT = Kokkos::HostSpace;
+using DeviceT = typename Kokkos::HostSpace::device_type;
 
 int main(int argc, char *argv[]) {
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
