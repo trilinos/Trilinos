@@ -984,5 +984,10 @@ refCenterDataStatic_ = {
 
 }  // Intrepid2 namespace
 
+#define INTREPID2_CELLDATA_INSTANT(DEVICE, EXTERN)                             \
+  EXTERN template class Intrepid2::RefSubcellParametrization<DEVICE>;
+
+INTREPID2_CELLDATA_INSTANT(Kokkos::DefaultExecutionSpace::device_type, extern);
+
 #endif
 
