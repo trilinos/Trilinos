@@ -49,9 +49,9 @@ namespace panzer {
   // always had a DOF.
   TEUCHOS_UNIT_TEST(tFieldPattern_DG, HGRAD_CG)
   {
-    using Basis = Intrepid2::Basis<PHX::Device,double,double>;
+    using Basis = Intrepid2::Basis<PHX::Device::device_type,double,double>;
 
-    RCP<Basis> bHGRAD = rcp(new Intrepid2::Basis_HGRAD_LINE_Cn_FEM<PHX::Device,double,double>(1));
+    RCP<Basis> bHGRAD = rcp(new Intrepid2::Basis_HGRAD_LINE_Cn_FEM<PHX::Device::device_type,double,double>(1));
     RCP<const FieldPattern> HGRAD = rcp(new Intrepid2FieldPattern(bHGRAD));
 
     using FieldVec = std::vector<std::tuple<int,FieldType,RCP<const FieldPattern>>>;
@@ -68,9 +68,9 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(tFieldPattern_DG, HGRAD_1D_LINE)
   {
-    using Basis = Intrepid2::Basis<PHX::Device,double,double>;
+    using Basis = Intrepid2::Basis<PHX::Device::device_type,double,double>;
 
-    RCP<Basis> bHGRAD2 = rcp(new Intrepid2::Basis_HGRAD_LINE_Cn_FEM<PHX::Device,double,double>(2));
+    RCP<Basis> bHGRAD2 = rcp(new Intrepid2::Basis_HGRAD_LINE_Cn_FEM<PHX::Device::device_type,double,double>(2));
     RCP<const FieldPattern> HGRAD2 = rcp(new Intrepid2FieldPattern(bHGRAD2));
 
     using FieldVec = std::vector<std::tuple<int,FieldType,RCP<const FieldPattern>>>;
@@ -92,9 +92,9 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(tFieldPattern_DG, HGRAD_2D_QUAD)
   {
-    using Basis = Intrepid2::Basis<PHX::Device,double,double>;
+    using Basis = Intrepid2::Basis<PHX::Device::device_type,double,double>;
 
-    RCP<Basis> bHGRAD2 = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device,double,double>(2));
+    RCP<Basis> bHGRAD2 = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device::device_type,double,double>(2));
     RCP<const FieldPattern> HGRAD2 = rcp(new Intrepid2FieldPattern(bHGRAD2));
 
     using FieldVec = std::vector<std::tuple<int,FieldType,RCP<const FieldPattern>>>;
@@ -120,9 +120,9 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(tFieldPattern_DG, HGRAD_3D_HEX)
   {
-    using Basis = Intrepid2::Basis<PHX::Device,double,double>;
+    using Basis = Intrepid2::Basis<PHX::Device::device_type,double,double>;
 
-    RCP<Basis> bHGRAD2 = rcp(new Intrepid2::Basis_HGRAD_HEX_Cn_FEM<PHX::Device,double,double>(2));
+    RCP<Basis> bHGRAD2 = rcp(new Intrepid2::Basis_HGRAD_HEX_Cn_FEM<PHX::Device::device_type,double,double>(2));
     RCP<const FieldPattern> HGRAD2 = rcp(new Intrepid2FieldPattern(bHGRAD2));
 
     using FieldVec = std::vector<std::tuple<int,FieldType,RCP<const FieldPattern>>>;
@@ -152,13 +152,13 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(tFieldPattern_DG, Mixed_CG_DG_2D)
   {
-    using Basis = Intrepid2::Basis<PHX::Device,double,double>;
+    using Basis = Intrepid2::Basis<PHX::Device::device_type,double,double>;
 
-    RCP<Basis> bHCURL2 = rcp(new Intrepid2::Basis_HCURL_QUAD_In_FEM<PHX::Device,double,double>(2));
+    RCP<Basis> bHCURL2 = rcp(new Intrepid2::Basis_HCURL_QUAD_In_FEM<PHX::Device::device_type,double,double>(2));
     RCP<const FieldPattern> HCURL2 = rcp(new Intrepid2FieldPattern(bHCURL2));
     out << "HCURL2\n" << *HCURL2 << std::endl;
 
-    RCP<Basis> bHDIV2 = rcp(new Intrepid2::Basis_HDIV_QUAD_In_FEM<PHX::Device,double,double>(2));
+    RCP<Basis> bHDIV2 = rcp(new Intrepid2::Basis_HDIV_QUAD_In_FEM<PHX::Device::device_type,double,double>(2));
     RCP<const FieldPattern> HDIV2 = rcp(new Intrepid2FieldPattern(bHDIV2));
     out << "HDIV2\n" << *HDIV2 << std::endl;
 
@@ -208,13 +208,13 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(tFieldPattern_DG, Mixed_CG_DG_3D)
   {
-    using Basis = Intrepid2::Basis<PHX::Device,double,double>;
+    using Basis = Intrepid2::Basis<PHX::Device::device_type,double,double>;
 
-    RCP<Basis> bHCURL2 = rcp(new Intrepid2::Basis_HCURL_HEX_In_FEM<PHX::Device,double,double>(2));
+    RCP<Basis> bHCURL2 = rcp(new Intrepid2::Basis_HCURL_HEX_In_FEM<PHX::Device::device_type,double,double>(2));
     RCP<const FieldPattern> HCURL2 = rcp(new Intrepid2FieldPattern(bHCURL2));
     out << "HCURL2\n" << *HCURL2 << std::endl;
 
-    RCP<Basis> bHDIV2 = rcp(new Intrepid2::Basis_HDIV_HEX_In_FEM<PHX::Device,double,double>(2));
+    RCP<Basis> bHDIV2 = rcp(new Intrepid2::Basis_HDIV_HEX_In_FEM<PHX::Device::device_type,double,double>(2));
     RCP<const FieldPattern> HDIV2 = rcp(new Intrepid2FieldPattern(bHDIV2));
     out << "HDIV2\n" << *HDIV2 << std::endl;
 
@@ -268,9 +268,9 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(tFieldPattern_DG, Mixed_CG_DG_INTERLEAVED)
   {
-    using Basis = Intrepid2::Basis<PHX::Device,double,double>;
+    using Basis = Intrepid2::Basis<PHX::Device::device_type,double,double>;
 
-    RCP<Basis> bHGRAD = rcp(new Intrepid2::Basis_HGRAD_HEX_Cn_FEM<PHX::Device,double,double>(2));
+    RCP<Basis> bHGRAD = rcp(new Intrepid2::Basis_HGRAD_HEX_Cn_FEM<PHX::Device::device_type,double,double>(2));
     RCP<const FieldPattern> HGRAD = rcp(new Intrepid2FieldPattern(bHGRAD));
     out << "HGRAD\n" << *HGRAD << std::endl;
 
@@ -337,9 +337,9 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(tFieldPattern_DG, Mixed_CG_DG_OFFSET_CLOSURE)
   {
-    using Basis = Intrepid2::Basis<PHX::Device,double,double>;
+    using Basis = Intrepid2::Basis<PHX::Device::device_type,double,double>;
 
-    RCP<Basis> bHGRAD = rcp(new Intrepid2::Basis_HGRAD_HEX_Cn_FEM<PHX::Device,double,double>(2));
+    RCP<Basis> bHGRAD = rcp(new Intrepid2::Basis_HGRAD_HEX_Cn_FEM<PHX::Device::device_type,double,double>(2));
     RCP<const FieldPattern> HGRAD = rcp(new Intrepid2FieldPattern(bHGRAD));
     out << "HGRAD\n" << *HGRAD << std::endl;
 

@@ -44,7 +44,7 @@ DOF_BasisToBasis(const std::string & fieldName,
   Kokkos::DynRankView<double,PHX::Device>intrpCoords =
     Kokkos::DynRankView<double,PHX::Device>("intrpCoords",targetBasis.cardinality(),targetBasis.dimension());
   
-  targetBasis.getIntrepid2Basis<PHX::exec_space,double,double>()->getDofCoords(intrpCoords);
+  targetBasis.getIntrepid2Basis<PHX::Device::device_type,double,double>()->getDofCoords(intrpCoords);
 
   // **************
   // Evaluate source basis values at target basis coordinates

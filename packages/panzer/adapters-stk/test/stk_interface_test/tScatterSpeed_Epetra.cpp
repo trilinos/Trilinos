@@ -173,7 +173,7 @@ size_t setUp1(RCP<Map> &rowmap,
 
   conn = rcp(new panzer_stk::STKConnManager(mesh));
 
-  RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis1 = rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::exec_space,double,double>);
+  RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> > basis1 = rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::Device::device_type,double,double>);
   RCP<const panzer::FieldPattern> pressure_pattern = Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis1));
 
   my_dofM = Teuchos::rcp(new panzer::DOFManager());

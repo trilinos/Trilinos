@@ -338,7 +338,7 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(basis_values_evaluator, eval_vector)
   {
-    typedef Intrepid2::Basis<PHX::Device::execution_space,double,double> IntrepidBasis;
+    typedef Intrepid2::Basis<PHX::Device::device_type,double,double> IntrepidBasis;
 
     const std::size_t workset_size = 4;
     const std::string fieldName = "U";
@@ -377,7 +377,7 @@ namespace panzer {
     {
        RCP<IntrepidBasis> hgrad_intrepid_basis;
        hgrad_intrepid_basis
-           = panzer::createIntrepid2Basis<PHX::Device::execution_space,double,double>("HGrad",1,
+           = panzer::createIntrepid2Basis<PHX::Device::device_type,double,double>("HGrad",1,
                                                                                       *mesh->getCellTopology(physicsBlock->elementBlockID()));
       RCP<panzer::Intrepid2FieldPattern> hgrad_field_pattern = rcp(new panzer::Intrepid2FieldPattern(hgrad_intrepid_basis));
 
@@ -509,7 +509,7 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(dof_point_values_evaluator, eval)
   {
-    typedef Intrepid2::Basis<PHX::Device::execution_space,double,double> IntrepidBasis;
+    typedef Intrepid2::Basis<PHX::Device::device_type,double,double> IntrepidBasis;
 
     const std::size_t workset_size = 4;
     const std::string fieldName_q1 = "U";
@@ -550,10 +550,10 @@ namespace panzer {
     {
        RCP<IntrepidBasis> hgrad_intrepid_basis, hcurl_intrepid_basis;
        hgrad_intrepid_basis
-           = panzer::createIntrepid2Basis<PHX::Device::execution_space,double,double>("HGrad",1,
+           = panzer::createIntrepid2Basis<PHX::Device::device_type,double,double>("HGrad",1,
                                                                                       *mesh->getCellTopology(physicsBlock->elementBlockID()));
        hcurl_intrepid_basis
-           = panzer::createIntrepid2Basis<PHX::Device::execution_space,double,double>("HCurl",1,
+           = panzer::createIntrepid2Basis<PHX::Device::device_type,double,double>("HCurl",1,
                                                                                       *mesh->getCellTopology(physicsBlock->elementBlockID()));
       RCP<panzer::Intrepid2FieldPattern> hgrad_field_pattern = rcp(new panzer::Intrepid2FieldPattern(hgrad_intrepid_basis));
       RCP<panzer::Intrepid2FieldPattern> hcurl_field_pattern = rcp(new panzer::Intrepid2FieldPattern(hcurl_intrepid_basis));

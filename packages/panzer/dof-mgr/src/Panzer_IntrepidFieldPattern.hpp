@@ -29,7 +29,7 @@ namespace panzer {
    */
   class Intrepid2FieldPattern : public FieldPattern {
   public:
-    Intrepid2FieldPattern(const Teuchos::RCP< Intrepid2::Basis<PHX::Device,double,double> > &intrepidBasis);
+    Intrepid2FieldPattern(const Teuchos::RCP< Intrepid2::Basis<PHX::Device::device_type,double,double> > &intrepidBasis);
     Teuchos::RCP<panzer::FieldPattern> clone() const
     {return Teuchos::rcp(new Intrepid2FieldPattern(*this));}
 
@@ -111,10 +111,10 @@ namespace panzer {
                                      Teuchos::RCP<const shards::CellTopology> meshCellTopology=Teuchos::null) const;
 
     /// Returns the underlying Intrepid2::Basis object
-    Teuchos::RCP< Intrepid2::Basis<PHX::Device,double,double> > getIntrepidBasis() const;
+    Teuchos::RCP< Intrepid2::Basis<PHX::Device::device_type,double,double> > getIntrepidBasis() const;
 
   protected:
-    Teuchos::RCP< Intrepid2::Basis<PHX::Device,double,double> > intrepidBasis_;
+    Teuchos::RCP< Intrepid2::Basis<PHX::Device::device_type,double,double> > intrepidBasis_;
 
     //mutable std::vector<int> subcellIndices_;
     mutable std::vector<std::vector<std::vector<int> > > subcellIndicies_;

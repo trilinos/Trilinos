@@ -61,7 +61,7 @@ namespace panzer {
     
     std::string fieldNameD2() const;
 
-    Teuchos::RCP< Intrepid2::Basis<PHX::Device::execution_space,double,double> > 
+    Teuchos::RCP< Intrepid2::Basis<PHX::Device::device_type,double,double> >
     getIntrepid2Basis() const;
 
     Teuchos::RCP<const PureBasis> getBasis() const;

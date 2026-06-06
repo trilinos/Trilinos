@@ -61,7 +61,7 @@ namespace panzer {
       const int index = std::distance(ebNames.cbegin(),search);
       const auto& cellTopology = topologies[index];
 
-      auto intrepidBasis = panzer::createIntrepid2Basis<PHX::Device,double,double>(targetBasisDescriptor_.getType(),
+      auto intrepidBasis = panzer::createIntrepid2Basis<PHX::Device::device_type,double,double>(targetBasisDescriptor_.getType(),
                                                                                    targetBasisDescriptor_.getOrder(),
                                                                                    cellTopology);
       Teuchos::RCP<const panzer::FieldPattern> fieldPattern(new panzer::Intrepid2FieldPattern(intrepidBasis));

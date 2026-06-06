@@ -133,7 +133,7 @@ TEUCHOS_UNIT_TEST(tIOSSConnManager, basic)
 	std::vector<Teuchos::RCP<panzer::Intrepid2FieldPattern>> intrepid2FieldPatterns;
 
 	RCP<panzer::FieldPattern> fp;
-	RCP<Intrepid2::Basis<PHX::Device,double,double> > basis;
+	RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> > basis;
 	RCP<panzer::Intrepid2FieldPattern> i2fp;
 
 	// Test 0
@@ -141,7 +141,7 @@ TEUCHOS_UNIT_TEST(tIOSSConnManager, basic)
 	iossDatabaseTypes.push_back("pamgen");
 	corrects.push_back(&correctQuad4NodalFP);
 	fp.reset(); // Set fp to null. Use the appropriate nodal field pattern.
-	basis = rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::Device,double,double>);
+	basis = rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::Device::device_type,double,double>);
 	i2fp = rcp(new panzer::Intrepid2FieldPattern(basis));
 	fieldPatterns.push_back(fp);
 	intrepid2FieldPatterns.push_back(i2fp);
@@ -150,7 +150,7 @@ TEUCHOS_UNIT_TEST(tIOSSConnManager, basic)
 	filenames.push_back("rectangle.pg");
 	iossDatabaseTypes.push_back("pamgen");
 	corrects.push_back(&correctQuadHGradC2FP);
-	basis = rcp(new Intrepid2::Basis_HGRAD_QUAD_C2_FEM<PHX::Device,double,double>);
+	basis = rcp(new Intrepid2::Basis_HGRAD_QUAD_C2_FEM<PHX::Device::device_type,double,double>);
 	fp = rcp(new panzer::Intrepid2FieldPattern(basis));
 	i2fp = rcp(new panzer::Intrepid2FieldPattern(basis));
 	fieldPatterns.push_back(fp);
@@ -160,7 +160,7 @@ TEUCHOS_UNIT_TEST(tIOSSConnManager, basic)
 	filenames.push_back("rectangle.pg");
 	iossDatabaseTypes.push_back("pamgen");
 	corrects.push_back(&correctQuadHGradC3FP);
-	basis = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device,double,double>(3, Intrepid2::POINTTYPE_EQUISPACED));
+	basis = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device::device_type,double,double>(3, Intrepid2::POINTTYPE_EQUISPACED));
 	fp = rcp(new panzer::Intrepid2FieldPattern(basis));
 	i2fp = rcp(new panzer::Intrepid2FieldPattern(basis));
 	fieldPatterns.push_back(fp);
@@ -170,7 +170,7 @@ TEUCHOS_UNIT_TEST(tIOSSConnManager, basic)
 	filenames.push_back("brick.pg");
 	iossDatabaseTypes.push_back("pamgen");
 	corrects.push_back(&correctHexHGradC2FP);
-	basis = rcp(new Intrepid2::Basis_HGRAD_HEX_C2_FEM<PHX::Device,double,double>);
+	basis = rcp(new Intrepid2::Basis_HGRAD_HEX_C2_FEM<PHX::Device::device_type,double,double>);
 	fp = rcp(new panzer::Intrepid2FieldPattern(basis));
 	i2fp = rcp(new panzer::Intrepid2FieldPattern(basis));
 	fieldPatterns.push_back(fp);

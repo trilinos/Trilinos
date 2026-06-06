@@ -51,7 +51,7 @@ namespace panzer_stk {
   RCP<const panzer::FieldPattern> buildFieldPattern()
   {
      // build a geometric pattern from a single basis
-     RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = rcp(new Intrepid2Type);
+     RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> > basis = rcp(new Intrepid2Type);
      RCP<const panzer::FieldPattern> pattern = rcp(new panzer::Intrepid2FieldPattern(basis));
      return pattern;
   }
@@ -102,7 +102,7 @@ namespace panzer_stk {
     // connection manager
     /////////////////////////////////////////////
     RCP<const panzer::FieldPattern> fp
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::exec_space,double,double> >();
+         = buildFieldPattern<Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::Device::device_type,double,double> >();
 
     Teuchos::RCP<panzer::ConnManager> connMngr
           = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));

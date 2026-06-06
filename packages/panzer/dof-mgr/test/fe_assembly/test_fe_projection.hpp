@@ -129,6 +129,7 @@ int feProjection(int argc, char *argv[]) {
 #else
       Kokkos::Impl::HostMirror<DeviceSpaceType>::Space::execution_space;
 #endif
+  using ExecSpaceType = typename DeviceSpaceType::execution_space;
   using DynRankView = Kokkos::DynRankView<ValueType,DeviceSpaceType>;
   using DynRankViewHost = Kokkos::DynRankView<ValueType,HostSpaceType>;
 
@@ -331,7 +332,7 @@ int feProjection(int argc, char *argv[]) {
         getFancyOStream(Teuchos::rcpFromRef (std::cout)) :
         getFancyOStream(Teuchos::rcp (new Teuchos::oblackholestream ()));
 
-    *outStream << "DeviceSpace::  "; DeviceSpaceType().print_configuration(*outStream, false);
+    *outStream << "DeviceSpace::  "; ExecSpaceType().print_configuration(*outStream, false);
     *outStream << "HostSpace::    ";   HostSpaceType().print_configuration(*outStream, false);
     *outStream << "\n";
 
