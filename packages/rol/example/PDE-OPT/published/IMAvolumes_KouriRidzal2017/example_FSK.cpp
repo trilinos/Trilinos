@@ -100,7 +100,7 @@ void print(ROL::Objective<Real> &obj,
 }
 
 using RealT = double;
-using DeviceT = Kokkos::HostSpace;
+using DeviceT = typename Kokkos::HostSpace::device_type;
 
 int main(int argc, char *argv[]) {
 
