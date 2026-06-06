@@ -21,7 +21,7 @@
 #include "pdevectorK.hpp"
 
 // Do not instantiate the template in this translation unit.
-extern template class Assembler<double,Kokkos::HostSpace>;
+extern template class Assembler<double,typename Kokkos::HostSpace::device_type>;
 
 //// Global Timers.
 #ifdef ROL_TIMERS
