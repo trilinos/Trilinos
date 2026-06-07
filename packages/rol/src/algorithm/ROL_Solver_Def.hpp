@@ -48,7 +48,7 @@ int Solver<Real>::solve( std::ostream &outStream,
     case TYPE_P:
       if (status != nullPtr) algoP_->setStatusTest(status,combineStatus);
       algoP_->run(*opt_,outStream);
-      break; 
+      break;
     case TYPE_B:
       if (status != nullPtr) algoB_->setStatusTest(status,combineStatus);
       algoB_->run(*opt_,outStream);
@@ -77,7 +77,7 @@ Ptr<const AlgorithmState<Real>> Solver<Real>::getAlgorithmState() const {
 //Ptr<const AlgorithmState<Real>>& Solver<Real>::getAlgorithmState() const {
   switch (problemType_) {
     case TYPE_U:  return algoU_->getState();
-    case TYPE_P:  return algoP_->getState(); 
+    case TYPE_P:  return algoP_->getState();
     case TYPE_B:  return algoB_->getState();
     case TYPE_E:  return algoE_->getState();
     case TYPE_EB: return algoG_->getState();
@@ -92,7 +92,7 @@ template<typename Real>
 void Solver<Real>::reset() {
   switch (problemType_) {
     case TYPE_U:  algoU_->reset(); break;
-    case TYPE_P:  algoP_->reset(); break; 
+    case TYPE_P:  algoP_->reset(); break;
     case TYPE_B:  algoB_->reset(); break;
     case TYPE_E:  algoE_->reset(); break;
     case TYPE_EB: algoG_->reset(); break;

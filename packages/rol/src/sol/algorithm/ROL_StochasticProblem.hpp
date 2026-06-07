@@ -103,7 +103,7 @@ public:
   /***************************************************************************/
 
   void finalize(bool lumpConstraints = false, bool printToStream = false,
-                std::ostream &outStream = std::cout) override;
+                std::ostream &outStream = std::cout, bool useSlackVariables=true) override;
 
   void edit(void) override;
 

@@ -51,6 +51,13 @@ cd build
 make
 ```
 
+## Python Interface
+The python pip package rol-python is the official python interface to ROL.
+It is available at https://pypi.org/project/rol-python/ and can be installed via
+```
+pip install rol-python
+```
+
 
 ## Copyright and License
 See COPYRIGHT and LICENSE.

@@ -14,6 +14,7 @@
 #include "ROL_Ptr.hpp"
 #include "ROL_Objective.hpp"
 #include "ROL_OED_DesignVector.hpp"
+#include "ROL_OED_RobustObjective.hpp"
 
 namespace ROL {
 namespace OED {
