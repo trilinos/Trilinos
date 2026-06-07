@@ -1422,7 +1422,7 @@ struct check_has_common_view_alloc_prop<P>
 template < typename P0, typename ... P >
 struct check_has_common_view_alloc_prop<P0, P...>
 {
-  enum { value = ( (has_common_view_alloc_prop<P0>::value == true) ? true : check_has_common_view_alloc_prop<P...>::value ) };
+  enum { value = ( (has_common_view_alloc_prop<P0>::value == true) ? true : static_cast<bool>(check_has_common_view_alloc_prop<P...>::value) ) };
 };
 
 template < typename ... >

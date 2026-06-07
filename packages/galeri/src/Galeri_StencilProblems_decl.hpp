@@ -94,6 +94,39 @@ class Brick3DProblem : public ScalarProblem<Map, Matrix, MultiVector> {
   Teuchos::RCP<RealValuedMultiVector> BuildCoords();
 };
 
+// =============================================  Scalar3D_27Pt =============================================
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
+class Scalar3D_27PtProblem : public ScalarProblem<Map, Matrix, MultiVector> {
+ public:
+  using RealValuedMultiVector = typename Problem<Map, Matrix, MultiVector>::RealValuedMultiVector;
+
+  Scalar3D_27PtProblem(Teuchos::ParameterList& list, const Teuchos::RCP<const Map>& map);
+  Teuchos::RCP<Matrix> BuildMatrix();
+  Teuchos::RCP<RealValuedMultiVector> BuildCoords();
+};
+
+// =============================================  HexFEM_LapStiff =============================================
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
+class HexFEM_LapStiffProblem : public ScalarProblem<Map, Matrix, MultiVector> {
+ public:
+  using RealValuedMultiVector = typename Problem<Map, Matrix, MultiVector>::RealValuedMultiVector;
+
+  HexFEM_LapStiffProblem(Teuchos::ParameterList& list, const Teuchos::RCP<const Map>& map);
+  Teuchos::RCP<Matrix> BuildMatrix();
+  Teuchos::RCP<RealValuedMultiVector> BuildCoords();
+};
+
+// =============================================  HexFEM_Mass =============================================
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
+class HexFEM_MassProblem : public ScalarProblem<Map, Matrix, MultiVector> {
+ public:
+  using RealValuedMultiVector = typename Problem<Map, Matrix, MultiVector>::RealValuedMultiVector;
+
+  HexFEM_MassProblem(Teuchos::ParameterList& list, const Teuchos::RCP<const Map>& map);
+  Teuchos::RCP<Matrix> BuildMatrix();
+  Teuchos::RCP<RealValuedMultiVector> BuildCoords();
+};
+
 // =============================================  Identity  =============================================
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
 class IdentityProblem : public Problem<Map, Matrix, MultiVector> {

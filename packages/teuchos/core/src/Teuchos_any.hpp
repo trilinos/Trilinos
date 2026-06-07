@@ -461,4 +461,12 @@ T & make_any_ref(any &rhs)
 
 } // namespace Teuchos
 
+
+extern template std::string& Teuchos::any_cast<std::string>(Teuchos::any&);
+extern template int& Teuchos::any_cast<int>(Teuchos::any&);
+extern template long long& Teuchos::any_cast<long long>(Teuchos::any&);
+extern template bool& Teuchos::any_cast<bool>(Teuchos::any&);
+extern template double& Teuchos::any_cast<double>(Teuchos::any&);
+
+
 #endif // TEUCHOS_ANY_HPP

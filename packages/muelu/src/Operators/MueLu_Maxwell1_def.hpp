@@ -354,7 +354,7 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
     GetOStream(Warnings0) << "\"tentative: calculate qr\" is set to \"true\". There is no guarantee that this will work." << std::endl;
 
   /* We need both nodal Ptent and P for Emin. */
-  if (((parameterList_.sublist("maxwell1: 11list").get<std::string>("multigrid algorithm") == "smoothed reitzinger") || (parameterList_.sublist("maxwell1: 11list").get<std::string>("multigrid algorithm") == "emin reitzinger")) &&
+  if (((parameterList_.sublist("maxwell1: 11list").template get<std::string>("multigrid algorithm") == "smoothed reitzinger") || (parameterList_.sublist("maxwell1: 11list").template get<std::string>("multigrid algorithm") == "emin reitzinger")) &&
       (!precList22_.isParameter("sa: keep tentative prolongator") || !precList22_.get<bool>("sa: keep tentative prolongator")))
     precList22_.set("sa: keep tentative prolongator", true);
 
@@ -535,9 +535,9 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
         EdgeL->Set("NodeImporter", importer);
       }
 
-      // We used tenative P to generate the coarse discrete gradient.
+      // We used tentative P to generate the coarse discrete gradient.
       RCP<Matrix> NodalPtent;
-      if (parameterList_.sublist("maxwell1: 22list").get<std::string>("multigrid algorithm") == "unsmoothed")
+      if (parameterList_.sublist("maxwell1: 22list").template get<std::string>("multigrid algorithm") == "unsmoothed")
         NodalPtent = NodeL->Get<RCP<Matrix>>("P");
       else {
         NodalPtent = NodeL->Get<RCP<Matrix>>("Ptent");
@@ -570,7 +570,7 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
       // Pnodal is used by ReitzingerP to generate a coarse discrete gradient D0c and by the Hiptmair smoother
       EdgeL->Set("Pnodal", P_for_RS_construction);
 
-      if (parameterList_.sublist("maxwell1: 11list").get<std::string>("multigrid algorithm") == "emin reitzinger") {
+      if (parameterList_.sublist("maxwell1: 11list").template get<std::string>("multigrid algorithm") == "emin reitzinger") {
         // PnodalEmin is used for the RHS of the sparse constraint in energy minimization:
         // Pe*D0c = D0*PnodalEmin
         EdgeL->Set("PnodalEmin", NodalP);

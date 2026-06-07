@@ -7,9 +7,10 @@
 // *****************************************************************************
 // @HEADER
 
-#ifndef TEUCHOS_FANCYOSTREAM_HPP
-#define TEUCHOS_FANCYOSTREAM_HPP
+#include "Teuchos_any.hpp"
 
-#include "Teuchos_FancyOStream_decl.hpp"
-
-#endif
+template std::string& Teuchos::any_cast<std::string>(Teuchos::any&);
+template int& Teuchos::any_cast<int>(Teuchos::any&);
+template long long& Teuchos::any_cast<long long>(Teuchos::any&);
+template bool& Teuchos::any_cast<bool>(Teuchos::any&);
+template double& Teuchos::any_cast<double>(Teuchos::any&);
