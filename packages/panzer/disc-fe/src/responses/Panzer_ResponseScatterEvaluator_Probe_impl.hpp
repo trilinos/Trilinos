@@ -114,7 +114,7 @@ findCellAndComputeBasisValues(typename Traits::EvalData d)
   // This evaluator needs to run on host until checkPointwiseInclusion
   // is moved to device.
   using HostSpace = Kokkos::DefaultHostExecutionSpace;
-  using CTD = Intrepid2::CellTools<HostSpace>;
+  using CTD = Intrepid2::CellTools<HostSpace::device_type>;
   using FST = Intrepid2::FunctionSpaceTools<HostSpace>;
 
   // Find which cell contains our point

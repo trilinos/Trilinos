@@ -141,7 +141,7 @@ int feProjection(int argc, char *argv[]) {
 
   using DynRankViewGId = Kokkos::DynRankView<global_ordinal_t,DeviceSpaceType>;
 
-  using ct = Intrepid2::CellTools<DeviceSpaceType>;
+  using ct = Intrepid2::CellTools<typename DeviceSpaceType::device_type>;
   using ots = Intrepid2::OrientationTools<DeviceSpaceType>;
   using pts = Intrepid2::ProjectionTools<DeviceSpaceType>;
   using ProjectionStruct = Intrepid2::ProjectionStruct<DeviceSpaceType,scalar_t>;
@@ -205,33 +205,33 @@ int feProjection(int argc, char *argv[]) {
     Teuchos::RCP<CellTopology> cellTopoPtr = Teuchos::rcp(new CellTopology);
 
     //brickBasis: used to compute the coordinates of the mesh vertices
-    Teuchos::RCP< Intrepid2::Basis<HostSpaceType, scalar_t,scalar_t> > brickBasis;
+    Teuchos::RCP< Intrepid2::Basis<typename HostSpaceType::device_type, scalar_t,scalar_t> > brickBasis;
 
     //linearBasis: used to compute the coordinates of the quadrature points for computing the L2 error
-    Teuchos::RCP< Intrepid2::Basis<DeviceSpaceType, scalar_t,scalar_t> > linearBasis;
+    Teuchos::RCP< Intrepid2::Basis<typename DeviceSpaceType::device_type, scalar_t,scalar_t> > linearBasis;
 
     if(shape == "Hexahedron") {
       cellTopoPtr = Teuchos::rcp(new CellTopology(shards::getCellTopologyData<shards::Hexahedron<8> >()));
-      brickBasis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<HostSpaceType,scalar_t,scalar_t>);
-      linearBasis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<DeviceSpaceType,scalar_t,scalar_t>);
+      brickBasis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<typename HostSpaceType::device_type,scalar_t,scalar_t>);
+      linearBasis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<typename DeviceSpaceType::device_type,scalar_t,scalar_t>);
       eShape = HEX;
       dim = 3;
     } else if (shape == "Tetrahedron") {
       cellTopoPtr = Teuchos::rcp(new CellTopology(shards::getCellTopologyData<shards::Tetrahedron<4> >()));
-      brickBasis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<HostSpaceType,scalar_t,scalar_t>);
-      linearBasis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_TET_C1_FEM<DeviceSpaceType,scalar_t,scalar_t>);
+      brickBasis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<typename HostSpaceType::device_type,scalar_t,scalar_t>);
+      linearBasis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_TET_C1_FEM<typename DeviceSpaceType::device_type,scalar_t,scalar_t>);
       eShape = TET;
       dim = 3;
     } else if (shape == "Quadrilateral") {
       cellTopoPtr = Teuchos::rcp(new CellTopology(shards::getCellTopologyData<shards::Quadrilateral<4> >()));
-      brickBasis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<HostSpaceType,scalar_t,scalar_t>);
-      linearBasis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<DeviceSpaceType,scalar_t,scalar_t>);
+      brickBasis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<typename HostSpaceType::device_type,scalar_t,scalar_t>);
+      linearBasis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<typename DeviceSpaceType::device_type,scalar_t,scalar_t>);
       eShape = QUAD;
       dim = 2;
     } else if (shape == "Triangle") {
       cellTopoPtr = Teuchos::rcp(new CellTopology(shards::getCellTopologyData<shards::Triangle<3> >()));
-      brickBasis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<HostSpaceType,scalar_t,scalar_t>);
-      linearBasis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_TRI_C1_FEM<DeviceSpaceType,scalar_t,scalar_t>);
+      brickBasis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<typename HostSpaceType::device_type,scalar_t,scalar_t>);
+      linearBasis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_TRI_C1_FEM<typename DeviceSpaceType::device_type,scalar_t,scalar_t>);
       eShape = TRI;
       dim = 2;
     } else {
@@ -240,8 +240,8 @@ int feProjection(int argc, char *argv[]) {
           "Supported shapes are: Hexahedron, Tetrahedron, Quadrilateral and Triangle." << std::endl);
     }
     int basisDimension;
-    Teuchos::RCP< Intrepid2::Basis<DeviceSpaceType, scalar_t,scalar_t> > basis;
-    using CG_DNBasis = Intrepid2::NodalBasisFamily<DeviceSpaceType,scalar_t,scalar_t>;
+    Teuchos::RCP< Intrepid2::Basis<typename DeviceSpaceType::device_type, scalar_t,scalar_t> > basis;
+    using CG_DNBasis = Intrepid2::NodalBasisFamily<typename DeviceSpaceType::device_type,scalar_t,scalar_t>;
     Intrepid2::EFunctionSpace functionSpace;
     if(space == "HGrad") {
       functionSpace = Intrepid2::FUNCTION_SPACE_HGRAD;
