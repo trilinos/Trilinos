@@ -227,7 +227,7 @@ namespace panzer {
     coords = Kokkos::DynRankView<double,PHX::Device>("coords",numCells,localCoords.extent(0),getDimension());
 
     if(numCells>0) {
-      Intrepid2::CellTools<PHX::Device> cellTools;
+      Intrepid2::CellTools<PHX::Device::device_type> cellTools;
       // For backwards compatability, allow the FE basis to supply the mesh cell topology (via the FEM base cell topo)
       // This will occur if no meshCellTopology is provided (defaults to Teuchos::null)
       // If provided, use the mesh topology directly

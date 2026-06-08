@@ -210,7 +210,7 @@ GetCoeffsEvaluator<EvalT, Traits>::
 evaluateFields(
   typename Traits::EvalData  workset)
 {
-  using ct = Intrepid2::CellTools<PHX::Device>;
+  using ct = Intrepid2::CellTools<PHX::Device::device_type>;
   using fst = Intrepid2::FunctionSpaceTools<PHX::Device>;
   using pts = Intrepid2::ProjectionTools<PHX::Device>;
 

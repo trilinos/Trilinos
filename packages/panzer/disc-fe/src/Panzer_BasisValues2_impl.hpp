@@ -1019,7 +1019,7 @@ getBasisCoordinates(const bool cache,
   auto const_bcr = getBasisCoordinatesRef(false);
   auto bcr = PHX::getNonConstDynRankViewFromConstMDField(const_bcr);
 
-  Intrepid2::CellTools<PHX::Device::execution_space> cell_tools;
+  Intrepid2::CellTools<PHX::Device::device_type> cell_tools;
   cell_tools.mapToPhysicalFrame(s_aux, bcr, s_node_coordinates, *cell_topology_);
   PHX::Device().fence();
 
