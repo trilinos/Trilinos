@@ -409,7 +409,7 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
           //map the reference Dof coordinates into physical frame
           DynRankView physCoordsPHI("physCoordsPHI", workset.numOwnedCells(), numBasisPHI, dim);
           auto wsCoords = Kokkos::subview(coords.get_view(), std::pair<int,int>(0, workset.numOwnedCells()), Kokkos::ALL(), Kokkos::ALL());
-          Intrepid2::CellTools<PHX::Device>::mapToPhysicalFrame(physCoordsPHI,dofCoordsPHI,wsCoords,*cellTopology);
+          Intrepid2::CellTools<PHX::Device::device_type>::mapToPhysicalFrame(physCoordsPHI,dofCoordsPHI,wsCoords,*cellTopology);
 
           //evaluate the function f at the coordinates physCoordsPHI
           DynRankView functValuesAtDofCoordsPHI("funPHI", workset.numOwnedCells(), numBasisPHI);
