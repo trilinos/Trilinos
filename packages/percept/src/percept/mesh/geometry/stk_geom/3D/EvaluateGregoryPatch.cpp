@@ -208,7 +208,7 @@ namespace percept {
     {
       double eps = f.eps();
       unsigned n = F::Size;
-      double v[n];
+      std::vector<double> v(n);
       for (unsigned i = 0; i < n; ++i)
         {
           v[i] = u[i];
@@ -216,9 +216,9 @@ namespace percept {
       for (unsigned i = 0; i < n; ++i)
         {
           v[i] = u[i] + eps;
-          double fp = f(v);
+          double fp = f(v.data());
           v[i] = u[i] - eps;
-          double fm = f(v);
+          double fm = f(v.data());
           g[i] = (fp -fm)/(2.0*eps);
           v[i] = u[i];
         }
@@ -233,7 +233,7 @@ namespace percept {
     {
       double eps = f.eps();
       unsigned n = F::Size;
-      double v[n];
+      std::vector<double> v(n);
       for (unsigned i = 0; i < n; ++i)
         {
           for (unsigned j = 0; j < n; ++j)
@@ -242,25 +242,25 @@ namespace percept {
               v[j] = u[j];
               v[i] += eps;
               v[j] += eps;
-              double fpp = f(v);
+              double fpp = f(v.data());
 
               v[i] = u[i];
               v[j] = u[j];
               v[i] -= eps;
               v[j] += eps;
-              double fmp = f(v);
+              double fmp = f(v.data());
 
               v[i] = u[i];
               v[j] = u[j];
               v[i] += eps;
               v[j] -= eps;
-              double fpm = f(v);
+              double fpm = f(v.data());
 
               v[i] = u[i];
               v[j] = u[j];
               v[i] -= eps;
               v[j] -= eps;
-              double fmm = f(v);
+              double fmm = f(v.data());
 
               h[i][j] = (fpp - fmp - fpm + fmm)/(4.0*eps*eps);
             }

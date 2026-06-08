@@ -9,6 +9,7 @@
 #ifndef percept_IntegratedOp_hpp
 #define percept_IntegratedOp_hpp
 
+#include <Kokkos_DynRankView.hpp>
 #include <cmath>
 #include <math.h>
 #include <map>
@@ -130,7 +131,7 @@
         VERIFY_OP_ON(cell_dimension, ==, meta_dimension, "Dimensions don't match");
 
         const stk::mesh::MetaData& meta = bulkData.mesh_meta_data();
-        CoordinatesFieldType& coord_field = *meta.get_field<double>(stk::topology::NODE_RANK, "coordinates");
+        auto coord_field = meta.get_field<double>(stk::topology::NODE_RANK, "coordinates");
 
         // FIXME for fields not on a Node
         unsigned nDOF = m_nDOFs;
@@ -170,7 +171,7 @@
 
         unsigned spaceDim = im.m_Spatial_Dim_Tag.num;
 
-        PerceptMesh::fillCellNodes(bulkData, bucket_or_element,  &coord_field, cn, spaceDim);
+        PerceptMesh::fillCellNodes(bulkData, bucket_or_element,  coord_field, cn, spaceDim);
 
         // get jacobian
         J(xi, cn, cell_topo);
@@ -184,8 +185,7 @@
         // get bases
 #if 1
         // FIXME
-        MDArray xi_mda;
-        xi.copyTo(xi_mda);
+        auto xi_mda = xi.copy("xi_mda");
         Nb(bulkData, bucket_or_element, xi_mda);
 #else
         Nb(bulkData, bucket_or_element, xi);
@@ -196,27 +196,11 @@
 #if 0
         m_integrand(pc, v);
 #else
-        MDArray pc_mda;
-        pc.copyTo(pc_mda);
-        std::vector<int>  ivDims(ivD.rank());
-        for (size_t i=0; i<ivDims.size(); ++i)
-          ivDims[i] = ivD.extent_int(i);
+        auto pc_mda = pc.copy("pc_mda");
 
-
-        /// NOTE: m_integrand requires the ranks of in/out MDArrays to be such that out_rank >= in_rank
-        /// Thus, we use IntegrandValuesDOF with [DOF] = 1, and then copy the result to IntegrandValues
-        /// which does not have the additional rightmost DOF index (Intrepid2 doesn't have the concept of
-        /// DOF's, it works on scalars only for the integration routines, or at least that's how I understand
-        /// it currently.
-
-        // create an array that percept::Function will like to hold the results
-        ivDims[ivDims.size()-1] = m_nDOFs;
-
-        std::vector<size_t> dimensions(8, KOKKOS_INVALID_INDEX);
-        for(size_t i=0; i< ivDims.size(); ++i) 
-          dimensions[i]=ivDims[i];
-
-        MDArray iv_mda ( "iv_mda", dimensions[0], dimensions[1], dimensions[2], dimensions[3], dimensions[4], dimensions[5], dimensions[6], dimensions[7]);
+        auto layout = ivD.layout();
+        layout.dimension[ivD.rank() - 1] = m_nDOFs;
+        MDArray iv_mda ("iv_mda", layout);
 
         if (m_turboOpt == TURBO_ELEMENT || m_turboOpt == TURBO_BUCKET)
           {
@@ -393,8 +377,7 @@
 
         // FIXME
         //fn(J, i_face, cell_topo);
-        MDArray J_mda;
-        J.copyTo(J_mda);
+        auto J_mda = J.copy("J_mda");
         MDArray fn_mda("fn_mda", im.m_Elements_Tag.num, numCubPoints_child, spaceDim);
         CellTools<Kokkos::HostSpace>::getPhysicalFaceNormals(fn_mda, J_mda, i_face, cell_topo);
 
@@ -418,8 +401,7 @@
         // get bases
 #if 1
         // FIXME
-        MDArray xi_mda;
-        xi.copyTo(xi_mda);
+        auto xi_mda = xi.copy("xi_mda");
         Nb(bulkData, element, xi_mda);
 #else
         Nb(bulkData, element, xi);
@@ -430,8 +412,7 @@
 #if 0
         m_integrand(pc, v);
 #else
-        MDArray pc_mda;
-        pc.copyTo(pc_mda);
+        auto pc_mda = pc.copy("pc_mda");
         std::vector<int>  ivDims(ivD.rank());
         for (size_t i=0; i<ivDims.size(); ++i)
           ivDims[i] = ivD.extent_int(i);
