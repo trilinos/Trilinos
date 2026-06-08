@@ -190,9 +190,16 @@ namespace Amesos2{
       const size_t nrows = output_view.extent(0);
       const size_t ncols = output_view.extent(1);
       Kokkos::resize(kokkos_vals, ldx, ncols);
+
+      auto h_output_view = Kokkos::create_mirror_view(output_view);
+      auto h_kokkos_vals = Kokkos::create_mirror_view(kokkos_vals);
+      Kokkos::deep_copy(output_view, h_output_view);
       for (size_t j=0; j<ncols; j++) {
-        for (size_t i=0; i<nrows; i++) kokkos_vals(i,j) = Teuchos::as<output_scalar_type> (output_view(i,j));
+        for (size_t i=0; i<nrows; i++) h_kokkos_vals(i,j) = Teuchos::as<output_scalar_type> (h_output_view(i,j));
+        //Kokkos::parallel_for("Amesos2::MultiVecAdapter::diff_type_get_view::apply", Kokkos::RangePolicy<execution_space>(0, nrows),
+        //  KOKKOS_LAMBDA(const int i) { kokkos_vals(i,j) = Teuchos::as<output_scalar_type> (output_view(i,j)); });
       }
+      Kokkos::deep_copy(kokkos_vals, h_kokkos_vals);
       // TODO: check this !!
       // made a copy, instead of assigning input pointer (so safe to shallow-copy, which won't over-write the original memory space)
       bAssigned = false;
@@ -222,7 +229,9 @@ namespace Amesos2{
             EDistribution distribution)
     {
       // call appropriate apply based on if the input and output scalar types are the same or different
-      using input_scalar_type  = typename MV::scalar_t;
+      // TODO: check input-scalar (host vs non-host)
+      //using input_scalar_type  = typename MV::scalar_t;
+      using input_scalar_type  = typename MV::host_value_t;
       using output_scalar_type = typename KV::non_const_value_type;
       bool bAssigned =  std::conditional_t<std::is_same_v<input_scalar_type, output_scalar_type>,
                same_type_get_view<MV, KV>,
@@ -399,7 +408,9 @@ namespace Amesos2{
                                           EDistribution distribution )
     {
       using input_scalar_type   = typename KV::non_const_value_type;
-      using output_scalar_type  = typename MV::scalar_t;
+      // TODO: check input-scalar (host vs non-host)
+      //using output_scalar_type  = typename MV::scalar_t;
+      using output_scalar_type  = typename MV::host_value_t;
       using execution_space = typename KV::execution_space;
       using memory_space    = typename execution_space::memory_space;
 
@@ -407,9 +418,47 @@ namespace Amesos2{
       const size_t nrows = kokkos_data.extent(0);
       const size_t ncols = kokkos_data.extent(1);
       Kokkos::View<output_scalar_type**, Kokkos::LayoutLeft, memory_space> output_view ("output_view", ldx, ncols);
-      for (size_t j=0; j<ncols; j++) {
-        for (size_t i=0; i<nrows; i++) output_view(i,j) = Teuchos::as<output_scalar_type> (kokkos_data(i,j));
+
+      #ifdef my_debug
+      {
+        auto h_output_view = Kokkos::create_mirror_view(output_view);
+        auto h_kokkos_data = Kokkos::create_mirror_view(kokkos_data);
+        Kokkos::deep_copy(h_kokkos_data, kokkos_data);
+        Kokkos::deep_copy(h_output_view, output_view);
+        for (size_t j=0; j<ncols; j++) {
+          for (size_t i=0; i<nrows; i++)
+            printf( " - %d:%d: (%e, %e) <- (%e, %e)\n",i,j,h_output_view(i,j).real(),h_output_view(i,j).imag(), h_kokkos_data(i,j).real(),h_kokkos_data(i,j).imag());
+        }
+	printf("\n");
       }
+      #endif
+      #if 1
+      auto h_output_view = Kokkos::create_mirror_view(output_view);
+      auto h_kokkos_data = Kokkos::create_mirror_view(kokkos_data);
+      Kokkos::deep_copy(h_kokkos_data, kokkos_data);
+      for (size_t j=0; j<ncols; j++) {
+        for (size_t i=0; i<nrows; i++) h_output_view(i,j) = Teuchos::as<output_scalar_type> (h_kokkos_data(i,j));
+      }
+      Kokkos::deep_copy(output_view, h_output_view);
+      #else
+      // TODO: how to custom-cast within parallel-for
+      for (size_t j=0; j<ncols; j++) {
+        Kokkos::parallel_for("Amesos2::MultiVecAdapter::diff_type_get_view::apply", Kokkos::RangePolicy<execution_space>(0, nrows),
+          KOKKOS_LAMBDA(const int i) { output_view(i,j) = Teuchos::as<output_scalar_type> (kokkos_data(i,j)); });
+      }
+      #endif
+      #ifdef my_debug
+      {
+        auto h_output_view = Kokkos::create_mirror_view(output_view);
+        auto h_kokkos_data = Kokkos::create_mirror_view(kokkos_data);
+        Kokkos::deep_copy(h_kokkos_data, kokkos_data);
+        Kokkos::deep_copy(h_output_view, output_view);
+        for (size_t j=0; j<ncols; j++) {
+          for (size_t i=0; i<nrows; i++)
+            printf( " + %d:%d: (%e, %e) <- (%e, %e)\n",i,j,h_output_view(i,j).real(),h_output_view(i,j).imag(), h_kokkos_data(i,j).real(),h_kokkos_data(i,j).imag());
+        }
+      }
+      #endif
       // put to output (of output scalar type)
       mv->put1dData_kokkos_view(output_view, ldx, distribution_map, distribution);
     }

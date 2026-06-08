@@ -54,6 +54,7 @@ namespace Amesos2 {
     typedef GlobalOrdinal                   global_ordinal_t;
     typedef Node                            node_t;
     typedef Tpetra::global_size_t           global_size_t;
+    typedef typename multivec_t::dual_view_type::t_host::value_type host_value_t;
 
     friend Teuchos::RCP<MultiVecAdapter<multivec_t> > createMultiVecAdapter<> (Teuchos::RCP<multivec_t>);
     friend Teuchos::RCP<const MultiVecAdapter<multivec_t> > createConstMultiVecAdapter<> (Teuchos::RCP<const multivec_t>);
