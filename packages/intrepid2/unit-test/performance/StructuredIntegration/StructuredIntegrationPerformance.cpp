@@ -1358,7 +1358,6 @@ int main( int argc, char* argv[] )
     }
     
     using Scalar = double;
-    using ExecutionSpace = Kokkos::DefaultExecutionSpace;
     using DeviceType = Kokkos::DefaultExecutionSpace::device_type;
     
     using std::vector;
@@ -1530,7 +1529,7 @@ int main( int argc, char* argv[] )
                 }
               }
             }
-            auto geometry = getMesh<Scalar, spaceDim, ExecutionSpace>(algorithmChoice, gridDims);
+            auto geometry = getMesh<Scalar, spaceDim, DeviceType>(algorithmChoice, gridDims);
             
             // timers recorded in performStructuredQuadratureGRADGRAD, performStandardQuadratureGRADGRAD
             auto jacobianAndCellMeasureTimer = Teuchos::TimeMonitor::getNewTimer("Jacobians");
