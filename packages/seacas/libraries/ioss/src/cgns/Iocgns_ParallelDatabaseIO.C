@@ -1595,7 +1595,7 @@ namespace Iocgns {
     int         id   = sb->get_property("id").get_int();
     const auto &sset = decomp->m_sideSets[id];
 
-    auto num_to_get = field.verify(data_size);
+    int64_t num_to_get = field.verify(data_size);
     if (num_to_get > 0) {
       int64_t entity_count = sb->entity_count();
       if (num_to_get != entity_count) {
