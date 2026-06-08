@@ -42,7 +42,7 @@
 #include <Intrepid2_CellTools.hpp>
 #include <array>
 
-using intrepid2ct = Intrepid2::CellTools<Kokkos::DefaultHostExecutionSpace>;
+using intrepid2ct = Intrepid2::CellTools<typename Kokkos::DefaultHostExecutionSpace::device_type>;
 
 TEST(SearchUtil, Intrepid2_hasReferenceCell)
 {
