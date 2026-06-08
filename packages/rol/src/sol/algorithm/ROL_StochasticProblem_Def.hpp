@@ -362,7 +362,7 @@ Real StochasticProblem<Real>::getSolutionStatistic(int comp, std::string name) c
 }
 
 template<typename Real>
-void StochasticProblem<Real>::finalize(bool lumpConstraints, bool printToStream, std::ostream &outStream) {
+void StochasticProblem<Real>::finalize(bool lumpConstraints, bool printToStream, std::ostream &outStream, bool useSlackVariables) {
   if (!Problem<Real>::isFinalized()) {
     std::vector<Ptr<ParameterList>> conList;
     bool flag(true);
