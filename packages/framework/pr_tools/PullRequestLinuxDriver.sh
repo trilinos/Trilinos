@@ -312,7 +312,8 @@ then
 fi
 
 if [[ ${GENCONFIG_BUILD_NAME} == *"framework"*
-    || ${GENCONFIG_BUILD_NAME} == *"compsim"* ]]
+    || ${GENCONFIG_BUILD_NAME} == *"compsim"*
+    || ${GENCONFIG_BUILD_NAME} == *"ats4"* ]]
 then
     test_cmd_options+=( "--skip-create-packageenables ")
 fi
