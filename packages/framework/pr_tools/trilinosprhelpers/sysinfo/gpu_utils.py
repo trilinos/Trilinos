@@ -1,4 +1,5 @@
 import os
+import sys
 import subprocess
 from shutil import which
 
@@ -19,5 +20,5 @@ def list_nvidia_gpus():
     try:
         gpu_ids = [str(x) for x in range(0, len(_nvidia_smi()))]
     except Exception as e:
-        raise RuntimeError("Failed to acquire list of gpus: {0}".format(str(e)))
+        print("WARNING: Failed to acquire list of gpus: {0}".format(str(e)), file=sys.stderr)
     return gpu_ids
