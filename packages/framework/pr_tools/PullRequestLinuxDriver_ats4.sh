@@ -25,4 +25,4 @@ flux alloc --job-name=trilinos_nightly --time-limit=12h \
   --nodes 1 ${FLUX_ALLOC_ARGS} \
   --output=${FLUX_OUTPUT_LOG} \
   --error=${FLUX_ERROR_LOG} \
-  ${WORKSPACE}/Trilinos/packages/framework/pr_tools/PullRequestLinuxDriver.sh
+  ${WORKSPACE}/Trilinos/packages/framework/pr_tools/PullRequestLinuxDriver.sh $@
