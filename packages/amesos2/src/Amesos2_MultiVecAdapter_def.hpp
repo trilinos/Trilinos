@@ -410,7 +410,6 @@ namespace Amesos2{
                                           Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map,
                                           EDistribution distribution )
     {
-      using input_scalar_type   = typename KV::non_const_value_type;
       // TODO: check input-scalar (host vs non-host)
       //using output_scalar_type  = typename MV::scalar_t;
       using output_scalar_type  = typename MV::host_value_t;
