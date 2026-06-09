@@ -395,9 +395,10 @@ namespace Intrepid2 {
         array (rank 2, 3 or 4) of square matrices, indexed by (D, D),
         (i0, D, D) or (i0, i1, D, D).
         
-        \param matVec  [out]  - matrix-vector product indexed by (D), (i0, D) or (i0, i1, D)
-        \param inMat    [in]  - the matrix argument indexed by (D, D), (i0, D, D) or (i0, i1, D, D)
-        \param inVec    [in]  - the vector argument indexed by (D), (i0, D) or (i0, i1, D)
+        \param matVec   [out]  - matrix-vector product indexed by (D), (i0, D) or (i0, i1, D)
+        \param inMat     [in]  - the matrix argument indexed by (D, D), (i0, D, D) or (i0, i1, D, D)
+        \param inVec     [in]  - the vector argument indexed by (D), (i0, D) or (i0, i1, D)
+        \param transpose [in]  - whether the matrix should be transposed
 
         \note  Requirements (checked at runtime, in debug mode): \n
         \li rank(<b><var>matVec</var></b>) == rank(<b><var>inVec</var></b>) == rank(<b><var>inMat</var></b>) - 1
@@ -411,18 +412,19 @@ namespace Intrepid2 {
     static void
     matvec(       Kokkos::DynRankView<matVecValueType,matVecProperties...> matVecs,
             const Kokkos::DynRankView<inMatValueType, inMatProperties...>  inMats,
-            const Kokkos::DynRankView<inVecValueType, inVecProperties...>  inVecs );
+            const Kokkos::DynRankView<inVecValueType, inVecProperties...>  inVecs,
+            const bool transpose = false);
     
     /** \brief Computes the matrix-matrix product \f$A^T A\f$, for an input rectangular matrix \f$A\f$.
         
-        \param matVec  [out]  - matrix-matrix product \f$A^T A\f$ indexed by (D, D), (i0, D, D) or (i0, i1, D, D)
+        \param outMat  [out]  - matrix-matrix product \f$A^T A\f$ indexed by (D, D), (i0, D, D) or (i0, i1, D, D)
         \param inMat    [in]  - the matrix argument \f$A\f$ indexed by (D, D), (i0, D, D) or (i0, i1, D, D)
     */
     template<typename outMatValueType, class ...outMatProperties,
              typename inMatValueType,  class ...inMatProperties>
     static void
-    AtA(       Kokkos::DynRankView<outMatValueType,outMatProperties...> outMats,
-         const Kokkos::DynRankView<inMatValueType, inMatProperties...>  inMats);
+    AtA(       Kokkos::DynRankView<outMatValueType,outMatProperties...> outMat,
+         const Kokkos::DynRankView<inMatValueType, inMatProperties...>  inMat);
 
     /** \brief Vector product using multidimensional arrays:\n
         <b><var>vecProd</var></b> = <b><var>inVecLeft</var></b> x <b><var>inVecRight</var></b>

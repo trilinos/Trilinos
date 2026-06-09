@@ -173,6 +173,8 @@ int main(int argc, char* argv[]) {
 
   // Kokkos still needs to be initialized at this point, even though
   // Tpetra::initialize wasn't supposed to have done it.
+  // Tpetra::finalize should NOT call Kokkos::finalize.
+  // Kokkos::finalize is now called via atexit hook. See issue #15294.
   if (!kokkosInitialized()) {
     err << "*** Kokkos is not initialized" << endl;
     success = false;

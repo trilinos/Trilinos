@@ -99,8 +99,8 @@ buildDistribution(
       retval = dynamic_cast<basedist_t *>(dist);
     } else {
       // Linear map similar to Trilinos default.
-      Distribution1DLinear<global_ordinal_type, scalar_type> *dist =
-          new Distribution1DLinear<global_ordinal_type, scalar_type>(
+      auto *dist =
+          new Distribution1DLinear<global_ordinal_type, scalar_type, node_type>(
               nRow, comm, params);
       retval = dynamic_cast<basedist_t *>(dist);
     }
@@ -110,8 +110,8 @@ buildDistribution(
                 << "LowerTriangularBlock distributions." << std::endl;
     }
 
-    DistributionLowerTriangularBlock<global_ordinal_type, scalar_type> *dist =
-        new DistributionLowerTriangularBlock<global_ordinal_type, scalar_type>(
+    auto *dist =
+        new DistributionLowerTriangularBlock<global_ordinal_type, scalar_type, node_type>(
             nRow, comm, params);
     retval = dynamic_cast<basedist_t *>(dist);
   } else if (distribution == "MMFile") {
@@ -366,7 +366,7 @@ readMatrixMarket(
       // Add nonzero (I,J) to the map if it should be on this processor
       // Some file-based distributions have processor assignment stored as
       // the non-zero's value, so pass the value to Mine.
-      if (dist->Mine(I, J, int(V))) {
+      if (dist->Mine(I, J, me + 1)) {
         nzindex_t idx = std::make_pair(I, J);
         localNZ[idx]  = V;
         if (requireDiagonal && (I == J)) diagset.insert(I);
@@ -375,7 +375,7 @@ readMatrixMarket(
       // If symmetrizing, add (J,I) to the map if it should be on this processor
       // Some file-based distributions have processor assignment stored as
       // the non-zero's value, so pass the value to Mine.
-      if (symmetrize && (I != J) && dist->Mine(J, I, int(V))) {
+      if (symmetrize && (I != J) && dist->Mine(J, I, me + 1)) {
         //  Add entry (J, I) if need to symmetrize
         //  This processor keeps this non-zero.
         nzindex_t idx = std::make_pair(J, I);
@@ -655,7 +655,7 @@ readBinary(
       // Add nonzero (I,J) to the map if it should be on this processor
       // Some file-based distributions have processor assignment stored as
       // the non-zero's value, so pass the value to Mine.
-      if (dist->Mine(I, J, ONE)) {
+      if (dist->Mine(I, J, me + 1)) {
         nzindex_t idx = std::make_pair(I, J);
         localNZ[idx]  = ONE;  // For now, the input binary format does not
                               // support numeric values, so we insert one.
@@ -665,7 +665,7 @@ readBinary(
       // If symmetrizing, add (J,I) to the map if it should be on this processor
       // Some file-based distributions have processor assignment stored as
       // the non-zero's value, so pass the value to Mine.
-      if (symmetrize && (I != J) && dist->Mine(J, I, ONE)) {
+      if (symmetrize && (I != J) && dist->Mine(J, I, me + 1)) {
         //  Add entry (J, I) if need to symmetrize
         //  This processor keeps this non-zero.
         nzindex_t idx = std::make_pair(J, I);
@@ -1000,8 +1000,8 @@ readSparseFile(
 
   // Create a new RowMap with only rows having non-zero entries.
   size_t dummy = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
-  Teuchos::RCP<const Tpetra::Map<> > rowMap =
-      Teuchos::rcp(new Tpetra::Map<>(dummy, rowIdx(), 0, comm));
+  auto rowMap =
+      Teuchos::rcp(new Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type>(dummy, rowIdx(), 0, comm));
 
   Teuchos::RCP<sparse_matrix_type> A =
       rcp(new sparse_matrix_type(rowMap, nnzPerRow()));
@@ -1055,8 +1055,8 @@ readSparseFile(
       if (dist->VecMine(i)) vectorSet.push_back(i);
 
     dummy = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
-    Teuchos::RCP<const Tpetra::Map<> > domainMap =
-        Teuchos::rcp(new Tpetra::Map<>(dummy, vectorSet(), 0, comm));
+    auto domainMap =
+        Teuchos::rcp(new Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type>(dummy, vectorSet(), 0, comm));
 
     Teuchos::Array<global_ordinal_type>().swap(vectorSet);
 
@@ -1066,8 +1066,8 @@ readSparseFile(
       if (dist->VecMine(i)) vectorSet.push_back(i);
 
     dummy = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
-    Teuchos::RCP<const Tpetra::Map<> > rangeMap =
-        Teuchos::rcp(new Tpetra::Map<>(dummy, vectorSet(), 0, comm));
+    auto rangeMap =
+        Teuchos::rcp(new Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type>(dummy, vectorSet(), 0, comm));
 
     Teuchos::Array<global_ordinal_type>().swap(vectorSet);
 

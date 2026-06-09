@@ -517,6 +517,17 @@ public:
 #endif
 
 
+void throw_invalid_obj_exception_free_fun(const std::string& rcp_type_name,
+                                          const void* rcp_ptr,
+                                          const RCPNode* rcp_node_ptr,
+                                          const void* rcp_obj_ptr,
+                                          const void *ptr_,
+#ifdef TEUCHOS_DEBUG
+                                          const void *deleted_ptr_,
+#endif
+                                          const std::string& type_name);
+
+
 /** \brief Templated implementation class of <tt>RCPNode</tt> that has the
  * responsibility for deleting the reference-counted object.
  *
@@ -595,40 +606,11 @@ public:
     const void* rcp_obj_ptr
     ) const
     {
-      TEUCHOS_TEST_FOR_EXCEPT_MSG( ptr_!=0, "Internal coding error!" );
-      const T* deleted_ptr =
+      throw_invalid_obj_exception_free_fun(rcp_type_name, rcp_ptr, rcp_node_ptr, rcp_obj_ptr, ptr_,
 #ifdef TEUCHOS_DEBUG
-        deleted_ptr_
-#else
-        0
+                                           deleted_ptr_,
 #endif
-        ;
-      TEUCHOS_ASSERT(rcp_node_ptr);
-      TEUCHOS_TEST_FOR_EXCEPTION( true, DanglingReferenceError,
-        "Error, an attempt has been made to dereference the underlying object\n"
-        "from a weak smart pointer object where the underling object has already\n"
-        "been deleted since the strong count has already gone to zero.\n"
-        "\n"
-        "Context information:\n"
-        "\n"
-        "  RCP type:             " << rcp_type_name << "\n"
-        "  RCP address:          " << rcp_ptr << "\n"
-        "  RCPNode type:         " << typeName(*this) << "\n"
-        "  RCPNode address:      " << rcp_node_ptr << "\n"
-        TEUCHOS_RCP_INSERION_NUMBER_STR()
-        "  RCP ptr address:      " << rcp_obj_ptr << "\n"
-        "  Concrete ptr address: " << deleted_ptr << "\n"
-        "\n"
-        << RCPNodeTracer::getCommonDebugNotesString()
-        );
-      // 2008/09/22: rabartl: Above, we do not provide the concreate object
-      // type or the concrete object address.  In the case of the concrete
-      // object address, in a non-debug build, we don't want to pay a price
-      // for extra storage that we strictly don't need.  In the case of the
-      // concrete object type name, we don't want to force non-debug built
-      // code to have the require that types be fully defined in order to use
-      // the memory management software.  This is related to bug 4016.
-
+                                           typeName(*this));
     }
   /** \brief . */
   const std::string get_base_obj_type_name() const

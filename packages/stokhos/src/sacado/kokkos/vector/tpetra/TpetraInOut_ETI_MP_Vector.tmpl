@@ -1,0 +1,20 @@
+// @HEADER
+// *****************************************************************************
+//                           Stokhos Package
+//
+// Copyright 2009 NTESS and the Stokhos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
+#include "TpetraCore_config.h"
+#ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
+
+#include "Stokhos_Tpetra_ETI_Helpers_MP_Vector_@ENSEMBLE_SIZE@_@DEVICE@.hpp"
+
+#include "@CLASS_FILE_NAME@_Tpetra.hpp"
+#include "@CLASS_FILE_NAME@_Tpetra_def.hpp"
+
+INSTANTIATE_TPETRA_MP_VECTOR(TPETRA_@UPPER_CASE_CLASS@_INSTANT)
+
+#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION

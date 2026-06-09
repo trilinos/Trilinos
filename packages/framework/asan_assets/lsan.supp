@@ -16,4 +16,11 @@ leak:mca_coll_tuned.so
 leak:mca_coll_libnbc.so
 leak:mca_coll_basic.so
 leak:python
-
+leak:avx_component_op_query
+leak:pmix_bfrop_tma_kval_new
+leak:fetch_nodeinfo
+leak:fetch_sessioninfo
+leak:hwloc_bitmap_alloc
+leak:get_data
+leak:pmix_bfrops_base_tma_value_xfer
+leak:pmix_bfrops_base_value_load

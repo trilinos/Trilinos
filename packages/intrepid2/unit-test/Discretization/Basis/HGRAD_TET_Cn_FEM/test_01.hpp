@@ -54,7 +54,7 @@ int HGRAD_TET_Cn_FEM_Test01(const bool verbose) {
   typedef typename ScalarTraits<OutValueType>::scalar_type scalar_type;
   typedef Kokkos::DynRankView<scalar_type, DeviceType> DynRankViewScalarValueType;
 
-  const scalar_type tol = tolerence();
+  const scalar_type tol = tolerance();
   int errorFlag = 0;
 
   // for virtual function, value and point types are declared in the class

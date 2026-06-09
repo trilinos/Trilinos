@@ -179,7 +179,7 @@ int run(int argc, char *argv[]) {
     } else {
       if (isRHS) {
         B->print(std::cout);
-        B = Tpetra::MatrixMarket::Reader<MV>::readVectorFile(filenameRHS, comm, map);
+        B = Tpetra::MatrixMarket::Reader<MAT>::readVectorFile(filenameRHS, comm, map);
         // std::cout << "rhs from input file " << std::endl;
         // B->print(std::cout);
         X = rcp(new MV(map, numRHS));

@@ -58,7 +58,7 @@ namespace Intrepid2 {
 
       typedef Kokkos::DynRankView<ValueType,DeviceType> DynRankView;
 
-      const ValueType tol = tolerence();
+      const ValueType tol = tolerance();
       int errorFlag = 0;
 
       // for virtual function, value and point types are declared in the class

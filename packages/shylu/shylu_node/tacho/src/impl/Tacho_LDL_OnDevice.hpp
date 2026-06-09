@@ -127,11 +127,12 @@ template <> struct LDL<Uplo::Lower, Algo::OnDevice> {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
   template <typename ExecSpaceType, typename ViewTypeA, typename ViewTypeP, typename ViewTypeD>
   inline static int device_modify(ExecSpaceType &exec_instance, const ViewTypeA &A, const ViewTypeP &P,
-                                  const ViewTypeD &D) {
+                                  const ViewTypeD &D, const bool conjugate) {
     using exec_space = ExecSpaceType;
     typedef typename ViewTypeA::non_const_value_type value_type;
-    const ordinal_type m = A.extent(0);
+    typedef ArithTraits<value_type> arith_traits;
 
+    const ordinal_type m = A.extent(0);
     int r_val(0);
     if (m > 0) {
       value_type *KOKKOS_RESTRICT Aptr = A.data();
@@ -157,7 +158,7 @@ template <> struct LDL<Uplo::Lower, Algo::OnDevice> {
                     fpiv[i] = 0;
 
                     D(i, 0) = A(i, i);
-                    D(i, 1) = A(i + 1, i); /// symmetric
+                    D(i, 1) = (conjugate ? arith_traits::conj(A(i + 1, i)) : A(i + 1, i)); /// symmetric
                     A(i, i) = one;
                   }
                 }
@@ -221,7 +222,7 @@ template <> struct LDL<Uplo::Lower, Algo::OnDevice> {
   }
 #endif
   template <typename MemberType, typename ViewTypeA, typename ViewTypeP, typename ViewTypeD>
-  inline static int modify(MemberType &member, const ViewTypeA &A, const ViewTypeP &P, const ViewTypeD &D) {
+  inline static int modify(MemberType &member, const ViewTypeA &A, const ViewTypeP &P, const ViewTypeD &D, bool conjugate) {
     typedef typename ViewTypeA::non_const_value_type value_type;
     typedef typename ViewTypeD::non_const_value_type value_type_d;
 
@@ -247,12 +248,12 @@ template <> struct LDL<Uplo::Lower, Algo::OnDevice> {
 #if defined(KOKKOS_ENABLE_CUDA)
     if (std::is_same<memory_space, Kokkos::CudaSpace>::value ||
         std::is_same<memory_space, Kokkos::CudaUVMSpace>::value) {
-      r_val = device_modify(member, A, P, D);
+      r_val = device_modify(member, A, P, D, conjugate);
     }
 #endif
 #if defined(KOKKOS_ENABLE_HIP)
     if (std::is_same<memory_space, Kokkos::HIPSpace>::value) {
-      r_val = device_modify(member, A, P, D);
+      r_val = device_modify(member, A, P, D, conjugate);
     }
 #endif
     return r_val;

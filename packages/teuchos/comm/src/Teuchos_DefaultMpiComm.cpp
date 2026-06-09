@@ -8,6 +8,7 @@
 // @HEADER
 
 #include <Teuchos_DefaultMpiComm.hpp>
+#include <Teuchos_DefaultMpiComm_def.hpp>
 
 // Only enable the contents of this file if building with MPI.
 #ifdef HAVE_TEUCHOS_MPI
@@ -66,5 +67,33 @@ namespace Teuchos {
   } // namespace details
 
 } // namespace Teuchos
+
+#define TEUCHOS_MPI_COMM_INSTANT(ORDINAL)                                      \
+  template class Teuchos::MpiCommStatus<ORDINAL>;                              \
+                                                                               \
+  template Teuchos::RCP<Teuchos::MpiCommStatus<ORDINAL>>                       \
+  Teuchos::mpiCommStatus(MPI_Status rawMpiStatus);                             \
+                                                                               \
+  template class Teuchos::MpiCommRequestBase<ORDINAL>;                         \
+                                                                               \
+  template class Teuchos::MpiCommRequest<ORDINAL>;                             \
+                                                                               \
+  template Teuchos::RCP<Teuchos::MpiCommRequest<ORDINAL>>                      \
+  Teuchos::mpiCommRequest(MPI_Request,                                         \
+                          const Teuchos::ArrayView<char>::size_type);          \
+  template class Teuchos::MpiComm<ORDINAL>;                                    \
+                                                                               \
+  template Teuchos::RCP<Teuchos::MpiComm<ORDINAL>> Teuchos::createMpiComm(     \
+      const RCP<const OpaqueWrapper<MPI_Comm>> &);                             \
+                                                                               \
+  template Teuchos::RCP<Teuchos::MpiComm<ORDINAL>> Teuchos::createMpiComm(     \
+      const RCP<const OpaqueWrapper<MPI_Comm>> &, const int);                  \
+                                                                               \
+  template MPI_Comm Teuchos::getRawMpiComm(const Comm<ORDINAL> &comm);
+
+TEUCHOS_MPI_COMM_INSTANT(short)
+TEUCHOS_MPI_COMM_INSTANT(int)
+TEUCHOS_MPI_COMM_INSTANT(long)
+TEUCHOS_MPI_COMM_INSTANT(long long)
 
 #endif // HAVE_TEUCHOS_MPI

@@ -119,12 +119,6 @@ namespace BaskerNS
               L.nnz,
               resize_L);
           L.clear_pend();
-          if(Options.incomplete == BASKER_TRUE)
-          {
-            REALLOC_INT_1DARRAY(L.inc_lvl,
-                L.nnz,
-                resize_L);
-          }
           L.mnnz = resize_L;
           L.nnz = resize_L;
         }
@@ -179,15 +173,6 @@ namespace BaskerNS
               {
                 //printf( " x gperm(%d) = %d\n",i,BASKER_MAX_IDX );
                 gperm(i) = BASKER_MAX_IDX;
-              }
-
-              //Clear incomplete ws
-              if(Options.incomplete == BASKER_TRUE)
-              {
-                for(Int i = SL.srow; i < SL.srow+SL.nrow; ++i)
-                {
-                  INC_LVL_TEMP(i) = BASKER_MAX_IDX;
-                }
               }
             }
           }//for - sb (subblks)
@@ -326,12 +311,6 @@ namespace BaskerNS
           REALLOC_ENTRY_1DARRAY(U.val,
               U.nnz,
               resize_U);
-          if(Options.incomplete == BASKER_TRUE)
-          {
-            REALLOC_INT_1DARRAY(U.inc_lvl,
-                U.nnz,
-                resize_U);
-          }
           U.mnnz = resize_U;
           U.nnz = resize_U;
         }
@@ -404,16 +383,6 @@ namespace BaskerNS
         nthread_remalloc++;
 
       }//if REMALLOC
-
-      //Reset Inc vector 
-      if(Options.inc_lvl == BASKER_TRUE)
-      {
-        //for(Int i = 0; i < INC_LVL_TEMP.extent(0); i++) //NDE - warning: comparison s and us
-        for(Int i = 0; i < static_cast<Int>( INC_LVL_TEMP.extent(0) ); i++) 
-        {
-          INC_LVL_TEMP(i) = BASKER_MAX_IDX;
-        }
-      }
     }//for all threads
 
     if(nthread_remalloc == 0)

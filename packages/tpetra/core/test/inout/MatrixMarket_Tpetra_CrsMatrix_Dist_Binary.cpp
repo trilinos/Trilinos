@@ -64,6 +64,7 @@ class TestReader {
   using map_t        = Tpetra::Map<>;
   using gno_t        = map_t::global_ordinal_type;
   using scalar_t     = Tpetra::Details::DefaultTypes::scalar_type;
+  using node_t       = Tpetra::Details::DefaultTypes::node_type;
   using matrix_t     = Tpetra::CrsMatrix<scalar_t>;
   using vector_t     = Tpetra::Vector<scalar_t>;
   using reader_t     = Tpetra::MatrixMarket::Reader<matrix_t>;
@@ -630,7 +631,7 @@ class TestReader {
     Teuchos::RCP<matrix_t> AmatTest = readFile(binfilename, testname, params, distTest);
 
     // Get the LTB operator from the test matrix
-    using distltb_t = Tpetra::DistributionLowerTriangularBlock<gno_t, scalar_t>;
+    using distltb_t = Tpetra::DistributionLowerTriangularBlock<gno_t, scalar_t, node_t>;
     Tpetra::LowerTriangularBlockOperator<scalar_t> lto_test(AmatTest,
                                                             dynamic_cast<distltb_t &>(*distTest));
 
@@ -667,7 +668,7 @@ class TestReader {
     cleanBinaryPerProcess();
 
     // Get the LTB operator from the test matrix
-    using distltb_t = Tpetra::DistributionLowerTriangularBlock<gno_t, scalar_t>;
+    using distltb_t = Tpetra::DistributionLowerTriangularBlock<gno_t, scalar_t, node_t>;
     Tpetra::LowerTriangularBlockOperator<scalar_t> lto_test(AmatTest,
                                                             dynamic_cast<distltb_t &>(*distTest));
 

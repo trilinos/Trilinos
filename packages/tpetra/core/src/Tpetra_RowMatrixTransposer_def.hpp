@@ -125,8 +125,23 @@ RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   using local_matrix_device_type = typename crs_matrix_type::local_matrix_device_type;
 
-  local_matrix_device_type lclMatrix          = crsMatrix->getLocalMatrixDevice();
+#if KOKKOSKERNELS_VERSION >= 50199
+  bool conjugate_values = Teuchos::ScalarTraits<Scalar>::isComplex;
+#else
+  bool conjugate_values = false;
+#endif
+  const char conjugateValuesParamName[] = "conjugate values";
+  if (!params.is_null() && params->isParameter(conjugateValuesParamName)) {
+    conjugate_values = params->get(conjugateValuesParamName, conjugate_values);
+  }
+
+  local_matrix_device_type lclMatrix = crsMatrix->getLocalMatrixDevice();
+#if KOKKOSKERNELS_VERSION >= 50199
+  local_matrix_device_type lclTransposeMatrix = KokkosSparse::Impl::transpose_matrix(lclMatrix, conjugate_values);
+#else
+  TEUCHOS_TEST_FOR_EXCEPTION(conjugate_values, std::runtime_error, "Kokkos-Kernels does not yet support conjugating the values.");
   local_matrix_device_type lclTransposeMatrix = KokkosSparse::Impl::transpose_matrix(lclMatrix);
+#endif
   if (sort)
     Import_Util::sortCrsMatrix(lclTransposeMatrix);
 

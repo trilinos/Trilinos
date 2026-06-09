@@ -16,6 +16,7 @@
 #include "Teuchos_CommHelpers.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Array.hpp"
+#include "Teuchos_EnvVariables.hpp"
 #include "Teuchos_PerformanceMonitorBase.hpp"
 #include "Teuchos_Behavior.hpp"
 #include "TeuchosComm_config.h" // for HAVE_TEUCHOSCOMM_MAGISTRATE
@@ -31,8 +32,8 @@
 #include <cassert>
 #include <chrono>
 #include <climits>
-#include <cstdlib> // for std::getenv and atoi
-#include <ctime> // for timestamp support
+#include <cstdlib> // for atoi
+#include <ctime>   // for timestamp support
 #include <iostream>
 
 #if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOS)
@@ -548,11 +549,11 @@ public:
     if (start_base_timer)
       this->startBaseTimer();
 
-    auto check_verbose = std::getenv("TEUCHOS_ENABLE_VERBOSE_TIMERS");
+    auto check_verbose = Teuchos::getEnvironmentVariableValue("TEUCHOS_ENABLE_VERBOSE_TIMERS");
     if (check_verbose != nullptr)
       enable_verbose_ = true;
 
-    auto check_timestamp = std::getenv("TEUCHOS_ENABLE_VERBOSE_TIMESTAMP_LEVELS");
+    auto check_timestamp = Teuchos::getEnvironmentVariableValue("TEUCHOS_ENABLE_VERBOSE_TIMESTAMP_LEVELS");
     if (check_timestamp != nullptr) {
       verbose_timestamp_levels_ = std::atoi(check_timestamp);
     }

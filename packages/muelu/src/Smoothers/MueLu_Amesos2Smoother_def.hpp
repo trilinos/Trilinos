@@ -72,7 +72,9 @@ void Projection<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   // Project X onto orthonormal nullspace
   // Nullspace_ ^T * X
-  Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tempMV = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(localMap_, X.getNumVectors());
+  if (tempMV_.is_null() || tempMV_->getNumVectors() != X.getNumVectors())
+    tempMV_ = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(localMap_, X.getNumVectors());
+  Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& tempMV = tempMV_;
   tempMV->multiply(Teuchos::CONJ_TRANS, Teuchos::NO_TRANS, ONE, *Nullspace_, X, ZERO);
   auto dots      = tempMV->getLocalViewHost(Tpetra::Access::ReadOnly);
   bool doProject = true;

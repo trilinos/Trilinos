@@ -92,9 +92,6 @@ namespace BaskerNS
     BASKER_INLINE
     void init_ptr();
 
-    BASKER_INLINE
-    void init_inc_lvl();
-
 
     //****Deprecated*******
     BASKER_INLINE
@@ -151,13 +148,6 @@ namespace BaskerNS
     //***Deprecated***
     BOOL_1DARRAY union_bit;
    
-   
-    //#ifdef BASKER_INC_LVL
-    BASKER_BOOL   inc_lvl_flg;
-    INT_1DARRAY   inc_lvl;
-    //#endif
-
-    #ifdef BASKER_2DL
     BASKER_BOOL   w_fill;
     ENTRY_1DARRAY ews;
     INT_1DARRAY   iws;
@@ -166,7 +156,6 @@ namespace BaskerNS
     Int           iws_mult;
     Int           ews_mult;
     Int           p_size;
-    #endif
     
     using Mag = typename Basker_ScalarTraits<Entry>::magnitudeType;
     Entry tpivot;

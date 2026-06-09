@@ -119,14 +119,14 @@ public:
 
         const ordinal_type offm = s.row_begin;
         auto tT = Kokkos::subview(_t, range_type(offm, offm + m), Kokkos::ALL());
-        Trsv<Uplo::Upper, Trans::ConjTranspose, TrsvAlgoType>::invoke(member, Diag::Unit(), ATL, tT);
+        Trsv<Uplo::Upper, Trans::Transpose, TrsvAlgoType>::invoke(member, Diag::Unit(), ATL, tT);
 
         if (n_m > 0) {
           // update remaining
           member.team_barrier();
           UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n;
           UnmanagedViewType<value_type_matrix> bB(bptr, n_m, _nrhs);
-          Gemv<Trans::ConjTranspose, GemvAlgoType>::invoke(member, minus_one, ATR, tT, zero, bB);
+          Gemv<Trans::Transpose, GemvAlgoType>::invoke(member, minus_one, ATR, tT, zero, bB);
         }
 
         // Apply D^{-1} to current block of vectors, tT (note: solving with L, and then D)
@@ -221,7 +221,7 @@ public:
         auto tT = Kokkos::subview(_t, range_type(offm, offm + m), Kokkos::ALL());
 
         // solve with diag L (ATL is square)
-        Trmv<Uplo::Upper, Trans::ConjTranspose, GemvAlgoType>::invoke(member, Diag::Unit(), one, ATL, tT, zero, bT);
+        Trmv<Uplo::Upper, Trans::Transpose, GemvAlgoType>::invoke(member, Diag::Unit(), one, ATL, tT, zero, bT);
 
         if (n_m > 0) {
           // update offdiag
@@ -229,7 +229,7 @@ public:
           UnmanagedViewType<value_type_matrix> bB(bptr, n_m, _nrhs);
 
           member.team_barrier();
-          Gemv<Trans::ConjTranspose, GemvAlgoType>::invoke(member, minus_one, ATR, bT, zero, bB);
+          Gemv<Trans::Transpose, GemvAlgoType>::invoke(member, minus_one, ATR, bT, zero, bB);
         }
 
         // Apply D^{-1} to current block of vectors, tT (note: solving with L, and then D)
@@ -327,7 +327,7 @@ public:
         auto tT = Kokkos::subview(_t, range_type(offm, offm + m), Kokkos::ALL());
 
         // AT is not square
-        Trmv<Uplo::Upper, Trans::ConjTranspose, GemvAlgoType>::invoke(member, Diag::Unit(), one, AT, tT, zero, b);
+        Trmv<Uplo::Upper, Trans::Transpose, GemvAlgoType>::invoke(member, Diag::Unit(), one, AT, tT, zero, b);
 
         // Apply D^{-1} to current block of vectors, tT (note: solving with L, and then D, also n>=m, so diag is stored first in aptr)
         UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);

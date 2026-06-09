@@ -35,7 +35,7 @@ struct SerialLeftHouseholderInternal {
     mag_type norm_x2_square = zero;
     for (int i = 0; i < m_x2; ++i) {
       const auto x2_at_i = x2[i * x2s];
-      norm_x2_square += KAT::real(KAT::conj(x2_at_i) * x2_at_i);
+      norm_x2_square += Kokkos::real(Kokkos::conj(x2_at_i) * x2_at_i);
     }
 
     /// if norm_x2 is zero, return with trivial values
@@ -68,7 +68,7 @@ struct SerialLeftHouseholderInternal {
     // multiple possible expressions for tau
     // we chose the same as LAPACK which
     // guarentees that R is real valued.
-    const mag_type chi1_minus_alpha_square = KAT::magnitude(chi1_minus_alpha) * KAT::magnitude(chi1_minus_alpha);
+    const mag_type chi1_minus_alpha_square = Kokkos::abs(chi1_minus_alpha) * Kokkos::abs(chi1_minus_alpha);
     if constexpr (KAT::is_complex) {
       *tau = alpha / (alpha - *chi1);
     } else {

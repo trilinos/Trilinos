@@ -185,7 +185,7 @@ class BlockReorderLeaf : public BlockReorderManager {
   BlockReorderLeaf(int ind) : value_(ind) {}
 
   //! Copy constructor
-  BlockReorderLeaf(const BlockReorderLeaf& brl) : value_(brl.value_) {}
+  BlockReorderLeaf(const BlockReorderLeaf& brl) : BlockReorderManager(brl), value_(brl.value_) {}
   //@}
 
   //! Make a copy of this object

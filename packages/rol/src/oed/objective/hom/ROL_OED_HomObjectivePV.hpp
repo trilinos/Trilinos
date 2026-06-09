@@ -10,6 +10,7 @@
 #ifndef ROL_OED_HOMOBJECTIVEPV_HPP
 #define ROL_OED_HOMOBJECTIVEPV_HPP
 
+#include "ROL_PartitionedVector.hpp"
 #include "ROL_Ptr.hpp"
 #include "ROL_Vector.hpp"
 #include "ROL_VectorController.hpp"

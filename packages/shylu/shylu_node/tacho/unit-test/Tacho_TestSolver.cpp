@@ -19,15 +19,25 @@
 
 /// matrix generator
 template <typename CrsMatrixBaseTypeHost>
-int generate2dLaplace(const int nx, CrsMatrixBaseTypeHost &A) {
+int generate2dLaplace(const int nx, CrsMatrixBaseTypeHost &A, bool conj) {
   // generate Laplace matrix on 5pt stencil
   int n = nx*nx;
   int nnz = n + 4*nx*(nx-1);
 
   using value_type = typename CrsMatrixBaseTypeHost::value_type;
+  using ATS = Tacho::ArithTraits<value_type>;
   typename CrsMatrixBaseTypeHost::size_type_array    ap("ap", n+1);
   typename CrsMatrixBaseTypeHost::ordinal_type_array aj("aj", nnz);
   typename CrsMatrixBaseTypeHost::value_type_array   ax("ax", nnz);
+
+  value_type FIVE(5.0); 
+  value_type mONE; 
+  if (std::is_same<value_type, double>::value)
+    ATS::set_real(mONE, -1.0);
+  if (std::is_same<value_type, Kokkos::complex<double>>::value) {
+    ATS::set_real(mONE,  0.0);
+    ATS::set_imag(mONE, -1.0);
+  }
 
   nnz = 0;
   ap(0) = 0;
@@ -36,25 +46,25 @@ int generate2dLaplace(const int nx, CrsMatrixBaseTypeHost &A) {
       int k = i*nx + j;
       if (i > 0) {
         aj(nnz) = k-nx;
-        ax(nnz) = value_type(1.0);
+        ax(nnz) = mONE;
         nnz ++;
       }
       if (j > 0) {
         aj(nnz) = k-1;
-        ax(nnz) = value_type(1.0);
+        ax(nnz) = mONE;
         nnz ++;
       }
       aj(nnz) = k;
-      ax(nnz) = value_type(4.0);
+      ax(nnz) = FIVE;
       nnz++;
       if (j < nx-1) {
         aj(nnz) = k+1;
-        ax(nnz) = value_type(1.0);
+        ax(nnz) = (conj ? ATS::conj(mONE) : mONE);
         nnz ++;
       }
       if (i < nx-1) {
         aj(nnz) = k+nx;
-        ax(nnz) = value_type(1.0);
+        ax(nnz) = (conj ? ATS::conj(mONE) : mONE);
         nnz ++;
       }
       ap(k+1) = nnz;
@@ -68,7 +78,7 @@ int generate2dLaplace(const int nx, CrsMatrixBaseTypeHost &A) {
 
 // main test driver
 template <typename value_type>
-int driver(const std::string file, const std::string method_name, const int variant, const int nrhs,
+int driver(const std::string file, const std::string method_name, const int variant, const int nrhs, const bool conj = true,
            const bool store_transpose = false, const bool single_solve = true, const bool single_setup = true,
            const bool team_on_user_stream = false) {
   int nx = 100;
@@ -94,6 +104,10 @@ int driver(const std::string file, const std::string method_name, const int vari
   Tacho::printExecSpaceConfiguration<typename device_type::execution_space>("DeviceSpace", detail);
   Tacho::printExecSpaceConfiguration<typename host_device_type::execution_space>("HostSpace", detail);
   std::cout << std::endl << "    --------------------- " << std::endl;
+  if (std::is_same<value_type, double>::value)
+    std::cout << "     Scalar Type:: double " << std::endl;
+  if (std::is_same<value_type, Kokkos::complex<double>>::value)
+    std::cout << "     Scalar Type:: complex<double> " << std::endl;
   std::cout << "     Method Name:: " << method_name << std::endl;
   std::cout << "     Solver Type:: " << variant << std::endl;
   std::cout << "          # RHSs:: " << nrhs << std::endl;
@@ -122,7 +136,7 @@ int driver(const std::string file, const std::string method_name, const int vari
       Tacho::MatrixMarket<value_type>::read(file, A, sanitize, verbose);
     } else {
       std::cout << " Generate 2D Laplace matrix(nx = " << nx << ")" << std::endl;
-      generate2dLaplace(nx, A);
+      generate2dLaplace(nx, A, conj);
     }
 
     /// create tacho solver
@@ -161,7 +175,7 @@ int driver(const std::string file, const std::string method_name, const int vari
       if(r_val == 0) {
         r_val = solver.initialize();
       }
-      int num_solves = 5; // number of numeric + solve calls
+      int num_solves = 3; // number of numeric + solve calls
       for (int step = 0; step < num_solves && r_val == 0; step++) {
         if (step > 0) {
           // perturb the first element (diagonal if Laplace), on host
@@ -170,6 +184,10 @@ int driver(const std::string file, const std::string method_name, const int vari
         // copy A to device
         Kokkos::deep_copy(values_on_device, A.Values());
         if (step%2 == 0) {
+          /// > default
+          solver.shiftDiagonal(0);
+          solver.useDefaultPivotTolerance(0);
+        } else if (step%2 == 1) {
           /// > test "shift diag" code path
           solver.shiftDiagonal(1);
           solver.useDefaultPivotTolerance(0);
@@ -208,8 +226,9 @@ int driver(const std::string file, const std::string method_name, const int vari
           } else {
             Kokkos::deep_copy (x, one);
             solver.computeSpMV(values_on_device, x, b);
-            Kokkos::deep_copy (x, zero);
           }
+          Kokkos::deep_copy (x, zero);
+          Kokkos::deep_copy (t, zero);
           r_val = solver.solve(x, b, t);
         }
         if(r_val == 0) {
@@ -233,127 +252,219 @@ int driver(const std::string file, const std::string method_name, const int vari
   return r_val;
 }
 
-
 // tests
+//  Cholesky
+#define TACHO_CHOL_TEST( SCALAR ) \
+  /* Chol */                                                        \
+  /* > single RHS */                                                \
+  EXPECT_EQ(driver<SCALAR>(file, "chol", 0, 1, conj), 0);           \
+  EXPECT_EQ(driver<SCALAR>(file, "chol", 1, 1, conj), 0);           \
+  EXPECT_EQ(driver<SCALAR>(file, "chol", 2, 1, conj), 0);           \
+  EXPECT_EQ(driver<SCALAR>(file, "chol", 3, 1, conj), 0);           \
+  /* > explicit transpose */                                        \
+  EXPECT_EQ(driver<SCALAR>(file, "chol", 3, 1, conj, true), 0);     \
+  /* > multiple RHSs */                                             \
+  EXPECT_EQ(driver<SCALAR>(file, "chol", 0, 5, conj), 0);           \
+  EXPECT_EQ(driver<SCALAR>(file, "chol", 1, 5, conj), 0);           \
+  EXPECT_EQ(driver<SCALAR>(file, "chol", 2, 5, conj), 0);           \
+  EXPECT_EQ(driver<SCALAR>(file, "chol", 3, 5, conj), 0);           \
+  EXPECT_EQ(driver<SCALAR>(file, "chol", 3, 5, conj, true), 0);     \
+  /* > one-stream */                                                \
+  EXPECT_EQ(driver<SCALAR>(file, "chol", 0, 1, conj, false, true, true, true), 0); \
+  EXPECT_EQ(driver<SCALAR>(file, "chol", 1, 1, conj, false, true, true, true), 0); \
+  EXPECT_EQ(driver<SCALAR>(file, "chol", 2, 1, conj, false, true, true, true), 0);
+
+#define TACHO_CHOL_SEQ_TEST( SCALAR ) \
+  /* > sequential path */                                   \
+  EXPECT_EQ(driver<SCALAR>(file, "chol", -1, 1, conj), 0);  \
+  EXPECT_EQ(driver<SCALAR>(file, "chol", -1, 5, conj), 0);
+
 TEST( Solver, Chol ) {
-  // Chol
-  std::string file = "";
-  // > single RHS
-  EXPECT_EQ(driver<double>(file, "chol", 0, 1), 0);
-  EXPECT_EQ(driver<double>(file, "chol", 1, 1), 0);
-  EXPECT_EQ(driver<double>(file, "chol", 2, 1), 0);
-  EXPECT_EQ(driver<double>(file, "chol", 3, 1), 0);
-  EXPECT_EQ(driver<double>(file, "chol", 3, 1, true), 0);
-  // > multiple RHSs
-  EXPECT_EQ(driver<double>(file, "chol", 0, 5), 0);
-  EXPECT_EQ(driver<double>(file, "chol", 1, 5), 0);
-  EXPECT_EQ(driver<double>(file, "chol", 2, 5), 0);
-  EXPECT_EQ(driver<double>(file, "chol", 3, 5), 0);
-  EXPECT_EQ(driver<double>(file, "chol", 3, 5, true), 0);
-  // > one-stream
-  EXPECT_EQ(driver<double>(file, "chol", 0, 1, false, true, true, true), 0);
-  EXPECT_EQ(driver<double>(file, "chol", 1, 1, false, true, true, true), 0);
-  EXPECT_EQ(driver<double>(file, "chol", 2, 1, false, true, true, true), 0);
-  #if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_SYCL)
-  // > sequential path
-  EXPECT_EQ(driver<double>(file, "chol", -1, 1), 0);
-  EXPECT_EQ(driver<double>(file, "chol", -1, 5), 0);
-  #endif
+  std::string file = ""; 
+  const bool conj = true;
+  TACHO_CHOL_TEST( double )
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_SYCL)
+  TACHO_CHOL_SEQ_TEST( double )
+#endif
+
+#ifdef TACHO_INST_COMPLEX_DOUBLE
+  //// > complex Hermitian
+  TACHO_CHOL_TEST( Kokkos::complex<double> )
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_SYCL)
+  TACHO_CHOL_SEQ_TEST( Kokkos::complex<double> )
+#endif
+#endif
 }
+
+//  LU
+#define TACHO_LU_TEST( SCALAR ) \
+  /* > single RHS */                                                              \
+  EXPECT_EQ(driver<SCALAR>(file, "lu", 0, 1, conj), 0);                           \
+  EXPECT_EQ(driver<SCALAR>(file, "lu", 1, 1, conj), 0);                           \
+  EXPECT_EQ(driver<SCALAR>(file, "lu", 2, 1, conj), 0);                           \
+  EXPECT_EQ(driver<SCALAR>(file, "lu", 3, 1, conj), 0);                           \
+  /* > multiple RHSs */                                                           \
+  EXPECT_EQ(driver<SCALAR>(file, "lu", 0, 5, conj), 0);                           \
+  EXPECT_EQ(driver<SCALAR>(file, "lu", 1, 5, conj), 0);                           \
+  EXPECT_EQ(driver<SCALAR>(file, "lu", 2, 5, conj), 0);                           \
+  EXPECT_EQ(driver<SCALAR>(file, "lu", 3, 5, conj), 0);                           \
+  /* > one-stream */                                                              \
+  EXPECT_EQ(driver<SCALAR>(file, "lu", 0, 1, conj, false, true, true, true), 0);  \
+  EXPECT_EQ(driver<SCALAR>(file, "lu", 1, 1, conj, false, true, true, true), 0);  \
+  EXPECT_EQ(driver<SCALAR>(file, "lu", 2, 1, conj, false, true, true, true), 0);
+
+#define TACHO_LU_CHOL_TEST( SCALAR ) \
+  /* multiple symbolic calls */                                                   \
+  EXPECT_EQ(driver<SCALAR>(file, "lu", 3, 5, conj, false, false, false), 0);      \
+  /* with mixed LU or Chol */                                                     \
+  EXPECT_EQ(driver<SCALAR>(file, "lu", 0, 1, conj, false, false), 0);             \
+  EXPECT_EQ(driver<SCALAR>(file, "lu", 1, 1, conj, false, false), 0);             \
+  EXPECT_EQ(driver<SCALAR>(file, "lu", 2, 1, conj, false, false), 0);             \
+  EXPECT_EQ(driver<SCALAR>(file, "lu", 3, 1, conj, false, false), 0);             \
+  /* multiple RHSs */                                                             \
+  EXPECT_EQ(driver<SCALAR>(file, "lu", 0, 5, conj, false, false), 0);             \
+  EXPECT_EQ(driver<SCALAR>(file, "lu", 1, 5, conj, false, false), 0);             \
+  EXPECT_EQ(driver<SCALAR>(file, "lu", 2, 5, conj, false, false), 0);             \
+  EXPECT_EQ(driver<SCALAR>(file, "lu", 3, 5, conj, false, false), 0);
+
+#define TACHO_LU_SEQ_TEST( SCALAR ) \
+  /* > sequential path */                           \
+  EXPECT_EQ(driver<SCALAR>(file, "lu", -1, 1, conj), 0);  \
+  EXPECT_EQ(driver<SCALAR>(file, "lu", -1, 5, conj), 0);  \
 
 TEST( Solver, LU ) {
   // LU
   std::string file = "";
-  // > single RHS
-  EXPECT_EQ(driver<double>(file, "lu", 0, 1), 0);
-  EXPECT_EQ(driver<double>(file, "lu", 1, 1), 0);
-  EXPECT_EQ(driver<double>(file, "lu", 2, 1), 0);
-  EXPECT_EQ(driver<double>(file, "lu", 3, 1), 0);
-  EXPECT_EQ(driver<double>(file, "lu", 0, 1, false, false), 0); // with mixed LU or Chol
-  EXPECT_EQ(driver<double>(file, "lu", 1, 1, false, false), 0);
-  EXPECT_EQ(driver<double>(file, "lu", 2, 1, false, false), 0);
-  EXPECT_EQ(driver<double>(file, "lu", 3, 1, false, false), 0);
-  // > multiple RHSs
-  EXPECT_EQ(driver<double>(file, "lu", 0, 5), 0);
-  EXPECT_EQ(driver<double>(file, "lu", 1, 5), 0);
-  EXPECT_EQ(driver<double>(file, "lu", 2, 5), 0);
-  EXPECT_EQ(driver<double>(file, "lu", 3, 5), 0);
-  EXPECT_EQ(driver<double>(file, "lu", 0, 5, false, false), 0); // with mixed LU or Chol
-  EXPECT_EQ(driver<double>(file, "lu", 1, 5, false, false), 0);
-  EXPECT_EQ(driver<double>(file, "lu", 2, 5, false, false), 0);
-  EXPECT_EQ(driver<double>(file, "lu", 3, 5, false, false), 0);
-  EXPECT_EQ(driver<double>(file, "lu", 3, 5, false, false, false), 0); // multiple symbolic calls
-  // > one-stream
-  EXPECT_EQ(driver<double>(file, "lu", 0, 1, false, true, true, true), 0);
-  EXPECT_EQ(driver<double>(file, "lu", 1, 1, false, true, true, true), 0);
-  EXPECT_EQ(driver<double>(file, "lu", 2, 1, false, true, true, true), 0);
-  #if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_SYCL)
-  // > sequential path
-  EXPECT_EQ(driver<double>(file, "lu", -1, 1), 0);
-  EXPECT_EQ(driver<double>(file, "lu", -1, 5), 0);
-  #endif
+  // > conjugate
+  bool conj = true;
+  TACHO_LU_TEST( double )
+  TACHO_LU_CHOL_TEST( double )
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_SYCL)
+  TACHO_LU_SEQ_TEST( double )
+#endif
+
+#ifdef TACHO_INST_COMPLEX_DOUBLE
+  //// > complex Hermitian
+  TACHO_LU_TEST( Kokkos::complex<double> )
+  TACHO_LU_CHOL_TEST( Kokkos::complex<double> )
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_SYCL)
+  TACHO_LU_SEQ_TEST( Kokkos::complex<double> )
+#endif
+  //// > complex symmetric
+  conj = false;
+  TACHO_LU_TEST( Kokkos::complex<double> )
+  //// no LU_CHOL for complex symmetric (chol is only for Hermitian)
+  /* TACHO_LU_CHOL_TEST( Kokkos::complex<double> ) */
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_SYCL)
+  TACHO_LU_SEQ_TEST( Kokkos::complex<double> )
+#endif
+#endif
 }
+
+//  LDL
+#define TACHO_LDL_TEST( SCALAR ) \
+  /* > single RHS */                                                               \
+  EXPECT_EQ(driver<SCALAR>(file, "ldl", 0, 1, conj), 0);                           \
+  EXPECT_EQ(driver<SCALAR>(file, "ldl", 1, 1, conj), 0);                           \
+  EXPECT_EQ(driver<SCALAR>(file, "ldl", 2, 1, conj), 0);                           \
+  EXPECT_EQ(driver<SCALAR>(file, "ldl", 3, 1, conj), 0);                           \
+  /* > explicit transpose */                                                       \
+  EXPECT_EQ(driver<SCALAR>(file, "ldl", 3, 1, conj, true), 0);                     \
+  /* > multiple RHSs */                                                            \
+  EXPECT_EQ(driver<SCALAR>(file, "ldl", 0, 5, conj), 0);                           \
+  EXPECT_EQ(driver<SCALAR>(file, "ldl", 1, 5, conj), 0);                           \
+  EXPECT_EQ(driver<SCALAR>(file, "ldl", 2, 5, conj), 0);                           \
+  EXPECT_EQ(driver<SCALAR>(file, "ldl", 3, 5, conj), 0);                           \
+  /* > one-stream */                                                               \
+  EXPECT_EQ(driver<SCALAR>(file, "ldl", 0, 1, conj, false, true, true, true), 0);  \
+  EXPECT_EQ(driver<SCALAR>(file, "ldl", 1, 1, conj, false, true, true, true), 0);  \
+  EXPECT_EQ(driver<SCALAR>(file, "ldl", 2, 1, conj, false, true, true, true), 0); 
+
+#define TACHO_LDL_CHOL_TEST( SCALAR ) \
+  /* with mixed LDL or Chol, only for double or float */                           \
+  /* Chol is for Hermitian, LDL for Symmetrix */                                   \
+  EXPECT_EQ(driver<SCALAR>(file, "ldl", 0, 1, conj, false, false), 0);             \
+  EXPECT_EQ(driver<SCALAR>(file, "ldl", 1, 1, conj, false, false), 0);             \
+  EXPECT_EQ(driver<SCALAR>(file, "ldl", 2, 1, conj, false, false), 0);             \
+  EXPECT_EQ(driver<SCALAR>(file, "ldl", 3, 1, conj, false, false), 0);             \
+  /* with multiple RHSs */                                                         \
+  EXPECT_EQ(driver<SCALAR>(file, "ldl", 0, 5, conj, false, false), 0);             \
+  EXPECT_EQ(driver<SCALAR>(file, "ldl", 1, 5, conj, false, false), 0);             \
+  EXPECT_EQ(driver<SCALAR>(file, "ldl", 2, 5, conj, false, false), 0);             \
+  EXPECT_EQ(driver<SCALAR>(file, "ldl", 3, 5, conj, false, false), 0);             \
+
+#define TACHO_LDL_SEQ_TEST( SCALAR ) \
+  /* > sequential path */                                 \
+  EXPECT_EQ(driver<SCALAR>(file, "ldl", -1, 1, conj), 0); \
+  EXPECT_EQ(driver<SCALAR>(file, "ldl", -1, 5, conj), 0); \
 
 TEST( Solver, LDL ) {
   // LDL
   std::string file = "";
-  // > single RHS
-  EXPECT_EQ(driver<double>(file, "ldl", 0, 1), 0);
-  EXPECT_EQ(driver<double>(file, "ldl", 1, 1), 0);
-  EXPECT_EQ(driver<double>(file, "ldl", 2, 1), 0);
-  EXPECT_EQ(driver<double>(file, "ldl", 3, 1), 0);
-  EXPECT_EQ(driver<double>(file, "ldl", 0, 1, false, false), 0); // with mixed LDL or Chol
-  EXPECT_EQ(driver<double>(file, "ldl", 1, 1, false, false), 0);
-  EXPECT_EQ(driver<double>(file, "ldl", 2, 1, false, false), 0);
-  EXPECT_EQ(driver<double>(file, "ldl", 3, 1, false, false), 0);
-  // > multiple RHSs
-  EXPECT_EQ(driver<double>(file, "ldl", 0, 5), 0);
-  EXPECT_EQ(driver<double>(file, "ldl", 1, 5), 0);
-  EXPECT_EQ(driver<double>(file, "ldl", 2, 5), 0);
-  EXPECT_EQ(driver<double>(file, "ldl", 3, 5), 0);
-  EXPECT_EQ(driver<double>(file, "ldl", 0, 5, false, false), 0); // with mixed LDL or Chol
-  EXPECT_EQ(driver<double>(file, "ldl", 1, 5, false, false), 0);
-  EXPECT_EQ(driver<double>(file, "ldl", 2, 5, false, false), 0);
-  EXPECT_EQ(driver<double>(file, "ldl", 3, 5, false, false), 0);
-  // > one-stream
-  EXPECT_EQ(driver<double>(file, "ldl", 0, 1, false, true, true, true), 0);
-  EXPECT_EQ(driver<double>(file, "ldl", 1, 1, false, true, true, true), 0);
-  EXPECT_EQ(driver<double>(file, "ldl", 2, 1, false, true, true, true), 0);
-  #if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_SYCL)
-  // > sequential path
-  EXPECT_EQ(driver<double>(file, "ldl", -1, 1), 0);
-  EXPECT_EQ(driver<double>(file, "ldl", -1, 5), 0);
-  #endif
+  const bool conj = false;
+  TACHO_LDL_TEST( double )
+  TACHO_LDL_CHOL_TEST( double )
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_SYCL)
+  TACHO_LDL_SEQ_TEST( double )
+#endif
+
+#ifdef TACHO_INST_COMPLEX_DOUBLE
+  //// > complex
+  TACHO_LDL_TEST( Kokkos::complex<double> )
+  //// > LDL + Chol (not for complex because Chol is for Hermitian, LDL is for complex symmetric)
+  /* TACHO_LDL_CHOL_TEST( Kokkos::complex<double> ) */
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_SYCL)
+  TACHO_LDL_SEQ_TEST( Kokkos::complex<double> )
+#endif
+#endif
 }
+
+// Non-piv LDL
+#define TACHO_NOPIV_TEST( SCALAR ) \
+  /* > single RHS */                                                          \
+  EXPECT_EQ(driver<SCALAR>(file, "ldl-nopiv", 0, 1, conj), 0);                \
+  EXPECT_EQ(driver<SCALAR>(file, "ldl-nopiv", 1, 1, conj), 0);                \
+  EXPECT_EQ(driver<SCALAR>(file, "ldl-nopiv", 2, 1, conj), 0);                \
+  EXPECT_EQ(driver<SCALAR>(file, "ldl-nopiv", 3, 1, conj), 0);                \
+  /* > multiple RHSs */                                                       \
+  EXPECT_EQ(driver<SCALAR>(file, "ldl-nopiv", 0, 5, conj), 0);                \
+  EXPECT_EQ(driver<SCALAR>(file, "ldl-nopiv", 1, 5, conj), 0);                \
+  EXPECT_EQ(driver<SCALAR>(file, "ldl-nopiv", 2, 5, conj), 0);                \
+  EXPECT_EQ(driver<SCALAR>(file, "ldl-nopiv", 3, 5, conj), 0);
+// Mix Non-piv LDL & Chol (cannot do for complex)
+#define TACHO_NOPIV_CHOL_TEST( SCALAR ) \
+  /* with mixed nopiv-LDL or Chol, only for double or float */                \
+  /* Chol for Hermitian and LDL for symmetrix */                              \
+  EXPECT_EQ(driver<SCALAR>(file, "ldl-nopiv", 0, 1, conj, false, false), 0);  \
+  EXPECT_EQ(driver<SCALAR>(file, "ldl-nopiv", 1, 1, conj, false, false), 0);  \
+  EXPECT_EQ(driver<SCALAR>(file, "ldl-nopiv", 2, 1, conj, false, false), 0);  \
+  EXPECT_EQ(driver<SCALAR>(file, "ldl-nopiv", 3, 1, conj, false, false), 0);  \
+  /*EXPECT_EQ(driver<double>(file, "ldl-nopiv", 3, 1, conj, true), 0);*/      \
+  /* with mixed nopiv-LDL or Chol */                                          \
+  EXPECT_EQ(driver<SCALAR>(file, "ldl-nopiv", 0, 5, conj, false, false), 0);  \
+  EXPECT_EQ(driver<SCALAR>(file, "ldl-nopiv", 1, 5, conj, false, false), 0);  \
+  EXPECT_EQ(driver<SCALAR>(file, "ldl-nopiv", 2, 5, conj, false, false), 0);  \
+  EXPECT_EQ(driver<SCALAR>(file, "ldl-nopiv", 3, 5, conj, false, false), 0);  \
+  /*EXPECT_EQ(driver<double>(file, "ldl-nopiv", 3, 5, conj, true), 0);*/      \
 
 TEST( Solver, NonPivLDL ) {
   // Non-piv LDL
   std::string file = "";
-  // > single RHS
-  EXPECT_EQ(driver<double>(file, "ldl-nopiv", 0, 1), 0);
-  EXPECT_EQ(driver<double>(file, "ldl-nopiv", 1, 1), 0);
-  EXPECT_EQ(driver<double>(file, "ldl-nopiv", 2, 1), 0);
-  EXPECT_EQ(driver<double>(file, "ldl-nopiv", 3, 1), 0);
-  EXPECT_EQ(driver<double>(file, "ldl-nopiv", 0, 1, false, false), 0); // with mixed nopiv-LDL or Chol
-  EXPECT_EQ(driver<double>(file, "ldl-nopiv", 1, 1, false, false), 0);
-  EXPECT_EQ(driver<double>(file, "ldl-nopiv", 2, 1, false, false), 0);
-  EXPECT_EQ(driver<double>(file, "ldl-nopiv", 3, 1, false, false), 0);
-  //EXPECT_EQ(driver<double>(file, "ldl-nopiv", 3, 1, true), 0);
-  // > multiple RHSs
-  EXPECT_EQ(driver<double>(file, "ldl-nopiv", 0, 5), 0);
-  EXPECT_EQ(driver<double>(file, "ldl-nopiv", 1, 5), 0);
-  EXPECT_EQ(driver<double>(file, "ldl-nopiv", 2, 5), 0);
-  EXPECT_EQ(driver<double>(file, "ldl-nopiv", 3, 5), 0);
-  EXPECT_EQ(driver<double>(file, "ldl-nopiv", 0, 5, false, false), 0); // with mixed nopiv-LDL or Chol
-  EXPECT_EQ(driver<double>(file, "ldl-nopiv", 1, 5, false, false), 0);
-  EXPECT_EQ(driver<double>(file, "ldl-nopiv", 2, 5, false, false), 0);
-  EXPECT_EQ(driver<double>(file, "ldl-nopiv", 3, 5, false, false), 0);
-  //EXPECT_EQ(driver<double>(file, "ldl-nopiv", 3, 5, true), 0);
+  const bool conj = false;
+  TACHO_NOPIV_TEST( double )
+  TACHO_NOPIV_CHOL_TEST( double ) 
   //#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_SYCL)
   //// > sequential path
   //EXPECT_EQ(driver<double>(file, "ldl-nopiv", -1, 1), 0);
   //EXPECT_EQ(driver<double>(file, "ldl-nopiv", -1, 5), 0);
   //#endif
+
+#ifdef TACHO_INST_COMPLEX_DOUBLE
+  //// > complex
+  TACHO_NOPIV_TEST( Kokkos::complex<double> )
+  //// > Non-piv LDL + Chol (not for complex because Chol is for Hermitian, LDL is for complex symmetric)
+  /* TACHO_NOPIV_CHOL_TEST( Kokkos::complex<double> ) */
+#endif
 }
 
 int main(int argc, char *argv[]) {

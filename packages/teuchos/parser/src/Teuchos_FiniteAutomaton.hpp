@@ -33,7 +33,7 @@ extern template struct Table<int>;
 struct FiniteAutomaton {
   Table<int> table;
   std::vector<int> accepted_tokens;
-  bool is_deterministic;
+  bool is_deterministic = false;
   FiniteAutomaton() {}
   FiniteAutomaton(int nsymbols_init, bool is_deterministic_init, int nstates_reserve);
   void swap(FiniteAutomaton& other);

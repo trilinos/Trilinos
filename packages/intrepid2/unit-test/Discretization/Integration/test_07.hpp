@@ -95,8 +95,8 @@ namespace Intrepid2 {
       typedef CubatureDirectLineGaussJacobi20<DeviceType,pointValueType,weightValueType> CubatureLineJacobiType;
       typedef CubatureTensorPyr<DeviceType,pointValueType,weightValueType> CubatureTensorPyrType;
       
-      // tolerence is too tight to test upto order 20
-      const auto tol = 1000.0 * tolerence();
+      // tolerance is too tight to test upto order 20
+      const auto tol = 1000.0 * tolerance();
 
       int errorFlag = 0;
 

@@ -285,107 +285,6 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     return BASKER_SUCCESS;
   }//end btf_order
 
-  template <class Int, class Entry, class Exe_Space>
-  BASKER_INLINE
-  void Basker<Int,Entry,Exe_Space>::order_incomplete()
-  {
-
-    Kokkos::Timer timer_one;
-
-    if(Options.matching == BASKER_TRUE)
-    {
-      match_ordering(1);
-    }
-    else
-    {
-      match_flag = BASKER_FALSE;
-    }
-
-    if(Options.btf == BASKER_TRUE)
-    {
-      //2. BTF ordering on whole matrix
-      //currently finds btf-hybrid and permutes
-      //A -> [BTF_A, BTF_C; 0 , BTF B]
-      //printf("outter num_threads:%d \n", num_threads);
-      MALLOC_INT_1DARRAY(btf_schedule, num_threads+1);
-      init_value(btf_schedule, num_threads+1, (Int)0);
-      find_btf(A);
-    }
-    else
-    {
-      btf_flag = BASKER_FALSE;
-    }
-
-    std::cout << "Order Timer 1: "
-      << timer_one.seconds()
-      << std::endl;
-
-    timer_one.reset();
-
-    //ND Order (We should always do this for use)
-    if(Options.btf == BASKER_TRUE && btf_tabs_offset != 0)
-    {
-      MALLOC_INT_1DARRAY(vals_order_scotch_array, BTF_A.nnz);
-      partition(BTF_A);
-      if(btf_nblks > 1)
-      {
-        permute_row(BTF_B, part_tree.permtab);
-      }
-      init_tree_thread();
-      if(Options.amd_domains == BASKER_TRUE)
-      {
-        INT_1DARRAY cmember;
-        MALLOC_INT_1DARRAY(cmember, BTF_A.ncol+1);
-        init_value(cmember,BTF_A.ncol+1,(Int) 0);
-        for(Int i = 0; i < tree.nblks; ++i)
-        {
-          for(Int j = tree.col_tabs(i); 
-              j < tree.col_tabs(i+1); ++j)
-          {
-            cmember(j) = i;
-          }
-        }
-        MALLOC_INT_1DARRAY(order_csym_array, BTF_A.ncol);
-        init_value(order_csym_array, BTF_A.ncol, (Int)0);
-        csymamd_order(BTF_A, order_csym_array, cmember, Options.verbose);
-
-        permute_col(BTF_A, order_csym_array);
-        sort_matrix(BTF_A);
-        permute_row(BTF_A, order_csym_array);
-        sort_matrix(BTF_A);
-
-        if(btf_nblks > 1)
-        {
-          permute_row(BTF_B, order_csym_array);
-          sort_matrix(BTF_B);
-        }
-      }//If amd order domains
-      matrix_to_views_2D(BTF_A);
-      find_2D_convert(BTF_A);
-      kokkos_order_init_2D<Int,Entry,Exe_Space> iO(this);
-      Kokkos::parallel_for(TeamPolicy(num_threads,1), iO);
-      Kokkos::fence();
-    }
-    else
-    {
-      MALLOC_INT_1DARRAY(vals_order_scotch_array, A.nnz);
-      partition(A);
-      init_tree_thread();
-      //Add domain order options
-      matrix_to_views_2D(A);
-      find_2D_convert(A);
-      kokkos_order_init_2D<Int,Entry,Exe_Space> iO(this);
-      Kokkos::parallel_for(TeamPolicy(num_threads,1), iO);
-      Kokkos::fence();
-    }
-
-    std::cout << "Order Timer 2: "
-      << timer_one.seconds()
-      << std::endl;
-
-    return;
-  }
-
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
@@ -454,76 +353,66 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
         scale_row_array(i) = one;
         scale_col_array(i) = one;
       }
-      if(Options.incomplete == BASKER_FALSE)
-      {
-        if (option == 0) {
-          if(Options.verbose == BASKER_TRUE) {
-            std::cout << " ++ no BTF matching ++ " << std::endl;
-          }
+      if (option == 0) {
+        if(Options.verbose == BASKER_TRUE) {
+          std::cout << " ++ no BTF matching ++ " << std::endl;
         }
-        else if (option == 1) {
-          if(Options.verbose == BASKER_TRUE) {
-            std::cout << " ++ calling ShyLUBasker::MWM (" << A.nrow << " x " << A.ncol << ") ++ " << std::endl;
+      }
+      else if (option == 1) {
+        if(Options.verbose == BASKER_TRUE) {
+          std::cout << " ++ calling ShyLUBasker::MWM (" << A.nrow << " x " << A.ncol << ") ++ " << std::endl;
+        }
+        num_match = mwm(A, order_match_array);
+      } 
+      #if defined(BASKER_MC64) || defined(BASKER_SUPERLUDIS_MC64)
+      else if (option == 3) {
+        Int job = 5; //2 is the default for SuperLU_DIST
+        // call mc64
+        if(Options.verbose == BASKER_TRUE) {
+          std::cout << " ++ calling MC64 ++ " << std::endl;
+        }
+        mc64(job, order_match_array, scale_row_array, scale_col_array);
+        #if 0
+        for(Int j = 0; j < A.ncol; j++) {
+          for(Int k = A.col_ptr[j]; k < A.col_ptr[j+1]; k++) {
+            A.val[k] *= (scale_col_array(j) * scale_row_array(A.row_idx[k]));
           }
-          num_match = mwm(A, order_match_array);
-        } 
-        #if defined(BASKER_MC64) || defined(BASKER_SUPERLUDIS_MC64)
-        else if (option == 3) {
-          Int job = 5; //2 is the default for SuperLU_DIST
-          // call mc64
-          if(Options.verbose == BASKER_TRUE) {
-            std::cout << " ++ calling MC64 ++ " << std::endl;
-          }
-          mc64(job, order_match_array, scale_row_array, scale_col_array);
-          #if 0
-          for(Int j = 0; j < A.ncol; j++) {
-            for(Int k = A.col_ptr[j]; k < A.col_ptr[j+1]; k++) {
-              A.val[k] *= (scale_col_array(j) * scale_row_array(A.row_idx[k]));
-            }
-          }
-          #endif
         }
         #endif
-        else { // if (option == 2 or default)
-          double maxwork = 0.0;
-          double work;
-          INT_1DARRAY WORK;
-          MALLOC_INT_1DARRAY(WORK, 5 * (A.ncol));
-          if(Options.verbose == BASKER_TRUE) {
-            std::cout << " ++ calling TRILINOS_BTF_MAXTRANS (" << A.nrow << " x " << A.ncol << ") ++ " << std::endl;
-          }
-          if (std::is_same<Int, int>::value) {
-            int *col_ptr = reinterpret_cast <int*> (&(A.col_ptr(0)));
-            int *row_idx = reinterpret_cast <int*> (&(A.row_idx(0)));
-            int *order   = reinterpret_cast <int*> (&(order_match_array(0)));
-            int *iwork   = reinterpret_cast <int*> (&(WORK(0)));
-            num_match = trilinos_btf_maxtrans ((int)A.nrow, (int)A.ncol, col_ptr, row_idx, maxwork, &work, order, iwork);
-          } else {
-            long int *col_ptr = reinterpret_cast <long int*> (&(A.col_ptr(0)));
-            long int *row_idx = reinterpret_cast <long int*> (&(A.row_idx(0)));
-            long int *order   = reinterpret_cast <long int*> (&(order_match_array(0)));
-            long int *iwork   = reinterpret_cast <long int*> (&(WORK(0)));
-            num_match = trilinos_btf_l_maxtrans ((long int)A.nrow, (long int)A.ncol, col_ptr, row_idx, maxwork, &work, order, iwork);
-          }
-          #if 0
-          printf( " >> debug: set order_match to identity <<\n" );
-          for(Int i = 0; i < A.nrow; i++)
-          {
-            order_match_array(i) = i;
-          }
-          #endif
-          FREE_INT_1DARRAY(WORK);
-        }
-        // apply matching to the rows of A
-        permute_row(A, order_match_array);
       }
-      else
-      {
+      #endif
+      else { // if (option == 2 or default)
+        double maxwork = 0.0;
+        double work;
+        INT_1DARRAY WORK;
+        MALLOC_INT_1DARRAY(WORK, 5 * (A.ncol));
+        if(Options.verbose == BASKER_TRUE) {
+          std::cout << " ++ calling TRILINOS_BTF_MAXTRANS (" << A.nrow << " x " << A.ncol << ") ++ " << std::endl;
+        }
+        if (std::is_same<Int, int>::value) {
+          int *col_ptr = reinterpret_cast <int*> (&(A.col_ptr(0)));
+          int *row_idx = reinterpret_cast <int*> (&(A.row_idx(0)));
+          int *order   = reinterpret_cast <int*> (&(order_match_array(0)));
+          int *iwork   = reinterpret_cast <int*> (&(WORK(0)));
+          num_match = trilinos_btf_maxtrans ((int)A.nrow, (int)A.ncol, col_ptr, row_idx, maxwork, &work, order, iwork);
+        } else {
+          long int *col_ptr = reinterpret_cast <long int*> (&(A.col_ptr(0)));
+          long int *row_idx = reinterpret_cast <long int*> (&(A.row_idx(0)));
+          long int *order   = reinterpret_cast <long int*> (&(order_match_array(0)));
+          long int *iwork   = reinterpret_cast <long int*> (&(WORK(0)));
+          num_match = trilinos_btf_l_maxtrans ((long int)A.nrow, (long int)A.ncol, col_ptr, row_idx, maxwork, &work, order, iwork);
+        }
+        #if 0
+        printf( " >> debug: set order_match to identity <<\n" );
         for(Int i = 0; i < A.nrow; i++)
         {
           order_match_array(i) = i;
         }
+        #endif
+        FREE_INT_1DARRAY(WORK);
       }
+      // apply matching to the rows of A
+      permute_row(A, order_match_array);
       //printf( " match_array\n" );
       //for(Int j = 0; j < A.ncol; j++) printf( " > %d\n",order_match_array(j) );
       //A.print_matrix("B.dat");

@@ -1,11 +1,16 @@
 #ifndef __TACHO_CONFIG_H__
 #define __TACHO_CONFIG_H__
 
-/* Define if want to build with size_type (int)  enabled */
+/* Define if want to build with size_type (int) enabled */
 #cmakedefine TACHO_USE_INT_INT
 
-/* Define if want to build with size_type (size_t)  enabled */
+/* Define if want to build with size_type (size_t) enabled */
 #cmakedefine TACHO_USE_INT_SIZE_T
+
+/* Instiate if defined */
+#cmakedefine TACHO_INST_FLOAT
+#cmakedefine TACHO_INST_COMPLEX_DOUBLE
+#cmakedefine TACHO_INST_COMPLEX_FLOAT
 
 /* Define if want to build with MKL enabled */
 #cmakedefine TACHO_HAVE_MKL
@@ -40,5 +45,4 @@
 
 /* Define if want to build with deprecated parameters */
 #cmakedefine TACHO_DEPRECATED_PARAMETERS
-
 #endif
