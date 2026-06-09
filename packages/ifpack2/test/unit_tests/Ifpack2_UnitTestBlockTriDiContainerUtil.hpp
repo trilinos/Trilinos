@@ -15,6 +15,7 @@
 #ifndef IFPACK2_UNITTEST_BLOCKTRIDICONTAINER_UTIL_HPP
 #define IFPACK2_UNITTEST_BLOCKTRIDICONTAINER_UTIL_HPP
 
+#include <random>
 #include <Ifpack2_BlockRelaxation.hpp>
 #ifdef HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
 #include <Ifpack2_BlockTriDiContainer_decl.hpp>
@@ -214,7 +215,7 @@ struct BlockTriDiContainerTester {
       }
       if (jacobiMode == JACOBI_ON_SHUFFLED_PARTS) {
         // Also randomly shuffle the parts (this should have no effect on the solution)
-        std::random_shuffle(parts.begin(), parts.end());
+        std::shuffle(parts.begin(), parts.end(), std::default_random_engine{std::random_device{}()});
       }
     }
   }

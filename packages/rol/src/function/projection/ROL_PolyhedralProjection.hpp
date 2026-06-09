@@ -12,15 +12,20 @@
 
 #include "ROL_BoundConstraint.hpp"
 #include "ROL_Constraint.hpp"
+#include "ROL_NullSpaceOperator.hpp"
+#include "ROL_Projection.hpp"
+#include "ROL_ReducedLinearConstraint.hpp"
 #include <iostream>
 
 namespace ROL {
 
 template<typename Real>
-class PolyhedralProjection {
+class PolyhedralProjection : public Projection<Real> {
 protected:
-  const Ptr<BoundConstraint<Real>> bnd_;
-  const Ptr<Constraint<Real>>      con_;
+  const Ptr<BoundConstraint<Real>>   bnd_;
+  const Ptr<Constraint<Real>>        con_;
+  Ptr<ReducedLinearConstraint<Real>> rcon_;  // con_ restricted to current active variables
+  Ptr<NullSpaceOperator<Real>>       ns_;    // null space projection onto reduced equality constraint
   Ptr<Vector<Real>> xprim_, xdual_, mul_, res_;
 
 public:
@@ -36,6 +41,8 @@ public:
                        const Vector<Real>               &res);
 
   virtual void project(Vector<Real> &x, std::ostream &stream = std::cout);
+
+  virtual void applyJacobian(Vector<Real> &v, const Vector<Real> &x);
 
   const Ptr<Constraint<Real>> getLinearConstraint(void) const;
 

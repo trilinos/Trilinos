@@ -795,7 +795,7 @@ class Scalar3D_27PtStencil {
   using GlobalOrdinal     = typename Map::global_ordinal_type;
   using Node              = typename Map::node_type;
   using local_map_type    = typename Map::local_map_type;
-  using local_matrix_type = typename ::Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type;
+  using local_matrix_type = typename ::Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_device_type;
   using rowptr_type       = typename local_matrix_type::row_map_type::non_const_type;
   using colidx_type       = typename local_matrix_type::index_type::non_const_type;
   using values_type       = typename local_matrix_type::values_type::non_const_type;
