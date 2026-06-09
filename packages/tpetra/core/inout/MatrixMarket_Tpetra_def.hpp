@@ -4234,7 +4234,7 @@ MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readMap(std::istr
   const int numProcs = comm->getSize();
   const int myRank   = comm->getRank();
 
-  if (err.is_null()) {
+  if (!err.is_null()) {
     err->pushTab();
   }
   if (debug) {
@@ -4242,7 +4242,7 @@ MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readMap(std::istr
     os << myRank << ": readMap: " << endl;
     *err << os.str();
   }
-  if (err.is_null()) {
+  if (!err.is_null()) {
     err->pushTab();
   }
 
@@ -4529,7 +4529,7 @@ MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readMap(std::istr
   }
   TEUCHOS_TEST_FOR_EXCEPTION(gblSuccess != 1, std::runtime_error, "Map constructor failed!");
 
-  if (err.is_null()) {
+  if (!err.is_null()) {
     err->popTab();
   }
   if (debug) {
@@ -4537,7 +4537,7 @@ MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readMap(std::istr
     os << myRank << ": readMap: done" << endl;
     *err << os.str();
   }
-  if (err.is_null()) {
+  if (!err.is_null()) {
     err->popTab();
   }
   return newMap;
@@ -6814,7 +6814,7 @@ void MatrixMarketWriter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeOperato
   std::string tmpFile   = "__TMP__" + fileName;
   const int myRank      = A.getDomainMap()->getComm()->getRank();
   bool precisionChanged = false;
-  int oldPrecision;
+  int oldPrecision      = 0;
   // The number of nonzero entries in a Tpetra::Operator is
   // unknown until probing is completed.  In order to write a
   // MatrixMarket header, we write the matrix to a temporary
