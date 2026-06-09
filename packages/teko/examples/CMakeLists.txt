@@ -1,8 +1,10 @@
 ADD_SUBDIRECTORY(BuildPreconditioner)
+
+ADD_SUBDIRECTORY(BasicExamples)
+
 IF (TEKO_ENABLE_EPETRA)
   ADD_SUBDIRECTORY(StridedSolve)
   ADD_SUBDIRECTORY(AddMultiplyPrecs)
-  ADD_SUBDIRECTORY(BasicExamples)
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(example_copyfiles
     SOURCE_FILES nslhs_test.mm

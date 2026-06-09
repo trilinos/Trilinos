@@ -8,31 +8,25 @@
 // @HEADER
 
 // Teuchos includes /*@ \label{lned:being-includes} @*/
-#include "Teuchos_ConfigDefs.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
-// Epetra includes
-#ifdef HAVE_MPI
-#include "mpi.h"
-#include "Epetra_MpiComm.h"
-#else
-#include "Epetra_SerialComm.h"
-#endif
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_Vector.h"
-#include "Epetra_LinearProblem.h"
-
-// EpetraExt includes
-#include "EpetraExt_CrsMatrixIn.h"
-#include "EpetraExt_VectorIn.h"
+// Tpetra includes
+#include "Tpetra_Core.hpp"
+#include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_Vector.hpp"
+#include "MatrixMarket_Tpetra.hpp"
 
 // Teko-Package includes
 #include "Teko_StratimikosFactory.hpp"
+#include "Teko_ConfigDefs.hpp"
+
+#include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 
 #include "Thyra_LinearOpWithSolveBase.hpp"
 #include "Thyra_VectorBase.hpp"
+#include "Thyra_TpetraThyraWrappers.hpp"
+#include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
 
 #include <iostream> /*@ \label{lned:end-includes} @*/
 
@@ -42,37 +36,53 @@ using Teuchos::rcp;
 
 int main(int argc, char* argv[]) {
   // calls MPI_Init and MPI_Finalize
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  Tpetra::ScopeGuard tpetraScope(&argc, &argv);
+
+  using ST = double;
+  using LO = Teko::LO;
+  using GO = Teko::GO;
+  using NT = Teko::NT;
+
+  using crs_matrix_type = Tpetra::CrsMatrix<ST, LO, GO, NT>;
+  using vector_type = Tpetra::Vector<ST, LO, GO, NT>;
+  using map_type = Tpetra::Map<LO, GO, NT>;
+
+  // build global communicator
+  RCP<const Teuchos::Comm<int> > Comm = Tpetra::getDefaultComm();
 
   // read in parameter list
   Teuchos::RCP<Teuchos::ParameterList> paramList =
       Teuchos::getParametersFromXmlFile("strat_example.xml");
 
-  // build global communicator
-#ifdef HAVE_MPI
-  Epetra_MpiComm Comm(MPI_COMM_WORLD);
-#else
-  Epetra_SerialComm Comm;
-#endif
-
   // Read in the matrix, store pointer as an RCP
-  Epetra_CrsMatrix* ptrA = 0;
-  EpetraExt::MatrixMarketFileToCrsMatrix("../data/nsjac.mm", Comm, ptrA);
-  RCP<Epetra_CrsMatrix> A = rcp(ptrA);
+  RCP<crs_matrix_type> A =
+      Tpetra::MatrixMarket::Reader<crs_matrix_type>::readSparseFile("../data/nsjac.mm", Comm);
 
   // read in the RHS vector
-  Epetra_Vector* ptrb = 0;
-  EpetraExt::MatrixMarketFileToVector("../data/nsrhs_test.mm", A->OperatorRangeMap(), ptrb);
-  RCP<const Epetra_Vector> b = rcp(ptrb);
+  RCP<const map_type> rangeMap = A->getRangeMap();
+  RCP<vector_type> b =
+      Tpetra::MatrixMarket::Reader<crs_matrix_type>::readVectorFile(
+          "../data/nsrhs_test.mm", Comm, rangeMap, false, false);
 
   // allocate vectors
-  RCP<Epetra_Vector> x = rcp(new Epetra_Vector(A->OperatorDomainMap()));
-  x->PutScalar(0.0);
+  RCP<vector_type> x = rcp(new vector_type(A->getDomainMap()));
+  x->putScalar(0.0);
 
   // Build Thyra linear algebra objects
-  RCP<const Thyra::LinearOpBase<double> > th_A = Thyra::epetraLinearOp(A);
-  RCP<const Thyra::VectorBase<double> > th_b   = Thyra::create_Vector(b, th_A->range());
-  RCP<Thyra::VectorBase<double> > th_x         = Thyra::create_Vector(x, th_A->domain());
+  RCP<const Thyra::VectorSpaceBase<ST> > thyraRangeSpace =
+      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(A->getRangeMap());
+
+  RCP<const Thyra::VectorSpaceBase<ST> > thyraDomainSpace =
+      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(A->getDomainMap());
+
+  RCP<const Thyra::LinearOpBase<ST> > th_A =
+      Thyra::tpetraLinearOp<ST, LO, GO, NT>(thyraRangeSpace, thyraDomainSpace, A);
+
+  RCP<const Thyra::VectorBase<ST> > th_b =
+      Thyra::createConstVector<ST, LO, GO, NT>(b, thyraRangeSpace);
+
+  RCP<Thyra::VectorBase<ST> > th_x =
+      Thyra::createVector<ST, LO, GO, NT>(x, thyraDomainSpace);
 
   // Build stratimikos solver
   /////////////////////////////////////////////////////////
@@ -82,15 +92,19 @@ int main(int argc, char* argv[]) {
   Teko::addTekoToStratimikosBuilder(linearSolverBuilder);
   linearSolverBuilder.setParameterList(paramList);
 
-  RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory =
+  RCP<Thyra::LinearOpWithSolveFactoryBase<ST> > lowsFactory =
       Thyra::createLinearSolveStrategy(linearSolverBuilder);
 
-  Teuchos::RCP<Thyra::LinearOpWithSolveBase<double> > th_invA =
+  Teuchos::RCP<Thyra::LinearOpWithSolveBase<ST> > th_invA =
       Thyra::linearOpWithSolve(*lowsFactory, th_A);
 
   Thyra::assign(th_x.ptr(), 0.0);
-  Thyra::SolveStatus<double> status =
-      Thyra::solve<double>(*th_invA, Thyra::NOTRANS, *th_b, th_x.ptr());
+  Thyra::SolveStatus<ST> status =
+      Thyra::solve<ST>(*th_invA, Thyra::NOTRANS, *th_b, th_x.ptr());
+
+  if (Comm->getRank() == 0) {
+    std::cout << "Solve status: " << status.message << std::endl;
+  }
 
   return 0;
 }
