@@ -99,6 +99,9 @@ def main(argv):
   launch_cmd = get_launch_cmd(ds.system_name)
   driver_args = get_driver_args(ds.system_name)
 
+  if args.build_name.startswith("ats4"):
+      args.driver = "./Trilinos/packages/framework/pr_tools/PullRequestLinuxDriver_ats4.sh"
+
   cmd = launch_env + launch_cmd + args.driver + driver_args
 
   if args.build_name.startswith("rhel8"):
