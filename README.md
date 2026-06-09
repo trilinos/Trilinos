@@ -43,7 +43,7 @@ unique design feature of Trilinos is its focus on packages.
   only a starting point for you to develop a script that works for
   your own platform.
 
-- If you have questions, please submit an issue on the Trilinos repo 
+- If you have questions, please submit an issue on the Trilinos repo
   [GitHub Issues page](https://github.com/trilinos/Trilinos/issues).
 
 
@@ -63,10 +63,13 @@ If you are using Trilinos, please cite our software in your publications. Below 
 @article{TrilinosPaper,
   author = {Mayr, Matthias and Heinlein, Alexander and Glusa, Christian A. and Rajamanickam, Sivasankaran and Arnst, Maarten and Bartlett, Roscoe A. and Berger-Vergiat, Luc and Boman, Erik G. and Devine, Karen D. and Harper, Graham and Heroux, Michael A. and Hoemmen, Mark and Hu, Jonathan J. and Kelley, Brian and Kouri, Drew P. and Kuberry, Paul and Kim, Kyungjoo and Liegois, Kim and Ober, Curtis C. and Pawlowski, Roger P. and Pearson, Carl and Perego, Mauro and Phipps, Eric T. and Ridzal, Denis and Roberts, Nathan V. and Siefert, Christopher M. and Thornquist, Heidi K. and Tomasetti, Romin and Trott, Christian R. and Tuminaro, Raymond S. and Willenbring, James M. and Wolf, Michael and Yamazaki, Ichitaro},
   doi = {10.1145/3802822},
+  eid = {12},
   journal = {ACM Transactions on Mathematical Software},
+  number = {2},
+  pages = {12},
   title = {{T}rilinos: {E}nabling {S}cientific {C}omputing across {D}iverse {H}ardware {A}rchitectures at {S}cale},
   url = {https://doi.org/10.1145/3802822},
-  volume = {published online ahead of print},
+  volume = {52},
   year = {2026}}
 ```
 
