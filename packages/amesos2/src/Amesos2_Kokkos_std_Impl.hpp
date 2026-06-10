@@ -8,7 +8,7 @@
 // @HEADER
 
 /**
-  \file   Amesos2_Kokkos_Impl.hpp
+  \file   Amesos2_Kokkos_std_Impl.hpp
   \author
   \date
 
