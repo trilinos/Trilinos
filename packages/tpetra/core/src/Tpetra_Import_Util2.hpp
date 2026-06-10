@@ -777,9 +777,11 @@ void lowCommunicationMakeColMapAndReindexSerial(const Teuchos::ArrayView<const s
       StartNext++;
     }
   }
-  Tpetra::sort2(ColIndices.begin() + NumLocalColGIDs + StartCurrent,
-                ColIndices.begin() + NumLocalColGIDs + StartNext,
-                RemotePermuteIDs.begin() + StartCurrent);
+  if (NumRemoteColGIDs > 0 && StartNext > StartCurrent) {
+    Tpetra::sort2(ColIndices.begin() + NumLocalColGIDs + StartCurrent,
+                  ColIndices.begin() + NumLocalColGIDs + StartNext,
+                  RemotePermuteIDs.begin() + StartCurrent);
+  }
 
   // Reverse the permutation to get the information we actually care about
   Teuchos::Array<LO> ReverseRemotePermuteIDs(NumRemoteColGIDs);
