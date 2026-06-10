@@ -312,9 +312,9 @@ namespace percept {
 
   //------------------------------------------------------------------------------------
   //------------------------------------------------------------------------------------
-  FiniteVolumeMesh3D::FiniteVolumeMesh3D(stk::mesh::BulkData& r, stk::mesh::FieldBase *coordinatesField_ ,
-                   stk::mesh::FieldBase *controlVolumeField_ , stk::mesh::FieldBase *scVolumeField_ )
-    : FiniteVolumeMesh(3, r, coordinatesField_, controlVolumeField_, scVolumeField_)
+  FiniteVolumeMesh3D::FiniteVolumeMesh3D(stk::mesh::BulkData& r, stk::mesh::FieldBase *coordinatesField_arg ,
+                   stk::mesh::FieldBase *controlVolumeField_arg , stk::mesh::FieldBase *scVolumeField_arg )
+    : FiniteVolumeMesh(3, r, coordinatesField_arg, controlVolumeField_arg, scVolumeField_arg)
   {
   }
 

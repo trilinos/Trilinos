@@ -313,8 +313,8 @@ struct IterationInfo
   size_t numCurrentElements;
   size_t numElementLimit;
   int convCase;
-  IterationInfo(int iter, double c0, double c1, double c2, size_t n0, size_t n1, int convCase_arg) :
-    iter(iter), currentErrorThreshold(c0), currentErrorThresholdMin(c1), currentErrorThresholdMax(c2),
+  IterationInfo(int iter_arg, double c0, double c1, double c2, size_t n0, size_t n1, int convCase_arg) :
+    iter(iter_arg), currentErrorThreshold(c0), currentErrorThresholdMin(c1), currentErrorThresholdMax(c2),
     numCurrentElements(n0), numElementLimit(n1), convCase(convCase_arg)
   {
   }
