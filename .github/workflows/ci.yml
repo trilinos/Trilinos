@@ -21,7 +21,7 @@ on:
       ctest-drop-site:
         required: false
         type: string
-        default: "sems-cdash-son.sandia.gov/cdash"
+        default: "my.cdash.org"
       cdash-track:
         description: 'Pull Request, Nightly, or Experimental'
         required: false
@@ -143,6 +143,8 @@ jobs:
           else
             extra_pr_driver_args=""
           fi
+
+          export no_proxy=my.cdash.org
 
           python3 ${TRILINOS_DIR}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
             --genconfig-build-name ${{ inputs.genconfig-string }} \
