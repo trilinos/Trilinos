@@ -23,6 +23,10 @@
 #include "BelosGmresIteration.hpp"
 #include "BelosBlockGmresIter.hpp"
 #include "BelosBlockFGmresIter.hpp"
+#ifdef HAVE_BELOS_THYRA
+#include "BelosAdaptiveHook.hpp"
+#include "Thyra_BlockedLinearOpBase.hpp"
+#endif
 #include "BelosOrthoManagerFactory.hpp"
 #include "BelosStatusTestMaxIters.hpp"
 #include "BelosStatusTestGenResNorm.hpp"
@@ -1173,6 +1177,39 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 
       // Inform the linear problem that we are finished with this block linear system.
       problem_->setCurrLS();
+
+      // ── Teko adaptive reconfiguration hook (double/Thyra/flexible only) ──
+      // Fires when TEKO_RECONFIG_REQUESTS_DIR is set AND the solve used the
+      // flexible GMRES iterator AND the operator is a blocked Thyra operator.
+      // The hook computes C_hat, writes request.json, waits for
+      // reconfiguration.json, rebuilds the Teko preconditioner, and reruns
+      // the solve — all transparently to the external caller.
+      //
+      // Guarded by HAVE_BELOS_THYRA since Thyra is an optional Belos
+      // dependency; the three-way type check in if-constexpr additionally
+      // prevents the inner code from being instantiated for non-Thyra MV/OP
+      // types (e.g. Belos::MultiVec).
+#ifdef HAVE_BELOS_THYRA
+      if constexpr (std::is_same_v<ScalarType,  double> &&
+                    std::is_same_v<MV, Thyra::MultiVectorBase<double>> &&
+                    std::is_same_v<OP, Thyra::LinearOpBase<double>>) {
+        if (isFlexible_ && isConverged) {
+          auto fgmres_iter =
+            Teuchos::rcp_dynamic_cast<BlockFGmresIter<ScalarType,MV,OP>>(
+              block_gmres_iter);
+          auto A_blocked =
+            Teuchos::rcp_dynamic_cast<const Thyra::BlockedLinearOpBase<ScalarType>>(
+              problem_->getOperator());
+          if (!fgmres_iter.is_null() && !A_blocked.is_null()) {
+            Belos::AdaptiveHook::invoke(
+              fgmres_iter->getState(),
+              problem_,
+              A_blocked);
+          }
+        }
+      }
+#endif // HAVE_BELOS_THYRA
+      // ────────────────────────────────────────────────────────────────────
 
       // Update indices for the linear systems to be solved.
       startPtr += numCurrRHS;

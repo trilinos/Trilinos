@@ -155,6 +155,24 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
   APPEND_SET(HEADERS BelosTsqrOrthoManagerImpl.hpp BelosTsqrOrthoManager.hpp)
 ENDIF() # ${PACKAGE_NAME}_ENABLE_TSQR
 
+# NOTE: ${PACKAGE_NAME}_ENABLE_Thyra is the raw (possibly empty/"auto")
+# tri-state cache variable and is NOT reliable to IF() on directly. The
+# resolved CMake variable is HAVE_BELOS_THYRA, set by TriBITS before the
+# TRIBITS_CONFIGURE_FILE() call above (it is what gets substituted into
+# Belos_config.h's "#cmakedefine HAVE_BELOS_THYRA"), and remains in scope
+# for the rest of this file.
+IF(HAVE_BELOS_THYRA)
+  #
+  # The post-solve adaptive-hook registry used by BlockGmresSolMgr's Teko
+  # reconfiguration hook. Header-declared/cpp-defined so that the registry
+  # has a single definition shared across all DSOs that link libbelos
+  # (see BelosAdaptiveHook.hpp for why). Only meaningful when Thyra
+  # multivectors/operators are available.
+  #
+  APPEND_SET(HEADERS BelosAdaptiveHook.hpp)
+  APPEND_SET(SOURCES BelosAdaptiveHook.cpp)
+ENDIF() # HAVE_BELOS_THYRA
+
 #
 # See the comments on "experimental" code in belos/CMakeLists.txt.  In
 # particular, experimental headers and source files are not included
