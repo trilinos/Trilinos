@@ -226,6 +226,7 @@ private:
   void assertInitialized() const;
 
   std::string label_, filenameLHS_, filenameRHS_;
+  mutable bool init_;
   mutable int counter_;
   
 };
