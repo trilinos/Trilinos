@@ -21,6 +21,8 @@
 #include "Teko_StratimikosFactory.hpp"
 #include "Teko_ConfigDefs.hpp"
 
+// Stratimikos includes
+#include "Stratimikos_MueLuHelpers.hpp"
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 
 #include "Thyra_LinearOpWithSolveBase.hpp"
@@ -33,6 +35,23 @@
 // for simplicity
 using Teuchos::RCP;
 using Teuchos::rcp;
+
+namespace{
+Teuchos::RCP<Stratimikos::DefaultLinearSolverBuilder> create_linear_solver_builder()
+{
+  Teuchos::RCP<Stratimikos::DefaultLinearSolverBuilder> strat =
+      Teuchos::rcp(new Stratimikos::DefaultLinearSolverBuilder("",
+          "",
+          "",
+          "linear-solver-params-file",
+          "extra-linear-solver-params",
+          "linear-solver-params-used-file"));
+  Stratimikos::enableMueLu<double, Teko::LO, Teko::GO, Teko::NT>(*strat);
+  Teko::addToStratimikosBuilder(strat);
+
+  return strat;
+}
+}
 
 int main(int argc, char* argv[]) {
   // calls MPI_Init and MPI_Finalize
@@ -56,13 +75,13 @@ int main(int argc, char* argv[]) {
 
   // Read in the matrix, store pointer as an RCP
   RCP<crs_matrix_type> A =
-      Tpetra::MatrixMarket::Reader<crs_matrix_type>::readSparseFile("../data/nsjac.mm", Comm);
+      Tpetra::MatrixMarket::Reader<crs_matrix_type>::readSparseFile("data/nsjac.mm", Comm);
 
   // read in the RHS vector
   RCP<const map_type> rangeMap = A->getRangeMap();
   RCP<vector_type> b =
       Tpetra::MatrixMarket::Reader<crs_matrix_type>::readVectorFile(
-          "../data/nsrhs_test.mm", Comm, rangeMap, false, false);
+          "data/nsrhs_test.mm", Comm, rangeMap, false, false);
 
   // allocate vectors
   RCP<vector_type> x = rcp(new vector_type(A->getDomainMap()));
@@ -87,13 +106,13 @@ int main(int argc, char* argv[]) {
   // Build stratimikos solver
   /////////////////////////////////////////////////////////
 
-  Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
+  auto linearSolverBuilder = create_linear_solver_builder();
 
-  Teko::addTekoToStratimikosBuilder(linearSolverBuilder);
-  linearSolverBuilder.setParameterList(paramList);
+  Teko::addTekoToStratimikosBuilder(*linearSolverBuilder);
+  linearSolverBuilder->setParameterList(paramList);
 
   RCP<Thyra::LinearOpWithSolveFactoryBase<ST> > lowsFactory =
-      Thyra::createLinearSolveStrategy(linearSolverBuilder);
+      Thyra::createLinearSolveStrategy(*linearSolverBuilder);
 
   Teuchos::RCP<Thyra::LinearOpWithSolveBase<ST> > th_invA =
       Thyra::linearOpWithSolve(*lowsFactory, th_A);

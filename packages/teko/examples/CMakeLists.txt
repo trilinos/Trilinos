@@ -1,7 +1,5 @@
 ADD_SUBDIRECTORY(BuildPreconditioner)
 
-ADD_SUBDIRECTORY(BasicExamples)
-
 IF (TEKO_ENABLE_EPETRA)
   ADD_SUBDIRECTORY(StridedSolve)
   ADD_SUBDIRECTORY(AddMultiplyPrecs)
