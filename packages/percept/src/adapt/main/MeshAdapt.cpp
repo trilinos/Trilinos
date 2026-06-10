@@ -68,11 +68,11 @@ namespace percept {
   // Return:
   //    string - the basename which is everything before the number
   //    int    - the refinement level
-  std::pair<std::string,int> MeshAdapt::get_basename_and_level(const std::string& input_mesh_)
+  std::pair<std::string,int> MeshAdapt::get_basename_and_level(const std::string& input_mesh_arg)
   {
     // find the last number before the first dot character
-    size_t dot_index = input_mesh_.find_last_of(".");
-    std::string prefix(input_mesh_, 0, dot_index);
+    size_t dot_index = input_mesh_arg.find_last_of(".");
+    std::string prefix(input_mesh_arg, 0, dot_index);
     size_t last_index = prefix.find_last_not_of("0123456789");
 
     int level = 0; // level will be one if we don't find a level
@@ -156,7 +156,7 @@ namespace percept {
     v.push_back('\0');
   }
 
-  void MeshAdapt::default_output_files(std::string input_mesh_s, std::string operation, int number_refines_,
+  void MeshAdapt::default_output_files(std::string input_mesh_s, std::string operation, int number_refines_arg,
     std::string &output_mesh_s, std::string &previous_adapted_mesh_s, std::string &next_adapted_mesh_s)
   {
 
@@ -188,7 +188,7 @@ namespace percept {
       bool ends_in_e = !operation.empty() && operation[operation.length()-1] == 'e';
       std::string new_suffix = "_" + operation + (ends_in_e ? "d" : "ed" );
       if ( operation == "refine" )
-        new_suffix += "_" + std::to_string(number_refines_);
+        new_suffix += "_" + std::to_string(number_refines_arg);
       new_suffix += suffix;
 
       Util::replace(output_mesh_s, suffix, new_suffix);
@@ -1697,13 +1697,13 @@ namespace percept {
       stk::diag::Timer timerReadMesh_("ReadMesh", m_timer);
       stk::diag::TimeBlock tbReadMeshg_(timerReadMesh_);
       
-      double tstart = stk::wall_time();
+      double t00 = stk::wall_time();
       if (generated_mesh)
         eMeshP->new_mesh(GMeshSpec(input_mesh));
       else
         eMeshP->open(input_mesh);
-      double tend = stk::wall_time();
-      mMeshInputTime = tend - tstart;
+      double t01 = stk::wall_time();
+      mMeshInputTime = t01 - t00;
     }
     if (smooth_surfaces == 1) eMeshP->set_smooth_surfaces(true);
 
@@ -1947,10 +1947,10 @@ namespace percept {
           stk::diag::Timer timerWriteMesh_("WriteMesh", m_timer);
           stk::diag::TimeBlock tbWriteMeshg_(timerWriteMesh_);
 
-          double tstart = stk::wall_time();
+          double t00 = stk::wall_time();
           eMeshP->save_as(output_mesh);
-          double tend = stk::wall_time();
-          mMeshOutputTime = tend - tstart;
+          double t01 = stk::wall_time();
+          mMeshOutputTime = t01 - t00;
         }
 
         write_memory_logfile(m_comm, WRITE_MESH, memory_logfile_name);
@@ -2148,12 +2148,12 @@ namespace percept {
   }
 
 
-void MeshAdapt::setup_m2g_parts(std::string input_geometry_)
+void MeshAdapt::setup_m2g_parts(std::string input_geometry_arg)
 {
   if ( (input_geometry_type != PGEOM_ACIS) && (input_geometry_type != PGEOM_OPENNURBS) )	  return;
 }
   
-void MeshAdapt::initialize_m2g_geometry(std::string input_geometry_)
+void MeshAdapt::initialize_m2g_geometry(std::string input_geometry_arg)
 {
   if( (input_geometry_type != PGEOM_ACIS) && (input_geometry_type != PGEOM_OPENNURBS) ) return;
 }

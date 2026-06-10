@@ -110,9 +110,6 @@ struct ParallelTimer
   Metric<WallTime>              m_wallTime;             ///< Wall time
   Metric<MPICount>              m_MPICount;             ///< MPI call count
   Metric<MPIByteCount>          m_MPIByteCount;	        ///< MPI byte count
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Nov 2025
-  Metric<HeapAlloc>             m_heapAlloc;            ///< MPI byte count
-#endif
 
   std::list<ParallelTimer>      m_subtimerList;         ///< Sub timers
 
@@ -152,15 +149,6 @@ inline const ParallelTimer::Metric<MPIByteCount> &
 ParallelTimer::getMetric<MPIByteCount>() const {
   return m_MPIByteCount;
 }
-
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Nov 2025
-template<>
-STK_DEPRECATED inline const ParallelTimer::Metric<HeapAlloc> &
-ParallelTimer::getMetric<HeapAlloc>() const {
-  return m_heapAlloc;
-}
-#endif
-
 
 template <typename T>
 Writer &operator<<(Writer &dout, const ParallelTimer::Metric<T> &t) {
