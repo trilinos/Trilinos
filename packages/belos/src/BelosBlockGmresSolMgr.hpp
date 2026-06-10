@@ -17,6 +17,8 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosTypes.hpp"
 
+#include <chrono>
+
 #include "BelosLinearProblem.hpp"
 #include "BelosSolverManager.hpp"
 
@@ -872,6 +874,11 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setDebugStatusTest(
 template<class ScalarType, class MV, class OP>
 ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 
+  // Wall-clock start of the solve, used (for the Teko adaptive reconfiguration
+  // hook below) to report how long the FGMRES iteration loop itself took,
+  // excluding any preconditioner construction the caller did beforehand.
+  const auto solveStartTime = std::chrono::steady_clock::now();
+
   // Set the current parameters if they were not set before.
   // NOTE:  This may occur if the user generated the solver manager with the default constructor and
   // then didn't set any parameters using setParameters().
@@ -1201,10 +1208,36 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
             Teuchos::rcp_dynamic_cast<const Thyra::BlockedLinearOpBase<ScalarType>>(
               problem_->getOperator());
           if (!fgmres_iter.is_null() && !A_blocked.is_null()) {
+            // Wall time spent in this solve's iteration loop so far, and the
+            // achieved (relative) residual at convergence — computed here
+            // (a few lines before achievedTol_ is assigned below) so they can
+            // be handed to the hook.
+            const double wall_time_sec = std::chrono::duration<double>(
+              std::chrono::steady_clock::now() - solveStartTime).count();
+
+            double achieved_tol = MT::zero();
+            {
+              const std::vector<MagnitudeType>* pTestValues = NULL;
+              if (expResTest_) {
+                pTestValues = expConvTest_->getTestValue();
+                if (pTestValues == NULL || pTestValues->size() < 1) {
+                  pTestValues = impConvTest_->getTestValue();
+                }
+              }
+              else {
+                pTestValues = impConvTest_->getTestValue();
+              }
+              if (pTestValues != NULL && pTestValues->size() >= 1) {
+                achieved_tol = *std::max_element(pTestValues->begin(), pTestValues->end());
+              }
+            }
+
             Belos::AdaptiveHook::invoke(
               fgmres_iter->getState(),
               problem_,
-              A_blocked);
+              A_blocked,
+              params_,
+              Belos::AdaptiveHook::SolveMetrics{wall_time_sec, achieved_tol});
           }
         }
       }

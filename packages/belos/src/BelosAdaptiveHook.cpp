@@ -20,10 +20,12 @@ void registerHook(HookFn fn) { globalHook() = std::move(fn); }
 void invoke(
     const State&                                              state,
     Teuchos::RCP<Problem>                                     problem,
-    Teuchos::RCP<const Thyra::BlockedLinearOpBase<SC>>        blocked_op)
+    Teuchos::RCP<const Thyra::BlockedLinearOpBase<SC>>        blocked_op,
+    Teuchos::RCP<const Teuchos::ParameterList>                params,
+    const SolveMetrics&                                       metrics)
 {
     auto& h = globalHook();
-    if (h) h(state, problem, blocked_op);
+    if (h) h(state, problem, blocked_op, params, metrics);
 }
 
 } // namespace AdaptiveHook

@@ -10,15 +10,20 @@
 // row of the Krylov basis V).  Diagonal blocks are identity by construction.
 //
 // Usage (transparent to callers):
-//   setenv("TEKO_RECONFIG_REQUESTS_DIR", "/workspace/teko-reconfig/requests")
-//   → adaptiveLoop() is registered as the BelosAdaptiveHook and fires after
-//     every flexible GMRES solve.
+//   adaptiveLoop() is registered as the BelosAdaptiveHook and fires after
+//   every converged flexible GMRES solve on a blocked operator. The
+//   request/response/convergence files live in TEKO_RECONFIG_REQUESTS_DIR if
+//   set, otherwise kDefaultRequestsDir below.
 //
 // adaptiveLoop():
-//   1. Computes C_hat and writes request.json to TEKO_RECONFIG_REQUESTS_DIR.
-//   2. Polls for reconfiguration.json in the same directory.
+//   1. Computes C_hat and writes request_<N>.json to requests_dir, where
+//      N = nextRequestNumber(requests_dir) (0, 1, 2, ... — never reused).
+//   2. Polls for reconfiguration_<N>.json in the same directory.
 //   3. Reads the ordering vector, rebuilds the Teko preconditioner.
 //   4. Runs a second FGMRES solve and overwrites the LHS with the result.
+//   5. Writes convergence_data/conv_<N>.json (sibling of requests_dir) with
+//      iteration count, initial/final residual, and wall time for both
+//      solves (solve2 is null if step 2 timed out).
 //
 // Depends on: Belos, Thyra, Tpetra, Teko, Stratimikos, Teuchos.
 // No external JSON library — JSON is written/parsed manually.
@@ -61,6 +66,7 @@ namespace fs = std::filesystem;
 #include "Thyra_MultiVectorBase.hpp"
 #include "Thyra_ProductMultiVectorBase.hpp"
 #include "Thyra_ProductVectorSpaceBase.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_LinearOpBase.hpp"
 
@@ -76,6 +82,7 @@ namespace fs = std::filesystem;
 // ── Teko ──────────────────────────────────────────────────────────────────
 #include "Teko_BlockDiagonalInverseOp.hpp"
 #include "Teko_BlockLowerTriInverseOp.hpp"
+#include "Teko_BlockedReordering.hpp"
 #include "Teko_InverseFactory.hpp"
 #include "Teko_InverseLibrary.hpp"
 #include "Teko_Utilities.hpp"
@@ -417,7 +424,39 @@ inline void writeVectorJson(std::ostream& os, const SDM& v)
     os << "]";
 }
 
-// Write request.json to requests_dir/request.json.
+// Scan requests_dir for existing request_<N>.json files and return
+// max(N) + 1, or 0 if none exist. This is how the C++ side picks the id for
+// the next request, so request ids are unique and monotonically increasing
+// across the lifetime of requests_dir (they are never reused, even if old
+// request_<N>.json files are deleted).
+inline int nextRequestNumber(const std::string& requests_dir)
+{
+    int next = 0;
+    if (!fs::exists(requests_dir)) return next;
+
+    const std::string prefix = "request_";
+    const std::string suffix = ".json";
+    for (const auto& entry : fs::directory_iterator(requests_dir)) {
+        if (!entry.is_regular_file()) continue;
+        const std::string name = entry.path().filename().string();
+        if (name.size() <= prefix.size() + suffix.size()) continue;
+        if (name.compare(0, prefix.size(), prefix) != 0) continue;
+        if (name.compare(name.size() - suffix.size(), suffix.size(), suffix) != 0) continue;
+
+        const std::string digits = name.substr(prefix.size(), name.size() - prefix.size() - suffix.size());
+        if (digits.empty() || !std::all_of(digits.begin(), digits.end(),
+                                            [](char c){ return std::isdigit(static_cast<unsigned char>(c)); })) continue;
+
+        const int n = std::stoi(digits);
+        if (n + 1 > next) next = n + 1;
+    }
+    return next;
+}
+
+// Write request_<N>.json to requests_dir, where N = nextRequestNumber(requests_dir).
+// Returns N so the caller can wait for the matching reconfiguration_<N>.json
+// and tag convergence_data/conv_<N>.json with the same id.
+//
 // Format:
 // {
 //   "n_blocks": nb,
@@ -431,12 +470,20 @@ inline void writeVectorJson(std::ostream& os, const SDM& v)
 // Every entry scales with nb (number of blocks) and ranks[j] (Krylov-derived
 // rank, <= krylov_dim) only — nothing here scales with the global problem
 // size n, so this stays small even for very large systems.
-inline void writeRequestJson(const CHatData& chat, const std::string& requests_dir)
+inline int writeRequestJson(const CHatData& chat, const std::string& requests_dir)
 {
-    const std::string path = requests_dir + "/request.json";
-    std::ofstream ofs(path);
+    const int request_id = nextRequestNumber(requests_dir);
+
+    // Write to a temp file and atomically rename into place. Without this, a
+    // reader's fs::exists(path) check (in wait_for_request.py) can observe
+    // the file mid-write and parse incomplete JSON. A same-directory
+    // rename() is atomic on POSIX, so readers only ever see the file fully
+    // written or not at all.
+    const std::string path     = requests_dir + "/request_" + std::to_string(request_id) + ".json";
+    const std::string tmp_path = path + ".tmp";
+    std::ofstream ofs(tmp_path);
     TEUCHOS_TEST_FOR_EXCEPTION(!ofs.is_open(), std::runtime_error,
-        "Teko::KrylovSurrogate::writeRequestJson: cannot open " + path);
+        "Teko::KrylovSurrogate::writeRequestJson: cannot open " + tmp_path);
 
     ofs << "{\n";
     ofs << "  \"n_blocks\": " << chat.nb << ",\n";
@@ -484,16 +531,20 @@ inline void writeRequestJson(const CHatData& chat, const std::string& requests_d
     ofs << "}\n";
     ofs.close();
 
+    fs::rename(tmp_path, path);
+
     std::cout << "[TekoAdaptive] wrote " << path << "\n";
+    return request_id;
 }
 
-// Poll for reconfiguration.json, read ordering vector, delete file.
-// Returns empty vector on timeout.
+// Poll for reconfiguration_<request_id>.json, read ordering vector, delete
+// file. Returns empty vector on timeout.
 inline std::vector<int> waitForOrdering(
     const std::string& requests_dir,
+    int                request_id,
     int                timeout_s = 600)
 {
-    const std::string path = requests_dir + "/reconfiguration.json";
+    const std::string path = requests_dir + "/reconfiguration_" + std::to_string(request_id) + ".json";
     const auto deadline =
         std::chrono::steady_clock::now() + std::chrono::seconds(timeout_s);
 
@@ -514,7 +565,7 @@ inline std::vector<int> waitForOrdering(
             const auto rb = content.find(']');
             if (lb == std::string::npos || rb == std::string::npos)
                 throw std::runtime_error(
-                    "[TekoAdaptive] reconfiguration.json: no [...] found");
+                    "[TekoAdaptive] " + path + ": no [...] found");
 
             std::istringstream ss(content.substr(lb + 1, rb - lb - 1));
             std::string tok;
@@ -536,7 +587,7 @@ inline std::vector<int> waitForOrdering(
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
     }
 
-    std::cerr << "[TekoAdaptive] timed out waiting for reconfiguration.json\n";
+    std::cerr << "[TekoAdaptive] timed out waiting for " << path << "\n";
     return {};
 }
 
@@ -544,14 +595,24 @@ inline std::vector<int> waitForOrdering(
 // Section 4: Preconditioner rebuild from ordering
 // ═══════════════════════════════════════════════════════════════════════════
 
+// Result of buildReconfiguredPrec: the new preconditioner together with the
+// reordered operator and the BlockReorderManager that defines its (possibly
+// nested) block structure. The second solve's operator/LHS/RHS must be
+// reshaped to this same structure (via Teko::buildReorderedMultiVector)
+// so that BlockLowerTriInverseOp::implicitApply's block-count assertions
+// against reorderedOp hold.
+struct ReconfiguredSystem {
+    Teko::LinearOp                                 precOp;
+    Teko::BlockedLinearOp                          reorderedOp;
+    Teuchos::RCP<const Teko::BlockReorderManager>  mgr;
+};
+
 // Build a new Teko block preconditioner from an ordering vector.
 //
 // ordering[k] = g means old block k maps to new group g.
 // Groups with a single member: singleton.
 // Groups with multiple members: merged (block-diagonal sub-inverse).
-//
-// Returns the new preconditioner as a Teko::LinearOp.
-inline Teko::LinearOp buildReconfiguredPrec(
+inline ReconfiguredSystem buildReconfiguredPrec(
     const std::vector<int>&                            ordering,
     Teuchos::RCP<const Thyra::BlockedLinearOpBase<SC>> A_blocked,
     int                                                nb_old,
@@ -577,6 +638,17 @@ inline Teko::LinearOp buildReconfiguredPrec(
     for (int k = 0; k < nb_old; ++k)
         groups[ordering[k]].push_back(k);
 
+    // A reconfiguration.json whose ordering values skip an integer (e.g.
+    // [0, 2, 0] — group 1 has no members) would leave groups[1] empty,
+    // leading to a 0-sized sub-blocked operator below and a confusing
+    // failure deep inside Thyra/Teko. Reject it here with a clear message.
+    for (int g = 0; g < nb_new; ++g)
+        TEUCHOS_TEST_FOR_EXCEPTION(groups[g].empty(), std::runtime_error,
+            "Teko::KrylovSurrogate::buildReconfiguredPrec: reconfiguration.json "
+            "ordering has no entries mapping to group " + std::to_string(g) +
+            " (group ids must be contiguous starting from 0; max ordering "
+            "value implies " + std::to_string(nb_new) + " groups).");
+
     // Build Ifpack2 inverse factory
     Stratimikos::DefaultLinearSolverBuilder builder;
     auto stratParams = Teuchos::rcp(new Teuchos::ParameterList);
@@ -586,65 +658,29 @@ inline Teko::LinearOp buildReconfiguredPrec(
     auto invLib  = Teko::InverseLibrary::buildFromStratimikos(builder);
     auto invFact = invLib->getInverseFactory("Ifpack2");
 
-    // ── Assemble new nb_new × nb_new blocked operator ─────────────────────
-    // For merged groups the (gi, gj) entry is itself a sub-blocked matrix.
-    // For singleton groups it is the bare A_blocked->getBlock(bi, bj).
-
-    // Collect Thyra vector spaces for singleton groups (needed only for the
-    // Thyra::zero fallback when a singleton/singleton block is structurally
-    // zero). Merged groups always go through the sub-blocked path below and
-    // never need a top-level product space.
-    std::vector<Teuchos::RCP<const Thyra::VectorSpaceBase<SC>>> newSpaces(nb_new);
+    // ── Build a BlockReorderManager describing the new grouping, then use it
+    // to reorder A_blocked into an nb_new x nb_new operator. Merged groups
+    // become nested sub-blocked entries. The same manager is reused (via
+    // Teko::buildReorderedMultiVector) to reshape the second solve's RHS/LHS
+    // so their product-space block counts match tekoNew, which
+    // BlockLowerTriInverseOp::implicitApply asserts on.
+    auto mgr = Teuchos::rcp(new Teko::BlockReorderManager(nb_new));
     for (int g = 0; g < nb_new; ++g) {
-        if (groups[g].size() == 1)
-            newSpaces[g] = A_blocked->productRange()->getBlock(groups[g][0]);
-    }
-
-    // Build the new nb_new × nb_new blocked operator.
-    auto newBlockedOp = Thyra::defaultBlockedLinearOp<SC>();
-    newBlockedOp->beginBlockFill(nb_new, nb_new);
-
-    for (int gi = 0; gi < nb_new; ++gi) {
-        for (int gj = 0; gj < nb_new; ++gj) {
-            const auto& mi = groups[gi];
-            const auto& mj = groups[gj];
-
-            if (mi.size() == 1 && mj.size() == 1) {
-                // Simple scalar (or Tpetra) block.
-                auto blk = A_blocked->getBlock(mi[0], mj[0]);
-                if (!blk.is_null())
-                    newBlockedOp->setBlock(gi, gj, blk);
-                else
-                    newBlockedOp->setBlock(gi, gj,
-                        Thyra::zero<SC>(newSpaces[gi], newSpaces[gj]));
-            } else {
-                // Sub-blocked entry: |mi| × |mj| blocked matrix.
-                auto sub = Thyra::defaultBlockedLinearOp<SC>();
-                sub->beginBlockFill(static_cast<int>(mi.size()),
-                                    static_cast<int>(mj.size()));
-                for (int si = 0; si < (int)mi.size(); ++si) {
-                    for (int sj = 0; sj < (int)mj.size(); ++sj) {
-                        auto blk = A_blocked->getBlock(mi[si], mj[sj]);
-                        auto ri_sp = A_blocked->productRange()->getBlock(mi[si]);
-                        auto di_sp = A_blocked->productDomain()->getBlock(mj[sj]);
-                        if (!blk.is_null())
-                            sub->setBlock(si, sj, blk);
-                        else
-                            sub->setBlock(si, sj,
-                                Thyra::zero<SC>(ri_sp, di_sp));
-                    }
-                }
-                sub->endBlockFill();
-                newBlockedOp->setBlock(gi, gj, sub);
-            }
+        const auto& mem = groups[g];
+        if (mem.size() == 1) {
+            mgr->SetBlock(g, mem[0]);
+        } else {
+            auto sub = Teuchos::rcp(new Teko::BlockReorderManager(static_cast<int>(mem.size())));
+            for (int si = 0; si < (int)mem.size(); ++si)
+                sub->SetBlock(si, mem[si]);
+            mgr->SetBlock(g, sub);
         }
     }
-    newBlockedOp->endBlockFill();
 
+    Teko::LinearOp reordered = Teko::buildReorderedLinearOp(*mgr, A_blocked);
     Teko::BlockedLinearOp tekoNew =
-        Teuchos::rcp_dynamic_cast<Thyra::PhysicallyBlockedLinearOpBase<SC>>(newBlockedOp);
-    TEUCHOS_TEST_FOR_EXCEPTION(tekoNew.is_null(), std::runtime_error,
-        "[TekoAdaptive] buildReconfiguredPrec: could not cast to PhysicallyBlockedLinearOpBase");
+        Teuchos::rcp_dynamic_cast<Thyra::PhysicallyBlockedLinearOpBase<SC>>(
+            Teuchos::rcp_const_cast<Thyra::LinearOpBase<SC>>(reordered), true);
 
     // ── Build diagonal inverses for each new group ─────────────────────────
     std::vector<Teko::LinearOp> newInvDiag(nb_new);
@@ -694,12 +730,17 @@ inline Teko::LinearOp buildReconfiguredPrec(
     else
         precOp = Teko::createBlockLowerTriInverseOp(tekoNew, newInvDiag);
 
-    return precOp;
+    return ReconfiguredSystem{precOp, tekoNew, mgr};
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Section 5: orchestration — the hook registered with BelosAdaptiveHook
 // ═══════════════════════════════════════════════════════════════════════════
+
+// Default location for request_<N>.json / reconfiguration_<N>.json /
+// convergence_data/ when TEKO_RECONFIG_REQUESTS_DIR is unset. Hardcoded for
+// now, relative to the Trilinos checkout this package lives in.
+constexpr const char* kDefaultRequestsDir = "/workspace/Trilinos/teko-reconfig";
 
 // RAII guard that temporarily unsets TEKO_RECONFIG_REQUESTS_DIR (to prevent
 // the hook from firing recursively during the second solve below) and
@@ -707,42 +748,102 @@ inline Teko::LinearOp buildReconfiguredPrec(
 // solve throws (e.g. BlockGmresSolMgrOrthoFailure). Without this, an
 // exception from solver2.solve() would leave the env var unset for the rest
 // of the process, silently disabling adaptive reconfiguration thereafter.
+//
+// was_set distinguishes "the env var was unset on entry" (requests_dir came
+// from kDefaultRequestsDir) from "it was set to saved_value" — restoring with
+// setenv() in the former case would incorrectly leave the env var permanently
+// set to the default directory for the rest of the process.
 class ScopedReconfigEnvUnset {
 public:
-    explicit ScopedReconfigEnvUnset(std::string saved_value)
-        : saved_(std::move(saved_value))
+    ScopedReconfigEnvUnset(std::string saved_value, bool was_set)
+        : saved_(std::move(saved_value)), was_set_(was_set)
     {
         unsetenv("TEKO_RECONFIG_REQUESTS_DIR");
     }
     ~ScopedReconfigEnvUnset()
     {
-        setenv("TEKO_RECONFIG_REQUESTS_DIR", saved_.c_str(), 1);
+        if (was_set_)
+            setenv("TEKO_RECONFIG_REQUESTS_DIR", saved_.c_str(), 1);
+        else
+            unsetenv("TEKO_RECONFIG_REQUESTS_DIR");
     }
     ScopedReconfigEnvUnset(const ScopedReconfigEnvUnset&) = delete;
     ScopedReconfigEnvUnset& operator=(const ScopedReconfigEnvUnset&) = delete;
 private:
     std::string saved_;
+    bool        was_set_;
 };
+
+// Convergence diagnostics for one FGMRES solve, written to
+// convergence_data/conv_<N>.json by writeConvergenceJson().
+struct SolveStats {
+    int    iterations;
+    double initial_residual;
+    double final_residual;
+    double wall_time_sec;
+};
+
+// Write convergence_data/conv_<request_id>.json (atomically, via a .tmp file
+// + rename). s2 == nullptr means no second solve was attempted (Phase 2 timed
+// out waiting for reconfiguration_<request_id>.json), and is recorded as
+// "solve2": null.
+inline void writeConvergenceJson(
+    const std::string& convergence_dir,
+    int                 request_id,
+    const SolveStats&   s1,
+    const SolveStats*   s2)
+{
+    fs::create_directories(convergence_dir);
+
+    const std::string path     = convergence_dir + "/conv_" + std::to_string(request_id) + ".json";
+    const std::string tmp_path = path + ".tmp";
+    std::ofstream ofs(tmp_path);
+    TEUCHOS_TEST_FOR_EXCEPTION(!ofs.is_open(), std::runtime_error,
+        "Teko::KrylovSurrogate::writeConvergenceJson: cannot open " + tmp_path);
+
+    auto writeStats = [&](const char* name, const SolveStats& s, bool trailing_comma) {
+        ofs << "  \"" << name << "\": {\n";
+        ofs << "    \"iterations\": " << s.iterations << ",\n";
+        ofs << "    \"initial_residual\": " << std::setprecision(17) << s.initial_residual << ",\n";
+        ofs << "    \"final_residual\": " << std::setprecision(17) << s.final_residual << ",\n";
+        ofs << "    \"wall_time_sec\": " << std::setprecision(17) << s.wall_time_sec << "\n";
+        ofs << "  }" << (trailing_comma ? ",\n" : "\n");
+    };
+
+    ofs << "{\n";
+    ofs << "  \"request_id\": " << request_id << ",\n";
+    writeStats("solve1", s1, /*trailing_comma=*/true);
+    if (s2 != nullptr)
+        writeStats("solve2", *s2, /*trailing_comma=*/false);
+    else
+        ofs << "  \"solve2\": null\n";
+    ofs << "}\n";
+    ofs.close();
+
+    fs::rename(tmp_path, path);
+    std::cout << "[TekoAdaptive] wrote " << path << "\n";
+}
 
 // This is the function registered as Belos::AdaptiveHook::HookFn.
 // It is called by BelosBlockGmresSolMgr::solve() after a flexible GMRES
-// solve converges, provided TEKO_RECONFIG_REQUESTS_DIR is set.
+// solve converges.
 //
 // On entry: problem->getLHS() contains the first solve's result.
-// On exit:  problem->getLHS() is overwritten with the second solve's result.
+// On exit:  problem->getLHS() is overwritten with the second solve's result
+//           (if one was attempted and converged).
 inline void adaptiveLoop(
     const Belos::AdaptiveHook::State&                         state,
     Teuchos::RCP<Belos::AdaptiveHook::Problem>                problem,
-    Teuchos::RCP<const Thyra::BlockedLinearOpBase<SC>>        A_blocked)
+    Teuchos::RCP<const Thyra::BlockedLinearOpBase<SC>>        A_blocked,
+    Teuchos::RCP<const Teuchos::ParameterList>                orig_params,
+    const Belos::AdaptiveHook::SolveMetrics&                  solve1_metrics)
 {
-    // Only activate when the environment variable is set. This keeps every
-    // normal flexible-GMRES solve silent when adaptive reconfiguration is
-    // not in use.
+    // requests_dir comes from TEKO_RECONFIG_REQUESTS_DIR if set, otherwise
+    // kDefaultRequestsDir. env_was_set is also needed by ScopedReconfigEnvUnset
+    // below to restore (or not restore) the env var correctly.
     const char* reconfig_dir_env = std::getenv("TEKO_RECONFIG_REQUESTS_DIR");
-    if (!reconfig_dir_env) {
-        return;
-    }
-    const std::string requests_dir(reconfig_dir_env);
+    const bool  env_was_set = (reconfig_dir_env != nullptr);
+    const std::string requests_dir = env_was_set ? std::string(reconfig_dir_env) : kDefaultRequestsDir;
 
     if (A_blocked.is_null()) {
         std::cerr << "[TekoAdaptive] operator is not blocked; skipping.\n";
@@ -752,6 +853,10 @@ inline void adaptiveLoop(
         std::cerr << "[TekoAdaptive] curDim==0; nothing to compute.\n";
         return;
     }
+
+    fs::create_directories(requests_dir);
+    const std::string convergence_dir =
+        (fs::path(requests_dir).parent_path() / "convergence_data").string();
 
     // Determine block structure from A_blocked.
     const int nb = A_blocked->productRange()->numBlocks();
@@ -763,15 +868,28 @@ inline void adaptiveLoop(
     std::cout << "[TekoAdaptive] first solve done. curDim=" << state.curDim
               << "  nb=" << nb << "\n";
 
-    // ── Phase 1: compute C_hat, b_hat and write request.json ──────────────
-    CHatData chat = computeCHat(state, A_blocked, problem->getRHS(), block_sizes);
-    writeRequestJson(chat, requests_dir);
+    // ||b||: shared initial residual for both solves. Both start from x0 = 0,
+    // and reordering (Phase 3) only regroups vector blocks, which preserves
+    // the 2-norm.
+    double b_norm = 0.0;
+    {
+        Teuchos::Array<SC> norms(1);
+        Thyra::norms_2(*problem->getRHS(), norms());
+        b_norm = norms[0];
+    }
 
-    // ── Phase 2: wait for reconfiguration.json ────────────────────────────
-    std::vector<int> ordering = waitForOrdering(requests_dir);
+    SolveStats s1{state.curDim, b_norm, solve1_metrics.achieved_tol, solve1_metrics.wall_time_sec};
+
+    // ── Phase 1: compute C_hat, b_hat and write request_<N>.json ──────────
+    CHatData chat = computeCHat(state, A_blocked, problem->getRHS(), block_sizes);
+    const int request_id = writeRequestJson(chat, requests_dir);
+
+    // ── Phase 2: wait for reconfiguration_<N>.json ─────────────────────────
+    std::vector<int> ordering = waitForOrdering(requests_dir, request_id);
     if (ordering.empty()) {
         std::cerr << "[TekoAdaptive] no ordering received; returning first "
                      "solve result.\n";
+        writeConvergenceJson(convergence_dir, request_id, s1, nullptr);
         return;
     }
 
@@ -786,35 +904,58 @@ inline void adaptiveLoop(
         if (!lti.is_null()) method = "gs";
     }
 
-    Teko::LinearOp newPrec = buildReconfiguredPrec(ordering, A_blocked, nb, method);
+    ReconfiguredSystem recon = buildReconfiguredPrec(ordering, A_blocked, nb, method);
 
     // ── Phase 4: second FGMRES solve ──────────────────────────────────────
     // Prevent the hook from firing recursively during the second solve;
     // restored on scope exit even if solver2.solve() throws.
-    ScopedReconfigEnvUnset env_guard(requests_dir);
+    ScopedReconfigEnvUnset env_guard(requests_dir, env_was_set);
 
     auto newProblem = Teuchos::rcp(new Problem());
     // setOperator/setRightPrec take RCP<const OP>, so a plain dynamic_cast
     // (which can add const) suffices — no const_cast needed.
-    newProblem->setOperator(Teuchos::rcp_dynamic_cast<const OP>(A_blocked));
-    newProblem->setRightPrec(Teuchos::rcp_dynamic_cast<const OP>(newPrec));
+    newProblem->setOperator(Teuchos::rcp_dynamic_cast<const OP>(recon.reorderedOp));
+    newProblem->setRightPrec(Teuchos::rcp_dynamic_cast<const OP>(recon.precOp));
 
+    // Reshape the flat LHS/RHS to match the block structure of
+    // recon.reorderedOp (recon.mgr's groups, with merged groups nested as
+    // sub-product vectors) — required so blockCount(src) ==
+    // blockRowCount(reorderedOp) inside BlockLowerTriInverseOp::implicitApply.
+    // x_new_reordered shares storage with x_new (buildReorderedMultiVector
+    // wraps the existing leaf blocks without copying), so writes made by the
+    // second solve land directly in x_new's buffers.
     auto x_new = Thyra::createMembers(A_blocked->domain(), 1);
     Thyra::assign(x_new.ptr(), SC(0));
-    newProblem->setLHS(x_new);
-    newProblem->setRHS(problem->getRHS());
+    auto x_flat = Teuchos::rcp_dynamic_cast<Thyra::ProductMultiVectorBase<SC>>(x_new, true);
+    auto x_new_reordered = Teko::buildReorderedMultiVector(*recon.mgr, x_flat);
+
+    auto b_flat = Teuchos::rcp_dynamic_cast<const Thyra::ProductMultiVectorBase<SC>>(
+        problem->getRHS(), true);
+    auto b_reordered = Teko::buildReorderedMultiVector(*recon.mgr, b_flat);
+
+    newProblem->setLHS(x_new_reordered);
+    newProblem->setRHS(b_reordered);
     newProblem->setProblem();
 
-    auto solverParams = Teuchos::rcp(new Teuchos::ParameterList);
-    // Mirror parameters from the original problem (use sensible defaults).
-    solverParams->set("Maximum Iterations",    500);
-    solverParams->set("Convergence Tolerance", 1e-8);
-    solverParams->set("Num Blocks",            300);
-    solverParams->set("Flexible Gmres",        true);
-    solverParams->set("Verbosity",             Belos::Warnings);
+    // Inherit the first solve's resolved parameters (Maximum Iterations, Num
+    // Blocks, Convergence Tolerance, Flexible Gmres, Verbosity, etc.) so the
+    // second solve uses the same settings the caller configured for the
+    // first, rather than independent hardcoded defaults.
+    auto solverParams = Teuchos::rcp(new Teuchos::ParameterList(*orig_params));
 
     Belos::BlockGmresSolMgr<SC, MV, OP> solver2(newProblem, solverParams);
+
+    // Wall time for solve 2's iteration loop only, mirroring solve1_metrics
+    // (which times only solve()'s own loop, excluding preconditioner setup).
+    // buildReconfiguredPrec() above is solve 2's "setup" and is excluded here
+    // too, so the two wall times are directly comparable.
+    const auto solve2Start = std::chrono::steady_clock::now();
     Belos::ReturnType ret2 = solver2.solve();
+    const double solve2_wall_time_sec = std::chrono::duration<double>(
+        std::chrono::steady_clock::now() - solve2Start).count();
+
+    SolveStats s2{solver2.getNumIters(), b_norm, solver2.achievedTol(), solve2_wall_time_sec};
+    writeConvergenceJson(convergence_dir, request_id, s1, &s2);
 
     if (ret2 != Belos::Converged)
         std::cerr << "[TekoAdaptive] second solve did not converge ("
