@@ -14,6 +14,7 @@
 
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MatrixUtils.hpp>
+#include <Xpetra_IO.hpp>
 #include <stdexcept>
 
 #include "MueLu_RAPFactory_decl.hpp"
@@ -92,6 +93,10 @@ void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fineLev
     RCP<Matrix> P = Get<RCP<Matrix> >(coarseLevel, "P"), AP, R;
     // We don't have a valid P (e.g., # global aggregates = 0) so we bail.
     // This level will ultimately be removed in MueLu_Hierarchy_defs.h via a resize()
+
+    Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("A.mm", *A);
+    Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("P.mm", *P);
+
     if (P.is_null()) {
       Ac = Teuchos::null;
       Set(coarseLevel, "A", Ac);
@@ -121,6 +126,8 @@ void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fineLev
     Utilities::TripleMatrixProduct(R, A, P, Ac, pL, *this, APparams, RAPparams, &coarseLevel);
 
     if (!Ac.is_null()) {
+      Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("Ac.mm", *Ac);
+
       std::ostringstream oss;
       oss << "A_" << coarseLevel.GetLevelID();
       Ac->setObjectLabel(oss.str());
