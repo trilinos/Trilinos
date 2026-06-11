@@ -211,7 +211,7 @@ void StratimikosFactory::initializePrec_Thyra(
   decomp_.clear();
   {
     std::stringstream ss;
-    ss << paramList_->get<std::string>("Strided Blocking");
+    ss << paramList_->get<std::string>("Strided Blocking", "1");
 
     while (!ss.eof()) {
       int num = 0;

@@ -124,5 +124,5 @@ int main(int argc, char* argv[]) {
     std::cout << "Solve status: " << status.message << std::endl;
   }
 
-  return 0;
+  return (status.solveStatus == Thyra::SOLVE_STATUS_CONVERGED) ? 0 : 1;;
 }
