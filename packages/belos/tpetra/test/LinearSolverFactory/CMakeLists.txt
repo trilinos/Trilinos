@@ -27,12 +27,12 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   )
 
-#TRIBITS_ADD_EXECUTABLE_AND_TEST(
-#  SolverFactoryLossOfAccuracy
-#  SOURCES SolverFactoryLossOfAccuracy.cpp ${TEUCHOS_STD_UNIT_TEST_MAIN}
-#  ARGS 
-#  COMM serial mpi
-#  )
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  SolverFactoryLossOfAccuracy
+  SOURCES SolverFactoryLossOfAccuracy.cpp ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS 
+  COMM serial mpi
+  )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SolverFactoryBreakdownDetected

@@ -33,6 +33,8 @@ createTestMatrix (Teuchos::FancyOStream& out,
   using std::endl;
   typedef Tpetra::CrsMatrix<SC,LO,GO,NT> MAT;
   typedef Tpetra::Map<LO,GO,NT> map_type;
+  typedef Teuchos::ScalarTraits<SC> STS;
+  typedef Teuchos::ScalarTraits<typename STS::magnitudeType> MTS;
 
   Teuchos::OSTab tab0 (out);
   out << "Create test matrix with " << gblNumRows << " row(s)" << endl;
@@ -47,7 +49,7 @@ createTestMatrix (Teuchos::FancyOStream& out,
   // are the same.  Giving a column Map to CrsMatrix's constructor
   // lets us use local indices.
   RCP<const map_type> colMap = rowMap;
-  const size_t maxNumEntPerRow = 1;
+  const size_t maxNumEntPerRow = 2;
   RCP<MAT> A (new MAT (rowMap, colMap, maxNumEntPerRow));
 
   if (rowMap->getLocalNumElements () != 0) {
@@ -56,8 +58,15 @@ createTestMatrix (Teuchos::FancyOStream& out,
     for (LO lclRow = rowMap->getMinLocalIndex ();
          lclRow <= rowMap->getMaxLocalIndex (); ++lclRow) {
       inds[0] = lclRow;
-      vals[0] = 1.; //lclRow+1;
+      vals[0] = MTS::one (); 
       A->insertLocalValues (lclRow, inds (), vals ());
+ 
+      // Add in the super-diagonal    
+      GO gblRow = rowMap->getGlobalElement(lclRow); 
+      if (gblRow != rowMap->getMaxAllGlobalIndex()) {
+       inds[0] = lclRow+1;
+       A->insertLocalValues (lclRow, inds (), vals ());
+      }
     }
   }
 
@@ -90,16 +99,7 @@ createTestProblem (Teuchos::FancyOStream& out,
   X = rcp (new MV (A->getDomainMap (), numVecs));
   B = rcp (new MV (A->getRangeMap (), numVecs));
 
-  B->putScalar (STS::zero());
-  B->randomize();
-  auto map = B->getMap();
-  auto localView = B->getLocalViewHost(Tpetra::Access::ReadOnly);
-  for (LO lclRow = map->getMinLocalIndex ();
-       lclRow <= map->getMaxLocalIndex (); ++lclRow) {
-    auto tmp = localView(lclRow, 0);
-    B->replaceLocalValue(lclRow, 1, tmp + 1.e-6); // Second vector
-    B->replaceLocalValue(lclRow, 2, tmp - 1.e-6); // Third vector
-  }
+  B->putScalar (STS::one()); 
   X->putScalar (STS::zero());
 }
 
@@ -120,6 +120,8 @@ testSolver (Teuchos::FancyOStream& out,
   typedef Tpetra::Operator<SC,LO,GO,NT> OP;
   typedef Tpetra::MultiVector<SC,LO,GO,NT> MV;
   typedef Teuchos::ScalarTraits<SC> STS;
+  typedef Teuchos::ScalarTraits<typename STS::magnitudeType> MTS;
+  typename STS::magnitudeType tol = MTS::eps();
 
   Teuchos::OSTab tab0 (out);
   out << "Test solver \"" << solverName << "\" from Belos package" << endl;
@@ -130,15 +132,8 @@ testSolver (Teuchos::FancyOStream& out,
 
   // Set up Belos solver parameters.
   Teuchos::RCP<Teuchos::ParameterList> belosList = Teuchos::parameterList (solverName);
-  belosList->set ("Verbosity", Belos::Errors + Belos::Warnings);
-  belosList->set("Maximum Iterations", 1); 
-  belosList->set("Flexible Gmres", false);
-  belosList->set("Num Blocks", 1);
-  belosList->set("Block Size", 3);
-  belosList->set("Adaptive Block Size", false);
-  belosList->set("Convergence Tolerance", 1.e-8);
-  belosList->set("Orthogonalization", "ICGS");
-  belosList->set("Orthogonalization Constant", 1.e-16);
+  belosList->set ("Verbosity", Belos::Errors + Belos::Warnings + Belos::FinalSummary);
+  belosList->set ("Convergence Tolerance", tol);
 
   try {
     solver = factory.create (solverName, belosList);
@@ -159,7 +154,6 @@ testSolver (Teuchos::FancyOStream& out,
   out << "Create the Belos::LinearProblem to solve" << endl;
   typedef Belos::LinearProblem<SC, MV, OP> linear_problem_type;
   X->putScalar (STS::zero ());
-
   RCP<linear_problem_type> problem (new linear_problem_type (A, X, B));
   problem->setProblem ();
 
@@ -181,9 +175,11 @@ testSolver (Teuchos::FancyOStream& out,
   unconvergedCause = solver->getUnconvergedCause();
   out << "ret = " << convertReturnTypeToString(ret)
       << ", unconvergedCause = " << convertUnconvergedCauseTypeToString(unconvergedCause)
+      << ", solver->isLOADetected() = " << solver->isLOADetected()
       << endl;
   
-  if ( (ret != Belos::Unconverged) || (unconvergedCause != Belos::LossOfAccuracyDetected) ) {
+  // Check that solver returned Unconverged.
+  if ( (ret != Belos::Unconverged) || (unconvergedCause != Belos::LossOfAccuracyDetected) || (solver->isLOADetected() != true) ) {
     success = false;
     return;
   }
@@ -207,8 +203,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( SolverFactory, CreateAndSolve, SC, LO, GO, NT
   typedef Tpetra::Operator<SC,LO,GO,NT> OP;
 
   RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
-  const Tpetra::global_size_t gblNumRows = comm->getSize () * 10;
-  const size_t numVecs = 3;
+  const Tpetra::global_size_t gblNumRows = comm->getSize () * 50;
+  const size_t numVecs = 1;
 
   out << "Create test problem" << endl;
   RCP<MV> X_exact, B;
