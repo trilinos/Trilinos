@@ -20,7 +20,10 @@ if [ "${FLUX_ERROR_LOG:-}" == "" ]; then
   FLUX_ERROR_LOG="${WORKSPACE}/flux-error-${JOB_NAME}.log"
 fi
 
-flux alloc --name=trilinos_nightly --time=12h \
+export TRILINOS_MAX_CORES=96
+export TRILINOS_NUM_CONCURRENT_TESTS=96
+
+flux alloc --job-name=trilinos_nightly --time-limit=12h \
   --nodes 1 ${FLUX_ALLOC_ARGS} \
   --output=${FLUX_OUTPUT_LOG} \
   --error=${FLUX_ERROR_LOG} \
