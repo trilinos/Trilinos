@@ -162,11 +162,6 @@ void StratimikosFactory::initializePrec_Thyra(
   using Teuchos::rcp_dynamic_cast;
   using Thyra::LinearOpBase;
 
-  using ST = Teko::ST;
-  using LO = Teko::LO;
-  using GO = Teko::GO;
-  using NT = Teko::NT;
-
   Teuchos::Time totalTimer(""), timer("");
   totalTimer.start(true);
 
