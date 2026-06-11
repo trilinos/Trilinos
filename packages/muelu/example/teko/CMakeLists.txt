@@ -6,19 +6,19 @@ IF(${PACKAGE_NAME}_ENABLE_Stratimikos
   TRIBITS_ADD_EXECUTABLE(
     Teko
     SOURCES Teko.cpp
-    COMM mpi
+    COMM serial mpi
   )
 
   TRIBITS_ADD_EXECUTABLE(
     InverseFactoryOperator-Tpetra
     SOURCES inverse-factory-operator.cpp
-    COMM mpi
+    COMM serial mpi
   )
 
   TRIBITS_ADD_EXECUTABLE(
     StratimikosSolve
     SOURCES stratimikos-solve.cpp
-    COMM mpi
+    COMM serial mpi
   )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(
@@ -53,18 +53,18 @@ IF(${PACKAGE_NAME}_ENABLE_Stratimikos
     EXEDEPS InverseFactoryOperator-Tpetra StratimikosSolve
   )
 
-  TRIBITS_ADD_TEST(
+  MUELU_ADD_SERIAL_AND_MPI_TEST(
     InverseFactoryOperator-Tpetra
     NAME "MueLuTekoInverseFactoryOperator-Tpetra"
     NUM_MPI_PROCS 1
-    COMM mpi # HAVE_MPI required
+    COMM serial mpi
   )
 
-  TRIBITS_ADD_TEST(
+  MUELU_ADD_SERIAL_AND_MPI_TEST(
     StratimikosSolve
     NAME "MueLuTekoStratimikosSolve"
     NUM_MPI_PROCS 1
-    COMM mpi # HAVE_MPI required
+    COMM serial mpi
   )
 
 ENDIF()
