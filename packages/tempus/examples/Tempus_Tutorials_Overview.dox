@@ -1,0 +1,81 @@
+/*! \page tempus_tutorials_overview Tempus Tutorials
+ *
+ *  \brief \ref Tempus tutorials demonstrating its capabilities.
+ *
+ *  \section progression_tutorial Progression Tutorial
+ *
+ *  These tutorials use the van der Pol problem to introduce \ref Tempus
+ *  capabilities in a stepwise manner.  Starting from a simple application with
+ *  a hand-written Forward Euler loop, the examples progressively introduce core
+ *  \ref Tempus and Trilinos abstractions.  Each example is runnable on its own,
+ *  and each step adds one major concept while preserving as much of the
+ *  previous example structure as possible.
+ *
+ *  The tutorial sequence introduces the following concepts:
+ *
+ *  <div style="margin:0.5em 0; padding:0.6em 0.8em; border:1px solid #ddd; border-radius:6px;">
+ *    <b>Example 0: Problem Description</b><br>
+ *    \ref example-00 "Basic Problem" - baseline application code for the
+ *    van der Pol problem using raw C++ arrays and a hand-written
+ *    Forward Euler loop.
+ *  </div>
+ *
+ *  <div style="margin:0.5em 0; padding:0.6em 0.8em; border:1px solid #ddd; border-radius:6px;">
+ *    <b>Example 1: Solution Data Representation</b><br>
+ *    \ref example-01 "Utilize Thyra" - Replace raw arrays with
+ *    \ref Thyra vectors and vector-space abstractions.
+ *  </div>
+ *
+ *  <div style="margin:0.5em 0; padding:0.6em 0.8em; border:1px solid #ddd; border-radius:6px;">
+ *    <b>Example 2: Problem Model Evaluation</b><br>
+ *    \ref example-02 "Use ModelEvaluator" - Use \ref Thyra::ModelEvaluator to
+ *    describe the problem model.
+ *  </div>
+ *
+ *  <div style="margin:0.5em 0; padding:0.6em 0.8em; border:1px solid #ddd; border-radius:6px;">
+ *    <b>Example 3: Solution Data Management</b><br>
+ *    \ref example-03 "Introduce Solution State" - Introduce
+ *    \ref Tempus::SolutionState to store the solution and selected
+ *    integration metadata.
+ *  </div>
+ *
+ *  <div style="margin:0.5em 0; padding:0.6em 0.8em; border:1px solid #ddd; border-radius:6px;">
+ *    <b>Example 4: Solution State History</b><br>
+ *    Add Solution History - Add \ref Tempus::SolutionHistory
+ *    to manage multiple solution states.
+ *  </div>
+ *
+ *  <div style="margin:0.5em 0; padding:0.6em 0.8em; border:1px solid #ddd; border-radius:6px;">
+ *    <b>Example 5: Time Stepping Algorithms</b><br>
+ *    Introduce Stepper - introduce \ref Tempus::Stepper to perform Forward Euler timesteps.
+ *  </div>
+ *
+ *  <div style="margin:0.5em 0; padding:0.6em 0.8em; border:1px solid #ddd; border-radius:6px;">
+ *    <b>Example 6: Time Step Control</b><br>
+ *    Introduce TimeStepControl — introduce \ref Tempus::TimeStepControl
+ *    to control timesteps with various strategies.
+ *  </div>
+ *
+ *  <div style="margin:0.5em 0; padding:0.6em 0.8em; border:1px solid #ddd; border-radius:6px;">
+ *    <b>Example 7: Orchestrate Multiple Time Steps</b><br>
+ *    Utilize IntegratorBasic — use \ref Tempus::IntegratorBasic to manage
+ *    the overall time integration process.
+ *  </div>
+ *
+ *  This progression is intended to show how applications can adopt
+ *  \ref Tempus incrementally rather than all at once.
+ *
+ *  \section how_to_read_tutorials How to read these examples
+ *
+ *  A recommended reading order is:
+ *
+ *  - read the current example source,
+ *  - read the transition page describing what changed from the previous step,
+ *  - compare the files directly when line-by-line detail is needed.
+ *
+ *  \htmlonly
+ *  <div style="text-align:center;">
+ *    <a href="example-00.html">Begin with Example 0: Problem Description →</a>
+ *  </div>
+ *  \endhtmlonly
+ */
