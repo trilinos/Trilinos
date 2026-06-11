@@ -12,6 +12,14 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM mpi
 )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Ialltofewv
+  SOURCES
+    Ialltofewv.cpp
+  NUM_MPI_PROCS 4
+  COMM mpi
+  )
+
 # This test is best done with at least 2 MPI processes.
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   isInterComm
