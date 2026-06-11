@@ -10,6 +10,9 @@ permissions:
 jobs:
 
   master-merge:
+    permissions:
+      contents: write
+      pull-requests: write
     runs-on: ubuntu-latest
     if: ${{ github.repository == 'trilinos/Trilinos' }}
     steps:

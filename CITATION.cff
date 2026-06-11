@@ -9,7 +9,9 @@ preferred-citation:
   journal: "ACM Transactions on Mathematical Software"
   doi: "10.1145/3802822"
   year: 2026
-  volume: "published online ahead of print"
+  volume: 52
+  issue: 2
+  article-number: 12
   authors:
     - family-names: "Mayr"
       given-names: "Matthias"

@@ -43,19 +43,19 @@ struct nodeToEvals {
 	//MAY NEED DESTUCTOR
 	nodeToEvals(){};
 
-    STK_FUNCTION
+    KOKKOS_FUNCTION
     bool operator==(nodeToEvals entityToEvals) const { return n2e.first.m_value == entityToEvals.n2e.first.m_value; }
 
-//    STK_FUNCTION
+//    KOKKOS_FUNCTION
 //    bool operator==(entity_value_type val) const { return m_value == val; }
 
-    STK_FUNCTION
+    KOKKOS_FUNCTION
     bool operator!=(nodeToEvals entityToEvals) const { return n2e.first.m_value != entityToEvals.n2e.first.m_value; }
 
-//    STK_FUNCTION
+//    KOKKOS_FUNCTION
 //    bool operator!=(entity_value_type val) const { return m_value != val; }
 
-    STK_FUNCTION
+    KOKKOS_FUNCTION
     bool operator<(nodeToEvals entityToEvals) const { return n2e.first.m_value < entityToEvals.n2e.first.m_value; }
 
 };

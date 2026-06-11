@@ -799,8 +799,8 @@
                       stk::mesh::Part& from_superset = *from_supersets[i_from_supersets];
                       if ( stk::mesh::is_auto_declared_part(from_superset) )
                         continue;
-                      bool auto_part2 = from_superset.attribute<AutoPart>() != 0;
-                      if (auto_part2)
+                      bool is_auto_part = from_superset.attribute<AutoPart>() != 0;
+                      if (is_auto_part)
                         continue;
 
                       if (DEBUG_fixSubSets && eMesh.get_rank() == 0)

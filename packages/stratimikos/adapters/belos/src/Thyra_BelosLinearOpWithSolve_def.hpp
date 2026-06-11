@@ -125,6 +125,7 @@ BelosLinearOpWithSolve<Scalar>::BelosLinearOpWithSolve()
   label_(""),
   filenameLHS_(""),
   filenameRHS_(""),
+  init_(false),
   counter_(0)
 {}
 
@@ -158,6 +159,7 @@ void BelosLinearOpWithSolve<Scalar>::initialize(
   approxFwdOpSrc_ = approxFwdOpSrc;
   supportSolveUse_ = supportSolveUse_in;
   convergenceTestFrequency_ = convergenceTestFrequency;
+  init_ = false;
   // Check if "Convergence Tolerance" is in the solver parameter list.  If
   // not, use the default from the solver.
   if ( !is_null(solverPL_) ) {
@@ -326,6 +328,7 @@ void BelosLinearOpWithSolve<Scalar>::uninitialize(
   isExternalPrec_ = false;
   approxFwdOpSrc_ = Teuchos::null;
   supportSolveUse_ = SUPPORT_SOLVE_UNSPECIFIED;
+  init_ = false;
 }
 
 
@@ -650,7 +653,10 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
         );
     Teuchos::OSTab tab1(outUsed,1,"BELOS");
     tmpPL->set("Output Stream", outUsed);
-    iterativeSolver_->setParameters(tmpPL);
+    if (!init_) {
+      iterativeSolver_->setParameters(tmpPL);
+      init_ = !nonnull(solveCriteria);
+    }
     if (nonnull(generalSolveCriteriaBelosStatusTest)) {
       iterativeSolver_->setUserConvStatusTest(generalSolveCriteriaBelosStatusTest);
     }

@@ -2148,10 +2148,15 @@ void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(err, std::runtime_error, "getGlobalElements error");
     } else if (isGloballyIndexed()) {
       auto gblInds = getGlobalIndsViewHost(rowinfo);
-      std::memcpy(
-          (void*)indices.data(),
-          (const void*)gblInds.data(),
-          theNumEntries * sizeof(*indices.data()));
+      // Kokkos zero-extent views return null from .data(); glibc declares memcpy's
+      // dst/src params __attribute__((nonnull(1,2))), so UBSan nonnull-arg fires
+      // on a null pointer even when the byte count is zero.
+      if (theNumEntries > 0) {
+        std::memcpy(
+            (void*)indices.data(),
+            (const void*)gblInds.data(),
+            theNumEntries * sizeof(*indices.data()));
+      }
     }
   }
 }

@@ -77,9 +77,6 @@ struct CPUTime {};                              ///< CPU runtime metric tag
 struct WallTime {};                             ///< Wall clock metric tag
 struct MPICount {};                             ///< MPI call count metric tag
 struct MPIByteCount {};                         ///< MPI byte count metric tag
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Nov 2025
-struct STK_DEPRECATED HeapAlloc {};                            ///< Heap allocation metric tag
-#endif
 
 
 template<>
@@ -131,18 +128,6 @@ struct MetricTraits<MPIByteCount>
   static std::string table_header();
   static std::string format(Type count);
 };
-
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Nov 2025
-template<>
-struct STK_DEPRECATED MetricTraits<HeapAlloc>
-{
-  typedef double Type;
-  enum {METRIC = METRICS_HEAP_ALLOC};
-  static Type value_now();
-  static std::string table_header();
-  static std::string format(Type count);
-};
-#endif
 
 template <class T>
 typename MetricTraits<T>::Type now() {

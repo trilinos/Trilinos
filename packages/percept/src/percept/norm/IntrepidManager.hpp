@@ -164,14 +164,11 @@ using namespace Intrepid2;
 
         CubaturePoints(const IM& im) ;
 
-        BaseType& getArray() {
-          return *this; 
-        }
-
-        void copyTo(MDArray& mda)
+        MDArray copy(const std::string& label)
         {
-          Kokkos::resize(mda, m_im.m_Cub_Points_Tag.num, m_im.m_Spatial_Dim_Tag.num);
-          Kokkos::deep_copy(mda, *this);
+          MDArray a(Kokkos::view_alloc(label, Kokkos::WithoutInitializing), m_im.m_Cub_Points_Tag.num, m_im.m_Spatial_Dim_Tag.num);
+          Kokkos::deep_copy(a, *this);
+          return a;
         }
 
         using BaseType::operator();
@@ -184,10 +181,6 @@ using namespace Intrepid2;
       public:
         typedef MDArray BaseType;
 
-        BaseType& getArray() {
-          return *this; 
-        }
-
         CubatureWeights(const IM& im);
         using BaseType::operator();
 
@@ -198,10 +191,6 @@ using namespace Intrepid2;
       {
       public:
         typedef MDArray BaseType;
-
-        BaseType& getArray() {
-          return *this; 
-        }
 
         CellWorkSet(const IM& im);
         using BaseType::operator();
@@ -217,16 +206,13 @@ using namespace Intrepid2;
 
         PhysicalCoords(const IM& im);
 
-        BaseType& getArray() {
-          return *this; 
-        }
-
         void operator()(CellWorkSet& c, CubaturePoints& xi);
         
-        void copyTo(MDArray& mda)
+        MDArray copy(const std::string& label)
         {
-          Kokkos::resize(mda, m_im.m_Elements_Tag.num, m_im.m_Cub_Points_Tag.num, m_im.m_Spatial_Dim_Tag.num);
-          Kokkos::deep_copy(mda, *this);
+          MDArray a(Kokkos::view_alloc(label, Kokkos::WithoutInitializing), m_im.m_Elements_Tag.num, m_im.m_Cub_Points_Tag.num, m_im.m_Spatial_Dim_Tag.num);
+          Kokkos::deep_copy(a, *this);
+          return a;
         }
         
 	using BaseType::operator();
@@ -243,14 +229,11 @@ using namespace Intrepid2;
         Jacobian(const IM& im);
         void operator()(CubaturePoints& xi, CellWorkSet& c, CellTopology& topo);
 
-        BaseType& getArray() {
-          return *this; 
-        }
-
-        void copyTo(MDArray& mda)
+        MDArray copy(const std::string& label)
         {
-          Kokkos::resize(mda, m_im.m_Elements_Tag.num, m_im.m_Cub_Points_Tag.num, m_im.m_Spatial_Dim_Tag.num, m_im.m_Spatial_Dim_Tag.num);
-          Kokkos::deep_copy(mda, *this);
+          MDArray a(Kokkos::view_alloc(label, Kokkos::WithoutInitializing), m_im.m_Elements_Tag.num, m_im.m_Cub_Points_Tag.num, m_im.m_Spatial_Dim_Tag.num, m_im.m_Spatial_Dim_Tag.num);
+          Kokkos::deep_copy(a, *this);
+          return a;
         }
 
         using BaseType::operator();
@@ -263,12 +246,6 @@ using namespace Intrepid2;
         typedef MDArray BaseType;
 
         FaceNormal(const IM& im);
-
-
-        BaseType& getArray() {
-          return *this; 
-        }
-
         void operator()(Jacobian& jac, int i_face, CellTopology& topo);
 
         using BaseType::operator();
@@ -282,12 +259,6 @@ using namespace Intrepid2;
         typedef MDArray BaseType;
 
         JacobianInverse(const IM& im);
-
-
-        BaseType& getArray() {
-          return *this; 
-        }
-
         void operator()(Jacobian& jac);
         using BaseType::operator();
       };
@@ -300,11 +271,6 @@ using namespace Intrepid2;
         typedef MDArray BaseType;
 
         JacobianDet(const IM& im);
-
-
-        BaseType& getArray() {
-          return *this; 
-        }
 
         void operator()(Jacobian& jac);
         using BaseType::operator();
@@ -320,10 +286,6 @@ using namespace Intrepid2;
         typedef MDArray BaseType;
 
         WeightedMeasure(const IM& im);
-
-        BaseType& getArray() {
-          return *this; 
-        }
 
         void operator()(CubatureWeights& w, JacobianDet& dJ);
         using BaseType::operator();
