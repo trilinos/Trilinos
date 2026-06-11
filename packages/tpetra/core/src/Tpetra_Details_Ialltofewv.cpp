@@ -178,274 +178,395 @@ struct Ialltofewv::Cache::impl {
   }
 };
 
-Ialltofewv::Cache::Cache()  = default;
+Ialltofewv::Cache::Cache() = default;
+
+// DistributorActor can be copied, but we don't want to share a single
+// cache since each actor can have its own Ialltofewv in flight.
+// This creates an empty cache in the copy.s
+Ialltofewv::Cache::Cache(const Cache &) {}
+
+// As with copy construction, assignment leaves this cache indepdendent.
+Ialltofewv::Cache &Ialltofewv::Cache::operator=(const Cache &other) {
+  if (this != &other) pimpl.reset();
+  return *this;
+}
+
 Ialltofewv::Cache::~Cache() = default;
 
+// Intermediate buffers and MPI requests for one asynchronous
+// Ialltofewv. Inherited by actual imlpementation, which is specialized on the
+// execution space.
+struct Ialltofewv::State {
+  virtual ~State()                = default;
+  virtual int start()             = 0;
+  virtual int progress()          = 0;
+  virtual bool isComplete() const = 0;
+  virtual MPI_Comm comm() const   = 0;
+  // Copies completion state back to the request that Ialltofewv callers maintain.
+  // Needed when progress on one Ialltofewv completes a different operation.
+  virtual void updateReq(Req &req) const = 0;
+};
+
 namespace {
-template <typename RecvExecSpace>
-int wait_impl(Ialltofewv::Req &req, Ialltofewv::Cache &cache) {
-  auto finalize = [&]() -> int {
-    req.completed = true;
+enum class Stage { counts,
+                   payload,
+                   forwarding,
+                   complete };
+
+int test_all(std::vector<MPI_Request> &reqs, int &flag) {
+  if (reqs.empty()) {
+    flag = 1;
     return MPI_SUCCESS;
-  };
-
-  if (0 == req.nroots) {
-    return finalize();
   }
+  return MPI_Testall(static_cast<int>(reqs.size()), reqs.data(), &flag, MPI_STATUSES_IGNORE);
+}
 
-  ProfilingRegion pr("alltofewv::wait");
+template <typename RecvExecSpace>
+class StateImpl : public Ialltofewv::State {
+ public:
+  using byte_view_type = Kokkos::View<char *, typename RecvExecSpace::memory_space>;
+  using root_view_type = Kokkos::View<uint8_t *, typename RecvExecSpace::memory_space>;
+  using args_view_type = Kokkos::View<MemcpyArg *, typename RecvExecSpace::memory_space>;
 
-  // lazy-init view cache
-  if (!cache.pimpl) {
-    cache.pimpl = std::make_shared<Ialltofewv::Cache::impl>();
-  }
+  StateImpl(Ialltofewv::Req &req, std::shared_ptr<Ialltofewv::Cache::impl> cache)
+    : req_(req)
+    , cache_(std::move(cache))
+    , rank_(getRank())
+    , size_(getSize())
+    , sendSize_(getTypeSize(req_.sendtype))
+    , recvSize_(getTypeSize(req_.recvtype))
+    // Is this rank a root? Linear search because nroots is expected to be small.
+    , isRoot_(std::find(req_.roots, req_.roots + req_.nroots, rank_) != req_.roots + req_.nroots)
+    // Balance the number of incoming messages at each phase:
+    // Aggregation = size / naggs * nroots
+    // Root =        naggs
+    // so size / naggs * nroots = naggs, and naggs = sqrt(size * nroots).
+    , naggs_(std::max(1, int(std::sqrt(size_t(size_) * size_t(req_.nroots)) + 0.5)))
+    // How many sources send to each aggregator.
+    , srcsPerAgg_((size_ + naggs_ - 1) / naggs_)
+    // The aggregator this rank sends to.
+    , myAgg_(rank_ / srcsPerAgg_ * srcsPerAgg_)
+    // [si * nroots + ri] is how much source si in this group sends to root ri.
+    , groupSendCounts_(rank_ == myAgg_ ? size_t(req_.nroots) * size_t(srcsPerAgg_) : 0)
+    , rootCount_(req_.nroots, 0) {}
 
-  const int rank = [&]() -> int {
-    int _rank;
-    MPI_Comm_rank(req.comm, &_rank);
-    return _rank;
-  }();
-
-  const int size = [&]() -> int {
-    int _size;
-    MPI_Comm_size(req.comm, &_size);
-    return _size;
-  }();
-
-  const size_t sendSize = [&]() -> size_t {
-    int _size;
-    MPI_Type_size(req.sendtype, &_size);
-    return _size;
-  }();
-
-  const size_t recvSize = [&]() -> size_t {
-    int _size;
-    MPI_Type_size(req.recvtype, &_size);
-    return _size;
-  }();
-
-  // is this rank a root? linear search - nroots expected to be small
-  const bool isRoot = std::find(req.roots, req.roots + req.nroots, rank) != req.roots + req.nroots;
-
-  // Balance the number of incoming messages at each phase:
-  // Aggregation = size / naggs * nroots
-  // Root =        naggs
-  // so
-  // size / naggs * nroots = naggs
-  // size * nroots = naggs^2
-  // naggs = sqrt(size * nroots)
-  const int naggs = std::sqrt(size_t(size) * size_t(req.nroots)) + /*rounding*/ 0.5;
-
-  // how many srcs go to each aggregator
-  const int srcsPerAgg = (size + naggs - 1) / naggs;
-
-  // the aggregator I send to
-  const int myAgg = rank / srcsPerAgg * srcsPerAgg;
-
-  // ensure aggregators know how much data each rank is sending to the root
-  // [si * nroots + r1] -> how much si'th rank in group wants to send to root ri
-  std::vector<int> groupSendCounts(size_t(req.nroots) * size_t(srcsPerAgg));
-  std::vector<MPI_Request> reqs;
-  if (rank == myAgg) {
-    reqs.reserve(srcsPerAgg);
-    // recv counts from each member of my group
-    for (int si = 0; si < srcsPerAgg && si + rank < size; ++si) {
-      MPI_Request rreq;
-
-#ifndef NDEBUG
-      if (size_t(si) * req.nroots + req.nroots > groupSendCounts.size()) {
-        std::stringstream ss;
-        ss << __FILE__ << ":" << __LINE__
-           << " [" << rank << "] tpetra internal Ialltofewv error: OOB access in recv buffer\n";
-        std::cerr << ss.str();
-      }
-#endif
-      MPI_Irecv(&groupSendCounts[size_t(si) * size_t(req.nroots)], req.nroots, MPI_INT, si + rank,
-                req.aggTag, req.comm, &rreq);
-      reqs.push_back(rreq);
+  int start() override {
+    if (req_.nroots == 0) {
+      stage_         = Stage::complete;
+      req_.completed = true;
+      return MPI_SUCCESS;
     }
-  }
-  // send sendcounts to aggregator
-  MPI_Send(req.sendcounts, req.nroots, MPI_INT, myAgg, req.aggTag, req.comm);
 
-  MPI_Waitall(reqs.size(), reqs.data(), MPI_STATUSES_IGNORE);
-  reqs.resize(0);
+    int err = postRootReceives();
+    if (err != MPI_SUCCESS) return setError(err);
 
-  // at this point, in each aggregator, groupSendCounts holds the send counts
-  // from each member of the aggregator. The first nroots entries are from the first rank,
-  // the second nroots entries are from the second rank, etc
-
-  // a temporary buffer to aggregate data. Data for a root is contiguous.
-  auto aggBuf = cache.pimpl->get_aggBuf<RecvExecSpace>(0);
-  std::vector<size_t> rootCount(req.nroots, 0);  // [ri] the count of data held for root ri
-  if (rank == myAgg) {
-    size_t aggBytes = 0;
-    for (int si = 0; si < srcsPerAgg && si + rank < size; ++si) {
-      for (int ri = 0; ri < req.nroots; ++ri) {
-        int count = groupSendCounts[si * req.nroots + ri];
-        rootCount[ri] += count;
-        aggBytes += count * sendSize;
+    // Ensure aggregators know how much data each rank is sending to each root.
+    if (rank_ == myAgg_) {
+      countReqs_.reserve(srcsPerAgg_ + 1);
+      // Receive counts from each member of this aggregation group.
+      for (int si = 0; si < srcsPerAgg_ && si + rank_ < size_; ++si) {
+        MPI_Request mpiReq;
+        err = MPI_Irecv(&groupSendCounts_[size_t(si) * size_t(req_.nroots)], req_.nroots,
+                        MPI_INT, si + rank_, req_.aggTag, req_.comm, &mpiReq);
+        if (err != MPI_SUCCESS) return setError(err);
+        countReqs_.push_back(mpiReq);
       }
     }
 
-    aggBuf = cache.pimpl->get_aggBuf<RecvExecSpace>(aggBytes);
+    // Send this rank's counts to its aggregator.
+    MPI_Request mpiReq;
+    err = MPI_Isend(req_.sendcounts, req_.nroots, MPI_INT, myAgg_, req_.aggTag,
+                    req_.comm, &mpiReq);
+    if (err != MPI_SUCCESS) return setError(err);
+    countReqs_.push_back(mpiReq);
+    return MPI_SUCCESS;
   }
-  // now, on the aggregator ranks,
-  // * aggBuf is resized to accomodate all incoming data
-  // * rootCount holds how much data i hold for each root
 
-  // Send the actual data to the aggregator
-  if (rank == myAgg) {
-    reqs.reserve(srcsPerAgg + req.nroots);
-    // receive from all ranks in my group
+  int progress() override {
+    if (error_ != MPI_SUCCESS || stage_ == Stage::complete) return error_;
+
+    int flag = 0;
+    int err  = MPI_SUCCESS;
+    if (stage_ == Stage::counts) {
+      err = test_all(countReqs_, flag);
+      if (err != MPI_SUCCESS) return setError(err);
+      if (!flag) return MPI_SUCCESS;
+      err = postPayload();
+      if (err != MPI_SUCCESS) return setError(err);
+    }
+
+    if (stage_ == Stage::payload) {
+      err = test_all(payloadReqs_, flag);
+      if (err != MPI_SUCCESS) return setError(err);
+      if (!flag) return MPI_SUCCESS;
+      err = postForwards();
+      if (err != MPI_SUCCESS) return setError(err);
+    }
+
+    if (stage_ == Stage::forwarding) {
+      int rootFlag    = 0;
+      int forwardFlag = 0;
+      err             = test_all(rootReqs_, rootFlag);
+      if (err != MPI_SUCCESS) return setError(err);
+      err = test_all(forwardReqs_, forwardFlag);
+      if (err != MPI_SUCCESS) return setError(err);
+      if (!rootFlag || !forwardFlag) return MPI_SUCCESS;
+      finish();
+    }
+    return MPI_SUCCESS;
+  }
+
+  bool isComplete() const override {
+    return stage_ == Stage::complete;
+  }
+
+  MPI_Comm comm() const override {
+    return req_.comm;
+  }
+
+  void updateReq(Ialltofewv::Req &req) const override {
+    req.completed = isComplete();
+  }
+
+ private:
+  int getRank() const {
+    int rank;
+    MPI_Comm_rank(req_.comm, &rank);
+    return rank;
+  }
+
+  int getSize() const {
+    int size;
+    MPI_Comm_size(req_.comm, &size);
+    return size;
+  }
+
+  static size_t getTypeSize(MPI_Datatype type) {
+    int size;
+    MPI_Type_size(type, &size);
+    return size_t(size);
+  }
+
+  int setError(int err) {
+    error_ = err;
+    return err;
+  }
+
+  int postRootReceives() {
+    if (!isRoot_) return MPI_SUCCESS;
+
+    // An aggregator sends contiguous data, which the root later scatters
+    // according to rdispls.
+    size_t totalRecvd = 0;
+    for (int i = 0; i < size_; ++i) totalRecvd += size_t(req_.recvcounts[i]) * recvSize_;
+    rootBuf_ = cache_->get_rootBuf<RecvExecSpace>(totalRecvd);
+
+    // Aggregators send data in rank order, which is also the order used in the
+    // root's contiguous receive buffer.
     size_t displ = 0;
-    // senders will send in root order, so we will recv in that order as well
-    // this puts all data for a root contiguous in the aggregation buffer
-    for (int ri = 0; ri < req.nroots; ++ri) {
-      for (int si = 0; si < srcsPerAgg && si + rank < size; ++si) {
-        // receive data for the ri'th root from the si'th sender
-        const int count = groupSendCounts[si * req.nroots + ri];
-        if (count) {
-#ifndef NDEBUG
-          if (displ + count * sendSize > aggBuf.size()) {
-            std::stringstream ss;
-            ss << __FILE__ << ":" << __LINE__
-               << " [" << rank << "] tpetra internal Ialltofewv error: OOB access in send buffer\n";
-            std::cerr << ss.str();
+    for (int aggSrc = 0; aggSrc < size_; aggSrc += srcsPerAgg_) {
+      // Tally the data received from this aggregator.
+      int count = 0;
+      for (int origSrc = aggSrc; origSrc < aggSrc + srcsPerAgg_ && origSrc < size_; ++origSrc) {
+        count += req_.recvcounts[origSrc];
+      }
+      if (count) {
+        MPI_Request mpiReq;
+        const int err = MPI_Irecv(rootBuf_.data() + displ, count, req_.recvtype, aggSrc,
+                                  req_.rootTag, req_.comm, &mpiReq);
+        if (err != MPI_SUCCESS) return err;
+        rootReqs_.push_back(mpiReq);
+        displ += size_t(count) * recvSize_;
+      }
+    }
+    return MPI_SUCCESS;
+  }
+
+  int postPayload() {
+    stage_ = Stage::payload;
+    if (rank_ == myAgg_) {
+      // groupSendCounts now holds counts from every member of this aggregation
+      // group. Size the aggregation buffer and record how much goes to each root.
+      size_t aggBytes = 0;
+      for (int si = 0; si < srcsPerAgg_ && si + rank_ < size_; ++si) {
+        for (int ri = 0; ri < req_.nroots; ++ri) {
+          const int count = groupSendCounts_[size_t(si) * size_t(req_.nroots) + size_t(ri)];
+          rootCount_[ri] += count;
+          aggBytes += size_t(count) * sendSize_;
+        }
+      }
+      aggBuf_ = cache_->get_aggBuf<RecvExecSpace>(aggBytes);
+
+      // Senders transmit in root order. Receive in the same order so all data
+      // for each root is contiguous in the aggregation buffer.
+      size_t displ = 0;
+      for (int ri = 0; ri < req_.nroots; ++ri) {
+        for (int si = 0; si < srcsPerAgg_ && si + rank_ < size_; ++si) {
+          // Receive data for root ri from source si in this group.
+          const int count = groupSendCounts_[size_t(si) * size_t(req_.nroots) + size_t(ri)];
+          if (count) {
+            MPI_Request mpiReq;
+            const int err = MPI_Irecv(aggBuf_.data() + displ, count, req_.sendtype, si + rank_,
+                                      req_.aggTag, req_.comm, &mpiReq);
+            if (err != MPI_SUCCESS) return err;
+            payloadReqs_.push_back(mpiReq);
+            displ += size_t(count) * sendSize_;
           }
-#endif
-          MPI_Request rreq;
-          // &aggBuf(displ)
-          MPI_Irecv(aggBuf.data() + displ, count, req.sendtype, si + rank, req.aggTag, req.comm, &rreq);
-          reqs.push_back(rreq);
-          displ += size_t(count) * sendSize;
         }
       }
     }
-  } else {
-    reqs.reserve(req.nroots);  // prepare for one send per root
-  }
 
-  // send data to aggregator
-  for (int ri = 0; ri < req.nroots; ++ri) {
-    const size_t displ = size_t(req.sdispls[ri]) * sendSize;
-    const int count    = req.sendcounts[ri];
-    if (count) {
-      MPI_Request sreq;
-      MPI_Isend(&reinterpret_cast<const char *>(req.sendbuf)[displ], req.sendcounts[ri],
-                req.sendtype, myAgg, req.aggTag, req.comm, &sreq);
-      reqs.push_back(sreq);
-    }
-  }
-
-  MPI_Waitall(reqs.size(), reqs.data(), MPI_STATUSES_IGNORE);
-  reqs.resize(0);
-
-  // if I am a root, receive data from each aggregator
-  // The aggregator will send contiguous data, which we may need to spread out according to rdispls
-  auto rootBuf = cache.pimpl->get_rootBuf<RecvExecSpace>(0);
-  if (isRoot) {
-    reqs.reserve(naggs);  // receive from each aggregator
-
-    const size_t totalRecvd = recvSize * [&]() -> size_t {
-      size_t acc = 0;
-      for (int i = 0; i < size; ++i) {
-        acc += req.recvcounts[i];
+    // Send this rank's data to its aggregator.
+    for (int ri = 0; ri < req_.nroots; ++ri) {
+      if (req_.sendcounts[ri]) {
+        MPI_Request mpiReq;
+        const size_t displ = size_t(req_.sdispls[ri]) * sendSize_;
+        const int err      = MPI_Isend(reinterpret_cast<const char *>(req_.sendbuf) + displ,
+                                       req_.sendcounts[ri], req_.sendtype, myAgg_, req_.aggTag,
+                                       req_.comm, &mpiReq);
+        if (err != MPI_SUCCESS) return err;
+        payloadReqs_.push_back(mpiReq);
       }
-      return acc;
-    }();
-    rootBuf = cache.pimpl->get_rootBuf<RecvExecSpace>(totalRecvd);
+    }
+    return MPI_SUCCESS;
+  }
 
-    // Receive data from each aggregator.
-    // Aggregators send data in order of the ranks they're aggregating,
-    // which is also the order the root needs in its recv buffer.
+  int postForwards() {
+    stage_ = Stage::forwarding;
+    if (rank_ != myAgg_) return MPI_SUCCESS;
+
+    // Forward each root's contiguous data in source-rank order, which is the
+    // order expected by the root's contiguous receive buffer.
     size_t displ = 0;
-    for (int aggSrc = 0; aggSrc < size; aggSrc += srcsPerAgg) {
-      // tally up the total data to recv from the sending aggregator
-      int count = 0;
-      for (int origSrc = aggSrc;
-           origSrc < aggSrc + srcsPerAgg && origSrc < size; ++origSrc) {
-        count += req.recvcounts[origSrc];
-      }
-
+    for (int ri = 0; ri < req_.nroots; ++ri) {
+      const size_t count = rootCount_[ri];
       if (count) {
-        MPI_Request rreq;
-        MPI_Irecv(rootBuf.data() + displ, count, req.recvtype, aggSrc, req.rootTag, req.comm, &rreq);
-        reqs.push_back(rreq);
-        displ += size_t(count) * recvSize;
+        MPI_Request mpiReq;
+        const int err = MPI_Isend(aggBuf_.data() + displ, int(count), req_.sendtype,
+                                  req_.roots[ri], req_.rootTag, req_.comm, &mpiReq);
+        if (err != MPI_SUCCESS) return err;
+        forwardReqs_.push_back(mpiReq);
+        displ += count * sendSize_;
       }
     }
+    return MPI_SUCCESS;
   }
 
-  // if I am an aggregator, forward data to the roots
-  // To each root, send my data in order of the ranks that sent to me
-  // which is the order the recvers expect
-  if (rank == myAgg) {
-    size_t displ = 0;
-    for (int ri = 0; ri < req.nroots; ++ri) {
-      const size_t count = rootCount[ri];
-      if (count) {
-        // &aggBuf[displ]
-        MPI_Send(aggBuf.data() + displ, count, req.sendtype, req.roots[ri], req.rootTag, req.comm);
-        displ += count * sendSize;
+  void finish() {
+    if (isRoot_) {
+      // Spread the contiguous root buffer into recvbuf according to rdispls.
+      // First set up the source and destination for each block.
+      args_         = cache_->get_args<RecvExecSpace>(size_);
+      auto args_h   = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, args_);
+      size_t srcOff = 0;
+      for (int srcRank = 0; srcRank < size_; ++srcRank) {
+        const size_t dstOff = size_t(req_.rdispls[srcRank]) * recvSize_;
+        const size_t count  = size_t(req_.recvcounts[srcRank]) * recvSize_;
+        args_h(srcRank)     = MemcpyArg{reinterpret_cast<char *>(req_.recvbuf) + dstOff,
+                                    rootBuf_.data() + srcOff, count};
+        srcOff += count;
       }
+
+      // Actually copy the data.
+      Kokkos::deep_copy(args_, args_h);
+      using Policy = Kokkos::TeamPolicy<RecvExecSpace>;
+      Policy policy(size_, Kokkos::AUTO);
+      auto args = args_;
+      Kokkos::parallel_for(
+          "Tpetra::Details::Ialltofewv: apply rdispls to contiguous root buffer", policy,
+          KOKKOS_LAMBDA(typename Policy::member_type member) {
+            team_memcpy(member, args(member.league_rank()));
+          });
+      Kokkos::fence("Tpetra::Details::Ialltofewv: after apply rdispls to contiguous root buffer");
     }
+    stage_         = Stage::complete;
+    req_.completed = true;
   }
 
-  MPI_Waitall(reqs.size(), reqs.data(), MPI_STATUSES_IGNORE);
+  Ialltofewv::Req &req_;
+  std::shared_ptr<Ialltofewv::Cache::impl> cache_;
+  int rank_;
+  int size_;
+  size_t sendSize_;
+  size_t recvSize_;
+  bool isRoot_;
+  int naggs_;
+  int srcsPerAgg_;
+  int myAgg_;
+  Stage stage_ = Stage::counts;
+  int error_   = MPI_SUCCESS;
+  std::vector<int> groupSendCounts_;
+  std::vector<size_t> rootCount_;
+  byte_view_type aggBuf_;
+  root_view_type rootBuf_;
+  args_view_type args_;
+  std::vector<MPI_Request> countReqs_;
+  std::vector<MPI_Request> payloadReqs_;
+  std::vector<MPI_Request> rootReqs_;
+  std::vector<MPI_Request> forwardReqs_;
+};
 
-  // at root, copy data from contiguous buffer into recv buffer
-  if (isRoot) {
-    // set up src and dst for each block
-    auto args   = cache.pimpl->get_args<RecvExecSpace>(size);
-    auto args_h = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, args);
-
-    size_t srcOff = 0;
-    for (int sRank = 0; sRank < size; ++sRank) {
-      const size_t dstOff = req.rdispls[sRank] * recvSize;
-
-      void *dst          = &reinterpret_cast<char *>(req.recvbuf)[dstOff];
-      void *const src    = rootBuf.data() + srcOff;  // &rootBuf(srcOff);
-      const size_t count = req.recvcounts[sRank] * recvSize;
-      args_h(sRank)      = MemcpyArg{dst, src, count};
-
-#ifndef NDEBUG
-      if (srcOff + count > rootBuf.extent(0)) {
-        std::stringstream ss;
-        ss << __FILE__ << ":" << __LINE__ << " Tpetra internal Ialltofewv error: src access OOB in memcpy\n";
-        std::cerr << ss.str();
-      }
-#endif
-      srcOff += count;
-    }
-
-    // Actually copy the data
-    Kokkos::deep_copy(args, args_h);
-    using Policy = Kokkos::TeamPolicy<RecvExecSpace>;
-    Policy policy(size, Kokkos::AUTO);
-    Kokkos::parallel_for(
-        "Tpetra::Details::Ialltofewv: apply rdispls to contiguous root buffer", policy,
-        KOKKOS_LAMBDA(typename Policy::member_type member) {
-          team_memcpy(member, args(member.league_rank()));
-        });
-    Kokkos::fence("Tpetra::Details::Ialltofewv: after apply rdispls to contiguous root buffer");
-  }
-
-  return finalize();
+std::vector<std::weak_ptr<Ialltofewv::State>> &activeStates() {
+  // Weak ownership lets each Req control its state lifetime while still making
+  // every local operation available for cooperative progress.
+  static std::vector<std::weak_ptr<Ialltofewv::State>> states;
+  return states;
 }
-}  //  namespace
+
+int progressAll(MPI_Comm comm) {
+  int result   = MPI_SUCCESS;
+  auto &states = activeStates();
+  for (auto it = states.begin(); it != states.end();) {
+    if (auto state = it->lock()) {
+      int comparison       = MPI_UNEQUAL;
+      const int compareErr = MPI_Comm_compare(comm, state->comm(), &comparison);
+      if (result == MPI_SUCCESS && compareErr != MPI_SUCCESS) result = compareErr;
+      if (comparison == MPI_IDENT) {
+        const int err = state->progress();
+        if (result == MPI_SUCCESS && err != MPI_SUCCESS) result = err;
+      }
+      if (state->isComplete()) {
+        it = states.erase(it);
+      } else {
+        ++it;
+      }
+    } else {
+      it = states.erase(it);
+    }
+  }
+  return result;
+}
+}  // namespace
+
+int Ialltofewv::start(Req &req) {
+  if (!cache_.pimpl) cache_.pimpl = std::make_shared<Cache::impl>();
+
+  if (req.devAccess) {
+    req.state = std::make_shared<StateImpl<Kokkos::DefaultExecutionSpace>>(req, cache_.pimpl);
+  } else {
+    req.state = std::make_shared<StateImpl<Kokkos::DefaultHostExecutionSpace>>(req, cache_.pimpl);
+  }
+
+  const int err = req.state->start();
+  req.state->updateReq(req);
+  if (!req.completed) activeStates().push_back(req.state);
+  return err;
+}
 
 int Ialltofewv::wait(Req &req) {
-  if (req.devAccess) {
-    return wait_impl<Kokkos::DefaultExecutionSpace>(req, cache_);
-  } else {
-    return wait_impl<Kokkos::DefaultHostExecutionSpace>(req, cache_);
+  ProfilingRegion pr("alltofewv::wait");
+  while (!req.state->isComplete()) {
+    const int err = progressAll(req.comm);
+    if (err != MPI_SUCCESS) return err;
   }
+  req.state->updateReq(req);
+  return MPI_SUCCESS;
 }
 
 int Ialltofewv::get_status(const Req &req, int *flag, MPI_Status * /*status*/) const {
-  *flag = req.completed;
-  return MPI_SUCCESS;
+  const int err = progressAll(req.comm);
+  *flag         = req.state->isComplete();
+  return err;
 }
 
 }  // namespace Tpetra::Details
