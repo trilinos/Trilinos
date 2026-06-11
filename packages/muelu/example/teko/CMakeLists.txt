@@ -50,4 +50,18 @@ IF(${PACKAGE_NAME}_ENABLE_Stratimikos AND ${PACKAGE_NAME}_ENABLE_Thyra AND ${PAC
     EXEDEPS InverseFactoryOperator-Tpetra StratimikosSolve
   )
 
+  TRIBITS_ADD_TEST(
+    InverseFactoryOperator-Tpetra
+    NAME "MueLuTekoInverseFactoryOperator-Tpetra"
+    NUM_MPI_PROCS 1
+    COMM mpi # HAVE_MPI required
+  )
+
+  TRIBITS_ADD_TEST(
+    StratimikosSolve
+    NAME "MueLuTekoStratimikosSolve"
+    NUM_MPI_PROCS 1
+    COMM mpi # HAVE_MPI required
+  )
+
 ENDIF()
