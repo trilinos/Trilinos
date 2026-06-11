@@ -58,8 +58,8 @@ jobs:
               
               echo "Branch ${merged_branch_name} can be deleted on remote ${REMOTE}"
 
-              # Delete the branch on origin. Commented out for now.
-              # git push --delete ${REMOTE} ${merged_branch_name}
+              # Delete the branch on origin.
+              git push --delete ${REMOTE} ${merged_branch_name}
           done
 
       

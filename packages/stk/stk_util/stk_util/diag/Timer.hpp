@@ -460,9 +460,6 @@ inline Marshal &operator<<(Marshal &mout, const Timer &t) {
   mout << t.getName() << t.getTimerMask() << t.getSubtimerLapCount()
        << t.getMetric<LapCount>() << t.getMetric<CPUTime>() << t.getMetric<WallTime>()
        << t.getMetric<MPICount>() << t.getMetric<MPIByteCount>()
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Nov 2025
-       << t.getMetric<HeapAlloc>()
-#endif
        ;
 
   mout << t.getTimerList();

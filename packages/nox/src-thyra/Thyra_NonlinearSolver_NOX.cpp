@@ -480,7 +480,7 @@ getThyraGroupNonConst(const Teuchos::RCP<NOX::Abstract::Group>& nox_group)
 
   TEUCHOS_TEST_FOR_EXCEPTION(ntg.is_null(),std::runtime_error,
                              "ERROR: Thyra::NOXNonlinearSolver::getThyraGroupNonConst() failed to cast to a NOX::Thyra::Group. The object is of type \""
-                             << Teuchos::demangleName(typeid(*nox_group).name()) << "\".\n");
+                             << Teuchos::demangleName(typeid(decltype(*nox_group)).name()) << "\".\n");
 
   return ntg;
 }
@@ -500,7 +500,7 @@ getThyraGroupConst(const Teuchos::RCP<const NOX::Abstract::Group>& nox_group) co
     ntg = this->getThyraGroupConst(nested_group); // for recursively nested groups
 
   TEUCHOS_TEST_FOR_EXCEPTION(ntg.is_null(),std::runtime_error,
-                             "ERROR: Thyra::NOXNonlinearSolver::getThyraGroupConst() failed to cast to a NOX::Thyra::Group. The object is of type \"" << Teuchos::demangleName(typeid(*nox_group).name()) << "\".\n");
+                             "ERROR: Thyra::NOXNonlinearSolver::getThyraGroupConst() failed to cast to a NOX::Thyra::Group. The object is of type \"" << Teuchos::demangleName(typeid(decltype(*nox_group)).name()) << "\".\n");
 
   return ntg;
 }

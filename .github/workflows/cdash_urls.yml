@@ -21,7 +21,7 @@ jobs:
           with:
             message-id: cdash
             message: |
-              [CDash for AT2 results](https://sems-cdash-son.sandia.gov/cdash/index.php?project=Trilinos&display=project&filtercount=2&showfilters=1&filtercombine=and&field1=buildname&compare1=65&value1=PR-${{ github.event.number }}&field2=buildstarttime&compare2=84&value2=now) [Currently only accessible from Sandia networks]
+              [CDash for AT2 results](https://my.cdash.org/index.php?project=Trilinos&display=project&filtercount=2&showfilters=1&filtercombine=and&field1=buildname&compare1=65&value1=PR-${{ github.event.number }}&field2=buildstarttime&compare2=84&value2=now)
 
               <details>
 

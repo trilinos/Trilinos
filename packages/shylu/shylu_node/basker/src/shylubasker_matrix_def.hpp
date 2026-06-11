@@ -529,7 +529,7 @@ namespace BaskerNS
 
     const Entry zero(0.0);
 
-    anorm = abs(zero);
+    anorm = std::abs(zero);
     Int temp_count = 0;
     for(Int k = scol; k < scol+ncol; ++k)
     {
@@ -553,7 +553,7 @@ namespace BaskerNS
             // if all were zero, then add the last entry to avoid empty column.
             row_idx(temp_count) = M.row_idx(i-1)-srow;
             val(temp_count) = M.val(i-1);
-            anorm_k += abs(M.val(i-1));
+            anorm_k += std::abs(M.val(i-1));
             temp_count++;
           }
           break;
@@ -580,7 +580,7 @@ namespace BaskerNS
           row_idx(temp_count) = j-srow;
           val(temp_count) = M.val(i);
 
-          anorm_k += abs(M.val(i));
+          anorm_k += std::abs(M.val(i));
           temp_count++;
           kept_count ++;
         } else {

@@ -95,9 +95,6 @@ TimerImpl::reset()
   m_wallTime.reset();
   m_MPICount.reset();
   m_MPIByteCount.reset();
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Nov 2025
-  m_heapAlloc.reset();
-#endif
 }
 
 
@@ -144,9 +141,6 @@ TimerImpl::start()
       m_wallTime.m_lapStop = m_wallTime.m_lapStart = value_now<WallTime>();
       m_MPICount.m_lapStop = m_MPICount.m_lapStart = value_now<MPICount>();
       m_MPIByteCount.m_lapStop = m_MPIByteCount.m_lapStart = value_now<MPIByteCount>();
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Nov 2025
-      m_heapAlloc.m_lapStop = m_heapAlloc.m_lapStart = value_now<HeapAlloc>();
-#endif
       if(m_parentTimer)
         m_parentTimer->child_notifies_of_start();
     }
@@ -165,9 +159,6 @@ TimerImpl::lap()
       m_wallTime.m_lapStop = value_now<WallTime>();
       m_MPICount.m_lapStop = value_now<MPICount>();
       m_MPIByteCount.m_lapStop = value_now<MPIByteCount>();
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Nov 2025
-      m_heapAlloc.m_lapStop = value_now<HeapAlloc>();
-#endif
     }
   }
 
@@ -211,18 +202,12 @@ TimerImpl::stop()
       m_wallTime.m_lapStop = value_now<WallTime>();
       m_MPICount.m_lapStop = value_now<MPICount>();
       m_MPIByteCount.m_lapStop = value_now<MPIByteCount>();
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Nov 2025
-      m_heapAlloc.m_lapStop = value_now<HeapAlloc>();
-#endif
 
       m_lapCount.addLap();
       m_cpuTime.addLap();
       m_wallTime.addLap();
       m_MPICount.addLap();
       m_MPIByteCount.addLap();
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Nov 2025
-      m_heapAlloc.addLap();
-#endif
       if(m_parentTimer)
         m_parentTimer->child_notifies_of_stop();
     }
@@ -255,9 +240,6 @@ TimerImpl::checkpoint() const
   m_wallTime.checkpoint();
   m_MPICount.checkpoint();
   m_MPIByteCount.checkpoint();
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Nov 2025
-  m_heapAlloc.checkpoint();
-#endif
 
   for (TimerList::const_iterator it = m_subtimerList.begin(); it != m_subtimerList.end(); ++it)
     (*it).m_timerImpl->checkpoint();
@@ -272,18 +254,12 @@ TimerImpl::updateRootTimer(TimerImpl *root_timer)
   root_timer->m_wallTime.m_lapStop = value_now<WallTime>();
   root_timer->m_MPICount.m_lapStop = value_now<MPICount>();
   root_timer->m_MPIByteCount.m_lapStop = value_now<MPIByteCount>();
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Nov 2025
-  root_timer->m_heapAlloc.m_lapStop = value_now<HeapAlloc>();
-#endif
 
   root_timer->m_lapCount.m_accumulatedLap = root_timer->m_lapCount.m_lapStop - root_timer->m_lapCount.m_lapStart;
   root_timer->m_cpuTime.m_accumulatedLap = root_timer->m_cpuTime.m_lapStop - root_timer->m_cpuTime.m_lapStart;
   root_timer->m_wallTime.m_accumulatedLap = root_timer->m_wallTime.m_lapStop - root_timer->m_wallTime.m_lapStart;
   root_timer->m_MPICount.m_accumulatedLap = root_timer->m_MPICount.m_lapStop - root_timer->m_MPICount.m_lapStart;
   root_timer->m_MPIByteCount.m_accumulatedLap = root_timer->m_MPIByteCount.m_lapStop - root_timer->m_MPIByteCount.m_lapStart;
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Nov 2025
-  root_timer->m_heapAlloc.m_accumulatedLap = root_timer->m_heapAlloc.m_lapStop - root_timer->m_heapAlloc.m_lapStart;
-#endif
 }
 
 

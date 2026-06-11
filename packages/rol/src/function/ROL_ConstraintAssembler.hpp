@@ -12,6 +12,7 @@
 
 #include "ROL_Constraint_Partitioned.hpp"
 #include "ROL_BoundConstraint_Partitioned.hpp"
+#include "ROL_Projection.hpp"
 #include <unordered_map>
 
 /** @ingroup func_group
@@ -29,13 +30,15 @@ struct ConstraintData {
   Ptr<Vector<Real>>          multiplier;
   Ptr<Vector<Real>>          residual;
   Ptr<BoundConstraint<Real>> bounds;
+  Ptr<Projection<Real>>      projection;
 
   ConstraintData(const Ptr<Constraint<Real>>      &con,
                  const Ptr<Vector<Real>>          &mul,
                  const Ptr<Vector<Real>>          &res=nullPtr,
-                 const Ptr<BoundConstraint<Real>> &bnd=nullPtr)
+                 const Ptr<BoundConstraint<Real>> &bnd=nullPtr,
+                 const Ptr<Projection<Real>>      &pro=nullPtr)
     : constraint(con), multiplier(mul),
-      residual(res==nullPtr ? mul->dual().clone() : res), bounds(bnd) {}
+      residual(res==nullPtr ? mul->dual().clone() : res), bounds(bnd), projection(pro) {}
 };
 
 template<typename Real>

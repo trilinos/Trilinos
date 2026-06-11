@@ -302,9 +302,6 @@ private:
   Timer::Metric<WallTime>       m_wallTime;     ///< Wall time
   Timer::Metric<MPICount>       m_MPICount;     ///< MPI call count
   Timer::Metric<MPIByteCount>   m_MPIByteCount; ///< MPI byte count
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Nov 2025
-  Timer::Metric<HeapAlloc>      m_heapAlloc;    ///< Heap allocated
-#endif
 };
 
 template<>
@@ -340,17 +337,6 @@ inline const Timer::Metric<MPIByteCount> &
 TimerImpl::getMetric<MPIByteCount>() const {
   return m_MPIByteCount;
 }
-
-
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Nov 2025
-template<>
-STK_DEPRECATED
-inline const Timer::Metric<HeapAlloc> &
-TimerImpl::getMetric<HeapAlloc>() const {
-  return m_heapAlloc;
-}
-#endif
-
 
 }
 

@@ -129,8 +129,18 @@ void testGemmVsTeuchosBlasForOneTransComb(Teuchos::FancyOStream& out,
 
   {
     typedef KokkosKernels::ArithTraits<entry_type> KATE;
-    const entry_type maxVal =
-        Kokkos::rand<generator_type, entry_type>::max();
+    // For integer types, the operation C = alpha*A*B + beta*C computes elements in the same type
+    // without a wider accumulator, so large values can cause signed-overflow UB. The worst-case magnitude is:
+    //
+    // |alpha| * K * maxVal^2 + |beta| * maxVal
+    //
+    // where K is the shared inner dimension. In this test |alpha|,|beta| ≤ 2, and K ≤ 13
+    // (see the loop in the unit test). Choosing maxVal = 256 gives the upper bound 2*13*256^2 + 2*256 = 1704448,
+    // which is far below the minimum of INT32_MAX (2^31-1) and INT64_MAX (2^63-1),
+    // guaranteeing no overflow for any integer entry_type used.
+    const entry_type maxVal = std::is_integral<entry_type>::value
+                                  ? entry_type(256)
+                                  : Kokkos::rand<generator_type, entry_type>::max();
     const entry_type minVal =
         KATE::is_signed ? entry_type(-maxVal) : KATE::zero();
     Kokkos::fill_random(A_orig, randPool, minVal, maxVal);
@@ -209,9 +219,13 @@ void testGemmVsTeuchosBlasForOneTransComb(Teuchos::FancyOStream& out,
   // enough for complex.
   const mag_type fudgeFactor = KokkosKernels::ArithTraits<entry_type>::is_complex ? static_cast<mag_type>(8) : static_cast<mag_type>(4);
 
-  const mag_type boundOrig =
-      eps * fudgeFactor * (A_norm * B_norm * static_cast<mag_type>(k));
-  const mag_type bound = boundOrig < (fudgeFactor * eps) ? (fudgeFactor * eps) : boundOrig;
+  // Skip the floating-point roundoff bound for exact-integer types: eps == 0
+  // makes the whole product zero anyway, and computing A_norm * B_norm for
+  // full-range integer entries overflows mag_type (signed-overflow UB).
+  const mag_type boundOrig = (eps == static_cast<mag_type>(0))
+                                 ? static_cast<mag_type>(0)
+                                 : eps * fudgeFactor * (A_norm * B_norm * static_cast<mag_type>(k));
+  const mag_type bound     = boundOrig < (fudgeFactor * eps) ? (fudgeFactor * eps) : boundOrig;
   out << "bound: " << bound << endl;
 
   // This needs to be EntryType and not

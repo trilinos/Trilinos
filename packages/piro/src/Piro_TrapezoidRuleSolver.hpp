@@ -118,9 +118,18 @@ class TrapezoidRuleSolver
   /** \brief . */
   Teuchos::RCP<Thyra::AdaptiveSolutionManager> getSolutionManager() const;
   /** \brief .*/
-  void disableCalcInitAccel() { calc_init_accel_ = false; }; 
+  void disableCalcInitAccel() { calc_init_accel_ = false; };
   /** \brief .*/
-  void enableCalcInitAccel() { calc_init_accel_ = true; }; 
+  void enableCalcInitAccel() { calc_init_accel_ = true; };
+  /** \brief Start from static equilibrium: solve K x = f (no inertia) once
+      before the time loop, then set v = a = 0. Takes precedence over the
+      initial-acceleration heuristic (calc_init_accel_), whose perturbation
+      parameter 4e6/dt^2 degenerates to a near-static solve anyway when dt
+      is large relative to the structural time scale, yielding a spurious
+      a_init = pert*x_static instead of a physical acceleration. */
+  void enableStaticInitSolve() { static_init_solve_ = true; };
+  /** \brief .*/
+  void disableStaticInitSolve() { static_init_solve_ = false; };
   //@}
 
 
@@ -160,7 +169,8 @@ private:
    int numTimeSteps;
    Scalar t_init, t_final, delta_t;
 
-   mutable bool calc_init_accel_{true}; 
+   mutable bool calc_init_accel_{true};
+   mutable bool static_init_solve_{false};
 };
 
 }

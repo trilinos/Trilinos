@@ -37,7 +37,7 @@ jobs:
           spack add trilinos@develop
           spack concretize -f
           spack install \
-            --cdash-upload-url=https://sems-cdash-son.sandia.gov/cdash/submit.php?project=Trilinos \
+            --cdash-upload-url=https://my.cdash.org/submit.php?project=Trilinos \
             --cdash-track='Pull Request (Non-blocking)' \
             --cdash-build='PR-${{ github.event.pull_request.number }}-spack' \
             -j16 \
