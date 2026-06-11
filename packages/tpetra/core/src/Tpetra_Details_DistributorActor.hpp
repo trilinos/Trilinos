@@ -160,6 +160,7 @@ class DistributorActor {
 #endif  // HAVE_TPETRA_MPI
 
   int mpiTag_;
+  int ialltofewvRootTag_;
 
   Teuchos::Array<Teuchos::RCP<Teuchos::CommRequest<int>>> requestsRecv_;
   Teuchos::Array<Teuchos::RCP<Teuchos::CommRequest<int>>> requestsSend_;
@@ -357,7 +358,7 @@ void DistributorActor::doPostsIalltofewvImpl(const DistributorPlan& plan,
                                                        imports.data(), ialltofewv_.recvcounts->data(), ialltofewv_.rdispls->data(),
                                                        roots, nroots,
                                                        rawType,
-                                                       mpiTag_, mpiComm, &(*ialltofewv_.req));
+                                                       mpiTag_, ialltofewvRootTag_, mpiComm, &(*ialltofewv_.req));
 
   TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
                              "ialltofewv failed with error \""
@@ -564,9 +565,18 @@ void DistributorActor::doPostRecvsImpl(const DistributorPlan& plan,
   // the tag gets incremented by one, until it eventually gets looped around back to a
   // small value. This logic is implemented in Teuchos.
   auto comm = plan.getComm();
+#if defined(HAVE_TPETRA_MPI)
+  const Details::EDistributorSendType sendType = plan.getSendType();
+#endif
   {
     auto non_const_comm = Teuchos::rcp_const_cast<Teuchos::Comm<int>>(comm);
     mpiTag_             = non_const_comm->incrementTag();
+#if defined(HAVE_TPETRA_MPI)
+    // Ialltofewv uses a separate tag for its aggregator -> root phase.
+    ialltofewvRootTag_ = sendType == Details::DISTRIBUTOR_IALLTOFEWV
+                             ? non_const_comm->incrementTag()
+                             : mpiTag_;
+#endif
   }
 
 #ifdef KOKKOS_ENABLE_CUDA
@@ -586,7 +596,6 @@ void DistributorActor::doPostRecvsImpl(const DistributorPlan& plan,
   // point-to-point, so we handle it separately.
 
   // These send options require no matching receives, so we just return.
-  const Details::EDistributorSendType sendType = plan.getSendType();
   if ((sendType == Details::DISTRIBUTOR_ALLTOALL) || (sendType == Details::DISTRIBUTOR_IALLTOFEWV)
 #ifdef HAVE_TPETRACORE_MPI_ADVANCE
       || (sendType == Details::DISTRIBUTOR_MPIADVANCE_ALLTOALL) || (sendType == Details::DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV)
