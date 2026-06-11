@@ -165,7 +165,7 @@ jobs:
             ${max_cores_allowed} \
             ${slots_per_gpu} \
             ${skip_create_packageenables} \
-            "${extra_pr_driver_args}"
+            ${extra_pr_driver_args}
       - name: Filtered build error logs
         if: success() || failure()
         shell: bash -l {0}
