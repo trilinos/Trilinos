@@ -36,22 +36,21 @@
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-namespace{
-Teuchos::RCP<Stratimikos::DefaultLinearSolverBuilder> create_linear_solver_builder()
-{
+namespace {
+Teuchos::RCP<Stratimikos::DefaultLinearSolverBuilder> create_linear_solver_builder() {
   Teuchos::RCP<Stratimikos::DefaultLinearSolverBuilder> strat =
       Teuchos::rcp(new Stratimikos::DefaultLinearSolverBuilder("",
-          "",
-          "",
-          "linear-solver-params-file",
-          "extra-linear-solver-params",
-          "linear-solver-params-used-file"));
+                                                               "",
+                                                               "",
+                                                               "linear-solver-params-file",
+                                                               "extra-linear-solver-params",
+                                                               "linear-solver-params-used-file"));
   Stratimikos::enableMueLu<double, Teko::LO, Teko::GO, Teko::NT>(*strat);
   Teko::addToStratimikosBuilder(strat);
 
   return strat;
 }
-}
+}  // namespace
 
 int main(int argc, char* argv[]) {
   // calls MPI_Init and MPI_Finalize
@@ -63,8 +62,8 @@ int main(int argc, char* argv[]) {
   using NT = Teko::NT;
 
   using crs_matrix_type = Tpetra::CrsMatrix<ST, LO, GO, NT>;
-  using vector_type = Tpetra::Vector<ST, LO, GO, NT>;
-  using map_type = Tpetra::Map<LO, GO, NT>;
+  using vector_type     = Tpetra::Vector<ST, LO, GO, NT>;
+  using map_type        = Tpetra::Map<LO, GO, NT>;
 
   // build global communicator
   RCP<const Teuchos::Comm<int> > Comm = Tpetra::getDefaultComm();

@@ -262,8 +262,7 @@ void StratimikosFactory::initializePrec_Thyra(
     // Extract underlying Tpetra operator from the incoming Thyra operator
     RCP<const Thyra::TpetraLinearOp<ST, LO, GO, NT> > tpetraThyraOp =
         rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST, LO, GO, NT> >(fwdOp, true);
-    RCP<const Tpetra::Operator<ST, LO, GO, NT> > tpetraOp =
-        tpetraThyraOp->getConstTpetraOperator();
+    RCP<const Tpetra::Operator<ST, LO, GO, NT> > tpetraOp = tpetraThyraOp->getConstTpetraOperator();
 
     // Build explicit GID vectors for block decomposition
     std::vector<std::vector<GO> > vars;
@@ -279,7 +278,7 @@ void StratimikosFactory::initializePrec_Thyra(
       vars.resize(decomp_.size());
 
       const LO numMyElts = rangeMap->getLocalNumElements();
-      LO i = 0;
+      LO i               = 0;
       while (i < numMyElts) {
         for (std::size_t d = 0; d < decomp_.size(); d++) {
           const int current = decomp_[d];
@@ -308,18 +307,17 @@ void StratimikosFactory::initializePrec_Thyra(
         Teuchos::rcp_dynamic_cast<Tpetra::Operator<ST, LO, GO, NT> >(wrappedFwdOp));
 
     prec_Op = Thyra::tpetraLinearOp<double, LO, GO, NT>(
-    Thyra::tpetraVectorSpace<double, LO, GO, NT>(teko_precOp->getRangeMap()),
-    Thyra::tpetraVectorSpace<double, LO, GO, NT>(teko_precOp->getDomainMap()),
-    Teuchos::rcp_dynamic_cast<Tpetra::Operator<ST, LO, GO, NT> >(teko_precOp));
+        Thyra::tpetraVectorSpace<double, LO, GO, NT>(teko_precOp->getRangeMap()),
+        Thyra::tpetraVectorSpace<double, LO, GO, NT>(teko_precOp->getDomainMap()),
+        Teuchos::rcp_dynamic_cast<Tpetra::Operator<ST, LO, GO, NT> >(teko_precOp));
 
     timer.stop();
     if (mediumVerbosity)
-      Teuchos::OSTab(out).o() << "> Blocked Tpetra construction time = "
-                              << timer.totalElapsedTime() << " sec\n";
+      Teuchos::OSTab(out).o() << "> Blocked Tpetra construction time = " << timer.totalElapsedTime()
+                              << " sec\n";
   }
 
-  if (mediumVerbosity)
-    *out << "\nFinished computing the preconditioner ...\n";
+  if (mediumVerbosity) *out << "\nFinished computing the preconditioner ...\n";
 
   defaultPrec.initializeUnspecified(prec_Op);
   defaultPrec.incrIter();
