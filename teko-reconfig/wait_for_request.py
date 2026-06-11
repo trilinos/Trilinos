@@ -26,10 +26,23 @@ REQUESTS_DIR = os.environ.get(
     "TEKO_RECONFIG_REQUESTS_DIR",
     os.path.dirname(os.path.abspath(__file__)),
 )
+# Sibling of requests_dir, matching Teko_KrylovSurrogate.hpp's
+# fs::path(requests_dir).parent_path() / "convergence_data".
+CONVERGENCE_DIR = os.path.join(
+    os.path.dirname(os.path.normpath(REQUESTS_DIR)), "convergence_data"
+)
 POLL_INTERVAL_SEC = 0.5
 RUN_SECONDS = 300
 
 REQUEST_RE = re.compile(r"request_(\d+)\.json$")
+
+
+def already_handled(request_id):
+    # conv_<N>.json is written (atomically) by the C++ side once it has
+    # consumed reconfiguration_<N>.json (or given up waiting for it). Its
+    # presence means request_<N>.json is a stale leftover from a previous
+    # run's pyTeko() call, not a request this watcher should answer.
+    return os.path.exists(os.path.join(CONVERGENCE_DIR, f"conv_{request_id}.json"))
 
 
 def make_ordering(n_blocks):
@@ -83,6 +96,9 @@ def main():
                     continue
                 request_id = int(m.group(1))
                 if request_id in answered:
+                    continue
+                if already_handled(request_id):
+                    answered.add(request_id)
                     continue
                 handle_request(request_id)
                 answered.add(request_id)

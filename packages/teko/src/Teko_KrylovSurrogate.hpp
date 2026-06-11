@@ -32,7 +32,7 @@
 // ── Standard library ──────────────────────────────────────────────────────
 #include <algorithm>
 #include <chrono>
-#include <cstdlib>    // getenv, setenv, unsetenv
+#include <cstdlib>    // getenv
 #include <fstream>
 #include <functional>
 #include <iomanip>
@@ -742,36 +742,27 @@ inline ReconfiguredSystem buildReconfiguredPrec(
 // now, relative to the Trilinos checkout this package lives in.
 constexpr const char* kDefaultRequestsDir = "/workspace/Trilinos/teko-reconfig";
 
-// RAII guard that temporarily unsets TEKO_RECONFIG_REQUESTS_DIR (to prevent
-// the hook from firing recursively during the second solve below) and
-// restores it on scope exit — including via stack unwinding if the second
-// solve throws (e.g. BlockGmresSolMgrOrthoFailure). Without this, an
-// exception from solver2.solve() would leave the env var unset for the rest
-// of the process, silently disabling adaptive reconfiguration thereafter.
-//
-// was_set distinguishes "the env var was unset on entry" (requests_dir came
-// from kDefaultRequestsDir) from "it was set to saved_value" — restoring with
-// setenv() in the former case would incorrectly leave the env var permanently
-// set to the default directory for the rest of the process.
-class ScopedReconfigEnvUnset {
+// adaptiveLoop()'s Phase 4 below runs a second flexible FGMRES solve, which
+// (if it converges) would re-invoke this same hook recursively — and that
+// recursive call operates on the *reordered* operator, whose merged-group
+// blocks are nested ProductMultiVectors rather than plain TpetraMultiVectors,
+// which extractBlockDense() cannot handle. g_inAdaptiveLoop / ScopedGuard
+// below prevent this: the outermost call sets the flag before Phase 4, so a
+// recursive invocation from solver2.solve() sees it set and returns
+// immediately at the top of adaptiveLoop(). thread_local since Belos solves
+// (and therefore this hook) could in principle run on different threads.
+namespace detail {
+thread_local bool g_inAdaptiveLoop = false;
+}
+
+// RAII guard around g_inAdaptiveLoop, reset on scope exit even if
+// solver2.solve() throws (e.g. BlockGmresSolMgrOrthoFailure).
+class ScopedAdaptiveLoopGuard {
 public:
-    ScopedReconfigEnvUnset(std::string saved_value, bool was_set)
-        : saved_(std::move(saved_value)), was_set_(was_set)
-    {
-        unsetenv("TEKO_RECONFIG_REQUESTS_DIR");
-    }
-    ~ScopedReconfigEnvUnset()
-    {
-        if (was_set_)
-            setenv("TEKO_RECONFIG_REQUESTS_DIR", saved_.c_str(), 1);
-        else
-            unsetenv("TEKO_RECONFIG_REQUESTS_DIR");
-    }
-    ScopedReconfigEnvUnset(const ScopedReconfigEnvUnset&) = delete;
-    ScopedReconfigEnvUnset& operator=(const ScopedReconfigEnvUnset&) = delete;
-private:
-    std::string saved_;
-    bool        was_set_;
+    ScopedAdaptiveLoopGuard()  { detail::g_inAdaptiveLoop = true; }
+    ~ScopedAdaptiveLoopGuard() { detail::g_inAdaptiveLoop = false; }
+    ScopedAdaptiveLoopGuard(const ScopedAdaptiveLoopGuard&) = delete;
+    ScopedAdaptiveLoopGuard& operator=(const ScopedAdaptiveLoopGuard&) = delete;
 };
 
 // Convergence diagnostics for one FGMRES solve, written to
@@ -838,12 +829,14 @@ inline void adaptiveLoop(
     Teuchos::RCP<const Teuchos::ParameterList>                orig_params,
     const Belos::AdaptiveHook::SolveMetrics&                  solve1_metrics)
 {
+    // Bail out immediately if this call is the recursive re-entry from
+    // Phase 4's solver2.solve() below (see ScopedAdaptiveLoopGuard).
+    if (detail::g_inAdaptiveLoop) return;
+
     // requests_dir comes from TEKO_RECONFIG_REQUESTS_DIR if set, otherwise
-    // kDefaultRequestsDir. env_was_set is also needed by ScopedReconfigEnvUnset
-    // below to restore (or not restore) the env var correctly.
+    // kDefaultRequestsDir.
     const char* reconfig_dir_env = std::getenv("TEKO_RECONFIG_REQUESTS_DIR");
-    const bool  env_was_set = (reconfig_dir_env != nullptr);
-    const std::string requests_dir = env_was_set ? std::string(reconfig_dir_env) : kDefaultRequestsDir;
+    const std::string requests_dir = reconfig_dir_env ? std::string(reconfig_dir_env) : kDefaultRequestsDir;
 
     if (A_blocked.is_null()) {
         std::cerr << "[TekoAdaptive] operator is not blocked; skipping.\n";
@@ -908,8 +901,8 @@ inline void adaptiveLoop(
 
     // ── Phase 4: second FGMRES solve ──────────────────────────────────────
     // Prevent the hook from firing recursively during the second solve;
-    // restored on scope exit even if solver2.solve() throws.
-    ScopedReconfigEnvUnset env_guard(requests_dir, env_was_set);
+    // reset on scope exit even if solver2.solve() throws.
+    ScopedAdaptiveLoopGuard recursion_guard;
 
     auto newProblem = Teuchos::rcp(new Problem());
     // setOperator/setRightPrec take RCP<const OP>, so a plain dynamic_cast
