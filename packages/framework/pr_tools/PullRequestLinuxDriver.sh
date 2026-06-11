@@ -41,8 +41,8 @@ function bootstrap_modules() {
 
         module list
     elif [[ ${NODE_NAME:?} =~ ${container_regex} ]]; then
-	echo "Nothing done for bootstrap in a container"
-	module list
+        echo "Nothing done for bootstrap in a container"
+        module list
     elif [[ ${on_weaver} == "1" ]]; then
         module unload git
         module unload python
