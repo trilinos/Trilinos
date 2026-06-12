@@ -64,6 +64,9 @@ class BlockCrsMatrixStruct;
 
 namespace MMdetails {
 
+// Provides narrowly scoped access to CrsMatrix's cached apply helper.
+struct CrsMatrixApplyHelperAccess;
+
 // Other functions
 template <class Scalar,
           class LocalOrdinal,
