@@ -852,6 +852,7 @@ struct ReconfiguredSystem {
     Teko::LinearOp                                 precOp;
     Teko::BlockedLinearOp                          reorderedOp;
     Teuchos::RCP<const Teko::BlockReorderManager>  mgr;
+    double                                         factor_wall_time_sec;
 };
 
 // Build a new Teko block preconditioner from an ordering vector.
@@ -938,14 +939,18 @@ inline ReconfiguredSystem buildReconfiguredPrec(
             Teuchos::rcp_const_cast<Thyra::LinearOpBase<SC>>(reordered), true);
 
     // ── Build diagonal inverses for each new group ─────────────────────────
+    double factor_wall_time_sec = 0.0;
     std::vector<Teko::LinearOp> newInvDiag(nb_new);
     for (int g = 0; g < nb_new; ++g) {
         const auto& mem = groups[g];
         if (mem.size() == 1) {
             // Singleton: factorize A_blocked(b,b) directly.
+            const auto factorStart = std::chrono::steady_clock::now();
             newInvDiag[g] =
                 Teko::buildInverse(*invFact,
                                    A_blocked->getBlock(mem[0], mem[0]));
+            factor_wall_time_sec += std::chrono::duration<double>(
+                std::chrono::steady_clock::now() - factorStart).count();
         } else {
             // Merged group: factor the coupled super-block jointly.
             // subTeko is the sub-blocked operator (len(mem) × len(mem),
@@ -976,7 +981,10 @@ inline ReconfiguredSystem buildReconfiguredPrec(
             Teko::LinearOp mergedOp = assembleMergedBlock(A_blocked, mem, block_sizes);
             Teko::LinearOp mergedInv;
             try {
+                const auto factorStart = std::chrono::steady_clock::now();
                 mergedInv = Teko::buildInverse(*invFact, mergedOp);
+                factor_wall_time_sec += std::chrono::duration<double>(
+                    std::chrono::steady_clock::now() - factorStart).count();
             } catch (const std::exception& e) {
                 throw std::runtime_error(
                     "Teko::KrylovSurrogate::buildReconfiguredPrec: joint "
@@ -1000,7 +1008,7 @@ inline ReconfiguredSystem buildReconfiguredPrec(
     else
         precOp = Teko::createBlockLowerTriInverseOp(tekoNew, newInvDiag);
 
-    return ReconfiguredSystem{precOp, tekoNew, mgr};
+    return ReconfiguredSystem{precOp, tekoNew, mgr, factor_wall_time_sec};
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1042,7 +1050,9 @@ struct SolveStats {
     int    iterations;
     double initial_residual;
     double final_residual;
-    double wall_time_sec;
+    double factor_wall_time_sec;
+    double iterate_wall_time_sec;
+    double total_wall_time_sec;
 };
 
 // Write s<request_id>_conv.json (atomically, via a .tmp file + rename).
@@ -1067,7 +1077,10 @@ inline void writeConvergenceJson(
         ofs << "    \"iterations\": " << s.iterations << ",\n";
         ofs << "    \"initial_residual\": " << std::setprecision(17) << s.initial_residual << ",\n";
         ofs << "    \"final_residual\": " << std::setprecision(17) << s.final_residual << ",\n";
-        ofs << "    \"wall_time_sec\": " << std::setprecision(17) << s.wall_time_sec << "\n";
+        ofs << "    \"factor_wall_time_sec\": " << std::setprecision(17) << s.factor_wall_time_sec << ",\n";
+        ofs << "    \"iterate_wall_time_sec\": " << std::setprecision(17) << s.iterate_wall_time_sec << ",\n";
+        ofs << "    \"total_wall_time_sec\": " << std::setprecision(17) << s.total_wall_time_sec << ",\n";
+        ofs << "    \"wall_time_sec\": " << std::setprecision(17) << s.total_wall_time_sec << "\n";
         ofs << "  }" << (trailing_comma ? ",\n" : "\n");
     };
 
@@ -1141,7 +1154,8 @@ inline void adaptiveLoop(
         b_norm = norms[0];
     }
 
-    SolveStats s1{state.curDim, b_norm, solve1_metrics.achieved_tol, solve1_metrics.wall_time_sec};
+    SolveStats s1{state.curDim, b_norm, solve1_metrics.achieved_tol,
+                  0.0, solve1_metrics.wall_time_sec, solve1_metrics.wall_time_sec};
 
     // ── Phase 1: compute C_hat, b_hat and write s<N>_request.json ──────────
     CHatData chat = computeCHat(state, A_blocked, problem->getRHS(), block_sizes);
@@ -1214,10 +1228,12 @@ inline void adaptiveLoop(
     // too, so the two wall times are directly comparable.
     const auto solve2Start = std::chrono::steady_clock::now();
     Belos::ReturnType ret2 = solver2.solve();
-    const double solve2_wall_time_sec = std::chrono::duration<double>(
+    const double solve2_iterate_wall_time_sec = std::chrono::duration<double>(
         std::chrono::steady_clock::now() - solve2Start).count();
 
-    SolveStats s2{solver2.getNumIters(), b_norm, solver2.achievedTol(), solve2_wall_time_sec};
+    SolveStats s2{solver2.getNumIters(), b_norm, solver2.achievedTol(),
+                  recon.factor_wall_time_sec, solve2_iterate_wall_time_sec,
+                  recon.factor_wall_time_sec + solve2_iterate_wall_time_sec};
     writeConvergenceJson(convergence_dir, request_id, s1, &s2);
 
     if (ret2 != Belos::Converged)
