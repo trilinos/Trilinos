@@ -23,9 +23,9 @@
 //      wait_for_request.py recognizes an already-answered request.
 //   3. Reads the ordering vector, rebuilds the Teko preconditioner.
 //   4. Runs a second FGMRES solve and overwrites the LHS with the result.
-//   5. Writes convergence_data/s<N>_conv.json (sibling of requests_dir) with
-//      iteration count, initial/final residual, and wall time for both
-//      solves (solve2 is null if step 2 timed out).
+//   5. Writes s<N>_conv.json (in requests_dir, alongside the request and
+//      reconfig files) with iteration count, initial/final residual, and wall
+//      time for both solves (solve2 is null if step 2 timed out).
 //
 // Depends on: Belos, Thyra, Tpetra, Teko, Stratimikos, Teuchos.
 // No external JSON library — JSON is written/parsed manually.
@@ -79,6 +79,7 @@ namespace fs = std::filesystem;
 
 // ── Tpetra ────────────────────────────────────────────────────────────────
 #include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_Map.hpp"
 #include "Tpetra_MultiVector.hpp"
 
 // ── Teko ──────────────────────────────────────────────────────────────────
@@ -501,9 +502,9 @@ inline SDM assembleBHat(const CHatData& chat, const std::vector<int>& equation_e
     return b;
 }
 
-// Write request_<N>.json to requests_dir, where N = nextRequestNumber(requests_dir).
-// Returns N so the caller can wait for the matching reconfiguration_<N>.json
-// and tag convergence_data/conv_<N>.json with the same id.
+// Write s<N>_request.json to requests_dir, where N = nextRequestNumber(requests_dir).
+// Returns N so the caller can wait for the matching s<N>_reconfig.json
+// and tag s<N>_conv.json with the same id.
 //
 // Format:
 // {
@@ -511,9 +512,16 @@ inline SDM assembleBHat(const CHatData& chat, const std::vector<int>& equation_e
 //   "block_sizes": [...],
 //   "krylov_dim": m,
 //   "ranks": [...],
-//   "C_hat": { "0_0": [...], "0_1": [...], ... },
-//   "b_hat": { "0": [...], "1": [...], ... }
+//   "equation_ends": [0, r0, r0+r1, ..., R],   // length nb+1, R = sum(ranks)
+//   "C_hat": [ [ ... ], ... ],                  // single R x R matrix
+//   "b_hat": [ ... ]                            // single length-R vector
 // }
+//
+// C_hat is the full R x R surrogate operator (R = sum(ranks)) and b_hat the
+// full length-R reduced RHS, both assembled block-by-block. "equation_ends"
+// gives the block boundaries within them: equation_ends[k] is the first
+// row/col index of block k and equation_ends[k+1] one past its last, so
+// block k occupies [equation_ends[k], equation_ends[k+1]).
 //
 // Every entry scales with nb (number of blocks) and ranks[j] (Krylov-derived
 // rank, <= krylov_dim) only — nothing here scales with the global problem
@@ -522,12 +530,16 @@ inline int writeRequestJson(const CHatData& chat, const std::string& requests_di
 {
     const int request_id = nextRequestNumber(requests_dir);
 
+    const std::vector<int> equation_ends = computeEquationEnds(chat);
+    const SDM C = assembleCHat(chat, equation_ends);
+    const SDM b = assembleBHat(chat, equation_ends);
+
     // Write to a temp file and atomically rename into place. Without this, a
     // reader's fs::exists(path) check (in wait_for_request.py) can observe
     // the file mid-write and parse incomplete JSON. A same-directory
     // rename() is atomic on POSIX, so readers only ever see the file fully
     // written or not at all.
-    const std::string path     = requests_dir + "/request_" + std::to_string(request_id) + ".json";
+    const std::string path     = requests_dir + "/s" + std::to_string(request_id) + "_request.json";
     const std::string tmp_path = path + ".tmp";
     std::ofstream ofs(tmp_path);
     TEUCHOS_TEST_FOR_EXCEPTION(!ofs.is_open(), std::runtime_error,
@@ -552,30 +564,23 @@ inline int writeRequestJson(const CHatData& chat, const std::string& requests_di
     }
     ofs << "],\n";
 
-    // C_hat blocks
-    ofs << "  \"C_hat\": {\n";
-    {
-        bool first = true;
-        for (int i = 0; i < chat.nb; ++i) {
-            for (int j = 0; j < chat.nb; ++j) {
-                if (!first) ofs << ",\n";
-                first = false;
-                ofs << "    \"" << i << "_" << j << "\":\n";
-                writeDenseJson(ofs, chat.blocks[i][j], 4);
-            }
-        }
+    ofs << "  \"equation_ends\": [";
+    for (size_t k = 0; k < equation_ends.size(); ++k) {
+        if (k) ofs << ", ";
+        ofs << equation_ends[k];
     }
-    ofs << "\n  },\n";
+    ofs << "],\n";
 
-    // b_hat vectors
-    ofs << "  \"b_hat\": {\n";
-    for (int j = 0; j < chat.nb; ++j) {
-        ofs << "    \"" << j << "\": ";
-        writeVectorJson(ofs, chat.b_hat[j]);
-        if (j + 1 < chat.nb) ofs << ",";
-        ofs << "\n";
-    }
-    ofs << "  }\n";
+    // C_hat: single R x R matrix
+    ofs << "  \"C_hat\":\n";
+    writeDenseJson(ofs, C, 2);
+    ofs << ",\n";
+
+    // b_hat: single length-R vector
+    ofs << "  \"b_hat\": ";
+    writeVectorJson(ofs, b);
+    ofs << "\n";
+
     ofs << "}\n";
     ofs.close();
 
@@ -585,14 +590,16 @@ inline int writeRequestJson(const CHatData& chat, const std::string& requests_di
     return request_id;
 }
 
-// Poll for reconfiguration_<request_id>.json, read ordering vector, delete
-// file. Returns empty vector on timeout.
+// Poll for s<request_id>_reconfig.json and read its ordering vector. The file
+// is left in place after being read (NOT deleted) — its presence is how
+// wait_for_request.py recognizes an already-answered request. Returns empty
+// vector on timeout.
 inline std::vector<int> waitForOrdering(
     const std::string& requests_dir,
     int                request_id,
     int                timeout_s = 600)
 {
-    const std::string path = requests_dir + "/reconfiguration_" + std::to_string(request_id) + ".json";
+    const std::string path = requests_dir + "/s" + std::to_string(request_id) + "_reconfig.json";
     const auto deadline =
         std::chrono::steady_clock::now() + std::chrono::seconds(timeout_s);
 
@@ -605,7 +612,8 @@ inline std::vector<int> waitForOrdering(
             std::string content((std::istreambuf_iterator<char>(ifs)),
                                  std::istreambuf_iterator<char>());
             ifs.close();
-            std::remove(path.c_str());
+            // Intentionally not removed: leaving s<N>_reconfig.json in place
+            // marks this request as already answered for the watcher.
 
             // Parse  {"ordering": [0, 2, 1, 1]}
             std::vector<int> ordering;
@@ -643,6 +651,197 @@ inline std::vector<int> waitForOrdering(
 // Section 4: Preconditioner rebuild from ordering
 // ═══════════════════════════════════════════════════════════════════════════
 
+// Assemble the coupled super-block of a merged group as a single monolithic
+// Tpetra::CrsMatrix, returned wrapped as a Thyra TpetraLinearOp.
+//
+// For members = [k0, k1, ...] the result is an N x N matrix (N = sum of the
+// members' block sizes) whose (si, sj) sub-block is A_blocked->getBlock(
+// members[si], members[sj]) — INCLUDING the off-diagonal coupling between
+// members — placed at the corresponding row/column offset. This is the matrix
+// that Ifpack2 ILUT factors jointly so a merged group is preconditioned as if
+// its members were a single block (rather than block-diagonally).
+//
+// Single-rank only, consistent with extractBlockDense()/computeCHat(): each
+// member block's map is assumed entirely local.
+inline Teko::LinearOp assembleMergedBlock(
+    Teuchos::RCP<const Thyra::BlockedLinearOpBase<SC>> A_blocked,
+    const std::vector<int>&                            members,
+    const std::vector<int>&                            block_sizes)
+{
+    using CrsMatrix = Tpetra::CrsMatrix<SC, LO, GO, Node>;
+    using TpMap     = Tpetra::Map<LO, GO, Node>;
+
+    const int m = static_cast<int>(members.size());
+
+    // Offsets of each member within the merged block.
+    std::vector<int> off(m + 1, 0);
+    for (int s = 0; s < m; ++s) off[s + 1] = off[s] + block_sizes[members[s]];
+    const int N = off[m];
+
+    // Extract every member sub-block (si, sj) as a Tpetra CrsMatrix, mirroring
+    // the dynamic-cast chain in computeCHat(). Null blocks (structural zeros)
+    // are simply skipped during assembly.
+    std::vector<std::vector<Teuchos::RCP<const CrsMatrix>>> sub(
+        m, std::vector<Teuchos::RCP<const CrsMatrix>>(m));
+    Teuchos::RCP<const Teuchos::Comm<int>> comm;
+    for (int si = 0; si < m; ++si) {
+        for (int sj = 0; sj < m; ++sj) {
+            auto blk = A_blocked->getBlock(members[si], members[sj]);
+            if (blk.is_null()) continue;
+            auto lo = Teuchos::rcp_dynamic_cast<
+                const Thyra::TpetraLinearOp<SC, LO, GO, Node>>(blk);
+            if (lo.is_null()) continue;
+            auto crs = Teuchos::rcp_dynamic_cast<const CrsMatrix>(
+                lo->getConstTpetraOperator());
+            if (crs.is_null()) continue;
+            sub[si][sj] = crs;
+            if (comm.is_null()) comm = crs->getRowMap()->getComm();
+        }
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(comm.is_null(), std::runtime_error,
+        "Teko::KrylovSurrogate::assembleMergedBlock: no Tpetra blocks found in "
+        "the merged group.");
+    TEUCHOS_TEST_FOR_EXCEPTION(comm->getSize() != 1, std::runtime_error,
+        "Teko::KrylovSurrogate::assembleMergedBlock: distributed over " +
+        std::to_string(comm->getSize()) + " MPI ranks; the Krylov-surrogate "
+        "adaptive loop currently only supports single-rank (serial) runs.");
+
+    auto map = Teuchos::rcp(new TpMap(static_cast<GO>(N), 0, comm));
+
+    // Pass 1: count nonzeros per merged row.
+    Teuchos::Array<size_t> nnzPerRow(N, 0);
+    for (int si = 0; si < m; ++si) {
+        const int ni = block_sizes[members[si]];
+        for (int sj = 0; sj < m; ++sj) {
+            const auto& crs = sub[si][sj];
+            if (crs.is_null()) continue;
+            for (int r = 0; r < ni; ++r)
+                nnzPerRow[off[si] + r] += crs->getNumEntriesInLocalRow(r);
+        }
+    }
+
+    auto M = Teuchos::rcp(new CrsMatrix(map, map, nnzPerRow()));
+
+    // Pass 2: copy each member block's entries in with row/col offsets.
+    for (int si = 0; si < m; ++si) {
+        const int ni = block_sizes[members[si]];
+        for (int sj = 0; sj < m; ++sj) {
+            const auto& crs = sub[si][sj];
+            if (crs.is_null()) continue;
+            for (int r = 0; r < ni; ++r) {
+                typename CrsMatrix::local_inds_host_view_type lcols;
+                typename CrsMatrix::values_host_view_type     lvals;
+                crs->getLocalRowView(r, lcols, lvals);
+                const int nnz = static_cast<int>(lcols.extent(0));
+                if (nnz == 0) continue;
+                Teuchos::Array<GO> gcols(nnz);
+                Teuchos::Array<SC> vals(nnz);
+                for (int k = 0; k < nnz; ++k) {
+                    // Member col map is contiguous 0-based, so the local column
+                    // index equals the within-block column index.
+                    gcols[k] = static_cast<GO>(off[sj] + lcols(k));
+                    vals[k]  = lvals(k);
+                }
+                M->insertGlobalValues(static_cast<GO>(off[si] + r), gcols(), vals());
+            }
+        }
+    }
+    M->fillComplete(map, map);
+
+    return Thyra::tpetraLinearOp<SC, LO, GO, Node>(
+        Thyra::tpetraVectorSpace<SC, LO, GO, Node>(M->getRangeMap()),
+        Thyra::tpetraVectorSpace<SC, LO, GO, Node>(M->getDomainMap()),
+        M);
+}
+
+// Inverse operator for a merged group that applies a single joint factorization
+// of the coupled super-block. The merged block is assembled into one flat
+// N x N matrix and factored once (Ifpack2 ILUT) into the flat inverse `Minv`;
+// but the surrounding BlockLowerTriInverseOp / BlockDiagonalInverseOp feed this
+// op the group's vector as a *nested* product multivector (one sub-block per
+// member). implicitApply() therefore gathers the member sub-blocks into a flat
+// vector, applies Minv, and scatters the result back — bridging the
+// product-of-members layout and the flat monolithic factor.
+//
+// range()/domain() match the merged group's blocked sub-operator (subTeko),
+// exactly as the previous createBlockDiagonalInverseOp(subTeko, ...) did, so no
+// other part of buildReconfiguredPrec / adaptiveLoop needs to change.
+class MergedGroupInverseOp : public Teko::BlockImplicitLinearOp {
+public:
+    MergedGroupInverseOp(const Teko::BlockedLinearOp& subTeko,
+                         const Teko::LinearOp&        Minv,
+                         std::vector<int>             memberSizes)
+        : Minv_(Minv),
+          memberSizes_(std::move(memberSizes)),
+          productRange_(subTeko->productDomain()),    // inverse: flip range/domain
+          productDomain_(subTeko->productRange()) {}
+
+    Teko::VectorSpace range()  const override { return productRange_;  }
+    Teko::VectorSpace domain() const override { return productDomain_; }
+
+    using Teko::BlockImplicitLinearOp::implicitApply;
+    void implicitApply(const Teko::BlockedMultiVector& src,
+                       Teko::BlockedMultiVector&       dst,
+                       const double alpha = 1.0, const double beta = 0.0) const override
+    {
+        using TMV = Thyra::TpetraMultiVector<SC, LO, GO, Node>;
+        const int m     = static_cast<int>(memberSizes_.size());
+        const int ncols = src->domain()->dim();
+
+        auto flatSrc = Thyra::createMembers(Minv_->domain(), ncols);
+        auto flatDst = Thyra::createMembers(Minv_->range(),  ncols);
+
+        // Gather: member sub-blocks → flat source.
+        {
+            auto fT = Teuchos::rcp_dynamic_cast<TMV>(flatSrc, true)
+                          ->getTpetraMultiVector();
+            int o = 0;
+            for (int b = 0; b < m; ++b) {
+                auto blkT = Teuchos::rcp_dynamic_cast<const TMV>(
+                                Teko::getBlock(b, src), true)
+                                ->getConstTpetraMultiVector();
+                for (int c = 0; c < ncols; ++c) {
+                    auto vin  = blkT->getVector(c)->getData();
+                    auto vout = fT->getVectorNonConst(c)->getDataNonConst();
+                    for (int r = 0; r < memberSizes_[b]; ++r)
+                        vout[o + r] = vin[r];
+                }
+                o += memberSizes_[b];
+            }
+        }
+
+        // Apply the single joint inverse.
+        Teko::applyOp(Minv_, flatSrc, flatDst);
+
+        // Scatter: flat result → member sub-blocks of dst, honoring alpha/beta
+        // (dst_block = alpha * (Minv*src)_block + beta * dst_block_old).
+        {
+            auto fT = Teuchos::rcp_dynamic_cast<const TMV>(flatDst, true)
+                          ->getConstTpetraMultiVector();
+            int o = 0;
+            for (int b = 0; b < m; ++b) {
+                auto blkT = Teuchos::rcp_dynamic_cast<TMV>(
+                                Teko::getBlock(b, dst), true)
+                                ->getTpetraMultiVector();
+                for (int c = 0; c < ncols; ++c) {
+                    auto vin  = fT->getVector(c)->getData();
+                    auto vout = blkT->getVectorNonConst(c)->getDataNonConst();
+                    for (int r = 0; r < memberSizes_[b]; ++r)
+                        vout[r] = alpha * vin[o + r] +
+                                  (beta != 0.0 ? beta * vout[r] : 0.0);
+                }
+                o += memberSizes_[b];
+            }
+        }
+    }
+
+private:
+    Teko::LinearOp    Minv_;
+    std::vector<int>  memberSizes_;
+    Teko::VectorSpace productRange_;
+    Teko::VectorSpace productDomain_;
+};
+
 // Result of buildReconfiguredPrec: the new preconditioner together with the
 // reordered operator and the BlockReorderManager that defines its (possibly
 // nested) block structure. The second solve's operator/LHS/RHS must be
@@ -658,8 +857,10 @@ struct ReconfiguredSystem {
 // Build a new Teko block preconditioner from an ordering vector.
 //
 // ordering[k] = g means old block k maps to new group g.
-// Groups with a single member: singleton.
-// Groups with multiple members: merged (block-diagonal sub-inverse).
+// Groups with a single member: singleton (factorize that diagonal block).
+// Groups with multiple members: merged — the coupled super-block (off-diagonals
+// included) is assembled into one matrix and factored jointly, so the group is
+// preconditioned as if its members were a single block.
 inline ReconfiguredSystem buildReconfiguredPrec(
     const std::vector<int>&                            ordering,
     Teuchos::RCP<const Thyra::BlockedLinearOpBase<SC>> A_blocked,
@@ -685,6 +886,12 @@ inline ReconfiguredSystem buildReconfiguredPrec(
     std::vector<std::vector<int>> groups(nb_new);
     for (int k = 0; k < nb_old; ++k)
         groups[ordering[k]].push_back(k);
+
+    // Block sizes (needed to assemble merged super-blocks with row/col offsets).
+    std::vector<int> block_sizes(nb_old);
+    for (int k = 0; k < nb_old; ++k)
+        block_sizes[k] =
+            static_cast<int>(A_blocked->productRange()->getBlock(k)->dim());
 
     // A reconfiguration.json whose ordering values skip an integer (e.g.
     // [0, 2, 0] — group 1 has no members) would leave groups[1] empty,
@@ -740,8 +947,11 @@ inline ReconfiguredSystem buildReconfiguredPrec(
                 Teko::buildInverse(*invFact,
                                    A_blocked->getBlock(mem[0], mem[0]));
         } else {
-            // Merged group: block-diagonal inverse of sub-blocks.
-            // Sub-operator = sub-blocked diagonal (len(mem) × len(mem)).
+            // Merged group: factor the coupled super-block jointly.
+            // subTeko is the sub-blocked operator (len(mem) × len(mem),
+            // off-diagonals included). It supplies the nested product vector
+            // spaces; the actual inverse comes from a single Ifpack2 ILUT
+            // factorization of the monolithic assembly of those same blocks.
             auto subOp = Thyra::defaultBlockedLinearOp<SC>();
             subOp->beginBlockFill(static_cast<int>(mem.size()),
                                   static_cast<int>(mem.size()));
@@ -762,12 +972,24 @@ inline ReconfiguredSystem buildReconfiguredPrec(
             Teko::BlockedLinearOp subTeko =
                 Teuchos::rcp_dynamic_cast<Thyra::PhysicallyBlockedLinearOpBase<SC>>(subOp);
 
-            std::vector<Teko::LinearOp> subInvDiag(mem.size());
-            for (int si = 0; si < (int)mem.size(); ++si)
-                subInvDiag[si] = Teko::buildInverse(*invFact,
-                                                     A_blocked->getBlock(mem[si], mem[si]));
+            // Assemble the coupled super-block as one matrix and factor it once.
+            Teko::LinearOp mergedOp = assembleMergedBlock(A_blocked, mem, block_sizes);
+            Teko::LinearOp mergedInv;
+            try {
+                mergedInv = Teko::buildInverse(*invFact, mergedOp);
+            } catch (const std::exception& e) {
+                throw std::runtime_error(
+                    "Teko::KrylovSurrogate::buildReconfiguredPrec: joint "
+                    "factorization of merged group " + std::to_string(g) +
+                    " failed (singular?): " + e.what());
+            }
 
-            newInvDiag[g] = Teko::createBlockDiagonalInverseOp(subTeko, subInvDiag);
+            std::vector<int> memberSizes(mem.size());
+            for (int si = 0; si < (int)mem.size(); ++si)
+                memberSizes[si] = block_sizes[mem[si]];
+
+            newInvDiag[g] = Teuchos::rcp(
+                new MergedGroupInverseOp(subTeko, mergedInv, memberSizes));
         }
     }
 
@@ -785,10 +1007,11 @@ inline ReconfiguredSystem buildReconfiguredPrec(
 // Section 5: orchestration — the hook registered with BelosAdaptiveHook
 // ═══════════════════════════════════════════════════════════════════════════
 
-// Default location for request_<N>.json / reconfiguration_<N>.json /
-// convergence_data/ when TEKO_RECONFIG_REQUESTS_DIR is unset. Hardcoded for
-// now, relative to the Trilinos checkout this package lives in.
-constexpr const char* kDefaultRequestsDir = "/workspace/Trilinos/teko-reconfig";
+// Default location for s<N>_request.json / s<N>_reconfig.json / s<N>_conv.json
+// when TEKO_RECONFIG_REQUESTS_DIR is unset. All three file types live together
+// in this single directory. Hardcoded for now, relative to the Trilinos
+// checkout this package lives in.
+constexpr const char* kDefaultRequestsDir = "/home/node/codespace/Trilinos/teko-reconfig/requests";
 
 // adaptiveLoop()'s Phase 4 below runs a second flexible FGMRES solve, which
 // (if it converges) would re-invoke this same hook recursively — and that
@@ -814,7 +1037,7 @@ public:
 };
 
 // Convergence diagnostics for one FGMRES solve, written to
-// convergence_data/conv_<N>.json by writeConvergenceJson().
+// s<N>_conv.json by writeConvergenceJson().
 struct SolveStats {
     int    iterations;
     double initial_residual;
@@ -822,10 +1045,9 @@ struct SolveStats {
     double wall_time_sec;
 };
 
-// Write convergence_data/conv_<request_id>.json (atomically, via a .tmp file
-// + rename). s2 == nullptr means no second solve was attempted (Phase 2 timed
-// out waiting for reconfiguration_<request_id>.json), and is recorded as
-// "solve2": null.
+// Write s<request_id>_conv.json (atomically, via a .tmp file + rename).
+// s2 == nullptr means no second solve was attempted (Phase 2 timed out waiting
+// for s<request_id>_reconfig.json), and is recorded as "solve2": null.
 inline void writeConvergenceJson(
     const std::string& convergence_dir,
     int                 request_id,
@@ -834,7 +1056,7 @@ inline void writeConvergenceJson(
 {
     fs::create_directories(convergence_dir);
 
-    const std::string path     = convergence_dir + "/conv_" + std::to_string(request_id) + ".json";
+    const std::string path     = convergence_dir + "/s" + std::to_string(request_id) + "_conv.json";
     const std::string tmp_path = path + ".tmp";
     std::ofstream ofs(tmp_path);
     TEUCHOS_TEST_FOR_EXCEPTION(!ofs.is_open(), std::runtime_error,
@@ -896,8 +1118,8 @@ inline void adaptiveLoop(
     }
 
     fs::create_directories(requests_dir);
-    const std::string convergence_dir =
-        (fs::path(requests_dir).parent_path() / "convergence_data").string();
+    // All request/reconfig/convergence files live together in requests_dir.
+    const std::string convergence_dir = requests_dir;
 
     // Determine block structure from A_blocked.
     const int nb = A_blocked->productRange()->numBlocks();
@@ -921,11 +1143,11 @@ inline void adaptiveLoop(
 
     SolveStats s1{state.curDim, b_norm, solve1_metrics.achieved_tol, solve1_metrics.wall_time_sec};
 
-    // ── Phase 1: compute C_hat, b_hat and write request_<N>.json ──────────
+    // ── Phase 1: compute C_hat, b_hat and write s<N>_request.json ──────────
     CHatData chat = computeCHat(state, A_blocked, problem->getRHS(), block_sizes);
     const int request_id = writeRequestJson(chat, requests_dir);
 
-    // ── Phase 2: wait for reconfiguration_<N>.json ─────────────────────────
+    // ── Phase 2: wait for s<N>_reconfig.json ───────────────────────────────
     std::vector<int> ordering = waitForOrdering(requests_dir, request_id);
     if (ordering.empty()) {
         std::cerr << "[TekoAdaptive] no ordering received; returning first "
