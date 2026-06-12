@@ -1210,7 +1210,7 @@ int OrientationHex(const bool verbose) {
         basis.getDofCoords(dofCoords);
         {
           //Basis_HVOL_QUAD_Cn_FEM<DeviceType,ValueType,ValueType> quadBasis(order-1);
-          Basis_HVOL_QUAD_Cn_FEM<Kokkos::DefaultHostExecutionSpace> quadBasis(order-1, POINTTYPE_GAUSS);
+          Basis_HVOL_QUAD_Cn_FEM<Kokkos::DefaultHostExecutionSpace::device_type> quadBasis(order-1, POINTTYPE_GAUSS);
           ordinal_type quadBasisCardinality = quadBasis.getCardinality();
           ordinal_type numInternalDofs = quadBasis.getDofCount(dim-1,0);
           DynRankView ConstructWithLabel(quadDofCoords, quadBasisCardinality, dim-1);

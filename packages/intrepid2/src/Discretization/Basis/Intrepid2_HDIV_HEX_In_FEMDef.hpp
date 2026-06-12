@@ -556,4 +556,10 @@ namespace Intrepid2 {
 
 } // namespace Intrepid2
 
+#define HDIV_HEX_In_FEM_INSTANT(DEVICE, OUTPUT_TYPE, POINT_TYPE, EXTERN)       \
+  EXTERN template class Intrepid2::Basis_HDIV_HEX_In_FEM<DEVICE, OUTPUT_TYPE,  \
+                                                         POINT_TYPE>;
+
+INTREPID2_ETI_DEVICE_DEF(HDIV_HEX_In_FEM_INSTANT);
+
 #endif

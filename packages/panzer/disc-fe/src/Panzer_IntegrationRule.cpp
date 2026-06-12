@@ -207,22 +207,22 @@ void panzer::IntegrationRule::setup_cv(const panzer::CellData& cell_data, std::s
 
   const shards::CellTopology & topo = *cell_data.getCellTopology();
 
-  Teuchos::RCP<Intrepid2::Cubature<PHX::Device::execution_space,double,double> > intrepid_cubature;
+  Teuchos::RCP<Intrepid2::Cubature<PHX::Device::device_type,double,double> > intrepid_cubature;
 
   int tmp_num_points = 0;
   if (cv_type == "volume") {
     ss << ",volume)";
-    intrepid_cubature  = Teuchos::rcp(new Intrepid2::CubatureControlVolume<PHX::Device::execution_space,double,double>(topo));
+    intrepid_cubature  = Teuchos::rcp(new Intrepid2::CubatureControlVolume<PHX::Device::device_type,double,double>(topo));
     tmp_num_points = intrepid_cubature->getNumPoints();
   }
   else if (cv_type == "side") {
     ss << ",side)";
-    intrepid_cubature  = Teuchos::rcp(new Intrepid2::CubatureControlVolumeSide<PHX::Device::execution_space,double,double>(topo));
+    intrepid_cubature  = Teuchos::rcp(new Intrepid2::CubatureControlVolumeSide<PHX::Device::device_type,double,double>(topo));
     tmp_num_points = intrepid_cubature->getNumPoints();
   }
   else if (cv_type == "boundary") {
     ss << ",boundary)";
-    intrepid_cubature  = Teuchos::rcp(new Intrepid2::CubatureControlVolumeBoundary<PHX::Device::execution_space,double,double>(topo,cell_data.side()));
+    intrepid_cubature  = Teuchos::rcp(new Intrepid2::CubatureControlVolumeBoundary<PHX::Device::device_type,double,double>(topo,cell_data.side()));
     tmp_num_points = intrepid_cubature->getNumPoints();
   }
 
