@@ -396,7 +396,7 @@ void mult_A_B_reuse_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOrdina
             LO Bkj = Bcolind(j);
             LO Cij = Bcol2Ccol(Bkj);
 
-            const bool badInsert = c_status[Cij] < OLD_ip || c_status[Cij] >= CSR_ip;
+            const bool badInsert = (Cij == LO_INVALID) || (c_status[Cij] < OLD_ip) || (c_status[Cij] >= CSR_ip);
             if (!badInsert)
               Cvals(c_status[Cij]) += Aval * Bvals(j);
             else if (throwOnInsert)
@@ -411,7 +411,7 @@ void mult_A_B_reuse_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOrdina
             LO Ikj = Icolind(j);
             LO Cij = Icol2Ccol(Ikj);
 
-            const bool badInsert = c_status[Cij] < OLD_ip || c_status[Cij] >= CSR_ip;
+            const bool badInsert = (Cij == LO_INVALID) || (c_status[Cij] < OLD_ip) || (c_status[Cij] >= CSR_ip);
             if (!badInsert)
               Cvals(c_status[Cij]) += Aval * Ivals(j);
             else if (throwOnInsert)
