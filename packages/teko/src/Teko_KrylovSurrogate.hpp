@@ -16,12 +16,14 @@
 //   set, otherwise kDefaultRequestsDir below.
 //
 // adaptiveLoop():
-//   1. Computes C_hat and writes request_<N>.json to requests_dir, where
+//   1. Computes C_hat and writes s<N>_request.json to requests_dir, where
 //      N = nextRequestNumber(requests_dir) (0, 1, 2, ... — never reused).
-//   2. Polls for reconfiguration_<N>.json in the same directory.
+//   2. Polls for s<N>_reconfig.json in the same directory. This file is left
+//      in place after being read (not deleted) — its presence is how
+//      wait_for_request.py recognizes an already-answered request.
 //   3. Reads the ordering vector, rebuilds the Teko preconditioner.
 //   4. Runs a second FGMRES solve and overwrites the LHS with the result.
-//   5. Writes convergence_data/conv_<N>.json (sibling of requests_dir) with
+//   5. Writes convergence_data/s<N>_conv.json (sibling of requests_dir) with
 //      iteration count, initial/final residual, and wall time for both
 //      solves (solve2 is null if step 2 timed out).
 //
@@ -424,18 +426,18 @@ inline void writeVectorJson(std::ostream& os, const SDM& v)
     os << "]";
 }
 
-// Scan requests_dir for existing request_<N>.json files and return
+// Scan requests_dir for existing s<N>_request.json files and return
 // max(N) + 1, or 0 if none exist. This is how the C++ side picks the id for
 // the next request, so request ids are unique and monotonically increasing
 // across the lifetime of requests_dir (they are never reused, even if old
-// request_<N>.json files are deleted).
+// s<N>_request.json files are deleted).
 inline int nextRequestNumber(const std::string& requests_dir)
 {
     int next = 0;
     if (!fs::exists(requests_dir)) return next;
 
-    const std::string prefix = "request_";
-    const std::string suffix = ".json";
+    const std::string prefix = "s";
+    const std::string suffix = "_request.json";
     for (const auto& entry : fs::directory_iterator(requests_dir)) {
         if (!entry.is_regular_file()) continue;
         const std::string name = entry.path().filename().string();
@@ -451,6 +453,52 @@ inline int nextRequestNumber(const std::string& requests_dir)
         if (n + 1 > next) next = n + 1;
     }
     return next;
+}
+
+// equation_ends[k] = sum(ranks[0..k-1]) for k = 0..nb, so equation_ends[0]==0
+// and equation_ends[nb] == R (the total rank, R = sum(ranks)). Each
+// equation_ends[k+1] is one-past-the-last row/col index of block k in the
+// assembled C_hat matrix / b_hat vector below.
+inline std::vector<int> computeEquationEnds(const CHatData& chat)
+{
+    std::vector<int> ends(chat.nb + 1, 0);
+    for (int j = 0; j < chat.nb; ++j)
+        ends[j + 1] = ends[j] + chat.ranks[j];
+    return ends;
+}
+
+// Assemble the full R x R C_hat matrix (R = sum(ranks)) from chat.blocks,
+// placing block (i,j) — size ranks[i] x ranks[j] — at rows
+// [equation_ends[i], equation_ends[i+1]) and cols
+// [equation_ends[j], equation_ends[j+1]).
+inline SDM assembleCHat(const CHatData& chat, const std::vector<int>& equation_ends)
+{
+    const int R = equation_ends.back();
+    SDM C(R, R);
+    for (int i = 0; i < chat.nb; ++i) {
+        for (int j = 0; j < chat.nb; ++j) {
+            const SDM& blk = chat.blocks[i][j];
+            for (int r = 0; r < blk.numRows(); ++r)
+                for (int c = 0; c < blk.numCols(); ++c)
+                    C(equation_ends[i] + r, equation_ends[j] + c) = blk(r, c);
+        }
+    }
+    return C;
+}
+
+// Assemble the full R x 1 b_hat vector (R = sum(ranks)) by stacking
+// chat.b_hat[j] — size ranks[j] x 1 — at rows
+// [equation_ends[j], equation_ends[j+1]).
+inline SDM assembleBHat(const CHatData& chat, const std::vector<int>& equation_ends)
+{
+    const int R = equation_ends.back();
+    SDM b(R, 1);
+    for (int j = 0; j < chat.nb; ++j) {
+        const SDM& bj = chat.b_hat[j];
+        for (int r = 0; r < bj.numRows(); ++r)
+            b(equation_ends[j] + r, 0) = bj(r, 0);
+    }
+    return b;
 }
 
 // Write request_<N>.json to requests_dir, where N = nextRequestNumber(requests_dir).
