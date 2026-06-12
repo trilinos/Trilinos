@@ -35,6 +35,42 @@ IF (CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
   ENDIF()
 ENDIF()
 
+# Windows toolchains with the MSVC C++ ABI need /EHsc so throw/catch work in all
+# packages and tests.  Covers Visual Studio and Ninja generators, cl.exe, clang-cl,
+# Intel (classic icpc), and IntelLLVM on Windows - not MinGW/Cygwin (different models).
+IF(WIN32 AND NOT CYGWIN AND ${PROJECT_NAME}_ENABLE_CXX)
+  SET(_TRILINOS_WINDOWS_MSVC_ABI_CXX FALSE)
+  IF(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    SET(_TRILINOS_WINDOWS_MSVC_ABI_CXX TRUE)
+  ELSEIF(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND "x${CMAKE_CXX_SIMULATE_ID}" STREQUAL "xMSVC")
+    SET(_TRILINOS_WINDOWS_MSVC_ABI_CXX TRUE)
+  ELSEIF(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
+    SET(_TRILINOS_WINDOWS_MSVC_ABI_CXX TRUE)
+  ELSEIF(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
+    SET(_TRILINOS_WINDOWS_MSVC_ABI_CXX TRUE)
+  ENDIF()
+  IF(_TRILINOS_WINDOWS_MSVC_ABI_CXX)
+    IF(CMAKE_CXX_FLAGS MATCHES "(^| )/EHa( |$)")
+      MESSAGE(WARNING
+        "CMAKE_CXX_FLAGS contains /EHa; Trilinos will not add /EHsc (exception model left to user).")
+    ELSEIF(CMAKE_CXX_FLAGS MATCHES "(^| )/EHsc-( |$)")
+      MESSAGE(WARNING
+        "CMAKE_CXX_FLAGS contains /EHsc-; Trilinos will not add /EHsc (exceptions explicitly disabled).")
+    ELSEIF(NOT CMAKE_CXX_FLAGS MATCHES "(^| )/EHsc( |$)")
+      MESSAGE("-- "
+        "Adding '/EHsc' for C++ exception handling on Windows (${CMAKE_CXX_COMPILER_ID})")
+      SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
+      ADD_COMPILE_OPTIONS($<$<COMPILE_LANGUAGE:CXX>:/EHsc>)
+    ELSE()
+      # CMAKE_CXX_FLAGS already has /EHsc (e.g. CMake MSVC defaults); still set
+      # directory compile options so a later -DCMAKE_CXX_FLAGS= override cannot
+      # drop exceptions for targets in this project.
+      ADD_COMPILE_OPTIONS($<$<COMPILE_LANGUAGE:CXX>:/EHsc>)
+    ENDIF()
+  ENDIF()
+  UNSET(_TRILINOS_WINDOWS_MSVC_ABI_CXX)
+ENDIF()
+
 IF (KokkosEnable)
   MESSAGE("-- " "Skip adding flags for OpenMP because Kokkos flags does that ...")
   SET(OpenMP_CXX_FLAGS_OVERRIDE " ")
