@@ -39,11 +39,6 @@ struct KokkosKernelsSPGEMMBackend<Tpetra::KokkosCompat::KokkosCudaWrapperNode> {
     (void)Bmerged;
 #endif
   }
-
-  template <class RowMapType, class EntriesType, class ValuesType>
-  static void sort_entries(const RowMapType& row_map, const EntriesType& entries, const ValuesType& values) {
-    Import_Util::sortCrsEntries(row_map, entries, values);
-  }
 };
 
 /*********************************************************************************************************/
