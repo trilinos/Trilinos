@@ -26,11 +26,6 @@ struct KokkosKernelsSPGEMMBackend<Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>
 
   template <class MatrixType>
   static void pre_spgemm(MatrixType&) {}
-
-  template <class RowMapType, class EntriesType, class ValuesType>
-  static void sort_entries(const RowMapType& row_map, const EntriesType& entries, const ValuesType& values) {
-    Import_Util::sortCrsEntries(row_map, entries, values);
-  }
 };
 
 /*********************************************************************************************************/

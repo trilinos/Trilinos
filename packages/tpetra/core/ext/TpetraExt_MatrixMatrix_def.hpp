@@ -1272,7 +1272,7 @@ void kokkos_kernels_mult_A_B_newmatrix(
   }
 
   if (params.is_null() || params->get("sort entries", true))
-    backend_type::sort_entries(row_mapC, entriesC, valuesC);
+    Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC);
   C.setAllValues(row_mapC, entriesC, valuesC);
 
   if constexpr (backend_type::use_time_monitor) {
