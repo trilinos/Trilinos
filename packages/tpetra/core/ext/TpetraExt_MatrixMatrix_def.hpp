@@ -1104,6 +1104,17 @@ void Add(
 
 namespace MMdetails {
 
+// nvcc 12.3 and 12.4 report getApplyHelper() as inaccessible even if
+// CrsMatrix friends kokkos_kernels_mult_A_B_newmatrix. Use this non-template
+// wrapper instead. Someone had the same problem in 2011 here:
+// https://forums.developer.nvidia.com/t/24378.
+struct CrsMatrixApplyHelperAccess {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  static auto get(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& matrix) {
+    return matrix.getApplyHelper();
+  }
+};
+
 template <class Scalar,
           class LocalOrdinal,
           class GlobalOrdinal,
@@ -1196,7 +1207,7 @@ void kokkos_kernels_mult_A_B_newmatrix(
   Tpetra::Details::IntRowPtrHelper<decltype(Bmerged)> irph(Bmerged.nnz(), Bmerged.graph.row_map);
   const bool useIntRowptrs =
       irph.shouldUseIntRowptrs() &&
-      Aview.origMatrix->getApplyHelper()->shouldUseIntRowptrs();
+      CrsMatrixApplyHelperAccess::get(*Aview.origMatrix)->shouldUseIntRowptrs();
 
   if (useIntRowptrs) {
     IntKernelHandle kh;
@@ -1205,7 +1216,7 @@ void kokkos_kernels_mult_A_B_newmatrix(
 
     int_view_t int_row_mapC(Kokkos::ViewAllocateWithoutInitializing("non_const_int_row"), AnumRows + 1);
 
-    auto Aint = Aview.origMatrix->getApplyHelper()->getIntRowptrMatrix(Amat);
+    auto Aint = CrsMatrixApplyHelperAccess::get(*Aview.origMatrix)->getIntRowptrMatrix(Amat);
     auto Bint = irph.getIntRowptrMatrix(Bmerged);
 
     {
