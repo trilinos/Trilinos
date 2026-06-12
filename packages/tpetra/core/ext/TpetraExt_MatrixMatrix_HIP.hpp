@@ -21,10 +21,6 @@ struct KokkosKernelsSPGEMMBackend<Tpetra::KokkosCompat::KokkosHIPWrapperNode> {
   static constexpr bool use_time_monitor = true;
   static std::string parameter_prefix() { return "hip"; }
   static std::string algorithm_label() { return "HIP"; }
-  static std::string wrapper_label() { return "HIPWrapper"; }
-  static std::string core_label() { return "HIP Core"; }
-  static std::string sort_label() { return "HIP Sort"; }
-  static std::string esfc_label() { return "HIP ESFC"; }
 
   template <class MatrixType>
   static void pre_spgemm(MatrixType&) {}
