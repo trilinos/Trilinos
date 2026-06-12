@@ -1,4 +1,4 @@
-
+INCLUDE(CombinedOption)
 
 #
 # A) Define the package
@@ -9,6 +9,7 @@ TRIBITS_PACKAGE(Teko)
 #
 # B) Set up package-specific options
 #
+
 
 COMBINED_OPTION( TEKO_HAVE_EPETRA
   DEP_OPTIONS_NAMES Teko_ENABLE_Epetra
