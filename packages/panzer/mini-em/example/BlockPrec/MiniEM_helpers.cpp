@@ -208,7 +208,8 @@ namespace mini_em {
             }
 
           }
-        }
+        } else if (solver == DIRECT)
+          updateParams("solverDirect.xml", lin_solver_pl, comm, out);
       } else
         updateParams(xml, lin_solver_pl, comm, out);
 

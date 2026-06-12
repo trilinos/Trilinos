@@ -28,6 +28,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyBlockPrecFiles
   solverMueLuHO.xml solverMueLuHOCuda.xml
   solverAugmentationUseILU.xml
   solverML.xml
+  solverDirect.xml
   maxwell-large.xml
   solverMueLu.xml solverMueLu2D.xml solverMueLuEpetra.xml
   solverMueLuOpenMP.xml solverMueLuCuda.xml
@@ -89,6 +90,7 @@ TRIBITS_ADD_TEST(
    POSTFIX_AND_ARGS_12 "order1_maxwell1_unsmoothed" --solver=Maxwell1-RS --numTimeSteps=1 --linAlgebra=Tpetra
    POSTFIX_AND_ARGS_13 "order1_maxwell1_smoothed"   --solver=Maxwell1-SA-RS --numTimeSteps=1 --linAlgebra=Tpetra
    POSTFIX_AND_ARGS_14 "order1_maxwell1_emin"       --solver=Maxwell1-Emin --numTimeSteps=1 --linAlgebra=Tpetra
+   POSTFIX_AND_ARGS_15 "order1_direct"              --solver=direct
    NUM_MPI_PROCS 4
    )
 
