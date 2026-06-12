@@ -3927,6 +3927,15 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   friend struct Tpetra::MMdetails::KernelWrappers;
   template <typename S, typename LO, typename GO, typename NODE, typename LOV>
   friend struct Tpetra::MMdetails::KernelWrappers2;
+  // Really we want to friend:
+  // template <typename S, typename LO, typename GO, typename NODE, typename LOV>
+  // friend void Tpetra::MMdetails::kokkos_kernels_mult_A_B_newmatrix(...),
+  // but nvcc seemingly doesn't reliably honor this friendship (because it's a template class?)
+  // Instead, we defined a little non-template wrapper class over by kokkos_kernels_mult_A_B_newmatrix so we
+  // can friend that here instead, which seems to work.
+  // This is needed so kokkos_kernels_mult_A_B_newmatrix can access the lazy integer row pointer
+  // helpers
+  friend struct Tpetra::MMdetails::CrsMatrixApplyHelperAccess;
 
   // friend Matrix Matrix utility function that needs to access integer-typed rowptrs
   friend void Tpetra::MMdetails::import_and_extract_views<Scalar, LocalOrdinal, GlobalOrdinal, Node>(
@@ -3935,20 +3944,6 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
       CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
       Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> > prototypeImporter,
       bool userAssertsThereAreNoRemotes,
-      const std::string& label,
-      const Teuchos::RCP<Teuchos::ParameterList>& params);
-  // Friend the shared MatrixMatrix SpGEMM helper introduced by the backend
-  // refactor so it can reuse the cached integer row pointers.
-  template <typename S, typename LO, typename GO, typename NODE, typename LOV>
-  friend void Tpetra::MMdetails::kokkos_kernels_mult_A_B_newmatrix(
-      CrsMatrixStruct<S, LO, GO, NODE>& Aview,
-      CrsMatrixStruct<S, LO, GO, NODE>& Bview,
-      const LOV& Acol2Brow,
-      const LOV& Acol2Irow,
-      const LOV& Bcol2Ccol,
-      const LOV& Icol2Ccol,
-      CrsMatrix<S, LO, GO, NODE>& C,
-      Teuchos::RCP<const Import<LO, GO, NODE> > Cimport,
       const std::string& label,
       const Teuchos::RCP<Teuchos::ParameterList>& params);
 
