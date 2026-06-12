@@ -222,7 +222,7 @@ namespace Teuchos
     inline BLAS(void) {}
 
     //! Copy constructor.
-    inline BLAS(const BLAS<OrdinalType, ScalarType>& /*BLAS_source*/) {}
+    inline BLAS(const BLAS<OrdinalType, ScalarType>& /*BLAS_source*/) : DefaultBLASImpl<OrdinalType, ScalarType>() {}
 
     //! Destructor.
     inline virtual ~BLAS(void) {}
