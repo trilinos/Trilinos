@@ -199,9 +199,9 @@ int main(int argc, char *argv[]) {
       std::cout << "Achieved tol : "<<ach_tol<<std::endl;
 
     // Clean up.
-    delete [] dvals;
-    delete [] colptr;
-    delete [] rowind;
+    free(dvals);
+    free(colptr);
+    free(rowind);
     delete [] cvals;
 
     success = ret==Belos::Converged && !norm_failure;
