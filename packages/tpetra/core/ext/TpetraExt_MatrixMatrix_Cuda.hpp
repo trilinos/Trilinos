@@ -21,10 +21,6 @@ struct KokkosKernelsSPGEMMBackend<Tpetra::KokkosCompat::KokkosCudaWrapperNode> {
   static constexpr bool use_time_monitor = true;
   static std::string parameter_prefix() { return "cuda"; }
   static std::string algorithm_label() { return "Cuda"; }
-  static std::string wrapper_label() { return "CudaWrapper"; }
-  static std::string core_label() { return "CudaCore"; }
-  static std::string sort_label() { return "CudaSort"; }
-  static std::string esfc_label() { return "CudaESFC"; }
 
   template <class MatrixType>
   static void pre_spgemm(MatrixType& Bmerged) {

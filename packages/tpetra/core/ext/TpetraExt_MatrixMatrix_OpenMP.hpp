@@ -19,10 +19,6 @@ struct KokkosKernelsSPGEMMBackend<Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>
   static constexpr bool use_time_monitor = true;
   static std::string parameter_prefix() { return "openmp"; }
   static std::string algorithm_label() { return "OpenMP"; }
-  static std::string wrapper_label() { return "OpenMPWrapper"; }
-  static std::string core_label() { return "OpenMPCore"; }
-  static std::string sort_label() { return "OpenMPSort"; }
-  static std::string esfc_label() { return "OpenMPESFC"; }
 
   template <class MatrixType>
   static void pre_spgemm(MatrixType&) {}

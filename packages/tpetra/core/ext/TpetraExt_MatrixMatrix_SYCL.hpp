@@ -21,10 +21,6 @@ struct KokkosKernelsSPGEMMBackend<Tpetra::KokkosCompat::KokkosSYCLWrapperNode> {
   static constexpr bool use_time_monitor = true;
   static std::string parameter_prefix() { return "sycl"; }
   static std::string algorithm_label() { return "SYCL"; }
-  static std::string wrapper_label() { return "SYCLWrapper"; }
-  static std::string core_label() { return "SYCLCore"; }
-  static std::string sort_label() { return "SYCLSort"; }
-  static std::string esfc_label() { return "SYCLESFC"; }
 
   template <class MatrixType>
   static void pre_spgemm(MatrixType&) {}
