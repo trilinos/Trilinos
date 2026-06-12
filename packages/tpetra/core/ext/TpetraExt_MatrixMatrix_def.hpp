@@ -1104,6 +1104,195 @@ void Add(
 
 namespace MMdetails {
 
+// nvcc 12.3 and 12.4 report getApplyHelper() as inaccessible even if
+// CrsMatrix friends kokkos_kernels_mult_A_B_newmatrix. Use this non-template
+// wrapper instead. Someone had the same problem in 2011 here:
+// https://forums.developer.nvidia.com/t/24378.
+struct CrsMatrixApplyHelperAccess {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  static auto get(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& matrix) {
+    return matrix.getApplyHelper();
+  }
+};
+
+template <class Scalar,
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node,
+          class LocalOrdinalViewType>
+void kokkos_kernels_mult_A_B_newmatrix(
+    CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
+    CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
+    const LocalOrdinalViewType& Acol2Brow,
+    const LocalOrdinalViewType& Acol2Irow,
+    const LocalOrdinalViewType& Bcol2Ccol,
+    const LocalOrdinalViewType& Icol2Ccol,
+    CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
+    Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node>> Cimport,
+    const std::string& label,
+    const Teuchos::RCP<Teuchos::ParameterList>& params) {
+  using backend_type = KokkosKernelsSPGEMMBackend<Node>;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+
+  using KCRS           = typename Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_device_type;
+  using device_t       = typename KCRS::device_type;
+  using graph_t        = typename KCRS::StaticCrsGraphType;
+  using lno_view_t     = typename graph_t::row_map_type::non_const_type;
+  using int_view_t     = Kokkos::View<int*, typename lno_view_t::array_layout, typename lno_view_t::memory_space, typename lno_view_t::memory_traits>;
+  using lno_nnz_view_t = typename graph_t::entries_type::non_const_type;
+  using scalar_view_t  = typename KCRS::values_type::non_const_type;
+  using KernelHandle   = KokkosKernels::Experimental::KokkosKernelsHandle<
+      typename lno_view_t::const_value_type, typename lno_nnz_view_t::const_value_type, typename scalar_view_t::const_value_type,
+      typename device_t::execution_space, typename device_t::memory_space, typename device_t::memory_space>;
+  using IntKernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<
+      typename int_view_t::const_value_type, typename lno_nnz_view_t::const_value_type, typename scalar_view_t::const_value_type,
+      typename device_t::execution_space, typename device_t::memory_space, typename device_t::memory_space>;
+
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+  using Teuchos::TimeMonitor;
+  Teuchos::RCP<TimeMonitor> timeMonitor;
+  const std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
+#endif
+  RCP<Tpetra::Details::ProfilingRegion> MM;
+
+  if constexpr (backend_type::use_time_monitor) {
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    timeMonitor = rcp(new TimeMonitor(*(TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix ") + backend_type::algorithm_label() + "Wrapper"))));
+#endif
+  } else {
+    MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: MMM: Newmatrix " + backend_type::algorithm_label() + "Wrapper"));
+  }
+
+  int team_work_size = 16;
+  std::string myalg("SPGEMM_KK_MEMORY");
+  if (!params.is_null()) {
+    const std::string prefixedAlg  = backend_type::parameter_prefix() + ": algorithm";
+    const std::string prefixedTeam = backend_type::parameter_prefix() + ": team work size";
+    if (params->isParameter(prefixedAlg))
+      myalg = params->get(prefixedAlg, myalg);
+    if (params->isParameter(prefixedTeam))
+      team_work_size = params->get(prefixedTeam, team_work_size);
+  }
+
+  const KCRS Amat = Aview.origMatrix->getLocalMatrixDevice();
+
+  const std::string genericAlg = backend_type::algorithm_label() + " algorithm";
+  if (!params.is_null() && params->isParameter(genericAlg))
+    myalg = params->get(genericAlg, myalg);
+  KokkosSparse::SPGEMMAlgorithm alg_enum = KokkosSparse::StringToSPGEMMAlgorithm(myalg);
+
+  KCRS Bmerged = Tpetra::MMdetails::merge_matrices(
+      Aview, Bview, Acol2Brow, Acol2Irow, Bcol2Ccol, Icol2Ccol, C.getColMap()->getLocalNumElements());
+  backend_type::pre_spgemm(Bmerged);
+
+  if constexpr (backend_type::use_time_monitor) {
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    timeMonitor = Teuchos::null;
+    timeMonitor = rcp(new TimeMonitor(*(TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix ") + backend_type::algorithm_label() + "Core"))));
+#endif
+  } else {
+    MM = Teuchos::null;
+    MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: MMM: Newmatrix " + backend_type::algorithm_label() + "Core"));
+  }
+
+  typename KernelHandle::nnz_lno_t AnumRows = Amat.numRows();
+  typename KernelHandle::nnz_lno_t BnumRows = Bmerged.numRows();
+  typename KernelHandle::nnz_lno_t BnumCols = Bmerged.numCols();
+
+  lno_view_t row_mapC(Kokkos::ViewAllocateWithoutInitializing("non_const_lno_row"), AnumRows + 1);
+  lno_nnz_view_t entriesC;
+  scalar_view_t valuesC;
+
+  Tpetra::Details::IntRowPtrHelper<decltype(Bmerged)> irph(Bmerged.nnz(), Bmerged.graph.row_map);
+  const bool useIntRowptrs =
+      irph.shouldUseIntRowptrs() &&
+      CrsMatrixApplyHelperAccess::get(*Aview.origMatrix)->shouldUseIntRowptrs();
+
+  if (useIntRowptrs) {
+    IntKernelHandle kh;
+    kh.create_spgemm_handle(alg_enum);
+    kh.set_team_work_size(team_work_size);
+
+    int_view_t int_row_mapC(Kokkos::ViewAllocateWithoutInitializing("non_const_int_row"), AnumRows + 1);
+
+    auto Aint = CrsMatrixApplyHelperAccess::get(*Aview.origMatrix)->getIntRowptrMatrix(Amat);
+    auto Bint = irph.getIntRowptrMatrix(Bmerged);
+
+    {
+      Tpetra::Details::ProfilingRegion MM2("TpetraExt: MMM: Newmatrix KokkosKernels symbolic int");
+      KokkosSparse::spgemm_symbolic(
+          &kh, AnumRows, BnumRows, BnumCols, Aint.graph.row_map, Aint.graph.entries, false, Bint.graph.row_map, Bint.graph.entries, false, int_row_mapC);
+    }
+
+    Tpetra::Details::ProfilingRegion MM2("TpetraExt: MMM: Newmatrix KokkosKernels numeric int");
+    size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
+    if (c_nnz_size) {
+      entriesC = lno_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
+      valuesC  = scalar_view_t(Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
+    }
+    KokkosSparse::spgemm_numeric(
+        &kh, AnumRows, BnumRows, BnumCols, Aint.graph.row_map, Aint.graph.entries, Aint.values, false,
+        Bint.graph.row_map, Bint.graph.entries, Bint.values, false, int_row_mapC, entriesC, valuesC);
+    Kokkos::parallel_for(
+        int_row_mapC.size(), KOKKOS_LAMBDA(const int i) { row_mapC(i) = int_row_mapC(i); });
+    kh.destroy_spgemm_handle();
+
+  } else {
+    KernelHandle kh;
+    kh.create_spgemm_handle(alg_enum);
+    kh.set_team_work_size(team_work_size);
+
+    {
+      Tpetra::Details::ProfilingRegion MM2("TpetraExt: MMM: Newmatrix KokkosKernels symbolic non-int");
+      KokkosSparse::spgemm_symbolic(
+          &kh, AnumRows, BnumRows, BnumCols, Amat.graph.row_map, Amat.graph.entries, false, Bmerged.graph.row_map, Bmerged.graph.entries, false, row_mapC);
+    }
+
+    Tpetra::Details::ProfilingRegion MM2("TpetraExt: MMM: Newmatrix KokkosKernels numeric non-int");
+    size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
+    if (c_nnz_size) {
+      entriesC = lno_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
+      valuesC  = scalar_view_t(Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
+    }
+    KokkosSparse::spgemm_numeric(
+        &kh, AnumRows, BnumRows, BnumCols, Amat.graph.row_map, Amat.graph.entries, Amat.values, false,
+        Bmerged.graph.row_map, Bmerged.graph.entries, Bmerged.values, false, row_mapC, entriesC, valuesC);
+    kh.destroy_spgemm_handle();
+  }
+
+  if constexpr (backend_type::use_time_monitor) {
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    timeMonitor = Teuchos::null;
+    timeMonitor = rcp(new TimeMonitor(*(TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix ") + backend_type::algorithm_label() + "Sort"))));
+#endif
+  } else {
+    MM = Teuchos::null;
+    MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: MMM: Newmatrix " + backend_type::algorithm_label() + "Sort"));
+  }
+
+  if (params.is_null() || params->get("sort entries", true))
+    Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC);
+  C.setAllValues(row_mapC, entriesC, valuesC);
+
+  if constexpr (backend_type::use_time_monitor) {
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    timeMonitor = Teuchos::null;
+    timeMonitor = rcp(new TimeMonitor(*(TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix ") + backend_type::algorithm_label() + "ESFC"))));
+#endif
+  } else {
+    MM = Teuchos::null;
+    MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: MMM: Newmatrix " + backend_type::algorithm_label() + "ESFC"));
+  }
+
+  RCP<Teuchos::ParameterList> labelList = rcp(new Teuchos::ParameterList);
+  labelList->set("Timer Label", label);
+  if (!params.is_null())
+    labelList->set("compute global constants", params->get("compute global constants", true));
+  RCP<const Export<LocalOrdinal, GlobalOrdinal, Node>> dummyExport;
+  C.expertStaticFillComplete(Bview.origMatrix->getDomainMap(), Aview.origMatrix->getRangeMap(), Cimport, dummyExport, labelList);
+}
+
 /*********************************************************************************************************/
 //// Prints MMM-style statistics on communication done with an Import or Export object
 // template <class TransferType>

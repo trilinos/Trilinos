@@ -16,6 +16,16 @@
 namespace Tpetra {
 namespace MMdetails {
 
+template <>
+struct KokkosKernelsSPGEMMBackend<Tpetra::KokkosCompat::KokkosSYCLWrapperNode> {
+  static constexpr bool use_time_monitor = true;
+  static std::string parameter_prefix() { return "sycl"; }
+  static std::string algorithm_label() { return "SYCL"; }
+
+  template <class MatrixType>
+  static void pre_spgemm(MatrixType&) {}
+};
+
 /*********************************************************************************************************/
 // MMM KernelWrappers for Partial Specialization to SYCL
 template <class Scalar,
@@ -107,147 +117,8 @@ void KernelWrappers<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::K
                                                                                                                                                                Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSYCLWrapperNode> > Cimport,
                                                                                                                                                                const std::string& label,
                                                                                                                                                                const Teuchos::RCP<Teuchos::ParameterList>& params) {
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
-  using Teuchos::TimeMonitor;
-  Teuchos::RCP<TimeMonitor> MM = rcp(new TimeMonitor(*(TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix SYCLWrapper")))));
-#endif
-  // Node-specific code
-  typedef Tpetra::KokkosCompat::KokkosSYCLWrapperNode Node;
-  std::string nodename("SYCL");
-
-  // Lots and lots of typedefs
-  using Teuchos::RCP;
-  typedef typename Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_device_type KCRS;
-  typedef typename KCRS::device_type device_t;
-  typedef typename KCRS::StaticCrsGraphType graph_t;
-  typedef typename graph_t::row_map_type::non_const_type lno_view_t;
-  using int_view_t = Kokkos::View<int*, typename lno_view_t::array_layout, typename lno_view_t::memory_space, typename lno_view_t::memory_traits>;
-  typedef typename graph_t::row_map_type::const_type c_lno_view_t;
-  typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
-  typedef typename KCRS::values_type::non_const_type scalar_view_t;
-  // typedef typename graph_t::row_map_type::const_type lno_view_t_const;
-
-  // Options
-  int team_work_size = 16;  // Defaults to 16 as per Deveci 12/7/16 - csiefer
-  std::string myalg("SPGEMM_KK_MEMORY");
-  if (!params.is_null()) {
-    if (params->isParameter("sycl: algorithm"))
-      myalg = params->get("sycl: algorithm", myalg);
-    if (params->isParameter("sycl: team work size"))
-      team_work_size = params->get("sycl: team work size", team_work_size);
-  }
-
-  // KokkosKernelsHandle
-  typedef KokkosKernels::Experimental::KokkosKernelsHandle<
-      typename lno_view_t::const_value_type, typename lno_nnz_view_t::const_value_type, typename scalar_view_t::const_value_type,
-      typename device_t::execution_space, typename device_t::memory_space, typename device_t::memory_space>
-      KernelHandle;
-  using IntKernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<
-      typename int_view_t::const_value_type, typename lno_nnz_view_t::const_value_type, typename scalar_view_t::const_value_type,
-      typename device_t::execution_space, typename device_t::memory_space, typename device_t::memory_space>;
-
-  // Grab the  Kokkos::SparseCrsMatrices
-  const KCRS Amat = Aview.origMatrix->getLocalMatrixDevice();
-  const KCRS Bmat = Bview.origMatrix->getLocalMatrixDevice();
-
-  c_lno_view_t Arowptr         = Amat.graph.row_map,
-               Browptr         = Bmat.graph.row_map;
-  const lno_nnz_view_t Acolind = Amat.graph.entries,
-                       Bcolind = Bmat.graph.entries;
-  const scalar_view_t Avals    = Amat.values,
-                      Bvals    = Bmat.values;
-
-  // Get the algorithm mode
-  std::string alg = nodename + std::string(" algorithm");
-  //  printf("DEBUG: Using kernel: %s\n",myalg.c_str());
-  if (!params.is_null() && params->isParameter(alg)) myalg = params->get(alg, myalg);
-  KokkosSparse::SPGEMMAlgorithm alg_enum = KokkosSparse::StringToSPGEMMAlgorithm(myalg);
-
-  // Merge the B and Bimport matrices
-  const KCRS Bmerged = Tpetra::MMdetails::merge_matrices(Aview, Bview, Acol2Brow, Acol2Irow, Bcol2Ccol, Icol2Ccol, C.getColMap()->getLocalNumElements());
-
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = Teuchos::null;
-  MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix SYCLCore"))));
-#endif
-
-  // Do the multiply on whatever we've got
-  typename KernelHandle::nnz_lno_t AnumRows = Amat.numRows();
-  typename KernelHandle::nnz_lno_t BnumRows = Bmerged.numRows();
-  typename KernelHandle::nnz_lno_t BnumCols = Bmerged.numCols();
-
-  lno_view_t row_mapC(Kokkos::ViewAllocateWithoutInitializing("non_const_lno_row"), AnumRows + 1);
-  lno_nnz_view_t entriesC;
-  scalar_view_t valuesC;
-
-  // static_assert(std::is_void_v<typename KCRS::row_map_type::non_const_value_type>, "");
-  // static_assert(std::is_void_v<typename decltype(Bmerged)::row_map_type::non_const_value_type>, "");
-  Tpetra::Details::IntRowPtrHelper<decltype(Bmerged)> irph(Bmerged.nnz(), Bmerged.graph.row_map);
-  const bool useIntRowptrs =
-      irph.shouldUseIntRowptrs() &&
-      Aview.origMatrix->getApplyHelper()->shouldUseIntRowptrs();
-
-  if (useIntRowptrs) {
-    IntKernelHandle kh;
-    kh.create_spgemm_handle(alg_enum);
-    kh.set_team_work_size(team_work_size);
-
-    int_view_t int_row_mapC(Kokkos::ViewAllocateWithoutInitializing("non_const_int_row"), AnumRows + 1);
-
-    auto Aint = Aview.origMatrix->getApplyHelper()->getIntRowptrMatrix(Amat);
-    auto Bint = irph.getIntRowptrMatrix(Bmerged);
-    KokkosSparse::spgemm_symbolic(&kh, AnumRows, BnumRows, BnumCols, Aint.graph.row_map, Aint.graph.entries, false, Bint.graph.row_map, Bint.graph.entries, false, int_row_mapC);
-
-    size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
-    if (c_nnz_size) {
-      entriesC = lno_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
-      valuesC  = scalar_view_t(Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
-    }
-    KokkosSparse::spgemm_numeric(&kh, AnumRows, BnumRows, BnumCols, Aint.graph.row_map, Aint.graph.entries, Aint.values, false, Bint.graph.row_map, Bint.graph.entries, Bint.values, false, int_row_mapC, entriesC, valuesC);
-    // transfer the integer rowptrs back to the correct rowptr type
-    Kokkos::parallel_for(
-        int_row_mapC.size(), KOKKOS_LAMBDA(int i) { row_mapC(i) = int_row_mapC(i); });
-    kh.destroy_spgemm_handle();
-
-  } else {
-    KernelHandle kh;
-    kh.create_spgemm_handle(alg_enum);
-    kh.set_team_work_size(team_work_size);
-
-    KokkosSparse::spgemm_symbolic(&kh, AnumRows, BnumRows, BnumCols, Amat.graph.row_map, Amat.graph.entries, false, Bmerged.graph.row_map, Bmerged.graph.entries, false, row_mapC);
-
-    size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
-    if (c_nnz_size) {
-      entriesC = lno_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
-      valuesC  = scalar_view_t(Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
-    }
-
-    KokkosSparse::spgemm_numeric(&kh, AnumRows, BnumRows, BnumCols, Amat.graph.row_map, Amat.graph.entries, Amat.values, false, Bmerged.graph.row_map, Bmerged.graph.entries, Bmerged.values, false, row_mapC, entriesC, valuesC);
-    kh.destroy_spgemm_handle();
-  }
-
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = Teuchos::null;
-  MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix SYCLSort"))));
-#endif
-
-  // Sort & set values
-  if (params.is_null() || params->get("sort entries", true))
-    Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC);
-  C.setAllValues(row_mapC, entriesC, valuesC);
-
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = Teuchos::null;
-  MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix SYCLESFC"))));
-#endif
-
-  // Final Fillcomplete
-  RCP<Teuchos::ParameterList> labelList = rcp(new Teuchos::ParameterList);
-  labelList->set("Timer Label", label);
-  if (!params.is_null()) labelList->set("compute global constants", params->get("compute global constants", true));
-  RCP<const Export<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSYCLWrapperNode> > dummyExport;
-  C.expertStaticFillComplete(Bview.origMatrix->getDomainMap(), Aview.origMatrix->getRangeMap(), Cimport, dummyExport, labelList);
+  Tpetra::MMdetails::kokkos_kernels_mult_A_B_newmatrix(
+      Aview, Bview, Acol2Brow, Acol2Irow, Bcol2Ccol, Icol2Ccol, C, Cimport, label, params);
 }
 
 /*********************************************************************************************************/
