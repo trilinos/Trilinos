@@ -155,6 +155,7 @@ int run(int argc, char *argv[])
   
   // Perform solve
   Belos::ReturnType ret = solver.solve();
+  Belos::UnconvergedCauseType unconvergedCause = solver.getUnconvergedCause();
 
   // Compute actual residuals.
   bool badRes = false;
@@ -176,18 +177,19 @@ int run(int argc, char *argv[])
     if (actRes > tol) badRes = true;
   }
 
-  if (ret!=Belos::Converged || badRes) {
+  if (ret==Belos::Converged && (unconvergedCause==Belos::SolverConverged) && !badRes) {
+    // Default return value
+    if (proc_verbose) {
+      std::cout << "\nEnd Result: TEST PASSED" << std::endl;
+    }
+  }
+  else {
     if (proc_verbose) {
       std::cout << "\nEnd Result: TEST FAILED" << std::endl;
     }
     return -1;
   }
   
-  // Default return value
-  if (proc_verbose) {
-    std::cout << "\nEnd Result: TEST PASSED" << std::endl;
-  }
-
   return 0;
 } // end test_bl_cg_complex_hb.cpp
 

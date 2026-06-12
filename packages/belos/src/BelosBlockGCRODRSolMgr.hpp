@@ -1770,6 +1770,8 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP>::solve() {
   using Teuchos::rcp;
   using Teuchos::rcp_const_cast;
 
+  this->unconvergedCause_ = Undetermined;
+
   // MLP: NEED TO ADD CHECK IF PARAMETERS ARE SET LATER
 
   ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
@@ -2018,12 +2020,15 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP>::solve() {
           block_gmres_iter->updateLSQR( block_gmres_iter->getCurSubspaceDim() );
           // Check to see if the most recent least-squares solution yielded convergence.
           sTest_->checkStatus( &*block_gmres_iter );
-          if (convTest_->getStatus() != Passed)
+          if (convTest_->getStatus() != Passed) {
+            this->unconvergedCause_ = OrthonormFailure;
             isConverged = false;
+          }
         }
       } // end catch (const GmresIterationOrthoFailure &e)
       catch (const StatusTestNaNError& e) {
         // A NaN was detected in the solver.  Set the solution to zero and return unconverged.
+        this->unconvergedCause_ = NaNDetected;
         achievedTol_ = MT::one();
         Teuchos::RCP<MV> X = problem_->getLHS();
         MVT::MvInit( *X, SCT::zero() );
@@ -2032,6 +2037,7 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP>::solve() {
         return Unconverged;
       }
       catch (const std::exception &e) {
+        this->unconvergedCause_ = NonspecificException;
         printer_->stream(Errors) << "Error! Caught std::exception in BlockGmresIter::iterate() at iteration "
                                  << block_gmres_iter->getNumIters() << std::endl
                                  << e.what() << std::endl;
@@ -2170,6 +2176,7 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP>::solve() {
         // ***********************************
         else if(maxIterTest_->getStatus() == Passed ){
           // no convergence; hit maxit
+          this->unconvergedCause_ = MaxItersReached;
           isConverged = false;
           break; // from while(1)
         } //end elseif reached maxit
@@ -2189,6 +2196,7 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP>::solve() {
           printer_->stream(Debug) << " Generated new recycled subspace using RHS index " << currIdx[0] << " of dimension " << keff << std::endl << std::endl;
           // NOTE: If we have hit the maximum number of restarts, then we will quit
           if(numRestarts >= maxRestarts_) {
+            this->unconvergedCause_ = MaxRestartsReached;
             isConverged = false;
             break; //from while(1)
           } //end if max restarts
@@ -2227,6 +2235,7 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP>::solve() {
         // Something is wrong, and it is probably our fault.
         // ****************************************************************
         else {
+          this->unconvergedCause_ = InconsistentState;
           TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Belos::BlockGCRODRSolMgr::solve(): Invalid return from BlockGCRODRIter::iterate().");
         } //end else (no status test passed)
 
@@ -2236,7 +2245,10 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP>::solve() {
         block_gcrodr_iter->updateLSQR( block_gcrodr_iter->getCurSubspaceDim() );
         // Check to see if the most recent least-squares solution yielded convergence.
         sTest_->checkStatus( &*block_gcrodr_iter );
-        if (convTest_->getStatus() != Passed) isConverged = false;
+        if (convTest_->getStatus() != Passed) {
+          this->unconvergedCause_ = OrthonormFailure;
+	  isConverged = false;
+        }
         break;
       }  // end catch orthogonalization failure
       catch(const std::exception &e){
@@ -2329,7 +2341,8 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP>::solve() {
   achievedTol_ = *std::max_element (pTestValues->begin(), pTestValues->end());
 
   if (!isConverged) return Unconverged; // return from BlockGCRODRSolMgr::solve()
-    return Converged; // return from BlockGCRODRSolMgr::solve()
+  this->unconvergedCause_ = SolverConverged;
+  return Converged; // return from BlockGCRODRSolMgr::solve()
 } //end solve()
 
 } //End Belos Namespace

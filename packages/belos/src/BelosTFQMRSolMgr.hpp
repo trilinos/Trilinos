@@ -606,6 +606,7 @@ TFQMRSolMgr<ScalarType,MV,OP>::getValidParameters() const
 // solve()
 template<class ScalarType, class MV, class OP>
 ReturnType TFQMRSolMgr<ScalarType,MV,OP>::solve() {
+  this->unconvergedCause_ = Undetermined;
 
   // Set the current parameters if they were not set before.
   // NOTE:  This may occur if the user generated the solver manager with the default constructor and
@@ -707,6 +708,7 @@ ReturnType TFQMRSolMgr<ScalarType,MV,OP>::solve() {
           ////////////////////////////////////////////////////////////////////////////////////
           else if ( maxIterTest_->getStatus() == Passed ) {
             // we don't have convergence
+            this->unconvergedCause_ = MaxItersReached;
             isConverged = false;
             break;  // break from while(1){tfqmr_iter->iterate()}
           }
@@ -719,12 +721,14 @@ ReturnType TFQMRSolMgr<ScalarType,MV,OP>::solve() {
           ////////////////////////////////////////////////////////////////////////////////////
 
           else {
+            this->unconvergedCause_ = InconsistentState;
             TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
                                "Belos::TFQMRSolMgr::solve(): Invalid return from TFQMRIter::iterate().");
           }
         }
         catch (const StatusTestNaNError& e) {
           // A NaN was detected in the solver.  Set the solution to zero and return unconverged.
+          this->unconvergedCause_ = NaNDetected;
           achievedTol_ = MT::one();
           Teuchos::RCP<MV> X = problem_->getLHS();
           MVT::MvInit( *X, SCT::zero() );
@@ -733,6 +737,7 @@ ReturnType TFQMRSolMgr<ScalarType,MV,OP>::solve() {
           return Unconverged; 
         }
         catch (const std::exception &e) {
+          this->unconvergedCause_ = NonspecificException;
           printer_->stream(Errors) << "Error! Caught std::exception in TFQMRIter::iterate() at iteration "
                                    << tfqmr_iter->getNumIters() << std::endl
                                    << e.what() << std::endl;
@@ -825,6 +830,7 @@ ReturnType TFQMRSolMgr<ScalarType,MV,OP>::solve() {
   if (!isConverged) {
     return Unconverged; // return from TFQMRSolMgr::solve()
   }
+  this->unconvergedCause_ = SolverConverged;
   return Converged; // return from TFQMRSolMgr::solve()
 }
 

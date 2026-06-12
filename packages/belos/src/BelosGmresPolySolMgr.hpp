@@ -605,6 +605,7 @@ ReturnType GmresPolySolMgr<ScalarType,MV,OP>::solve ()
 
   // Assume convergence is achieved if user does not require strict convergence.
   ReturnType ret = Belos::Converged;
+  this->unconvergedCause_ = Undetermined;
 
   // Set the current parameters if they were not set before.  NOTE:
   // This may occur if the user generated the solver manager with the
@@ -673,6 +674,7 @@ ReturnType GmresPolySolMgr<ScalarType,MV,OP>::solve ()
     solver->setProblem( newProblem );
     
     ret = solver->solve();
+    this->unconvergedCause_ = solver->getUnconvergedCause();
     numIters_ = solver->getNumIters();
     loaDetected_ = solver->isLOADetected();
     achievedTol_ = solver->achievedTol();
@@ -689,6 +691,7 @@ ReturnType GmresPolySolMgr<ScalarType,MV,OP>::solve ()
     solver->setProblem( problem_ );
     
     ret = solver->solve();
+    this->unconvergedCause_ = solver->getUnconvergedCause();
     numIters_ = solver->getNumIters();
     loaDetected_ = solver->isLOADetected();
     achievedTol_ = solver->achievedTol();
@@ -702,6 +705,9 @@ ReturnType GmresPolySolMgr<ScalarType,MV,OP>::solve ()
 
   }
 
+  if (ret == Converged) {
+    this->unconvergedCause_ = SolverConverged;
+  }
   return ret;
 }
 

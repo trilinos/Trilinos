@@ -141,7 +141,8 @@ int run(int argc, char *argv[])
     
     // Perform solve
     Belos::ReturnType ret = solver.solve();
-    
+    Belos::UnconvergedCauseType unconvergedCause = solver.getUnconvergedCause();
+
     // Compute actual residuals.
     bool badRes = false;
     std::vector<MT> actual_resids( numrhs );
@@ -161,7 +162,7 @@ int run(int argc, char *argv[])
       std::cout << std::endl << "Condition Estimate: " << solver.getConditionEstimate() << std::endl;
     }
 
-    success = ret==Belos::Converged && !badRes;
+    success = ret==Belos::Converged && (unconvergedCause==Belos::SolverConverged) && !badRes;
 
     if (success) {
       if (proc_verbose)

@@ -158,6 +158,7 @@ int main(int argc, char *argv[]) {
   // Perform solve
   //
   Belos::ReturnType ret = solver.solve();
+  Belos::UnconvergedCauseType unconvergedCause = solver.getUnconvergedCause();
   numIters1=solver.getNumIters();
   //
   // Compute actual residuals.
@@ -183,7 +184,10 @@ int main(int argc, char *argv[]) {
 
   if (proc_verbose) { std::cout << "Solve took " << numIters1 << " iterations." << std::endl; }
 
-  if ( ret!=Belos::Converged || badRes ) {
+  if ( ret==Belos::Converged && (unconvergedCause==Belos::SolverConverged) && !badRes ) {
+    // Ok
+  }
+  else {
     if (proc_verbose) {
       std::cout << "\nEnd Result: TEST FAILED" << std::endl;
     }

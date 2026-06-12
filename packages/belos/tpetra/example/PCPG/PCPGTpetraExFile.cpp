@@ -350,6 +350,7 @@ int run(int argc, char *argv[]) {
 
       // Perform solve
       Belos::ReturnType ret = solver->solve();
+      Belos::UnconvergedCauseType unconvergedCause = solver->getUnconvergedCause();
 
       // Compute actual residuals.
       badRes = false;
@@ -371,7 +372,10 @@ int run(int argc, char *argv[]) {
             badRes = true;
         }
       }
-      if (ret != Belos::Converged || badRes) {
+      if (ret==Belos::Converged && (unconvergedCause==Belos::SolverConverged) && !badRes) {
+	// Ok
+      }
+      else {
         success = false;
         break;
       }

@@ -271,10 +271,11 @@ void IterativeInverseOperator<OP, ST, MP, MV>::operator () (const MV &b, MV &x)
 
   timer.start();
   Belos::ReturnType ret = pBelos->solve();
+  Belos::UnconvergedCauseType unconvergedCause = pBelos->getUnconvergedCause();
   timer.stop();
 
   if (pid == 0 && print) {
-    if (ret == Belos::Converged)
+    if (ret == Belos::Converged && (unconvergedCause == Belos::SolverConverged))
     {
       std::cout << std::endl << "pid[" << pid << "] TFQMR converged" << std::endl;
       std::cout << "Solution time: " << timer.totalElapsedTime() << std::endl;

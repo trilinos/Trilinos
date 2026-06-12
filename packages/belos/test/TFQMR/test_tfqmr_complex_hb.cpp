@@ -164,6 +164,7 @@ int main(int argc, char *argv[]) {
     // Perform solve
     //
     Belos::ReturnType ret = solver.solve();
+    Belos::UnconvergedCauseType unconvergedCause = solver.getUnconvergedCause();
     //
     // Compute actual residuals.
     //
@@ -187,7 +188,7 @@ int main(int argc, char *argv[]) {
     delete [] rowind;
     delete [] cvals;
 
-    success = ret==Belos::Converged && !norm_failure;
+    success = ret==Belos::Converged && (unconvergedCause == Belos::SolverConverged) && !norm_failure;
     if (success) {
       if (proc_verbose)
         std::cout << "End Result: TEST PASSED" << std::endl;

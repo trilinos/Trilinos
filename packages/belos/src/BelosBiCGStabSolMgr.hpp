@@ -578,6 +578,8 @@ BiCGStabSolMgr<ScalarType,MV,OP>::getValidParameters() const
 template<class ScalarType, class MV, class OP>
 ReturnType BiCGStabSolMgr<ScalarType,MV,OP>::solve ()
 {
+  this->unconvergedCause_ = Undetermined;
+
   // Set the current parameters if they were not set before.
   // NOTE:  This may occur if the user generated the solver manager with the default constructor and
   // then didn't set any parameters using setParameters().
@@ -720,6 +722,7 @@ ReturnType BiCGStabSolMgr<ScalarType,MV,OP>::solve ()
           else if ( maxIterTest_->getStatus() == Passed ) {
             // we don't have convergence
             isConverged = false;
+            this->unconvergedCause_ = MaxItersReached;
             break;  // break from while(1){bicgstab_iter->iterate()}
           }
 
@@ -733,6 +736,7 @@ ReturnType BiCGStabSolMgr<ScalarType,MV,OP>::solve ()
           else if ( bicgstab_iter->breakdownDetected() ) {
             // we don't have convergence
             isConverged = false;
+            this->unconvergedCause_ = BreakdownDetected;
             printer_->stream(Warnings) <<
               "Belos::BiCGStabSolMgr::solve(): Warning! Solver has experienced a breakdown!" << std::endl;
             break;  // break from while(1){bicgstab_iter->iterate()}
@@ -746,12 +750,14 @@ ReturnType BiCGStabSolMgr<ScalarType,MV,OP>::solve ()
           ////////////////////////////////////////////////////////////////////////////////////
 
           else {
+            this->unconvergedCause_ = InconsistentState;
             TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
                                "Belos::BiCGStabSolMgr::solve(): Invalid return from BiCGStabIter::iterate().");
           }
         }
         catch (const StatusTestNaNError& e) {
           // A NaN was detected in the solver.  Set the solution to zero and return unconverged.
+          this->unconvergedCause_ = NaNDetected;
           achievedTol_ = MT::one();
           Teuchos::RCP<MV> X = problem_->getLHS();
           MVT::MvInit( *X, SCT::zero() );
@@ -760,6 +766,7 @@ ReturnType BiCGStabSolMgr<ScalarType,MV,OP>::solve ()
           return Unconverged; 
         }
         catch (const std::exception &e) {
+          this->unconvergedCause_ = NonspecificException;
           printer_->stream(Errors) << "Error! Caught std::exception in BiCGStabIter::iterate() at iteration "
                                    << bicgstab_iter->getNumIters() << std::endl
                                    << e.what() << std::endl;
@@ -819,6 +826,7 @@ ReturnType BiCGStabSolMgr<ScalarType,MV,OP>::solve ()
   if (!isConverged ) {
     return Unconverged; // return from BiCGStabSolMgr::solve()
   }
+  this->unconvergedCause_ = SolverConverged;
   return Converged; // return from BiCGStabSolMgr::solve()
 }
 

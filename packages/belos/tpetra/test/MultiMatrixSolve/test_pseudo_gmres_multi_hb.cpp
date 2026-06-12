@@ -154,6 +154,7 @@ int run(int argc, char *argv[]) {
 
     // Perform solve
     Belos::ReturnType ret = initSolver->solve();
+    Belos::UnconvergedCauseType unconvergedCause = initSolver->getUnconvergedCause();
 
     // Compute actual residuals.
     std::vector<int> initIndex( initNumRHS );
@@ -178,7 +179,10 @@ int run(int argc, char *argv[]) {
       }
     }
 
-    if (ret != Belos::Converged || badRes==true) {
+    if (ret == Belos::Converged && (unconvergedCause == Belos::SolverConverged) && !badRes) {
+      // Ok
+    }
+    else {
       if (procVerbose)
         std::cout << std::endl << "ERROR:  Initial solve did not converge to solution!" << std::endl;
       return -1;
@@ -227,8 +231,12 @@ int run(int argc, char *argv[]) {
 
     // Perform solve
     ret = augSolver->solve();
+    unconvergedCause = augSolver->getUnconvergedCause();
 
-    if (ret != Belos::Converged) {
+    if (ret == Belos::Converged && (unconvergedCause == Belos::SolverConverged)) {
+      // Ok
+    }
+    else {
       if (procVerbose)
         std::cout << std::endl << "ERROR: Augmented solver did not converge to solution!" << std::endl;
       return -1;
@@ -274,14 +282,15 @@ int run(int argc, char *argv[]) {
         if (actRes > tol ) badRes = true;
       }
     }
-    if (ret!=Belos::Converged || badRes==true) {
-      success = false;
-      if (procVerbose)
-        std::cout << "End Result: TEST FAILED" << std::endl;
-    } else {
+    if (ret == Belos::Converged && (unconvergedCause == Belos::SolverConverged) && !badRes) {
       success = true;
       if (procVerbose)
         std::cout << "End Result: TEST PASSED" << std::endl;
+    }
+    else {
+      success = false;
+      if (procVerbose)
+        std::cout << "End Result: TEST FAILED" << std::endl;
     }
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose,std::cerr,success);

@@ -557,6 +557,8 @@ ReturnType FixedPointSolMgr<ScalarType,MV,OP>::solve() {
   using Teuchos::rcp_const_cast;
   using Teuchos::rcp_dynamic_cast;
 
+  this->unconvergedCause_ = Undetermined;
+
   // Set the current parameters if they were not set before.  NOTE:
   // This may occur if the user generated the solver manager with the
   // default constructor and then didn't set any parameters using
@@ -698,6 +700,7 @@ ReturnType FixedPointSolMgr<ScalarType,MV,OP>::solve() {
           // maximum iteration count was reached.
           //
           else if (maxIterTest_->getStatus() == Passed) {
+            this->unconvergedCause_ = MaxItersReached;
             isConverged = false; // None of the linear systems converged.
             break;  // break from while(1){block_fp_iter->iterate()}
           }
@@ -706,6 +709,7 @@ ReturnType FixedPointSolMgr<ScalarType,MV,OP>::solve() {
           // This indicates a bug.
           //
           else {
+            this->unconvergedCause_ = InconsistentState;
             TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
               "Belos::FixedPointSolMgr::solve(): Neither the convergence test nor "
               "the maximum iteration count test passed.  Please report this bug "
@@ -714,6 +718,7 @@ ReturnType FixedPointSolMgr<ScalarType,MV,OP>::solve() {
         }
         catch (const StatusTestNaNError& e) {
           // A NaN was detected in the solver.  Set the solution to zero and return unconverged.
+          this->unconvergedCause_ = NaNDetected;
           achievedTol_ = MT::one();
           Teuchos::RCP<MV> X = problem_->getLHS();
           MVT::MvInit( *X, SCT::zero() );
@@ -722,6 +727,7 @@ ReturnType FixedPointSolMgr<ScalarType,MV,OP>::solve() {
           return Unconverged;
         }
         catch (const std::exception &e) {
+          this->unconvergedCause_ = NonspecificException;
           std::ostream& err = printer_->stream (Errors);
           err << "Error! Caught std::exception in FixedPointIteration::iterate() at "
               << "iteration " << block_fp_iter->getNumIters() << std::endl
@@ -802,6 +808,7 @@ ReturnType FixedPointSolMgr<ScalarType,MV,OP>::solve() {
   if (!isConverged) {
     return Unconverged; // return from FixedPointSolMgr::solve()
   }
+  this->unconvergedCause_ = SolverConverged;
   return Converged; // return from FixedPointSolMgr::solve()
 }
 

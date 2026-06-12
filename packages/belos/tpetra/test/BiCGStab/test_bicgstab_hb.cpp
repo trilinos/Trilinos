@@ -144,6 +144,7 @@ int main (int argc, char *argv[])
 
     // Ask Belos to solve the linear system.
     Belos::ReturnType ret = solver->solve();
+    Belos::UnconvergedCauseType unconvergedCause = solver->getUnconvergedCause();
 
     //
     // Compute actual residuals.
@@ -167,7 +168,10 @@ int main (int argc, char *argv[])
       if (actRes > tol) badRes = true;
     }
 
-    if ( ret!=Belos::Converged || badRes) {
+    if ( ret==Belos::Converged && (unconvergedCause==Belos::SolverConverged) && !badRes) {
+      // Ok
+    }
+    else {
       if (proc_verbose) {
         std::cout << "\nEnd Result: TEST FAILED" << std::endl;
       }

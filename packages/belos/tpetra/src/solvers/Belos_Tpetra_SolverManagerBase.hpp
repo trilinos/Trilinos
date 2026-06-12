@@ -165,6 +165,16 @@ public:
        "a nonnull argument before calling this method.");
 
     lastSolverOutput_ = solver_->solve (*X, *B);
+    // Set 'this->unconvergedCause' manually, since 'solver_->getUnconvergedCause()'
+    // does not work because 'solver_' is an instance of Krylov<SC, MV, OP>, which
+    // does not have the method 'getUnconvergedCause()' nor implements an internal
+    // variable related to unconverged cause.
+    if (lastSolverOutput_.converged) {
+      this->unconvergedCause_ = Belos::SolverConverged;
+    }
+    else {
+      this->unconvergedCause_ = Belos::Undetermined;
+    }
     return lastSolverOutput_.converged ? Belos::Converged : Belos::Unconverged;
   }
 
