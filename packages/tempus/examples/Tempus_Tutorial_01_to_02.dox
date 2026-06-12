@@ -1,0 +1,144 @@
+/*! \page tempus_tutorial_transition_01_02 Transition from Example 1 to Example 2
+ *
+ *  \section tempus_tutorial_transition_01_02_goal Goal
+ *
+ *  The primary goal of \ref example-02 is to move the van der Pol problem
+ *  definition into a \ref Thyra::ModelEvaluator while preserving the same
+ *  \ref Thyra-based state representation and the same Forward Euler stepping
+ *  logic used in \ref example-01.
+ *
+ *  New concepts introduced are:
+ *
+ *  - \ref Thyra::ModelEvaluator
+ *    - provides a standard Trilinos interface for evaluating the application model
+ *  - `Thyra::ModelEvaluatorBase::InArgs`
+ *    - supplies the model inputs such as time and state
+ *  - `Thyra::ModelEvaluatorBase::OutArgs`
+ *    - receives the model outputs such as the right-hand side
+ *  - `getNominalValues()`
+ *    - provides nominal initial conditions from the model
+ *  - `evalModel()`
+ *    - evaluates the model using the supplied input and output arguments
+ *
+ *  This is the first step in separating the problem physics from the
+ *  time integration algorithm.  Rather than evaluating the right-hand side
+ *  directly in the application, the code now requests that evaluation through
+ *  a common model interface.  This is a key part of how \ref Tempus steppers
+ *  and integrators interact with application models.
+ *
+ *  \section tempus_tutorial_transition_01_02_same What stays the same
+ *
+ *  - The state is still stored in \ref Thyra vectors.
+ *  - The timestepper is still Forward Euler.
+ *  - The application still controls the time loop directly.
+ *  - The regression check follows the same pattern.
+ *
+ *  \section tempus_tutorial_transition_01_02_snippets Selected code excerpts
+ *
+ *  The code excerpts below highlight the main changes needed to move from
+ *  direct application-level right-hand-side evaluation to the use of a
+ *  \ref Thyra::ModelEvaluator.
+ *
+ *  <hr style="border:0; border-top:5px solid #ccc;">
+ *  \subsection tempus_tutorial_transition_01_02_snippet1 Construct the model
+ *
+ *  <b>Construct a ModelEvaluator.</b>  The application now creates an object
+ *  that represents the problem model.
+ *
+ *  <b>Before</b>
+ *  @code
+ *  int vectorLength = 2;
+ *  RCP<const Thyra::VectorSpaceBase<double> > xSpace =
+ *    Thyra::defaultSpmdVectorSpace<double>(vectorLength);
+ *  @endcode
+ *
+ *  <b>After</b>
+ *  @code
+ *  Teuchos::RCP<const Thyra::ModelEvaluator<double> >
+ *    model = Teuchos::rcp(new VanDerPol_ModelEvaluator_02<double>());
+ *  @endcode
+ *
+ *  The application now delegates model-specific information to a dedicated
+ *  model object.
+ *
+ *  <hr style="border:0; border-top:5px solid #ccc;">
+ *  \subsection tempus_tutorial_transition_01_02_snippet2 Get initial conditions
+ *
+ *  <b>Obtain nominal initial conditions from the model.</b>  The nominal
+ *  solution and its time derivative are no longer assembled manually.
+ *
+ *  <b>Before</b>
+ *  @code
+ *  RCP<Thyra::VectorBase<double> > x_n    = Thyra::createMember(xSpace);
+ *  RCP<Thyra::VectorBase<double> > xDot_n = Thyra::createMember(xSpace);
+ *  @endcode
+ *
+ *  <b>After</b>
+ *  @code
+ *  RCP<Thyra::VectorBase<double> > x_n =
+ *    model->getNominalValues().get_x()->clone_v();
+ *  RCP<Thyra::VectorBase<double> > xDot_n =
+ *    model->getNominalValues().get_x_dot()->clone_v();
+ *  @endcode
+ *
+ *  <hr style="border:0; border-top:5px solid #ccc;">
+ *  \subsection tempus_tutorial_transition_01_02_snippet3 Evaluate the model
+ *
+ *  <b>Evaluate the right-hand side through ModelEvaluator.</b>  The
+ *  application fills `InArgs` and `OutArgs` and then requests the model
+ *  evaluation.
+ *
+ *  <b>Before</b>
+ *  @code
+ *  {
+ *    Thyra::ConstDetachedVectorView<double> x_n_view(*x_n);
+ *    Thyra::DetachedVectorView<double> xDot_n_view(*xDot_n);
+ *    xDot_n_view[0] = x_n_view[1];
+ *    xDot_n_view[1] =
+ *      ((1.0-x_n_view[0]*x_n_view[0])*x_n_view[1]-x_n_view[0])/epsilon;
+ *  }
+ *  @endcode
+ *
+ *  <b>After</b>
+ *  @code
+ *  auto inArgs  = model->createInArgs();
+ *  auto outArgs = model->createOutArgs();
+ *  inArgs.set_t(time);
+ *  inArgs.set_x(x_n);
+ *  inArgs.set_x_dot(Teuchos::null);
+ *  outArgs.set_f(xDot_n);
+ *
+ *  model->evalModel(inArgs, outArgs);
+ *  @endcode
+ *
+ *  The right-hand side is now obtained through the model interface rather
+ *  than being coded directly in the time loop.
+ *
+ *  <hr style="border:0; border-top:5px solid #ccc;">
+ *  \section tempus_tutorial_transition_01_02_compare How to compare the examples
+ *
+ *  A more detailed comparison can be made by diffing:
+ *  - `examples/01_Utilize_Thyra/01_Utilize_Thyra.cpp`
+ *  - `examples/02_Use_ModelEvaluator/02_Use_ModelEvaluator.cpp`
+ *
+ *  From the `packages/tempus` directory, a focused comparison of the main
+ *  time-integration logic between these two examples can be generated locally
+ *  in `bash` or `zsh` with:
+ *
+ *  @code{.sh}
+ *  git diff --no-index \
+ *    <(sed -n '60,130p' examples/01_Utilize_Thyra/01_Utilize_Thyra.cpp) \
+ *    <(sed -n '67,131p' examples/02_Use_ModelEvaluator/02_Use_ModelEvaluator.cpp)
+ *  @endcode
+ *
+ *  This ignores leading header lines (for example, `#include` statements and
+ *  Doxygen comments) and trailing regression-testing lines.
+ *
+ *  \htmlonly
+ *  <div style="text-align:center;">
+ *    <a href="example-01.html">← Previous Example</a> |
+ *    <a href="example-02.html">Current Example</a> |
+ *    <a href="example-03.html">Next Example →</a>
+ *  </div>
+ *  \endhtmlonly
+ */
