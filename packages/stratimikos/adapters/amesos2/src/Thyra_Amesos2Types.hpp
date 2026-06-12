@@ -49,7 +49,19 @@ enum ESolverType {
 #ifdef HAVE_AMESOS2_MUMPS
   ,MUMPS
 #endif
-}; 
+#ifdef HAVE_AMESOS2_UMFPACK
+  ,UMFPACK
+#endif
+#ifdef HAVE_AMESOS2_SHYLU_NODETACHO
+  ,TACHO
+#endif
+#ifdef HAVE_AMESOS2_STRUMPACK
+  ,STRUMPACK
+#endif
+#ifdef HAVE_AMESOS2_CUSOLVER
+  ,CUSOLVER
+#endif
+};
 
 /** \brief .
 \ingroup Amesos2_Thyra_adapters_grp
@@ -82,7 +94,19 @@ const int numSolverTypes = 1
 #ifdef HAVE_AMESOS2_MUMPS
 +1
 #endif
-; 
+#ifdef HAVE_AMESOS2_UMFPACK
++1
+#endif
+#ifdef HAVE_AMESOS2_SHYLU_NODETACHO
++1
+#endif
+#ifdef HAVE_AMESOS2_STRUMPACK
++1
+#endif
+#ifdef HAVE_AMESOS2_CUSOLVER
++1
+#endif
+;
 
 /** \brief .
 \ingroup Amesos2_Thyra_adapters_grp

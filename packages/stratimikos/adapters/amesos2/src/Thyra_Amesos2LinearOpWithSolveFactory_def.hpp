@@ -197,6 +197,26 @@ void Amesos2LinearOpWithSolveFactory<Scalar>::initializeOp(
           amesos2Solver = ::Amesos2::create<MAT,MV>("mumps", tpetraCrsMat);
           break;
 #endif
+#ifdef HAVE_AMESOS2_UMFPACK
+        case Thyra::Amesos2::UMFPACK:
+          amesos2Solver = ::Amesos2::create<MAT,MV>("umfpack", tpetraCrsMat);
+          break;
+#endif
+#ifdef HAVE_AMESOS2_SHYLU_NODETACHO
+        case Thyra::Amesos2::TACHO:
+          amesos2Solver = ::Amesos2::create<MAT,MV>("tacho", tpetraCrsMat);
+          break;
+#endif
+#ifdef HAVE_AMESOS2_STRUMPACK
+        case Thyra::Amesos2::STRUMPACK:
+          amesos2Solver = ::Amesos2::create<MAT,MV>("strumpack", tpetraCrsMat);
+          break;
+#endif
+#ifdef HAVE_AMESOS2_CUSOLVER
+        case Thyra::Amesos2::CUSOLVER:
+          amesos2Solver = ::Amesos2::create<MAT,MV>("cusolver", tpetraCrsMat);
+          break;
+#endif
           default:
             TEUCHOS_TEST_FOR_EXCEPTION(
               true, std::logic_error
@@ -209,6 +229,11 @@ void Amesos2LinearOpWithSolveFactory<Scalar>::initializeOp(
     if( paramList_->isSublist(Amesos2_Settings_name) ){
       auto amesos2Params = Teuchos::rcp(new Teuchos::ParameterList(paramList_->sublist(Amesos2_Settings_name)));
       amesos2Params->setName("Amesos2");
+      amesos2Solver->setParameters(amesos2Params);
+    } else {
+      auto amesos2Params = Teuchos::rcp(new Teuchos::ParameterList());
+      amesos2Params->setName("Amesos2");
+      amesos2Params->sublist(amesos2Solver->name());
       amesos2Solver->setParameters(amesos2Params);
     }
 
@@ -411,7 +436,7 @@ Amesos2LinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
     validParamList->set(ThrowOnPreconditionerInput_name,bool(true));
     Teuchos::setupVerboseObjectSublist(&*validParamList);
 
-    // empty Amesos2_Settings parameter list 
+    // empty Amesos2_Settings parameter list
     // (Stratimikos won't validate, but Amesos2 will when a user actually try to set parameters)
     RCP<Teuchos::ParameterList> amesos2Params = rcp(new ParameterList("Amesos2"));
     validParamList->sublist(Amesos2_Settings_name).setParameters(*amesos2Params);
