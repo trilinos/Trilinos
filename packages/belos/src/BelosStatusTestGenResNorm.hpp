@@ -319,6 +319,12 @@ class StatusTestGenResNorm: public StatusTestResNorm<ScalarType,MV,OP> {
   //! Most recent solution vector used by this status test.
   Teuchos::RCP<MV> curSoln_;
 
+  //! Cached MV used to hold the explicit residual computed inside
+  //! checkStatus() (Explicit residual path).  Reused across solves on
+  //! the same linear problem so the status test does not allocate a
+  //! fresh domain-Map MV on every convergence check.
+  mutable Teuchos::RCP<MV> cachedCurRes_;
+
   //! Status
   StatusType status_;
 
@@ -488,7 +494,19 @@ StatusType StatusTestGenResNorm<ScalarType,MV,OP>::checkStatus( Iteration<Scalar
     //
     Teuchos::RCP<MV> cur_update = iSolver->getCurrentUpdate();
     curSoln_ = lp.updateSolution( cur_update );
-    Teuchos::RCP<MV> cur_res = MVT::Clone( *curSoln_, MVT::GetNumberVecs( *curSoln_ ) );
+    // Reuse the cached explicit-residual MV when its column count
+    // matches; otherwise (re)allocate.  curSoln_'s map does not
+    // change between solves on the same linear problem, so the
+    // buffer is reusable and we save a per-solve cudaMalloc of a
+    // domain-Map MV.
+    {
+      const int need = MVT::GetNumberVecs( *curSoln_ );
+      if (cachedCurRes_.is_null() ||
+          MVT::GetNumberVecs( *cachedCurRes_ ) != need) {
+        cachedCurRes_ = MVT::Clone( *curSoln_, need );
+      }
+    }
+    Teuchos::RCP<MV> cur_res = cachedCurRes_;
     lp.computeCurrResVec( &*cur_res, &*curSoln_ );
     std::vector<MagnitudeType> tmp_resvector( MVT::GetNumberVecs( *cur_res ) );
     MVT::MvNorm( *cur_res, tmp_resvector, resnormtype_ );

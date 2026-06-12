@@ -372,6 +372,15 @@ public:
   //! Is this the first time CheckStatus is called?
   bool firstcallCheckStatus_;
 
+  //! Cached MV used to hold the explicit residual computed in
+  //! checkStatus().  The map of curSoln_ does not change between
+  //! solves on the same linear problem and the column count is
+  //! determined by the current solver block size, so we keep a
+  //! single MV alive across calls and only re-Clone it when the
+  //! column count changes.  Eliminates a per-solve cudaMalloc of a
+  //! domain-Map MV.
+  mutable Teuchos::RCP<MV> cachedCurRes_;
+
   //! Is this the first time DefineResForm is called?
   bool firstcallDefineResForm_;
 
@@ -615,7 +624,19 @@ checkStatus (Iteration<ScalarType,MV,OP>* iSolver)
     //
     RCP<MV> cur_update = iSolver->getCurrentUpdate ();
     curSoln_ = lp.updateSolution (cur_update);
-    RCP<MV> cur_res = MVT::Clone (*curSoln_, MVT::GetNumberVecs (*curSoln_));
+    // Reuse the cached explicit-residual MV when its column count
+    // matches; otherwise (re)allocate.  curSoln_'s map is fixed for
+    // a given linear problem, so once allocated the MV is reusable
+    // across solves and we avoid a cudaMalloc on each convergence
+    // check.
+    {
+      const int need = MVT::GetNumberVecs (*curSoln_);
+      if (cachedCurRes_.is_null () ||
+          MVT::GetNumberVecs (*cachedCurRes_) != need) {
+        cachedCurRes_ = MVT::Clone (*curSoln_, need);
+      }
+    }
+    RCP<MV> cur_res = cachedCurRes_;
     lp.computeCurrResVec (&*cur_res, &*curSoln_);
     tmp_resvector.resize (MVT::GetNumberVecs (*cur_res));
     std::vector<MagnitudeType> tmp_testvector (have);

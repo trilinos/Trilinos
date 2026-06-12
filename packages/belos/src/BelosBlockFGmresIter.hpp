@@ -298,6 +298,19 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
   // z_: Q applied to right-hand side of the least squares system
   Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > R_;
   Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > z_;
+
+  // Cached output of getCurrentUpdate(): a domain-Map MV with
+  // blockSize_ columns, holding Z*y.  Allocated once and reused
+  // across solves, eliminating a per-solve cudaMalloc.
+  mutable Teuchos::RCP<MV> currentUpdate_;
+  // Cached view of the first curDim_ columns of Z_, plus the dim it
+  // was created at.  Re-CloneView only when curDim_ changes.
+  mutable Teuchos::RCP<const MV> cachedZjp1_;
+  mutable int cachedZjp1_dim_ = -1;
+  // Cached host-side scratch for the LSQR-RHS copy used in
+  // getCurrentUpdate.  Reshaped via shapeUninitialized when the
+  // requested (curDim_, blockSize_) shape changes.
+  mutable Teuchos::SerialDenseMatrix<int,ScalarType> cachedY_;
 };
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -352,8 +365,14 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
       return;
     }
 
-    if (blockSize!=blockSize_ || numBlocks!=numBlocks_)
+    if (blockSize!=blockSize_ || numBlocks!=numBlocks_) {
       stateStorageInitialized_ = false;
+      // Drop cached scratch in getCurrentUpdate(): they all depend
+      // on V_/Z_'s map and on blockSize_/curDim_, which may change.
+      currentUpdate_  = Teuchos::null;
+      cachedZjp1_     = Teuchos::null;
+      cachedZjp1_dim_ = -1;
+    }
 
     blockSize_ = blockSize;
     numBlocks_ = numBlocks;
@@ -493,23 +512,45 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
       const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one ();
       Teuchos::BLAS<int,ScalarType> blas;
 
-      currentUpdate = MVT::Clone (*Z_, blockSize_);
+      // Reuse the cached update MV when its column count matches.
+      // The map of Z_ doesn't change after setStateSize, so we avoid
+      // a fresh cudaMalloc on every solve.
+      if (currentUpdate_.is_null () ||
+          MVT::GetNumberVecs (*currentUpdate_) != blockSize_) {
+        currentUpdate_ = MVT::Clone (*Z_, blockSize_);
+      }
+      currentUpdate = currentUpdate_;
 
-      // Make a view and then copy the RHS of the least squares problem.  DON'T OVERWRITE IT!
-      SDM y (Teuchos::Copy, *z_, curDim_, blockSize_);
+      // Reuse cached host SDM for the LSQR RHS copy; reshape only
+      // when the (rows, cols) request changes.
+      if (cachedY_.numRows () < curDim_ || cachedY_.numCols () < blockSize_) {
+        cachedY_.shapeUninitialized (curDim_, blockSize_);
+      }
+      // Copy current curDim_ rows × blockSize_ cols of *z_ into the
+      // top-left block of cachedY_.  DON'T OVERWRITE *z_.
+      for (int j = 0; j < blockSize_; ++j) {
+        for (int i = 0; i < curDim_; ++i) {
+          cachedY_(i, j) = (*z_)(i, j);
+        }
+      }
+      SDM y (Teuchos::View, cachedY_, curDim_, blockSize_);
 
       // Solve the least squares problem.
       blas.TRSM (Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
                  Teuchos::NON_UNIT_DIAG, curDim_, blockSize_, one,
                  R_->values (), R_->stride (), y.values (), y.stride ());
 
-      // Compute the current update.
-      std::vector<int> index (curDim_);
-      for (int i = 0; i < curDim_; ++i) {
-        index[i] = i;
+      // Compute the current update.  Reuse the cached view when
+      // curDim_ hasn't changed since the last call.
+      if (cachedZjp1_.is_null () || cachedZjp1_dim_ != curDim_) {
+        std::vector<int> index (curDim_);
+        for (int i = 0; i < curDim_; ++i) {
+          index[i] = i;
+        }
+        cachedZjp1_     = MVT::CloneView (*Z_, index);
+        cachedZjp1_dim_ = curDim_;
       }
-      Teuchos::RCP<const MV> Zjp1 = MVT::CloneView (*Z_, index);
-      MVT::MvTimesMatAddMv (one, *Zjp1, y, zero, *currentUpdate);
+      MVT::MvTimesMatAddMv (one, *cachedZjp1_, y, zero, *currentUpdate);
     }
     return currentUpdate;
   }
