@@ -39,6 +39,7 @@
 #include <functional>
 #include <iomanip>
 #include <iostream>
+#include <limits>
 #include <numeric>
 #include <sstream>
 #include <string>
@@ -50,6 +51,7 @@
 namespace fs = std::filesystem;
 
 // ── Teuchos ───────────────────────────────────────────────────────────────
+#include "Teuchos_CommHelpers.hpp"
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
@@ -110,54 +112,62 @@ using Problem  = Belos::LinearProblem<SC, MV, OP>;
 using State    = Belos::GmresIterationState<SC, MV>;
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Section 1: dense helpers
+// Section 1: distributed helpers
 // ═══════════════════════════════════════════════════════════════════════════
 
-// Extract the first nCols columns of block j from a Thyra ProductMultiVector
-// into a column-major SerialDenseMatrix (nRows_j × nCols).
-inline SDM extractBlockDense(
+// Return block j of a Thyra ProductMultiVector as its underlying (possibly
+// distributed) Tpetra::MultiVector. No data is copied or gathered.
+inline Teuchos::RCP<const TpetraMV> getBlockTpetraMV(
     Teuchos::RCP<const MV> mv,
-    int j,
-    int nRows_j,
-    int nCols)
+    int j)
 {
     auto pmv  = Teuchos::rcp_dynamic_cast<const Thyra::ProductMultiVectorBase<SC>>(mv);
     TEUCHOS_TEST_FOR_EXCEPTION(pmv.is_null(), std::runtime_error,
-        "Teko::KrylovSurrogate::extractBlockDense: mv is not a ProductMultiVectorBase");
+        "Teko::KrylovSurrogate::getBlockTpetraMV: mv is not a ProductMultiVectorBase");
 
     auto blk  = pmv->getMultiVectorBlock(j);
     auto tmv  = Teuchos::rcp_dynamic_cast<const Thyra::TpetraMultiVector<SC, LO, GO, Node>>(blk);
     TEUCHOS_TEST_FOR_EXCEPTION(tmv.is_null(), std::runtime_error,
-        "Teko::KrylovSurrogate::extractBlockDense: block is not a TpetraMultiVector");
+        "Teko::KrylovSurrogate::getBlockTpetraMV: block " + std::to_string(j) +
+        " is not a TpetraMultiVector");
 
-    auto tptr = tmv->getConstTpetraMultiVector();
+    return tmv->getConstTpetraMultiVector();
+}
 
-    // The dense SVD/C_hat computation below indexes this block's data with
-    // plain global row indices (0..nRows_j-1). That is only correct if the
-    // block's map is entirely local to this rank, i.e. a single-rank
-    // (serial) run. On a multi-rank run getData() returns a *local* view
-    // whose length need not match nRows_j (the global block dimension),
-    // which would silently read/write out of bounds. Fail loudly instead.
-    TEUCHOS_TEST_FOR_EXCEPTION(tptr->getMap()->getComm()->getSize() != 1,
-        std::runtime_error,
-        "Teko::KrylovSurrogate::extractBlockDense: block " + std::to_string(j) +
-        " is distributed across " +
-        std::to_string(tptr->getMap()->getComm()->getSize()) +
-        " MPI ranks; the Krylov-surrogate adaptive loop currently only "
-        "supports single-rank (serial) runs.");
-    TEUCHOS_TEST_FOR_EXCEPTION(static_cast<size_t>(nRows_j) != tptr->getLocalLength(),
-        std::runtime_error,
-        "Teko::KrylovSurrogate::extractBlockDense: block " + std::to_string(j) +
-        " expected " + std::to_string(nRows_j) + " rows but local length is " +
-        std::to_string(tptr->getLocalLength()));
+// (comm, rank) from block 0 of a product multivector — used to gate the JSON
+// file I/O in adaptiveLoop() to rank 0.
+inline std::pair<Teuchos::RCP<const Teuchos::Comm<int>>, int>
+getCommAndRank(Teuchos::RCP<const MV> mv)
+{
+    auto comm = getBlockTpetraMV(mv, 0)->getMap()->getComm();
+    return {comm, comm->getRank()};
+}
 
-    SDM D(nRows_j, nCols);
-    for (int col = 0; col < nCols; ++col) {
-        auto view = tptr->getVector(col)->getData();
-        for (int row = 0; row < nRows_j; ++row)
-            D(row, col) = view[row];
+// C := A^T B as a replicated SerialDenseMatrix (numVecs(A) × numVecs(B)).
+// A and B may be distributed arbitrarily (they must share a row distribution).
+// Internally Tpetra computes the local GEMM and sum-reduces the small result
+// across ranks (Tpetra::MultiVector::multiply with a locally-replicated
+// target), so every rank gets the bit-identical matrix — no broadcasts needed
+// downstream. This is the only cross-rank reduction in computeCHat(); nothing
+// problem-sized is ever gathered.
+inline SDM mvTransMv(const TpetraMV& A, const TpetraMV& B)
+{
+    const int ka = static_cast<int>(A.getNumVectors());
+    const int kb = static_cast<int>(B.getNumVectors());
+
+    auto repMap = Teuchos::rcp(new Tpetra::Map<LO, GO, Node>(
+        static_cast<Tpetra::global_size_t>(ka), 0,
+        A.getMap()->getComm(), Tpetra::LocallyReplicated));
+    TpetraMV C(repMap, kb);
+    C.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, A, B, 0.0);
+
+    SDM out(ka, kb);
+    for (int c = 0; c < kb; ++c) {
+        auto view = C.getVector(c)->getData();
+        for (int r = 0; r < ka; ++r)
+            out(r, c) = view[r];
     }
-    return D;
+    return out;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -170,11 +180,6 @@ struct CHatData {
     std::vector<int>   block_sizes;
     std::vector<int>   ranks;       // r_j per block
 
-    // Q[j] is (block_sizes[j] × ranks[j]) — left singular vectors of V_j.
-    // Internal use only (needed to form C_hat and b_hat below); NOT written
-    // to request.json since its size is O(block_sizes[j]) and would make the
-    // request scale with the global problem size n.
-    std::vector<SDM>               Q;
     // blocks[i][j] is (ranks[i] × ranks[j]) — reduced operator
     std::vector<std::vector<SDM>>  blocks;
     // b_hat[j] is (ranks[j] × 1) = Q[j]^T * b_j — reduced right-hand side
@@ -187,6 +192,33 @@ struct CHatData {
 //   b          — the right-hand side of the linear system (for b_hat = Q^T b)
 //   block_sizes — sizes of each block
 //   svd_tol    — truncation threshold relative to leading singular value
+//
+// Multi-rank (Gram-matrix) formulation. The mathematical definitions are
+// unchanged from the GESVD version:
+//
+//   V_j = Q_j Sigma_j W_j^T  (thin SVD),
+//   C_hat_{ij} = Q_{i,ri}^T A_{ij} Z_j W_{j,rj} Sigma_{j,rj}^{-1},
+//   b_hat_j    = Q_{j,rj}^T b_j,
+//
+// but Q_j (problem-sized, distributed) is eliminated via
+// Q_j = V_j W_j Sigma_j^{-1}, leaving only small replicated quantities:
+//
+//   G_j   := V_j^T V_j = W_j Sigma_j^2 W_j^T   (curDim × curDim, SPD)
+//     → SYEV eigendecomposition gives W_j and sigma_{j,k} = sqrt(lambda_{j,k})
+//   b_hat_j    = Sigma_{j,rj}^{-1} W_{j,rj}^T (V_j^T b_j)
+//   C_hat_{ij} = Sigma_{i,ri}^{-1} W_{i,ri}^T (V_i^T A_{ij} Z_j) W_{j,rj} Sigma_{j,rj}^{-1}
+//
+// Every V^T(...) product is a mvTransMv() reduction (local GEMM + Allreduce of
+// a curDim-sized matrix); the sparse A_{ij} Z_j apply stays fully distributed.
+// All ranks therefore compute identical C_hat/b_hat with no gathers or
+// broadcasts. This is a collective: every rank must call it.
+//
+// Numerical caveat: truncating sigma_k >= svd_tol * sigma_max on G_j's
+// eigenvalues means lambda_k >= svd_tol^2 * lambda_max (= 1e-16*lambda_max at
+// the default), right at double roundoff. For ill-conditioned V_j
+// (cond >~ 1e4) ranks[j] may differ from the GESVD result. SYEV's eigenvector
+// sign convention may also flip individual rows/columns of C_hat/b_hat
+// relative to GESVD — magnitudes and norms are unaffected.
 inline CHatData computeCHat(
     const State&                                       state,
     Teuchos::RCP<const Thyra::BlockedLinearOpBase<SC>> A_blocked,
@@ -202,105 +234,85 @@ inline CHatData computeCHat(
     chat.krylov_dim  = curDim;
     chat.block_sizes = block_sizes;
     chat.ranks.resize(nb, 0);
-    chat.Q.resize(nb);
     chat.b_hat.resize(nb);
     chat.blocks.assign(nb, std::vector<SDM>(nb));
 
     Teuchos::LAPACK<int, SC> lapack;
 
-    // ── Per-block SVD of V_j ──────────────────────────────────────────────
-    // V[:,0:curDim] are the curDim Krylov vectors.
-    // V_j = rows of block j of V → (block_sizes[j] × curDim).
-    // SVD: V_j = U Sigma W^T  (thin, JOBU='S', JOBVT='S').
-    //   U:   block_sizes[j] × curDim  (left singular vectors)
-    //   S:   curDim                    (singular values)
-    //   VT:  curDim × curDim           (right singular vectors, rows)
+    const Teuchos::Range1D krylovCols(0, curDim - 1);
 
-    // Also store Z_j for later use.
-    std::vector<SDM> Z_dense(nb);          // Z_dense[j] = n_j × curDim
-    std::vector<SDM> WTrunc(nb);           // WTrunc[j]  = curDim × r_j (right sv)
-    std::vector<std::vector<SC>> Sigma(nb); // Sigma[j]   = first r_j values
+    // Per-block distributed views (first curDim columns; no copies).
+    std::vector<Teuchos::RCP<const TpetraMV>> Vt(nb), Zt(nb);
+    for (int j = 0; j < nb; ++j) {
+        Vt[j] = getBlockTpetraMV(state.V, j)->subView(krylovCols);
+        Zt[j] = getBlockTpetraMV(state.Z, j)->subView(krylovCols);
+    }
+
+    // ── Per-block: eigendecomposition of the Gram matrix G_j = V_j^T V_j ──
+    std::vector<SDM> WTrunc(nb);            // WTrunc[j] = curDim × r_j
+    std::vector<std::vector<SC>> Sigma(nb); // Sigma[j]  = leading r_j sing. values
 
     for (int j = 0; j < nb; ++j) {
-        const int nj = block_sizes[j];
+        // G_j (curDim × curDim, replicated identically on every rank).
+        SDM Gj = mvTransMv(*Vt[j], *Vt[j]);
 
-        // Extract V_j and Z_j
-        SDM Vj = extractBlockDense(state.V, j, nj, curDim);
-        Z_dense[j] = extractBlockDense(state.Z, j, nj, curDim);
-
-        // GESVD: overwrites Vj.  Need a mutable copy of the data.
-        std::vector<SC> A_buf(nj * curDim);
-        for (int c = 0; c < curDim; ++c)
-            for (int r = 0; r < nj; ++r)
-                A_buf[c * nj + r] = Vj(r, c);  // column-major
-
-        const int k   = std::min(nj, curDim);
-        std::vector<SC> S(k);
-        std::vector<SC> U_buf(nj * k);           // nj × k, column-major
-        std::vector<SC> VT_buf(k * curDim);      // k × curDim, column-major
-
-        // Workspace query
+        // SYEV: eigenvalues ascending; eigenvectors overwrite Gj's columns.
+        std::vector<SC> eig(curDim);
         int lwork = -1, info = 0;
         SC work_query;
-        lapack.GESVD('S', 'S',
-            nj, curDim,
-            A_buf.data(), nj,
-            S.data(),
-            U_buf.data(), nj,
-            VT_buf.data(), k,
-            &work_query, lwork,
-            nullptr,  // RWORK ignored for double
-            &info);
+        lapack.SYEV('V', 'U', curDim, Gj.values(), Gj.stride(),
+                    eig.data(), &work_query, lwork, &info);
         lwork = static_cast<int>(work_query);
         std::vector<SC> work(lwork);
-        lapack.GESVD('S', 'S',
-            nj, curDim,
-            A_buf.data(), nj,
-            S.data(),
-            U_buf.data(), nj,
-            VT_buf.data(), k,
-            work.data(), lwork,
-            nullptr,
-            &info);
+        lapack.SYEV('V', 'U', curDim, Gj.values(), Gj.stride(),
+                    eig.data(), work.data(), lwork, &info);
         TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
-            "Teko::KrylovSurrogate::computeCHat: GESVD failed (info=" +
+            "Teko::KrylovSurrogate::computeCHat: SYEV failed (info=" +
             std::to_string(info) + ") for block " + std::to_string(j));
 
-        // Truncate
-        const SC threshold = (S[0] > 0.0 ? svd_tol * S[0] : 0.0);
+        // Truncate against the leading eigenvalue. sigma_k >= svd_tol*sigma_max
+        // on singular values is lambda_k >= svd_tol^2*lambda_max on G_j's
+        // eigenvalues (lambda_k = sigma_k^2). The threshold is floored at a
+        // few ulps of lambda_max: eigenvalues of G_j below that are roundoff
+        // noise (directions with sigma <~ sqrt(eps)*sigma_max cannot be
+        // resolved through the Gram matrix), and keeping one would inject an
+        // O(1/sigma) garbage row/column into C_hat.
+        const SC eps        = std::numeric_limits<SC>::epsilon();
+        const SC lambda_max = eig[curDim - 1];
+        const SC threshold  = (lambda_max > 0.0
+            ? std::max(svd_tol * svd_tol, 8.0 * eps) * lambda_max : 0.0);
         int rj = 0;
-        while (rj < k && S[rj] >= threshold) ++rj;
+        while (rj < curDim && eig[curDim - 1 - rj] >= threshold) ++rj;
         if (rj == 0) rj = 1;  // keep at least one direction
 
         chat.ranks[j] = rj;
-        Sigma[j].assign(S.begin(), S.begin() + rj);
 
-        // Q[j] = U[:,0:rj]  (nj × rj), column-major
-        chat.Q[j].shape(nj, rj);
-        for (int c = 0; c < rj; ++c)
-            for (int r = 0; r < nj; ++r)
-                chat.Q[j](r, c) = U_buf[c * nj + r];
+        // Descending order: r-th largest eigenpair is SYEV column curDim-1-r.
+        Sigma[j].resize(rj);
+        WTrunc[j].shape(curDim, rj);
+        for (int r = 0; r < rj; ++r) {
+            const int src = curDim - 1 - r;
+            Sigma[j][r] = std::sqrt(std::max(eig[src], 0.0));
+            for (int kd = 0; kd < curDim; ++kd)
+                WTrunc[j](kd, r) = Gj(kd, src);
+        }
 
-        // b_hat[j] = Q[j]^T * b_j   (rj × 1)
-        SDM bj = extractBlockDense(b, j, nj, 1);
+        // b_hat[j] = Sigma_j^{-1} W_j^T (V_j^T b_j)   (rj × 1)
+        SDM Vtb = mvTransMv(*Vt[j], *getBlockTpetraMV(b, j));   // curDim × 1
         chat.b_hat[j].shape(rj, 1);
         chat.b_hat[j].multiply(Teuchos::TRANS, Teuchos::NO_TRANS,
-                                1.0, chat.Q[j], bj, 0.0);
-
-        // WTrunc[j] = VT[0:rj,:]^T  stored as (curDim × rj).
-        // GESVD returns VT as (k × curDim), column-major with ldvt=k, i.e.
-        // VT(row, col) = VT_buf[col * k + row]. We want
-        // WTrunc[j](kd, r) = VT(r, kd) = VT_buf[kd * k + r].
-        WTrunc[j].shape(curDim, rj);
-        for (int kd = 0; kd < curDim; ++kd)
-            for (int r = 0; r < rj; ++r)
-                WTrunc[j](kd, r) = VT_buf[kd * k + r];
+                               1.0, WTrunc[j], Vtb, 0.0);
+        for (int r = 0; r < rj; ++r) {
+            const SC inv_s = (std::abs(Sigma[j][r]) > 1e-14)
+                             ? 1.0 / Sigma[j][r] : 0.0;
+            chat.b_hat[j](r, 0) *= inv_s;
+        }
     }
 
     // ── Per (i,j) block of C_hat ──────────────────────────────────────────
-    // C_hat[i][j] = Q_i^T  (A_ij Z_j W_j Sigma_j^{-1})
-    // where A_ij Z_j is n_i × curDim, then × W_j (curDim × rj) → n_i × rj,
-    // scaled by Sigma_j^{-1}, then left-multiplied by Q_i^T (ri × ni).
+    // C_hat[i][j] = Sigma_i^{-1} W_i^T (V_i^T A_ij Z_j) W_j Sigma_j^{-1}.
+    // A_ij Z_j is the existing distributed sparse apply; V_i^T(...) is a
+    // mvTransMv reduction.
 
     for (int i = 0; i < nb; ++i) {
         for (int j = 0; j < nb; ++j) {
@@ -333,60 +345,34 @@ inline CHatData computeCHat(
                 A_ij_tpetra_lo->getConstTpetraOperator());
             if (A_crs.is_null()) continue;
 
-            const int nj = block_sizes[j];
-            const int ni = block_sizes[i];
-
-            // Build Tpetra MV for Z_j (n_j × curDim)
-            auto Zj_tmv = Teuchos::rcp(new TpetraMV(A_crs->getDomainMap(), curDim));
-            // As in extractBlockDense: the indexing below assumes block j's
-            // domain map is entirely local (single-rank) and matches nj.
-            TEUCHOS_TEST_FOR_EXCEPTION(static_cast<size_t>(nj) != Zj_tmv->getLocalLength(),
-                std::runtime_error,
-                "Teko::KrylovSurrogate::computeCHat: A_blocked->getBlock(" +
-                std::to_string(i) + "," + std::to_string(j) + ")'s domain map "
-                "has local length " + std::to_string(Zj_tmv->getLocalLength()) +
-                " but block_sizes[" + std::to_string(j) + "]=" + std::to_string(nj));
-            for (int col = 0; col < curDim; ++col) {
-                auto view = Zj_tmv->getVectorNonConst(col)->getDataNonConst();
-                for (int row = 0; row < nj; ++row)
-                    view[row] = Z_dense[j](row, col);
-            }
-
-            // AijZj = A_ij * Z_j  (n_i × curDim)
+            // AijZj = A_ij * Z_j — fully distributed sparse apply, directly on
+            // block j's Tpetra view (no extract/repack).
             auto AijZj_tmv = Teuchos::rcp(new TpetraMV(A_crs->getRangeMap(), curDim));
-            TEUCHOS_TEST_FOR_EXCEPTION(static_cast<size_t>(ni) != AijZj_tmv->getLocalLength(),
-                std::runtime_error,
-                "Teko::KrylovSurrogate::computeCHat: A_blocked->getBlock(" +
-                std::to_string(i) + "," + std::to_string(j) + ")'s range map "
-                "has local length " + std::to_string(AijZj_tmv->getLocalLength()) +
-                " but block_sizes[" + std::to_string(i) + "]=" + std::to_string(ni));
-            A_crs->apply(*Zj_tmv, *AijZj_tmv, Teuchos::NO_TRANS, 1.0, 0.0);
+            A_crs->apply(*Zt[j], *AijZj_tmv, Teuchos::NO_TRANS, 1.0, 0.0);
 
-            SDM AijZj(ni, curDim);
-            for (int col = 0; col < curDim; ++col) {
-                auto view = AijZj_tmv->getVector(col)->getData();
-                for (int row = 0; row < ni; ++row)
-                    AijZj(row, col) = view[row];
-            }
+            // M_ij = V_i^T (A_ij Z_j)   (curDim × curDim, replicated)
+            SDM Mij = mvTransMv(*Vt[i], *AijZj_tmv);
 
-            // T = AijZj * WTrunc[j]  (n_i × rj)   via DGEMM
-            // T(ni, rj) = AijZj(ni, curDim) * WTrunc[j](curDim, rj)
-            SDM T(ni, rj);
+            // T = M_ij * W_j  (curDim × rj), columns scaled by 1/sigma_{j,c}
+            SDM T(curDim, rj);
             T.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS,
-                       1.0, AijZj, WTrunc[j], 0.0);
-
-            // Scale columns of T by 1/Sigma[j][c]
+                       1.0, Mij, WTrunc[j], 0.0);
             for (int c = 0; c < rj; ++c) {
                 const SC inv_s = (std::abs(Sigma[j][c]) > 1e-14)
                                  ? 1.0 / Sigma[j][c] : 0.0;
-                for (int r = 0; r < ni; ++r)
+                for (int r = 0; r < curDim; ++r)
                     T(r, c) *= inv_s;
             }
 
-            // C_hat[i][j] = Q_i^T * T   (ri × rj)
-            // Q_i is (ni × ri), so Q_i^T is (ri × ni)
+            // C_hat[i][j] = W_i^T * T  (ri × rj), rows scaled by 1/sigma_{i,r}
             chat.blocks[i][j].multiply(Teuchos::TRANS, Teuchos::NO_TRANS,
-                                       1.0, chat.Q[i], T, 0.0);
+                                       1.0, WTrunc[i], T, 0.0);
+            for (int r = 0; r < ri; ++r) {
+                const SC inv_s = (std::abs(Sigma[i][r]) > 1e-14)
+                                 ? 1.0 / Sigma[i][r] : 0.0;
+                for (int c = 0; c < rj; ++c)
+                    chat.blocks[i][j](r, c) *= inv_s;
+            }
         }
     }
 
@@ -661,8 +647,12 @@ inline std::vector<int> waitForOrdering(
 // that Ifpack2 ILUT factors jointly so a merged group is preconditioned as if
 // its members were a single block (rather than block-diagonally).
 //
-// Single-rank only, consistent with extractBlockDense()/computeCHat(): each
-// member block's map is assumed entirely local.
+// Multi-rank: each member block keeps its own row distribution. The merged
+// map's local rows on each rank are the concatenation, in member order, of
+// that rank's local rows of every member (with the member's global row index
+// shifted by the member's offset). The flat vector layout induced by this map
+// is therefore exactly "member-local parts back to back", which is what
+// MergedGroupInverseOp::implicitApply's gather/scatter assumes.
 inline Teko::LinearOp assembleMergedBlock(
     Teuchos::RCP<const Thyra::BlockedLinearOpBase<SC>> A_blocked,
     const std::vector<int>&                            members,
@@ -676,7 +666,6 @@ inline Teko::LinearOp assembleMergedBlock(
     // Offsets of each member within the merged block.
     std::vector<int> off(m + 1, 0);
     for (int s = 0; s < m; ++s) off[s + 1] = off[s] + block_sizes[members[s]];
-    const int N = off[m];
 
     // Extract every member sub-block (si, sj) as a Tpetra CrsMatrix, mirroring
     // the dynamic-cast chain in computeCHat(). Null blocks (structural zeros)
@@ -701,48 +690,70 @@ inline Teko::LinearOp assembleMergedBlock(
     TEUCHOS_TEST_FOR_EXCEPTION(comm.is_null(), std::runtime_error,
         "Teko::KrylovSurrogate::assembleMergedBlock: no Tpetra blocks found in "
         "the merged group.");
-    TEUCHOS_TEST_FOR_EXCEPTION(comm->getSize() != 1, std::runtime_error,
-        "Teko::KrylovSurrogate::assembleMergedBlock: distributed over " +
-        std::to_string(comm->getSize()) + " MPI ranks; the Krylov-surrogate "
-        "adaptive loop currently only supports single-rank (serial) runs.");
 
-    auto map = Teuchos::rcp(new TpMap(static_cast<GO>(N), 0, comm));
-
-    // Pass 1: count nonzeros per merged row.
-    Teuchos::Array<size_t> nnzPerRow(N, 0);
+    // Row map of each member = row map of the first non-null block in its row.
+    std::vector<Teuchos::RCP<const TpMap>> memberRowMap(m);
     for (int si = 0; si < m; ++si) {
-        const int ni = block_sizes[members[si]];
-        for (int sj = 0; sj < m; ++sj) {
-            const auto& crs = sub[si][sj];
-            if (crs.is_null()) continue;
-            for (int r = 0; r < ni; ++r)
-                nnzPerRow[off[si] + r] += crs->getNumEntriesInLocalRow(r);
+        for (int sj = 0; sj < m; ++sj)
+            if (!sub[si][sj].is_null()) { memberRowMap[si] = sub[si][sj]->getRowMap(); break; }
+        TEUCHOS_TEST_FOR_EXCEPTION(memberRowMap[si].is_null(), std::runtime_error,
+            "Teko::KrylovSurrogate::assembleMergedBlock: member " +
+            std::to_string(members[si]) + " has no Tpetra blocks in its row.");
+    }
+
+    // Merged map: this rank's GIDs are each member's local rows (as global
+    // indices) shifted by the member's offset, concatenated in member order.
+    std::vector<GO> myGIDs;
+    for (int si = 0; si < m; ++si) {
+        const size_t nloc = memberRowMap[si]->getLocalNumElements();
+        for (size_t lr = 0; lr < nloc; ++lr)
+            myGIDs.push_back(static_cast<GO>(off[si]) +
+                             memberRowMap[si]->getGlobalElement(static_cast<LO>(lr)));
+    }
+    auto map = Teuchos::rcp(new TpMap(
+        Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),
+        Teuchos::ArrayView<const GO>(myGIDs.data(), myGIDs.size()), 0, comm));
+
+    // Pass 1: count nonzeros per local merged row (same ordering as myGIDs).
+    Teuchos::Array<size_t> nnzPerRow(myGIDs.size(), 0);
+    {
+        size_t lrow = 0;
+        for (int si = 0; si < m; ++si) {
+            const size_t nloc = memberRowMap[si]->getLocalNumElements();
+            for (size_t lr = 0; lr < nloc; ++lr, ++lrow)
+                for (int sj = 0; sj < m; ++sj)
+                    if (!sub[si][sj].is_null())
+                        nnzPerRow[lrow] += sub[si][sj]->getNumEntriesInLocalRow(static_cast<LO>(lr));
         }
     }
 
-    auto M = Teuchos::rcp(new CrsMatrix(map, map, nnzPerRow()));
+    auto M = Teuchos::rcp(new CrsMatrix(map, nnzPerRow()));
 
-    // Pass 2: copy each member block's entries in with row/col offsets.
+    // Pass 2: copy each member block's locally-owned entries in with row/col
+    // offsets. Column indices go through the member's column map to recover
+    // the member-global column (the local index alone is not the within-block
+    // column index once the block is distributed).
     for (int si = 0; si < m; ++si) {
-        const int ni = block_sizes[members[si]];
+        const size_t nloc = memberRowMap[si]->getLocalNumElements();
         for (int sj = 0; sj < m; ++sj) {
             const auto& crs = sub[si][sj];
             if (crs.is_null()) continue;
-            for (int r = 0; r < ni; ++r) {
+            auto colMap = crs->getColMap();
+            for (size_t lr = 0; lr < nloc; ++lr) {
                 typename CrsMatrix::local_inds_host_view_type lcols;
                 typename CrsMatrix::values_host_view_type     lvals;
-                crs->getLocalRowView(r, lcols, lvals);
+                crs->getLocalRowView(static_cast<LO>(lr), lcols, lvals);
                 const int nnz = static_cast<int>(lcols.extent(0));
                 if (nnz == 0) continue;
                 Teuchos::Array<GO> gcols(nnz);
                 Teuchos::Array<SC> vals(nnz);
                 for (int k = 0; k < nnz; ++k) {
-                    // Member col map is contiguous 0-based, so the local column
-                    // index equals the within-block column index.
-                    gcols[k] = static_cast<GO>(off[sj] + lcols(k));
+                    gcols[k] = static_cast<GO>(off[sj]) + colMap->getGlobalElement(lcols(k));
                     vals[k]  = lvals(k);
                 }
-                M->insertGlobalValues(static_cast<GO>(off[si] + r), gcols(), vals());
+                const GO grow = static_cast<GO>(off[si]) +
+                                memberRowMap[si]->getGlobalElement(static_cast<LO>(lr));
+                M->insertGlobalValues(grow, gcols(), vals());
             }
         }
     }
@@ -766,13 +777,19 @@ inline Teko::LinearOp assembleMergedBlock(
 // range()/domain() match the merged group's blocked sub-operator (subTeko),
 // exactly as the previous createBlockDiagonalInverseOp(subTeko, ...) did, so no
 // other part of buildReconfiguredPrec / adaptiveLoop needs to change.
+//
+// Multi-rank: assembleMergedBlock builds the merged map so that this rank's
+// local rows are the members' local rows concatenated in member order. The
+// gather/scatter below therefore copies each member's *local* part (local
+// length, not global block size) into consecutive local slots of the flat
+// vector — purely local data movement, no communication.
 class MergedGroupInverseOp : public Teko::BlockImplicitLinearOp {
 public:
     MergedGroupInverseOp(const Teko::BlockedLinearOp& subTeko,
                          const Teko::LinearOp&        Minv,
-                         std::vector<int>             memberSizes)
+                         int                          numMembers)
         : Minv_(Minv),
-          memberSizes_(std::move(memberSizes)),
+          numMembers_(numMembers),
           productRange_(subTeko->productDomain()),    // inverse: flip range/domain
           productDomain_(subTeko->productRange()) {}
 
@@ -785,28 +802,29 @@ public:
                        const double alpha = 1.0, const double beta = 0.0) const override
     {
         using TMV = Thyra::TpetraMultiVector<SC, LO, GO, Node>;
-        const int m     = static_cast<int>(memberSizes_.size());
+        const int m     = numMembers_;
         const int ncols = src->domain()->dim();
 
         auto flatSrc = Thyra::createMembers(Minv_->domain(), ncols);
         auto flatDst = Thyra::createMembers(Minv_->range(),  ncols);
 
-        // Gather: member sub-blocks → flat source.
+        // Gather: member sub-blocks' local parts → flat source.
         {
             auto fT = Teuchos::rcp_dynamic_cast<TMV>(flatSrc, true)
                           ->getTpetraMultiVector();
-            int o = 0;
+            size_t o = 0;
             for (int b = 0; b < m; ++b) {
                 auto blkT = Teuchos::rcp_dynamic_cast<const TMV>(
                                 Teko::getBlock(b, src), true)
                                 ->getConstTpetraMultiVector();
+                const size_t nloc = blkT->getLocalLength();
                 for (int c = 0; c < ncols; ++c) {
                     auto vin  = blkT->getVector(c)->getData();
                     auto vout = fT->getVectorNonConst(c)->getDataNonConst();
-                    for (int r = 0; r < memberSizes_[b]; ++r)
+                    for (size_t r = 0; r < nloc; ++r)
                         vout[o + r] = vin[r];
                 }
-                o += memberSizes_[b];
+                o += nloc;
             }
         }
 
@@ -818,26 +836,27 @@ public:
         {
             auto fT = Teuchos::rcp_dynamic_cast<const TMV>(flatDst, true)
                           ->getConstTpetraMultiVector();
-            int o = 0;
+            size_t o = 0;
             for (int b = 0; b < m; ++b) {
                 auto blkT = Teuchos::rcp_dynamic_cast<TMV>(
                                 Teko::getBlock(b, dst), true)
                                 ->getTpetraMultiVector();
+                const size_t nloc = blkT->getLocalLength();
                 for (int c = 0; c < ncols; ++c) {
                     auto vin  = fT->getVector(c)->getData();
                     auto vout = blkT->getVectorNonConst(c)->getDataNonConst();
-                    for (int r = 0; r < memberSizes_[b]; ++r)
+                    for (size_t r = 0; r < nloc; ++r)
                         vout[r] = alpha * vin[o + r] +
                                   (beta != 0.0 ? beta * vout[r] : 0.0);
                 }
-                o += memberSizes_[b];
+                o += nloc;
             }
         }
     }
 
 private:
     Teko::LinearOp    Minv_;
-    std::vector<int>  memberSizes_;
+    int               numMembers_;
     Teko::VectorSpace productRange_;
     Teko::VectorSpace productDomain_;
 };
@@ -992,12 +1011,9 @@ inline ReconfiguredSystem buildReconfiguredPrec(
                     " failed (singular?): " + e.what());
             }
 
-            std::vector<int> memberSizes(mem.size());
-            for (int si = 0; si < (int)mem.size(); ++si)
-                memberSizes[si] = block_sizes[mem[si]];
-
             newInvDiag[g] = Teuchos::rcp(
-                new MergedGroupInverseOp(subTeko, mergedInv, memberSizes));
+                new MergedGroupInverseOp(subTeko, mergedInv,
+                                         static_cast<int>(mem.size())));
         }
     }
 
@@ -1025,7 +1041,7 @@ constexpr const char* kDefaultRequestsDir = "/home/node/codespace/Trilinos/teko-
 // (if it converges) would re-invoke this same hook recursively — and that
 // recursive call operates on the *reordered* operator, whose merged-group
 // blocks are nested ProductMultiVectors rather than plain TpetraMultiVectors,
-// which extractBlockDense() cannot handle. g_inAdaptiveLoop / ScopedGuard
+// which getBlockTpetraMV() cannot handle. g_inAdaptiveLoop / ScopedGuard
 // below prevent this: the outermost call sets the flag before Phase 4, so a
 // recursive invocation from solver2.solve() sees it set and returns
 // immediately at the top of adaptiveLoop(). thread_local since Belos solves
@@ -1130,7 +1146,12 @@ inline void adaptiveLoop(
         return;
     }
 
-    fs::create_directories(requests_dir);
+    // All file I/O (request/reconfig/convergence JSON) is rank-0-only; the
+    // numerics (computeCHat, buildReconfiguredPrec, second solve) are
+    // collective and run identically on every rank.
+    auto [comm, rank] = getCommAndRank(state.V);
+
+    if (rank == 0) fs::create_directories(requests_dir);
     // All request/reconfig/convergence files live together in requests_dir.
     const std::string convergence_dir = requests_dir;
 
@@ -1141,8 +1162,9 @@ inline void adaptiveLoop(
         block_sizes[j] =
             static_cast<int>(A_blocked->productRange()->getBlock(j)->dim());
 
-    std::cout << "[TekoAdaptive] first solve done. curDim=" << state.curDim
-              << "  nb=" << nb << "\n";
+    if (rank == 0)
+        std::cout << "[TekoAdaptive] first solve done. curDim=" << state.curDim
+                  << "  nb=" << nb << "\n";
 
     // ||b||: shared initial residual for both solves. Both start from x0 = 0,
     // and reordering (Phase 3) only regroups vector blocks, which preserves
@@ -1158,15 +1180,31 @@ inline void adaptiveLoop(
                   0.0, solve1_metrics.wall_time_sec, solve1_metrics.wall_time_sec};
 
     // ── Phase 1: compute C_hat, b_hat and write s<N>_request.json ──────────
+    // computeCHat is collective (mvTransMv reductions + distributed applies);
+    // its result is replicated identically on every rank, so only rank 0
+    // writes the request file.
     CHatData chat = computeCHat(state, A_blocked, problem->getRHS(), block_sizes);
-    const int request_id = writeRequestJson(chat, requests_dir);
+    int request_id = -1;
+    if (rank == 0) request_id = writeRequestJson(chat, requests_dir);
 
     // ── Phase 2: wait for s<N>_reconfig.json ───────────────────────────────
-    std::vector<int> ordering = waitForOrdering(requests_dir, request_id);
+    // The response arrives from an external process via the filesystem, so
+    // rank 0 polls and the result is broadcast — the one genuinely
+    // rank-0-sourced piece of data in the loop.
+    std::vector<int> ordering;
+    if (rank == 0) ordering = waitForOrdering(requests_dir, request_id);
+    int ordering_size = static_cast<int>(ordering.size());
+    Teuchos::broadcast(*comm, 0, 1, &ordering_size);
+    ordering.resize(ordering_size);
+    if (ordering_size > 0)
+        Teuchos::broadcast(*comm, 0, ordering_size, ordering.data());
+
     if (ordering.empty()) {
-        std::cerr << "[TekoAdaptive] no ordering received; returning first "
-                     "solve result.\n";
-        writeConvergenceJson(convergence_dir, request_id, s1, nullptr);
+        if (rank == 0) {
+            std::cerr << "[TekoAdaptive] no ordering received; returning first "
+                         "solve result.\n";
+            writeConvergenceJson(convergence_dir, request_id, s1, nullptr);
+        }
         return;
     }
 
@@ -1234,17 +1272,19 @@ inline void adaptiveLoop(
     SolveStats s2{solver2.getNumIters(), b_norm, solver2.achievedTol(),
                   recon.factor_wall_time_sec, solve2_iterate_wall_time_sec,
                   recon.factor_wall_time_sec + solve2_iterate_wall_time_sec};
-    writeConvergenceJson(convergence_dir, request_id, s1, &s2);
+    if (rank == 0) writeConvergenceJson(convergence_dir, request_id, s1, &s2);
 
-    if (ret2 != Belos::Converged)
-        std::cerr << "[TekoAdaptive] second solve did not converge ("
-                  << solver2.getNumIters() << " iters). Using first result.\n";
-    else {
+    if (ret2 != Belos::Converged) {
+        if (rank == 0)
+            std::cerr << "[TekoAdaptive] second solve did not converge ("
+                      << solver2.getNumIters() << " iters). Using first result.\n";
+    } else {
         // Overwrite the original LHS (x_thyra in teko_ext.cpp) with the
         // result of the second solve.
         Thyra::assign(problem->getLHS().ptr(), *x_new);
-        std::cout << "[TekoAdaptive] second solve converged ("
-                  << solver2.getNumIters() << " iters).\n";
+        if (rank == 0)
+            std::cout << "[TekoAdaptive] second solve converged ("
+                      << solver2.getNumIters() << " iters).\n";
     }
     // env_guard restores TEKO_RECONFIG_REQUESTS_DIR here (or during unwinding
     // if solver2.solve() threw).
