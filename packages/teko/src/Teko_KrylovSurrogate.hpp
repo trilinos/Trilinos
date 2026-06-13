@@ -21,7 +21,11 @@
 //   2. Polls for s<N>_reconfig.json in the same directory. This file is left
 //      in place after being read (not deleted) — its presence is how
 //      wait_for_request.py recognizes an already-answered request.
-//   3. Reads the ordering vector, rebuilds the Teko preconditioner.
+//   3. Reads the ordering vector and assembles the reconfigured system as a
+//      fresh flat blocked operator (merged groups become single monolithic
+//      blocks), exactly as if the application had been called with that
+//      grouping originally — so the second solve's factor/iterate times are
+//      directly comparable to the first solve's.
 //   4. Runs a second FGMRES solve and overwrites the LHS with the result.
 //   5. Writes s<N>_conv.json (in requests_dir, alongside the request and
 //      reconfig files) with iteration count, initial/final residual, and wall
@@ -87,7 +91,7 @@ namespace fs = std::filesystem;
 // ── Teko ──────────────────────────────────────────────────────────────────
 #include "Teko_BlockDiagonalInverseOp.hpp"
 #include "Teko_BlockLowerTriInverseOp.hpp"
-#include "Teko_BlockedReordering.hpp"
+#include "Teko_FactorTimeRegistry.hpp"
 #include "Teko_InverseFactory.hpp"
 #include "Teko_InverseLibrary.hpp"
 #include "Teko_Utilities.hpp"
@@ -637,105 +641,121 @@ inline std::vector<int> waitForOrdering(
 // Section 4: Preconditioner rebuild from ordering
 // ═══════════════════════════════════════════════════════════════════════════
 
-// Assemble the coupled super-block of a merged group as a single monolithic
-// Tpetra::CrsMatrix, returned wrapped as a Thyra TpetraLinearOp.
+// Extract A_blocked(i,j) as a Tpetra CrsMatrix (null if the block is null or
+// not a Tpetra CRS operator).
+inline Teuchos::RCP<const Tpetra::CrsMatrix<SC, LO, GO, Node>> getBlockCrs(
+    Teuchos::RCP<const Thyra::BlockedLinearOpBase<SC>> A_blocked, int i, int j)
+{
+    auto blk = A_blocked->getBlock(i, j);
+    if (blk.is_null()) return Teuchos::null;
+    auto lo = Teuchos::rcp_dynamic_cast<
+        const Thyra::TpetraLinearOp<SC, LO, GO, Node>>(blk);
+    if (lo.is_null()) return Teuchos::null;
+    return Teuchos::rcp_dynamic_cast<const Tpetra::CrsMatrix<SC, LO, GO, Node>>(
+        lo->getConstTpetraOperator());
+}
+
+// Row map of original block k: row map of the first non-null Tpetra block in
+// block-row k. This is the distribution of block k's vector entries.
+inline Teuchos::RCP<const Tpetra::Map<LO, GO, Node>> blockRowMap(
+    Teuchos::RCP<const Thyra::BlockedLinearOpBase<SC>> A_blocked, int k, int nb)
+{
+    for (int j = 0; j < nb; ++j) {
+        auto crs = getBlockCrs(A_blocked, k, j);
+        if (!crs.is_null()) return crs->getRowMap();
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
+        "Teko::KrylovSurrogate::blockRowMap: block-row " + std::to_string(k) +
+        " has no Tpetra blocks.");
+    return Teuchos::null;  // unreachable
+}
+
+// Map of a group: each rank's GIDs are the members' local rows (as global
+// indices within the group, i.e. shifted by the member's within-group offset)
+// concatenated in member order. The vector layout this induces is exactly
+// "member-local parts back to back", which is what the local repacking in
+// copyOriginalToGrouped/copyGroupedToOriginal assumes. For a singleton group
+// this is just the member's own row map.
+inline Teuchos::RCP<const Tpetra::Map<LO, GO, Node>> buildGroupMap(
+    const std::vector<int>&                                           members,
+    const std::vector<Teuchos::RCP<const Tpetra::Map<LO, GO, Node>>>& rowMapOf,
+    const std::vector<int>&                                           groupOffsets)
+{
+    using TpMap = Tpetra::Map<LO, GO, Node>;
+    if (members.size() == 1) return rowMapOf[members[0]];
+
+    std::vector<GO> myGIDs;
+    for (size_t s = 0; s < members.size(); ++s) {
+        const auto&  mmap = rowMapOf[members[s]];
+        const size_t nloc = mmap->getLocalNumElements();
+        for (size_t lr = 0; lr < nloc; ++lr)
+            myGIDs.push_back(static_cast<GO>(groupOffsets[s]) +
+                             mmap->getGlobalElement(static_cast<LO>(lr)));
+    }
+    return Teuchos::rcp(new TpMap(
+        Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),
+        Teuchos::ArrayView<const GO>(myGIDs.data(), myGIDs.size()), 0,
+        rowMapOf[members[0]]->getComm()));
+}
+
+// Assemble the (rowMembers × colMembers) super-block of A_blocked into a
+// single monolithic Tpetra::CrsMatrix on the given group row/domain maps —
+// the matrix the application would have built directly had it been called
+// with this grouping in the first place. Off-diagonal coupling between
+// members is included. Returns null if every member sub-block is null
+// (a structurally zero super-block).
 //
-// For members = [k0, k1, ...] the result is an N x N matrix (N = sum of the
-// members' block sizes) whose (si, sj) sub-block is A_blocked->getBlock(
-// members[si], members[sj]) — INCLUDING the off-diagonal coupling between
-// members — placed at the corresponding row/column offset. This is the matrix
-// that Ifpack2 ILUT factors jointly so a merged group is preconditioned as if
-// its members were a single block (rather than block-diagonally).
-//
-// Multi-rank: each member block keeps its own row distribution. The merged
-// map's local rows on each rank are the concatenation, in member order, of
-// that rank's local rows of every member (with the member's global row index
-// shifted by the member's offset). The flat vector layout induced by this map
-// is therefore exactly "member-local parts back to back", which is what
-// MergedGroupInverseOp::implicitApply's gather/scatter assumes.
-inline Teko::LinearOp assembleMergedBlock(
-    Teuchos::RCP<const Thyra::BlockedLinearOpBase<SC>> A_blocked,
-    const std::vector<int>&                            members,
-    const std::vector<int>&                            block_sizes)
+// Multi-rank: each member block keeps its own row distribution; only
+// locally-owned rows are inserted. Column indices go through the member's
+// column map to recover the member-global column (the local index alone is
+// not the within-block column index once the block is distributed).
+inline Teuchos::RCP<Tpetra::CrsMatrix<SC, LO, GO, Node>> assembleGroupBlock(
+    Teuchos::RCP<const Thyra::BlockedLinearOpBase<SC>>                A_blocked,
+    const std::vector<int>&                                           rowMembers,
+    const std::vector<int>&                                           colMembers,
+    const std::vector<int>&                                           rowOffsets,
+    const std::vector<int>&                                           colOffsets,
+    const std::vector<Teuchos::RCP<const Tpetra::Map<LO, GO, Node>>>& rowMapOf,
+    Teuchos::RCP<const Tpetra::Map<LO, GO, Node>>                     groupRowMap,
+    Teuchos::RCP<const Tpetra::Map<LO, GO, Node>>                     groupDomainMap)
 {
     using CrsMatrix = Tpetra::CrsMatrix<SC, LO, GO, Node>;
-    using TpMap     = Tpetra::Map<LO, GO, Node>;
 
-    const int m = static_cast<int>(members.size());
+    const int mr = static_cast<int>(rowMembers.size());
+    const int mc = static_cast<int>(colMembers.size());
 
-    // Offsets of each member within the merged block.
-    std::vector<int> off(m + 1, 0);
-    for (int s = 0; s < m; ++s) off[s + 1] = off[s] + block_sizes[members[s]];
-
-    // Extract every member sub-block (si, sj) as a Tpetra CrsMatrix, mirroring
-    // the dynamic-cast chain in computeCHat(). Null blocks (structural zeros)
-    // are simply skipped during assembly.
     std::vector<std::vector<Teuchos::RCP<const CrsMatrix>>> sub(
-        m, std::vector<Teuchos::RCP<const CrsMatrix>>(m));
-    Teuchos::RCP<const Teuchos::Comm<int>> comm;
-    for (int si = 0; si < m; ++si) {
-        for (int sj = 0; sj < m; ++sj) {
-            auto blk = A_blocked->getBlock(members[si], members[sj]);
-            if (blk.is_null()) continue;
-            auto lo = Teuchos::rcp_dynamic_cast<
-                const Thyra::TpetraLinearOp<SC, LO, GO, Node>>(blk);
-            if (lo.is_null()) continue;
-            auto crs = Teuchos::rcp_dynamic_cast<const CrsMatrix>(
-                lo->getConstTpetraOperator());
-            if (crs.is_null()) continue;
-            sub[si][sj] = crs;
-            if (comm.is_null()) comm = crs->getRowMap()->getComm();
+        mr, std::vector<Teuchos::RCP<const CrsMatrix>>(mc));
+    bool anyNonNull = false;
+    for (int si = 0; si < mr; ++si)
+        for (int sj = 0; sj < mc; ++sj) {
+            sub[si][sj] = getBlockCrs(A_blocked, rowMembers[si], colMembers[sj]);
+            anyNonNull  = anyNonNull || !sub[si][sj].is_null();
         }
-    }
-    TEUCHOS_TEST_FOR_EXCEPTION(comm.is_null(), std::runtime_error,
-        "Teko::KrylovSurrogate::assembleMergedBlock: no Tpetra blocks found in "
-        "the merged group.");
+    if (!anyNonNull) return Teuchos::null;
 
-    // Row map of each member = row map of the first non-null block in its row.
-    std::vector<Teuchos::RCP<const TpMap>> memberRowMap(m);
-    for (int si = 0; si < m; ++si) {
-        for (int sj = 0; sj < m; ++sj)
-            if (!sub[si][sj].is_null()) { memberRowMap[si] = sub[si][sj]->getRowMap(); break; }
-        TEUCHOS_TEST_FOR_EXCEPTION(memberRowMap[si].is_null(), std::runtime_error,
-            "Teko::KrylovSurrogate::assembleMergedBlock: member " +
-            std::to_string(members[si]) + " has no Tpetra blocks in its row.");
-    }
-
-    // Merged map: this rank's GIDs are each member's local rows (as global
-    // indices) shifted by the member's offset, concatenated in member order.
-    std::vector<GO> myGIDs;
-    for (int si = 0; si < m; ++si) {
-        const size_t nloc = memberRowMap[si]->getLocalNumElements();
-        for (size_t lr = 0; lr < nloc; ++lr)
-            myGIDs.push_back(static_cast<GO>(off[si]) +
-                             memberRowMap[si]->getGlobalElement(static_cast<LO>(lr)));
-    }
-    auto map = Teuchos::rcp(new TpMap(
-        Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),
-        Teuchos::ArrayView<const GO>(myGIDs.data(), myGIDs.size()), 0, comm));
-
-    // Pass 1: count nonzeros per local merged row (same ordering as myGIDs).
-    Teuchos::Array<size_t> nnzPerRow(myGIDs.size(), 0);
+    // Pass 1: count nonzeros per local group row (groupRowMap's local
+    // ordering = members' local rows concatenated in member order).
+    Teuchos::Array<size_t> nnzPerRow(groupRowMap->getLocalNumElements(), 0);
     {
         size_t lrow = 0;
-        for (int si = 0; si < m; ++si) {
-            const size_t nloc = memberRowMap[si]->getLocalNumElements();
+        for (int si = 0; si < mr; ++si) {
+            const size_t nloc = rowMapOf[rowMembers[si]]->getLocalNumElements();
             for (size_t lr = 0; lr < nloc; ++lr, ++lrow)
-                for (int sj = 0; sj < m; ++sj)
+                for (int sj = 0; sj < mc; ++sj)
                     if (!sub[si][sj].is_null())
                         nnzPerRow[lrow] += sub[si][sj]->getNumEntriesInLocalRow(static_cast<LO>(lr));
         }
     }
 
-    auto M = Teuchos::rcp(new CrsMatrix(map, nnzPerRow()));
+    auto M = Teuchos::rcp(new CrsMatrix(groupRowMap, nnzPerRow()));
 
     // Pass 2: copy each member block's locally-owned entries in with row/col
-    // offsets. Column indices go through the member's column map to recover
-    // the member-global column (the local index alone is not the within-block
-    // column index once the block is distributed).
-    for (int si = 0; si < m; ++si) {
-        const size_t nloc = memberRowMap[si]->getLocalNumElements();
-        for (int sj = 0; sj < m; ++sj) {
+    // offsets.
+    for (int si = 0; si < mr; ++si) {
+        const auto&  rmap = rowMapOf[rowMembers[si]];
+        const size_t nloc = rmap->getLocalNumElements();
+        for (int sj = 0; sj < mc; ++sj) {
             const auto& crs = sub[si][sj];
             if (crs.is_null()) continue;
             auto colMap = crs->getColMap();
@@ -748,139 +768,105 @@ inline Teko::LinearOp assembleMergedBlock(
                 Teuchos::Array<GO> gcols(nnz);
                 Teuchos::Array<SC> vals(nnz);
                 for (int k = 0; k < nnz; ++k) {
-                    gcols[k] = static_cast<GO>(off[sj]) + colMap->getGlobalElement(lcols(k));
+                    gcols[k] = static_cast<GO>(colOffsets[sj]) + colMap->getGlobalElement(lcols(k));
                     vals[k]  = lvals(k);
                 }
-                const GO grow = static_cast<GO>(off[si]) +
-                                memberRowMap[si]->getGlobalElement(static_cast<LO>(lr));
+                const GO grow = static_cast<GO>(rowOffsets[si]) +
+                                rmap->getGlobalElement(static_cast<LO>(lr));
                 M->insertGlobalValues(grow, gcols(), vals());
             }
         }
     }
-    M->fillComplete(map, map);
-
-    return Thyra::tpetraLinearOp<SC, LO, GO, Node>(
-        Thyra::tpetraVectorSpace<SC, LO, GO, Node>(M->getRangeMap()),
-        Thyra::tpetraVectorSpace<SC, LO, GO, Node>(M->getDomainMap()),
-        M);
+    M->fillComplete(groupDomainMap, groupRowMap);
+    return M;
 }
 
-// Inverse operator for a merged group that applies a single joint factorization
-// of the coupled super-block. The merged block is assembled into one flat
-// N x N matrix and factored once (Ifpack2 ILUT) into the flat inverse `Minv`;
-// but the surrounding BlockLowerTriInverseOp / BlockDiagonalInverseOp feed this
-// op the group's vector as a *nested* product multivector (one sub-block per
-// member). implicitApply() therefore gathers the member sub-blocks into a flat
-// vector, applies Minv, and scatters the result back — bridging the
-// product-of-members layout and the flat monolithic factor.
-//
-// range()/domain() match the merged group's blocked sub-operator (subTeko),
-// exactly as the previous createBlockDiagonalInverseOp(subTeko, ...) did, so no
-// other part of buildReconfiguredPrec / adaptiveLoop needs to change.
-//
-// Multi-rank: assembleMergedBlock builds the merged map so that this rank's
-// local rows are the members' local rows concatenated in member order. The
-// gather/scatter below therefore copies each member's *local* part (local
-// length, not global block size) into consecutive local slots of the flat
-// vector — purely local data movement, no communication.
-class MergedGroupInverseOp : public Teko::BlockImplicitLinearOp {
-public:
-    MergedGroupInverseOp(const Teko::BlockedLinearOp& subTeko,
-                         const Teko::LinearOp&        Minv,
-                         int                          numMembers)
-        : Minv_(Minv),
-          numMembers_(numMembers),
-          productRange_(subTeko->productDomain()),    // inverse: flip range/domain
-          productDomain_(subTeko->productRange()) {}
-
-    Teko::VectorSpace range()  const override { return productRange_;  }
-    Teko::VectorSpace domain() const override { return productDomain_; }
-
-    using Teko::BlockImplicitLinearOp::implicitApply;
-    void implicitApply(const Teko::BlockedMultiVector& src,
-                       Teko::BlockedMultiVector&       dst,
-                       const double alpha = 1.0, const double beta = 0.0) const override
-    {
-        using TMV = Thyra::TpetraMultiVector<SC, LO, GO, Node>;
-        const int m     = numMembers_;
-        const int ncols = src->domain()->dim();
-
-        auto flatSrc = Thyra::createMembers(Minv_->domain(), ncols);
-        auto flatDst = Thyra::createMembers(Minv_->range(),  ncols);
-
-        // Gather: member sub-blocks' local parts → flat source.
-        {
-            auto fT = Teuchos::rcp_dynamic_cast<TMV>(flatSrc, true)
-                          ->getTpetraMultiVector();
-            size_t o = 0;
-            for (int b = 0; b < m; ++b) {
-                auto blkT = Teuchos::rcp_dynamic_cast<const TMV>(
-                                Teko::getBlock(b, src), true)
-                                ->getConstTpetraMultiVector();
-                const size_t nloc = blkT->getLocalLength();
-                for (int c = 0; c < ncols; ++c) {
-                    auto vin  = blkT->getVector(c)->getData();
-                    auto vout = fT->getVectorNonConst(c)->getDataNonConst();
-                    for (size_t r = 0; r < nloc; ++r)
-                        vout[o + r] = vin[r];
-                }
-                o += nloc;
-            }
-        }
-
-        // Apply the single joint inverse.
-        Teko::applyOp(Minv_, flatSrc, flatDst);
-
-        // Scatter: flat result → member sub-blocks of dst, honoring alpha/beta
-        // (dst_block = alpha * (Minv*src)_block + beta * dst_block_old).
-        {
-            auto fT = Teuchos::rcp_dynamic_cast<const TMV>(flatDst, true)
+// Copy a 1-column product multivector from the original nb-block layout into
+// the grouped nb_new-block layout (group block = members' local parts
+// concatenated in member order — the layout induced by buildGroupMap).
+// Purely local data movement, no communication.
+inline void copyOriginalToGrouped(
+    Teuchos::RCP<const MV>               orig,
+    Teuchos::RCP<MV>                     grouped,
+    const std::vector<std::vector<int>>& groups)
+{
+    using TMV = Thyra::TpetraMultiVector<SC, LO, GO, Node>;
+    auto o  = Teuchos::rcp_dynamic_cast<const Thyra::ProductMultiVectorBase<SC>>(orig, true);
+    auto gp = Teuchos::rcp_dynamic_cast<Thyra::ProductMultiVectorBase<SC>>(grouped, true);
+    for (size_t g = 0; g < groups.size(); ++g) {
+        auto gT = Teuchos::rcp_dynamic_cast<TMV>(
+                      gp->getNonconstMultiVectorBlock(static_cast<int>(g)), true)
+                      ->getTpetraMultiVector();
+        auto gview = gT->getVectorNonConst(0)->getDataNonConst();
+        size_t off = 0;
+        for (int k : groups[g]) {
+            auto mT = Teuchos::rcp_dynamic_cast<const TMV>(
+                          o->getMultiVectorBlock(k), true)
                           ->getConstTpetraMultiVector();
-            size_t o = 0;
-            for (int b = 0; b < m; ++b) {
-                auto blkT = Teuchos::rcp_dynamic_cast<TMV>(
-                                Teko::getBlock(b, dst), true)
-                                ->getTpetraMultiVector();
-                const size_t nloc = blkT->getLocalLength();
-                for (int c = 0; c < ncols; ++c) {
-                    auto vin  = fT->getVector(c)->getData();
-                    auto vout = blkT->getVectorNonConst(c)->getDataNonConst();
-                    for (size_t r = 0; r < nloc; ++r)
-                        vout[r] = alpha * vin[o + r] +
-                                  (beta != 0.0 ? beta * vout[r] : 0.0);
-                }
-                o += nloc;
-            }
+            auto mview = mT->getVector(0)->getData();
+            const size_t nloc = mT->getLocalLength();
+            for (size_t r = 0; r < nloc; ++r) gview[off + r] = mview[r];
+            off += nloc;
         }
     }
+}
 
-private:
-    Teko::LinearOp    Minv_;
-    int               numMembers_;
-    Teko::VectorSpace productRange_;
-    Teko::VectorSpace productDomain_;
-};
+// Inverse of copyOriginalToGrouped: unpack a grouped product multivector back
+// into the original nb-block layout.
+inline void copyGroupedToOriginal(
+    Teuchos::RCP<const MV>               grouped,
+    Teuchos::RCP<MV>                     orig,
+    const std::vector<std::vector<int>>& groups)
+{
+    using TMV = Thyra::TpetraMultiVector<SC, LO, GO, Node>;
+    auto gp = Teuchos::rcp_dynamic_cast<const Thyra::ProductMultiVectorBase<SC>>(grouped, true);
+    auto o  = Teuchos::rcp_dynamic_cast<Thyra::ProductMultiVectorBase<SC>>(orig, true);
+    for (size_t g = 0; g < groups.size(); ++g) {
+        auto gT = Teuchos::rcp_dynamic_cast<const TMV>(
+                      gp->getMultiVectorBlock(static_cast<int>(g)), true)
+                      ->getConstTpetraMultiVector();
+        auto gview = gT->getVector(0)->getData();
+        size_t off = 0;
+        for (int k : groups[g]) {
+            auto mT = Teuchos::rcp_dynamic_cast<TMV>(
+                          o->getNonconstMultiVectorBlock(k), true)
+                          ->getTpetraMultiVector();
+            auto mview = mT->getVectorNonConst(0)->getDataNonConst();
+            const size_t nloc = mT->getLocalLength();
+            for (size_t r = 0; r < nloc; ++r) mview[r] = gview[off + r];
+            off += nloc;
+        }
+    }
+}
 
-// Result of buildReconfiguredPrec: the new preconditioner together with the
-// reordered operator and the BlockReorderManager that defines its (possibly
-// nested) block structure. The second solve's operator/LHS/RHS must be
-// reshaped to this same structure (via Teko::buildReorderedMultiVector)
-// so that BlockLowerTriInverseOp::implicitApply's block-count assertions
-// against reorderedOp hold.
+// Result of buildReconfiguredPrec: a freshly assembled flat nb_new x nb_new
+// blocked system in which every merged group is a single monolithic Tpetra
+// block — exactly the operator the application would have constructed had it
+// been called with this grouping originally — together with the new
+// preconditioner and the group membership (needed to repack the RHS into,
+// and the solution out of, the grouped layout).
+//
+// Building the system this way (instead of reordering A_blocked into nested
+// sub-blocks with per-apply gather/scatter wrapper inverses) makes the second
+// solve structurally identical to a first solve: plain Tpetra blocks, plain
+// block inverse ops, flat product vectors. Its factor and iterate times are
+// therefore directly comparable to solve 1's — they measure the realistic
+// cost of having used the reconfigured grouping from the start.
 struct ReconfiguredSystem {
-    Teko::LinearOp                                 precOp;
-    Teko::BlockedLinearOp                          reorderedOp;
-    Teuchos::RCP<const Teko::BlockReorderManager>  mgr;
-    double                                         factor_wall_time_sec;
+    Teko::LinearOp                 precOp;
+    Teko::BlockedLinearOp          flatOp;
+    std::vector<std::vector<int>>  groups;
+    double                         factor_wall_time_sec;
 };
 
-// Build a new Teko block preconditioner from an ordering vector.
+// Build the reconfigured system and preconditioner from an ordering vector.
 //
 // ordering[k] = g means old block k maps to new group g.
-// Groups with a single member: singleton (factorize that diagonal block).
-// Groups with multiple members: merged — the coupled super-block (off-diagonals
-// included) is assembled into one matrix and factored jointly, so the group is
-// preconditioned as if its members were a single block.
+// Groups with a single member reuse the original blocks directly. Groups with
+// multiple members are assembled into monolithic super-blocks (off-diagonal
+// coupling included), so a merged group's diagonal is factored jointly and
+// the whole system looks exactly as if the application had been called with
+// the merged grouping in the first place.
 inline ReconfiguredSystem buildReconfiguredPrec(
     const std::vector<int>&                            ordering,
     Teuchos::RCP<const Thyra::BlockedLinearOpBase<SC>> A_blocked,
@@ -933,98 +919,86 @@ inline ReconfiguredSystem buildReconfiguredPrec(
     auto invLib  = Teko::InverseLibrary::buildFromStratimikos(builder);
     auto invFact = invLib->getInverseFactory("Ifpack2");
 
-    // ── Build a BlockReorderManager describing the new grouping, then use it
-    // to reorder A_blocked into an nb_new x nb_new operator. Merged groups
-    // become nested sub-blocked entries. The same manager is reused (via
-    // Teko::buildReorderedMultiVector) to reshape the second solve's RHS/LHS
-    // so their product-space block counts match tekoNew, which
-    // BlockLowerTriInverseOp::implicitApply asserts on.
-    auto mgr = Teuchos::rcp(new Teko::BlockReorderManager(nb_new));
+    // ── Per-block row maps and per-group maps/spaces ───────────────────────
+    std::vector<Teuchos::RCP<const Tpetra::Map<LO, GO, Node>>> rowMapOf(nb_old);
+    for (int k = 0; k < nb_old; ++k)
+        rowMapOf[k] = blockRowMap(A_blocked, k, nb_old);
+
+    std::vector<std::vector<int>> offsets(nb_new);  // within-group member offsets
+    std::vector<Teuchos::RCP<const Tpetra::Map<LO, GO, Node>>>  groupMap(nb_new);
+    std::vector<Teuchos::RCP<const Thyra::VectorSpaceBase<SC>>> groupSpace(nb_new);
     for (int g = 0; g < nb_new; ++g) {
         const auto& mem = groups[g];
-        if (mem.size() == 1) {
-            mgr->SetBlock(g, mem[0]);
-        } else {
-            auto sub = Teuchos::rcp(new Teko::BlockReorderManager(static_cast<int>(mem.size())));
-            for (int si = 0; si < (int)mem.size(); ++si)
-                sub->SetBlock(si, mem[si]);
-            mgr->SetBlock(g, sub);
-        }
+        offsets[g].assign(mem.size(), 0);
+        for (size_t s = 1; s < mem.size(); ++s)
+            offsets[g][s] = offsets[g][s - 1] + block_sizes[mem[s - 1]];
+        groupMap[g] = buildGroupMap(mem, rowMapOf, offsets[g]);
+        // Singleton groups keep the original Thyra space (so their blocks can
+        // be reused as-is); merged groups get a fresh space over the group map.
+        groupSpace[g] = (mem.size() == 1)
+            ? A_blocked->productRange()->getBlock(mem[0])
+            : Teuchos::RCP<const Thyra::VectorSpaceBase<SC>>(
+                  Thyra::tpetraVectorSpace<SC, LO, GO, Node>(groupMap[g]));
     }
 
-    Teko::LinearOp reordered = Teko::buildReorderedLinearOp(*mgr, A_blocked);
-    Teko::BlockedLinearOp tekoNew =
-        Teuchos::rcp_dynamic_cast<Thyra::PhysicallyBlockedLinearOpBase<SC>>(
-            Teuchos::rcp_const_cast<Thyra::LinearOpBase<SC>>(reordered), true);
+    // ── Assemble the flat nb_new × nb_new operator ─────────────────────────
+    // Singleton×singleton blocks are reused from A_blocked without copying;
+    // any block touching a merged group is assembled monolithically.
+    auto flat = Thyra::defaultBlockedLinearOp<SC>();
+    flat->beginBlockFill(nb_new, nb_new);
+    for (int g = 0; g < nb_new; ++g) {
+        for (int h = 0; h < nb_new; ++h) {
+            if (groups[g].size() == 1 && groups[h].size() == 1) {
+                auto blk = A_blocked->getBlock(groups[g][0], groups[h][0]);
+                if (!blk.is_null()) {
+                    flat->setBlock(g, h, blk);
+                    continue;
+                }
+            } else {
+                auto M = assembleGroupBlock(A_blocked, groups[g], groups[h],
+                                            offsets[g], offsets[h], rowMapOf,
+                                            groupMap[g], groupMap[h]);
+                if (!M.is_null()) {
+                    flat->setBlock(g, h,
+                        Thyra::tpetraLinearOp<SC, LO, GO, Node>(
+                            groupSpace[g], groupSpace[h], M));
+                    continue;
+                }
+            }
+            flat->setBlock(g, h, Thyra::zero<SC>(groupSpace[g], groupSpace[h]));
+        }
+    }
+    flat->endBlockFill();
 
-    // ── Build diagonal inverses for each new group ─────────────────────────
+    Teko::BlockedLinearOp flatTeko =
+        Teuchos::rcp_dynamic_cast<Thyra::PhysicallyBlockedLinearOpBase<SC>>(flat);
+
+    // ── Factor each group diagonal (this is solve 2's setup cost) ──────────
     double factor_wall_time_sec = 0.0;
     std::vector<Teko::LinearOp> newInvDiag(nb_new);
     for (int g = 0; g < nb_new; ++g) {
-        const auto& mem = groups[g];
-        if (mem.size() == 1) {
-            // Singleton: factorize A_blocked(b,b) directly.
+        auto diag = flatTeko->getBlock(g, g);
+        try {
             const auto factorStart = std::chrono::steady_clock::now();
-            newInvDiag[g] =
-                Teko::buildInverse(*invFact,
-                                   A_blocked->getBlock(mem[0], mem[0]));
+            newInvDiag[g] = Teko::buildInverse(*invFact, diag);
             factor_wall_time_sec += std::chrono::duration<double>(
                 std::chrono::steady_clock::now() - factorStart).count();
-        } else {
-            // Merged group: factor the coupled super-block jointly.
-            // subTeko is the sub-blocked operator (len(mem) × len(mem),
-            // off-diagonals included). It supplies the nested product vector
-            // spaces; the actual inverse comes from a single Ifpack2 ILUT
-            // factorization of the monolithic assembly of those same blocks.
-            auto subOp = Thyra::defaultBlockedLinearOp<SC>();
-            subOp->beginBlockFill(static_cast<int>(mem.size()),
-                                  static_cast<int>(mem.size()));
-            for (int si = 0; si < (int)mem.size(); ++si) {
-                for (int sj = 0; sj < (int)mem.size(); ++sj) {
-                    auto blk = A_blocked->getBlock(mem[si], mem[sj]);
-                    auto ri_sp = A_blocked->productRange()->getBlock(mem[si]);
-                    auto di_sp = A_blocked->productDomain()->getBlock(mem[sj]);
-                    if (!blk.is_null())
-                        subOp->setBlock(si, sj, blk);
-                    else
-                        subOp->setBlock(si, sj,
-                            Thyra::zero<SC>(ri_sp, di_sp));
-                }
-            }
-            subOp->endBlockFill();
-
-            Teko::BlockedLinearOp subTeko =
-                Teuchos::rcp_dynamic_cast<Thyra::PhysicallyBlockedLinearOpBase<SC>>(subOp);
-
-            // Assemble the coupled super-block as one matrix and factor it once.
-            Teko::LinearOp mergedOp = assembleMergedBlock(A_blocked, mem, block_sizes);
-            Teko::LinearOp mergedInv;
-            try {
-                const auto factorStart = std::chrono::steady_clock::now();
-                mergedInv = Teko::buildInverse(*invFact, mergedOp);
-                factor_wall_time_sec += std::chrono::duration<double>(
-                    std::chrono::steady_clock::now() - factorStart).count();
-            } catch (const std::exception& e) {
-                throw std::runtime_error(
-                    "Teko::KrylovSurrogate::buildReconfiguredPrec: joint "
-                    "factorization of merged group " + std::to_string(g) +
-                    " failed (singular?): " + e.what());
-            }
-
-            newInvDiag[g] = Teuchos::rcp(
-                new MergedGroupInverseOp(subTeko, mergedInv,
-                                         static_cast<int>(mem.size())));
+        } catch (const std::exception& e) {
+            throw std::runtime_error(
+                "Teko::KrylovSurrogate::buildReconfiguredPrec: factorization "
+                "of group " + std::to_string(g) + " failed (singular?): " +
+                e.what());
         }
     }
 
     // ── Assemble the preconditioner ────────────────────────────────────────
     Teko::LinearOp precOp;
     if (method == "jacobi")
-        precOp = Teko::createBlockDiagonalInverseOp(tekoNew, newInvDiag);
+        precOp = Teko::createBlockDiagonalInverseOp(flatTeko, newInvDiag);
     else
-        precOp = Teko::createBlockLowerTriInverseOp(tekoNew, newInvDiag);
+        precOp = Teko::createBlockLowerTriInverseOp(flatTeko, newInvDiag);
 
-    return ReconfiguredSystem{precOp, tekoNew, mgr, factor_wall_time_sec};
+    return ReconfiguredSystem{precOp, flatTeko, groups, factor_wall_time_sec};
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1038,10 +1012,9 @@ inline ReconfiguredSystem buildReconfiguredPrec(
 constexpr const char* kDefaultRequestsDir = "/home/node/codespace/Trilinos/teko-reconfig/requests";
 
 // adaptiveLoop()'s Phase 4 below runs a second flexible FGMRES solve, which
-// (if it converges) would re-invoke this same hook recursively — and that
-// recursive call operates on the *reordered* operator, whose merged-group
-// blocks are nested ProductMultiVectors rather than plain TpetraMultiVectors,
-// which getBlockTpetraMV() cannot handle. g_inAdaptiveLoop / ScopedGuard
+// (if it converges) would re-invoke this same hook recursively on the
+// already-reconfigured system — at best redundant work, at worst an unbounded
+// reconfigure/solve recursion. g_inAdaptiveLoop / ScopedGuard
 // below prevent this: the outermost call sets the flag before Phase 4, so a
 // recursive invocation from solver2.solve() sees it set and returns
 // immediately at the top of adaptiveLoop(). thread_local since Belos solves
@@ -1176,8 +1149,27 @@ inline void adaptiveLoop(
         b_norm = norms[0];
     }
 
+    // Setup (factorization) time of the first solve: everything the
+    // application spent inside Teko::buildInverse / Teko::rebuildInverse since
+    // the previous hook invocation — i.e. building the preconditioner that
+    // the solve which just converged used. Drain the registry now (Phase 3's
+    // buildReconfiguredPrec will bump it again; it is timed separately), and
+    // re-drain on every exit path below so solve 2's factorizations never
+    // leak into the *next* solve's setup figure. Factorization is rank-local
+    // work, so report the max across ranks (the wall-clock critical path).
+    double solve1_factor_sec = Teko::FactorTimeRegistry::read();
+    Teko::FactorTimeRegistry::reset();
+    if (comm->getSize() > 1) {
+        double local = solve1_factor_sec;
+        Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, 1, &local, &solve1_factor_sec);
+    }
+    struct RegistryResetGuard {
+        ~RegistryResetGuard() { Teko::FactorTimeRegistry::reset(); }
+    } registry_reset_guard;
+
     SolveStats s1{state.curDim, b_norm, solve1_metrics.achieved_tol,
-                  0.0, solve1_metrics.wall_time_sec, solve1_metrics.wall_time_sec};
+                  solve1_factor_sec, solve1_metrics.wall_time_sec,
+                  solve1_factor_sec + solve1_metrics.wall_time_sec};
 
     // ── Phase 1: compute C_hat, b_hat and write s<N>_request.json ──────────
     // computeCHat is collective (mvTransMv reductions + distributed applies);
@@ -1222,34 +1214,28 @@ inline void adaptiveLoop(
     ReconfiguredSystem recon = buildReconfiguredPrec(ordering, A_blocked, nb, method);
 
     // ── Phase 4: second FGMRES solve ──────────────────────────────────────
-    // Prevent the hook from firing recursively during the second solve;
-    // reset on scope exit even if solver2.solve() throws.
+    // Runs on the freshly assembled flat system, exactly as if the
+    // application had been called with the reconfigured grouping originally
+    // (see ReconfiguredSystem) — so its timings are directly comparable to
+    // solve 1's. Prevent the hook from firing recursively during the second
+    // solve; reset on scope exit even if solver2.solve() throws.
     ScopedAdaptiveLoopGuard recursion_guard;
 
     auto newProblem = Teuchos::rcp(new Problem());
     // setOperator/setRightPrec take RCP<const OP>, so a plain dynamic_cast
     // (which can add const) suffices — no const_cast needed.
-    newProblem->setOperator(Teuchos::rcp_dynamic_cast<const OP>(recon.reorderedOp));
+    newProblem->setOperator(Teuchos::rcp_dynamic_cast<const OP>(recon.flatOp));
     newProblem->setRightPrec(Teuchos::rcp_dynamic_cast<const OP>(recon.precOp));
 
-    // Reshape the flat LHS/RHS to match the block structure of
-    // recon.reorderedOp (recon.mgr's groups, with merged groups nested as
-    // sub-product vectors) — required so blockCount(src) ==
-    // blockRowCount(reorderedOp) inside BlockLowerTriInverseOp::implicitApply.
-    // x_new_reordered shares storage with x_new (buildReorderedMultiVector
-    // wraps the existing leaf blocks without copying), so writes made by the
-    // second solve land directly in x_new's buffers.
-    auto x_new = Thyra::createMembers(A_blocked->domain(), 1);
+    // Grouped RHS/LHS: the group layout concatenates member local parts, so
+    // repacking b (and unpacking x afterwards) is a purely local copy.
+    auto x_new = Thyra::createMembers(recon.flatOp->domain(), 1);
     Thyra::assign(x_new.ptr(), SC(0));
-    auto x_flat = Teuchos::rcp_dynamic_cast<Thyra::ProductMultiVectorBase<SC>>(x_new, true);
-    auto x_new_reordered = Teko::buildReorderedMultiVector(*recon.mgr, x_flat);
+    auto b_new = Thyra::createMembers(recon.flatOp->range(), 1);
+    copyOriginalToGrouped(problem->getRHS(), b_new, recon.groups);
 
-    auto b_flat = Teuchos::rcp_dynamic_cast<const Thyra::ProductMultiVectorBase<SC>>(
-        problem->getRHS(), true);
-    auto b_reordered = Teko::buildReorderedMultiVector(*recon.mgr, b_flat);
-
-    newProblem->setLHS(x_new_reordered);
-    newProblem->setRHS(b_reordered);
+    newProblem->setLHS(x_new);
+    newProblem->setRHS(b_new);
     newProblem->setProblem();
 
     // Inherit the first solve's resolved parameters (Maximum Iterations, Num
@@ -1269,9 +1255,16 @@ inline void adaptiveLoop(
     const double solve2_iterate_wall_time_sec = std::chrono::duration<double>(
         std::chrono::steady_clock::now() - solve2Start).count();
 
+    // Same cross-rank max as solve 1's factor time.
+    double solve2_factor_sec = recon.factor_wall_time_sec;
+    if (comm->getSize() > 1) {
+        double local = solve2_factor_sec;
+        Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, 1, &local, &solve2_factor_sec);
+    }
+
     SolveStats s2{solver2.getNumIters(), b_norm, solver2.achievedTol(),
-                  recon.factor_wall_time_sec, solve2_iterate_wall_time_sec,
-                  recon.factor_wall_time_sec + solve2_iterate_wall_time_sec};
+                  solve2_factor_sec, solve2_iterate_wall_time_sec,
+                  solve2_factor_sec + solve2_iterate_wall_time_sec};
     if (rank == 0) writeConvergenceJson(convergence_dir, request_id, s1, &s2);
 
     if (ret2 != Belos::Converged) {
@@ -1280,8 +1273,8 @@ inline void adaptiveLoop(
                       << solver2.getNumIters() << " iters). Using first result.\n";
     } else {
         // Overwrite the original LHS (x_thyra in teko_ext.cpp) with the
-        // result of the second solve.
-        Thyra::assign(problem->getLHS().ptr(), *x_new);
+        // result of the second solve, unpacked from the grouped layout.
+        copyGroupedToOriginal(x_new, problem->getLHS(), recon.groups);
         if (rank == 0)
             std::cout << "[TekoAdaptive] second solve converged ("
                       << solver2.getNumIters() << " iters).\n";

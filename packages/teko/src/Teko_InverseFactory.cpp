@@ -65,10 +65,14 @@
 // Teko includes
 #include "Teko_Utilities.hpp"
 #include "Teko_BlockPreconditionerFactory.hpp"
+#include "Teko_FactorTimeRegistry.hpp"
 #include "Teko_Preconditioner.hpp"
 #include "Teko_PreconditionerLinearOp.hpp"
 #include "Teko_SolveInverseFactory.hpp"
 #include "Teko_PreconditionerInverseFactory.hpp"
+
+#include <atomic>
+#include <chrono>
 
 using Teuchos::rcp;
 using Teuchos::RCP;
@@ -77,8 +81,43 @@ using Teuchos::rcp_dynamic_cast;
 
 namespace Teko {
 
+namespace FactorTimeRegistry {
+
+namespace {
+// Single process-wide accumulator; out-of-line on purpose so every shared
+// library sees the same instance (see Teko_FactorTimeRegistry.hpp).
+std::atomic<double> g_factorSeconds{0.0};
+}  // namespace
+
+void add(double seconds) { g_factorSeconds.fetch_add(seconds); }
+double read() { return g_factorSeconds.load(); }
+void reset() { g_factorSeconds.store(0.0); }
+
+}  // namespace FactorTimeRegistry
+
+namespace {
+// Adds its lifetime to the FactorTimeRegistry on destruction, so the
+// buildInverse/rebuildInverse wall time is recorded on both the normal and
+// the throwing path.
+class FactorStopwatch {
+ public:
+  FactorStopwatch() : start_(std::chrono::steady_clock::now()) {}
+  ~FactorStopwatch() {
+    FactorTimeRegistry::add(std::chrono::duration<double>(
+                                std::chrono::steady_clock::now() - start_)
+                                .count());
+  }
+  FactorStopwatch(const FactorStopwatch&)            = delete;
+  FactorStopwatch& operator=(const FactorStopwatch&) = delete;
+
+ private:
+  std::chrono::steady_clock::time_point start_;
+};
+}  // namespace
+
 //! Build an inverse operator using a factory and a linear operator
 InverseLinearOp buildInverse(const InverseFactory& factory, const LinearOp& A) {
+  FactorStopwatch stopwatch;
   InverseLinearOp inv;
   try {
     inv = factory.buildInverse(A);
@@ -112,6 +151,7 @@ InverseLinearOp buildInverse(const InverseFactory& factory, const LinearOp& A) {
 InverseLinearOp buildInverse(const InverseFactory& factory, const LinearOp& A,
                              const LinearOp& precOp) {
   Teko_DEBUG_SCOPE("buildInverse(factory,A,precOp)", 10);
+  FactorStopwatch stopwatch;
   InverseLinearOp inv;
   try {
     inv = factory.buildInverse(A, precOp);
@@ -135,6 +175,7 @@ InverseLinearOp buildInverse(const InverseFactory& factory, const LinearOp& A,
  * given a new forward operator.
  */
 void rebuildInverse(const InverseFactory& factory, const LinearOp& A, InverseLinearOp& invA) {
+  FactorStopwatch stopwatch;
   InverseLinearOp inv;
   try {
     factory.rebuildInverse(A, invA);
@@ -169,6 +210,7 @@ void rebuildInverse(const InverseFactory& factory, const LinearOp& A, InverseLin
  */
 void rebuildInverse(const InverseFactory& factory, const LinearOp& A, const LinearOp& precOp,
                     InverseLinearOp& invA) {
+  FactorStopwatch stopwatch;
   InverseLinearOp inv;
   try {
     factory.rebuildInverse(A, precOp, invA);
