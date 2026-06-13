@@ -46,6 +46,9 @@ unique design feature of Trilinos is its focus on packages.
 - If you have questions, please submit an issue on the Trilinos repo
   [GitHub Issues page](https://github.com/trilinos/Trilinos/issues).
 
+### Build and Testing Dashboard
+
+Trilinos nightly and pull request testing results are available at https://my.cdash.org/index.php?project=Trilinos.
 
 ### License
 
