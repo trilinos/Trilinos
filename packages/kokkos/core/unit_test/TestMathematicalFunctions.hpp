@@ -19,6 +19,8 @@ import kokkos.core;
 #include <cstdint>
 #include <cfloat>
 
+#include "KokkosTest_Utils.hpp"
+
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP) || \
     defined(KOKKOS_ENABLE_SYCL) || defined(KOKKOS_ENABLE_OPENACC)
 #else
@@ -219,104 +221,6 @@ using math_binary_function_return_type_t = typename math_binary_function_return_
 template <class T, class U, class V>
 using math_ternary_function_return_type_t = math_binary_function_return_type_t<
     T, math_binary_function_return_type_t<U, V>>;
-
-struct FloatingPointComparison {
- private:
-  template <class T>
-  KOKKOS_FUNCTION double eps(T) const {
-    return DBL_EPSILON;
-  }
-#if defined(KOKKOS_HALF_T_IS_FLOAT) && !KOKKOS_HALF_T_IS_FLOAT
-  KOKKOS_FUNCTION
-  KE::half_t eps(KE::half_t) const {
-// FIXME_NVHPC compile-time error
-#ifdef KOKKOS_COMPILER_NVHPC
-    return 0.0009765625F;
-#else
-    return KE::epsilon<KE::half_t>::value;
-#endif
-  }
-#endif
-#if defined(KOKKOS_BHALF_T_IS_FLOAT) && !KOKKOS_BHALF_T_IS_FLOAT
-  KOKKOS_FUNCTION
-  KE::bhalf_t eps(KE::bhalf_t) const {
-// FIXME_NVHPC compile-time error
-#ifdef KOKKOS_COMPILER_NVHPC
-    return 0.0078125;
-#else
-    return KE::epsilon<KE::bhalf_t>::value;
-#endif
-  }
-#endif
-  KOKKOS_FUNCTION
-  double eps(float) const { return FLT_EPSILON; }
-// POWER9 gives unexpected values with LDBL_EPSILON issues
-// https://stackoverflow.com/questions/68960416/ppc64-long-doubles-machine-epsilon-calculation
-#if defined(KOKKOS_ARCH_POWER9) || defined(KOKKOS_ARCH_POWER8)
-  KOKKOS_FUNCTION
-  double eps(long double) const { return DBL_EPSILON; }
-#else
-  KOKKOS_FUNCTION
-  double eps(long double) const { return LDBL_EPSILON; }
-#endif
-  // Using absolute here instead of abs, since we actually test abs ...
-  template <class T>
-  KOKKOS_FUNCTION std::enable_if_t<std::is_signed_v<T>, T> absolute(
-      T val) const {
-    return val < T(0) ? -val : val;
-  }
-
-  template <class T>
-  KOKKOS_FUNCTION std::enable_if_t<!std::is_signed_v<T>, T> absolute(
-      T val) const {
-    return val;
-  }
-
- public:
-  template <class FPT>
-  KOKKOS_FUNCTION bool compare_near_zero(FPT const& fpv, int ulp) const {
-    auto abs_tol = eps(fpv) * ulp;
-
-    bool ar = absolute(fpv) <= abs_tol;
-    if (!ar) {
-      Kokkos::printf("absolute value exceeds tolerance [|%e| > %e]\n",
-                     (double)fpv, (double)abs_tol);
-    }
-
-    return ar;
-  }
-
-  template <class Lhs, class Rhs>
-  KOKKOS_FUNCTION bool compare(Lhs const& lhs, Rhs const& rhs, int ulp) const {
-    if (lhs == 0) {
-      return compare_near_zero(rhs, ulp);
-    } else if (rhs == 0) {
-      return compare_near_zero(lhs, ulp);
-    } else {
-      auto rel_tol     = (eps(lhs) < eps(rhs) ? eps(lhs) : eps(rhs)) * ulp;
-      double abs_diff  = static_cast<double>(rhs > lhs ? rhs - lhs : lhs - rhs);
-      double min_denom = static_cast<double>(
-          absolute(rhs) < absolute(lhs) ? absolute(rhs) : absolute(lhs));
-      double rel_diff = abs_diff / min_denom;
-      bool ar         = rel_diff <= rel_tol;
-      if (!ar) {
-        Kokkos::printf("relative difference exceeds tolerance [%e > %e]\n",
-                       (double)rel_diff, (double)rel_tol);
-      }
-
-      return ar;
-    }
-  }
-};
-
-struct IntegerComparison {
-  template <class Lhs, class Rhs>
-  KOKKOS_FUNCTION bool compare(Lhs const& lhs, Rhs const& rhs) const {
-    static_assert(std::is_integral_v<Lhs>);
-    static_assert(std::is_integral_v<Rhs>);
-    return lhs == rhs;
-  }
-};
 
 template <class Floating>
 struct ConvertibleTo {
@@ -781,7 +685,7 @@ DEFINE_TYPE_NAME(long double)
 
 template <class Space, class Func, class Arg, std::size_t N,
           class Ret = math_unary_function_return_type_t<Arg>>
-struct TestMathUnaryFunction : FloatingPointComparison {
+struct TestMathUnaryFunction : KokkosTest::FloatingPointComparison {
   Arg val_[N];
   Ret res_[N];
   TestMathUnaryFunction(const Arg (&val)[N]) {
@@ -843,7 +747,7 @@ void do_test_half_math_unary_function(const Arg (&x)[N]) {
   do_test_half_math_unary_function<T, TEST_EXECSPACE, MathUnaryFunction_##FUNC>
 
 template <class Space, class Func, class Arg, std::size_t N>
-struct TestIntMathUnaryFunction : IntegerComparison {
+struct TestIntMathUnaryFunction : KokkosTest::IntegerComparison {
   Arg val_[N];
   int res_[N];
   TestIntMathUnaryFunction(const Arg (&val)[N]) {
@@ -907,7 +811,7 @@ void do_test_int_half_math_unary_function(const Arg (&x)[N]) {
 
 template <class Space, class Func, class Arg1, class Arg2,
           class Ret = math_binary_function_return_type_t<Arg1, Arg2>>
-struct TestMathBinaryFunction : FloatingPointComparison {
+struct TestMathBinaryFunction : KokkosTest::FloatingPointComparison {
   Arg1 val1_;
   Arg2 val2_;
   Ret res_;
@@ -942,7 +846,7 @@ void do_test_math_binary_function(Arg1 arg1, Arg2 arg2) {
 
 template <class Space, class Func, class Arg1, class Arg2,
           class Ret = math_unary_function_return_type_t<Arg1>>
-struct TestMathBinaryIntFunction : FloatingPointComparison {
+struct TestMathBinaryIntFunction : KokkosTest::FloatingPointComparison {
   Arg1 val1_;
   Arg2 val2_;
   Ret res_;
@@ -977,7 +881,7 @@ void do_test_math_binary_int_function(Arg1 arg1, Arg2 arg2) {
 
 template <class Space, class Func, class Arg,
           class Ret = math_unary_function_return_type_t<Arg>>
-struct TestMathBinaryPtrFunction : FloatingPointComparison {
+struct TestMathBinaryPtrFunction : KokkosTest::FloatingPointComparison {
   Arg val_;
   Ret res_frac_;
   Ret res_int_;
@@ -1056,7 +960,7 @@ void do_test_math_binary_predicate(Arg1 arg1, Arg2 arg2) {
 
 template <class Space, class Func, class Arg,
           class Ret = math_unary_function_return_type_t<Arg>>
-struct TestMathBinaryIntPtrFunction : FloatingPointComparison {
+struct TestMathBinaryIntPtrFunction : KokkosTest::FloatingPointComparison {
   Arg val_;
   int res1_;
   Ret res2_;
@@ -1100,7 +1004,7 @@ void do_test_math_binary_int_ptr_function(Arg x) {
 
 template <class Space, class Func, class Arg1, class Arg2,
           class Ret = math_binary_function_return_type_t<Arg1, Arg2>>
-struct TestMathTernaryIntPtrFunction : FloatingPointComparison {
+struct TestMathTernaryIntPtrFunction : KokkosTest::FloatingPointComparison {
   Arg1 val1_;
   Arg2 val2_;
   int val_;
@@ -1140,7 +1044,7 @@ void do_test_math_ternary_int_ptr_function(Arg1 arg1, Arg2 arg2) {
 
 template <class Space, class Func, class Arg1, class Arg2, class Arg3,
           class Ret = math_ternary_function_return_type_t<Arg1, Arg2, Arg3>>
-struct TestMathTernaryFunction : FloatingPointComparison {
+struct TestMathTernaryFunction : KokkosTest::FloatingPointComparison {
   Arg1 val1_;
   Arg2 val2_;
   Arg3 val3_;
@@ -2104,7 +2008,8 @@ TEST(TEST_CATEGORY, mathematical_functions_floating_point_absolute_value) {
 }
 
 template <class Space>
-struct TestFloatingPointRemainderFunction : FloatingPointComparison {
+struct TestFloatingPointRemainderFunction
+    : KokkosTest::FloatingPointComparison {
   TestFloatingPointRemainderFunction() { run(); }
   void run() const {
     int errors = 0;
@@ -2149,13 +2054,14 @@ struct TestFloatingPointRemainderFunction : FloatingPointComparison {
 #endif
 #if !__FINITE_MATH_ONLY__
     // special values
+    using Kokkos::infinity;
     using Kokkos::isinf;
     using Kokkos::isnan;
-    if (!isnan(fmod(-KE::infinity<float>::value, 1.f)) ||
-        !(fmod(5.f, -KE::infinity<float>::value) == 5.f) ||
-        !isnan(fmod(5.f, 0.f)) ||
-        !isnan(fmod(-KE::quiet_NaN<float>::value, 1.f)) ||
-        !isnan(fmod(1.f, -KE::quiet_NaN<float>::value))) {
+    using Kokkos::quiet_NaN;
+    if (!isnan(fmod(-infinity<float>::value, 1.f)) ||
+        !(fmod(5.f, -infinity<float>::value) == 5.f) ||
+        !isnan(fmod(5.f, 0.f)) || !isnan(fmod(-quiet_NaN<float>::value, 1.f)) ||
+        !isnan(fmod(1.f, -quiet_NaN<float>::value))) {
       ++e;
       Kokkos::printf("failed fmod(floating_point) special values\n");
     }
@@ -2180,7 +2086,8 @@ TEST(TEST_CATEGORY, mathematical_functions_remainder_function) {
 }
 
 template <class Space>
-struct TestIEEEFloatingPointRemainderFunction : FloatingPointComparison {
+struct TestIEEEFloatingPointRemainderFunction
+    : KokkosTest::FloatingPointComparison {
   TestIEEEFloatingPointRemainderFunction() { run(); }
   void run() const {
     int errors = 0;
@@ -2226,10 +2133,12 @@ struct TestIEEEFloatingPointRemainderFunction : FloatingPointComparison {
 #endif
 #if !__FINITE_MATH_ONLY__
     // special values
+    using Kokkos::infinity;
     using Kokkos::isinf;
     using Kokkos::isnan;
-    if (!isnan(remainder(-KE::infinity<float>::value, 2.f)) ||
-        !isnan(remainder(-KE::quiet_NaN<float>::value, 2.f))) {
+    using Kokkos::quiet_NaN;
+    if (!isnan(remainder(-infinity<float>::value, 2.f)) ||
+        !isnan(remainder(-quiet_NaN<float>::value, 2.f))) {
       ++e;
       Kokkos::printf("failed remainder(floating_point) special values\n");
     }
@@ -2286,10 +2195,10 @@ struct TestIsFinite {
     ASSERT_EQ(errors, 0);
   }
   KOKKOS_FUNCTION void operator()(int, int& e) const {
-    using KE::infinity;
-    using KE::quiet_NaN;
-    using KE::signaling_NaN;
+    using Kokkos::infinity;
     using Kokkos::isfinite;
+    using Kokkos::quiet_NaN;
+    using Kokkos::signaling_NaN;
     if (!isfinite(1) || !isfinite(INT_MAX)) {
       ++e;
       Kokkos::printf("failed isfinite(integral)\n");
@@ -2370,10 +2279,10 @@ struct TestIsInf {
     ASSERT_EQ(errors, 0);
   }
   KOKKOS_FUNCTION void operator()(int, int& e) const {
-    using KE::infinity;
-    using KE::quiet_NaN;
-    using KE::signaling_NaN;
+    using Kokkos::infinity;
     using Kokkos::isinf;
+    using Kokkos::quiet_NaN;
+    using Kokkos::signaling_NaN;
     if (isinf(1) || isinf(INT_MAX)) {
       ++e;
       Kokkos::printf("failed isinf(integral)\n");
@@ -2452,11 +2361,11 @@ struct TestFpClassify {
     ASSERT_EQ(errors, 0);
   }
   KOKKOS_FUNCTION void operator()(int, int& e) const {
-    using KE::denorm_min;
-    using KE::infinity;
-    using KE::quiet_NaN;
-    using KE::signaling_NaN;
+    using Kokkos::denorm_min;
     using Kokkos::fpclassify;
+    using Kokkos::infinity;
+    using Kokkos::quiet_NaN;
+    using Kokkos::signaling_NaN;
 
     if (fpclassify(0) != FP_ZERO || fpclassify(1) != FP_NORMAL) {
       ++e;
@@ -2552,10 +2461,10 @@ struct TestIsNaN {
     ASSERT_EQ(errors, 0);
   }
   KOKKOS_FUNCTION void operator()(int, int& e) const {
-    using KE::infinity;
-    using KE::quiet_NaN;
-    using KE::signaling_NaN;
+    using Kokkos::infinity;
     using Kokkos::isnan;
+    using Kokkos::quiet_NaN;
+    using Kokkos::signaling_NaN;
     if (isnan(1) || isnan(INT_MAX)) {
       ++e;
       Kokkos::printf("failed isnan(integral)\n");
@@ -2640,12 +2549,12 @@ struct TestIsNormal {
     ASSERT_EQ(errors, 0);
   }
   KOKKOS_FUNCTION void operator()(int, int& e) const {
-    using KE::denorm_min;
-    using KE::infinity;
-    using KE::norm_min;
-    using KE::quiet_NaN;
-    using KE::signaling_NaN;
+    using Kokkos::denorm_min;
+    using Kokkos::infinity;
     using Kokkos::isnormal;
+    using Kokkos::norm_min;
+    using Kokkos::quiet_NaN;
+    using Kokkos::signaling_NaN;
     if (isnormal(0) || !isnormal(1) || !isnormal(INT_MAX)) {
       ++e;
       Kokkos::printf("failed isnormal(integral)\n");
@@ -2754,12 +2663,12 @@ struct TestSignbit {
     ASSERT_EQ(errors, 0);
   }
   KOKKOS_FUNCTION void operator()(int, int& e) const {
-    using KE::denorm_min;
-    using KE::finite_max;
-    using KE::finite_min;
-    using KE::infinity;
-    using KE::quiet_NaN;
-    using KE::signaling_NaN;
+    using Kokkos::denorm_min;
+    using Kokkos::finite_max;
+    using Kokkos::finite_min;
+    using Kokkos::infinity;
+    using Kokkos::quiet_NaN;
+    using Kokkos::signaling_NaN;
     using Kokkos::signbit;
     if (signbit(1) || signbit(INT_MAX) || !signbit(-2) || !signbit(INT_MIN) ||
         signbit(0)) {
@@ -2973,11 +2882,13 @@ struct TestNextAfterHalf {
     ASSERT_EQ(errors, 0);
   }
   KOKKOS_FUNCTION void operator()(int, int& e) const {
-    using KE::infinity;
-    using KE::quiet_NaN;
-    using KE::signaling_NaN;
+    using Kokkos::finite_max;
+    using Kokkos::finite_min;
+    using Kokkos::infinity;
     using Kokkos::isnan;
     using Kokkos::nextafter;
+    using Kokkos::quiet_NaN;
+    using Kokkos::signaling_NaN;
 
     // Define useful constants
     const std::uint16_t FP16_POS_ZERO     = 0x0000;
@@ -2991,11 +2902,10 @@ struct TestNextAfterHalf {
     const FP16Type neg_zero     = Kokkos::bit_cast<FP16Type>(FP16_NEG_ZERO);
     const FP16Type pos_smallest = Kokkos::bit_cast<FP16Type>(FP16_SMALLEST_POS);
     const FP16Type neg_smallest = Kokkos::bit_cast<FP16Type>(FP16_SMALLEST_NEG);
-    const FP16Type pos_max = Kokkos::Experimental::finite_max<FP16Type>::value;
-    const FP16Type neg_max = Kokkos::Experimental::finite_min<FP16Type>::value;
-    const FP16Type pos_inf = Kokkos::Experimental::infinity<FP16Type>::value;
-    const FP16Type neg_inf =
-        -static_cast<FP16Type>(Kokkos::Experimental::infinity<FP16Type>::value);
+    const FP16Type pos_max      = finite_max<FP16Type>::value;
+    const FP16Type neg_max      = finite_min<FP16Type>::value;
+    const FP16Type pos_inf      = infinity<FP16Type>::value;
+    const FP16Type neg_inf = -static_cast<FP16Type>(infinity<FP16Type>::value);
 
     // NaN Handling
     if (!isnan(nextafter(quiet_NaN<FP16Type>::value, pos_one)) ||
@@ -3117,23 +3027,29 @@ struct TestNextToward {
 
   template <bool finite_math_only>
   void test_float() const {
+    using Kokkos::denorm_min;
+    using Kokkos::finite_max;
+    using Kokkos::finite_min;
+    using Kokkos::infinity;
     using Kokkos::isnan;
     using Kokkos::nexttoward;
+    using Kokkos::quiet_NaN;
+    using Kokkos::signaling_NaN;
 
     const T pos_one{1.0f}, neg_one{-1.0f};
     const T pos_zero{0.0f}, neg_zero{-0.0f};
-    const T pos_smallest = KE::denorm_min<T>::value;
-    const T neg_smallest = -static_cast<T>(KE::denorm_min<T>::value);
-    const T pos_max      = KE::finite_max<T>::value;
-    const T neg_max      = KE::finite_min<T>::value;
-    const T pos_inf      = KE::infinity<T>::value;
-    const T neg_inf      = -static_cast<T>(KE::infinity<T>::value);
+    const T pos_smallest = denorm_min<T>::value;
+    const T neg_smallest = -static_cast<T>(denorm_min<T>::value);
+    const T pos_max      = finite_max<T>::value;
+    const T neg_max      = finite_min<T>::value;
+    const T pos_inf      = infinity<T>::value;
+    const T neg_inf      = -static_cast<T>(infinity<T>::value);
 
     long double target_pos_one{1.0l}, target_pos_two{2.0l};
     long double target_neg_one{-1.0l}, target_neg_two{-2.0l};
     long double target_pos_zero{0.0l}, target_neg_zero{-0.0l};
-    long double target_pos_inf{KE::infinity<long double>::value};
-    long double target_neg_inf{-KE::infinity<long double>::value};
+    long double target_pos_inf{infinity<long double>::value};
+    long double target_neg_inf{-infinity<long double>::value};
 
     // Check return type
     testing::StaticAssertTypeEq<decltype(nexttoward(pos_one, target_pos_one)),
@@ -3146,27 +3062,25 @@ struct TestNextToward {
           static_cast<std::string>(Kokkos::Impl::TypeInfo<T>::name()) +
           " type nexttoward(NaN)";
 
-      EXPECT_TRUE(isnan(nexttoward(KE::quiet_NaN<T>::value, target_pos_one)))
+      EXPECT_TRUE(isnan(nexttoward(quiet_NaN<T>::value, target_pos_one)))
+          << nan_err_msg;
+      EXPECT_TRUE(isnan(nexttoward(signaling_NaN<T>::value, target_pos_one)))
+          << nan_err_msg;
+      EXPECT_TRUE(isnan(nexttoward(pos_one, quiet_NaN<long double>::value)))
+          << nan_err_msg;
+      EXPECT_TRUE(isnan(nexttoward(pos_one, signaling_NaN<long double>::value)))
           << nan_err_msg;
       EXPECT_TRUE(
-          isnan(nexttoward(KE::signaling_NaN<T>::value, target_pos_one)))
+          isnan(nexttoward(quiet_NaN<T>::value, quiet_NaN<long double>::value)))
           << nan_err_msg;
-      EXPECT_TRUE(isnan(nexttoward(pos_one, KE::quiet_NaN<long double>::value)))
+      EXPECT_TRUE(isnan(
+          nexttoward(quiet_NaN<T>::value, signaling_NaN<long double>::value)))
           << nan_err_msg;
-      EXPECT_TRUE(
-          isnan(nexttoward(pos_one, KE::signaling_NaN<long double>::value)))
+      EXPECT_TRUE(isnan(
+          nexttoward(signaling_NaN<T>::value, quiet_NaN<long double>::value)))
           << nan_err_msg;
-      EXPECT_TRUE(isnan(nexttoward(KE::quiet_NaN<T>::value,
-                                   KE::quiet_NaN<long double>::value)))
-          << nan_err_msg;
-      EXPECT_TRUE(isnan(nexttoward(KE::quiet_NaN<T>::value,
-                                   KE::signaling_NaN<long double>::value)))
-          << nan_err_msg;
-      EXPECT_TRUE(isnan(nexttoward(KE::signaling_NaN<T>::value,
-                                   KE::quiet_NaN<long double>::value)))
-          << nan_err_msg;
-      EXPECT_TRUE(isnan(nexttoward(KE::signaling_NaN<T>::value,
-                                   KE::signaling_NaN<long double>::value)))
+      EXPECT_TRUE(isnan(nexttoward(signaling_NaN<T>::value,
+                                   signaling_NaN<long double>::value)))
           << nan_err_msg;
     }
 

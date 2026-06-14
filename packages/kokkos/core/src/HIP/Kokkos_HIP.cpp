@@ -6,11 +6,7 @@
 #endif
 
 #include <Kokkos_Macros.hpp>
-#ifdef KOKKOS_ENABLE_EXPERIMENTAL_CXX20_MODULES
-import kokkos.core;
-#else
 #include <Kokkos_Core.hpp>
-#endif
 #include <HIP/Kokkos_HIP.hpp>
 #include <HIP/Kokkos_HIP_Instance.hpp>
 #include <HIP/Kokkos_HIP_IsXnack.hpp>
@@ -37,13 +33,7 @@ struct {
 
 namespace Kokkos {
 
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
-int HIP::concurrency() {
-#else
-int HIP::concurrency() const {
-#endif
-  return Impl::HIPInternal::concurrency();
-}
+int HIP::concurrency() const { return Impl::HIPInternal::concurrency(); }
 
 void HIP::impl_initialize(InitializationSettings const& settings) {
   const std::vector<int>& visible_devices = Impl::get_visible_devices();
@@ -147,10 +137,6 @@ HIP::HIP(hipStream_t const stream, Impl::ManageStream manage_stream)
                ? Impl::HostSharedPtr(new Impl::HIPInternal(stream),
                                      customDeleterManagesStream)
                : Impl::HostSharedPtr(new Impl::HIPInternal(stream)))) {}
-
-KOKKOS_DEPRECATED HIP::HIP(hipStream_t const stream, bool manage_stream)
-    : HIP(stream,
-          manage_stream ? Impl::ManageStream::yes : Impl::ManageStream::no) {}
 
 void HIP::print_configuration(std::ostream& os, bool /*verbose*/) const {
   os << "Device Execution Space:\n";

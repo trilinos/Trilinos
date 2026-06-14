@@ -67,6 +67,8 @@ class ParallelFor<FunctorType, Kokkos::RangePolicy<Traits...>, Kokkos::Cuda> {
              iwork < static_cast<Member>(work_end - work_stride * batch_size)
                  ? iwork + work_stride * batch_size
                  : work_end) {
+// FIXME: batch_size == 1 can be treated without nested loops but faced issue
+// with cuda-12.6.2 on Hopper90 GPU (compiler hangs) when implementing that
 #if defined(KOKKOS_COMPILER_NVCC)
 #pragma unroll
 #endif
@@ -86,6 +88,7 @@ class ParallelFor<FunctorType, Kokkos::RangePolicy<Traits...>, Kokkos::Cuda> {
     const typename Policy::index_type nwork =
         (m_policy.end() - m_policy.begin()) / batch_size +
         ((m_policy.end() - m_policy.begin()) % batch_size == 0 ? 0 : 1);
+
     cudaFuncAttributes attr =
         CudaParallelLaunch<ParallelFor, LaunchBounds>::get_cuda_func_attributes(
             m_policy.space().impl_internal_space_instance());

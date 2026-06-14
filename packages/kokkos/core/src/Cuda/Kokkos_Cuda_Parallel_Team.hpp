@@ -190,16 +190,27 @@ class TeamPolicyInternal<Kokkos::Cuda, Properties...>
     // reductions. They also use one int64_t in static shared memory for a
     // shared ID. Furthermore, they use additional scratch memory in some
     // reduction scenarios, which depend on the size of the value_type and is
-    // NOT captured here.
+    // NOT captured here. There is also the chance that RDC or the potential
+    // inclusion of CCCL/other libraries in the future could add extra static
+    // shared memory requirements that can't be captured without knowing
+    // details of the function itself.
+    //
+    // These potential scenarios are addressed in an ad-hoc fashion by the
+    // 16KiB "shared memory fudge factor"; more robust solutions to this
+    // are being considered in #9089.
     constexpr size_t max_possible_team_size = 1024;
+    constexpr size_t ad_hoc_shared_memory_overallocation =
+        static_cast<size_t>(16) * 1024;
     constexpr size_t max_reserved_shared_mem_per_team =
-        (max_possible_team_size + 2) * sizeof(double) + sizeof(int64_t);
+        (max_possible_team_size + 2) * sizeof(double) + sizeof(int64_t) +
+        ad_hoc_shared_memory_overallocation;
     // arbitrarily setting level 1 scratch limit to 20MB, for a
     // Volta V100 that would give us about 3.2GB for 2 teams per SM
     constexpr size_t max_l1_scratch_size =
-        static_cast<size_t>(20) * 1024 * 1024;
+        static_cast<size_t>(80) * 1024 * 1024;
 
-    size_t max_shmem = Cuda().cuda_device_prop().sharedMemPerBlock;
+    auto const& props = Impl::CudaInternal::m_deviceProp;
+    size_t max_shmem  = get_max_shared_mem_per_block(props);
     return (level == 0 ? max_shmem - max_reserved_shared_mem_per_team
                        : max_l1_scratch_size);
   }
@@ -582,8 +593,9 @@ class ParallelFor<FunctorType, Kokkos::TeamPolicy<Properties...>,
                   static_cast<std::int64_t>(m_league_size))));
     }
 
+    auto const& dev_props = m_policy.space().cuda_device_prop();
     const int maxShmemPerBlock =
-        m_policy.space().cuda_device_prop().sharedMemPerBlock;
+        static_cast<int>(get_max_shared_mem_per_block(dev_props));
     const int shmem_size_total = m_shmem_begin + m_shmem_size;
     if (maxShmemPerBlock < shmem_size_total) {
       std::stringstream error;
@@ -979,8 +991,9 @@ class ParallelReduce<CombinedFunctorReducerType,
     // Functor's reduce memory, team scan memory, and team shared memory depend
     // upon team size.
 
+    auto const& dev_props = m_policy.space().cuda_device_prop();
     const int maxShmemPerBlock =
-        m_policy.space().cuda_device_prop().sharedMemPerBlock;
+        static_cast<int>(get_max_shared_mem_per_block(dev_props));
     const int shmem_size_total = m_team_begin + m_shmem_begin + m_shmem_size;
 
     if (!Kokkos::has_single_bit<unsigned>(m_team_size) && !UseShflReduction) {

@@ -48,11 +48,7 @@ struct ArrayBoundsCheck {
 /**\brief  Derived from the C++17 'std::array'.
  *         Dropping the iterator interface.
  */
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
-template <class T = void, size_t N = KOKKOS_INVALID_INDEX, class Proxy = void>
-#else
 template <class T, size_t N>
-#endif
 struct Array {
  public:
   /**
@@ -144,13 +140,8 @@ struct Array {
   }
 };
 
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
-template <class T, class Proxy>
-struct Array<T, 0, Proxy> {
-#else
 template <class T>
 struct Array<T, 0> {
-#endif
  public:
   using reference       = T&;
   using const_reference = std::add_const_t<T>&;
@@ -222,164 +213,6 @@ struct Array<T, 0> {
   friend KOKKOS_INLINE_FUNCTION constexpr void kokkos_swap(
       Array<T, 0>&, Array<T, 0>&) noexcept {}
 };
-
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
-namespace Impl {
-struct KokkosArrayContiguous {};
-struct KokkosArrayStrided {};
-}  // namespace Impl
-
-template <>
-struct KOKKOS_DEPRECATED Array<void, KOKKOS_INVALID_INDEX, void> {
-  using contiguous = Impl::KokkosArrayContiguous;
-  using strided    = Impl::KokkosArrayStrided;
-};
-
-template <class T>
-struct KOKKOS_DEPRECATED
-    Array<T, KOKKOS_INVALID_INDEX, Impl::KokkosArrayContiguous> {
- private:
-  T* m_elem;
-  size_t m_size;
-
- public:
-  using reference       = T&;
-  using const_reference = std::add_const_t<T>&;
-  using size_type       = size_t;
-  using difference_type = ptrdiff_t;
-  using value_type      = T;
-  using pointer         = T*;
-  using const_pointer   = std::add_const_t<T>*;
-
-  KOKKOS_INLINE_FUNCTION constexpr size_type size() const { return m_size; }
-  KOKKOS_INLINE_FUNCTION constexpr bool empty() const { return 0 == m_size; }
-  KOKKOS_INLINE_FUNCTION constexpr size_type max_size() const { return m_size; }
-
-  template <typename iType>
-  KOKKOS_INLINE_FUNCTION reference operator[](const iType& i) {
-    static_assert((std::is_integral_v<iType> || std::is_enum_v<iType>),
-                  "Must be integral argument");
-    KOKKOS_ARRAY_BOUNDS_CHECK(i, m_size);
-    return m_elem[i];
-  }
-
-  template <typename iType>
-  KOKKOS_INLINE_FUNCTION const_reference operator[](const iType& i) const {
-    static_assert((std::is_integral_v<iType> || std::is_enum_v<iType>),
-                  "Must be integral argument");
-    KOKKOS_ARRAY_BOUNDS_CHECK(i, m_size);
-    return m_elem[i];
-  }
-
-  KOKKOS_INLINE_FUNCTION pointer data() { return m_elem; }
-  KOKKOS_INLINE_FUNCTION const_pointer data() const { return m_elem; }
-
-  KOKKOS_DEFAULTED_FUNCTION ~Array()                     = default;
-  KOKKOS_INLINE_FUNCTION_DELETED Array()                 = delete;
-  KOKKOS_INLINE_FUNCTION_DELETED Array(const Array& rhs) = delete;
-  KOKKOS_INLINE_FUNCTION_DELETED Array(Array&& rhs)      = delete;
-
-  KOKKOS_INLINE_FUNCTION
-  Array& operator=(const Array& rhs) {
-    if (&rhs == this) return *this;
-    const size_t n = size() < rhs.size() ? size() : rhs.size();
-    for (size_t i = 0; i < n; ++i) m_elem[i] = rhs[i];
-    return *this;
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  Array& operator=(Array&& rhs) {
-    if (&rhs == this) return *this;
-    const size_t n = size() < rhs.size() ? size() : rhs.size();
-    for (size_t i = 0; i < n; ++i) m_elem[i] = rhs[i];
-    return *this;
-  }
-
-  template <size_t N, class P>
-  KOKKOS_INLINE_FUNCTION Array& operator=(const Array<T, N, P>& rhs) {
-    const size_t n = size() < rhs.size() ? size() : rhs.size();
-    for (size_t i = 0; i < n; ++i) m_elem[i] = rhs[i];
-    return *this;
-  }
-
-  KOKKOS_INLINE_FUNCTION constexpr Array(pointer arg_ptr, size_type arg_size,
-                                         size_type = 0)
-      : m_elem(arg_ptr), m_size(arg_size) {}
-};
-
-template <class T>
-struct KOKKOS_DEPRECATED
-    Array<T, KOKKOS_INVALID_INDEX, Impl::KokkosArrayStrided> {
- private:
-  T* m_elem;
-  size_t m_size;
-  size_t m_stride;
-
- public:
-  using reference       = T&;
-  using const_reference = std::add_const_t<T>&;
-  using size_type       = size_t;
-  using difference_type = ptrdiff_t;
-  using value_type      = T;
-  using pointer         = T*;
-  using const_pointer   = std::add_const_t<T>*;
-
-  KOKKOS_INLINE_FUNCTION constexpr size_type size() const { return m_size; }
-  KOKKOS_INLINE_FUNCTION constexpr bool empty() const { return 0 == m_size; }
-  KOKKOS_INLINE_FUNCTION constexpr size_type max_size() const { return m_size; }
-
-  template <typename iType>
-  KOKKOS_INLINE_FUNCTION reference operator[](const iType& i) {
-    static_assert((std::is_integral_v<iType> || std::is_enum_v<iType>),
-                  "Must be integral argument");
-    KOKKOS_ARRAY_BOUNDS_CHECK(i, m_size);
-    return m_elem[i * m_stride];
-  }
-
-  template <typename iType>
-  KOKKOS_INLINE_FUNCTION const_reference operator[](const iType& i) const {
-    static_assert((std::is_integral_v<iType> || std::is_enum_v<iType>),
-                  "Must be integral argument");
-    KOKKOS_ARRAY_BOUNDS_CHECK(i, m_size);
-    return m_elem[i * m_stride];
-  }
-
-  KOKKOS_INLINE_FUNCTION pointer data() { return m_elem; }
-  KOKKOS_INLINE_FUNCTION const_pointer data() const { return m_elem; }
-
-  KOKKOS_DEFAULTED_FUNCTION ~Array()                 = default;
-  KOKKOS_INLINE_FUNCTION_DELETED Array()             = delete;
-  KOKKOS_INLINE_FUNCTION_DELETED Array(const Array&) = delete;
-  KOKKOS_INLINE_FUNCTION_DELETED Array(Array&&)      = delete;
-
-  KOKKOS_INLINE_FUNCTION
-  Array& operator=(const Array& rhs) {
-    if (&rhs == this) return *this;
-    const size_t n = size() < rhs.size() ? size() : rhs.size();
-    for (size_t i = 0; i < n; ++i) m_elem[i * m_stride] = rhs[i];
-    return *this;
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  Array& operator=(Array&& rhs) {
-    if (&rhs == this) return *this;
-    const size_t n = size() < rhs.size() ? size() : rhs.size();
-    for (size_t i = 0; i < n; ++i) m_elem[i * m_stride] = rhs[i];
-    return *this;
-  }
-
-  template <size_t N, class P>
-  KOKKOS_INLINE_FUNCTION Array& operator=(const Array<T, N, P>& rhs) {
-    const size_t n = size() < rhs.size() ? size() : rhs.size();
-    for (size_t i = 0; i < n; ++i) m_elem[i * m_stride] = rhs[i];
-    return *this;
-  }
-
-  KOKKOS_INLINE_FUNCTION constexpr Array(pointer arg_ptr, size_type arg_size,
-                                         size_type arg_stride)
-      : m_elem(arg_ptr), m_size(arg_size), m_stride(arg_stride) {}
-};
-#endif
 
 template <typename T, typename... Us>
 Array(T, Us...) -> Array<T, 1 + sizeof...(Us)>;

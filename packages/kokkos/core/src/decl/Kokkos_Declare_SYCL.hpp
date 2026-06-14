@@ -24,14 +24,20 @@
 #include <SYCL/Kokkos_SYCL_UniqueToken.hpp>
 #include <SYCL/Kokkos_SYCL_ZeroMemset.hpp>
 
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_5
 namespace Kokkos {
 namespace Experimental {
-using SYCLDeviceUSMSpace = ::Kokkos::SYCLDeviceUSMSpace;
-using SYCLHostUSMSpace   = ::Kokkos::SYCLHostUSMSpace;
-using SYCLSharedUSMSpace = ::Kokkos::SYCLSharedUSMSpace;
-using SYCL               = ::Kokkos::SYCL;
+using SYCLDeviceUSMSpace KOKKOS_DEPRECATED_WITH_COMMENT(
+    "Use Kokkos::SYCLDeviceUSMSpace instead!") = ::Kokkos::SYCLDeviceUSMSpace;
+using SYCLHostUSMSpace KOKKOS_DEPRECATED_WITH_COMMENT(
+    "Use Kokkos::SYCLHostUSMSpace instead!") = ::Kokkos::SYCLHostUSMSpace;
+using SYCLSharedUSMSpace KOKKOS_DEPRECATED_WITH_COMMENT(
+    "Use Kokkos::SYCLSharedUSMSpace instead!") = ::Kokkos::SYCLSharedUSMSpace;
+using SYCL KOKKOS_DEPRECATED_WITH_COMMENT("Use Kokkos::SYCL instead!") =
+    ::Kokkos::SYCL;
 }  // namespace Experimental
 }  // namespace Kokkos
+#endif
 
 #endif
 

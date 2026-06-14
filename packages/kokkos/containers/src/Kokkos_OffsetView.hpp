@@ -471,6 +471,7 @@ class OffsetView : public View<DataType, Properties...> {
     KOKKOS_IF_ON_HOST((return runtime_check_begins_ends_host(begins, ends);))
     KOKKOS_IF_ON_DEVICE(
         (return runtime_check_begins_ends_device(begins, ends);))
+    KOKKOS_IMPL_UNREACHABLE();
   }
 
   // Constructor around unmanaged data after checking begins < ends for all
@@ -1115,23 +1116,6 @@ KOKKOS_INLINE_FUNCTION
   return Kokkos::Experimental::Impl::subview_offset(src, args...);
 }
 
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
-namespace Experimental {
-template <class D, class... P, class... Args>
-KOKKOS_DEPRECATED_WITH_COMMENT("Use Kokkos::subview instead")
-KOKKOS_INLINE_FUNCTION
-    typename Kokkos::Experimental::Impl::GetOffsetViewTypeFromViewType<
-        typename Kokkos::Impl::ViewMapping<
-            void /* deduce subview type from source view traits */
-            ,
-            ViewTraits<D, P...>, Args...>::type>::type
-    subview(const Kokkos::Experimental::OffsetView<D, P...>& src,
-            Args... args) {
-  return Kokkos::subview(src, args...);
-}
-}  // namespace Experimental
-#endif
-
 }  // namespace Kokkos
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -1478,6 +1462,16 @@ create_mirror_view_and_copy(
     std::string const& name = "") {
   return {create_mirror_view_and_copy(space, src.view(), name), src.begins()};
 }
+
+template <class T, class... P>
+auto create_mirror_view_and_copy(
+    const Kokkos::Experimental::OffsetView<T, P...>& src) {
+  return create_mirror_view_and_copy(
+      typename Kokkos::Experimental::OffsetView<
+          T, P...>::host_mirror_type::memory_space{},
+      src);
+}
+
 } /* namespace Kokkos */
 
 //----------------------------------------------------------------------------
