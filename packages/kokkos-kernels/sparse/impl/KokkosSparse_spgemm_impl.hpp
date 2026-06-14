@@ -556,10 +556,10 @@ class KokkosSPGEMM {
    *
    */
   template <typename a_row_view_t, typename a_nnz_view_t, typename b_oldrow_view_t, typename b_row_view_t>
-  struct PredicMaxRowNNZ;
+  struct PredictMaxRowNNZ;
 
-  struct PredicMaxRowNNZIntersection;
-  struct PredicMaxRowNNZ_p;
+  struct PredictMaxRowNNZIntersection;
+  struct PredictMaxRowNNZ_p;
 
  private:
   /**

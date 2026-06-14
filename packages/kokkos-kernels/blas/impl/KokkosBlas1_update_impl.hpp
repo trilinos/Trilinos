@@ -5,7 +5,7 @@
 
 #include "KokkosKernels_config.h"
 #include "Kokkos_Core.hpp"
-#include "Kokkos_InnerProductSpaceTraits.hpp"
+#include "KokkosKernels_InnerProductSpaceTraits.hpp"
 
 namespace KokkosBlas {
 namespace Impl {

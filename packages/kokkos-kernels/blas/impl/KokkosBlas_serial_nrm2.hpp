@@ -5,7 +5,7 @@
 #define KOKKOSBLAS_SERIAL_NRM2_HPP_
 
 #include <Kokkos_Core.hpp>
-#include <Kokkos_InnerProductSpaceTraits.hpp>
+#include <KokkosKernels_InnerProductSpaceTraits.hpp>
 
 namespace KokkosBlas {
 namespace Impl {
@@ -14,9 +14,9 @@ namespace Impl {
 /// Serial Internal Impl
 /// ====================
 template <typename ValueType>
-KOKKOS_INLINE_FUNCTION static typename Kokkos::Details::InnerProductSpaceTraits<ValueType>::mag_type serial_nrm2(
+KOKKOS_INLINE_FUNCTION static typename KokkosKernels::Details::InnerProductSpaceTraits<ValueType>::mag_type serial_nrm2(
     const int m, const ValueType *KOKKOS_RESTRICT X, const int xs0) {
-  using IPT       = Kokkos::Details::InnerProductSpaceTraits<ValueType>;
+  using IPT       = KokkosKernels::Details::InnerProductSpaceTraits<ValueType>;
   using norm_type = typename IPT::mag_type;
 
   norm_type nrm = KokkosKernels::ArithTraits<norm_type>::zero();
@@ -32,7 +32,7 @@ KOKKOS_INLINE_FUNCTION static typename Kokkos::Details::InnerProductSpaceTraits<
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION static void serial_nrm2(
     const int m, const int n, const ValueType *KOKKOS_RESTRICT X, const int xs0, const int xs1,
-    typename Kokkos::Details::InnerProductSpaceTraits<ValueType>::mag_type *KOKKOS_RESTRICT R, const int ys0) {
+    typename KokkosKernels::Details::InnerProductSpaceTraits<ValueType>::mag_type *KOKKOS_RESTRICT R, const int ys0) {
   for (int vecIdx = 0; vecIdx < n; ++vecIdx) R[vecIdx * ys0] = serial_nrm2(m, X + vecIdx * xs1, xs0);
 
   return;

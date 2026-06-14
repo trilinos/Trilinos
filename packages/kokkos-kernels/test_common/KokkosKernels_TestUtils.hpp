@@ -44,6 +44,34 @@
 
 namespace Test {
 
+namespace Impl {
+
+template <class Scalar1, class Scalar2, class Scalar3>
+::testing::AssertionResult kk_expect_near_pred_format(const char* expr1, const char* expr2, const char* expr3,
+                                                      const Scalar1& val1, const Scalar2& val2, const Scalar3& tol) {
+  using scalar1_type = typename std::remove_cv<typename std::remove_reference<Scalar1>::type>::type;
+  using scalar3_type = typename std::remove_cv<typename std::remove_reference<Scalar3>::type>::type;
+  using AT1          = KokkosKernels::ArithTraits<scalar1_type>;
+  using AT3          = KokkosKernels::ArithTraits<scalar3_type>;
+
+  const double abs_diff = static_cast<double>(AT1::abs(val1 - val2));
+  const double abs_tol  = static_cast<double>(AT3::abs(tol));
+
+  if (abs_diff <= abs_tol) {
+    return ::testing::AssertionSuccess();
+  }
+
+  return ::testing::AssertionFailure() << "The difference between " << expr1 << " and " << expr2 << " is " << abs_diff
+                                       << ", which exceeds " << expr3 << ", where\n"
+                                       << expr1 << " evaluates to " << ::testing::PrintToString(val1) << ",\n"
+                                       << expr2 << " evaluates to " << ::testing::PrintToString(val2) << ", and\n"
+                                       << expr3 << " evaluates to " << ::testing::PrintToString(tol) << ".";
+}
+
+}  // namespace Impl
+
+#define KK_EXPECT_NEAR(val1, val2, tol) EXPECT_PRED_FORMAT3(::Test::Impl::kk_expect_near_pred_format, val1, val2, tol)
+
 // Utility class for testing kernels with rank-1 and rank-2 views that may be
 // LayoutStride. Simplifies making a LayoutStride view of a given size that is
 // actually noncontiguous, and host-device transfers for checking results on

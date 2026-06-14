@@ -5,7 +5,7 @@
 
 #include <KokkosKernels_config.h>
 #include <Kokkos_Core.hpp>
-#include <Kokkos_InnerProductSpaceTraits.hpp>
+#include <KokkosKernels_InnerProductSpaceTraits.hpp>
 
 namespace KokkosBlas {
 namespace Impl {
@@ -21,7 +21,7 @@ template <class AV, class XVector, class YVector, typename SizeType>
 struct DotFunctor {
   typedef SizeType size_type;
   typedef typename AV::non_const_value_type avalue_type;
-  typedef Kokkos::Details::InnerProductSpaceTraits<avalue_type> IPT;
+  typedef KokkosKernels::Details::InnerProductSpaceTraits<avalue_type> IPT;
   typedef typename IPT::dot_type value_type;
 
   XVector m_x;
@@ -36,7 +36,7 @@ struct DotFunctor {
   // Prefer const size_type& to const size_type or size_type,
   // since the compiler has an easier time inlining the former.
   KOKKOS_FORCEINLINE_FUNCTION void operator()(const size_type& i, value_type& sum) const {
-    Kokkos::Details::updateDot(sum, m_x(i), m_y(i));  // sum += m_x(i) * m_y(i)
+    KokkosKernels::Details::updateDot(sum, m_x(i), m_y(i));  // sum += m_x(i) * m_y(i)
   }
 
   KOKKOS_INLINE_FUNCTION void init(value_type& update) const {

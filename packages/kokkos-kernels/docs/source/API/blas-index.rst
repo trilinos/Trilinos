@@ -7,8 +7,10 @@ API: BLAS
 
    blas/blas1_abs
    blas/blas1_axpy
+   blas/blas1_axpby
    blas/blas1_dot
    blas/blas1_iamax
+   blas/blas1_nrminf
    blas/blas1_nrm1
    blas/blas1_nrm2
    blas/blas1_rotg

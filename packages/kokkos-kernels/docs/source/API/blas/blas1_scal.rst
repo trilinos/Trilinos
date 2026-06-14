@@ -43,3 +43,18 @@ Type Requirements
 
   - ``Kokkos::SpaceAccessibility<execution_space, typename RMV::memory_space>::accessible == true``
   - ``RMV::rank == XMV::rank``
+
+Example
+=======
+
+.. literalinclude:: ../../../../example/docs/blas/KokkosBlas1_docs_scal.cpp
+  :language: c++
+
+output:
+
+.. code::
+
+   orignal values:
+      {-3, -3, -3, -3, -3}
+   final values:
+      {6, 6, 6, 6, 6}

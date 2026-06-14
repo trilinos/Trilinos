@@ -240,7 +240,7 @@ void spmv(const ExecutionSpace& space, Handle* handle, const char mode[], const 
         useNative = useNative || (mode[0] == Conjugate[0]);
       }
 #ifdef KOKKOS_ENABLE_SYCL
-      if constexpr (std::is_same_v<ExecutionSpace, Kokkos::Experimental::SYCL>) {
+      if constexpr (std::is_same_v<ExecutionSpace, Kokkos::SYCL>) {
         useNative = useNative || (mode[0] != NoTranspose[0]);
       }
 #endif
