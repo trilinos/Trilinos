@@ -99,7 +99,7 @@ void test_coloring(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size
 
   // FIXME SYCL: re-enable this when EB is working
 #ifdef KOKKOS_ENABLE_SYCL
-  if (!std::is_same<typename device::execution_space, Kokkos::Experimental::SYCL>::value) {
+  if (!std::is_same<typename device::execution_space, Kokkos::SYCL>::value) {
     coloring_algorithms.push_back(COLORING_EB);
   }
 #else

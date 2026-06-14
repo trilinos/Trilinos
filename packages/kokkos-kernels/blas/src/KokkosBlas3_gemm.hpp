@@ -5,7 +5,6 @@
 
 /// \file KokkosBlas3_gemm.hpp
 
-#include <KokkosKernels_Macros.hpp>
 #include <KokkosBlas3_gemm_spec.hpp>
 #include <KokkosBlas2_gemv.hpp>
 #include <KokkosBlas1_scal.hpp>

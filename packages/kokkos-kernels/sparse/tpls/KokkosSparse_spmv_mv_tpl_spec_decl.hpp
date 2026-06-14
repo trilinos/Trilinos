@@ -158,6 +158,11 @@ void spmv_mv_cusparse(const Kokkos::Cuda &exec, Handle *handle, const char mode[
                                                                  &subhandle->bufferSize));
 
     KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMalloc(&subhandle->buffer, subhandle->bufferSize));
+    // Call the optional preprocess, unless we know the handle will not be reused
+    if (handle->get_algorithm() != SPMV_FAST_SETUP) {
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSpMM_preprocess(
+          cusparseHandle, opA, opB, &alpha, subhandle->mat, vecX, &beta, vecY, computeType, algo, subhandle->buffer));
+    }
   }
 
   KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSpMM(cusparseHandle, opA, opB, &alpha, subhandle->mat, vecX, &beta, vecY,

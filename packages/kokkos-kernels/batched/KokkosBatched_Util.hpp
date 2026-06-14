@@ -21,7 +21,9 @@
 #include <complex>
 #include <iostream>
 
+#include <Kokkos_Assert.hpp>
 #include "Kokkos_Complex.hpp"
+#include "Kokkos_DynRankView.hpp"
 
 #include "KokkosKernels_config.h"
 #include "KokkosKernels_Macros.hpp"
@@ -55,6 +57,17 @@ namespace KokkosBatched {
 #define Int2StringHelper(A) #A
 #define Int2String(A) Int2StringHelper(A)
 #define StringCat(A, B) A B
+
+// nvcc+MSVC device code cannot resolve Kokkos::View::rank via instance call;
+// use ViewType::rank() (compile-time) for fixed-rank View, v.rank() for DynRankView.
+template <typename ViewType>
+KOKKOS_INLINE_FUNCTION size_t view_rank(const ViewType &v) {
+  if constexpr (Kokkos::is_view_v<ViewType>) {
+    return ViewType::rank();
+  } else {
+    return v.rank();
+  }
+}
 
 void print_compiler_info();
 
@@ -237,6 +250,31 @@ struct Diag {
     static const bool use_unit_diag = false;
   };
 };
+
+struct Norm {
+  struct L1 {};
+  struct L2 {};
+  struct LInf {};
+  struct ScaledL2 {};
+};
+
+template <class T>
+struct is_norm : std::false_type {};
+
+template <>
+struct is_norm<Norm::L1> : std::true_type {};
+
+template <>
+struct is_norm<Norm::L2> : std::true_type {};
+
+template <>
+struct is_norm<Norm::LInf> : std::true_type {};
+
+template <>
+struct is_norm<Norm::ScaledL2> : std::true_type {};
+
+template <class T>
+constexpr bool is_norm_v = is_norm<T>::value;
 
 /// BatchLayout class used to specify where the batch dimension is
 /// allocated in the input views for host-level Batched BLAS/LAPACK routines.
@@ -677,9 +715,17 @@ KOKKOS_INLINE_FUNCTION void fma_bounds_check(ViewType v, SizeType m, SizeType n,
 namespace Impl {
 template <typename ViewType>
 KOKKOS_INLINE_FUNCTION int get_extent_int(const ViewType &v, const int r) {
-  static_assert(Kokkos::is_view_v<ViewType>, "KokkosBatched: ViewType is not a Kokkos::View.");
-  constexpr std::size_t V_rank = ViewType::rank();
-  static_assert(V_rank <= 2, "KokkosBatched: ViewType must have rank 0, 1 or 2.");
+  // Check for view and dynrankview
+  if constexpr (Kokkos::is_view_v<ViewType>) {
+    static_assert(ViewType::rank() <= 2, "KokkosBatched: ViewType must have rank 0, 1 or 2.");
+  } else if constexpr (Kokkos::is_dyn_rank_view_v<ViewType>) {
+    KOKKOS_EXPECTS((v.rank() <= 2));
+  } else {
+    static_assert(Kokkos::is_view_v<ViewType> || Kokkos::is_dyn_rank_view_v<ViewType>,
+                  "KokkosBatched: ViewType must be a Kokkos::View or a Kokkos::DynRankView");
+  }
+
+  const std::size_t V_rank = view_rank(v);
 
   if (r == 0) {
     int V_extent_0 = V_rank < 1 ? 1 : v.extent_int(0);
@@ -694,9 +740,17 @@ KOKKOS_INLINE_FUNCTION int get_extent_int(const ViewType &v, const int r) {
 
 template <typename ViewType>
 KOKKOS_INLINE_FUNCTION std::size_t get_stride(const ViewType &v, const int r) {
-  static_assert(Kokkos::is_view_v<ViewType>, "KokkosBatched: ViewType is not a Kokkos::View.");
-  constexpr std::size_t V_rank = ViewType::rank();
-  static_assert(V_rank <= 2, "KokkosBatched: ViewType must have rank 0, 1 or 2.");
+  // Check for view and dynrankview
+  if constexpr (Kokkos::is_view_v<ViewType>) {
+    static_assert(ViewType::rank() <= 2, "KokkosBatched: ViewType must have rank 0, 1 or 2.");
+  } else if constexpr (Kokkos::is_dyn_rank_view_v<ViewType>) {
+    KOKKOS_EXPECTS((v.rank() <= 2));
+  } else {
+    static_assert(Kokkos::is_view_v<ViewType> || Kokkos::is_dyn_rank_view_v<ViewType>,
+                  "KokkosBatched: ViewType must be a Kokkos::View or a Kokkos::DynRankView");
+  }
+
+  const std::size_t V_rank = view_rank(v);
 
   if (r == 0) {
     std::size_t V_stride_0 = V_rank < 1 ? 1 : v.stride(0);

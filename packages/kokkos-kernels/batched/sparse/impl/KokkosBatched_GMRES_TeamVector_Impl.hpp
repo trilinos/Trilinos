@@ -85,7 +85,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorGMRES<MemberType>::invoke(const MemberType&
   P.template apply<Trans::NoTranspose, Mode::TeamVector, 1>(member, W, W);
   member.team_barrier();
 
-  TeamVectorDot<MemberType>::invoke(member, W, W, tmp);
+  TeamVectorDot<MemberType, Trans::ConjTranspose, 1>::invoke(member, W, W, tmp);
   member.team_barrier();
 
   Kokkos::parallel_for(Kokkos::TeamVectorRange(member, 0, numMatrices), [&](const OrdinalType& i) {
@@ -139,7 +139,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorGMRES<MemberType>::invoke(const MemberType&
     if (handle.get_ortho_strategy() == 1) {
       for (size_t i = 0; i < j + 1; ++i) {
         auto V_i = Kokkos::subview(V_view, Kokkos::ALL, i, Kokkos::ALL);
-        TeamVectorDot<MemberType>::invoke(member, W, V_i, tmp);
+        TeamVectorDot<MemberType, Trans::ConjTranspose, 1>::invoke(member, W, V_i, tmp);
         member.team_barrier();
         TeamVectorCopy1D::invoke(member, tmp, Kokkos::subview(H_view, Kokkos::ALL, j, i));
         member.team_barrier();
@@ -153,7 +153,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorGMRES<MemberType>::invoke(const MemberType&
       }
     }
 
-    TeamVectorDot<MemberType>::invoke(member, W, W, tmp);
+    TeamVectorDot<MemberType, Trans::ConjTranspose, 1>::invoke(member, W, W, tmp);
     member.team_barrier();
     Kokkos::parallel_for(Kokkos::TeamVectorRange(member, 0, numMatrices), [&](const OrdinalType& i) {
       H_view(i, j, j + 1) = ATM::sqrt(tmp(i));
@@ -260,7 +260,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorGMRES<MemberType>::invoke(const MemberType&
     member.team_barrier();
     P.template apply<Trans::NoTranspose, Mode::TeamVector, 1>(member, W, W);
     member.team_barrier();
-    TeamVectorDot<MemberType>::invoke(member, W, W, tmp);
+    TeamVectorDot<MemberType, Trans::ConjTranspose, 1>::invoke(member, W, W, tmp);
     member.team_barrier();
 
     Kokkos::parallel_for(Kokkos::TeamVectorRange(member, 0, numMatrices), [&](const OrdinalType& i) {

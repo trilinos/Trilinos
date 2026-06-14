@@ -21,7 +21,7 @@ struct V_Iamax_Functor {
   using size_type   = SizeType;
   using mag_type    = MagType;
   using xvalue_type = typename XV::non_const_value_type;
-  using IPT         = Kokkos::Details::InnerProductSpaceTraits<xvalue_type>;
+  using IPT         = KokkosKernels::Details::InnerProductSpaceTraits<xvalue_type>;
   using value_type  = typename RV::value_type;
 
   typename XV::const_type m_x;

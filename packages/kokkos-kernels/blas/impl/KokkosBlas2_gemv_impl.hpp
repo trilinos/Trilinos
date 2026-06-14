@@ -572,7 +572,7 @@ void twoLevelGemv(const ExecutionSpace& space, const char trans[], typename AVie
         // FIXME SYCL: team_size_recommended() returns too big of a team size.
         // Kernel hangs with 1024 threads on XEHP.
 #ifdef KOKKOS_ENABLE_SYCL
-      if (std::is_same<ExecutionSpace, Kokkos::Experimental::SYCL>::value) {
+      if (std::is_same<ExecutionSpace, Kokkos::SYCL>::value) {
         if (teamSize > 256) teamSize = 256;
       }
 #endif

@@ -46,7 +46,7 @@ struct TeamTrsm<MemberType, Side::Left, Uplo::Lower, Trans::NoTranspose, ArgDiag
     // Quick return if possible
     if (B.size() == 0) return 0;
 
-    const size_t B_rank     = B.rank();
+    const size_t B_rank     = view_rank(B);
     const size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
     const size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
 
@@ -80,7 +80,7 @@ struct TeamTrsm<MemberType, Side::Left, Uplo::Lower, Trans::NoTranspose, ArgDiag
     // Quick return if possible
     if (B.size() == 0) return 0;
 
-    const size_t B_rank     = B.rank();
+    const size_t B_rank     = view_rank(B);
     const size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
     const size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
 
@@ -120,7 +120,7 @@ struct TeamTrsm<MemberType, Side::Right, Uplo::Upper, Trans::NoTranspose, ArgDia
     // Quick return if possible
     if (B.size() == 0) return 0;
 
-    const size_t B_rank     = B.rank();
+    const size_t B_rank     = view_rank(B);
     const size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
     const size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
 
@@ -154,7 +154,7 @@ struct TeamTrsm<MemberType, Side::Right, Uplo::Upper, Trans::NoTranspose, ArgDia
     // Quick return if possible
     if (B.size() == 0) return 0;
 
-    const size_t B_rank     = B.rank();
+    const size_t B_rank     = view_rank(B);
     const size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
     const size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
 
@@ -194,7 +194,7 @@ struct TeamTrsm<MemberType, Side::Right, Uplo::Lower, Trans::NoTranspose, ArgDia
     // Quick return if possible
     if (B.size() == 0) return 0;
 
-    const size_t B_rank     = B.rank();
+    const size_t B_rank     = view_rank(B);
     const size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
     const size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
 
@@ -228,7 +228,7 @@ struct TeamTrsm<MemberType, Side::Right, Uplo::Lower, Trans::NoTranspose, ArgDia
     // Quick return if possible
     if (B.size() == 0) return 0;
 
-    const size_t B_rank     = B.rank();
+    const size_t B_rank     = view_rank(B);
     const size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
     const size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
 
@@ -268,7 +268,7 @@ struct TeamTrsm<MemberType, Side::Right, Uplo::Upper, Trans::Transpose, ArgDiag,
     // Quick return if possible
     if (B.size() == 0) return 0;
 
-    const size_t B_rank     = B.rank();
+    const size_t B_rank     = view_rank(B);
     const size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
     const size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
 
@@ -302,7 +302,7 @@ struct TeamTrsm<MemberType, Side::Right, Uplo::Upper, Trans::Transpose, ArgDiag,
     // Quick return if possible
     if (B.size() == 0) return 0;
 
-    const size_t B_rank     = B.rank();
+    const size_t B_rank     = view_rank(B);
     const size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
     const size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
 
@@ -342,7 +342,7 @@ struct TeamTrsm<MemberType, Side::Left, Uplo::Upper, Trans::NoTranspose, ArgDiag
     // Quick return if possible
     if (B.size() == 0) return 0;
 
-    const size_t B_rank     = B.rank();
+    const size_t B_rank     = view_rank(B);
     const size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
     const size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
 
@@ -376,7 +376,7 @@ struct TeamTrsm<MemberType, Side::Left, Uplo::Upper, Trans::NoTranspose, ArgDiag
     // Quick return if possible
     if (B.size() == 0) return 0;
 
-    const size_t B_rank     = B.rank();
+    const size_t B_rank     = view_rank(B);
     const size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
     const size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
 
@@ -416,7 +416,7 @@ struct TeamTrsm<MemberType, Side::Left, Uplo::Lower, Trans::Transpose, ArgDiag, 
     // Quick return if possible
     if (B.size() == 0) return 0;
 
-    const size_t B_rank     = B.rank();
+    const size_t B_rank     = view_rank(B);
     const size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
     const size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
 
@@ -450,7 +450,7 @@ struct TeamTrsm<MemberType, Side::Left, Uplo::Lower, Trans::Transpose, ArgDiag, 
     // Quick return if possible
     if (B.size() == 0) return 0;
 
-    const size_t B_rank     = B.rank();
+    const size_t B_rank     = view_rank(B);
     const size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
     const size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
 
@@ -490,7 +490,7 @@ struct TeamTrsm<MemberType, Side::Left, Uplo::Upper, Trans::Transpose, ArgDiag, 
     // Quick return if possible
     if (B.size() == 0) return 0;
 
-    const size_t B_rank     = B.rank();
+    const size_t B_rank     = view_rank(B);
     const size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
     const size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
 
@@ -524,7 +524,7 @@ struct TeamTrsm<MemberType, Side::Left, Uplo::Upper, Trans::Transpose, ArgDiag, 
     // Quick return if possible
     if (B.size() == 0) return 0;
 
-    const size_t B_rank     = B.rank();
+    const size_t B_rank     = view_rank(B);
     const size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
     const size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
 

@@ -97,7 +97,7 @@ int main_instantiation(int argc, char** argv) {
   if (params.use_sycl) {
 #if defined(KOKKOS_ENABLE_SYCL)
     std::cout << "Running on SYCL backend.\n";
-    KOKKOSKERNELS_PERF_TEST_NAME<Kokkos::Experimental::SYCL>(argc, argv, params);
+    KOKKOSKERNELS_PERF_TEST_NAME<Kokkos::SYCL>(argc, argv, params);
     ran = true;
 #else
     std::cout << "ERROR: SYCL requested, but not available.\n";

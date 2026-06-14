@@ -102,9 +102,9 @@ KOKKOS_INLINE_FUNCTION int TeamTrsvInternalLower<Algo::Trsv::Blocked>::invoke(
         member.team_barrier();
         if (member.team_rank() == 0) {
           if (use_unit_diag)
-            trsm_u.serial_invoke(Ap, pb, 1, bp);
+            trsm_u.serial_invoke(KokkosBlas::Impl::OpID(), Ap, pb, 1, bp);
           else
-            trsm_n.serial_invoke(Ap, pb, 1, bp);
+            trsm_n.serial_invoke(KokkosBlas::Impl::OpID(), Ap, pb, 1, bp);
         }
 
         // gemv update
@@ -204,9 +204,9 @@ KOKKOS_INLINE_FUNCTION int TeamTrsvInternalUpper<Algo::Trsv::Blocked>::invoke(
         member.team_barrier();
         if (member.team_rank() == 0) {
           if (use_unit_diag)
-            trsm_u.serial_invoke(Ap, pb, 1, bp);
+            trsm_u.serial_invoke(KokkosBlas::Impl::OpID(), Ap, pb, 1, bp);
           else
-            trsm_n.serial_invoke(Ap, pb, 1, bp);
+            trsm_n.serial_invoke(KokkosBlas::Impl::OpID(), Ap, pb, 1, bp);
         }
 
         // gemv update

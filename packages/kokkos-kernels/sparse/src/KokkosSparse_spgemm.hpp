@@ -145,17 +145,20 @@ void block_spgemm_numeric(KernelHandle& kh, const AMatrix& A, const bool Amode, 
 ///
 /// @brief
 ///
-/// @tparam CMatrix
-/// @tparam AMatrix
-/// @tparam BMatrix
-/// @param A
-/// @param Amode
-/// @param B
-/// @param Bmode
-/// @return CMatrix
+/// @tparam CMatrix Result matrix type.
+/// @tparam AMatrix Left input matrix type.
+/// @tparam BMatrix Right input matrix type.
+/// @param algo Algorithm to use.
+/// @param A Left input matrix.
+/// @param Amode Whether to transpose A (only Amode == false is currently supported)
+/// @param B Right input matrix.
+/// @param Bmode Whether to transpose B (only Bmode == false is currently supported)
+/// @param algo Algorithm option to use.
+/// @return CMatrix Product A*B.
 ///
 template <class CMatrix, class AMatrix, class BMatrix>
-CMatrix spgemm(const AMatrix& A, const bool Amode, const BMatrix& B, const bool Bmode) {
+CMatrix spgemm(KokkosSparse::SPGEMMAlgorithm algo, const AMatrix& A, const bool Amode, const BMatrix& B,
+               const bool Bmode) {
   // Canonicalize the matrix types:
   //  - Make A,B have const values and entries.
   //  - Make all views in A,B unmanaged, but otherwise default memory traits
@@ -199,9 +202,33 @@ CMatrix spgemm(const AMatrix& A, const bool Amode, const BMatrix& B, const bool 
     typename CMatrix::values_type valuesC;
     return CMatrix("C", Crows, Ccols, 0, valuesC, row_mapC, entriesC);
   }
-  return CMatrix(
-      KokkosSparse::Impl::SPGEMM_NOREUSE<CMatrix_Internal, AMatrix_Internal, BMatrix_Internal>::spgemm_noreuse(
-          A_internal, Amode, B_internal, Bmode));
+  if (Impl::is_spgemm_algorithm_native(algo)) {
+    return CMatrix(
+        KokkosSparse::Impl::SPGEMM_NOREUSE<CMatrix_Internal, AMatrix_Internal, BMatrix_Internal, false>::spgemm_noreuse(
+            algo, A_internal, Amode, B_internal, Bmode));
+  } else {
+    return CMatrix(
+        KokkosSparse::Impl::SPGEMM_NOREUSE<CMatrix_Internal, AMatrix_Internal, BMatrix_Internal>::spgemm_noreuse(
+            algo, A_internal, Amode, B_internal, Bmode));
+  }
+}
+
+///
+/// @brief
+///
+/// @tparam CMatrix Result matrix type.
+/// @tparam AMatrix Left input matrix type.
+/// @tparam BMatrix Right input matrix type.
+/// @param A Left input matrix.
+/// @param Amode Whether to transpose A (only Amode == false is currently supported)
+/// @param B Right input matrix.
+/// @param Bmode Whether to transpose B (only Bmode == false is currently supported)
+/// @param algo Algorithm option to use.
+/// @return CMatrix Product A*B.
+///
+template <class CMatrix, class AMatrix, class BMatrix>
+CMatrix spgemm(const AMatrix& A, const bool Amode, const BMatrix& B, const bool Bmode) {
+  return spgemm<CMatrix, AMatrix, BMatrix>(KokkosSparse::SPGEMM_DEFAULT, A, Amode, B, Bmode);
 }
 
 }  // namespace KokkosSparse

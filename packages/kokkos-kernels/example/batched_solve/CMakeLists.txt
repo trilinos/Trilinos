@@ -34,3 +34,11 @@ kokkoskernels_add_executable(serial_axpy SOURCES serial_axpy.cpp)
 kokkoskernels_add_executable(serial_copy SOURCES serial_copy.cpp)
 
 kokkoskernels_add_executable(serial_syr2 SOURCES serial_syr2.cpp)
+
+kokkoskernels_add_executable(serial_rot SOURCES serial_rot.cpp)
+
+kokkoskernels_add_executable(serial_rotm SOURCES serial_rotm.cpp)
+
+kokkoskernels_add_executable(serial_dot SOURCES serial_dot.cpp)
+
+kokkoskernels_add_executable(serial_nrm SOURCES serial_nrm.cpp)

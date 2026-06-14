@@ -24,7 +24,7 @@ class Kokkos::Impl::ParallelFor<FunctorType, Kokkos::MDRangePolicy<Traits...>,
   using array_index_type = typename Policy::array_index_type;
   using index_type       = typename Policy::index_type;
   using WorkTag          = typename Policy::work_tag;
-  using MaxGridSize      = Kokkos::Array<index_type, 3>;
+  using MaxGridSize      = Kokkos::Array<std::size_t, 3>;
   using array_type       = typename Policy::point_type;
 
   const FunctorType m_functor;
@@ -83,7 +83,7 @@ class Kokkos::Impl::ParallelFor<FunctorType, Kokkos::MDRangePolicy<Traits...>,
         const index_type n_global_z = item.get_group_range(0);
 
         Kokkos::Impl::DeviceIterate<Policy::rank, array_index_type, index_type,
-                                    FunctorType, Policy::inner_direction,
+                                    Policy::inner_direction, true, FunctorType,
                                     typename Policy::work_tag>(
             lower_bound, upper_bound, extent, functor_wrapper.get_functor(),
             {n_global_x, n_global_y, n_global_z},
@@ -126,9 +126,7 @@ class Kokkos::Impl::ParallelFor<FunctorType, Kokkos::MDRangePolicy<Traits...>,
     // as the one varying the fastest, so the order must be reversed for Kokkos
     // see:
     // https://registry.khronos.org/SYCL/specs/sycl-2020/html/sycl-2020.html#sec:multi-dim-linearization
-    return {static_cast<index_type>(max_grid_size[2]),
-            static_cast<index_type>(max_grid_size[1]),
-            static_cast<index_type>(max_grid_size[0])};
+    return {max_grid_size[2], max_grid_size[1], max_grid_size[0]};
 #else
     // otherwise, we consider that the max is infinite
     return {std::numeric_limits<index_type>::max(),

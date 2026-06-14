@@ -603,16 +603,6 @@ class DynRankView : private View<DataType*******, Properties...> {
   using view_type::span;
   using view_type::span_is_contiguous;  // FIXME: not tested
   using view_type::stride;              // FIXME: not tested
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
-  using view_type::stride_0;  // FIXME: not tested
-  using view_type::stride_1;  // FIXME: not tested
-  using view_type::stride_2;  // FIXME: not tested
-  using view_type::stride_3;  // FIXME: not tested
-  using view_type::stride_4;  // FIXME: not tested
-  using view_type::stride_5;  // FIXME: not tested
-  using view_type::stride_6;  // FIXME: not tested
-  using view_type::stride_7;  // FIXME: not tested
-#endif
   using view_type::use_count;
 
 #ifdef KOKKOS_ENABLE_CUDA
@@ -1770,6 +1760,13 @@ auto create_mirror_view_and_copy(const Space&,
                                  std::string const& name = "") {
   return create_mirror_view_and_copy(
       Kokkos::view_alloc(typename Space::memory_space{}, name), src);
+}
+
+template <class T, class... P>
+auto create_mirror_view_and_copy(const Kokkos::DynRankView<T, P...>& src) {
+  return create_mirror_view_and_copy(
+      typename Kokkos::DynRankView<T, P...>::host_mirror_type::memory_space{},
+      src);
 }
 
 }  // namespace Kokkos

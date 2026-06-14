@@ -25,6 +25,7 @@ kokkoskernels_add_executable(sparse_spmv
   SOURCES KokkosSparse_spmv.cpp KokkosSparse_spmv_test.cpp spmv/OpenMPSmartStatic_SPMV.cpp ${utilities_list})
 
 kokkoskernels_add_executable(sparse_kk_spmv SOURCES KokkosSparse_kk_spmv.cpp)
+kokkoskernels_add_executable(sparse_kk_spmv_merge SOURCES KokkosSparse_kk_spmv_merge.cpp)
 
 if(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
   kokkoskernels_add_executable(sparse_spmv_merge SOURCES KokkosSparse_spmv_merge.cpp)

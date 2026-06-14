@@ -36,7 +36,7 @@ namespace Impl {
                          Kokkos::MemoryTraits<Kokkos::Unmanaged>>                                                    \
         XV;                                                                                                          \
     typedef typename XV::size_type size_type;                                                                        \
-    typedef Kokkos::Details::InnerProductSpaceTraits<double> IPT;                                                    \
+    typedef KokkosKernels::Details::InnerProductSpaceTraits<double> IPT;                                             \
                                                                                                                      \
     static void nrminf(const ExecSpace& space, RV& R, const XV& X) {                                                 \
       Kokkos::Profiling::pushRegion("KokkosBlas::nrminf[TPL_BLAS,double]");                                          \
@@ -69,7 +69,7 @@ namespace Impl {
                          Kokkos::MemoryTraits<Kokkos::Unmanaged>>                                                   \
         XV;                                                                                                         \
     typedef typename XV::size_type size_type;                                                                       \
-    typedef Kokkos::Details::InnerProductSpaceTraits<float> IPT;                                                    \
+    typedef KokkosKernels::Details::InnerProductSpaceTraits<float> IPT;                                             \
                                                                                                                     \
     static void nrminf(const ExecSpace& space, RV& R, const XV& X) {                                                \
       Kokkos::Profiling::pushRegion("KokkosBlas::nrminf[TPL_BLAS,float]");                                          \
@@ -102,7 +102,7 @@ namespace Impl {
                          Kokkos::MemoryTraits<Kokkos::Unmanaged>>                                                    \
         XV;                                                                                                          \
     typedef typename XV::size_type size_type;                                                                        \
-    typedef Kokkos::Details::InnerProductSpaceTraits<Kokkos::complex<double>> IPT;                                   \
+    typedef KokkosKernels::Details::InnerProductSpaceTraits<Kokkos::complex<double>> IPT;                            \
                                                                                                                      \
     static void nrminf(const ExecSpace& space, RV& R, const XV& X) {                                                 \
       Kokkos::Profiling::pushRegion("KokkosBlas::nrminf[TPL_BLAS,complex<double>]");                                 \
@@ -137,7 +137,7 @@ namespace Impl {
                          Kokkos::MemoryTraits<Kokkos::Unmanaged>>                                                     \
         XV;                                                                                                           \
     typedef typename XV::size_type size_type;                                                                         \
-    typedef Kokkos::Details::InnerProductSpaceTraits<Kokkos::complex<float>> IPT;                                     \
+    typedef KokkosKernels::Details::InnerProductSpaceTraits<Kokkos::complex<float>> IPT;                              \
                                                                                                                       \
     static void nrminf(const ExecSpace& space, RV& R, const XV& X) {                                                  \
       Kokkos::Profiling::pushRegion("KokkosBlas::nrminf[TPL_BLAS,complex<float>]");                                   \
