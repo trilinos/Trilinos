@@ -473,8 +473,18 @@ public:
 
   int incrementTag() {
     ++tag_;
-    if (tag_ == std::numeric_limits<int>::max())
-      tag_ = 0;
+    // Wrap at MPI_TAG_UB, NOT std::numeric_limits<int>::max(). The tag is
+    // passed straight to MPI_Isend/Irecv, and MPI rejects any tag above
+    // MPI_TAG_UB with MPI_ERR_TAG. MPI_TAG_UB is far below INT_MAX on real
+    // implementations (e.g. 2^23-1 = 8388607 on OpenMPI), so wrapping only
+    // at INT_MAX let the tag climb out of the valid range: the Tpetra
+    // Distributor calls this once per communication round, and a long run
+    // (~8.4M rounds) eventually aborts mid-solve with MPI_ERR_TAG. tagUb_
+    // is the queried MPI_TAG_UB (see setupMembersFromComm); wrapping back
+    // to minTag_ keeps the tag valid and matches the documented intent of
+    // "loop around back to a small value".
+    if (tag_ >= tagUb_)
+      tag_ = minTag_;
     return tag_;
   }
 
@@ -509,6 +519,13 @@ private:
   /// <a href="https://software.sandia.gov/bugzilla/show_bug.cgi?id=5740">Bug 5740</a>
   /// for further discussion.
   int tag_;
+
+  /// \brief Upper bound for a valid MPI message tag (the queried
+  ///   MPI_TAG_UB attribute of rawMpiComm_), used by incrementTag to wrap
+  ///   the tag before it exceeds what MPI accepts. Set in
+  ///   setupMembersFromComm. Defaulted to the MPI-standard guaranteed
+  ///   minimum so it is never garbage even on an unforeseen ctor path.
+  int tagUb_ = 32767;
 
   //! MPI error handler.  If null, MPI uses the default error handler.
   RCP<const OpaqueWrapper<MPI_Errhandler> > customErrorHandler_;
