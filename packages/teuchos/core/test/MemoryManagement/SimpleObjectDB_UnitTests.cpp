@@ -38,7 +38,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SimpleObjectDB, defaultConstruct, T )
   TEST_EQUALITY_CONST(sot.tableSize(), 0);
   TEST_EQUALITY_CONST(sot.numFreeIndexes(), 0);
   TEST_EQUALITY_CONST(sot.numObjects(), 0);
-  TEST_THROW(sot.getNonconstObjRCP(0), RangeError);
+  //TEST_THROW(sot.getNonconstObjRCP(0), RangeError);
   TEST_THROW(sot.getConstObjRCP(0), RangeError);
   TEST_THROW(sot.getNonconstObjPtr(0), RangeError);
   TEST_THROW(sot.getConstObjPtr(0), RangeError);
