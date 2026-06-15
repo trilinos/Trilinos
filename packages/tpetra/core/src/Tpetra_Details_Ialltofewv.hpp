@@ -27,7 +27,8 @@ struct Ialltofewv {
     const int *roots;
     int nroots;
     MPI_Datatype recvtype;
-    int tag;
+    int aggTag;
+    int rootTag;
     MPI_Comm comm;
 
     bool devAccess;
@@ -47,7 +48,8 @@ struct Ialltofewv {
            const int *roots,       // list of root ranks (must be same on all procs)
            int nroots,             // size of list of root ranks
            MPI_Datatype recvtype,
-           int tag,
+           int aggTag,
+           int rootTag,
            MPI_Comm comm,
            Req *req) {
     req->sendbuf    = sendbuf;
@@ -60,7 +62,8 @@ struct Ialltofewv {
     req->roots      = roots;
     req->nroots     = nroots;
     req->recvtype   = recvtype;
-    req->tag        = tag;
+    req->aggTag     = aggTag;
+    req->rootTag    = rootTag;
     req->comm       = comm;
 
     req->devAccess = DevAccess;
