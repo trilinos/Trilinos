@@ -55,32 +55,14 @@
 #include <BelosXpetraAdapter.hpp>
 #endif
 
-#define FOURBYFOUR
-
 namespace {
 
-std::string defaultSuffix() {
-#ifdef BIGVERSION
-  return "big";
-#else
-  return "";
-#endif
-}
-
 int defaultBlockCount() {
-#ifdef FOURBYFOUR
   return 4;
-#else
-  return 2;
-#endif
 }
 
-std::string defaultMultiPhysFile(const std::string& suffix) {
-#ifdef FOURBYFOUR
-  return "multiPhys4x4" + suffix + ".mat";
-#else
-  return "multiPhys2x2" + suffix + ".mat";
-#endif
+std::string defaultMultiPhysFile() {
+  return "multiPhys4x4.mat";
 }
 
 std::string trim(std::string s) {
@@ -166,9 +148,8 @@ struct BlockSpec {
 };
 
 struct DriverOptions {
-  std::string suffix        = defaultSuffix();
   std::string xmlFile       = "comboP.xml";
-  std::string multiPhysFile = defaultMultiPhysFile(defaultSuffix());
+  std::string multiPhysFile = defaultMultiPhysFile();
   int nBlks                 = defaultBlockCount();
   int expectedIters         = 50;
   std::vector<BlockSpec> blocks;
@@ -178,19 +159,12 @@ struct DriverOptions {
 
 DriverOptions makeDefaultOptions() {
   DriverOptions opts;
-  const auto s = opts.suffix;
 
-#ifdef FOURBYFOUR
   opts.blocks = {
-      {"aux1" + s + ".mat", "coords1" + s + ".mat", "null1" + s + ".mat", ""},
-      {"aux2" + s + ".mat", "coords2" + s + ".mat", "null2" + s + ".mat", ""},
-      {"aux1" + s + ".mat", "coords1" + s + ".mat", "null1" + s + ".mat", ""},
-      {"aux2" + s + ".mat", "coords2" + s + ".mat", "null2" + s + ".mat", ""}};
-#else
-  opts.blocks = {
-      {"aux1" + s + ".mat", "coords1" + s + ".mat", "null1" + s + ".mat", ""},
-      {"aux2" + s + ".mat", "coords2" + s + ".mat", "null2" + s + ".mat", ""}};
-#endif
+      {"aux1.mat", "coords1.mat", "null1.mat", ""},
+      {"aux2.mat", "coords2.mat", "null2.mat", ""},
+      {"aux1.mat", "coords1.mat", "null1.mat", ""},
+      {"aux2.mat", "coords2.mat", "null2.mat", ""}};
 
   return opts;
 }
