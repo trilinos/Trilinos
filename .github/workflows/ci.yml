@@ -9,6 +9,10 @@ on:
       genconfig-string:
         required: true
         type: string
+      image:
+        description: 'Link to the registry image. Used for pr_reproducer script.'
+        required: true
+        type: string
       target-branch:
         required: false
         type: string

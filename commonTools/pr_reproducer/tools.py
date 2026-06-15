@@ -84,20 +84,20 @@ def parse_AT2_workflows(source_dir):
 
         job = data['jobs'][jobname]
 
-        if 'env' not in job:
-            logger.debug("no \"env\" attribute")
+        if 'with' not in job:
+            logger.debug("no \"with\" attribute")
             continue
-        env = job['env']
+        inputs = job['with']
 
-        if 'IMAGE' not in env:
-            logger.debug("no \"IMAGE\" attribute")
+        if 'image' not in inputs:
+            logger.debug("no \"image\" attribute")
             continue
-        image, tag = env["IMAGE"].split(":")
+        image, tag = inputs["image"].split(":")
 
-        if 'GENCONFIG_BUILD_NAME' not in env:
+        if 'genconfig-string' not in inputs:
             logger.debug("no \"GENCONFIG_BUILD_NAME\" attribute")
             continue
-        genconfig_build_id = env["GENCONFIG_BUILD_NAME"]
+        genconfig_build_id = inputs["genconfig-string"]
 
         pr_builds[jobname] = {"image": image,
                               "tag": tag,

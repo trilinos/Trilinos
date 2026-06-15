@@ -39,6 +39,7 @@ jobs:
     with:
       target-runner-labels: "['self-hosted', 'gcc-12.3.0-openmpi-4.1.6', '20260507']"
       genconfig-string: "rhel8_gcc-openmpi_debug_shared_no-kokkos-arch_no-asan_complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables"
+      image: registry-ex.sandia.gov/trilinos-project/trilinos-containers/production/ubi8-gcc-12.3.0-openmpi-4.1.6:20260507
       cdash-track: "Pull Request"
       dashboard-build-name: PR-${{ github.event.pull_request.number }}_${AT2_IMAGE}_debug_shared
       max-cores-allowed: 29
@@ -51,6 +52,7 @@ jobs:
     with:
       target-runner-labels: "['self-hosted', 'clang-19.1.7-openmpi-4.1.6', '20260507']"
       genconfig-string: "rhel_clang-openmpi_release-debug_shared_no-kokkos-arch_no-asan_no-complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables"
+      image: registry-ex.sandia.gov/trilinos-project/trilinos-containers/production/ubi9-clang-19.1.7-openmpi-4.1.6:20260507
       cdash-track: "Pull Request"
       dashboard-build-name: PR-${{ github.event.pull_request.number }}_${AT2_IMAGE}_release-debug_shared
       max-cores-allowed: 29
@@ -63,6 +65,7 @@ jobs:
     with:
       target-runner-labels: "['self-hosted', 'cuda-12.4.1-gcc-12.3.0-openmpi-4.1.6', '20260507', 'gpu:A100']"
       genconfig-string: "rhel_cuda-12-gcc-openmpi_release_static_Ampere80_no-asan_complex_no-fpic_mpi_pt_no-rdc_no-uvm_deprecated-on_no-package-enables"
+      image: registry-ex.sandia.gov/trilinos-project/trilinos-containers/production/ubi8-cuda-12.4.1-gcc-12.3.0-openmpi-4.1.6:20260507
       cdash-track: "Pull Request"
       dashboard-build-name: PR-${{ github.event.pull_request.number }}_${AT2_IMAGE}_release_static
       max-cores-allowed: 56
@@ -76,6 +79,7 @@ jobs:
     with:
       target-runner-labels: "['self-hosted', 'gcc-14', '20260507']"
       genconfig-string: "rhel_gcc_release-debug_shared_no-kokkos-arch_no-asan_no-complex_no-fpic_no-mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables"
+      image: registry-ex.sandia.gov/trilinos-project/trilinos-containers/production/ubi10-gcc-14:20260507
       cdash-track: "Pull Request"
       dashboard-build-name: PR-${{ github.event.pull_request.number }}_${AT2_IMAGE}_release-debug_shared
       max-cores-allowed: 29
@@ -88,6 +92,7 @@ jobs:
     with:
       target-runner-labels: "['self-hosted', 'cuda-12.4.1-gcc-12.3.0-openmpi-4.1.6', '20260507']"
       genconfig-string: "rhel_cuda-gcc-openmpi_release_static_Ampere80_no-asan_complex_no-fpic_mpi_pt_no-rdc_uvm_deprecated-on_no-package-enables"
+      image: registry-ex.sandia.gov/trilinos-project/trilinos-containers/production/ubi8-cuda-12.4.1-gcc-12.3.0-openmpi-4.1.6:20260507
       cdash-track: "Pull Request"
       dashboard-build-name: PR-${{ github.event.pull_request.number }}_${AT2_IMAGE}_release_static_uvm
       max-cores-allowed: 56
@@ -100,6 +105,7 @@ jobs:
     with:
       target-runner-labels: "['self-hosted', 'oneapi-2024.2', '20260507']"
       genconfig-string: "rhel_oneapi-intelmpi_release-debug_shared_no-kokkos-arch_no-asan_no-complex_fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables"
+      image: registry-ex.sandia.gov/trilinos-project/trilinos-containers/production/ubi9-oneapi-2024.2:20260507
       cdash-track: "Pull Request"
       dashboard-build-name: PR-${{ github.event.pull_request.number }}_${AT2_IMAGE}_release-debug_shared
       max-cores-allowed: 29
@@ -112,6 +118,7 @@ jobs:
     with:
       target-runner-labels: "['self-hosted', 'gcc-12.3.0-openmpi-4.1.6', '20260507']"
       genconfig-string: "rhel8_gcc-openmpi-openmp_release-debug_static_no-kokkos-arch_no-asan_no-complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables"
+      image: registry-ex.sandia.gov/trilinos-project/trilinos-containers/production/ubi8-gcc-12.3.0-openmpi-4.1.6:20260507
       cdash-track: "Pull Request"
       dashboard-build-name: PR-${{ github.event.pull_request.number }}_${AT2_IMAGE}_release-debug_static_openmp
       max-cores-allowed: 29
@@ -124,6 +131,7 @@ jobs:
     with:
       target-runner-labels: "['self-hosted', 'python-3.9', '20260507']"
       genconfig-string: "rhel8_python_debug_shared_no-kokkos-arch_no-asan_no-complex_no-fpic_no-mpi_no-pt_no-rdc_no-uvm_deprecated-on_pr-framework"
+      image: registry-ex.sandia.gov/trilinos-project/trilinos-containers/production/ubi8-python-3.9:20260507
       cdash-track: "Pull Request"
       dashboard-build-name: PR-${{ github.event.pull_request.number }}_${AT2_IMAGE}_framework-tests
       skip-create-packageenables: true
@@ -135,6 +143,7 @@ jobs:
     with:
       target-runner-labels: "['self-hosted', 'gcc-12.3.0-openmpi-4.1.6', '20260507']"
       genconfig-string: "rhel8_gcc-openmpi-openmp_release_static_no-kokkos-arch_no-asan_no-complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_ramses"
+      image: registry-ex.sandia.gov/trilinos-project/trilinos-containers/production/ubi8-gcc-12.3.0-openmpi-4.1.6:20260507
       cdash-track: "Pull Request (Non-blocking)"
       dashboard-build-name: PR-${{ github.event.pull_request.number }}_${AT2_IMAGE}_release_static_RAMSES
       max-cores-allowed: 29
