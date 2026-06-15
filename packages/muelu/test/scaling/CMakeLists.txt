@@ -314,7 +314,7 @@ TRIBITS_ADD_TEST(
 TRIBITS_ADD_TEST(
   ComboPDriver
   NAME "ComboPTest"
-  ARGS "--linAlgebra=Tpetra --its=9"
+  ARGS "--linAlgebra=Tpetra --its=9 --xml=comboP.xml --nblks=4 --matrix=multiPhys4x4.mat --auxFiles=aux1.mat,aux2.mat,aux1.mat,aux2.mat --coordFiles=coords1.mat,coords2.mat,coords1.mat,coords2.mat --nullFiles=null1.mat,null2.mat,null1.mat,null2.mat"
   NUM_MPI_PROCS 4
   COMM mpi
   PASS_REGULAR_EXPRESSION "Belos converged"
