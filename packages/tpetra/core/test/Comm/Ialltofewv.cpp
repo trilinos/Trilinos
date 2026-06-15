@@ -95,8 +95,9 @@ void checkResult(const Fixture &fixture, int offset,
 }
 
 TEUCHOS_UNIT_TEST(Ialltofewv, differentWaitOrder) {
-  // Test that we don't deadlock when different ranks wait on different Ialltofewv
-  // in different orders.
+  // Two concurrent Ialltofewv operations can complete without deadlocking
+  // when ranks wait for them in different orders.  Post distinct operations with
+  // distinct tags, reverse the wait order on odd ranks, and check both results.
 
   int rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -121,7 +122,9 @@ TEUCHOS_UNIT_TEST(Ialltofewv, differentWaitOrder) {
 }
 
 TEUCHOS_UNIT_TEST(Ialltofewv, pollingOneProgressesAll) {
-  // Check that get_status() on a request makes progress on other Ialltofewvs
+  // Polling one request also progresses every active Ialltofewv.
+  // Poll only the first request and observe the second request's
+  // completion, then check that both operations produced their data.
 
   int rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -147,7 +150,8 @@ TEUCHOS_UNIT_TEST(Ialltofewv, pollingOneProgressesAll) {
 }
 
 TEUCHOS_UNIT_TEST(Ialltofewv, zeroCountsMultipleRoots) {
-  // Mutliple source/root pairs send nothing
+  // Multiple roots handle zero-count source/root pairs correctly.  Every
+  // rank sends one value to root 0, while only odd ranks send to root 1.
   int rank = 0;
   int size = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -194,6 +198,10 @@ TEUCHOS_UNIT_TEST(Ialltofewv, zeroCountsMultipleRoots) {
 }
 
 TEUCHOS_UNIT_TEST(Ialltofewv, reusesCachedViews) {
+  // Ialltofewv instance reuses cached temporary views.  First run an
+  // operation large enough to populate the cache, then run a smaller operation while
+  // counting named Kokkos allocations and require that no cached view is reallocated.
+
   int rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
@@ -211,6 +219,9 @@ TEUCHOS_UNIT_TEST(Ialltofewv, reusesCachedViews) {
 }
 
 TEUCHOS_UNIT_TEST(Ialltofewv, copyHasIndependentCache) {
+  // Copy construction does not share an Ialltofewv instance's cache.
+  // Populate the original's cache, copy it, then require the copy to allocate.
+
   int rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
