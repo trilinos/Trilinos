@@ -7,111 +7,138 @@
 // *****************************************************************************
 // @HEADER
 
-// Teuchos includes /*@ \label{lned:being-includes} @*/
+// Teuchos includes
 #include "Teuchos_ConfigDefs.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
 
-// Epetra includes
-#include "mpi.h"
-#include "Epetra_MpiComm.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_Vector.h"
-#include "Epetra_LinearProblem.h"
-
-// EpetraExt includes
-#include "EpetraExt_CrsMatrixIn.h"
-#include "EpetraExt_VectorIn.h"
+// Tpetra includes
+#include "Tpetra_Core.hpp"
+#include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_Vector.hpp"
+#include "Tpetra_MultiVector.hpp"
+#include "MatrixMarket_Tpetra.hpp"
 
 // Teko-Package includes
 #include "Teko_Utilities.hpp"
 #include "Teko_InverseFactory.hpp"
 #include "Teko_InverseLibrary.hpp"
-#include "Teko_StridedEpetraOperator.hpp"
-#include "Teko_EpetraBlockPreconditioner.hpp"
+#include "Teko_StridedTpetraOperator.hpp"
+#include "Teko_TpetraBlockPreconditioner.hpp"
 #include "Teko_LSCPreconditionerFactory.hpp"
 #include "Teko_InvLSCStrategy.hpp"
 #include "Teko_SIMPLEPreconditionerFactory.hpp"
+#include "Teko_ConfigDefs.hpp"
 
-// Aztec includes
-#include "AztecOO.h"
-#include "AztecOO_Operator.h"
+// Belos includes
+#include "BelosConfigDefs.hpp"
+#include "BelosLinearProblem.hpp"
+#include "BelosBlockGmresSolMgr.hpp"
+#include "BelosTpetraAdapter.hpp"
 
-#include <iostream> /*@ \label{lned:end-includes} @*/
+#include <iostream>
+#include <vector>
 
 // for simplicity
 using Teuchos::RCP;
 using Teuchos::rcp;
 
 int main(int argc, char* argv[]) {
-  // calls MPI_Init and MPI_Finalize
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  Tpetra::ScopeGuard tpetraScope(&argc, &argv);
 
-  // build global communicator
-  Epetra_MpiComm Comm(MPI_COMM_WORLD);
+  using ST = double;
+  using LO = Teko::LO;
+  using GO = Teko::GO;
+  using NT = Teko::NT;
 
-  // Read in the matrix, store pointer as an RCP
-  Epetra_CrsMatrix* ptrA = 0;
-  EpetraExt::MatrixMarketFileToCrsMatrix("../data/nsjac.mm", Comm, ptrA);
-  RCP<Epetra_CrsMatrix> A = rcp(ptrA);
+  using map_t = Tpetra::Map<LO, GO, NT>;
+  using crs_t = Tpetra::CrsMatrix<ST, LO, GO, NT>;
+  using vec_t = Tpetra::Vector<ST, LO, GO, NT>;
+  using mv_t  = Tpetra::MultiVector<ST, LO, GO, NT>;
+  using op_t  = Tpetra::Operator<ST, LO, GO, NT>;
 
-  // read in the RHS vector
-  Epetra_Vector* ptrb = 0;
-  EpetraExt::MatrixMarketFileToVector("../data/nsrhs_test.mm", A->OperatorRangeMap(), ptrb);
-  RCP<Epetra_Vector> b = rcp(ptrb);
+  auto comm = Tpetra::getDefaultComm();
 
-  // allocate vectors
-  RCP<Epetra_Vector> x = rcp(new Epetra_Vector(A->OperatorDomainMap()));
-  x->PutScalar(0.0);
+  // Read in the matrix
+  RCP<crs_t> A = Tpetra::MatrixMarket::Reader<crs_t>::readSparseFile("../data/nsjac.mm", comm);
+
+  TEUCHOS_TEST_FOR_EXCEPTION(A.is_null(), std::runtime_error,
+                             "Failed to read matrix from ../data/nsjac.mm");
+
+  // Read in the RHS vector
+  RCP<const map_t> rangeMap  = A->getRangeMap();
+  RCP<const map_t> domainMap = A->getDomainMap();
+
+  RCP<vec_t> b = Tpetra::MatrixMarket::Reader<crs_t>::readVectorFile("../data/nsrhs_test.mm", comm,
+                                                                     rangeMap, false, false);
+
+  TEUCHOS_TEST_FOR_EXCEPTION(b.is_null(), std::runtime_error,
+                             "Failed to read RHS vector from ../data/nsrhs_test.mm");
+
+  // Allocate solution vector
+  RCP<vec_t> x = rcp(new vec_t(domainMap));
+  x->putScalar(0.0);
 
   // Break apart the strided linear system
   /////////////////////////////////////////////////////////
 
-  // Block the linear system using a strided epetra operator
   std::vector<int> vec(2);
   vec[0] = 2;
-  vec[1] = 1; /*@ \label{lned:define-strided} @*/
-  Teuchos::RCP<Teko::Epetra::StridedEpetraOperator> sA =
-      Teuchos::rcp(new Teko::Epetra::StridedEpetraOperator(vec, A));
+  vec[1] = 1;
 
-  // Build the preconditioner /*@ \label{lned:construct-prec} @*/
+  Teuchos::RCP<Teko::TpetraHelpers::StridedTpetraOperator> sA =
+      Teuchos::rcp(new Teko::TpetraHelpers::StridedTpetraOperator(vec, A));
+
+  // Build the preconditioner
   /////////////////////////////////////////////////////////
 
-  // build an InverseLibrary
-  RCP<Teko::InverseLibrary> invLib =
-      Teko::InverseLibrary::buildFromStratimikos(); /*@ \label{lned:define-inv-params} @*/
+  RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromStratimikos();
 
-  // build the inverse factory needed by the example preconditioner
-  RCP<Teko::InverseFactory> inverse /*@ \label{lned:define-inv-fact} @*/
-      = invLib->getInverseFactory("Amesos");
+  RCP<Teko::InverseFactory> inverse = invLib->getInverseFactory("Amesos2");
 
-  // build the preconditioner factory
-  RCP<Teko::NS::LSCStrategy> strategy =
-      rcp(new Teko::NS::InvLSCStrategy(inverse, true)); /*@ \label{lned:const-prec-strategy} @*/
-  RCP<Teko::BlockPreconditionerFactory> precFact        /*@ \label{lned:const-prec-fact} @*/
-      = rcp(new Teko::NS::LSCPreconditionerFactory(strategy));
+  RCP<Teko::NS::LSCStrategy> strategy = rcp(new Teko::NS::InvLSCStrategy(inverse, true));
 
-  // using the preconditioner factory construct an Epetra_Operator
-  Teko::Epetra::EpetraBlockPreconditioner prec(precFact); /*@ \label{lned:const-epetra-prec} @*/
-  prec.buildPreconditioner(sA);  // fill epetra preconditioner using the strided operator
+  RCP<Teko::BlockPreconditionerFactory> precFact =
+      rcp(new Teko::NS::LSCPreconditionerFactory(strategy));
+
+  Teko::TpetraHelpers::TpetraBlockPreconditioner prec(precFact);
+  prec.buildPreconditioner(sA);
 
   // Build and solve the linear system
   /////////////////////////////////////////////////////////
 
-  // Setup the linear solve: notice A is used directly
-  Epetra_LinearProblem problem(&*A, &*x, &*b); /*@ \label{lned:aztec-solve} @*/
+  RCP<mv_t> X = rcp(new mv_t(domainMap, 1));
+  RCP<mv_t> B = rcp(new mv_t(rangeMap, 1));
 
-  // build the solver
-  AztecOO solver(problem);
-  solver.SetAztecOption(AZ_solver, AZ_gmres);
-  solver.SetAztecOption(AZ_precond, AZ_none);
-  solver.SetAztecOption(AZ_kspace, 1000);
-  solver.SetAztecOption(AZ_output, 10);
-  solver.SetPrecOperator(&prec);
+  X->getVectorNonConst(0)->assign(*x);
+  B->getVectorNonConst(0)->assign(*b);
 
-  // solve the linear system
-  solver.Iterate(1000, 1e-5);
+  using problem_t        = Belos::LinearProblem<ST, mv_t, op_t>;
+  RCP<problem_t> problem = rcp(new problem_t(A, X, B));
+
+  RCP<op_t> precOp = Teuchos::rcp(&prec, false);
+  problem->setRightPrec(precOp);
+
+  const bool set = problem->setProblem();
+  TEUCHOS_TEST_FOR_EXCEPTION(!set, std::runtime_error,
+                             "Belos::LinearProblem::setProblem() failed.");
+
+  using solver_t = Belos::BlockGmresSolMgr<ST, mv_t, op_t>;
+
+  Teuchos::ParameterList belosList;
+  belosList.set("Maximum Iterations", 1000);
+  belosList.set("Convergence Tolerance", 1e-5);
+  belosList.set("Num Blocks", 1000);
+  belosList.set("Verbosity",
+                Belos::Errors + Belos::Warnings + Belos::IterationDetails + Belos::FinalSummary);
+  belosList.set("Output Frequency", 10);
+
+  solver_t solver(problem, rcpFromRef(belosList));
+  Belos::ReturnType result = solver.solve();
+
+  TEUCHOS_TEST_FOR_EXCEPTION(result != Belos::Converged, std::runtime_error,
+                             "Belos solver failed to converge.");
+
+  x->assign(*X->getVector(0));
 
   return 0;
 }
