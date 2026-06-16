@@ -67,6 +67,15 @@ KOKKOS_INLINE_FUNCTION void team_memcpy(const Member &member, MemcpyArg &arg) {
   }
 }
 
+template <typename ArgsView, typename Member>
+struct ApplyRdispls {
+  ArgsView args;
+
+  KOKKOS_INLINE_FUNCTION void operator()(const Member &member) const {
+    team_memcpy(member, args(member.league_rank()));
+  }
+};
+
 }  // namespace
 
 namespace Tpetra::Details {
@@ -474,9 +483,7 @@ class StateImpl : public Ialltofewv::State {
       auto args = args_;
       Kokkos::parallel_for(
           "Tpetra::Details::Ialltofewv: apply rdispls to contiguous root buffer", policy,
-          KOKKOS_LAMBDA(typename Policy::member_type member) {
-            team_memcpy(member, args(member.league_rank()));
-          });
+          ApplyRdispls<decltype(args), typename Policy::member_type>{args});
       Kokkos::fence("Tpetra::Details::Ialltofewv: after apply rdispls to contiguous root buffer");
     }
     stage_         = Stage::complete;
