@@ -33,7 +33,11 @@ REQUESTS_DIR = os.environ.get(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "requests"),
 )
 POLL_INTERVAL_SEC = 0.5
-RUN_SECONDS = 300
+# Self-terminate after this many seconds with no request handled. Read from
+# TEKO_WATCHER_IDLE_TIMEOUT (default 1000); <= 0 disables the idle timeout.
+# This is only a safety net — when launched by the Python interface the
+# watcher is normally stopped explicitly at interpreter exit.
+IDLE_TIMEOUT_SEC = float(os.environ.get("TEKO_WATCHER_IDLE_TIMEOUT", "1000"))
 
 REQUEST_RE = re.compile(r"s(\d+)_request\.json$")
 
@@ -163,13 +167,28 @@ def handle_request(request_id):
 
 
 def main():
+    idle_desc = (f"idle timeout {IDLE_TIMEOUT_SEC:g}s"
+                 if IDLE_TIMEOUT_SEC > 0 else "no idle timeout")
     print(f"Watching {REQUESTS_DIR} for s<N>_request.json "
-          f"(until Ctrl-C or {RUN_SECONDS}s)...")
+          f"(until Ctrl-C, parent exit, or {idle_desc})...")
 
     answered = set()
     start = time.monotonic()
+    last_activity = start
+    initial_ppid = os.getppid()
+    stop_reason = "Ctrl-C"
     try:
-        while time.monotonic() - start < RUN_SECONDS:
+        while True:
+            # Exit if our parent (the Python interface that launched us) has
+            # gone away, so the watcher never orphans itself.
+            if os.getppid() != initial_ppid:
+                stop_reason = "parent exited"
+                break
+            # Idle timeout: stop if no request has been handled in a while.
+            if IDLE_TIMEOUT_SEC > 0 and time.monotonic() - last_activity > IDLE_TIMEOUT_SEC:
+                stop_reason = f"idle for {IDLE_TIMEOUT_SEC:g}s"
+                break
+
             for path in glob.glob(os.path.join(REQUESTS_DIR, "s*_request.json")):
                 m = REQUEST_RE.match(os.path.basename(path))
                 if not m:
@@ -182,12 +201,14 @@ def main():
                     continue
                 handle_request(request_id)
                 answered.add(request_id)
+                last_activity = time.monotonic()
             time.sleep(POLL_INTERVAL_SEC)
     except KeyboardInterrupt:
-        print("Interrupted.")
+        stop_reason = "Ctrl-C"
 
     elapsed = time.monotonic() - start
-    print(f"Stopping after {elapsed:.1f}s; answered requests: {sorted(answered)}")
+    print(f"Stopping ({stop_reason}) after {elapsed:.1f}s; "
+          f"answered requests: {sorted(answered)}")
 
 
 if __name__ == "__main__":

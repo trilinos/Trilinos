@@ -981,6 +981,21 @@ struct ReconfiguredSystem {
     double                         factor_wall_time_sec;
 };
 
+// Build a Stratimikos-backed Ifpack2 inverse factory. This is configuration
+// setup only (no factorization happens here, so it is outside the factor-time
+// accounting); build it once and reuse it across a sweep rather than
+// rebuilding per ordering.
+inline Teuchos::RCP<Teko::InverseFactory> makeIfpack2InverseFactory()
+{
+    Stratimikos::DefaultLinearSolverBuilder builder;
+    auto stratParams = Teuchos::rcp(new Teuchos::ParameterList);
+    stratParams->set("Linear Solver Type",  "Belos");
+    stratParams->set("Preconditioner Type", "Ifpack2");
+    builder.setParameterList(stratParams);
+    auto invLib = Teko::InverseLibrary::buildFromStratimikos(builder);
+    return invLib->getInverseFactory("Ifpack2");
+}
+
 // Build the reconfigured system and preconditioner from an ordering vector.
 //
 // ordering[k] = g means old block k maps to new group g.
@@ -989,11 +1004,16 @@ struct ReconfiguredSystem {
 // coupling included), so a merged group's diagonal is factored jointly and
 // the whole system looks exactly as if the application had been called with
 // the merged grouping in the first place.
+//
+// invFact is the (shared) Ifpack2 inverse factory; only the per-group
+// buildInverse calls below are timed into factor_wall_time_sec, so passing a
+// prebuilt factory does not affect the reported timing.
 inline ReconfiguredSystem buildReconfiguredPrec(
     const std::vector<int>&                            ordering,
     Teuchos::RCP<const Thyra::BlockedLinearOpBase<SC>> A_blocked,
     int                                                nb_old,
-    const std::string&                                 method)
+    const std::string&                                 method,
+    Teuchos::RCP<Teko::InverseFactory>                 invFact)
 {
     // Validate the externally-supplied ordering before indexing with it:
     // a malformed reconfiguration.json (wrong length, negative entries)
@@ -1032,14 +1052,7 @@ inline ReconfiguredSystem buildReconfiguredPrec(
             " (group ids must be contiguous starting from 0; max ordering "
             "value implies " + std::to_string(nb_new) + " groups).");
 
-    // Build Ifpack2 inverse factory
-    Stratimikos::DefaultLinearSolverBuilder builder;
-    auto stratParams = Teuchos::rcp(new Teuchos::ParameterList);
-    stratParams->set("Linear Solver Type",  "Belos");
-    stratParams->set("Preconditioner Type", "Ifpack2");
-    builder.setParameterList(stratParams);
-    auto invLib  = Teko::InverseLibrary::buildFromStratimikos(builder);
-    auto invFact = invLib->getInverseFactory("Ifpack2");
+    // invFact (Ifpack2 inverse factory) is supplied by the caller and reused.
 
     // ── Per-block row maps and per-group maps/spaces ───────────────────────
     std::vector<Teuchos::RCP<const Tpetra::Map<LO, GO, Node>>> rowMapOf(nb_old);
@@ -1228,18 +1241,43 @@ struct OrderingResult {
 // and the solve converged, the solution is unpacked into problem->getLHS().
 // The hook-recursion guard must already be held by the caller (this runs a
 // flexible solve, which would otherwise re-enter the hook).
+//
+// Preconditioner construction is guarded: if buildReconfiguredPrec throws on
+// ANY rank (e.g. a singular merged block), the failure flag is max-reduced and
+// every rank returns a non-converged result without entering the collective
+// solve — so one bad candidate in a sweep can't deadlock the run (other ranks
+// would otherwise hang in solver.solve()).
 inline OrderingResult solveOrdering(
     const std::vector<int>&                            ordering,
     Teuchos::RCP<const Thyra::BlockedLinearOpBase<SC>> A_blocked,
     int                                                nb,
     const std::string&                                 method,
+    Teuchos::RCP<Teko::InverseFactory>                 invFact,
     Teuchos::RCP<Belos::AdaptiveHook::Problem>         problem,
     Teuchos::RCP<const Teuchos::ParameterList>         orig_params,
     Teuchos::RCP<const Teuchos::Comm<int>>             comm,
     double                                             b_norm,
     bool                                               writeToLHS)
 {
-    ReconfiguredSystem recon = buildReconfiguredPrec(ordering, A_blocked, nb, method);
+    OrderingResult r;
+    r.ordering         = ordering;
+    r.initial_residual = b_norm;
+
+    ReconfiguredSystem recon;
+    int local_err = 0;
+    try {
+        recon = buildReconfiguredPrec(ordering, A_blocked, nb, method, invFact);
+    } catch (const std::exception&) {
+        local_err = 1;
+    }
+    int glob_err = local_err;
+    if (comm->getSize() > 1)
+        Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, 1, &local_err, &glob_err);
+    if (glob_err) {
+        // Build failed somewhere; do not enter the collective solve. r is left
+        // as not-converged with zero timings.
+        return r;
+    }
 
     auto newProblem = Teuchos::rcp(new Problem());
     newProblem->setOperator(Teuchos::rcp_dynamic_cast<const OP>(recon.flatOp));
@@ -1267,11 +1305,8 @@ inline OrderingResult solveOrdering(
         Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, 1, &loc_i, &iterate_sec);
     }
 
-    OrderingResult r;
-    r.ordering              = ordering;
     r.iterations            = solver.getNumIters();
     r.converged             = (ret == Belos::Converged);
-    r.initial_residual      = b_norm;
     r.final_residual        = solver.achievedTol();
     r.factor_wall_time_sec  = factor_sec;
     r.iterate_wall_time_sec = iterate_sec;
@@ -1350,6 +1385,19 @@ inline void adaptiveLoop(
     // Bail out immediately if this call is the recursive re-entry from
     // Phase 4's solver2.solve() below (see ScopedAdaptiveLoopGuard).
     if (detail::g_inAdaptiveLoop) return;
+
+    // Opt-in gate. The hook is registered globally at libteko load, so it would
+    // otherwise fire on *every* flexible blocked GMRES solve in any process
+    // that links Teko — hijacking unrelated solves and blocking them on the
+    // reconfig handshake. Do nothing unless TEKO_ADAPTIVE_RECONFIG is set to a
+    // truthy value. (A per-solve ParameterList flag is not used because Belos
+    // validates the solver parameter list and rejects unknown keys.)
+    {
+        const char* en = std::getenv("TEKO_ADAPTIVE_RECONFIG");
+        const std::string v = en ? std::string(en) : "";
+        const bool enabled = !(v.empty() || v == "0" || v == "false" || v == "FALSE");
+        if (!enabled) return;
+    }
 
     // requests_dir comes from TEKO_RECONFIG_REQUESTS_DIR if set, otherwise
     // kDefaultRequestsDir.
@@ -1500,6 +1548,11 @@ inline void adaptiveLoop(
     // this hook; hold the guard across the whole sweep + final solve.
     ScopedAdaptiveLoopGuard recursion_guard;
 
+    // One Ifpack2 inverse factory, reused for every candidate build below
+    // (factory construction is untimed setup; sharing it avoids rebuilding the
+    // Stratimikos inverse library once per ordering).
+    auto invFact = makeIfpack2InverseFactory();
+
     // Warm-up before a timed sweep. The first build+solve inside this hook
     // pays one-time costs (kernel first-touch, Stratimikos/Ifpack2 setup
     // paths) that the factorization warm-up does not cover; left unaddressed
@@ -1510,7 +1563,7 @@ inline void adaptiveLoop(
     if (!resp.test_orderings.empty()) {
         std::vector<int> identity(nb);
         std::iota(identity.begin(), identity.end(), 0);
-        solveOrdering(identity, A_blocked, nb, method, problem,
+        solveOrdering(identity, A_blocked, nb, method, invFact, problem,
                       orig_params, comm, b_norm, /*writeToLHS=*/false);
     }
 
@@ -1520,7 +1573,7 @@ inline void adaptiveLoop(
     std::vector<OrderingResult> sweep;
     sweep.reserve(resp.test_orderings.size());
     for (const auto& ord : resp.test_orderings)
-        sweep.push_back(solveOrdering(ord, A_blocked, nb, method, problem,
+        sweep.push_back(solveOrdering(ord, A_blocked, nb, method, invFact, problem,
                                       orig_params, comm, b_norm, /*writeToLHS=*/false));
 
     // Selection. "chosen" returns use_ordering; "best_conv"/"best_time" pick
@@ -1562,7 +1615,7 @@ inline void adaptiveLoop(
     // ── Phase 4: authoritative solve of the selected ordering ──────────────
     // Re-solve the selected ordering (no cached solution is kept) and write
     // its result into the LHS the application reads back.
-    OrderingResult finalRes = solveOrdering(selected, A_blocked, nb, method, problem,
+    OrderingResult finalRes = solveOrdering(selected, A_blocked, nb, method, invFact, problem,
                                             orig_params, comm, b_norm, /*writeToLHS=*/true);
 
     SolveStats s2{finalRes.iterations, b_norm, finalRes.final_residual,
