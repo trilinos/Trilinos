@@ -58,7 +58,8 @@ struct Fixture {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     if (rank == root) {
-      recv.resize(size * count, -1);
+      using recv_size_type = decltype(recv)::size_type;
+      recv.resize(recv_size_type(size) * recv_size_type(count), -1);
       recvcounts.resize(size, count);
       rdispls.resize(size);
       for (int i = 0; i < size; ++i) rdispls[i] = i * count;
