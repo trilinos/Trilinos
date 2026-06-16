@@ -114,21 +114,32 @@ BuildPointCouplingMatrix(
     const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>& domainMap,
     Scalar value) {
   using Matrix = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using GO     = GlobalOrdinal;
 
   Teuchos::RCP<Matrix> A =
       Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(rangeMap, 1);
 
-  TEUCHOS_TEST_FOR_EXCEPTION(rangeMap->getLocalNumElements() != domainMap->getLocalNumElements(),
-                             std::runtime_error,
-                             "rangeMap and domainMap local sizes must match");
+  const auto rangeGids  = rangeMap->getLocalElementList();
+  const auto domainGids = domainMap->getLocalElementList();
 
-  Teuchos::ArrayView<const GlobalOrdinal> rowGids = rangeMap->getLocalElementList();
-  for (size_t i = 0; i < static_cast<size_t>(rowGids.size()); ++i) {
-    GlobalOrdinal row = rowGids[i];
-    LocalOrdinal lid  = rangeMap->getLocalElement(row);
-    GlobalOrdinal col = domainMap->getGlobalElement(lid);
+  const size_t nRangeLocal  = rangeGids.size();
+  const size_t nDomainLocal = domainGids.size();
 
-    Teuchos::Array<GlobalOrdinal> cols(1, col);
+  if (nRangeLocal == 0 || nDomainLocal == 0) {
+    A->fillComplete(domainMap, rangeMap);
+    return A;
+  }
+
+  for (size_t i = 0; i < nRangeLocal; ++i) {
+    const GO row = rangeGids[i];
+
+    const size_t j = std::min(
+        (i * nDomainLocal) / nRangeLocal,
+        nDomainLocal - size_t(1));
+
+    const GO col = domainGids[j];
+
+    Teuchos::Array<GO> cols(1, col);
     Teuchos::Array<Scalar> vals(1, value);
     A->insertGlobalValues(row, cols(), vals());
   }
@@ -161,11 +172,14 @@ BuildProblem(const Teuchos::RCP<const Teuchos::Comm<int>>& comm,
   // Build the base scalar map for field 0
   Teuchos::RCP<const Map> mapU = BuildCartesianMap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(comm, lib, nx, ny);
 
+  const GlobalOrdinal nxP = nx;
+  const GlobalOrdinal nyP = ny / 3;
+
   // Shift field 1 GIDs for Xpetra-style blocked numbering
-  Teuchos::RCP<const Map> mapP = BuildCartesianMap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(comm, lib, nx, ny);
+  Teuchos::RCP<const Map> mapP = BuildCartesianMap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(comm, lib, nxP, nyP);
 
   auto [A00, coords0, nullspace0] = BuildLaplace2D<Scalar, LocalOrdinal, GlobalOrdinal, Node>(comm, lib, nx, ny, mapU);
-  auto [A11, coords1, nullspace1] = BuildLaplace2D<Scalar, LocalOrdinal, GlobalOrdinal, Node>(comm, lib, nx, ny, mapP);
+  auto [A11, coords1, nullspace1] = BuildLaplace2D<Scalar, LocalOrdinal, GlobalOrdinal, Node>(comm, lib, nxP, nyP, mapP);
 
   Teuchos::RCP<Matrix> A01 = BuildPointCouplingMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(mapU, mapP, alpha);
   Teuchos::RCP<Matrix> A10 = BuildPointCouplingMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(mapP, mapU, beta);
