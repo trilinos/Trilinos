@@ -75,6 +75,7 @@
 #include <chrono>
 #include <cstdlib>
 #include <mutex>
+#include <string>
 
 using Teuchos::rcp;
 using Teuchos::RCP;
@@ -118,14 +119,19 @@ class FactorStopwatch {
 
 // One-time warm-up so the first *timed* factorization is not charged for
 // process-level initialization (Stratimikos/Ifpack2 first-use setup, the
-// first Kokkos kernel launch / OpenMP team spawn, allocator warmup). When
-// TEKO_FACTOR_WARMUP is set in the environment, the very first
-// buildInverse(factory, A) call factors A once untimed before the real timed
-// factorization, so that one-time cost lands outside any measured solve and
-// the first and second adaptive solves are compared warm-vs-warm. Off unless
-// the env var is set, so ordinary Teko users see no extra work.
+// first Kokkos kernel launch / OpenMP team spawn, allocator warmup). The very
+// first buildInverse(factory, A) call factors A once untimed before the real
+// timed factorization, so that one-time cost lands outside any measured solve
+// and the first and second adaptive solves are compared warm-vs-warm. On by
+// default; set TEKO_FACTOR_WARMUP=0 (or "false") to disable, e.g. if the extra
+// first factorization is unwanted.
 void maybeWarmupFactor(const InverseFactory& factory, const LinearOp& A) {
-  static const bool enabled = (std::getenv("TEKO_FACTOR_WARMUP") != nullptr);
+  static const bool enabled = []() {
+    const char* v = std::getenv("TEKO_FACTOR_WARMUP");
+    if (v == nullptr) return true;  // default on
+    const std::string s(v);
+    return !(s.empty() || s == "0" || s == "false" || s == "FALSE");
+  }();
   if (!enabled) return;
   static std::once_flag flag;
   std::call_once(flag, [&]() {

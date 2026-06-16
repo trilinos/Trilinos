@@ -53,7 +53,8 @@ diagonal-block build).
 ## Optional knobs (env)
 - `TEKO_ADAPTIVE_RECONFIG` — master opt-in; the hook is inert unless set.
 - `TEKO_RECONFIG_REQUESTS_DIR` — handshake directory (must match the watcher).
-- `TEKO_FACTOR_WARMUP` — if set, the first factorization runs once untimed so
-  cold-start cost stays out of solve-1's reported factor time.
+- `TEKO_FACTOR_WARMUP` — on by default: the first factorization runs once
+  untimed so cold-start cost stays out of solve-1's reported factor time. Set
+  to `0`/`false` to disable.
 - `TEKO_WATCHER_IDLE_TIMEOUT` — watcher self-terminate-after-idle seconds
   (default 1000; ≤ 0 disables).
