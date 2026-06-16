@@ -209,7 +209,7 @@ jobs:
         env:
           NODE_USE_SYSTEM_CA: 1
         with:
-          name: ${{ inputs.dashboard-build-name }}-artifacts
+          name: ${{ inputs.genconfig-string }}-artifacts
           path: /home/runner/artifacts/*
           retention-days: 90
       - name: Write Summary
