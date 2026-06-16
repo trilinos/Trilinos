@@ -1500,6 +1500,20 @@ inline void adaptiveLoop(
     // this hook; hold the guard across the whole sweep + final solve.
     ScopedAdaptiveLoopGuard recursion_guard;
 
+    // Warm-up before a timed sweep. The first build+solve inside this hook
+    // pays one-time costs (kernel first-touch, Stratimikos/Ifpack2 setup
+    // paths) that the factorization warm-up does not cover; left unaddressed
+    // they would be charged entirely to the first swept ordering and bias
+    // best_time. When there is a sweep to time, run one throwaway solve on the
+    // identity (all-separate) ordering first so every recorded candidate is
+    // measured warm. The result is discarded (writeToLHS = false).
+    if (!resp.test_orderings.empty()) {
+        std::vector<int> identity(nb);
+        std::iota(identity.begin(), identity.end(), 0);
+        solveOrdering(identity, A_blocked, nb, method, problem,
+                      orig_params, comm, b_norm, /*writeToLHS=*/false);
+    }
+
     // Sweep: build, solve, and time every candidate ordering on the freshly
     // assembled flat (as-if-original) system, so all candidates are timed
     // comparably to the first solve. Skipped when no test_orderings were given.
