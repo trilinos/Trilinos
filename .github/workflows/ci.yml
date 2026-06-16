@@ -115,6 +115,9 @@ jobs:
           printf "\n\n\n"
 
           echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}"
+          if [ "${{ inputs.image }}" ~= "${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" ] ; then
+              exit 1
+          fi
           type python
 
           if [ "${{ inputs.num-concurrent-tests }}" != "-1" ]
