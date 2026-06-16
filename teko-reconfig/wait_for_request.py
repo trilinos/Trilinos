@@ -54,22 +54,80 @@ def make_ordering(n_blocks):
     return [0] * (n_blocks - 1) + [1]
 
 
-def write_reconfig(ordering, path):
+# selection_mode written into the reconfig response, switching what the C++
+# side returns after timing the test_orderings sweep:
+#   "chosen"    — apply use_ordering (the sweep is still timed & recorded).
+#   "best_conv" — apply the swept ordering with the best convergence.
+#   "best_time" — apply the swept ordering with the best (factor+iterate) time.
+SELECTION_MODE = "chosen"
+
+# When True, emit a test_orderings sweep for the C++ side to build/solve/time
+# (results land in s<N>_solved.json). For small block counts this is the full
+# set of partitions (every way to group the blocks); above the cap only a few
+# representative candidates are sent to keep the sweep bounded.
+EMIT_TEST_ORDERINGS = True
+MAX_BLOCKS_FOR_EXHAUSTIVE = 6
+
+
+def restricted_growth_strings(n):
+    """Every set partition of n blocks, as a restricted-growth string. These
+    are exactly the valid orderings (contiguous group ids starting at 0). The
+    count is the Bell number B(n)."""
+    if n <= 0:
+        return [[]]
+    result = []
+
+    def rec(prefix, max_used):
+        if len(prefix) == n:
+            result.append(list(prefix))
+            return
+        for v in range(max_used + 2):
+            prefix.append(v)
+            rec(prefix, max(max_used, v))
+            prefix.pop()
+
+    rec([], -1)
+    return result
+
+
+def make_test_orderings(n_blocks, use_ordering):
+    if not EMIT_TEST_ORDERINGS or n_blocks == 0:
+        return []
+    if n_blocks <= MAX_BLOCKS_FOR_EXHAUSTIVE:
+        return restricted_growth_strings(n_blocks)
+    # Too many partitions to sweep exhaustively: send a few representatives.
+    candidates = [list(use_ordering), list(range(n_blocks)), [0] * n_blocks]
+    seen, out = set(), []
+    for c in candidates:
+        key = tuple(c)
+        if key not in seen:
+            seen.add(key)
+            out.append(c)
+    return out
+
+
+def write_reconfig(ordering, path, n_blocks):
     # Write to a temp file and atomically rename into place, so the C++ side's
     # fs::exists(path) poll never observes a partially-written file.
     #
     # Fields:
-    #   use_ordering     — the ordering the C++ side actually applies (the only
-    #                      field it reads). Written first.
+    #   selection_mode   — what the C++ side returns after the sweep (see
+    #                      SELECTION_MODE). Written first.
+    #   use_ordering     — the ordering applied in "chosen" mode (the field C++
+    #                      always reads).
     #   opt_ordering     — the "optimal" ordering from the cheap surrogate
     #                      search. For now a copy of use_ordering.
     #   exh_opt_ordering — the optimal ordering from an exhaustive search.
     #                      Left blank for now.
+    #   test_orderings   — candidate orderings to build/solve/time; results are
+    #                      written by C++ to s<N>_solved.json. May be empty.
     tmp_path = path + ".tmp"
     payload = {
+        "selection_mode": SELECTION_MODE,
         "use_ordering": ordering,
         "opt_ordering": list(ordering),
         "exh_opt_ordering": [],
+        "test_orderings": make_test_orderings(n_blocks, ordering),
     }
     with open(tmp_path, "w") as f:
         json.dump(payload, f, indent=2)
@@ -98,8 +156,10 @@ def handle_request(request_id):
     print(f"  b_hat length  = {len(b_hat)}")
 
     ordering = make_ordering(request["n_blocks"])
-    write_reconfig(ordering, reconfig_path)
-    print(f"Wrote ordering {ordering} to {reconfig_path}")
+    write_reconfig(ordering, reconfig_path, request["n_blocks"])
+    n_tests = len(make_test_orderings(request["n_blocks"], ordering))
+    print(f"Wrote reconfig (mode={SELECTION_MODE}, use_ordering={ordering}, "
+          f"{n_tests} test orderings) to {reconfig_path}")
 
 
 def main():
