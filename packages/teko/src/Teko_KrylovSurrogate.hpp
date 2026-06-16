@@ -37,6 +37,7 @@
 
 // ── Standard library ──────────────────────────────────────────────────────
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <cstdlib>    // getenv
 #include <fstream>
@@ -427,21 +428,27 @@ inline int nextRequestNumber(const std::string& requests_dir)
     int next = 0;
     if (!fs::exists(requests_dir)) return next;
 
+    // Consider both s<N>_request.json and s<N>_conv.json. A non-converged
+    // (record-only) solve writes a s<N>_conv.json with no matching
+    // request.json; counting conv files too keeps that N reserved so a later
+    // request can't reuse it and overwrite the record.
     const std::string prefix = "s";
-    const std::string suffix = "_request.json";
+    const std::array<std::string, 2> suffixes{"_request.json", "_conv.json"};
     for (const auto& entry : fs::directory_iterator(requests_dir)) {
         if (!entry.is_regular_file()) continue;
         const std::string name = entry.path().filename().string();
-        if (name.size() <= prefix.size() + suffix.size()) continue;
         if (name.compare(0, prefix.size(), prefix) != 0) continue;
-        if (name.compare(name.size() - suffix.size(), suffix.size(), suffix) != 0) continue;
+        for (const auto& suffix : suffixes) {
+            if (name.size() <= prefix.size() + suffix.size()) continue;
+            if (name.compare(name.size() - suffix.size(), suffix.size(), suffix) != 0) continue;
 
-        const std::string digits = name.substr(prefix.size(), name.size() - prefix.size() - suffix.size());
-        if (digits.empty() || !std::all_of(digits.begin(), digits.end(),
-                                            [](char c){ return std::isdigit(static_cast<unsigned char>(c)); })) continue;
+            const std::string digits = name.substr(prefix.size(), name.size() - prefix.size() - suffix.size());
+            if (digits.empty() || !std::all_of(digits.begin(), digits.end(),
+                                                [](char c){ return std::isdigit(static_cast<unsigned char>(c)); })) continue;
 
-        const int n = std::stoi(digits);
-        if (n + 1 > next) next = n + 1;
+            const int n = std::stoi(digits);
+            if (n + 1 > next) next = n + 1;
+        }
     }
     return next;
 }
@@ -605,13 +612,25 @@ inline std::vector<int> waitForOrdering(
             // Intentionally not removed: leaving s<N>_reconfig.json in place
             // marks this request as already answered for the watcher.
 
-            // Parse  {"ordering": [0, 2, 1, 1]}
+            // Parse the "use_ordering" array, e.g.
+            //   {"use_ordering": [0, 2, 1, 1], "opt_ordering": [...], ...}
+            // Anchor on the key name and take the first [...] that follows it,
+            // so additional fields (opt_ordering, exh_opt_ordering, scalar
+            // metadata, ...) in any position don't perturb the parse. This is
+            // a deliberately small hand-parser, not a full JSON reader, but
+            // keying off "use_ordering" makes it robust to surrounding fields.
             std::vector<int> ordering;
-            const auto lb = content.find('[');
-            const auto rb = content.find(']');
+            const std::string key = "\"use_ordering\"";
+            const auto keyPos = content.find(key);
+            if (keyPos == std::string::npos)
+                throw std::runtime_error(
+                    "[TekoAdaptive] " + path + ": no \"use_ordering\" field found");
+            const auto lb = content.find('[', keyPos);
+            const auto rb = (lb == std::string::npos) ? std::string::npos
+                                                      : content.find(']', lb);
             if (lb == std::string::npos || rb == std::string::npos)
                 throw std::runtime_error(
-                    "[TekoAdaptive] " + path + ": no [...] found");
+                    "[TekoAdaptive] " + path + ": \"use_ordering\" has no [...] array");
 
             std::istringstream ss(content.substr(lb + 1, rb - lb - 1));
             std::string tok;
@@ -619,8 +638,23 @@ inline std::vector<int> waitForOrdering(
                 tok.erase(std::remove_if(tok.begin(), tok.end(),
                                          [](char c){ return std::isspace(c); }),
                           tok.end());
-                if (!tok.empty())
-                    ordering.push_back(std::stoi(tok));
+                if (tok.empty()) continue;
+                // Require the whole token to be a single integer; reject
+                // anything stoi would silently truncate (e.g. "0.9" -> 0).
+                std::size_t consumed = 0;
+                int value = 0;
+                try {
+                    value = std::stoi(tok, &consumed);
+                } catch (const std::exception&) {
+                    throw std::runtime_error(
+                        "[TekoAdaptive] " + path +
+                        ": \"use_ordering\" has non-integer entry \"" + tok + "\"");
+                }
+                if (consumed != tok.size())
+                    throw std::runtime_error(
+                        "[TekoAdaptive] " + path +
+                        ": \"use_ordering\" has non-integer entry \"" + tok + "\"");
+                ordering.push_back(value);
             }
             std::cout << "[TekoAdaptive] ordering: [";
             for (int k = 0; k < (int)ordering.size(); ++k) {
@@ -1167,9 +1201,25 @@ inline void adaptiveLoop(
         ~RegistryResetGuard() { Teko::FactorTimeRegistry::reset(); }
     } registry_reset_guard;
 
-    SolveStats s1{state.curDim, b_norm, solve1_metrics.achieved_tol,
+    SolveStats s1{solve1_metrics.num_iters, b_norm, solve1_metrics.achieved_tol,
                   solve1_factor_sec, solve1_metrics.wall_time_sec,
                   solve1_factor_sec + solve1_metrics.wall_time_sec};
+
+    // ── Non-converged first solve: record only ────────────────────────────
+    // The solve stalled (hit max iterations / lost accuracy). Record its
+    // wall time and iteration count and stop — do not build the surrogate,
+    // request an ordering, or reconfigure. s1.iterate_wall_time_sec is the
+    // time it took to reach the iteration limit; s1.iterations is that limit.
+    if (!solve1_metrics.converged) {
+        if (rank == 0) {
+            const int request_id = nextRequestNumber(requests_dir);
+            std::cerr << "[TekoAdaptive] first solve did not converge ("
+                      << solve1_metrics.num_iters
+                      << " iters); recording timing only, no reconfiguration.\n";
+            writeConvergenceJson(convergence_dir, request_id, s1, nullptr);
+        }
+        return;
+    }
 
     // ── Phase 1: compute C_hat, b_hat and write s<N>_request.json ──────────
     // computeCHat is collective (mvTransMv reductions + distributed applies);

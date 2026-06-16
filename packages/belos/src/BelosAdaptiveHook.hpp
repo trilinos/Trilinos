@@ -55,9 +55,18 @@ using Problem = LinearProblem<SC, MV, OP>;
 //   achieved_tol  — the same relative-residual quantity solve() will store in
 //                   achievedTol_, computed a few lines earlier so it is
 //                   available at hook time.
+//   converged     — whether this solve met its convergence tolerance. The hook
+//                   fires on BOTH outcomes: on convergence (the normal
+//                   adaptive path) and on non-convergence (e.g. hitting the
+//                   max-iteration limit), so a stalled solve's wall time and
+//                   iteration count are still recorded rather than lost.
+//   num_iters     — iterations this solve ran (== max iterations when it
+//                   stalled without converging).
 struct SolveMetrics {
     double wall_time_sec;
     double achieved_tol;
+    bool   converged;
+    int    num_iters;
 };
 
 // Function type called after convergence of a flexible GMRES solve.

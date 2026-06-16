@@ -1237,7 +1237,9 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
               problem_,
               A_blocked,
               params_,
-              Belos::AdaptiveHook::SolveMetrics{wall_time_sec, achieved_tol});
+              Belos::AdaptiveHook::SolveMetrics{
+                wall_time_sec, achieved_tol,
+                /*converged=*/true, fgmres_iter->getNumIters()});
           }
         }
       }
@@ -1326,6 +1328,38 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
     // just for the vectors from the last deflation?
     achievedTol_ = *std::max_element (pTestValues->begin(), pTestValues->end());
   }
+
+  // ──────────────────────────────────────────────────────────────────────
+  // Adaptive hook on NON-convergence (flexible GMRES, blocked operator).
+  // The convergence-path invoke above fires from inside the iteration loop;
+  // this one fires when the solve stalled (hit max iterations / lost
+  // accuracy) so the hook still sees this solve's wall time and iteration
+  // count. converged=false lets the hook record the stall instead of
+  // attempting a reconfiguration. Mirrors the convergence-path guards.
+#ifdef HAVE_BELOS_THYRA
+  if constexpr (std::is_same_v<ScalarType,  double> &&
+                std::is_same_v<MV, Thyra::MultiVectorBase<double>> &&
+                std::is_same_v<OP, Thyra::LinearOpBase<double>>) {
+    if (isFlexible_ && (!isConverged || loaDetected_)) {
+      auto fgmres_iter =
+        Teuchos::rcp_dynamic_cast<BlockFGmresIter<ScalarType,MV,OP>>(block_gmres_iter);
+      auto A_blocked =
+        Teuchos::rcp_dynamic_cast<const Thyra::BlockedLinearOpBase<ScalarType>>(
+          problem_->getOperator());
+      if (!fgmres_iter.is_null() && !A_blocked.is_null()) {
+        const double wall_time_sec = std::chrono::duration<double>(
+          std::chrono::steady_clock::now() - solveStartTime).count();
+        Belos::AdaptiveHook::invoke(
+          fgmres_iter->getState(),
+          problem_,
+          A_blocked,
+          params_,
+          Belos::AdaptiveHook::SolveMetrics{
+            wall_time_sec, achievedTol_, /*converged=*/false, numIters_});
+      }
+    }
+  }
+#endif // HAVE_BELOS_THYRA
 
   if (!isConverged || loaDetected_) {
     return Unconverged; // return from BlockGmresSolMgr::solve()

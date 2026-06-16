@@ -73,6 +73,8 @@
 
 #include <atomic>
 #include <chrono>
+#include <cstdlib>
+#include <mutex>
 
 using Teuchos::rcp;
 using Teuchos::RCP;
@@ -113,10 +115,34 @@ class FactorStopwatch {
  private:
   std::chrono::steady_clock::time_point start_;
 };
+
+// One-time warm-up so the first *timed* factorization is not charged for
+// process-level initialization (Stratimikos/Ifpack2 first-use setup, the
+// first Kokkos kernel launch / OpenMP team spawn, allocator warmup). When
+// TEKO_FACTOR_WARMUP is set in the environment, the very first
+// buildInverse(factory, A) call factors A once untimed before the real timed
+// factorization, so that one-time cost lands outside any measured solve and
+// the first and second adaptive solves are compared warm-vs-warm. Off unless
+// the env var is set, so ordinary Teko users see no extra work.
+void maybeWarmupFactor(const InverseFactory& factory, const LinearOp& A) {
+  static const bool enabled = (std::getenv("TEKO_FACTOR_WARMUP") != nullptr);
+  if (!enabled) return;
+  static std::once_flag flag;
+  std::call_once(flag, [&]() {
+    try {
+      InverseLinearOp warm = factory.buildInverse(A);  // untimed; result discarded
+      (void)warm;
+    } catch (...) {
+      // A warm-up failure (e.g. a singular first operator) must not mask the
+      // real, error-reporting factorization below.
+    }
+  });
+}
 }  // namespace
 
 //! Build an inverse operator using a factory and a linear operator
 InverseLinearOp buildInverse(const InverseFactory& factory, const LinearOp& A) {
+  maybeWarmupFactor(factory, A);
   FactorStopwatch stopwatch;
   InverseLinearOp inv;
   try {

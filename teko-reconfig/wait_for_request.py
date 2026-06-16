@@ -57,9 +57,22 @@ def make_ordering(n_blocks):
 def write_reconfig(ordering, path):
     # Write to a temp file and atomically rename into place, so the C++ side's
     # fs::exists(path) poll never observes a partially-written file.
+    #
+    # Fields:
+    #   use_ordering     — the ordering the C++ side actually applies (the only
+    #                      field it reads). Written first.
+    #   opt_ordering     — the "optimal" ordering from the cheap surrogate
+    #                      search. For now a copy of use_ordering.
+    #   exh_opt_ordering — the optimal ordering from an exhaustive search.
+    #                      Left blank for now.
     tmp_path = path + ".tmp"
+    payload = {
+        "use_ordering": ordering,
+        "opt_ordering": list(ordering),
+        "exh_opt_ordering": [],
+    }
     with open(tmp_path, "w") as f:
-        json.dump({"ordering": ordering}, f, indent=2)
+        json.dump(payload, f, indent=2)
     os.replace(tmp_path, path)
 
 
