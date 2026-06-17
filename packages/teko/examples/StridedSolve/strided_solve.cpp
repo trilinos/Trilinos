@@ -131,11 +131,8 @@ int main(int argc, char* argv[]) {
 
   if (myPID == 0) std::cout << "Preconditioner built" << std::endl;
 
-  RCP<mv_t> X = rcp(new mv_t(domainMap, 1));
-  RCP<mv_t> B = rcp(new mv_t(rangeMap, 1));
-
-  X->getVectorNonConst(0)->assign(*x);
-  B->getVectorNonConst(0)->assign(*b);
+  RCP<mv_t> X = x;
+  RCP<mv_t> B = b;
 
   using problem_t        = Belos::LinearProblem<ST, mv_t, op_t>;
   RCP<problem_t> problem = rcp(new problem_t(A, X, B));
@@ -166,8 +163,6 @@ int main(int argc, char* argv[]) {
 
   TEUCHOS_TEST_FOR_EXCEPTION(result != Belos::Converged, std::runtime_error,
                              "Belos solver failed to converge.");
-
-  x->assign(*X->getVector(0));
 
   if (myPID == 0) std::cout << "Solve converged" << std::endl;
 

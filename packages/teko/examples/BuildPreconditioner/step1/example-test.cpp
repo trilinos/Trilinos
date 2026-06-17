@@ -60,14 +60,18 @@ RCP<Tpetra::CrsMatrix<Teko::ST, Teko::LO, Teko::GO, Teko::NT> > build2x2(
   indices[1] = 1;
 
   // build first row
-  values[0] = a;
-  values[1] = b;
-  matrix->insertGlobalValues(0, indices(), values());
+  if (map->isNodeGlobalElement(0)) {
+    values[0] = a;
+    values[1] = b;
+    matrix->insertGlobalValues(0, indices(), values());
+  }
 
   // build second row
-  values[0] = c;
-  values[1] = d;
-  matrix->insertGlobalValues(1, indices(), values());
+  if (map->isNodeGlobalElement(1)) {
+    values[0] = c;
+    values[1] = d;
+    matrix->insertGlobalValues(1, indices(), values());
+  }
 
   matrix->fillComplete();
 
@@ -88,25 +92,25 @@ int main(int argc, char* argv[]) {
   auto comm = Tpetra::getDefaultComm();
 
   // build the sub blocks
+  auto mat_00         = build2x2(1, 2, 2, 1, comm);
   Teko::LinearOp A_00 = Thyra::tpetraLinearOp<ST, LO, GO, NT>(
-      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(build2x2(1, 2, 2, 1, comm)->getRangeMap()),
-      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(build2x2(1, 2, 2, 1, comm)->getDomainMap()),
-      build2x2(1, 2, 2, 1, comm));
+      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(mat_00->getRangeMap()),
+      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(mat_00->getDomainMap()), mat_00);
 
+  auto mat_01         = build2x2(0, -1, 3, 4, comm);
   Teko::LinearOp A_01 = Thyra::tpetraLinearOp<ST, LO, GO, NT>(
-      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(build2x2(0, -1, 3, 4, comm)->getRangeMap()),
-      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(build2x2(0, -1, 3, 4, comm)->getDomainMap()),
-      build2x2(0, -1, 3, 4, comm));
+      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(mat_01->getRangeMap()),
+      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(mat_01->getDomainMap()), mat_01);
 
+  auto mat_10         = build2x2(1, 6, -3, 2, comm);
   Teko::LinearOp A_10 = Thyra::tpetraLinearOp<ST, LO, GO, NT>(
-      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(build2x2(1, 6, -3, 2, comm)->getRangeMap()),
-      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(build2x2(1, 6, -3, 2, comm)->getDomainMap()),
-      build2x2(1, 6, -3, 2, comm));
+      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(mat_10->getRangeMap()),
+      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(mat_10->getDomainMap()), mat_10);
 
+  auto mat_11         = build2x2(2, 1, 1, 2, comm);
   Teko::LinearOp A_11 = Thyra::tpetraLinearOp<ST, LO, GO, NT>(
-      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(build2x2(2, 1, 1, 2, comm)->getRangeMap()),
-      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(build2x2(2, 1, 1, 2, comm)->getDomainMap()),
-      build2x2(2, 1, 1, 2, comm));
+      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(mat_11->getRangeMap()),
+      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(mat_11->getDomainMap()), mat_11);
 
   // build the Tpetra operator wrapper
   Teuchos::RCP<Teko::TpetraHelpers::TpetraOperatorWrapper> A = Teuchos::rcp(
@@ -137,15 +141,10 @@ int main(int argc, char* argv[]) {
   prec.buildPreconditioner(A);
 
   // apply the preconditioner
-  RCP<mv_t> B = rcp(new mv_t(A->getRangeMap(), 1));
-  RCP<mv_t> X = rcp(new mv_t(A->getDomainMap(), 1));
-
-  B->getVectorNonConst(0)->assign(*b);
-  X->getVectorNonConst(0)->assign(*x);
+  RCP<mv_t> B = b;
+  RCP<mv_t> X = x;
 
   prec.apply(*B, *X);
-
-  x->assign(*X->getVector(0));
 
   x->describe(*(Teuchos::VerboseObjectBase::getDefaultOStream()),
               Teuchos::EVerbosityLevel::VERB_EXTREME);

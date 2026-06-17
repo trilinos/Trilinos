@@ -82,6 +82,8 @@ int main(int argc, char* argv[]) {
   if (myPID == 0) std::cout << "Reading matrix market files" << std::endl;
 
   RCP<crs_t> A = Tpetra::MatrixMarket::Reader<crs_t>::readSparseFile("./modified.mm", comm);
+  TEUCHOS_TEST_FOR_EXCEPTION(A.is_null(), std::runtime_error,
+                             "Failed to read matrix from ./modified.mm");
 
   RCP<const map_t> rangeMap  = A->getRangeMap();
   RCP<const map_t> domainMap = A->getDomainMap();
@@ -92,8 +94,6 @@ int main(int argc, char* argv[]) {
   RCP<vec_t> x = Tpetra::MatrixMarket::Reader<crs_t>::readVectorFile("./lhs_test.mm", comm,
                                                                      domainMap, false, false);
 
-  TEUCHOS_TEST_FOR_EXCEPTION(A.is_null(), std::runtime_error,
-                             "Failed to read matrix from ./modified.mm");
   TEUCHOS_TEST_FOR_EXCEPTION(b.is_null(), std::runtime_error,
                              "Failed to read rhs vector from ./rhs_test.mm");
   TEUCHOS_TEST_FOR_EXCEPTION(x.is_null(), std::runtime_error,
@@ -129,11 +129,8 @@ int main(int argc, char* argv[]) {
   Teko::TpetraHelpers::TpetraBlockPreconditioner MyPreconditioner(MasterFactory);
   MyPreconditioner.buildPreconditioner(sA);
 
-  RCP<mv_t> X = rcp(new mv_t(x->getMap(), 1));
+  RCP<mv_t> X = x;
   RCP<mv_t> B = rcp(new mv_t(b->getMap(), 1));
-
-  X->getVectorNonConst(0)->assign(*x);
-  B->getVectorNonConst(0)->assign(*b);
 
   using problem_t        = Belos::LinearProblem<ST, mv_t, op_t>;
   RCP<problem_t> problem = rcp(new problem_t(A, X, B));
@@ -162,8 +159,6 @@ int main(int argc, char* argv[]) {
 
   TEUCHOS_TEST_FOR_EXCEPTION(result != Belos::Converged, std::runtime_error,
                              "Belos solver failed to converge.");
-
-  x->assign(*X->getVector(0));
 
   if (myPID == 0) std::cout << "Solve converged" << std::endl;
 
