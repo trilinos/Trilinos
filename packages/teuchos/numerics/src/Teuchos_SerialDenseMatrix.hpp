@@ -418,7 +418,9 @@ SerialDenseMatrix<OrdinalType, ScalarType>::SerialDenseMatrix(
 
 template<typename OrdinalType, typename ScalarType>
 SerialDenseMatrix<OrdinalType, ScalarType>::SerialDenseMatrix(const SerialDenseMatrix<OrdinalType, ScalarType> &Source, ETransp trans)
-  : valuesCopied_(true)
+  : CompObject(Source),
+    BLAS<OrdinalType, ScalarType>(Source),
+    valuesCopied_(true)
 {
   if ( trans == Teuchos::NO_TRANS )
   {

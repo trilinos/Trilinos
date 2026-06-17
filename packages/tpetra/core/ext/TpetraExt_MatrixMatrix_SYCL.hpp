@@ -130,7 +130,7 @@ void KernelWrappers<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::K
 
   // Options
   int team_work_size = 16;  // Defaults to 16 as per Deveci 12/7/16 - csiefer
-  std::string myalg("SPGEMM_KK_MEMORY");
+  std::string myalg("SPGEMM_DEFAULT");
   if (!params.is_null()) {
     if (params->isParameter("sycl: algorithm"))
       myalg = params->get("sycl: algorithm", myalg);
@@ -392,7 +392,7 @@ void KernelWrappers<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::K
           LO Bkj = Bcolind[j];
           LO Cij = Bcol2Ccol[Bkj];
 
-          const bool badInsert = c_status[Cij] < OLD_ip || c_status[Cij] >= CSR_ip;
+          const bool badInsert = (Cij == LO_INVALID) || (c_status[Cij] < OLD_ip) || (c_status[Cij] >= CSR_ip);
           if (!badInsert)
             Cvals[c_status[Cij]] += Aval * Bvals[j];
           else if (throwOnInsert)
@@ -408,7 +408,7 @@ void KernelWrappers<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::K
           LO Ikj = Icolind[j];
           LO Cij = Icol2Ccol[Ikj];
 
-          const bool badInsert = c_status[Cij] < OLD_ip || c_status[Cij] >= CSR_ip;
+          const bool badInsert = (Cij == LO_INVALID) || (c_status[Cij] < OLD_ip) || (c_status[Cij] >= CSR_ip);
           if (!badInsert)
             Cvals[c_status[Cij]] += Aval * Ivals[j];
           else if (throwOnInsert)
@@ -744,7 +744,7 @@ void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::
 
   // Options
   int team_work_size = 16;
-  std::string myalg("SPGEMM_KK_MEMORY");
+  std::string myalg("SPGEMM_DEFAULT");
   if (!params.is_null()) {
     if (params->isParameter("sycl: algorithm"))
       myalg = params->get("sycl: algorithm", myalg);
