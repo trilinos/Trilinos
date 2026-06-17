@@ -125,11 +125,6 @@ BuildPointCouplingMatrix(
   const size_t nRangeLocal  = rangeGids.size();
   const size_t nDomainLocal = domainGids.size();
 
-  if (nRangeLocal == 0 || nDomainLocal == 0) {
-    A->fillComplete(domainMap, rangeMap);
-    return A;
-  }
-
   for (size_t i = 0; i < nRangeLocal; ++i) {
     const GO row = rangeGids[i];
 
