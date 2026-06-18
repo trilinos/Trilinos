@@ -57,7 +57,7 @@ class PhiLinearSolver {
   void buildb(const Teuchos::ArrayView<const Teuchos::RCP<const Thyra::VectorBase<Scalar>>> &rhs_B);
   Teuchos::RCP<Thyra::ProductVectorBase<Scalar>> buildv(const Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar>> space,
 							const Teuchos::RCP<const Thyra::VectorBase<Scalar>> x0) const;
-  Teuchos::Tuple<Scalar, 3> computeJacobianSpectrumBounds(int inev);
+  void computeJacobianSpectrumBounds(int inev, double& a, double& b, double& c);
 
   // Solve Mass plus Jacobian, for given inArgs (recompute matrices from from ModelEvaluator)
   Thyra::SolveStatus<Scalar> assembleAndsolveMpJ(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
