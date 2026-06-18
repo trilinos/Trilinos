@@ -32,6 +32,10 @@ ProfilingRegion::ProfilingRegion(const char name[]) {
     tm = Teuchos::rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer(name)));
 }
 
+ProfilingRegion::ProfilingRegion(const std::string& name)
+  : ProfilingRegion(name.c_str()) {
+}
+
 ProfilingRegion::ProfilingRegion(const char name[], const char group[]) {
   kokkos_region_active_ = false;
   const bool timeit     = Behavior::timing(group);
