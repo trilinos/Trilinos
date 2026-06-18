@@ -22,7 +22,6 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(Test_EPI_CopyFiles
   Tempus_EPI_SinCos.xml
   Tempus_EPI_VanDerPol.xml
   Tempus_EPI_Reaction.xml
-  Tempus_EPI_Leja_Reaction.xml
   Tempus_EPI_NonAutoSrc.xml
   Tempus_EPI_LotkaVolterra.xml
   Tempus_RK4_LotkaVolterra.xml
