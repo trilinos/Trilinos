@@ -86,6 +86,17 @@ namespace Zoltan2 {
       typedef Anasazi::MultiVecTraits<scalar_t,mvector_t> MVT;
 
       ///////////////////////////////////////////////////////////////////////////
+      ///////////////////////// DESTRUCTOR //////////////////////////////////////
+      ///////////////////////////////////////////////////////////////////////////
+
+      ~Sphynx() {
+        if (weightData_ != nullptr) {
+          delete[] weightData_;
+          weightData_ = nullptr;
+        }
+      }
+
+      ///////////////////////////////////////////////////////////////////////////
       ///////////////////////// CONSTRUCTORS ////////////////////////////////////
       ///////////////////////////////////////////////////////////////////////////
 
@@ -95,7 +106,7 @@ namespace Zoltan2 {
           const RCP<Teuchos::ParameterList> &sphynxParams,
           const RCP<const Comm<int> > &comm,
           const RCP<const XpetraCrsGraphAdapter<graph_t> > &adapter) :
-        env_(env), params_(params), sphynxParams_(sphynxParams), comm_(comm), adapter_(adapter)
+        env_(env), params_(params), sphynxParams_(sphynxParams), comm_(comm), adapter_(adapter), weightData_(nullptr)
     {
 
       // Don't compute the Laplacian if the number of requested parts is 1
@@ -162,12 +173,13 @@ namespace Zoltan2 {
           int computedNumEv,
           Teuchos::RCP<mvector_t> &coordinates);
 
-      void computeWeights(std::vector<const weight_t *> vecweights,
-          std::vector<int> strides);
+      int computeWeights(std::vector<const weight_t *> &vecweights,
+          std::vector<int> &strides);
 
       void MJwrapper(const Teuchos::RCP<const mvector_t> &coordinates,
           std::vector<const weight_t *> weights,
           std::vector<int> strides,
+          int numConstraints,
           const Teuchos::RCP<PartitioningSolution<Adapter>> &solution);
 
       void setUserEigenvectors(const Teuchos::RCP<mvector_t> &userEvects);
@@ -502,6 +514,7 @@ namespace Zoltan2 {
       bool randomInit_;          // obtained from user params or decided internally
       int verbosity_;            // obtained from user params
       bool skipPrep_;            // obtained from user params
+      weight_t *weightData_;     // pointer to weight data for memory management
   };
 
   ///////////////////////////////////////////////////////////////////////////
@@ -573,11 +586,10 @@ namespace Zoltan2 {
       // Get the weights from the adapter
       std::vector<const weight_t *> weights;
       std::vector<int> wstrides;
-      Sphynx::computeWeights(weights, wstrides);
-
+      int numConstraints = Sphynx::computeWeights(weights, wstrides);
 
       // Compute the partition using MJ on coordinates
-      Sphynx::MJwrapper(coordinates, weights, wstrides, solution);
+      Sphynx::MJwrapper(coordinates, weights, wstrides, numConstraints, solution);
 
     }
 
@@ -924,17 +936,23 @@ namespace Zoltan2 {
   // If user didn't provide weights but told us to use degree as weight, do so.
   // If user neither provided weights nor told us what to do, use degree as weight.
   template <typename Adapter>
-    void Sphynx<Adapter>::computeWeights(std::vector<const weight_t *> vecweights,
-        std::vector<int> strides)
+    int Sphynx<Adapter>::computeWeights(std::vector<const weight_t *> &vecweights,
+        std::vector<int> &strides)
     {
 
       int numWeights = adapter_->getNumWeightsPerVertex();
       int numConstraints = numWeights > 0 ? numWeights : 1;
 
       size_t myNumVertices = adapter_->getLocalNumVertices();
+
+      // Allocate all weight data in a single contiguous block for better memory management
+      weight_t *weightData = new weight_t[numConstraints * myNumVertices];
       weight_t ** weights = new weight_t*[numConstraints];
-      for(int j = 0; j < numConstraints; j++)
-        weights[j] = new weight_t[myNumVertices];
+
+      // Set up pointers into the contiguous block
+      for(int j = 0; j < numConstraints; j++) {
+        weights[j] = &weightData[j * myNumVertices];
+      }
 
       // Will be needed if we use degree as weight
       const offset_t *offset;
@@ -977,6 +995,17 @@ namespace Zoltan2 {
         }
       }
 
+      // Clean up the weights array (pointers only)
+      delete[] weights;
+
+      // Store the weightData pointer so it can be freed later
+      // Clean up any previous weight data first to avoid memory leaks
+      if (weightData_ != nullptr) {
+        delete[] weightData_;
+      }
+      weightData_ = weightData;
+
+      return numConstraints;
     }
 
 
@@ -986,6 +1015,7 @@ namespace Zoltan2 {
     void Sphynx<Adapter>::MJwrapper(const Teuchos::RCP<const mvector_t> &coordinates,
         std::vector<const weight_t *> weights,
         std::vector<int> strides,
+        int numConstraints,
         const Teuchos::RCP<PartitioningSolution<Adapter>> &solution)
     {
 
@@ -1020,6 +1050,11 @@ namespace Zoltan2 {
       Teuchos::ArrayRCP<part_t> parts(myNumVertices);
       for(size_t i = 0; i < myNumVertices; i++) parts[i] = vectorsolution->getPartListView()[i];
       solution->setParts(parts);
+
+      // Note: Weight memory is now managed by the class member weightData_
+      // and will be cleaned up automatically in the destructor
+      // The weights pointers in the vector will be cleaned up automatically
+      // when the vector goes out of scope
     }
 
 } // namespace Zoltan2
