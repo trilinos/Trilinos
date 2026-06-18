@@ -594,7 +594,7 @@ TEUCHOS_UNIT_TEST(EPI, LotkaVolterra)
   double timeFinal = 0.0;
   {
     RCP<ParameterList> pList =
-        getParametersFromXmlFile("Tempus_RK4_LotkaVolterra.xml");
+        getParametersFromXmlFile("Tempus_EPI_LotkaVolterra.xml");
 
     RCP<ParameterList> lvm_pl = sublist(pList, "LotkaVolterraModel", true);
     auto modelRef             = rcp(new LotkaVolterraModel<double>(lvm_pl));
@@ -606,6 +606,15 @@ TEUCHOS_UNIT_TEST(EPI, LotkaVolterra)
     pl->sublist("Demo Integrator")
         .sublist("Time Step Control")
         .set("Maximum Time Step", dt_ref);
+
+    pl->sublist("Demo Stepper").set("Stepper Type", "RK Explicit 4 Stage")
+        .set("Use Embedded", false);
+
+    pl->sublist("Demo Stepper").remove("EPI Order", false);
+    pl->sublist("Demo Stepper").remove("Predictor Stepper Type", false);
+    pl->sublist("Demo Stepper").remove("Solver Name", false);
+    pl->sublist("Demo Stepper").remove("Demo Solver", false);
+    pl->sublist("Demo Stepper").remove("PhiEvaluator", false);
 
     auto integratorRef = Tempus::createIntegratorBasic<double>(pl, modelRef);
 

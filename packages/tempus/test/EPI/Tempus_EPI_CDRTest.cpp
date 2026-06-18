@@ -59,7 +59,7 @@ using Tempus::SolutionState;
 // ************************************************************
 template <typename SC, typename Model, typename Comm>
 void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
-              bool& success)
+              bool& success, const std::string& caseName, const bool lumped)
 {
   RCP<Tempus::IntegratorBasic<double>> integrator;
   std::vector<RCP<Thyra::VectorBase<double>>> solutions;
@@ -68,7 +68,8 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
   std::vector<double> xErrorNorm;
   std::vector<double> xDotErrorNorm;
   const int nTimeStepSizes = 4;
-  double dt                = 0.001;
+  double dt                = 0.0005;
+  if (caseName == "Taylor") dt /= 2;
   for (int n = 0; n < nTimeStepSizes; n++) {
     // Read params from .xml file
     RCP<ParameterList> pList =
@@ -84,20 +85,24 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
 
     auto model = rcp(new Model(comm, num_elements, left_end, right_end,
                                a_convection, k_source));
-    // std::cout << "CDR Model created." << std::endl;
+
     // Set the factory
     ::Stratimikos::DefaultLinearSolverBuilder builder;
 
     auto p = rcp(new ParameterList);
     p->set("Linear Solver Type", "Belos");
     p->set("Preconditioner Type", "None");
+    p->sublist("Linear Solver Types").sublist("Belos")
+        .set("Solver Type", "Pseudo Block GMRES");
+    p->sublist("Linear Solver Types").sublist("Belos")
+        .sublist("Solver Types").sublist("Pseudo Block GMRES")
+        .set("Convergence Tolerance", 1e-13);
     builder.setParameterList(p);
 
     auto lowsFactory = builder.createLinearSolveStrategy("");
 
     model->set_W_factory(lowsFactory);
-    // std::cout << "Linear Solver Factory set." << std::endl;
-    // Set the step size
+
     dt /= 2;
 
     // Setup the Integrator and reset initial time step
@@ -105,7 +110,28 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
     pl->sublist("Demo Integrator")
         .sublist("Time Step Control")
         .set("Initial Time Step", dt);
-    // std::cout << "Integrator is about to be created." << std::endl;
+
+    auto& phiList = pl->sublist("Demo Stepper").sublist("PhiEvaluator");
+    if (caseName == "Leja") {
+      phiList.set("PhiEvaluator Type", "Leja")
+             .set("Expansion Order", 100)
+             .set("Leja DD Method", 2)
+             .set("leja_tol", 1.e-12)
+             .set("leja_a", -50000.0)
+             .set("leja_c", 1000.0);
+    }
+    else if (caseName == "Taylor") {
+      phiList.remove("Leja DD Method", false);
+      phiList.remove("leja_tol", false);
+      phiList.remove("leja_a", false);
+      phiList.remove("leja_c", false);
+
+      phiList.set("PhiEvaluator Type", "Taylor")
+             .set("Expansion Order", 100);
+    }
+
+    phiList.set("Lump Mass Matrix", lumped);
+
     integrator = Tempus::createIntegratorBasic<double>(pl, model);
 
     // Initial Conditions
@@ -118,11 +144,8 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
     integrator->initializeSolutionHistory(0.0, x0);
     integrator->initialize();
 
-    // std::cout << "Integrator created." << std::endl;
     // Integrate to timeMax
-    // std::cout << "before advance time created." << std::endl;
     bool integratorStatus = integrator->advanceTime();
-    // std::cout << "after advance time created." << std::endl;
     TEST_ASSERT(integratorStatus)
 
     // Test if at 'Final Time'
@@ -132,7 +155,7 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
                            .get<double>("Final Time");
     double tol = 100.0 * std::numeric_limits<double>::epsilon();
     TEST_FLOATING_EQUALITY(time, timeFinal, tol);
-    // std::cout << "before Get xDot." << std::endl;
+
     // Store off the final solution and step size
     StepSize.push_back(dt);
     auto solution = Thyra::createMember(model->get_x_space());
@@ -141,7 +164,7 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
     auto solutionDot = Thyra::createMember(model->get_x_space());
     Thyra::copy(*(integrator->getXDot()), solutionDot.ptr());
     solutionsDot.push_back(solutionDot);
-    // std::cout << "Get xDot." << std::endl;
+
     // Output finest temporal solution for plotting
     // This only works for ONE MPI process
     if ((n == nTimeStepSizes - 1) && (commSize == 1)) {
@@ -176,23 +199,11 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
   double xSlope                        = 0.0;
   double xDotSlope                     = 0.0;
   RCP<Tempus::Stepper<double>> stepper = integrator->getStepper();
-  //writeOrderError("Tempus_EPI_CDR-Error.dat", stepper, StepSize,
-  //                solutions, xErrorNorm, xSlope, solutionsDot, xDotErrorNorm,
-  //                xDotSlope, out);
-  writeOrderError("Tempus_EPI_CDR-Error.dat", stepper, StepSize,
+  writeOrderError("Tempus_EPI_CDR_" + caseName + "-Error.dat", stepper, StepSize,
                   solutions, xErrorNorm, xSlope, out);
 
-  // TEST_FLOATING_EQUALITY(xSlope, 1.3372, 0.01);
-  // TODO: The accuracy for the "Lump Mass Matrix" == False testcase is affected by the linear solver tolerance
-  TEST_COMPARE(std::abs(xErrorNorm[0]), <=, 1.0e-6);
-  TEST_COMPARE(std::abs(xErrorNorm[nTimeStepSizes - 2]), <=, 1.e-8);
-  // TEST_ABSOLUTE_EQUALITY(xErrorNorm[0], 1e-12, 2.0e-12);
-  //TEST_FLOATING_EQUALITY(xDotSlope, 1.32052, 0.01);
-  //TEST_FLOATING_EQUALITY(xDotErrorNorm[0], 0.449888, 1.0e-4);
-  // At small dt, slopes should be equal to order.
-  // double order = stepper->getOrder();
-  // TEST_FLOATING_EQUALITY(xSlope,              order, 0.01 );
-  // TEST_FLOATING_EQUALITY(xDotSlope,           order, 0.01 );
+  TEST_COMPARE(std::abs(xErrorNorm[0]), <=, 1.0e-10);
+  TEST_COMPARE(std::abs(xErrorNorm[nTimeStepSizes - 2]), <=, 1.e-12);
 
   // ---------------------------------------------------------------
   // Run SDIRK 3 Stage 4th order at the finest EPI step as a baseline
@@ -203,7 +214,7 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
     const double dt_sdirk = StepSize[nTimeStepSizes - 1] / 4.;  // finest EPI dt / 4
 
     RCP<ParameterList> pListS =
-        getParametersFromXmlFile("Tempus_SDIRK_CDR.xml");
+        getParametersFromXmlFile("Tempus_EPI_CDR.xml");
 
     RCP<ParameterList> model_plS = sublist(pListS, "CDR Model", true);
     const auto num_elemS  = model_plS->get<int>("num elements");
@@ -229,6 +240,11 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
     plS->sublist("Demo Integrator")
         .sublist("Time Step Control")
         .set("Maximum Time Step", dt_sdirk);
+
+    plS->sublist("Demo Stepper").set("Stepper Type", "SDIRK 3 Stage 4th order");
+
+    plS->sublist("Demo Stepper").remove("EPI Order", false);
+    plS->sublist("Demo Stepper").remove("PhiEvaluator", false);
 
     auto integratorSDIRK =
         Tempus::createIntegratorBasic<double>(plS, modelSDIRK);
@@ -276,7 +292,7 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
 
     const Thyra::VectorBase<double>& x = *(solutions[solutions.size() - 1]);
 
-    std::ofstream ftmp("Tempus_EPI_CDR-Solution.dat");
+    std::ofstream ftmp("Tempus_EPI_CDR_" + caseName + "-Solution.dat");
     for (int n = 0; n < num_elements + 1; n++) {
       const double dx =
           std::fabs(left_end - right_end) / static_cast<double>(num_elements);
@@ -292,7 +308,7 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
 #ifdef TEMPUS_ENABLE_EPETRA_STACK
 // ************************************************************
 // ************************************************************
-TEUCHOS_UNIT_TEST(EPI, CDR)
+TEUCHOS_UNIT_TEST(EPI, CDR_Leja_lumped)
 {
   // Create a communicator for Epetra objects
   RCP<Epetra_Comm> comm;
@@ -303,7 +319,61 @@ TEUCHOS_UNIT_TEST(EPI, CDR)
 #endif
 
   CDR_Test<double, Tempus_Test::CDR_Model<double>>(comm, comm->NumProc(), out,
-                                                   success);
+                                                   success, "Leja", true);
+
+  std::cout << "Running EPETRA" << std::endl;
+}
+
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(EPI, CDR_Leja)
+{
+  // Create a communicator for Epetra objects
+  RCP<Epetra_Comm> comm;
+#ifdef Tempus_ENABLE_MPI
+  comm = rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+#else
+  comm = rcp(new Epetra_SerialComm);
+#endif
+
+  CDR_Test<double, Tempus_Test::CDR_Model<double>>(comm, comm->NumProc(), out,
+                                                   success, "Leja", false);
+
+  std::cout << "Running EPETRA" << std::endl;
+}
+
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(EPI, CDR_Taylor_lumped)
+{
+  // Create a communicator for Epetra objects
+  RCP<Epetra_Comm> comm;
+#ifdef Tempus_ENABLE_MPI
+  comm = rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+#else
+  comm = rcp(new Epetra_SerialComm);
+#endif
+
+  CDR_Test<double, Tempus_Test::CDR_Model<double>>(comm, comm->NumProc(), out,
+                                                   success, "Taylor", true);
+
+  std::cout << "Running EPETRA" << std::endl;
+}
+
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(EPI, CDR_Taylor)
+{
+  // Create a communicator for Epetra objects
+  RCP<Epetra_Comm> comm;
+#ifdef Tempus_ENABLE_MPI
+  comm = rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+#else
+  comm = rcp(new Epetra_SerialComm);
+#endif
+
+  CDR_Test<double, Tempus_Test::CDR_Model<double>>(comm, comm->NumProc(), out,
+                                                   success, "Taylor", false);
 
   std::cout << "Running EPETRA" << std::endl;
 }
@@ -312,7 +382,7 @@ TEUCHOS_UNIT_TEST(EPI, CDR)
 #ifdef TEMPUS_ENABLE_TPETRA_STACK
 // ************************************************************
 // ************************************************************
-TEUCHOS_UNIT_TEST(EPI, CDR_Tpetra)
+TEUCHOS_UNIT_TEST(EPI, CDR_Tpetra_Leja_lumped)
 {
   // Get default Tpetra template types
   using SC   = Tpetra::Vector<>::scalar_type;
@@ -323,7 +393,61 @@ TEUCHOS_UNIT_TEST(EPI, CDR_Tpetra)
   auto comm = Tpetra::getDefaultComm();
 
   CDR_Test<SC, Tempus_Test::CDR_Model_Tpetra<SC, LO, GO, Node>>(
-     comm, comm->getSize(), out, success);
+     comm, comm->getSize(), out, success, "Leja", true);
+
+  std::cout << "Running TPETRA" << std::endl;
+}
+
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(EPI, CDR_Tpetra_Leja)
+{
+  // Get default Tpetra template types
+  using SC   = Tpetra::Vector<>::scalar_type;
+  using LO   = Tpetra::Vector<>::local_ordinal_type;
+  using GO   = Tpetra::Vector<>::global_ordinal_type;
+  using Node = Tpetra::Vector<>::node_type;
+
+  auto comm = Tpetra::getDefaultComm();
+
+  CDR_Test<SC, Tempus_Test::CDR_Model_Tpetra<SC, LO, GO, Node>>(
+     comm, comm->getSize(), out, success, "Leja", false);
+
+  std::cout << "Running TPETRA" << std::endl;
+}
+
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(EPI, CDR_Tpetra_Taylor_lumped)
+{
+  // Get default Tpetra template types
+  using SC   = Tpetra::Vector<>::scalar_type;
+  using LO   = Tpetra::Vector<>::local_ordinal_type;
+  using GO   = Tpetra::Vector<>::global_ordinal_type;
+  using Node = Tpetra::Vector<>::node_type;
+
+  auto comm = Tpetra::getDefaultComm();
+
+  CDR_Test<SC, Tempus_Test::CDR_Model_Tpetra<SC, LO, GO, Node>>(
+     comm, comm->getSize(), out, success, "Taylor", true);
+
+  std::cout << "Running TPETRA" << std::endl;
+}
+
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(EPI, CDR_Tpetra_Taylor)
+{
+  // Get default Tpetra template types
+  using SC   = Tpetra::Vector<>::scalar_type;
+  using LO   = Tpetra::Vector<>::local_ordinal_type;
+  using GO   = Tpetra::Vector<>::global_ordinal_type;
+  using Node = Tpetra::Vector<>::node_type;
+
+  auto comm = Tpetra::getDefaultComm();
+
+  CDR_Test<SC, Tempus_Test::CDR_Model_Tpetra<SC, LO, GO, Node>>(
+     comm, comm->getSize(), out, success, "Taylor", false);
 
   std::cout << "Running TPETRA" << std::endl;
 }
