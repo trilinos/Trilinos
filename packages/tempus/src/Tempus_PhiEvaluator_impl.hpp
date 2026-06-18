@@ -42,9 +42,9 @@
 
 // Anasazi eigensolver (Block Krylov-Schur) for spectrum bound estimation
 #ifdef TEMPUS_ENABLE_ANASAZI
-  #include "AnasaziThyraAdapter.hpp"
-  #include "AnasaziBasicEigenproblem.hpp"
-  #include "AnasaziBlockKrylovSchurSolMgr.hpp"
+#include "AnasaziThyraAdapter.hpp"
+#include "AnasaziBasicEigenproblem.hpp"
+#include "AnasaziBlockKrylovSchurSolMgr.hpp"
 #endif
 
 
