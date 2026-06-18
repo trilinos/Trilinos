@@ -16,7 +16,6 @@
 #include "Thyra_DetachedVectorView.hpp"
 
 #include "Tempus_IntegratorBasic.hpp"
-
 #include "Tempus_StepperEPI.hpp"
 
 #include "../TestUtils/Tempus_ConvergenceTestUtils.hpp"

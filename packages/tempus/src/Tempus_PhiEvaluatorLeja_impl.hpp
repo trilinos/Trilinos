@@ -380,7 +380,8 @@ void PhiEvaluatorLeja<Scalar>::adaptEvaluator()
   // scale ellipse by saftey factor
   leja_a_ *= leja_sf_;
   leja_c_ *= leja_sf_;
-  std::cout << "Adapted Leja ellipse parameters. a=" << leja_a_ << " b=" << leja_b_ << " c=" << leja_c_ << std::endl;
+  std::cout << "Adapted Leja ellipse parameters. a=" <<
+    leja_a_ << " b=" << leja_b_ << " c=" << leja_c_ << std::endl;
 }
 
 template <class Scalar>
