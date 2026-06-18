@@ -1149,20 +1149,9 @@ void kokkos_kernels_mult_A_B_newmatrix(
       typename int_view_t::const_value_type, typename lno_nnz_view_t::const_value_type, typename scalar_view_t::const_value_type,
       typename device_t::execution_space, typename device_t::memory_space, typename device_t::memory_space>;
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  using Teuchos::TimeMonitor;
-  Teuchos::RCP<TimeMonitor> timeMonitor;
-  const std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
-#endif
-  RCP<Tpetra::Details::ProfilingRegion> MM;
-
-  if constexpr (backend_type::use_time_monitor) {
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-    timeMonitor = rcp(new TimeMonitor(*(TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix ") + backend_type::algorithm_label() + "Wrapper"))));
-#endif
-  } else {
-    MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: MMM: Newmatrix " + backend_type::algorithm_label() + "Wrapper"));
-  }
+  const std::string wrapperLabel = "TpetraExt: MMM: Newmatrix " + backend_type::algorithm_label() + "Wrapper";
+  RCP<Tpetra::Details::ProfilingRegion> MM =
+      rcp(new Tpetra::Details::ProfilingRegion(wrapperLabel.c_str()));
 
   int team_work_size = 16;
   std::string myalg("SPGEMM_KK_MEMORY");
@@ -1186,15 +1175,9 @@ void kokkos_kernels_mult_A_B_newmatrix(
       Aview, Bview, Acol2Brow, Acol2Irow, Bcol2Ccol, Icol2Ccol, C.getColMap()->getLocalNumElements());
   backend_type::pre_spgemm(Bmerged);
 
-  if constexpr (backend_type::use_time_monitor) {
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-    timeMonitor = Teuchos::null;
-    timeMonitor = rcp(new TimeMonitor(*(TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix ") + backend_type::algorithm_label() + "Core"))));
-#endif
-  } else {
-    MM = Teuchos::null;
-    MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: MMM: Newmatrix " + backend_type::algorithm_label() + "Core"));
-  }
+  const std::string coreLabel = "TpetraExt: MMM: Newmatrix " + backend_type::algorithm_label() + "Core";
+  MM = Teuchos::null;
+  MM = rcp(new Tpetra::Details::ProfilingRegion(coreLabel.c_str()));
 
   typename KernelHandle::nnz_lno_t AnumRows = Amat.numRows();
   typename KernelHandle::nnz_lno_t BnumRows = Bmerged.numRows();
@@ -1261,29 +1244,17 @@ void kokkos_kernels_mult_A_B_newmatrix(
     kh.destroy_spgemm_handle();
   }
 
-  if constexpr (backend_type::use_time_monitor) {
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-    timeMonitor = Teuchos::null;
-    timeMonitor = rcp(new TimeMonitor(*(TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix ") + backend_type::algorithm_label() + "Sort"))));
-#endif
-  } else {
-    MM = Teuchos::null;
-    MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: MMM: Newmatrix " + backend_type::algorithm_label() + "Sort"));
-  }
+  const std::string sortLabel = "TpetraExt: MMM: Newmatrix " + backend_type::algorithm_label() + "Sort";
+  MM = Teuchos::null;
+  MM = rcp(new Tpetra::Details::ProfilingRegion(sortLabel.c_str()));
 
   if (params.is_null() || params->get("sort entries", true))
     Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC);
   C.setAllValues(row_mapC, entriesC, valuesC);
 
-  if constexpr (backend_type::use_time_monitor) {
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-    timeMonitor = Teuchos::null;
-    timeMonitor = rcp(new TimeMonitor(*(TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix ") + backend_type::algorithm_label() + "ESFC"))));
-#endif
-  } else {
-    MM = Teuchos::null;
-    MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: MMM: Newmatrix " + backend_type::algorithm_label() + "ESFC"));
-  }
+  const std::string esfcLabel = "TpetraExt: MMM: Newmatrix " + backend_type::algorithm_label() + "ESFC";
+  MM = Teuchos::null;
+  MM = rcp(new Tpetra::Details::ProfilingRegion(esfcLabel.c_str()));
 
   RCP<Teuchos::ParameterList> labelList = rcp(new Teuchos::ParameterList);
   labelList->set("Timer Label", label);

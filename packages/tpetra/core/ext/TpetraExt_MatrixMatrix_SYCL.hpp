@@ -18,7 +18,6 @@ namespace MMdetails {
 
 template <>
 struct KokkosKernelsSPGEMMBackend<Tpetra::KokkosCompat::KokkosSYCLWrapperNode> {
-  static constexpr bool use_time_monitor = true;
   static std::string parameter_prefix() { return "sycl"; }
   static std::string algorithm_label() { return "SYCL"; }
 
