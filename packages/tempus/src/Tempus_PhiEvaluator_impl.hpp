@@ -12,10 +12,9 @@
 
 #include "Tempus_PhiEvaluator.hpp"
 #include "Teuchos_RCPDecl.hpp"
-#include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_TimeMonitor.hpp"
-#include "Teuchos_LAPACK.hpp"
+#include "Tempus_config.hpp"
 
 #include "Thyra_DefaultDiagonalLinearOp.hpp"
 #include "Thyra_LinearOpWithSolveFactoryBase.hpp"
@@ -42,11 +41,11 @@
 #include "Teuchos_VerbosityLevel.hpp"
 
 // Anasazi eigensolver (Block Krylov-Schur) for spectrum bound estimation
-// #ifdef HAVE_TRILINOS_ANASAZI
-#include "AnasaziThyraAdapter.hpp"
-#include "AnasaziBasicEigenproblem.hpp"
-#include "AnasaziBlockKrylovSchurSolMgr.hpp"
-// #endif
+#ifdef TEMPUS_ENABLE_ANASAZI
+  #include "AnasaziThyraAdapter.hpp"
+  #include "AnasaziBasicEigenproblem.hpp"
+  #include "AnasaziBlockKrylovSchurSolMgr.hpp"
+#endif
 
 
 namespace Tempus {
@@ -516,56 +515,6 @@ Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> PhiLinearSolver<Scalar>::buildAT
   return Atilde_;
 }
 
-// Helper function to convert a Thyra LinearOp to a SerialDenseMatrix
-template <class Scalar>
-Teuchos::SerialDenseMatrix<int, Scalar> operatorToDense(Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> lop) {
-  const int n = static_cast<int>(lop->domain()->dim());
-  const int m = static_cast<int>(lop->range()->dim());
-
-  Teuchos::SerialDenseMatrix<int, Scalar> denseMatrix(m, n);
-
-  // Reusable domain vector (j-th standard basis vector) and range vector (result)
-  Teuchos::RCP<Thyra::VectorBase<Scalar>> e_j  = Thyra::createMember(lop->domain());
-  Teuchos::RCP<Thyra::VectorBase<Scalar>> col_j = Thyra::createMember(lop->range());
-
-  const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
-  const Scalar one  = Teuchos::ScalarTraits<Scalar>::one();
-
-  for (int j = 0; j < n; ++j) {
-    Thyra::assign(e_j.ptr(), zero);
-    Thyra::set_ele(j, one, e_j.ptr());
-    Thyra::apply(*lop, Thyra::NOTRANS, *e_j, col_j.ptr(), one, zero);
-
-    // Extract each element of the result into column j of the dense matrix
-    for (int i = 0; i < m; ++i) {
-      denseMatrix(i, j) = Thyra::get_ele(*col_j, i);
-    }
-  }
-
-  return denseMatrix;
-}
-
-// Helper function to compute eigenvalues of a SerialDenseMatrix
-template<typename OrdinalType, typename Scalar>
-int denseEigenvalues(const Teuchos::SerialDenseMatrix<OrdinalType, Scalar>& A,
-                           Teuchos::Array<Scalar>& eigs_re,
-                           Teuchos::Array<Scalar>& eigs_im) {
-    OrdinalType n = A.numRows();
-    Teuchos::SerialDenseMatrix<OrdinalType, Scalar> A_copy(Teuchos::Copy, A);
-    Teuchos::LAPACK<OrdinalType, Scalar> lapack;
-    // Quick workspace query
-    Scalar lworkQuery = 0.0;
-    OrdinalType info = 0;
-    lapack.GEEV('N', 'N', n, A_copy.values(), A_copy.stride(), eigs_re.getRawPtr(), eigs_im.getRawPtr(),
-                nullptr, 1, nullptr, 1, &lworkQuery, -1, &info);
-    // Solve
-    OrdinalType lwork = static_cast<OrdinalType>(lworkQuery);
-    Teuchos::Array<Scalar> work(lwork);
-    lapack.GEEV('N', 'N', n, A_copy.values(), A_copy.stride(), eigs_re.getRawPtr(), eigs_im.getRawPtr(),
-                nullptr, 1, nullptr, 1, work.getRawPtr(), lwork, &info);
-    return info;
-}
-
 template <class Scalar>
 void PhiLinearSolver<Scalar>::computeJacobianSpectrumBounds(int inev, double& a, double& b, double& c)
 {
@@ -587,14 +536,14 @@ void PhiLinearSolver<Scalar>::computeJacobianSpectrumBounds(int inev, double& a,
   const int blockSize = 2;
   const int numBlocks = std::min(2 * nev, dim);
   // loose tol sufficient for spectrum bound estimate
-  const double eig_tolerance = 1e-1;
+  const double eig_tolerance = 5.0;
 
   // MinvJ = M^{-1}*J LinOp
   Teuchos::RCP<const OP> MinvJ =
       Thyra::scale<Scalar>(-1.0, Thyra::multiply<Scalar>(inverseMassMatrix_, jacobianMatrix_));
 
-  // If the system is too small BlockKrylovSchur fails
-  if (dim <= 10) {
+  // Fallback to dense eigen solve for small systems.
+  if (dim <= 64) {
     // std::cout << "=== Fallback to Dense Eigen Solve ===" << std::endl;
     // Convert LinearOpBase to SerialDenseMatrix and compute eigenvalues directly.
     auto denseMinvJ = operatorToDense(MinvJ);
@@ -614,6 +563,8 @@ void PhiLinearSolver<Scalar>::computeJacobianSpectrumBounds(int inev, double& a,
     c = c_val;
     return;
   }
+
+#ifdef TEMPUS_ENABLE_ANASAZI
 
   TEUCHOS_TEST_FOR_EXCEPTION(
       (blockSize * numBlocks) <= nev, std::logic_error,
@@ -665,19 +616,13 @@ void PhiLinearSolver<Scalar>::computeJacobianSpectrumBounds(int inev, double& a,
   Anasazi::BlockKrylovSchurSolMgr<Scalar, MV, OP> solverMgr(problem, pl);
   solverMgr.solve();
 
-  // Extract eigenvalues: prefer converged, fall back to current Ritz values
+  // Extract the current Ritz values. Can be unconverged
   const Anasazi::Eigensolution<Scalar, MV>& sol = problem->getSolution();
-
   std::vector<Anasazi::Value<Scalar>> evals;
-  if (sol.numVecs > 0) {
-    evals = sol.Evals;
-    // evals.assign(sol.Evals.begin(), sol.Evals.begin() + sol.numVecs);
-  } else {
-    evals = solverMgr.getRitzValues();
-  }
+  evals = solverMgr.getRitzValues();
 
   // Compute spectrum bounds
-  // std::cout << "=== Adapting Leja Ellips to Eigs ===" << std::endl;
+  // std::cout << "=== Krylov-Schur Ritz ===" << std::endl;
   for (const auto& ev : evals) {
     // std::cout << "ev re: " << ev.realpart << " im: " << ev.imagpart << std::endl;
     a_val = std::min(a_val, ev.realpart);
@@ -696,6 +641,12 @@ void PhiLinearSolver<Scalar>::computeJacobianSpectrumBounds(int inev, double& a,
   a = std::min(0.0, a_val);
   b = std::max(0.0, b_val);
   c = c_val;
+#else
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::logic_error,
+      "ANASAZI is unavailable and Block-Krylov-Schur Leja Ellipse update was requested. " <<
+      "Reconfigure with Tempus_ENALBE_Anasazi=ON.\n");
+#endif
 }
 
 template <class Scalar>
