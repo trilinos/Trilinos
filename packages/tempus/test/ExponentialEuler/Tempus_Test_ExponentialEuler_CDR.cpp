@@ -55,7 +55,7 @@ using Tempus::SolutionState;
 // ************************************************************
 template <typename SC, typename Model, typename Comm>
 void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
-              bool& success, const std::string& fileName)
+              bool& success, const std::string& caseName)
 {
   RCP<Tempus::IntegratorBasic<double>> integrator;
   std::vector<RCP<Thyra::VectorBase<double>>> solutions;
@@ -66,7 +66,7 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
   const int nTimeStepSizes = 5;
 
   // Read params from .xml file
-  const std::string pListFile = fileName + ".xml";
+  const std::string pListFile = "Tempus_ExponentialEuler_CDR.xml";
   RCP<ParameterList> pList = getParametersFromXmlFile(pListFile);
   RCP<ParameterList> pl = sublist(pList, "Tempus", true);
   double dt = pl->sublist("Demo Integrator")
@@ -107,6 +107,43 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
     pl->sublist("Demo Integrator")
         .sublist("Time Step Control")
         .set("Initial Time Step", dt);
+
+    // Update the PhiEvaluator parameters based on the PhiEvaluator type
+    auto& phiList = pl->sublist("Demo Stepper").sublist("PhiEvaluator");
+    if (caseName == "Leja") {
+      phiList.set("PhiEvaluator Type", "Leja")
+             .set("Expansion Order", 60)
+             .set("Leja DD Method", 2)
+             .set("leja_tol", 1.e-11)
+             .set("leja_a", -50000.0)
+             .set("leja_b", 0.0)
+             .set("leja_c", 1000.0)
+             .set("Lump Mass Matrix", true);
+    }
+    else if (caseName == "Taylor") {
+      phiList.remove("Leja DD Method", false);
+      phiList.remove("leja_tol", false);
+      phiList.remove("leja_a", false);
+      phiList.remove("leja_b", false);
+      phiList.remove("leja_c", false);
+
+      phiList.set("PhiEvaluator Type", "Taylor")
+             .set("Expansion Order", 400)
+             .set("Lump Mass Matrix", true);
+
+    }
+    else if (caseName == "PFD") {
+      phiList.remove("Expansion Order", false);
+      phiList.remove("Leja DD Method", false);
+      phiList.remove("leja_tol", false);
+      phiList.remove("leja_a", false);
+      phiList.remove("leja_b", false);
+      phiList.remove("leja_c", false);
+
+      phiList.set("PhiEvaluator Type", "PFD")
+             .set("Lump Mass Matrix", false);
+    }
+
     integrator = Tempus::createIntegratorBasic<double>(pl, model);
 
     // Integrate to timeMax
@@ -133,7 +170,7 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
     // Output finest temporal solution for plotting
     // This only works for ONE MPI process
     if ((n == nTimeStepSizes - 1) && (commSize == 1)) {
-      std::ofstream ftmp(fileName + ".dat");
+      std::ofstream ftmp("Tempus_ExponentialEuler_CDR_" + caseName + ".dat");
       ftmp << "TITLE=\"Exponential Euler Solution to CDR\"\n"
            << "VARIABLES=\"z\",\"T\"\n";
       const double dx =
@@ -167,20 +204,11 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
   //writeOrderError("Tempus_ExponentialEuler_CDR-Error.dat", stepper, StepSize,
   //                solutions, xErrorNorm, xSlope, solutionsDot, xDotErrorNorm,
   //                xDotSlope, out);
-  writeOrderError(fileName + "-Error.dat", stepper, StepSize,
+  writeOrderError("Tempus_ExponentialEuler_CDR_" + caseName + "-Error.dat", stepper, StepSize,
                   solutions, xErrorNorm, xSlope, out);
 
   // TODO: refine these tests once methods have settled down
-  //TEST_COMPARE(xSlope, >, 2);
   TEST_COMPARE(xErrorNorm[nTimeStepSizes - 2], <, 1e-6);
-  //TEST_FLOATING_EQUALITY(xSlope, 1.3372, 0.01);
-  //TEST_FLOATING_EQUALITY(xErrorNorm[0], 0.498668, 1.0e-4);
-  //TEST_FLOATING_EQUALITY(xDotSlope, 1.32052, 0.01);
-  //TEST_FLOATING_EQUALITY(xDotErrorNorm[0], 0.449888, 1.0e-4);
-  // At small dt, slopes should be equal to order.
-  // double order = stepper->getOrder();
-  // TEST_FLOATING_EQUALITY(xSlope,              order, 0.01 );
-  // TEST_FLOATING_EQUALITY(xDotSlope,           order, 0.01 );
 
   // Write fine mesh solution at final time
   // This only works for ONE MPI process
@@ -194,7 +222,7 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
 
     const Thyra::VectorBase<double>& x = *(solutions[solutions.size() - 1]);
 
-    std::ofstream ftmp(fileName + "-Solution.dat");
+    std::ofstream ftmp("Tempus_ExponentialEuler_CDR_" + caseName + "-Solution.dat");
     for (int n = 0; n < num_elements + 1; n++) {
       const double dx =
           std::fabs(left_end - right_end) / static_cast<double>(num_elements);
@@ -221,9 +249,9 @@ TEUCHOS_UNIT_TEST(ExponentialEuler, CDR_Taylor)
   comm = rcp(new Epetra_SerialComm);
 #endif
 
-  const std::string fileName = "Tempus_ExponentialEuler_CDR_PhiTaylor";
+  const std::string caseName = "Taylor";
   CDR_Test<double, Tempus_Test::CDR_Model<double>>(comm, comm->NumProc(), out,
-                                                   success, fileName);
+                                                   success, caseName);
 }
 
   // ************************************************************
@@ -238,9 +266,9 @@ TEUCHOS_UNIT_TEST(ExponentialEuler, CDR_Leja)
   comm = rcp(new Epetra_SerialComm);
 #endif
 
-  const std::string fileName = "Tempus_ExponentialEuler_CDR_PhiLeja";
+  const std::string caseName = "Leja";
   CDR_Test<double, Tempus_Test::CDR_Model<double>>(comm, comm->NumProc(), out,
-                                                   success, fileName);
+                                                   success, caseName);
 }
 
 // ************************************************************
@@ -255,16 +283,16 @@ TEUCHOS_UNIT_TEST(ExponentialEuler, CDR_PFD)
   comm = rcp(new Epetra_SerialComm);
 #endif
 
-  const std::string fileName = "Tempus_ExponentialEuler_CDR_PhiPFD";
+  const std::string caseName = "PFD";
   CDR_Test<double, Tempus_Test::CDR_Model<double>>(comm, comm->NumProc(), out,
-                                                   success, fileName);
+                                                   success, caseName);
 }
 #endif
 
 #ifdef TEMPUS_ENABLE_TPETRA_STACK
 // ************************************************************
 // ************************************************************
-TEUCHOS_UNIT_TEST(ExponentialEuler, CDR_Tpetra)
+TEUCHOS_UNIT_TEST(ExponentialEuler, CDR_Tpetra_Taylor)
 {
   // Get default Tpetra template types
   using SC   = Tpetra::Vector<>::scalar_type;
@@ -274,10 +302,43 @@ TEUCHOS_UNIT_TEST(ExponentialEuler, CDR_Tpetra)
 
   auto comm = Tpetra::getDefaultComm();
 
-  //CDR_Test<SC, Tempus_Test::CDR_Model_Tpetra<SC, LO, GO, Node>>(
-  //    comm, comm->getSize(), out, success);
+  const std::string caseName = "Taylor";
+  CDR_Test<SC, Tempus_Test::CDR_Model_Tpetra<SC, LO, GO, Node>>(
+     comm, comm->getSize(), out, success, caseName);
+}
 
-  std::cout << "Disabled TPETRA test" << std::endl;
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(ExponentialEuler, CDR_Tpetra_Leja)
+{
+  // Get default Tpetra template types
+  using SC   = Tpetra::Vector<>::scalar_type;
+  using LO   = Tpetra::Vector<>::local_ordinal_type;
+  using GO   = Tpetra::Vector<>::global_ordinal_type;
+  using Node = Tpetra::Vector<>::node_type;
+
+  auto comm = Tpetra::getDefaultComm();
+
+  const std::string caseName = "Leja";
+  CDR_Test<SC, Tempus_Test::CDR_Model_Tpetra<SC, LO, GO, Node>>(
+     comm, comm->getSize(), out, success, caseName);
+}
+
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(ExponentialEuler, CDR_Tpetra_PFD)
+{
+  // Get default Tpetra template types
+  using SC   = Tpetra::Vector<>::scalar_type;
+  using LO   = Tpetra::Vector<>::local_ordinal_type;
+  using GO   = Tpetra::Vector<>::global_ordinal_type;
+  using Node = Tpetra::Vector<>::node_type;
+
+  auto comm = Tpetra::getDefaultComm();
+
+  const std::string caseName = "PFD";
+  CDR_Test<SC, Tempus_Test::CDR_Model_Tpetra<SC, LO, GO, Node>>(
+     comm, comm->getSize(), out, success, caseName);
 }
 #endif
 
