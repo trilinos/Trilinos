@@ -74,6 +74,9 @@
             <ParameterList name="Newton">
               <Parameter name="Forcing Term Method" type="string" value="Constant"/>
               <Parameter name="Rescue Bad Newton Solve" type="bool" value="1"/>
+              <ParameterList name="Linear Solver">
+                <Parameter name="Tolerance" type="double" value="1.0e-12"/>
+              </ParameterList>
             </ParameterList>
           </ParameterList>
           <ParameterList name="Line Search">
@@ -107,11 +110,11 @@
             <Parameter name="Number of Tests" type="int" value="2"/>
             <ParameterList name="Test 0">
               <Parameter name="Test Type" type="string" value="NormF"/>
-              <Parameter name="Tolerance" type="double" value="1.0e-8"/>
+              <Parameter name="Tolerance" type="double" value="1.0e-12"/>
             </ParameterList>
             <ParameterList name="Test 1">
               <Parameter name="Test Type" type="string" value="MaxIters"/>
-              <Parameter name="Maximum Iterations" type="int" value="10"/>
+              <Parameter name="Maximum Iterations" type="int" value="100"/>
             </ParameterList>
           </ParameterList>
     </ParameterList>

@@ -24,7 +24,6 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(Test_EPI_CopyFiles
   Tempus_EPI_Reaction.xml
   Tempus_EPI_NonAutoSrc.xml
   Tempus_EPI_LotkaVolterra.xml
-  Tempus_RK4_LotkaVolterra.xml
   EXEDEPS EPI
   )
 
@@ -32,7 +31,6 @@ IF (TEMPUS_ENABLE_EPETRA_STACK OR TEMPUS_ENABLE_TPETRA_STACK)
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Test_EPI_CDR_CopyFiles
     DEST_FILES
     Tempus_EPI_CDR.xml
-    Tempus_SDIRK_CDR.xml
     EXEDEPS EPI_CDR
     )
 ENDIF()
