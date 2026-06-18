@@ -550,10 +550,6 @@ int readHB_newmat_double(const char* filename, int* M, int* N, int* nonzeros,
   *rowind = (int*)malloc(*nonzeros * sizeof(int));
   if (*rowind == NULL) IOHBTerminate("Insufficient memory for rowind.\n");
   if (Type[0] == 'C') {
-    /*
-       std::fprintf(stderr, "Warning: Reading complex data from HB file %s.\n",filename);
-       std::fprintf(stderr, "         Real and imaginary parts will be interlaced in val[].\n");
-    */
     /* Malloc enough space for real AND imaginary parts of val[] */
     *val = (double*)malloc(*nonzeros * sizeof(double) * 2);
     if (*val == NULL) IOHBTerminate("Insufficient memory for val.\n");
@@ -564,6 +560,7 @@ int readHB_newmat_double(const char* filename, int* M, int* N, int* nonzeros,
       if (*val == NULL) IOHBTerminate("Insufficient memory for val.\n");
     }
   } /* No val[] space needed if pattern only */
+  free(Type);
   return readHB_mat_double(filename, *colptr, *rowind, *val);
 }
 
@@ -755,6 +752,7 @@ int readHB_newaux_double(const char* filename, const char AuxType, double** b) {
   readHB_info(filename, &M, &N, &nonzeros, &Type, &Nrhs);
   if (Nrhs <= 0) {
     std::fprintf(stderr, "Warn: Requested read of aux vector(s) when none are present.\n");
+    free(Type);
     return 0;
   } else {
     if (Type[0] == 'C') {
@@ -762,11 +760,15 @@ int readHB_newaux_double(const char* filename, const char AuxType, double** b) {
       std::fprintf(stderr, "         Real and imaginary parts will be interlaced in b[].");
       *b = (double*)malloc(M * Nrhs * sizeof(double) * 2);
       if (*b == NULL) IOHBTerminate("Insufficient memory for rhs.\n");
-      return readHB_aux_double(filename, AuxType, *b);
+      int result = readHB_aux_double(filename, AuxType, *b);
+      free(Type);
+      return result;
     } else {
       *b = (double*)malloc(M * Nrhs * sizeof(double));
       if (*b == NULL) IOHBTerminate("Insufficient memory for rhs.\n");
-      return readHB_aux_double(filename, AuxType, *b);
+      int result = readHB_aux_double(filename, AuxType, *b);
+      free(Type);
+      return result;
     }
   }
 }
