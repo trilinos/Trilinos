@@ -17,6 +17,7 @@
 #include "TpetraCore_config.h"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_RCP.hpp"
+#include <string>
 
 namespace Tpetra {
 namespace Details {
@@ -73,6 +74,8 @@ class ProfilingRegion {
   ProfilingRegion();
   //! Open region to profile; name the region \c name.
   ProfilingRegion(const char name[]);
+  //! Open region to profile; name the region \c name.
+  ProfilingRegion(const std::string& name);
   //! Open region to profile, if the group name \c group is enabled by the
   //! TPETRA_TIMING variable; name the region \c name.
   ProfilingRegion(const char name[], const char group[]);

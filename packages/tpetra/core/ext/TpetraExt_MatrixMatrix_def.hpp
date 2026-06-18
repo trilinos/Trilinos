@@ -1151,7 +1151,7 @@ void kokkos_kernels_mult_A_B_newmatrix(
 
   const std::string wrapperLabel = "TpetraExt: MMM: Newmatrix " + backend_type::algorithm_label() + "Wrapper";
   RCP<Tpetra::Details::ProfilingRegion> MM =
-      rcp(new Tpetra::Details::ProfilingRegion(wrapperLabel.c_str()));
+      rcp(new Tpetra::Details::ProfilingRegion(wrapperLabel));
 
   int team_work_size = 16;
   std::string myalg("SPGEMM_KK_MEMORY");
@@ -1176,8 +1176,8 @@ void kokkos_kernels_mult_A_B_newmatrix(
   backend_type::pre_spgemm(Bmerged);
 
   const std::string coreLabel = "TpetraExt: MMM: Newmatrix " + backend_type::algorithm_label() + "Core";
-  MM = Teuchos::null;
-  MM = rcp(new Tpetra::Details::ProfilingRegion(coreLabel.c_str()));
+  MM                          = Teuchos::null;
+  MM                          = rcp(new Tpetra::Details::ProfilingRegion(coreLabel));
 
   typename KernelHandle::nnz_lno_t AnumRows = Amat.numRows();
   typename KernelHandle::nnz_lno_t BnumRows = Bmerged.numRows();
@@ -1245,16 +1245,16 @@ void kokkos_kernels_mult_A_B_newmatrix(
   }
 
   const std::string sortLabel = "TpetraExt: MMM: Newmatrix " + backend_type::algorithm_label() + "Sort";
-  MM = Teuchos::null;
-  MM = rcp(new Tpetra::Details::ProfilingRegion(sortLabel.c_str()));
+  MM                          = Teuchos::null;
+  MM                          = rcp(new Tpetra::Details::ProfilingRegion(sortLabel));
 
   if (params.is_null() || params->get("sort entries", true))
     Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC);
   C.setAllValues(row_mapC, entriesC, valuesC);
 
   const std::string esfcLabel = "TpetraExt: MMM: Newmatrix " + backend_type::algorithm_label() + "ESFC";
-  MM = Teuchos::null;
-  MM = rcp(new Tpetra::Details::ProfilingRegion(esfcLabel.c_str()));
+  MM                          = Teuchos::null;
+  MM                          = rcp(new Tpetra::Details::ProfilingRegion(esfcLabel));
 
   RCP<Teuchos::ParameterList> labelList = rcp(new Teuchos::ParameterList);
   labelList->set("Timer Label", label);
