@@ -21,6 +21,7 @@
 #include "Tempus_PhiEvaluator.hpp"
 #include "Tempus_PhiEvaluatorLeja.hpp"
 
+#include "../TestModels/ReactionModel.hpp"
 #include "../TestModels/SinCosModel.hpp"
 #include "Thyra_VectorStdOps_decl.hpp"
 
@@ -57,7 +58,6 @@ TEUCHOS_UNIT_TEST(PhiEvaluator, Leja_SinCos)
   // Setup the PhiEvaluator
   const int expansion_order = 20;
   RCP<ParameterList> phi_pl = sublist(pList, "PhiEvaluator");
-  // use the H-factorization method by default
   const int dd_method = 2;
   phi_pl->set("Leja DD Method", dd_method);
   phi_pl->set("Expansion Order", expansion_order);
@@ -207,6 +207,112 @@ TEUCHOS_UNIT_TEST(PhiEvaluator, Leja_SinCos)
   TEST_FLOATING_EQUALITY(sol[1], Thyra::get_ele(*vend, 1), 1e-6);
 
   Teuchos::TimeMonitor::summarize();
+}
+
+TEUCHOS_UNIT_TEST(PhiEvaluator, Leja_Adapt_SinCos)
+{
+  // Read params from .xml file
+  RCP<ParameterList> pList =
+      getParametersFromXmlFile("Tempus_PhiEvaluator_SinCos.xml");
+
+  // Setup the SinCosModel as mock model
+  RCP<ParameterList> scm_pl = sublist(pList, "SinCosModel", true);
+  auto model = rcp(new SinCosModel<double>(scm_pl));
+
+  // Setup the PhiEvaluator
+  const int expansion_order = 20;
+  RCP<ParameterList> phi_pl = sublist(pList, "PhiEvaluator");
+  const int dd_method = 2;
+  phi_pl->set("Leja DD Method", dd_method);
+  phi_pl->set("Expansion Order", expansion_order);
+  auto phiEvaluator = Tempus::createPhiEvaluatorLeja<double>(phi_pl);
+  phiEvaluator->setModel(model);
+  phiEvaluator->initialize();
+
+  auto x_space = model->get_x_space();
+  Teuchos::RCP<Thyra::VectorBase<double>> xdot_init = createMember(x_space);
+  Teuchos::RCP<Thyra::VectorBase<double>> v = createMember(x_space);
+  Teuchos::RCP<Thyra::VectorBase<double>> vend = createMember(x_space);
+  Teuchos::RCP<Thyra::VectorBase<double>> vend_tay = createMember(x_space);
+
+  // set initial condition v0 = (-1.0, 0)
+  Thyra::assign(v.ptr(), 0.0);
+  Thyra::set_ele(0, -1.0, v.ptr());
+  Thyra::assign(xdot_init.ptr(), 0.0);
+
+  auto inArgs = model->createInArgs();
+  inArgs.set_x(v);
+  inArgs.set_x_dot(xdot_init);
+  inArgs.set_t(0.0);
+  const double dt = 1.0;
+  phiEvaluator->setLinearizationPoint(inArgs);
+  // update the ellipse parameters from krylov-schur solve
+  phiEvaluator->adaptEvaluator();
+
+  // check the leja ellipse parameters
+  Teuchos::Tuple<double, 3> leja_abc = phiEvaluator->getLejaEllipse();
+  // expect jacobian spectrum to have eigenvalues +/-1i
+  // thus the bounding leja ellipse paramters are
+  // a==b==0 and c==1.0
+  TEST_FLOATING_EQUALITY(leja_abc[0], 0.0, 1e-2);
+  TEST_FLOATING_EQUALITY(leja_abc[1], 0.0, 1e-2);
+  TEST_FLOATING_EQUALITY(leja_abc[2], 1.0, 1e-2);
+
+  // compute exp(dt*A)*v using adapted leja ellipse
+  phiEvaluator->computePhi(vend.ptr(), 0, dt, v);
+
+  // compare to analytic solution
+  // v(t) = [-cos(t), sin(t)]
+  std::vector<double> sol = {-std::cos(dt), std::sin(dt)};
+  TEST_FLOATING_EQUALITY(sol[0], Thyra::get_ele(*vend, 0), 1e-6);
+  TEST_FLOATING_EQUALITY(sol[1], Thyra::get_ele(*vend, 1), 1e-6);
+}
+
+TEUCHOS_UNIT_TEST(PhiEvaluator, Leja_Adapt_Reaction)
+{
+  // Read params from .xml file
+  RCP<ParameterList> pList =
+      getParametersFromXmlFile("../EPI/Tempus_EPI_Leja_Reaction.xml");
+
+  // Setup the SinCosModel as mock model
+  RCP<ParameterList> scm_pl = sublist(pList, "ReactionModel", true);
+  auto model = rcp(new ReactionModel<double>(scm_pl));
+
+  // Setup the PhiEvaluator
+  const int expansion_order = 20;
+  RCP<ParameterList> phi_pl = sublist(pList, "PhiEvaluator");
+  const int dd_method = 2;
+  phi_pl->set("Leja DD Method", dd_method);
+  phi_pl->set("Expansion Order", expansion_order);
+  auto phiEvaluator = Tempus::createPhiEvaluatorLeja<double>(phi_pl);
+  phiEvaluator->setModel(model);
+  phiEvaluator->initialize();
+
+  auto x_space = model->get_x_space();
+  Teuchos::RCP<Thyra::VectorBase<double>> xdot_init = createMember(x_space);
+  Teuchos::RCP<Thyra::VectorBase<double>> v = createMember(x_space);
+  Teuchos::RCP<Thyra::VectorBase<double>> vend = createMember(x_space);
+  Teuchos::RCP<Thyra::VectorBase<double>> vend_tay = createMember(x_space);
+
+  // set initial condition v0 = (-1.0, 0)
+  Thyra::assign(v.ptr(), 0.0);
+  Thyra::set_ele(0, -1.0, v.ptr());
+  Thyra::assign(xdot_init.ptr(), 0.0);
+
+  auto inArgs = model->createInArgs();
+  inArgs.set_x(v);
+  inArgs.set_x_dot(xdot_init);
+  inArgs.set_t(0.0);
+  const double dt = 1.0;
+  phiEvaluator->setLinearizationPoint(inArgs);
+  // update the ellipse parameters from krylov-schur solve
+  phiEvaluator->adaptEvaluator();
+
+  // check the leja ellipse parameters
+  Teuchos::Tuple<double, 3> leja_abc = phiEvaluator->getLejaEllipse();
+  TEST_FLOATING_EQUALITY(leja_abc[0], -1.0, 1e-2);
+  TEST_FLOATING_EQUALITY(leja_abc[1], 0.0, 1e-2);
+  TEST_FLOATING_EQUALITY(leja_abc[2], 0.0, 1e-2);
 }
 
 }  // namespace Tempus_Test
