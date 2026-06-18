@@ -23,6 +23,14 @@ COMBINED_OPTION( TEMPUS_ENABLE_TPETRA_STACK
   )
 MESSAGE(STATUS "Tempus: Tpetra Stack: ${TEMPUS_ENABLE_TPETRA_STACK}")
 
+COMBINED_OPTION( TEMPUS_ENABLE_ANASAZI
+  DEP_OPTIONS_NAMES Tempus_ENABLE_Anasazi
+  DOCSTR "Enables support for Anasazi in Tempus."
+  " Defaults to ON if Anasazi is enabled,"
+    " otherwise defaults to OFF."
+  )
+MESSAGE(STATUS "Tempus: Anasazi support: ${TEMPUS_ENABLE_ANASAZI}")
+
 # For use by Tempus unit tests
 GLOBAL_SET(TEMPUS_UNIT_TEST_MAIN
   "${PACKAGE_SOURCE_DIR}/test/TestUtils/Tempus_UnitTestMain.cpp")

@@ -10,7 +10,11 @@
 #include "Tempus_config.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_Describable.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_LAPACK.hpp"
 
+#include "Thyra_VectorStdOps.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_ProductVectorBase.hpp"
 #include "Thyra_ModelEvaluator.hpp"
@@ -237,6 +241,58 @@ class PhiEvaluator
 						     const Scalar cdt=1.0
 						     ) = 0;
 };
+
+/// Nonmember helper to convert a Thyra LinearOp to a SerialDenseMatrix
+// ------------------------------------------------------------------------
+template <class Scalar>
+Teuchos::SerialDenseMatrix<int, Scalar> operatorToDense(Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> lop) {
+  const int n = static_cast<int>(lop->domain()->dim());
+  const int m = static_cast<int>(lop->range()->dim());
+
+  Teuchos::SerialDenseMatrix<int, Scalar> denseMatrix(m, n);
+
+  // Reusable domain vector (j-th standard basis vector) and range vector (result)
+  Teuchos::RCP<Thyra::VectorBase<Scalar>> e_j  = Thyra::createMember(lop->domain());
+  Teuchos::RCP<Thyra::VectorBase<Scalar>> col_j = Thyra::createMember(lop->range());
+
+  const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
+  const Scalar one  = Teuchos::ScalarTraits<Scalar>::one();
+
+  for (int j = 0; j < n; ++j) {
+    Thyra::assign(e_j.ptr(), zero);
+    Thyra::set_ele(j, one, e_j.ptr());
+    Thyra::apply(*lop, Thyra::NOTRANS, *e_j, col_j.ptr(), one, zero);
+
+    // Extract each element of the result into column j of the dense matrix
+    for (int i = 0; i < m; ++i) {
+      denseMatrix(i, j) = Thyra::get_ele(*col_j, i);
+    }
+  }
+
+  return denseMatrix;
+}
+
+/// Nonmember helper to compute eigenvalues of a SerialDenseMatrix
+// ------------------------------------------------------------------------
+template<typename OrdinalType, typename Scalar>
+int denseEigenvalues(const Teuchos::SerialDenseMatrix<OrdinalType, Scalar>& A,
+                           Teuchos::Array<Scalar>& eigs_re,
+                           Teuchos::Array<Scalar>& eigs_im) {
+    OrdinalType n = A.numRows();
+    Teuchos::SerialDenseMatrix<OrdinalType, Scalar> A_copy(Teuchos::Copy, A);
+    Teuchos::LAPACK<OrdinalType, Scalar> lapack;
+    // Quick workspace query
+    Scalar lworkQuery = 0.0;
+    OrdinalType info = 0;
+    lapack.GEEV('N', 'N', n, A_copy.values(), A_copy.stride(), eigs_re.getRawPtr(), eigs_im.getRawPtr(),
+                nullptr, 1, nullptr, 1, &lworkQuery, -1, &info);
+    // Solve
+    OrdinalType lwork = static_cast<OrdinalType>(lworkQuery);
+    Teuchos::Array<Scalar> work(lwork);
+    lapack.GEEV('N', 'N', n, A_copy.values(), A_copy.stride(), eigs_re.getRawPtr(), eigs_im.getRawPtr(),
+                nullptr, 1, nullptr, 1, work.getRawPtr(), lwork, &info);
+    return info;
+}
 
 }  // namespace Tempus
 
