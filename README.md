@@ -1,5 +1,8 @@
 # Trilinos
-![Trilinos Logo](https://github.com/trilinos/Logos/blob/master/current/RGB/Horizontal/Navy/Trilinos_Logo_RGB_Horizontal_Navy.png)
+[<img src="https://github.com/trilinos/Logos/blob/master/current/RGB/Horizontal/Navy/Trilinos_Logo_RGB_Horizontal_Navy.png" width="25%" style="vertical-align: middle;">](https://trilinos.org)&emsp;&emsp;
+[<img src="https://github.com/hpsfoundation/hpsf-logos/blob/main/Logos/PNG/Horizontal/HPSF_horizontal-tagline-color.png" width="25%" style="vertical-align: middle;">](https://hpsf.io)&emsp;&emsp;
+[<img src="https://github.com/hpsfoundation/hpsf-logos/blob/main/Badges/HPSF_Project_Badge_Established.png" width="9%" style="vertical-align: middle;">](https://hpsf.io/projects/)&emsp;&emsp;
+[<img src="https://www.linuxfoundation.org/hubfs/lf-stacked-color.svg" width="25%" style="vertical-align: middle;">](https://linuxfoundation.org)
 
 [Website](https://trilinos.github.io) |
 [Documentation](https://trilinos.github.io/documentation.html) |
