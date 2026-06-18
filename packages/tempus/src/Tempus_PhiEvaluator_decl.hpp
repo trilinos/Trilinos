@@ -61,6 +61,18 @@ class PhiLinearSolver {
   void buildb(const Teuchos::ArrayView<const Teuchos::RCP<const Thyra::VectorBase<Scalar>>> &rhs_B);
   Teuchos::RCP<Thyra::ProductVectorBase<Scalar>> buildv(const Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar>> space,
 							const Teuchos::RCP<const Thyra::VectorBase<Scalar>> x0) const;
+
+  /** \brief Compute the extrema of the the system Jacobian.
+  *
+  *   Computes the minimum real, maximum real and maximum imaginary components
+  *   of the Jacobian spectrum using Anasazi block Krylov-Schur.
+  *   These values maybe used to set hyperparameters of the PhiEvaluators.
+  *
+   @param inev Number of converged eigenvalues used to estimate the spectrum bounds.
+   @param a    The minimum real spectrum bound
+   @param b    The maximum real spectrum bound
+   @param c    The maximum imaginary spectrum bound
+  */
   void computeJacobianSpectrumBounds(int inev, double& a, double& b, double& c);
 
   // Solve Mass plus Jacobian, for given inArgs (recompute matrices from from ModelEvaluator)
