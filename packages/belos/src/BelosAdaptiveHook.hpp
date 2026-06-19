@@ -69,17 +69,32 @@ struct SolveMetrics {
     int    num_iters;
 };
 
-// Function type called after convergence of a flexible GMRES solve.
+// What the hook reports back to the solver manager. If the hook ran a
+// follow-up (reconfigured) solve that converged and wrote its result into the
+// problem's LHS, it sets converged=true along with that solve's iteration
+// count and achieved tolerance. The manager then reports *that* outcome from
+// solve() — so a first solve that stalled at its max-iteration limit but was
+// rescued by the reconfigured solve is reported (and returned) as converged,
+// rather than as the original stall. converged=false (the default) means the
+// manager keeps its own result untouched.
+struct HookResult {
+    bool   converged    = false;
+    int    num_iters    = 0;
+    double achieved_tol = 0.0;
+};
+
+// Function type called after a flexible GMRES solve (converged OR stalled).
 //   state       — final Krylov state (V, Z, curDim, H, R)
 //   problem     — the linear problem (operator, prec, LHS, RHS)
 //   blocked_op  — problem operator cast to BlockedLinearOpBase (may be null
 //                 if the operator is not blocked; hook must handle this)
-//   params      — the resolved parameter list of the solver that just
-//                 converged (Maximum Iterations, Num Blocks, Convergence
-//                 Tolerance, Flexible Gmres, Verbosity, etc.), so the hook
-//                 can reuse the same settings for any follow-up solve.
-//   metrics     — wall time and achieved tolerance for this solve.
-using HookFn = std::function<void(
+//   params      — the resolved parameter list of the solver that just ran
+//                 (Maximum Iterations, Num Blocks, Convergence Tolerance,
+//                 Flexible Gmres, Verbosity, etc.), so the hook can reuse the
+//                 same settings for any follow-up solve.
+//   metrics     — wall time, achieved tolerance, convergence, iteration count.
+// Returns a HookResult describing any rescuing re-solve (see above).
+using HookFn = std::function<HookResult(
     const State&                                              state,
     Teuchos::RCP<Problem>                                     problem,
     Teuchos::RCP<const Thyra::BlockedLinearOpBase<SC>>        blocked_op,
@@ -89,8 +104,9 @@ using HookFn = std::function<void(
 // Called once from Teko_KrylovSurrogateInit.cpp static initialiser.
 void registerHook(HookFn fn);
 
-// Called from BelosBlockGmresSolMgr::solve() after a flexible solve converges.
-void invoke(
+// Called from BelosBlockGmresSolMgr::solve() after a flexible solve. Returns
+// the hook's HookResult (default-constructed if no hook is registered).
+HookResult invoke(
     const State&                                              state,
     Teuchos::RCP<Problem>                                     problem,
     Teuchos::RCP<const Thyra::BlockedLinearOpBase<SC>>        blocked_op,

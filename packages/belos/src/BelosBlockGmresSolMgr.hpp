@@ -879,6 +879,15 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
   // excluding any preconditioner construction the caller did beforehand.
   const auto solveStartTime = std::chrono::steady_clock::now();
 
+  // Result reported by the adaptive hook (if any). When the hook ran a
+  // reconfigured re-solve that converged, this carries that solve's outcome,
+  // and the manager reports it from solve() in place of the original result —
+  // so a first solve that stalled at max-iters but was rescued is returned as
+  // converged. Default (converged=false) leaves the manager's result alone.
+#ifdef HAVE_BELOS_THYRA
+  Belos::AdaptiveHook::HookResult adaptiveHookResult;
+#endif
+
   // Set the current parameters if they were not set before.
   // NOTE:  This may occur if the user generated the solver manager with the default constructor and
   // then didn't set any parameters using setParameters().
@@ -1232,7 +1241,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
               }
             }
 
-            Belos::AdaptiveHook::invoke(
+            adaptiveHookResult = Belos::AdaptiveHook::invoke(
               fgmres_iter->getState(),
               problem_,
               A_blocked,
@@ -1349,7 +1358,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
       if (!fgmres_iter.is_null() && !A_blocked.is_null()) {
         const double wall_time_sec = std::chrono::duration<double>(
           std::chrono::steady_clock::now() - solveStartTime).count();
-        Belos::AdaptiveHook::invoke(
+        adaptiveHookResult = Belos::AdaptiveHook::invoke(
           fgmres_iter->getState(),
           problem_,
           A_blocked,
@@ -1358,6 +1367,17 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
             wall_time_sec, achievedTol_, /*converged=*/false, numIters_});
       }
     }
+  }
+
+  // If the hook ran a reconfigured re-solve that converged (and wrote its
+  // result into the LHS), report *that* outcome: a stalled first solve that
+  // was rescued is returned as converged, with the re-solve's iteration count
+  // and achieved tolerance.
+  if (adaptiveHookResult.converged) {
+    isConverged  = true;
+    loaDetected_ = false;
+    numIters_    = adaptiveHookResult.num_iters;
+    achievedTol_ = adaptiveHookResult.achieved_tol;
   }
 #endif // HAVE_BELOS_THYRA
 

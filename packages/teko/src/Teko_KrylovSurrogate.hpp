@@ -1375,7 +1375,12 @@ inline void writeSolvedJson(
 // On entry: problem->getLHS() contains the first solve's result.
 // On exit:  problem->getLHS() is overwritten with the selected ordering's
 //           result (if one was attempted and converged).
-inline void adaptiveLoop(
+// Returns a HookResult: when the selected re-solve converged, it carries that
+// solve's iteration count / achieved tolerance so the solver manager can
+// report the (possibly rescued) outcome. Fires on both converged and stalled
+// first solves — a stall (curDim > 0) takes the full reconfigure path too, so
+// a short, deliberately-low-max-iter first solve can be rescued.
+inline Belos::AdaptiveHook::HookResult adaptiveLoop(
     const Belos::AdaptiveHook::State&                         state,
     Teuchos::RCP<Belos::AdaptiveHook::Problem>                problem,
     Teuchos::RCP<const Thyra::BlockedLinearOpBase<SC>>        A_blocked,
@@ -1384,7 +1389,7 @@ inline void adaptiveLoop(
 {
     // Bail out immediately if this call is the recursive re-entry from
     // Phase 4's solver2.solve() below (see ScopedAdaptiveLoopGuard).
-    if (detail::g_inAdaptiveLoop) return;
+    if (detail::g_inAdaptiveLoop) return {};
 
     // Opt-in gate. The hook is registered globally at libteko load, so it would
     // otherwise fire on *every* flexible blocked GMRES solve in any process
@@ -1396,7 +1401,7 @@ inline void adaptiveLoop(
         const char* en = std::getenv("TEKO_ADAPTIVE_RECONFIG");
         const std::string v = en ? std::string(en) : "";
         const bool enabled = !(v.empty() || v == "0" || v == "false" || v == "FALSE");
-        if (!enabled) return;
+        if (!enabled) return {};
     }
 
     // requests_dir comes from TEKO_RECONFIG_REQUESTS_DIR if set, otherwise
@@ -1406,11 +1411,11 @@ inline void adaptiveLoop(
 
     if (A_blocked.is_null()) {
         std::cerr << "[TekoAdaptive] operator is not blocked; skipping.\n";
-        return;
+        return {};
     }
     if (state.curDim == 0) {
         std::cerr << "[TekoAdaptive] curDim==0; nothing to compute.\n";
-        return;
+        return {};
     }
 
     // All file I/O (request/reconfig/convergence JSON) is rank-0-only; the
@@ -1465,21 +1470,17 @@ inline void adaptiveLoop(
                   solve1_factor_sec, solve1_metrics.wall_time_sec,
                   solve1_factor_sec + solve1_metrics.wall_time_sec};
 
-    // ── Non-converged first solve: record only ────────────────────────────
-    // The solve stalled (hit max iterations / lost accuracy). Record its
-    // wall time and iteration count and stop — do not build the surrogate,
-    // request an ordering, or reconfigure. s1.iterate_wall_time_sec is the
-    // time it took to reach the iteration limit; s1.iterations is that limit.
-    if (!solve1_metrics.converged) {
-        if (rank == 0) {
-            const int request_id = nextRequestNumber(requests_dir);
-            std::cerr << "[TekoAdaptive] first solve did not converge ("
-                      << solve1_metrics.num_iters
-                      << " iters); recording timing only, no reconfiguration.\n";
-            writeConvergenceJson(convergence_dir, request_id, s1, nullptr);
-        }
-        return;
-    }
+    // A stalled first solve (hit max iterations / lost accuracy) is NOT a dead
+    // end — it is exactly the case reconfiguration should rescue, and the
+    // surrogate builds fine from its Krylov data (curDim == max iters). So it
+    // falls through to the same surrogate / watcher / sweep / re-solve path as
+    // a converged solve; s1 still records the stall (iterations == max iters,
+    // time-to-stall), and if the selected re-solve converges this hook reports
+    // it back so the manager returns success instead of the original stall.
+    if (rank == 0 && !solve1_metrics.converged)
+        std::cerr << "[TekoAdaptive] first solve stalled ("
+                  << solve1_metrics.num_iters
+                  << " iters); attempting reconfiguration rescue.\n";
 
     // ── Phase 1: compute C_hat, b_hat and write s<N>_request.json ──────────
     // computeCHat is collective (mvTransMv reductions + distributed applies);
@@ -1530,7 +1531,7 @@ inline void adaptiveLoop(
                          "solve result.\n";
             writeConvergenceJson(convergence_dir, request_id, s1, nullptr);
         }
-        return;
+        return {};
     }
 
     // ── Phase 3: determine method, then sweep / select / re-solve ──────────
@@ -1631,6 +1632,16 @@ inline void adaptiveLoop(
             std::cout << "[TekoAdaptive] selected solve (" << selection_mode
                       << ") converged (" << finalRes.iterations << " iters).\n";
     }
+
+    // Report the re-solve back to the manager. Only when it converged (and so
+    // wrote its result into the LHS) does this override the manager's result —
+    // turning a rescued stall into a reported success. If it did not converge,
+    // converged stays false and the manager keeps its own (first-solve) result.
+    Belos::AdaptiveHook::HookResult result;
+    result.converged    = finalRes.converged;
+    result.num_iters    = finalRes.iterations;
+    result.achieved_tol = finalRes.final_residual;
+    return result;
 }
 
 } // namespace KrylovSurrogate
