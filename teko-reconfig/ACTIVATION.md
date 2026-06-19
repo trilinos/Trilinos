@@ -25,12 +25,24 @@ very low for cheap data-gathering, the re-solve is capped at that same low
 value and may not converge; give it a larger budget if you need the rescue to
 land. (A `curDim == 0` breakdown still returns early — nothing to build from.)
 
+## Where the implementation lives
+
+The hook is split across four sibling headers in `packages/teko/src/` (one
+concept each); chase references by file, not just line:
+
+| Header | Holds |
+| --- | --- |
+| [`Teko_KrylovReducedModel.hpp`](../packages/teko/src/Teko_KrylovReducedModel.hpp) | the surrogate math (`computeCHat`) + the shared `SC/LO/GO/Node` type aliases |
+| [`Teko_KrylovReconfigIO.hpp`](../packages/teko/src/Teko_KrylovReconfigIO.hpp) | the four JSON file formats + the watcher handshake |
+| [`Teko_KrylovReconfigPrec.hpp`](../packages/teko/src/Teko_KrylovReconfigPrec.hpp) | reconfigured ("as-if-original") system + preconditioner assembly |
+| [`Teko_KrylovSurrogate.hpp`](../packages/teko/src/Teko_KrylovSurrogate.hpp) | the Belos hook itself (`adaptiveLoop`) |
+
 ## Where the knobs are defined
 
 | Env var | Read in | Default |
 | --- | --- | --- |
-| `TEKO_ADAPTIVE_RECONFIG` | [`Teko_KrylovSurrogate.hpp:1401`](../packages/teko/src/Teko_KrylovSurrogate.hpp#L1401) | unset → inert |
-| `TEKO_RECONFIG_REQUESTS_DIR` | [`Teko_KrylovSurrogate.hpp:1409`](../packages/teko/src/Teko_KrylovSurrogate.hpp#L1409) | `kDefaultRequestsDir` ([`:1147`](../packages/teko/src/Teko_KrylovSurrogate.hpp#L1147)) |
+| `TEKO_ADAPTIVE_RECONFIG` | [`Teko_KrylovSurrogate.hpp:228`](../packages/teko/src/Teko_KrylovSurrogate.hpp#L228) | unset → inert |
+| `TEKO_RECONFIG_REQUESTS_DIR` | [`Teko_KrylovSurrogate.hpp:236`](../packages/teko/src/Teko_KrylovSurrogate.hpp#L236) | `kDefaultRequestsDir` ([`:91`](../packages/teko/src/Teko_KrylovSurrogate.hpp#L91)) |
 | `TEKO_FACTOR_WARMUP` | [`Teko_InverseFactory.cpp:130`](../packages/teko/src/Teko_InverseFactory.cpp#L130) | on |
 | `TEKO_WATCHER_IDLE_TIMEOUT` | [`wait_for_request.py:40`](wait_for_request.py#L40) | 1000 s |
 
@@ -44,7 +56,7 @@ land. (A `curDim == 0` breakdown still returns early — nothing to build from.)
 - The operator casts to **`Thyra::BlockedLinearOpBase<double>`** (physically
   blocked), and its blocks are **`Thyra::TpetraLinearOp`** over
   **`Tpetra::CrsMatrix<double,int,long long,OpenMP-node>`** (the aliases in
-  `Teko_KrylovSurrogate.hpp`).
+  `Teko_KrylovReducedModel.hpp`).
 - The first solve produced Krylov data (`curDim > 0`) — true whether it
   converged or stalled at max-iters. A `curDim == 0` breakdown returns early.
 - A **watcher** answers `s<N>_reconfig.json` in the requests dir

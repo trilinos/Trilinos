@@ -48,17 +48,26 @@ namespace KrylovSurrogate {
 // s<N>_request.json — C++ → watcher (the surrogate)
 // ═══════════════════════════════════════════════════════════════════════════
 
-// Write a dense matrix as a JSON array-of-arrays.
+// Write a flat JSON array of ints: [a, b, c].
+inline void writeIntArrayJson(std::ostream& os, const std::vector<int>& v)
+{
+    os << "[";
+    for (std::size_t i = 0; i < v.size(); ++i) { if (i) os << ", "; os << v[i]; }
+    os << "]";
+}
+
+// Write a dense matrix as a JSON array-of-arrays. (std::setprecision is sticky,
+// so it is set once per stream — here and in the writers below.)
 inline void writeDenseJson(std::ostream& os, const SDM& M, int indent)
 {
     const std::string pad(indent, ' ');
     const std::string inner(indent + 2, ' ');
-    os << pad << "[\n";
+    os << std::setprecision(17) << pad << "[\n";
     for (int r = 0; r < M.numRows(); ++r) {
         os << inner << "[";
         for (int c = 0; c < M.numCols(); ++c) {
             if (c) os << ", ";
-            os << std::setprecision(17) << M(r, c);
+            os << M(r, c);
         }
         os << "]";
         if (r + 1 < M.numRows()) os << ",";
@@ -70,10 +79,10 @@ inline void writeDenseJson(std::ostream& os, const SDM& M, int indent)
 // Write a (k × 1) column vector as a flat JSON array.
 inline void writeVectorJson(std::ostream& os, const SDM& v)
 {
-    os << "[";
+    os << std::setprecision(17) << "[";
     for (int r = 0; r < v.numRows(); ++r) {
         if (r) os << ", ";
-        os << std::setprecision(17) << v(r, 0);
+        os << v(r, 0);
     }
     os << "]";
 }
@@ -204,29 +213,10 @@ inline int writeRequestJson(const CHatData& chat, const std::string& requests_di
 
     ofs << "{\n";
     ofs << "  \"n_blocks\": " << chat.nb << ",\n";
-
-    ofs << "  \"block_sizes\": [";
-    for (int j = 0; j < chat.nb; ++j) {
-        if (j) ofs << ", ";
-        ofs << chat.block_sizes[j];
-    }
-    ofs << "],\n";
-
+    ofs << "  \"block_sizes\": ";   writeIntArrayJson(ofs, chat.block_sizes); ofs << ",\n";
     ofs << "  \"krylov_dim\": " << chat.krylov_dim << ",\n";
-
-    ofs << "  \"ranks\": [";
-    for (int j = 0; j < chat.nb; ++j) {
-        if (j) ofs << ", ";
-        ofs << chat.ranks[j];
-    }
-    ofs << "],\n";
-
-    ofs << "  \"equation_ends\": [";
-    for (size_t k = 0; k < equation_ends.size(); ++k) {
-        if (k) ofs << ", ";
-        ofs << equation_ends[k];
-    }
-    ofs << "],\n";
+    ofs << "  \"ranks\": ";         writeIntArrayJson(ofs, chat.ranks);       ofs << ",\n";
+    ofs << "  \"equation_ends\": "; writeIntArrayJson(ofs, equation_ends);    ofs << ",\n";
 
     // C_hat: single R x R matrix
     ofs << "  \"C_hat\":\n";
@@ -454,16 +444,17 @@ inline void writeConvergenceJson(
     std::ofstream ofs(tmp_path);
     TEUCHOS_TEST_FOR_EXCEPTION(!ofs.is_open(), std::runtime_error,
         "Teko::KrylovSurrogate::writeConvergenceJson: cannot open " + tmp_path);
+    ofs << std::setprecision(17);
 
     auto writeStats = [&](const char* name, const SolveStats& s, bool trailing_comma) {
         ofs << "  \"" << name << "\": {\n";
         ofs << "    \"iterations\": " << s.iterations << ",\n";
-        ofs << "    \"initial_residual\": " << std::setprecision(17) << s.initial_residual << ",\n";
-        ofs << "    \"final_residual\": " << std::setprecision(17) << s.final_residual << ",\n";
-        ofs << "    \"factor_wall_time_sec\": " << std::setprecision(17) << s.factor_wall_time_sec << ",\n";
-        ofs << "    \"iterate_wall_time_sec\": " << std::setprecision(17) << s.iterate_wall_time_sec << ",\n";
-        ofs << "    \"total_wall_time_sec\": " << std::setprecision(17) << s.total_wall_time_sec << ",\n";
-        ofs << "    \"wall_time_sec\": " << std::setprecision(17) << s.total_wall_time_sec << "\n";
+        ofs << "    \"initial_residual\": " << s.initial_residual << ",\n";
+        ofs << "    \"final_residual\": " << s.final_residual << ",\n";
+        ofs << "    \"factor_wall_time_sec\": " << s.factor_wall_time_sec << ",\n";
+        ofs << "    \"iterate_wall_time_sec\": " << s.iterate_wall_time_sec << ",\n";
+        ofs << "    \"total_wall_time_sec\": " << s.total_wall_time_sec << ",\n";
+        ofs << "    \"wall_time_sec\": " << s.total_wall_time_sec << "\n";
         ofs << "  }" << (trailing_comma ? ",\n" : "\n");
     };
 
@@ -514,30 +505,25 @@ inline void writeSolvedJson(
     std::ofstream ofs(tmp_path);
     TEUCHOS_TEST_FOR_EXCEPTION(!ofs.is_open(), std::runtime_error,
         "Teko::KrylovSurrogate::writeSolvedJson: cannot open " + tmp_path);
-
-    auto writeOrdering = [&](const std::vector<int>& o) {
-        ofs << "[";
-        for (std::size_t k = 0; k < o.size(); ++k) { if (k) ofs << ", "; ofs << o[k]; }
-        ofs << "]";
-    };
+    ofs << std::setprecision(17);
 
     ofs << "{\n";
     ofs << "  \"selection_mode\": \"" << selection_mode << "\",\n";
     ofs << "  \"request_id\": " << request_id << ",\n";
     ofs << "  \"selected_index\": " << selected_index << ",\n";
-    ofs << "  \"selected_ordering\": "; writeOrdering(selected_ordering); ofs << ",\n";
+    ofs << "  \"selected_ordering\": "; writeIntArrayJson(ofs, selected_ordering); ofs << ",\n";
     ofs << "  \"results\": [\n";
     for (std::size_t i = 0; i < results.size(); ++i) {
         const OrderingResult& r = results[i];
         ofs << "    {\n";
-        ofs << "      \"ordering\": "; writeOrdering(r.ordering); ofs << ",\n";
+        ofs << "      \"ordering\": "; writeIntArrayJson(ofs, r.ordering); ofs << ",\n";
         ofs << "      \"iterations\": " << r.iterations << ",\n";
         ofs << "      \"converged\": " << (r.converged ? "true" : "false") << ",\n";
-        ofs << "      \"initial_residual\": " << std::setprecision(17) << r.initial_residual << ",\n";
-        ofs << "      \"final_residual\": " << std::setprecision(17) << r.final_residual << ",\n";
-        ofs << "      \"factor_wall_time_sec\": " << std::setprecision(17) << r.factor_wall_time_sec << ",\n";
-        ofs << "      \"iterate_wall_time_sec\": " << std::setprecision(17) << r.iterate_wall_time_sec << ",\n";
-        ofs << "      \"total_wall_time_sec\": " << std::setprecision(17) << r.total_wall_time_sec << "\n";
+        ofs << "      \"initial_residual\": " << r.initial_residual << ",\n";
+        ofs << "      \"final_residual\": " << r.final_residual << ",\n";
+        ofs << "      \"factor_wall_time_sec\": " << r.factor_wall_time_sec << ",\n";
+        ofs << "      \"iterate_wall_time_sec\": " << r.iterate_wall_time_sec << ",\n";
+        ofs << "      \"total_wall_time_sec\": " << r.total_wall_time_sec << "\n";
         ofs << "    }" << (i + 1 < results.size() ? "," : "") << "\n";
     }
     ofs << "  ]\n";

@@ -19,11 +19,9 @@
 #include <limits>
 #include <stdexcept>
 #include <string>
-#include <utility>
 #include <vector>
 
 // ── Teuchos ───────────────────────────────────────────────────────────────
-#include "Teuchos_Comm.hpp"
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
@@ -122,6 +120,11 @@ inline SDM mvTransMv(const TpetraMV& A, const TpetraMV& B)
 // ═══════════════════════════════════════════════════════════════════════════
 // Section 2: CHat data structure and computation
 // ═══════════════════════════════════════════════════════════════════════════
+
+// Reciprocal of a singular value, guarding the Sigma^{-1} projections below
+// against a (numerically) zero sigma — a direction at or below the Gram-matrix
+// resolution floor contributes nothing rather than an O(1/sigma) blow-up.
+inline SC invSigmaOrZero(SC s) { return (std::abs(s) > 1e-14) ? 1.0 / s : 0.0; }
 
 struct CHatData {
     int                nb;          // number of blocks
@@ -279,11 +282,8 @@ inline CHatData computeCHat(
         chat.b_hat[j].shape(rj, 1);
         chat.b_hat[j].multiply(Teuchos::TRANS, Teuchos::NO_TRANS,
                                1.0, WTrunc[j], Vtb, 0.0);
-        for (int r = 0; r < rj; ++r) {
-            const SC inv_s = (std::abs(Sigma[j][r]) > 1e-14)
-                             ? 1.0 / Sigma[j][r] : 0.0;
-            chat.b_hat[j](r, 0) *= inv_s;
-        }
+        for (int r = 0; r < rj; ++r)
+            chat.b_hat[j](r, 0) *= invSigmaOrZero(Sigma[j][r]);
     }
 
     // ── Per (i,j) block of C_hat ──────────────────────────────────────────
@@ -335,8 +335,7 @@ inline CHatData computeCHat(
             T.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS,
                        1.0, Mij, WTrunc[j], 0.0);
             for (int c = 0; c < rj; ++c) {
-                const SC inv_s = (std::abs(Sigma[j][c]) > 1e-14)
-                                 ? 1.0 / Sigma[j][c] : 0.0;
+                const SC inv_s = invSigmaOrZero(Sigma[j][c]);
                 for (int r = 0; r < curDim; ++r)
                     T(r, c) *= inv_s;
             }
@@ -345,8 +344,7 @@ inline CHatData computeCHat(
             chat.blocks[i][j].multiply(Teuchos::TRANS, Teuchos::NO_TRANS,
                                        1.0, WTrunc[i], T, 0.0);
             for (int r = 0; r < ri; ++r) {
-                const SC inv_s = (std::abs(Sigma[i][r]) > 1e-14)
-                                 ? 1.0 / Sigma[i][r] : 0.0;
+                const SC inv_s = invSigmaOrZero(Sigma[i][r]);
                 for (int c = 0; c < rj; ++c)
                     chat.blocks[i][j](r, c) *= inv_s;
             }
