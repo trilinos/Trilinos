@@ -35,6 +35,14 @@ class PhiLinearSolver {
 
   void setLumpMassMatrix(const bool lump);
 
+  /** \brief Set the eigensolver parameter list used by computeJacobianSpectrumBounds.
+   *
+   *  The ParameterList should contain the entries defined in
+   *  PhiEvaluator::getValidParametersBasic() under the "Eigensolver" sublist.
+   *  When null, all eigensolver parameters fall back to compiled-in defaults.
+   */
+  void setEigensolverParams(Teuchos::RCP<Teuchos::ParameterList> pl);
+
   /** \brief Initialize PhiSolver
    *
    *  This function will check if mass matrix and Jacobian have been computed.
@@ -62,18 +70,17 @@ class PhiLinearSolver {
   Teuchos::RCP<Thyra::ProductVectorBase<Scalar>> buildv(const Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar>> space,
 							const Teuchos::RCP<const Thyra::VectorBase<Scalar>> x0) const;
 
-  /** \brief Compute the extrema of the the system Jacobian.
+  /** \brief Compute the extrema of the the scaled system Jacobian.
   *
   *   Computes the minimum real, maximum real and maximum imaginary components
   *   of the Jacobian spectrum using Anasazi block Krylov-Schur.
   *   These values maybe used to set hyperparameters of the PhiEvaluators.
   *
-   @param inev Number of converged eigenvalues used to estimate the spectrum bounds.
    @param a    The minimum real spectrum bound
    @param b    The maximum real spectrum bound
    @param c    The maximum imaginary spectrum bound
   */
-  void computeJacobianSpectrumBounds(int inev, double& a, double& b, double& c);
+  void computeJacobianSpectrumBounds(double& a, double& b, double& c);
 
   // Solve Mass plus Jacobian, for given inArgs (recompute matrices from from ModelEvaluator)
   Thyra::SolveStatus<Scalar> assembleAndsolveMpJ(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
@@ -109,6 +116,9 @@ class PhiLinearSolver {
 
   // internal storage for eigenvectors of the M^{-1}*J LinOp
   Teuchos::RCP<Thyra::MultiVectorBase<Scalar>> evecsMinvJ_;
+
+  // eigensolver parameters forwarded from the owning PhiEvaluator
+  Teuchos::RCP<Teuchos::ParameterList> eigensolverPL_;
 };
 
 
@@ -238,6 +248,9 @@ class PhiEvaluator
 
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>> appModel_;
   Teuchos::RCP<Tempus::PhiLinearSolver<Scalar>> phiLinSolv_;
+
+  /// Eigenvalue solver settings
+  Teuchos::RCP<Teuchos::ParameterList> eigensolverPL_;
 
   //mutable
   Teuchos::RCP<const Thyra::ModelEvaluatorBase::InArgs<Scalar>> inArgs_lin_;

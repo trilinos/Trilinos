@@ -64,6 +64,11 @@
         <Parameter name="leja_a" type="double" value="-50000.0"/>
         <Parameter name="leja_c" type="double" value="1000."/>
         <Parameter name="Lump Mass Matrix" type="bool" value="true"/>
+        <ParameterList name="Eigensolver">
+            <Parameter name="Convergence Tolerance" type="double" value="0.1"/>
+            <Parameter name="Block Size" type="int" value="2"/>
+            <Parameter name="Num Eigenvalues" type="int" value="8"/>
+        </ParameterList>
       </ParameterList>
 
       <Parameter name="Solver Name"    type="string" value="Demo Solver"/>
