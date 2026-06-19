@@ -14,9 +14,6 @@
 #include "Teuchos_LAPACK.hpp"
 #include "Thyra_DetachedVectorView.hpp"
 #include "Thyra_DetachedMultiVectorView.hpp"
-#include "Thyra_SpmdVectorSpaceBase.hpp"
-#include "Teuchos_DefaultComm.hpp"
-#include "Teuchos_CommHelpers.hpp"
 
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
@@ -278,18 +275,8 @@ class PhiEvaluator
 // ------------------------------------------------------------------------
 template <class Scalar>
 Teuchos::SerialDenseMatrix<int, Scalar> operatorToDense(Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> lop) {
-  Teuchos::RCP<const Teuchos::Comm<Teuchos::Ordinal>> comm;
   const int numCols = static_cast<int>(lop->domain()->dim());
   const int numRows = static_cast<int>(lop->range()->dim());
-
-  // Attempt to cast the range space to a Parallel SPMD vector space interface
-  auto spmdRangeSpace = Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<Scalar>>(lop->range());
-  if (spmdRangeSpace != Teuchos::null) {
-    comm = spmdRangeSpace->getComm();
-  }
-  if (comm.is_null()) {
-    comm = Teuchos::DefaultComm<Teuchos::Ordinal>::getDefaultSerialComm(Teuchos::null);
-  }
 
   // Build the identity matrix
   Teuchos::RCP<Thyra::MultiVectorBase<Scalar>> Id = Thyra::createMembers(lop->domain(), numCols);
@@ -307,28 +294,12 @@ Teuchos::SerialDenseMatrix<int, Scalar> operatorToDense(Teuchos::RCP<const Thyra
 
   // build the SerialDenseMatrix on on ranks
   Teuchos::SerialDenseMatrix<int, Scalar> globalDenseMat(numRows, numCols);
-  Teuchos::SerialDenseMatrix<int, Scalar> localRankBuffer(numRows, numCols);
-  localRankBuffer.putScalar(0.0);
-
   for (int j = 0; j < numCols; ++j) {
-      Teuchos::RCP<const Thyra::VectorBase<Scalar>> colY = Y->col(j);
-      // ConstDetachedVectorView works natively on ANY Thyra multi-vector provider
-      Thyra::ConstDetachedVectorView<Scalar> view(*colY);
-      // Inject the elements this rank owns into the local buffer
-      for (ptrdiff_t i = 0; i < view.subDim(); ++i) {
-          int globalRowIdx = view.globalOffset() + i;
-          localRankBuffer(globalRowIdx, j) = view.values()[i * view.stride()];
-      }
+    Teuchos::RCP<const Thyra::VectorBase<Scalar>> colY = Y->col(j);
+    Thyra::ConstDetachedVectorView<Scalar> fullView(*colY, Thyra::Range1D(0, numRows-1));
+    for (int i = 0; i < numRows; ++i)
+      globalDenseMat(i, j) = fullView[i];
   }
-
-  // AllReduce the local buffers
-  Teuchos::reduceAll(
-      *comm,
-      Teuchos::REDUCE_SUM,
-      static_cast<Teuchos::Ordinal>(numRows * numCols),
-      localRankBuffer.values(),
-      globalDenseMat.values()
-  );
 
   return globalDenseMat;
 }
