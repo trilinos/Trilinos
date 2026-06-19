@@ -14,6 +14,24 @@
 
 #include "Tempus_PhiEvaluator.hpp"
 
+
+template <class Scalar>
+class ExponentialODEParameters {
+ public:
+  /// Constructor
+  ExponentialODEParameters() : timeStepSize_(Scalar(0.0)), stageNumber_(0) {}
+
+  /// Constructor
+  ExponentialODEParameters(Scalar timeStepSize, int stageNumber = 0)
+    : timeStepSize_(timeStepSize), stageNumber_(stageNumber)
+  {
+  }
+
+  Scalar timeStepSize_;
+  int stageNumber_;
+};
+
+
 namespace Tempus {
 // TODO: FURKAN: FIX THE DESCRIPTION
 /** \brief Exponential Euler time stepper.
@@ -97,8 +115,14 @@ public:
     void setOrder(Scalar order) {this->order_ = order;}
 
     /// Set the initial conditions and make them consistent.
-    virtual void setInitialConditions (
-      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) override;
+    virtual void setInitialConditions(
+        const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) override;
+
+    /// Set the initial conditions and make them consistent.
+    virtual void evaluateExponentialODE(Teuchos::RCP<Thyra::VectorBase<Scalar> >& f,
+        const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x,
+        const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xDot, const Scalar time,
+        const Teuchos::RCP<ExponentialODEParameters<Scalar> >& p);
 
     /// Take the specified timestep, dt, and return true if successful.
     virtual void takeStep(
@@ -111,6 +135,8 @@ public:
     virtual Scalar getOrderMax() const override {return 3.0;}
 
     virtual bool isExplicit() const override {return false;}
+
+    /// Get the implicit/explicit type: we return true, since we rely on the implicit ModelEvaluator
     virtual bool isImplicit() const override {return true;}
     virtual bool isExplicitImplicit() const override
       {return isExplicit() && isImplicit();}
@@ -144,31 +170,23 @@ public:
   { phiEvaluatorPL_ = pl; }
 
 private:
-
-  /// Implementation of computeStep*() methods
-  void computeStepResidDerivImpl(
-    const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs,
-    const Teuchos::Array< Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x,
-    const Teuchos::Array<Scalar>& t,
-    const Thyra::VectorBase<Scalar>& p,
-    const int param_index,
-    const int deriv_index = 0) const;
-
-  /// Compute the nonlinear remainder
-  ///   R = F(xr,tr) - F(x0,t0) - J_{x0}*(xr-x0) - (d/dt)F(x0,t0)(tr-t0)
-  /// the following extra arguments are used:
-  ///  xrDot a temp. vector that is used internally
-  ///  dt is the new timestep (from current to working)
-  ///  dt_Mf_deriv = - (d/dt)F(x0,t0) * dt (the dt from above, not tr-t0)
-  Teuchos::RCP<Thyra::VectorBase<Scalar>> computeRemf(
+ /// Compute the nonlinear remainder:
+ ///   R = -M * (F(xr,tr) - F(x0,t0) - J_{x0} * (xr-x0) - F'(t0) * (tr-t0))
+ /// including multiple of negative mass matrix (-M).
+ ///
+ /// dt is the current time-step, not necessarily (tr-t0)
+ /// Mf contains already evaluated -M*F(x0,t0)
+ /// dt_Mf_deriv contains already evaluated dt*M*F'(t0)
+ /// Mfr is unused, currently, can contain -M*F(xr,tr)
+ Teuchos::RCP<Thyra::VectorBase<Scalar>> computeRemf(
     const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& xr,
-    const Teuchos::RCP<Thyra::VectorBase<Scalar>>& xrDot,
     const Scalar tr,
     const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& x0,
     const Scalar t0,
     const Scalar dt,
     const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& Mf,
-    const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& dt_Mf_deriv
+    const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& dt_Mf_deriv,
+    const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& Mfr = Teuchos::null
   );
 
 private:
@@ -190,39 +208,6 @@ private:
   int adapt_phi_evaluator_interval_;
 };
 
-/** \brief Time-derivative interface for Backward Euler.
- *
- *  Given the state \f$x\f$, compute the Backward Euler time-derivative,
- *  \f[
- *    \dot{x}_{n} = \frac{(x_{n} - x_{n-1})}{\Delta t_{n}}.
- *  \f]
- *  \f$\ddot{x}\f$ is not used and set to null.
- */
-template <typename Scalar>
-class StepperEPITimeDerivative
-  : virtual public Tempus::TimeDerivative<Scalar>
-{
-public:
-  // TODO: remove this, not needed for exponential.
-  /// Constructor
-  StepperEPITimeDerivative()
-  { }
-
-  /// Destructor
-  virtual ~StepperEPITimeDerivative() {}
-
-  /// Compute the time derivative.
-  virtual void compute(
-    Teuchos::RCP<const Thyra::VectorBase<Scalar> > x,
-    Teuchos::RCP<      Thyra::VectorBase<Scalar> > xDot,
-    Teuchos::RCP<      Thyra::VectorBase<Scalar> > xDotDot = Teuchos::null)
-  {
-    xDotDot = Teuchos::null;
-    // Always evaluate to zero, to ensure the model evaluator evaluates the correct residual
-    Thyra::assign(xDot.ptr(), Scalar(0.));
-  }
-
-};
 
 /// Nonmember constructor - ModelEvaluator and ParameterList
 // ------------------------------------------------------------------------
