@@ -132,9 +132,15 @@ PhiEvaluator<Scalar>::getValidParametersBasic() const
   pl->sublist("Eigensolver");
   pl->sublist("Eigensolver").set("Which", "LM");
   pl->sublist("Eigensolver").set("Block Size",                     2);
+  pl->sublist("Eigensolver").set("Num Blocks",                     16);
   pl->sublist("Eigensolver").set("Maximum Restarts",               50);
   pl->sublist("Eigensolver").set("Convergence Tolerance",          0.08);
   pl->sublist("Eigensolver").set("Relative Convergence Tolerance", true);
+  pl->sublist("Eigensolver").set("Num Eigenvalues",                8,
+      "Number of eigenvalues used to estimate the Jacobian spectrum bounds.");
+  pl->sublist("Eigensolver").set("Dense Fallback Dimension",       64,
+      "Systems with dimension <= this value use a dense LAPACK eigensolver "
+      "instead of the iterative Block Krylov-Schur solver.");
 
   //pl->set("?", *member_->getNonconstParameterList());
 
@@ -169,6 +175,13 @@ void PhiEvaluator<Scalar>::setPhiEvaluatorValues(
 
   setLumpMassMatrix(pl->get<bool>("Lump Mass Matrix", true));
   setName(pl->name());
+
+  // Cache a copy of the "Eigensolver" sublist so setModel() can forward it
+  // to the PhiLinearSolver when it is constructed.
+  eigensolverPL_ =
+      Teuchos::rcp(new Teuchos::ParameterList(pl->sublist("Eigensolver")));
+  if (phiLinSolv_ != Teuchos::null)
+    phiLinSolv_->setEigensolverParams(eigensolverPL_);
 }
 
 
@@ -189,6 +202,10 @@ void PhiEvaluator<Scalar>::setModel(const Teuchos::RCP<const Thyra::ModelEvaluat
   appModel_ = appModel;
 
   phiLinSolv_ = Teuchos::rcp(new PhiLinearSolver<Scalar>(appModel_, lumpMassMatrix_));
+
+  // Forward eigensolver parameters if they were set before setModel was called
+  if (eigensolverPL_ != Teuchos::null)
+    phiLinSolv_->setEigensolverParams(eigensolverPL_);
 }
 
 template<class Scalar>
@@ -363,6 +380,13 @@ template <class Scalar>
 void PhiLinearSolver<Scalar>::setLumpMassMatrix(bool lump)
 {
   lumpMass_ = lump;
+}
+
+template <class Scalar>
+void PhiLinearSolver<Scalar>::setEigensolverParams(
+    Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  eigensolverPL_ = pl;
 }
 
 template <class Scalar>
@@ -825,7 +849,7 @@ Thyra::SolveStatus<Scalar> PhiLinearSolver<Scalar>::solveMpJ(const Teuchos::Ptr<
 }
 
 template <class Scalar>
-void PhiLinearSolver<Scalar>::computeJacobianSpectrumBounds(int inev, double& a, double& b, double& c)
+void PhiLinearSolver<Scalar>::computeJacobianSpectrumBounds(double& a, double& b, double& c)
 {
   this->checkInitialized();
 
@@ -837,22 +861,26 @@ void PhiLinearSolver<Scalar>::computeJacobianSpectrumBounds(int inev, double& a,
   MT b_val = -Teuchos::ScalarTraits<MT>::rmax();
   MT c_val =  Teuchos::ScalarTraits<MT>::zero();
 
-  // Estimate up to the first inev eigenvalues
-  const int dim       = static_cast<int>(jacobianMatrix_->domain()->dim());
-  // BlockKrylovSchur requires numBlocks > nev and numBlocks <= dim,
-  // so nev must be less than dim.  Cap nev to dim-1 to satisfy this.
-  const int nev       = std::min(inev, dim-1);
-  const int blockSize = 2;
+  // Read eigensolver parameters from the stored ParameterList
+  const int inev = eigensolverPL_->get<int>("Num Eigenvalues", 8);
+  const int denseFallbackDim = eigensolverPL_->get<int>("Dense Fallback Dimension", 64);
+  const int blockSize = eigensolverPL_->get<int>("Block Size", 2);
+  const double eigTol = eigensolverPL_->get<double>("Convergence Tolerance", 0.08);
+  const int maxRestarts = eigensolverPL_->get<int>("Maximum Restarts", 50);
+  const bool relConvTol = eigensolverPL_->get<bool>("Relative Convergence Tolerance", true);
+  const std::string which = eigensolverPL_->get<std::string>("Which", "LM");
+
+  // Estimate up to the first nev eigenvalues
+  const int dim = static_cast<int>(jacobianMatrix_->domain()->dim());
+  const int nev      = std::min(inev, dim - 1);
   const int numBlocks = std::min(2 * nev, dim);
-  // loose tol sufficient for spectrum bound estimate
-  const double eig_tolerance = 0.08;
 
   // MinvJ = M^{-1}*J LinOp
   Teuchos::RCP<const OP> MinvJ =
       Thyra::scale<Scalar>(-1.0, Thyra::multiply<Scalar>(inverseMassMatrix_, jacobianMatrix_));
 
   // Fallback to dense eigen solve for small systems.
-  if (dim <= 64) {
+  if (dim <= denseFallbackDim) {
     // std::cout << "=== Fallback to Dense Eigen Solve ===" << std::endl;
     // Convert LinearOpBase to SerialDenseMatrix and compute eigenvalues directly.
     auto denseMinvJ = operatorToDense(MinvJ);
@@ -890,10 +918,6 @@ void PhiLinearSolver<Scalar>::computeJacobianSpectrumBounds(int inev, double& a,
 
   if (canWarmstart) {
     // std::cout << "=== Warmstarting Krylov-Schur ===" << std::endl;
-    // {
-    //   Teuchos::basic_FancyOStream<char> ostr(Teuchos::rcp(&std::cout, false));
-    //   evecsMinvJ_->describe(ostr, Teuchos::VERB_EXTREME);
-    // }
     initVec = evecsMinvJ_;
   } else {
     initVec = Thyra::createMembers(jacobianMatrix_->domain(), blockSize);
@@ -914,15 +938,19 @@ void PhiLinearSolver<Scalar>::computeJacobianSpectrumBounds(int inev, double& a,
       !problem->setProblem(), std::logic_error,
       "computeJacobianSpectrumBounds: BasicEigenproblem::setProblem() failed.");
 
-  Teuchos::ParameterList pl;
-  pl.set("Which",                          "LM");
-  pl.set("Block Size",                     blockSize);
-  pl.set("Num Blocks",                     numBlocks);
-  pl.set("Maximum Restarts",               50);
-  pl.set("Convergence Tolerance",          eig_tolerance);
-  pl.set("Relative Convergence Tolerance", true);
-  pl.set("Verbosity",                      Anasazi::Errors);
-  Anasazi::BlockKrylovSchurSolMgr<Scalar, MV, OP> solverMgr(problem, pl);
+  // Build the Anasazi solver parameter list from eigensolverPL_ with defaults.
+  // "Num Blocks" is derived from nev and dim, so it is always computed here.
+  // "Verbosity" is kept at Anasazi::Errors (not exposed in the user PL).
+  Teuchos::ParameterList anasaziPL;
+  anasaziPL.set("Which",                          which);
+  anasaziPL.set("Block Size",                     blockSize);
+  anasaziPL.set("Num Blocks",                     numBlocks);
+  anasaziPL.set("Maximum Restarts",               maxRestarts);
+  anasaziPL.set("Convergence Tolerance",          eigTol);
+  anasaziPL.set("Relative Convergence Tolerance", relConvTol);
+  anasaziPL.set("Verbosity",                      Anasazi::Errors);
+
+  Anasazi::BlockKrylovSchurSolMgr<Scalar, MV, OP> solverMgr(problem, anasaziPL);
   solverMgr.solve();
 
   // Extract the current Ritz values. Can be unconverged
