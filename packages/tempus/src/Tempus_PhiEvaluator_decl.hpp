@@ -23,6 +23,10 @@
 #include "Thyra_ProductVectorBase.hpp"
 #include "Thyra_ModelEvaluator.hpp"
 
+#include "Teuchos_DefaultComm.hpp"
+#include "Thyra_SpmdVectorSpaceBase.hpp"
+#include "Teuchos_CommHelpers.hpp"
+
 namespace Tempus {
 
 /** \brief PhiLinearSolver
@@ -274,31 +278,83 @@ class PhiEvaluator
 /// Nonmember helper to convert a Thyra LinearOp to a SerialDenseMatrix
 // ------------------------------------------------------------------------
 template <class Scalar>
-Teuchos::SerialDenseMatrix<int, Scalar> operatorToDense(Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> lop) {
+Teuchos::SerialDenseMatrix<int, Scalar>
+operatorToDense(Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> lop)
+{
   const int numCols = static_cast<int>(lop->domain()->dim());
   const int numRows = static_cast<int>(lop->range()->dim());
 
-  // Build the identity matrix
-  Teuchos::RCP<Thyra::MultiVectorBase<Scalar>> Id = Thyra::createMembers(lop->domain(), numCols);
+  auto rangeSpmd =
+    Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<Scalar>>(
+        lop->range(), true);
+
+  auto domainSpmd =
+    Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<Scalar>>(
+        lop->domain(), true);
+
+  auto comm = rangeSpmd->getComm();
+  const int rank = comm->getRank();
+
+  const int rowOffset   = static_cast<int>(rangeSpmd->localOffset());
+  const int rowLocalDim = static_cast<int>(rangeSpmd->localSubDim());
+
+  const int colOffset   = static_cast<int>(domainSpmd->localOffset());
+  const int colLocalDim = static_cast<int>(domainSpmd->localSubDim());
+
+  Teuchos::RCP<Thyra::MultiVectorBase<Scalar>> Id =
+      Thyra::createMembers(lop->domain(), numCols);
+
   Thyra::assign(Id.ptr(), Scalar(0));
-  for (int j = 0; j < numCols; ++j) {
-     Teuchos::RCP<Thyra::VectorBase<Scalar>> col_j = Id->col(j);
-     Thyra::set_ele(j, Scalar(1), col_j.ptr());
+
+  // Build distributed identity. Each rank sets only the identity entries
+  // whose domain rows it owns.
+  for (int jLocal = 0; jLocal < colLocalDim; ++jLocal) {
+    const int jGlobal = colOffset + jLocal;
+
+    Teuchos::RCP<Thyra::VectorBase<Scalar>> col_j = Id->col(jGlobal);
+    Thyra::set_ele(jGlobal, Scalar(1), col_j.ptr());
   }
 
-  // Create an abstract MultiVector for the result
-  Teuchos::RCP<Thyra::MultiVectorBase<Scalar>> Y = Thyra::createMembers(lop->range(), numCols);
+  Teuchos::RCP<Thyra::MultiVectorBase<Scalar>> Y =
+      Thyra::createMembers(lop->range(), numCols);
 
-  // Apply the linop to identity
-  Thyra::apply(*lop, Thyra::NOTRANS, *Id, Y.ptr(), 1.0, 0.0);
+  Thyra::apply(*lop, Thyra::NOTRANS, *Id, Y.ptr(), Scalar(1), Scalar(0));
 
-  // Build the SerialDenseMatrix on all ranks
-  Teuchos::SerialDenseMatrix<int, Scalar> globalDenseMat(numRows, numCols);
+  // Local contribution to the dense matrix.
+  // Column-major indexing: i + j*numRows.
+  std::vector<Scalar> localDense(numRows * numCols, Scalar(0));
+  std::vector<Scalar> globalDense(numRows * numCols, Scalar(0));
+
   for (int j = 0; j < numCols; ++j) {
     Teuchos::RCP<const Thyra::VectorBase<Scalar>> colY = Y->col(j);
-    Thyra::ConstDetachedVectorView<Scalar> fullView(*colY, Thyra::Range1D(0, numRows-1));
-    for (int i = 0; i < numRows; ++i)
-      globalDenseMat(i, j) = fullView[i];
+
+    if (rowLocalDim > 0) {
+      Thyra::Range1D localRange(rowOffset, rowOffset + rowLocalDim - 1);
+
+      Thyra::ConstDetachedVectorView<Scalar> localView(*colY, localRange);
+
+      for (int iLocal = 0; iLocal < rowLocalDim; ++iLocal) {
+        const int iGlobal = rowOffset + iLocal;
+        localDense[iGlobal + j * numRows] = localView[iLocal];
+      }
+    }
+  }
+
+  // Combine local pieces. Since each row is owned by one rank,
+  // sum-reduction reconstructs the full dense matrix on every rank.
+  Teuchos::reduceAll(
+      *comm,
+      Teuchos::REDUCE_SUM,
+      static_cast<long int>(localDense.size()),
+      localDense.data(),
+      globalDense.data());
+
+  Teuchos::SerialDenseMatrix<int, Scalar> globalDenseMat(numRows, numCols);
+
+  for (int j = 0; j < numCols; ++j) {
+    for (int i = 0; i < numRows; ++i) {
+      globalDenseMat(i, j) = globalDense[i + j * numRows];
+    }
   }
 
   return globalDenseMat;
