@@ -198,6 +198,73 @@ struct CHatData {
     std::vector<SDM>               b_hat;
 };
 
+// Reduced basis of one Krylov block — the core "reduced model" construction.
+// From the thin SVD V_j = Q_j Sigma_j W_j^T, obtained via the Gram matrix
+// G_j = V_j^T V_j (eigendecomposition) WITHOUT ever forming the distributed
+// Q_j. Holds the truncated rank r_j, the leading r_j singular values
+// (descending), and the right singular vectors W_j (curDim × r_j). b_hat_j and
+// the reduced operator blocks C_hat_{ij} are projections onto this basis.
+struct BlockReduction {
+    int             rank = 0;   // r_j
+    std::vector<SC> sigma;      // length r_j, descending singular values
+    SDM             W;          // curDim × r_j, right singular vectors
+};
+
+// Build the reduced basis of Krylov block Vj (using its first curDim columns).
+// svd_tol truncates singular values relative to the largest. Collective —
+// mvTransMv does a local GEMM + Allreduce, so the small dense eigenproblem and
+// its truncation are identical on every rank (no broadcasts). See the
+// numerical caveat on computeCHat about squaring the condition number via the
+// Gram matrix.
+inline BlockReduction reduceKrylovBlock(const TpetraMV& Vj, int curDim, double svd_tol)
+{
+    Teuchos::LAPACK<int, SC> lapack;
+
+    // G_j (curDim × curDim, replicated identically on every rank).
+    SDM Gj = mvTransMv(Vj, Vj);
+
+    // SYEV: eigenvalues ascending; eigenvectors overwrite Gj's columns.
+    std::vector<SC> eig(curDim);
+    int lwork = -1, info = 0;
+    SC work_query;
+    lapack.SYEV('V', 'U', curDim, Gj.values(), Gj.stride(),
+                eig.data(), &work_query, lwork, &info);
+    lwork = static_cast<int>(work_query);
+    std::vector<SC> work(lwork);
+    lapack.SYEV('V', 'U', curDim, Gj.values(), Gj.stride(),
+                eig.data(), work.data(), lwork, &info);
+    TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
+        "Teko::KrylovSurrogate::reduceKrylovBlock: SYEV failed (info=" +
+        std::to_string(info) + ")");
+
+    // Truncate against the leading eigenvalue. sigma_k >= svd_tol*sigma_max on
+    // singular values is lambda_k >= svd_tol^2*lambda_max on G_j's eigenvalues
+    // (lambda_k = sigma_k^2). The threshold is floored at a few ulps of
+    // lambda_max: eigenvalues below that are roundoff noise (directions with
+    // sigma <~ sqrt(eps)*sigma_max cannot be resolved through the Gram
+    // matrix), and keeping one would inject an O(1/sigma) garbage direction.
+    const SC eps        = std::numeric_limits<SC>::epsilon();
+    const SC lambda_max = eig[curDim - 1];
+    const SC threshold  = (lambda_max > 0.0
+        ? std::max(svd_tol * svd_tol, 8.0 * eps) * lambda_max : 0.0);
+    int rj = 0;
+    while (rj < curDim && eig[curDim - 1 - rj] >= threshold) ++rj;
+    if (rj == 0) rj = 1;  // keep at least one direction
+
+    // Descending order: r-th largest eigenpair is SYEV column curDim-1-r.
+    BlockReduction red;
+    red.rank = rj;
+    red.sigma.resize(rj);
+    red.W.shape(curDim, rj);
+    for (int r = 0; r < rj; ++r) {
+        const int src = curDim - 1 - r;
+        red.sigma[r] = std::sqrt(std::max(eig[src], 0.0));
+        for (int kd = 0; kd < curDim; ++kd)
+            red.W(kd, r) = Gj(kd, src);
+    }
+    return red;
+}
+
 // Compute C_hat from the final FGMRES state.
 //   state      — from BlockFGmresIter::getState() after convergence
 //   A_blocked  — the blocked system operator
@@ -249,8 +316,6 @@ inline CHatData computeCHat(
     chat.b_hat.resize(nb);
     chat.blocks.assign(nb, std::vector<SDM>(nb));
 
-    Teuchos::LAPACK<int, SC> lapack;
-
     const Teuchos::Range1D krylovCols(0, curDim - 1);
 
     // Per-block distributed views (first curDim columns; no copies).
@@ -265,49 +330,12 @@ inline CHatData computeCHat(
     std::vector<std::vector<SC>> Sigma(nb); // Sigma[j]  = leading r_j sing. values
 
     for (int j = 0; j < nb; ++j) {
-        // G_j (curDim × curDim, replicated identically on every rank).
-        SDM Gj = mvTransMv(*Vt[j], *Vt[j]);
-
-        // SYEV: eigenvalues ascending; eigenvectors overwrite Gj's columns.
-        std::vector<SC> eig(curDim);
-        int lwork = -1, info = 0;
-        SC work_query;
-        lapack.SYEV('V', 'U', curDim, Gj.values(), Gj.stride(),
-                    eig.data(), &work_query, lwork, &info);
-        lwork = static_cast<int>(work_query);
-        std::vector<SC> work(lwork);
-        lapack.SYEV('V', 'U', curDim, Gj.values(), Gj.stride(),
-                    eig.data(), work.data(), lwork, &info);
-        TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
-            "Teko::KrylovSurrogate::computeCHat: SYEV failed (info=" +
-            std::to_string(info) + ") for block " + std::to_string(j));
-
-        // Truncate against the leading eigenvalue. sigma_k >= svd_tol*sigma_max
-        // on singular values is lambda_k >= svd_tol^2*lambda_max on G_j's
-        // eigenvalues (lambda_k = sigma_k^2). The threshold is floored at a
-        // few ulps of lambda_max: eigenvalues of G_j below that are roundoff
-        // noise (directions with sigma <~ sqrt(eps)*sigma_max cannot be
-        // resolved through the Gram matrix), and keeping one would inject an
-        // O(1/sigma) garbage row/column into C_hat.
-        const SC eps        = std::numeric_limits<SC>::epsilon();
-        const SC lambda_max = eig[curDim - 1];
-        const SC threshold  = (lambda_max > 0.0
-            ? std::max(svd_tol * svd_tol, 8.0 * eps) * lambda_max : 0.0);
-        int rj = 0;
-        while (rj < curDim && eig[curDim - 1 - rj] >= threshold) ++rj;
-        if (rj == 0) rj = 1;  // keep at least one direction
-
+        // Reduced basis of block j (Gram-matrix thin SVD + truncation).
+        BlockReduction red = reduceKrylovBlock(*Vt[j], curDim, svd_tol);
+        const int rj  = red.rank;
         chat.ranks[j] = rj;
-
-        // Descending order: r-th largest eigenpair is SYEV column curDim-1-r.
-        Sigma[j].resize(rj);
-        WTrunc[j].shape(curDim, rj);
-        for (int r = 0; r < rj; ++r) {
-            const int src = curDim - 1 - r;
-            Sigma[j][r] = std::sqrt(std::max(eig[src], 0.0));
-            for (int kd = 0; kd < curDim; ++kd)
-                WTrunc[j](kd, r) = Gj(kd, src);
-        }
+        WTrunc[j]     = red.W;          // curDim × rj
+        Sigma[j]      = red.sigma;      // length rj
 
         // b_hat[j] = Sigma_j^{-1} W_j^T (V_j^T b_j)   (rj × 1)
         SDM Vtb = mvTransMv(*Vt[j], *getBlockTpetraMV(b, j));   // curDim × 1
