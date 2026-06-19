@@ -376,7 +376,7 @@ Teuchos::Tuple<double, 3> PhiEvaluatorLeja<Scalar>::getLejaEllipse()
 template <class Scalar>
 void PhiEvaluatorLeja<Scalar>::adaptEvaluator()
 {
-  this->phiLinSolv_->computeJacobianSpectrumBounds(8, leja_a_, leja_b_, leja_c_);
+  this->phiLinSolv_->computeJacobianSpectrumBounds(leja_a_, leja_b_, leja_c_);
   // scale ellipse by saftey factor
   leja_a_ *= leja_sf_;
   leja_c_ *= leja_sf_;
