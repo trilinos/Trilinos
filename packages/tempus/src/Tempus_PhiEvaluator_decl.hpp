@@ -12,10 +12,17 @@
 #include "Teuchos_Describable.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_LAPACK.hpp"
+#include "Thyra_DetachedVectorView.hpp"
+#include "Thyra_DetachedMultiVectorView.hpp"
+#include "Thyra_SpmdVectorSpaceBase.hpp"
+#include "Teuchos_DefaultComm.hpp"
+#include "Teuchos_CommHelpers.hpp"
 
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_VectorBase.hpp"
+#include "Thyra_LinearOpBase.hpp"
+#include "Thyra_DefaultIdentityLinearOp.hpp"
 #include "Thyra_ProductVectorBase.hpp"
 #include "Thyra_ModelEvaluator.hpp"
 
@@ -68,7 +75,7 @@ class PhiLinearSolver {
   void buildK(const Thyra::Ordinal n);
   void buildb(const Teuchos::ArrayView<const Teuchos::RCP<const Thyra::VectorBase<Scalar>>> &rhs_B);
   Teuchos::RCP<Thyra::ProductVectorBase<Scalar>> buildv(const Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar>> space,
-							const Teuchos::RCP<const Thyra::VectorBase<Scalar>> x0) const;
+              const Teuchos::RCP<const Thyra::VectorBase<Scalar>> x0) const;
 
   /** \brief Compute the extrema of the the scaled system Jacobian.
   *
@@ -215,8 +222,8 @@ class PhiEvaluator
    *  which is solved as part of this method.
    */
   virtual Thyra::SolveStatus<Scalar> computePhi(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
-						const int phi_order, const Scalar cdt,
-						const Teuchos::RCP<const Thyra::VectorBase<Scalar>> &Mrhs_b);
+            const int phi_order, const Scalar cdt,
+            const Teuchos::RCP<const Thyra::VectorBase<Scalar>> &Mrhs_b);
 
   /** \brief  Compute the Phi function of cdt times Jacobian for a linear combination with right hand side vectors Mrhs_B
    *
@@ -261,40 +268,69 @@ class PhiEvaluator
    *  Computes v := phi_{phi_order}(L)v in place (overwriting the rhs with the result)
    */
   virtual Thyra::SolveStatus<Scalar> computeLinOpPhi(const int phi_order,
-						     const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> L,
-						     const Teuchos::Ptr<Thyra::VectorBase<Scalar>> v,
-						     const Scalar cdt=1.0
-						     ) = 0;
+                 const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> L,
+                 const Teuchos::Ptr<Thyra::VectorBase<Scalar>> v,
+                 const Scalar cdt=1.0
+                 ) = 0;
 };
 
 /// Nonmember helper to convert a Thyra LinearOp to a SerialDenseMatrix
 // ------------------------------------------------------------------------
 template <class Scalar>
 Teuchos::SerialDenseMatrix<int, Scalar> operatorToDense(Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> lop) {
-  const int n = static_cast<int>(lop->domain()->dim());
-  const int m = static_cast<int>(lop->range()->dim());
+  Teuchos::RCP<const Teuchos::Comm<Teuchos::Ordinal>> comm;
+  const int numCols = static_cast<int>(lop->domain()->dim());
+  const int numRows = static_cast<int>(lop->range()->dim());
 
-  Teuchos::SerialDenseMatrix<int, Scalar> denseMatrix(m, n);
-
-  // Reusable domain vector (j-th standard basis vector) and range vector (result)
-  Teuchos::RCP<Thyra::VectorBase<Scalar>> e_j  = Thyra::createMember(lop->domain());
-  Teuchos::RCP<Thyra::VectorBase<Scalar>> col_j = Thyra::createMember(lop->range());
-
-  const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
-  const Scalar one  = Teuchos::ScalarTraits<Scalar>::one();
-
-  for (int j = 0; j < n; ++j) {
-    Thyra::assign(e_j.ptr(), zero);
-    Thyra::set_ele(j, one, e_j.ptr());
-    Thyra::apply(*lop, Thyra::NOTRANS, *e_j, col_j.ptr(), one, zero);
-
-    // Extract each element of the result into column j of the dense matrix
-    for (int i = 0; i < m; ++i) {
-      denseMatrix(i, j) = Thyra::get_ele(*col_j, i);
-    }
+  // Attempt to cast the range space to a Parallel SPMD vector space interface
+  auto spmdRangeSpace = Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<Scalar>>(lop->range());
+  if (spmdRangeSpace != Teuchos::null) {
+    comm = spmdRangeSpace->getComm();
+  }
+  if (comm.is_null()) {
+    comm = Teuchos::DefaultComm<Teuchos::Ordinal>::getDefaultSerialComm(Teuchos::null);
   }
 
-  return denseMatrix;
+  // Build the identity matrix
+  Teuchos::RCP<Thyra::MultiVectorBase<Scalar>> Id = Thyra::createMembers(lop->domain(), numCols);
+  Thyra::assign(Id.ptr(), Scalar(0));
+  for (int j = 0; j < numCols; ++j) {
+     Teuchos::RCP<Thyra::VectorBase<Scalar>> col_j = Id->col(j);
+     Thyra::set_ele(j, Scalar(1), col_j.ptr());
+  }
+
+  // Create an abstract MultiVector for the result
+  Teuchos::RCP<Thyra::MultiVectorBase<Scalar>> Y = Thyra::createMembers(lop->range(), numCols);
+
+  // Apply the linop to identity
+  Thyra::apply(*lop, Thyra::NOTRANS, *Id, Y.ptr(), 1.0, 0.0);
+
+  // build the SerialDenseMatrix on on ranks
+  Teuchos::SerialDenseMatrix<int, Scalar> globalDenseMat(numRows, numCols);
+  Teuchos::SerialDenseMatrix<int, Scalar> localRankBuffer(numRows, numCols);
+  localRankBuffer.putScalar(0.0);
+
+  for (int j = 0; j < numCols; ++j) {
+      Teuchos::RCP<const Thyra::VectorBase<Scalar>> colY = Y->col(j);
+      // ConstDetachedVectorView works natively on ANY Thyra multi-vector provider
+      Thyra::ConstDetachedVectorView<Scalar> view(*colY);
+      // Inject the elements this rank owns into the local buffer
+      for (ptrdiff_t i = 0; i < view.subDim(); ++i) {
+          int globalRowIdx = view.globalOffset() + i;
+          localRankBuffer(globalRowIdx, j) = view.values()[i * view.stride()];
+      }
+  }
+
+  // AllReduce the local buffers
+  Teuchos::reduceAll(
+      *comm,
+      Teuchos::REDUCE_SUM,
+      static_cast<Teuchos::Ordinal>(numRows * numCols),
+      localRankBuffer.values(),
+      globalDenseMat.values()
+  );
+
+  return globalDenseMat;
 }
 
 /// Nonmember helper to compute eigenvalues of a SerialDenseMatrix
