@@ -293,7 +293,8 @@ operatorToDense(Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> lop)
         lop->domain(), true);
 
   auto comm = rangeSpmd->getComm();
-  const int rank = comm->getRank();
+  const int rank = comm.is_null() ? 0 : comm->getRank();
+  const int numProcs = comm.is_null() ? 1 : comm->getSize();
 
   const int rowOffset   = static_cast<int>(rangeSpmd->localOffset());
   const int rowLocalDim = static_cast<int>(rangeSpmd->localSubDim());
@@ -335,19 +336,25 @@ operatorToDense(Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> lop)
 
       for (int iLocal = 0; iLocal < rowLocalDim; ++iLocal) {
         const int iGlobal = rowOffset + iLocal;
-        localDense[iGlobal + j * numRows] = localView[iLocal];
+        localDense[iGlobal + j * numRows] = localView[iGlobal];
       }
     }
   }
 
   // Combine local pieces. Since each row is owned by one rank,
   // sum-reduction reconstructs the full dense matrix on every rank.
-  Teuchos::reduceAll(
-      *comm,
-      Teuchos::REDUCE_SUM,
-      static_cast<long int>(localDense.size()),
-      localDense.data(),
-      globalDense.data());
+  // Ignore the logic if comm is null.
+  if (comm.is_null()) {
+    globalDense = localDense;
+  }
+  else {
+    Teuchos::reduceAll(
+        *comm,
+        Teuchos::REDUCE_SUM,
+        static_cast<long int>(localDense.size()),
+        localDense.data(),
+        globalDense.data());
+  }
 
   Teuchos::SerialDenseMatrix<int, Scalar> globalDenseMat(numRows, numCols);
 
