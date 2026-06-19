@@ -92,15 +92,6 @@ inline Teuchos::RCP<const TpetraMV> getBlockTpetraMV(
     return tmv->getConstTpetraMultiVector();
 }
 
-// (comm, rank) from block 0 of a product multivector — used to gate the JSON
-// file I/O in adaptiveLoop() to rank 0.
-inline std::pair<Teuchos::RCP<const Teuchos::Comm<int>>, int>
-getCommAndRank(Teuchos::RCP<const MV> mv)
-{
-    auto comm = getBlockTpetraMV(mv, 0)->getMap()->getComm();
-    return {comm, comm->getRank()};
-}
-
 // C := A^T B as a replicated SerialDenseMatrix (numVecs(A) × numVecs(B)).
 // A and B may be distributed arbitrarily (they must share a row distribution).
 // Internally Tpetra computes the local GEMM and sum-reduces the small result
