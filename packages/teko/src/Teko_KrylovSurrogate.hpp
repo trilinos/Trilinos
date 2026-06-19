@@ -104,10 +104,17 @@ namespace Teko {
 namespace KrylovSurrogate {
 
 // ── Type aliases matching teko_ext.cpp ────────────────────────────────────
+// SC is fixed to double (the surrogate's dense math and the Belos adaptive
+// hook are double-only by design). LO/GO/Node track the Trilinos build's
+// Tpetra defaults rather than being hardcoded, so the dynamic_casts to
+// TpetraLinearOp/CrsMatrix below match whatever node/ordinals the build uses
+// (Serial, OpenMP, CUDA, a different GO, ...) instead of silently returning
+// null on a mismatched build. (GPU nodes additionally need host-accessible
+// data for the getData() loops here — see INTERFACE_AND_HPC_ISSUES.md.)
 using SC   = double;
-using LO   = int;
-using GO   = long long;
-using Node = Tpetra::KokkosCompat::KokkosOpenMPWrapperNode;
+using LO   = Tpetra::Map<>::local_ordinal_type;
+using GO   = Tpetra::Map<>::global_ordinal_type;
+using Node = Tpetra::Map<>::node_type;
 
 using SDM      = Teuchos::SerialDenseMatrix<int, SC>;
 using TpetraMV = Tpetra::MultiVector<SC, LO, GO, Node>;
