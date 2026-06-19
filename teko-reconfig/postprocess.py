@@ -12,7 +12,7 @@ import sys
 
 def _ensure_mypy_venv():
     script_dir = Path(__file__).resolve().parent
-    venv_dir = script_dir.parents[1] / "py-front-end" / "mypy"
+    venv_dir = script_dir.parents[1] / "trilinos-teko-pyfront" / "mypy"
     venv_python = venv_dir / "bin" / "python3"
 
     if Path(sys.prefix).resolve() == venv_dir.resolve():
