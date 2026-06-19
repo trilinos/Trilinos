@@ -292,7 +292,7 @@ Teuchos::SerialDenseMatrix<int, Scalar> operatorToDense(Teuchos::RCP<const Thyra
   // Apply the linop to identity
   Thyra::apply(*lop, Thyra::NOTRANS, *Id, Y.ptr(), 1.0, 0.0);
 
-  // build the SerialDenseMatrix on on ranks
+  // Build the SerialDenseMatrix on all ranks
   Teuchos::SerialDenseMatrix<int, Scalar> globalDenseMat(numRows, numCols);
   for (int j = 0; j < numCols; ++j) {
     Teuchos::RCP<const Thyra::VectorBase<Scalar>> colY = Y->col(j);
