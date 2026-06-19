@@ -12,9 +12,9 @@ goes back to watching for the next request.
 Runs until Ctrl-C or until RUN_SECONDS (default 300 = 5 minutes) have
 elapsed, whichever comes first.
 
-Run with:
-    source /home/node/codespace/mypy/bin/activate
-    python /home/node/codespace/Trilinos/teko-reconfig/wait_for_request.py
+Normally you don't run this by hand — the front-end interface spawns it
+automatically. To run it standalone (from its own directory):
+    python wait_for_request.py
 
 All three file types (s<N>_request.json, s<N>_reconfig.json, s<N>_conv.json)
 live together in one directory. Defaults to the "requests" sibling of this
