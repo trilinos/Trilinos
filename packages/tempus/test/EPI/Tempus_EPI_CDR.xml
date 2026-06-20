@@ -41,7 +41,8 @@
       <Parameter name="Stepper Type"   type="string" value="EPI2"/>
       <Parameter name="Adapt PhiEvaluator Interval" type="int" value="10"/>
       <Parameter name="Use FSAL"       type="bool" value="false"/>
-      <Parameter name="Initial Condition Consistency" type="string" value="None"/>
+      <Parameter name="Initial Condition Consistency" type="string" value="Consistent"/>
+      <Parameter name="Initial Condition Consistency Check" type="bool" value="true"/>
       <!--
       <Parameter name="Stepper Type"   type="string" value="Trapezoidal Method"/>
       <Parameter name="Use FSAL"       type="bool" value="true"/>
