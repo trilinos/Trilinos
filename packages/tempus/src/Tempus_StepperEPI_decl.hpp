@@ -169,16 +169,27 @@ public:
   void setPhiEvaluatorParameterList(const Teuchos::RCP<Teuchos::ParameterList>& pl)
   { phiEvaluatorPL_ = pl; }
 
-private:
- /// Compute the nonlinear remainder:
- ///   R = -M * (F(xr,tr) - F(x0,t0) - J_{x0} * (xr-x0) - F'(t0) * (tr-t0))
- /// including multiple of negative mass matrix (-M).
- ///
- /// dt is the current time-step, not necessarily (tr-t0)
- /// Mf contains already evaluated -M*F(x0,t0)
- /// dt_Mf_deriv contains already evaluated dt*M*F'(t0)
- /// Mfr is unused, currently, can contain -M*F(xr,tr)
- Teuchos::RCP<Thyra::VectorBase<Scalar>> computeRemf(
+ private:
+  /// Compute the temporal finite difference dt_Mf_deriv
+  ///   d/dt (-M * F(x,t))
+  void computeTemporalFD(
+    Teuchos::RCP<Thyra::VectorBase<Scalar>>& dt_Mf_deriv,
+    const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& x,
+    const Scalar t0,
+    const Scalar dt,
+    const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& Mf
+  );
+
+  /// Compute the nonlinear remainder:
+  ///   remf = -M * (F(xr,tr) - F(x0,t0) - J_{x0} * (xr-x0) - F'(t0) * (tr-t0))
+  /// including multiple of negative mass matrix (-M).
+  ///
+  /// dt is the current time-step, not necessarily (tr-t0)
+  /// Mf contains already evaluated -M*F(x0,t0)
+  /// dt_Mf_deriv contains already evaluated dt*M*F'(t0)
+  /// Mfr is unused, currently, can contain -M*F(xr,tr)
+  void computeRemf(
+    Teuchos::RCP<Thyra::VectorBase<Scalar>>& remf,
     const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& xr,
     const Scalar tr,
     const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& x0,
