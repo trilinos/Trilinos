@@ -66,6 +66,10 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
   std::vector<double> StepSize;
   std::vector<double> xErrorNorm;
   std::vector<double> xDotErrorNorm;
+
+  // make this a test parameter
+  const bool test_xdot = true;
+
   const int nTimeStepSizes = 4;
   double dt                = 0.0005;
   if (caseName == "Taylor") dt /= 2;
@@ -134,16 +138,23 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
 
     phiList.set("Lump Mass Matrix", lumped);
 
+    if (!test_xdot) {
+      // disable consitency checks
+      pl->sublist("Demo Stepper").set("Initial Condition Consistency", "None");
+      pl->sublist("Demo Stepper").set("Initial Condition Consistency Check", false);
+    }
+
     integrator = Tempus::createIntegratorBasic<double>(pl, model);
 
-    // Initial Conditions
-    // During the Integrator construction, the initial SolutionState
-    // is set by default to model->getNominalVales().get_x().  However,
-    // the application can set it also by integrator->initializeSolutionHistory.
-    RCP<Thyra::VectorBase<double>> x0 =
-          model->getNominalValues().get_x()->clone_v();
+    if (!test_xdot) {
+      // delete x_dot from the history
+      auto sh = integrator->getNonConstSolutionHistory();
+      auto state0 = sh->getCurrentState();
 
-    integrator->initializeSolutionHistory(0.0, x0);
+      Teuchos::RCP<const Thyra::VectorBase<double> > xdot_null;
+      state0->setXDot(xdot_null);
+      integrator->getStepper()->setInitialConditions(sh);
+    }
     integrator->initialize();
 
     // Integrate to timeMax
@@ -163,9 +174,12 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
     auto solution = Thyra::createMember(model->get_x_space());
     Thyra::copy(*(integrator->getX()), solution.ptr());
     solutions.push_back(solution);
-    auto solutionDot = Thyra::createMember(model->get_x_space());
-    Thyra::copy(*(integrator->getXDot()), solutionDot.ptr());
-    solutionsDot.push_back(solutionDot);
+
+    if (test_xdot) {
+      auto solutionDot = Thyra::createMember(model->get_x_space());
+      Thyra::copy(*(integrator->getXDot()), solutionDot.ptr());
+      solutionsDot.push_back(solutionDot);
+    }
 
     // Output finest temporal solution for plotting
     // This only works for ONE MPI process
@@ -199,7 +213,7 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
 
   // Check the order and intercept
   double xSlope                        = 0.0;
-  double xDotSlope                     = 0.0;
+  //double xDotSlope                     = 0.0;
   RCP<Tempus::Stepper<double>> stepper = integrator->getStepper();
   writeOrderError("Tempus_EPI_CDR_" + caseName + "-Error.dat", stepper, StepSize,
                   solutions, xErrorNorm, xSlope, out);
