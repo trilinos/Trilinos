@@ -20,7 +20,7 @@
       </ParameterList>
       <ParameterList name="Time Step Control">
         <Parameter name="Initial Time"           type="double" value="0.0"/>
-        <Parameter name="Final Time"             type="double" value=".001"/>
+        <Parameter name="Final Time"             type="double" value="0.001"/>
         <Parameter name="Initial Time Index"     type="int"    value="0"/>
         <Parameter name="Final Time Index"       type="int"    value="1000000"/>
         <Parameter name="Minimum Time Step"      type="double" value="0.000000001"/>
@@ -40,7 +40,7 @@
     <ParameterList name="Demo Stepper">
       <Parameter name="Stepper Type"   type="string" value="EPI2"/>
       <Parameter name="Adapt PhiEvaluator Interval" type="int" value="10"/>
-      <Parameter name="Use FSAL"       type="bool" value="false"/>
+      <Parameter name="Use FSAL"       type="bool" value="true"/>
       <Parameter name="Initial Condition Consistency" type="string" value="Consistent"/>
       <Parameter name="Initial Condition Consistency Check" type="bool" value="true"/>
       <!--
@@ -48,13 +48,6 @@
       <Parameter name="Use FSAL"       type="bool" value="true"/>
       <Parameter name="Initial Condition Consistency" type="string" value="Consistent"/>
       <Parameter name="Initial Condition Consistency Check" type="bool" value="false"/>
-      -->
-      <!--
-      <ParameterList name="PhiEvaluator">
-        <Parameter name="Expansion Order" type="int" value="100"/>
-        <Parameter name="PhiEvaluator Type" type="string" value="Taylor"/>
-        <Parameter name="Lump Mass Matrix" type="bool" value="true"/>
-      </ParameterList>
       -->
       <ParameterList name="PhiEvaluator">
         <Parameter name="PhiEvaluator Type" type="string" value="Leja"/>
@@ -71,6 +64,13 @@
             <Parameter name="Num Eigenvalues" type="int" value="8"/>
         </ParameterList>
       </ParameterList>
+      <!--
+      <ParameterList name="PhiEvaluator">
+        <Parameter name="Expansion Order" type="int" value="100"/>
+        <Parameter name="PhiEvaluator Type" type="string" value="Taylor"/>
+        <Parameter name="Lump Mass Matrix" type="bool" value="true"/>
+      </ParameterList>
+      -->
 
       <Parameter name="Solver Name"    type="string" value="Demo Solver"/>
       <Parameter name="Predictor Stepper Type" type="string" value="None"/>

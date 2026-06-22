@@ -171,6 +171,10 @@ Scalar computeLinearRegressionLogLog(std::vector<Scalar>& x,
     }
   }
 
+  if (xlog.size() < 2)
+    // too few nonzero data-points for regression, returning slope = 0
+    return 0.;
+
   LinearRegression<Scalar> lr;
   lr.setData(xlog, ylog);
   return (lr.getSlope());
