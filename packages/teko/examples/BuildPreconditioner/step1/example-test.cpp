@@ -78,9 +78,7 @@ RCP<Tpetra::CrsMatrix<Teko::ST, Teko::LO, Teko::GO, Teko::NT> > build2x2(
   return matrix;
 }
 
-int main(int argc, char* argv[]) {
-  Tpetra::ScopeGuard tpetraScope(&argc, &argv);
-
+void run_test() {
   using ST = Teko::ST;
   using LO = Teko::LO;
   using GO = Teko::GO;
@@ -147,6 +145,10 @@ int main(int argc, char* argv[]) {
 
   x->describe(*(Teuchos::VerboseObjectBase::getDefaultOStream()),
               Teuchos::EVerbosityLevel::VERB_EXTREME);
+}
 
+int main(int argc, char* argv[]) {
+  Tpetra::ScopeGuard tpetraScope(&argc, &argv);
+  { run_test(); }
   return 0;
 }

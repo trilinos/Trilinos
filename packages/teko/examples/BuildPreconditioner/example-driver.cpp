@@ -42,9 +42,7 @@
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-int main(int argc, char* argv[]) {
-  Tpetra::ScopeGuard tpetraScope(&argc, &argv);
-
+void run_driver() {
   using ST = double;
   using LO = Teko::LO;
   using GO = Teko::GO;
@@ -127,6 +125,10 @@ int main(int argc, char* argv[]) {
 
   TEUCHOS_TEST_FOR_EXCEPTION(result != Belos::Converged, std::runtime_error,
                              "Belos solver failed to converge.");
+}
 
+int main(int argc, char* argv[]) {
+  Tpetra::ScopeGuard tpetraScope(&argc, &argv);
+  { run_driver(); }
   return 0;
 }

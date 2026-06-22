@@ -54,9 +54,7 @@ using Teuchos::ParameterList;
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-int main(int argc, char* argv[]) {
-  Tpetra::ScopeGuard tpetraScope(&argc, &argv);
-
+void run_driver() {
   RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
   using ST = double;
@@ -159,6 +157,10 @@ int main(int argc, char* argv[]) {
                              "Belos solver failed to converge.");
 
   *fos << "Solve converged" << std::endl;
+}
 
+int main(int argc, char* argv[]) {
+  Tpetra::ScopeGuard tpetraScope(&argc, &argv);
+  { run_driver(); }
   return 0;
 }
