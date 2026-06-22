@@ -50,11 +50,12 @@
 #include <string>
 #include <vector>
 
+using Teuchos::FancyOStream;
 using Teuchos::ParameterList;
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-void run_driver() {
+void run_driver(std::string solveName) {
   RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
   using ST = double;
@@ -69,9 +70,6 @@ void run_driver() {
   using op_t  = Tpetra::Operator<ST, LO, GO, NT>;
 
   auto comm = Tpetra::getDefaultComm();
-
-  std::string solveName = "Amesos2";
-  if (argc > 1) solveName = argv[1];
 
   RCP<FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   fos->setOutputToRootOnly(0);
@@ -161,6 +159,11 @@ void run_driver() {
 
 int main(int argc, char* argv[]) {
   Tpetra::ScopeGuard tpetraScope(&argc, &argv);
-  { run_driver(); }
+  {
+    std::string solveName = "Amesos2";
+    if (argc > 1) solveName = argv[1];
+
+    run_driver(solveName);
+  }
   return 0;
 }

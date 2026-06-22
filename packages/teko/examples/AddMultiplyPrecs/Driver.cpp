@@ -49,6 +49,7 @@
 #include <iostream>
 #include <vector>
 
+using Teuchos::FancyOStream;
 using Teuchos::ParameterList;
 using Teuchos::RCP;
 using Teuchos::rcp;
