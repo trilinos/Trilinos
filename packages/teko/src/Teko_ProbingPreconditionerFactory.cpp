@@ -26,6 +26,65 @@ using Teuchos::rcp;
 using Teuchos::RCP;
 using Teuchos::rcp_dynamic_cast;
 
+namespace {
+
+using ST = Teko::ST;
+using LO = Teko::LO;
+using GO = Teko::GO;
+using NT = Teko::NT;
+
+using exec_space = typename NT::device_type::execution_space;
+
+template <class ProbeViewType, class ColorViewType>
+void set_probe_by_color(const ProbeViewType& probeView, const ColorViewType& colors,
+                        const LO numRows, const LO color) {
+  Kokkos::parallel_for(
+      "Teko::ProbingPreconditionerFactory::set_probe", Kokkos::RangePolicy<exec_space>(0, numRows),
+      KOKKOS_LAMBDA(const LO lrow) {
+        if (colors(lrow) == color) {
+          probeView(lrow, 0) = Teuchos::ScalarTraits<ST>::one();
+        }
+      });
+}
+
+template <class RowPtrViewType, class ColIndViewType, class ColorViewType, class ResponseViewType,
+          class ValuesViewType>
+void decode_probe_by_color(const RowPtrViewType& rowPtrs, const ColIndViewType& localColInds,
+                           const ColorViewType& colors, const ResponseViewType& responseView,
+                           const LO numRows, const LO color, const ValuesViewType& values) {
+  Kokkos::parallel_for(
+      "Teko::ProbingPreconditionerFactory::decode_probe",
+      Kokkos::RangePolicy<exec_space>(0, numRows), KOKKOS_LAMBDA(const LO lrow) {
+        const auto rowStart = rowPtrs(lrow);
+        const auto rowEnd   = rowPtrs(lrow + 1);
+        const ST rowValue   = responseView(lrow, 0);
+
+        for (auto entry = rowStart; entry < rowEnd; ++entry) {
+          LO lcol = localColInds(entry);
+          if (colors(lcol) == color) {
+            values(entry) = rowValue;
+          }
+        }
+      });
+}
+
+template <class RowPtrViewType>
+LO compute_max_row_length(const RowPtrViewType& rowPtrs, const LO numRows) {
+  LO maxNumEntriesPerRow = 0;
+
+  Kokkos::parallel_reduce(
+      "Teko::ProbingPreconditionerFactory::max_row_length",
+      Kokkos::RangePolicy<exec_space>(0, numRows),
+      KOKKOS_LAMBDA(const LO r, LO& localMax) {
+        LO rowLen = static_cast<LO>(rowPtrs(r + 1) - rowPtrs(r));
+        if (rowLen > localMax) localMax = rowLen;
+      },
+      Kokkos::Max<LO>(maxNumEntriesPerRow));
+
+  return maxNumEntriesPerRow;
+}
+}  // end anonymous namespace
+
 namespace Teko {
 
 ProbingPreconditionerFactory::ProbingPreconditionerFactory() {}
@@ -94,93 +153,79 @@ RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > ProbingPreconditionerFactory::probe(
 
   RCP<const Tpetra::Map<LO, GO, NT> > domainMap = tpetraOp->getDomainMap();
   RCP<const Tpetra::Map<LO, GO, NT> > rangeMap  = tpetraOp->getRangeMap();
+  RCP<const Tpetra::Map<LO, GO, NT> > rowMap    = graph_->getRowMap();
+  RCP<const Tpetra::Map<LO, GO, NT> > colMap    = graph_->getColMap();
 
-  using rowmap_t     = typename Tpetra::CrsGraph<LO, GO, NT>::local_graph_device_type::row_map_type;
-  using colinds_t    = typename Tpetra::CrsGraph<LO, GO, NT>::local_graph_device_type::entries_type;
-  using exec_space   = typename NT::device_type::execution_space;
+  using local_matrix_type = typename Tpetra::CrsMatrix<ST, LO, GO, NT>::local_matrix_device_type;
+  using row_map_type = typename Tpetra::CrsGraph<LO, GO, NT>::local_graph_device_type::row_map_type;
+  using index_type   = typename Tpetra::CrsGraph<LO, GO, NT>::local_graph_device_type::entries_type;
+  using values_type  = typename local_matrix_type::values_type::non_const_type;
   using memory_space = typename NT::device_type::memory_space;
   using kernel_handle_type =
-      KokkosKernels::Experimental::KokkosKernelsHandle<typename rowmap_t::value_type,
-                                                       typename colinds_t::value_type, ST,
+      KokkosKernels::Experimental::KokkosKernelsHandle<typename row_map_type::value_type,
+                                                       typename index_type::value_type, ST,
                                                        exec_space, memory_space, memory_space>;
 
   kernel_handle_type kh;
   kh.create_distance2_graph_coloring_handle(KokkosGraph::COLORING_D2_DEFAULT);
 
+  row_map_type rowPtrs;
+  index_type localColInds;
+  LO numRows             = 0;
+  LO totalNumEntries     = 0;
+  LO maxNumEntriesPerRow = 0;
+
   {
     auto localGraphDevice = graph_->getLocalGraphDevice();
+
     KokkosGraph::Experimental::graph_color_distance2(
         &kh, graph_->getLocalNumRows(), localGraphDevice.row_map, localGraphDevice.entries);
+
+    rowPtrs             = localGraphDevice.row_map;
+    localColInds        = localGraphDevice.entries;
+    numRows             = static_cast<LO>(graph_->getLocalNumRows());
+    totalNumEntries     = static_cast<LO>(localColInds.extent(0));
+    maxNumEntriesPerRow = compute_max_row_length(rowPtrs, numRows);
   }
 
   auto coloringHandle = kh.get_distance2_graph_coloring_handle();
   auto colors         = coloringHandle->get_vertex_colors();
   const LO numColors  = static_cast<LO>(coloringHandle->get_num_colors());
-  auto colors_h       = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), colors);
 
-  auto probedMat = Teuchos::rcp(new Tpetra::CrsMatrix<ST, LO, GO, NT>(graph_->getRowMap(), 0));
+  values_type values(Kokkos::ViewAllocateWithoutInitializing("probed_values"), totalNumEntries);
+  Kokkos::deep_copy(values, Teuchos::ScalarTraits<ST>::zero());
 
-  auto localGraphHost = graph_->getLocalGraphHost();
-  const auto colMap   = graph_->getColMap();
+  RCP<Tpetra::MultiVector<ST, LO, GO, NT> > probeVec =
+      rcp(new Tpetra::MultiVector<ST, LO, GO, NT>(domainMap, 1));
+  RCP<Tpetra::MultiVector<ST, LO, GO, NT> > response =
+      rcp(new Tpetra::MultiVector<ST, LO, GO, NT>(rangeMap, 1));
 
-  Teuchos::Array<GO> colGids;
-  Teuchos::Array<ST> vals;
+  RCP<const Thyra::MultiVectorBase<ST> > thyraProbe = Thyra::createConstMultiVector<ST, LO, GO, NT>(
+      probeVec, Thyra::tpetraVectorSpace<ST, LO, GO, NT>(domainMap));
+  RCP<Thyra::MultiVectorBase<ST> > thyraResponse = Thyra::createMultiVector<ST, LO, GO, NT>(
+      response, Thyra::tpetraVectorSpace<ST, LO, GO, NT>(rangeMap));
 
   for (LO color = 1; color <= numColors; ++color) {
-    RCP<Tpetra::MultiVector<ST, LO, GO, NT> > probeVec =
-        rcp(new Tpetra::MultiVector<ST, LO, GO, NT>(domainMap, 1));
-    probeVec->putScalar(0.0);
+    probeVec->putScalar(Teuchos::ScalarTraits<ST>::zero());
+    auto probeView = probeVec->getLocalViewDevice(Tpetra::Access::ReadWrite);
 
-    for (LO lrow = 0; lrow < static_cast<LO>(graph_->getLocalNumRows()); ++lrow) {
-      if (colors_h(lrow) == color) {
-        GO gid = domainMap->getGlobalElement(lrow);
-        probeVec->replaceGlobalValue(gid, 0, Teuchos::ScalarTraits<ST>::one());
-      }
-    }
+    set_probe_by_color(probeView, colors, numRows, color);
 
-    RCP<Tpetra::MultiVector<ST, LO, GO, NT> > response =
-        rcp(new Tpetra::MultiVector<ST, LO, GO, NT>(rangeMap, 1));
-    response->putScalar(0.0);
+    response->putScalar(Teuchos::ScalarTraits<ST>::zero());
 
-    Thyra::apply(*lo, Thyra::NOTRANS,
-                 *Thyra::createConstMultiVector<ST, LO, GO, NT>(
-                     probeVec, Thyra::tpetraVectorSpace<ST, LO, GO, NT>(domainMap)),
-                 Thyra::createMultiVector<ST, LO, GO, NT>(
-                     response, Thyra::tpetraVectorSpace<ST, LO, GO, NT>(rangeMap))
-                     .ptr());
+    Thyra::apply(*lo, Thyra::NOTRANS, *thyraProbe, thyraResponse.ptr());
 
-    auto responseView = response->getLocalViewHost(Tpetra::Access::ReadOnly);
+    auto responseView = response->getLocalViewDevice(Tpetra::Access::ReadOnly);
 
-    for (LO lrow = 0; lrow < static_cast<LO>(graph_->getLocalNumRows()); ++lrow) {
-      auto row      = localGraphHost.rowConst(lrow);
-      size_t rowLen = row.length;
-
-      colGids.resize(rowLen);
-      vals.resize(rowLen);
-
-      GO rowGid = graph_->getRowMap()->getGlobalElement(lrow);
-
-      size_t nnz = 0;
-      for (size_t k = 0; k < rowLen; ++k) {
-        LO lcol   = row.colidx(k);
-        GO colGid = colMap->getGlobalElement(lcol);
-
-        if (colors_h(lcol) == color) {
-          colGids[nnz] = colGid;
-          vals[nnz]    = responseView(lrow, 0);
-          ++nnz;
-        }
-      }
-
-      if (nnz > 0) {
-        probedMat->sumIntoGlobalValues(rowGid,
-                                       Teuchos::ArrayView<const GO>(colGids.getRawPtr(), nnz),
-                                       Teuchos::ArrayView<const ST>(vals.getRawPtr(), nnz));
-      }
-    }
+    decode_probe_by_color(rowPtrs, localColInds, colors, responseView, numRows, color, values);
   }
 
-  probedMat->fillComplete(domainMap, rangeMap);
+  auto lclMat = local_matrix_type("probed_local_matrix", numRows, maxNumEntriesPerRow,
+                                  totalNumEntries, values, rowPtrs, localColInds);
+
+  auto probedMat = Teuchos::rcp(
+      new Tpetra::CrsMatrix<ST, LO, GO, NT>(lclMat, rowMap, colMap, domainMap, rangeMap));
+
   kh.destroy_distance2_graph_coloring_handle();
 
   return probedMat;
