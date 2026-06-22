@@ -19,6 +19,16 @@
 #include "Tpetra_Map.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 
+// Galeri / Xpetra
+#include "Galeri_XpetraMaps.hpp"
+#include "Galeri_XpetraProblemFactory.hpp"
+#include "Galeri_XpetraParameters.hpp"
+
+#include "Xpetra_Map.hpp"
+#include "Xpetra_Matrix.hpp"
+#include "Xpetra_TpetraMap.hpp"
+#include "Xpetra_TpetraCrsMatrix.hpp"
+
 // Teko-Package includes
 #include "Teko_Utilities.hpp"
 #include "Teko_Config.h"
@@ -43,40 +53,24 @@ using LO = Teko::LO;
 using GO = Teko::GO;
 using NT = Teko::NT;
 
+using map_t = Tpetra::Map<LO, GO, NT>;
+using crs_t = Tpetra::CrsMatrix<ST, LO, GO, NT>;
+using mv_t  = Tpetra::MultiVector<ST, LO, GO, NT>;
+
 const RCP<Thyra::LinearOpBase<double> > buildSystem(const RCP<const Teuchos::Comm<int> >& comm,
                                                     GO size) {
-  RCP<const Tpetra::Map<LO, GO, NT> > map = rcp(new const Tpetra::Map<LO, GO, NT>(size, 0, comm));
+  Teuchos::ParameterList galeriList;
+  galeriList.set("nx", size);
+  galeriList.set("mx", comm->getSize());
 
-  RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > mat = Tpetra::createCrsMatrix<ST, LO, GO, NT>(map, 3);
+  RCP<const Xpetra::Map<LO, GO, NT> > xMap =
+      Galeri::Xpetra::CreateMap<LO, GO, NT>(Xpetra::UseTpetra, "Cartesian1D", comm, galeriList);
+  RCP<const map_t> tMap = Xpetra::toTpetra(xMap);
 
-  ST values[] = {-1.0, 2.0, -1.0};
-  GO iTemp[]  = {-1, 0, 1}, indices[3];
-  ST* vPtr;
-  GO* iPtr;
+  auto problem =
+      Galeri::Xpetra::BuildProblem<ST, LO, GO, map_t, crs_t, mv_t>("Laplace1D", tMap, galeriList);
 
-  for (size_t i = 0; i < map->getLocalNumElements(); i++) {
-    int count = 3;
-    GO gid    = map->getGlobalElement(i);
-
-    vPtr = values;
-    iPtr = indices;
-
-    indices[0] = gid + iTemp[0];
-    indices[1] = gid + iTemp[1];
-    indices[2] = gid + iTemp[2];
-
-    if (gid == 0) {
-      vPtr  = &values[1];
-      iPtr  = &indices[1];
-      count = 2;
-    } else if (gid == map->getMaxAllGlobalIndex())
-      count = 2;
-
-    mat->insertGlobalValues(gid, Teuchos::ArrayView<GO>(iPtr, count),
-                            Teuchos::ArrayView<ST>(vPtr, count));
-  }
-
-  mat->fillComplete();
+  RCP<crs_t> mat = problem->BuildMatrix();
 
   return Thyra::tpetraLinearOp<ST, LO, GO, NT>(
       Thyra::tpetraVectorSpace<ST, LO, GO, NT>(mat->getDomainMap()),
