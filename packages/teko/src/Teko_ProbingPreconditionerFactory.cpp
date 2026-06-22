@@ -104,25 +104,26 @@ RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > ProbingPreconditionerFactory::probe(
                                                        typename colinds_t::value_type, ST,
                                                        exec_space, memory_space, memory_space>;
 
-  auto localGraph = graph_->getLocalGraphDevice();
   kernel_handle_type kh;
   kh.create_distance2_graph_coloring_handle(KokkosGraph::COLORING_D2_DEFAULT);
 
-  KokkosGraph::Experimental::graph_color_distance2(&kh, graph_->getLocalNumRows(),
-                                                   localGraph.row_map, localGraph.entries);
+  {
+    auto localGraphDevice = graph_->getLocalGraphDevice();
+    KokkosGraph::Experimental::graph_color_distance2(
+        &kh, graph_->getLocalNumRows(), localGraphDevice.row_map, localGraphDevice.entries);
+  }
 
   auto coloringHandle = kh.get_distance2_graph_coloring_handle();
   auto colors         = coloringHandle->get_vertex_colors();
   const LO numColors  = static_cast<LO>(coloringHandle->get_num_colors());
-
-  auto probedMat = Teuchos::rcp(new Tpetra::CrsMatrix<ST, LO, GO, NT>(graph_));
-  probedMat->resumeFill();
-  probedMat->setAllToScalar(Teuchos::ScalarTraits<ST>::zero());
-
-  auto localGraphHost = graph_->getLocalGraphHost();
   auto colors_h       = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), colors);
 
-  Teuchos::Array<LO> colLids;
+  auto probedMat = Teuchos::rcp(new Tpetra::CrsMatrix<ST, LO, GO, NT>(graph_->getRowMap(), 0));
+
+  auto localGraphHost = graph_->getLocalGraphHost();
+  const auto colMap   = graph_->getColMap();
+
+  Teuchos::Array<GO> colGids;
   Teuchos::Array<ST> vals;
 
   for (LO color = 1; color <= numColors; ++color) {
@@ -154,23 +155,27 @@ RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > ProbingPreconditionerFactory::probe(
       auto row      = localGraphHost.rowConst(lrow);
       size_t rowLen = row.length;
 
-      colLids.resize(rowLen);
+      colGids.resize(rowLen);
       vals.resize(rowLen);
+
+      GO rowGid = graph_->getRowMap()->getGlobalElement(lrow);
 
       size_t nnz = 0;
       for (size_t k = 0; k < rowLen; ++k) {
-        LO lcol = row.colidx(k);
+        LO lcol   = row.colidx(k);
+        GO colGid = colMap->getGlobalElement(lcol);
 
         if (colors_h(lcol) == color) {
-          colLids[nnz] = lcol;
+          colGids[nnz] = colGid;
           vals[nnz]    = responseView(lrow, 0);
           ++nnz;
         }
       }
 
       if (nnz > 0) {
-        probedMat->sumIntoLocalValues(lrow, Teuchos::ArrayView<const LO>(colLids.getRawPtr(), nnz),
-                                      Teuchos::ArrayView<const ST>(vals.getRawPtr(), nnz));
+        probedMat->sumIntoGlobalValues(rowGid,
+                                       Teuchos::ArrayView<const GO>(colGids.getRawPtr(), nnz),
+                                       Teuchos::ArrayView<const ST>(vals.getRawPtr(), nnz));
       }
     }
   }
