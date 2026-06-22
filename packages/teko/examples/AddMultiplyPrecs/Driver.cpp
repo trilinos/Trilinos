@@ -82,8 +82,6 @@ int main(int argc, char* argv[]) {
   if (myPID == 0) std::cout << "Reading matrix market files" << std::endl;
 
   RCP<crs_t> A = Tpetra::MatrixMarket::Reader<crs_t>::readSparseFile("./modified.mm", comm);
-  TEUCHOS_TEST_FOR_EXCEPTION(A.is_null(), std::runtime_error,
-                             "Failed to read matrix from ./modified.mm");
 
   RCP<const map_t> rangeMap  = A->getRangeMap();
   RCP<const map_t> domainMap = A->getDomainMap();
@@ -93,11 +91,6 @@ int main(int argc, char* argv[]) {
 
   RCP<vec_t> x = Tpetra::MatrixMarket::Reader<crs_t>::readVectorFile("./lhs_test.mm", comm,
                                                                      domainMap, false, false);
-
-  TEUCHOS_TEST_FOR_EXCEPTION(b.is_null(), std::runtime_error,
-                             "Failed to read rhs vector from ./rhs_test.mm");
-  TEUCHOS_TEST_FOR_EXCEPTION(x.is_null(), std::runtime_error,
-                             "Failed to read lhs vector from ./lhs_test.mm");
 
   if (myPID == 0) std::cout << "Building strided operator" << std::endl;
 

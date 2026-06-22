@@ -61,18 +61,12 @@ int main(int argc, char* argv[]) {
   // Read in the matrix
   RCP<crs_t> A = Tpetra::MatrixMarket::Reader<crs_t>::readSparseFile("../data/nsjac.mm", comm);
 
-  TEUCHOS_TEST_FOR_EXCEPTION(A.is_null(), std::runtime_error,
-                             "Failed to read matrix from ../data/nsjac.mm");
-
   // Read in the RHS vector
   RCP<const map_t> rangeMap  = A->getRangeMap();
   RCP<const map_t> domainMap = A->getDomainMap();
 
   RCP<vec_t> b = Tpetra::MatrixMarket::Reader<crs_t>::readVectorFile("../data/nsrhs_test.mm", comm,
                                                                      rangeMap, false, false);
-
-  TEUCHOS_TEST_FOR_EXCEPTION(b.is_null(), std::runtime_error,
-                             "Failed to read RHS vector from ../data/nsrhs_test.mm");
 
   // Allocate solution vector
   RCP<vec_t> x = rcp(new vec_t(domainMap));
