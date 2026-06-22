@@ -70,7 +70,6 @@ int main(int argc, char* argv[]) {
 
   // Allocate solution vector
   RCP<vec_t> x = rcp(new vec_t(domainMap));
-  x->putScalar(0.0);
 
   // Break apart the strided linear system
   /////////////////////////////////////////////////////////

@@ -119,7 +119,6 @@ int main(int argc, char* argv[]) {
   // build the Tpetra vectors
   RCP<vec_t> b = rcp(new vec_t(A->getRangeMap()));
   RCP<vec_t> x = rcp(new vec_t(A->getDomainMap()));
-  x->putScalar(0.0);
 
   // build the RHS vector
   b->replaceGlobalValue(0, 1.0);
