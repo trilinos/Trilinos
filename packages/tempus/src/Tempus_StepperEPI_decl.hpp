@@ -133,6 +133,11 @@ public:
     virtual Scalar getOrder() const override {return order_;}
     virtual Scalar getOrderMin() const override {return 2.0;}
     virtual Scalar getOrderMax() const override {return 3.0;}
+    virtual void setUseFSAL(bool a) override
+    {
+      this->useFSAL_       = a;
+      this->isInitialized_ = false;
+    }
 
     virtual bool isExplicit() const override {return false;}
 
