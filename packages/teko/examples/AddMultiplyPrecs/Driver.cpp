@@ -69,6 +69,9 @@ void run_driver() {
 
   auto comm = Tpetra::getDefaultComm();
 
+  RCP<FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  fos->setOutputToRootOnly(0);
+
   const int numProc = comm->getSize();
   const int myPID   = comm->getRank();
 
@@ -77,7 +80,7 @@ void run_driver() {
 
   RCP<Teuchos::ParameterList> paramList = Teuchos::getParametersFromXmlFile("solverparams.xml");
 
-  if (myPID == 0) std::cout << "Reading matrix market files" << std::endl;
+  *fos << "Reading matrix market files" << std::endl;
 
   RCP<crs_t> A = Tpetra::MatrixMarket::Reader<crs_t>::readSparseFile("./modified.mm", comm);
 
@@ -90,7 +93,7 @@ void run_driver() {
   RCP<vec_t> x = Tpetra::MatrixMarket::Reader<crs_t>::readVectorFile("./lhs_test.mm", comm,
                                                                      domainMap, false, false);
 
-  if (myPID == 0) std::cout << "Building strided operator" << std::endl;
+  *fos << "Building strided operator" << std::endl;
 
   std::vector<int> vars(2);
   vars[0] = 2;
@@ -144,14 +147,14 @@ void run_driver() {
   using solver_t = Belos::BlockGmresSolMgr<ST, mv_t, op_t>;
   solver_t solver(problem, rcpFromRef(belosList));
 
-  if (myPID == 0) std::cout << "Starting Belos solve" << std::endl;
+  *fos << "Starting Belos solve" << std::endl;
 
   Belos::ReturnType result = solver.solve();
 
   TEUCHOS_TEST_FOR_EXCEPTION(result != Belos::Converged, std::runtime_error,
                              "Belos solver failed to converge.");
 
-  if (myPID == 0) std::cout << "Solve converged" << std::endl;
+  *fos << "Solve converged" << std::endl;
 }
 
 int main(int argc, char* argv[]) {
