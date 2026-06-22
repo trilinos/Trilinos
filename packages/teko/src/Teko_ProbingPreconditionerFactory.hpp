@@ -10,23 +10,19 @@
 #ifndef __Teko_ProbingPreconditionerFactory_hpp__
 #define __Teko_ProbingPreconditionerFactory_hpp__
 
-#include "Teko_Config.h"
-
-#ifdef Teko_ENABLE_Isorropia
-
-// Teko includes
 #include "Teko_PreconditionerState.hpp"
 #include "Teko_PreconditionerFactory.hpp"
+#include "Teko_ConfigDefs.hpp"
 
-// Isorropia includes
-#include "Isorropia_EpetraProber.hpp"
+#include "Tpetra_CrsGraph.hpp"
+#include "Tpetra_CrsMatrix.hpp"
 
 namespace Teko {
 
 /** \brief Preconditioner factory that builds a probing approximation to an operator and then
  * "inverts" it as requested.
  *
- * NOTE: You need to set the probing Graph or GraphOperator for probing to know what to do
+ * NOTE: You need to set the probing Graph or GraphOperator for probing to know what to do.
  */
 class ProbingPreconditionerFactory : public virtual Teko::PreconditionerFactory {
  public:
@@ -41,27 +37,26 @@ class ProbingPreconditionerFactory : public virtual Teko::PreconditionerFactory 
 
   /** Create the probed preconditioner operator.
    */
-  LinearOp buildPreconditionerOperator(LinearOp& lo, PreconditionerState& state) const;
+  LinearOp buildPreconditionerOperator(LinearOp& lo, PreconditionerState& state) const override;
 
   //! Initialize from a parameter list
-  virtual void initializeFromParameterList(const Teuchos::ParameterList& pl);
+  void initializeFromParameterList(const Teuchos::ParameterList& pl) override;
 
   void setGraphOperator(const Teko::LinearOp& graphOp);
-  void setGraph(const Teuchos::RCP<const Epetra_CrsGraph>& graph);
-
-  void setProberList(const Teuchos::ParameterList& list);
+  void setGraph(const Teuchos::RCP<const Tpetra::CrsGraph<LO, GO, NT> >& graph);
 
   void setInverseFactory(const Teuchos::RCP<Teko::InverseFactory>& invFactory) {
     invFactory_ = invFactory;
   }
 
  protected:
-  //! some members
-  Teuchos::RCP<Isorropia::Epetra::Prober> prober;
+  Teuchos::RCP<const Tpetra::CrsGraph<LO, GO, NT> > graph_;
   Teuchos::RCP<Teko::InverseFactory> invFactory_;
+
+ private:
+  Teuchos::RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > probe(const LinearOp& lo) const;
 };
 
 }  // end namespace Teko
 
-#endif
 #endif

@@ -15,51 +15,48 @@
 #include <string>
 #include <iostream>
 
-#ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#else
-#include "Epetra_SerialComm.h"
-#endif
-
-#include "Epetra_Map.h"
-#include "Epetra_CrsMatrix.h"
+#include "Tpetra_Core.hpp"
+#include "Tpetra_Map.hpp"
+#include "Tpetra_CrsMatrix.hpp"
 
 // Teko-Package includes
-#include "Teko_Config.h"
 #include "Teko_Utilities.hpp"
+#include "Teko_Config.h"
 #include "Teko_DiagonallyScaledPreconditionerFactory.hpp"
 #include "Teko_PreconditionerInverseFactory.hpp"
 #include "Teko_PreconditionerLinearOp.hpp"
 #include "Teko_ProbingPreconditionerFactory.hpp"
 #include "Teko_InverseLibrary.hpp"
+#include "Teko_ConfigDefs.hpp"
 
-#include "Thyra_EpetraLinearOp.hpp"
+#include "Thyra_TpetraLinearOp.hpp"
 #include "Thyra_LinearOpTester.hpp"
-#include "Thyra_get_Epetra_Operator.hpp"
-
-#ifdef Teko_ENABLE_Isorropia
-
-// Test-rig
 
 using Teuchos::rcp;
 using Teuchos::RCP;
-using Teuchos::rcp_dynamic_cast;
 using Teuchos::rcpFromRef;
-using Thyra::epetraLinearOp;
 
-const RCP<Thyra::LinearOpBase<double> > buildSystem(const Epetra_Comm& comm, int size) {
-  Epetra_Map map(size, 0, comm);
+namespace {
 
-  RCP<Epetra_CrsMatrix> mat = rcp(new Epetra_CrsMatrix(Copy, map, 0));
+using ST = Teko::ST;
+using LO = Teko::LO;
+using GO = Teko::GO;
+using NT = Teko::NT;
 
-  double values[] = {-1.0, 2.0, -1.0};
-  int iTemp[]     = {-1, 0, 1}, indices[3];
-  double* vPtr;
-  int* iPtr;
+const RCP<Thyra::LinearOpBase<double> > buildSystem(const RCP<const Teuchos::Comm<int> >& comm,
+                                                    GO size) {
+  RCP<const Tpetra::Map<LO, GO, NT> > map = rcp(new const Tpetra::Map<LO, GO, NT>(size, 0, comm));
 
-  for (int i = 0; i < map.NumMyElements(); i++) {
+  RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > mat = Tpetra::createCrsMatrix<ST, LO, GO, NT>(map, 3);
+
+  ST values[] = {-1.0, 2.0, -1.0};
+  GO iTemp[]  = {-1, 0, 1}, indices[3];
+  ST* vPtr;
+  GO* iPtr;
+
+  for (size_t i = 0; i < map->getLocalNumElements(); i++) {
     int count = 3;
-    int gid   = map.GID(i);
+    GO gid    = map->getGlobalElement(i);
 
     vPtr = values;
     iPtr = indices;
@@ -72,29 +69,29 @@ const RCP<Thyra::LinearOpBase<double> > buildSystem(const Epetra_Comm& comm, int
       vPtr  = &values[1];
       iPtr  = &indices[1];
       count = 2;
-    } else if (gid == map.MaxAllGID())
+    } else if (gid == map->getMaxAllGlobalIndex())
       count = 2;
 
-    mat->InsertGlobalValues(gid, count, vPtr, iPtr);
+    mat->insertGlobalValues(gid, Teuchos::ArrayView<GO>(iPtr, count),
+                            Teuchos::ArrayView<ST>(vPtr, count));
   }
 
-  mat->FillComplete();
+  mat->fillComplete();
 
-  return Thyra::nonconstEpetraLinearOp(mat);
+  return Thyra::tpetraLinearOp<ST, LO, GO, NT>(
+      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(mat->getDomainMap()),
+      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(mat->getRangeMap()), mat);
 }
 
+}  // namespace
+
 TEUCHOS_UNIT_TEST(tProbingFactory, basic_test) {
-// build global (or serial communicator)
-#ifdef HAVE_MPI
-  Epetra_MpiComm Comm(MPI_COMM_WORLD);
-#else
-  Epetra_SerialComm Comm;
-#endif
+  RCP<const Teuchos::Comm<int> > Comm = Tpetra::getDefaultComm();
 
   Teko::LinearOp lo = buildSystem(Comm, 10);
 
   Teuchos::RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromStratimikos();
-  Teuchos::RCP<Teko::InverseFactory> directSolveFactory = invLib->getInverseFactory("Amesos");
+  Teuchos::RCP<Teko::InverseFactory> directSolveFactory = invLib->getInverseFactory("Ifpack2");
 
   Teuchos::RCP<Teko::ProbingPreconditionerFactory> probeFact =
       rcp(new Teko::ProbingPreconditionerFactory);
@@ -122,21 +119,16 @@ TEUCHOS_UNIT_TEST(tProbingFactory, basic_test) {
 }
 
 TEUCHOS_UNIT_TEST(tProbingFactory, parameterlist_constr) {
-// build global (or serial communicator)
-#ifdef HAVE_MPI
-  Epetra_MpiComm Comm(MPI_COMM_WORLD);
-#else
-  Epetra_SerialComm Comm;
-#endif
+  RCP<const Teuchos::Comm<int> > Comm = Tpetra::getDefaultComm();
 
   Teko::LinearOp lo = buildSystem(Comm, 10);
 
   Teuchos::RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromStratimikos();
-  Teuchos::RCP<Teko::InverseFactory> directSolveFactory = invLib->getInverseFactory("Amesos");
+  Teuchos::RCP<Teko::InverseFactory> directSolveFactory = invLib->getInverseFactory("Ifpack2");
 
   {
     Teuchos::ParameterList pl;
-    pl.set("Inverse Type", "Amesos");
+    pl.set("Inverse Type", "Ifpack2");
     pl.set("Probing Graph Operator", lo);
 
     Teuchos::RCP<Teko::ProbingPreconditionerFactory> probeFact =
@@ -164,11 +156,15 @@ TEUCHOS_UNIT_TEST(tProbingFactory, parameterlist_constr) {
   }
 
   {
-    Teuchos::RCP<const Epetra_CrsGraph> theGraph = rcpFromRef(
-        rcp_dynamic_cast<const Epetra_CrsMatrix>(Thyra::get_Epetra_Operator(*lo))->Graph());
+    RCP<const Thyra::TpetraLinearOp<ST, LO, GO, NT> > tOp =
+        Teuchos::rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST, LO, GO, NT> >(lo, true);
+    RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT> > tMat =
+        Teuchos::rcp_dynamic_cast<const Tpetra::CrsMatrix<ST, LO, GO, NT> >(
+            tOp->getConstTpetraOperator(), true);
+    Teuchos::RCP<const Tpetra::CrsGraph<LO, GO, NT> > theGraph = tMat->getCrsGraph();
 
     Teuchos::ParameterList pl;
-    pl.set("Inverse Type", "Amesos");
+    pl.set("Inverse Type", "Ifpack2");
     pl.set("Probing Graph", theGraph);
 
     Teuchos::RCP<Teko::ProbingPreconditionerFactory> probeFact =
@@ -197,18 +193,13 @@ TEUCHOS_UNIT_TEST(tProbingFactory, parameterlist_constr) {
 }
 
 TEUCHOS_UNIT_TEST(tProbingFactory, invlib_constr) {
-// build global (or serial communicator)
-#ifdef HAVE_MPI
-  Epetra_MpiComm Comm(MPI_COMM_WORLD);
-#else
-  Epetra_SerialComm Comm;
-#endif
+  RCP<const Teuchos::Comm<int> > Comm = Tpetra::getDefaultComm();
 
   Teko::LinearOp lo = buildSystem(Comm, 10);
 
   Teuchos::ParameterList subList;
   subList.set("Type", "Probing Preconditioner");
-  subList.set("Inverse Type", "Amesos");
+  subList.set("Inverse Type", "Ifpack2");
   subList.set("Probing Graph Operator", lo);
 
   Teuchos::ParameterList pl;
@@ -216,7 +207,7 @@ TEUCHOS_UNIT_TEST(tProbingFactory, invlib_constr) {
 
   Teuchos::RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromParameterList(pl);
   Teuchos::RCP<Teko::InverseFactory> proberFactory      = invLib->getInverseFactory("Prober");
-  Teuchos::RCP<Teko::InverseFactory> directSolveFactory = invLib->getInverseFactory("Amesos");
+  Teuchos::RCP<Teko::InverseFactory> directSolveFactory = invLib->getInverseFactory("Ifpack2");
 
   {
     Teko::LinearOp probedInverse = Teko::buildInverse(*proberFactory, lo);
@@ -236,20 +227,3 @@ TEUCHOS_UNIT_TEST(tProbingFactory, invlib_constr) {
     }
   }
 }
-
-TEUCHOS_UNIT_TEST(tProbingFactory, callback_interface) {
-// build global (or serial communicator)
-#ifdef HAVE_MPI
-  Epetra_MpiComm Comm(MPI_COMM_WORLD);
-#else
-  Epetra_SerialComm Comm;
-#endif
-
-  // this should be tested!
-}
-
-#else
-
-TEUCHOS_UNIT_TEST(tProbingFactory, no_isoroppia_available) {}
-
-#endif
