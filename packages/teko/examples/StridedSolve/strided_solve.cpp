@@ -75,8 +75,10 @@ int main(int argc, char* argv[]) {
   std::string solveName = "Amesos2";
   if (argc > 1) solveName = argv[1];
 
-  if (comm->getRank() == 0)
-    std::cout << "Using \"" << solveName << "\" for approximate solve" << std::endl;
+  RCP<FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  fos->setOutputToRootOnly(0);
+
+  *fos << "Using \"" << solveName << "\" for approximate solve" << std::endl;
 
   const int numProc = comm->getSize();
   const int myPID   = comm->getRank();
@@ -88,7 +90,7 @@ int main(int argc, char* argv[]) {
 
   RCP<Teuchos::ParameterList> paramList = Teuchos::getParametersFromXmlFile("solverparams.xml");
 
-  if (myPID == 0) std::cout << "Reading matrix market file" << std::endl;
+  *fos << "Reading matrix market file" << std::endl;
 
   RCP<crs_t> A = Tpetra::MatrixMarket::Reader<crs_t>::readSparseFile("../data/nsjac.mm", comm);
 
@@ -109,7 +111,7 @@ int main(int argc, char* argv[]) {
   TEUCHOS_TEST_FOR_EXCEPTION(x.is_null(), std::runtime_error,
                              "Failed to read lhs vector from ../data/nslhs_test.mm");
 
-  if (myPID == 0) std::cout << "Building strided operator" << std::endl;
+  *fos << "Building strided operator" << std::endl;
 
   std::vector<int> vars(2);
   vars[0] = 2;
@@ -124,12 +126,12 @@ int main(int argc, char* argv[]) {
   RCP<Teko::BlockPreconditionerFactory> precFact =
       rcp(new Teko::NS::SIMPLEPreconditionerFactory(inverse, alpha));
 
-  if (myPID == 0) std::cout << "Preconditioner factory built" << std::endl;
+  *fos << "Preconditioner factory built" << std::endl;
 
   Teko::TpetraHelpers::TpetraBlockPreconditioner prec(precFact);
   prec.buildPreconditioner(sA);
 
-  if (myPID == 0) std::cout << "Preconditioner built" << std::endl;
+  *fos << "Preconditioner built" << std::endl;
 
   RCP<mv_t> X = x;
   RCP<mv_t> B = b;
@@ -144,7 +146,7 @@ int main(int argc, char* argv[]) {
   TEUCHOS_TEST_FOR_EXCEPTION(!set, std::runtime_error,
                              "Belos::LinearProblem::setProblem() failed.");
 
-  if (myPID == 0) std::cout << "Setting solver parameters" << std::endl;
+  *fos << "Setting solver parameters" << std::endl;
 
   Teuchos::ParameterList belosList;
   belosList.set("Maximum Iterations", 1000);
@@ -157,14 +159,14 @@ int main(int argc, char* argv[]) {
   using solver_t = Belos::BlockGmresSolMgr<ST, mv_t, op_t>;
   solver_t solver(problem, rcpFromRef(belosList));
 
-  if (myPID == 0) std::cout << "Solving" << std::endl;
+  *fos << "Solving" << std::endl;
 
   Belos::ReturnType result = solver.solve();
 
   TEUCHOS_TEST_FOR_EXCEPTION(result != Belos::Converged, std::runtime_error,
                              "Belos solver failed to converge.");
 
-  if (myPID == 0) std::cout << "Solve converged" << std::endl;
+  *fos << "Solve converged" << std::endl;
 
   return 0;
 }
