@@ -94,9 +94,6 @@ int main(int argc, char* argv[]) {
 
   RCP<crs_t> A = Tpetra::MatrixMarket::Reader<crs_t>::readSparseFile("../data/nsjac.mm", comm);
 
-  TEUCHOS_TEST_FOR_EXCEPTION(A.is_null(), std::runtime_error,
-                             "Failed to read matrix from ../data/nsjac.mm");
-
   RCP<const map_t> rangeMap  = A->getRangeMap();
   RCP<const map_t> domainMap = A->getDomainMap();
 
@@ -105,11 +102,6 @@ int main(int argc, char* argv[]) {
 
   RCP<vec_t> x = Tpetra::MatrixMarket::Reader<crs_t>::readVectorFile("../data/nslhs_test.mm", comm,
                                                                      domainMap, false, false);
-
-  TEUCHOS_TEST_FOR_EXCEPTION(b.is_null(), std::runtime_error,
-                             "Failed to read rhs vector from ../data/nsrhs_test.mm");
-  TEUCHOS_TEST_FOR_EXCEPTION(x.is_null(), std::runtime_error,
-                             "Failed to read lhs vector from ../data/nslhs_test.mm");
 
   *fos << "Building strided operator" << std::endl;
 
