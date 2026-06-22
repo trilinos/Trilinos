@@ -208,7 +208,7 @@ Teuchos::RCP<Teuchos::ParameterList> Stepper<Scalar>::getValidParametersBasic()
       "It should be noted that when the FSAL priniciple can be used\n"
       "(can set useFSAL=true), setting useFSAL=false will give the\n"
       "same solution but at additional expense.  However, the reverse\n"
-      "is not true.  When the FSAL priniciple can not always be used\n"
+      "is not always true.  When the FSAL priniciple can not be used\n"
       "(need to set useFSAL=false), setting useFSAL=true will produce\n"
       "incorrect solutions.\n"
       "\n"
