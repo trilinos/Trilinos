@@ -7,7 +7,7 @@
 // *****************************************************************************
 // @HEADER
 
-// Teuchos includes
+// Teuchos includes /*@ \label{lnet:being-includes} @*/
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_RCP.hpp"
 
@@ -33,7 +33,7 @@
 #include "ExamplePreconditionerFactory.cpp"
 
 #include <iostream>
-#include <vector>
+#include <vector> /*@ \label{lnet:end-includes} @*/
 
 // for simplicity
 using Teuchos::RCP;

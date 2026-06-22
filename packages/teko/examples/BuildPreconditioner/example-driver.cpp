@@ -8,7 +8,7 @@
 // @HEADER
 
 // Teuchos includes
-#include "Teuchos_ConfigDefs.hpp"
+#include "Teuchos_ConfigDefs.hpp" /*@ \label{lned:being-includes} @*/
 #include "Teuchos_RCP.hpp"
 
 // Tpetra includes
@@ -36,7 +36,7 @@
 #include "BelosTpetraAdapter.hpp"
 
 #include <iostream>
-#include <vector>
+#include <vector> /*@ \label{lned:end-includes} @*/
 
 // for simplicity
 using Teuchos::RCP;
