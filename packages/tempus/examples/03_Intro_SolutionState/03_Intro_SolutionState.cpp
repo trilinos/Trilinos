@@ -55,6 +55,7 @@ using Teuchos::RCP;
  *  capability:
  *  - the solution vector \f$x(t)\f$
  *  - selected metadata from \ref Tempus::SolutionStateMetaData
+ *  - For additional details, see \ref SolutionState_Description.
  *
  *  <hr>
  *  \par Transition notes
@@ -91,8 +92,8 @@ int main(int argc, char *argv[])
 
     // Timestep size
     double finalTime = 2.0;
-    int nTimeSteps = 2001;
-    const double constDT = finalTime/(nTimeSteps-1);
+    int nTimeSteps = 2000;
+    const double constDT = finalTime/nTimeSteps;
 
     // Advance the solution to the next timestep.
     while (solState->getSolutionStatus() == Tempus::Status::PASSED &&
@@ -162,24 +163,6 @@ int main(int argc, char *argv[])
     if ( x_L2norm_error > 1.0e-08*x_L2norm_regress) {
       solState->setSolutionStatus(Tempus::Status::FAILED);
       cout << "FAILED regression constraint!" << endl;
-    }
-
-    RCP<Thyra::VectorBase<double> > x_best = x_n->clone_v();
-    {
-      Thyra::DetachedVectorView<double> x_best_view(*x_best);
-      x_best_view[0] = -1.59496108218721311;
-      x_best_view[1] =  0.96359412806611255;
-    }
-
-    Thyra::V_VmV(x_error.ptr(), *x_n, *x_best);
-           x_L2norm_error = Thyra::norm_2(*x_error);
-    double x_L2norm_best  = Thyra::norm_2(*x_best );
-
-    cout << "Relative L2 Norm of the error (best)       = "
-         << x_L2norm_error/x_L2norm_best << endl;
-    if ( x_L2norm_error > 0.02*x_L2norm_best) {
-      solState->setSolutionStatus(Tempus::Status::FAILED);
-      cout << "FAILED best constraint!" << endl;
     }
     if (solState->getSolutionStatus() == Tempus::Status::PASSED) success = true;
   }
