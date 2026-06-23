@@ -136,9 +136,6 @@ SET(TEST_DRIVER_DATA_FILES
   lsc_Qu_2.mm
   lsc_exact_2.mm
   lsc_rhs.mm
-  tOpMat.mm
-  tOpMp.mm
-  tOpRhs.mm
   szdMat.mm
   szdMp.mm
   szdRHS.mm
