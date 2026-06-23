@@ -56,13 +56,10 @@ using Teuchos::RCP;
  *  - the solution vector \f$x(t)\f$
  *  - selected metadata from \ref Tempus::SolutionStateMetaData
  *
- *  For additional details, see \ref SolutionState_Description.
- *
- *  A more detailed explanation of the changes from \ref example-02 is given in
- *  \ref tempus_tutorial_transition_02_03.
- *
- *  The next example extends this idea by introducing
- *  \ref Tempus::SolutionHistory to manage multiple solution states.
+ *  <hr>
+ *  \par Transition notes
+ *  See \ref tempus_tutorial_transition_02_03 for a detailed explanation
+ *  of what changed from \ref example-02.
  *
  *  \htmlonly
  *  <div style="text-align:center;">
