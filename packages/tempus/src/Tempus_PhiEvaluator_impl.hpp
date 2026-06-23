@@ -305,7 +305,7 @@ PhiEvaluator<Scalar>::computePhis(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> 
                                   const Scalar cdt,
                                   const Teuchos::ArrayView<const Teuchos::RCP<const Thyra::VectorBase<Scalar>>> &Mrhs_B)
 {
-  const int max_phi_order = Mrhs_B.size() - 1;
+  const Thyra::Ordinal max_phi_order = Mrhs_B.size() - 1;
 
   TEUCHOS_TEST_FOR_EXCEPTION(
       max_phi_order < 0,
@@ -326,7 +326,7 @@ PhiEvaluator<Scalar>::computePhis(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> 
   // Invert the mass matrix out of the right hand sides
   // TODO: This might be more efficient to do on the combined MultiVector that will be assembled in buildb
   //       However, if Mrhs_B is sparse, it may not.
-  for (int ii = 0; ii < max_phi_order+1; ii++)
+  for (Thyra::Ordinal ii = 0; ii < max_phi_order+1; ii++)
   {
     if (Mrhs_B[ii] != Teuchos::null)
     {
@@ -338,20 +338,6 @@ PhiEvaluator<Scalar>::computePhis(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> 
     }
   }
 
-  // Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-  // rhs_b->describe(*out, Teuchos::VERB_EXTREME);
-  // Mrhs_b->describe(*out, Teuchos::VERB_EXTREME);
-  //   auto vec = rhs_b;
-  // auto space = vec->space();
-  // int n = space->dim();
-
-  // for (int i = 0; i < n; ++i) {
-  //    std::cout << "rhs[" << i << "] = "
-  //              << Thyra::get_ele(*rhs_b, i) << std::endl;
-  //              std::cout << "Mrhs[" << i << "] = "
-  //              << Thyra::get_ele(*Mrhs_b, i) << std::endl;
-  // }
-
   // Build extended matrix
   this->phiLinSolv_->buildK(max_phi_order);
   this->phiLinSolv_->buildb(rhs_B());
@@ -359,11 +345,13 @@ PhiEvaluator<Scalar>::computePhis(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> 
 
   // Build initial vector and compute matrix exponential in place
   auto v = this->phiLinSolv_->buildv(Atilde->domain(), rhs_B[0]);
-  Thyra::SolveStatus<Scalar> sStatus = this->computeLinOpPhi(0, Atilde, v.ptr(), cdt);
 
   //Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   //Atilde->describe(*out, Teuchos::VERB_EXTREME);
   //Atilde->domain()->describe(*out, Teuchos::VERB_EXTREME);
+  //v->describe(*out, Teuchos::VERB_EXTREME);
+
+  Thyra::SolveStatus<Scalar> sStatus = this->computeLinOpPhi(0, Atilde, v.ptr(), cdt);
 
   // Get the first block of the multi-vector calculated from 2x2 multi-matrix
   auto v0 = v->getVectorBlock(0);  // V block
@@ -649,8 +637,8 @@ Teuchos::RCP<Thyra::ProductVectorBase<Scalar>> PhiLinearSolver<Scalar>::buildv(
   Thyra::assign(v1.ptr(), Scalar(0.));
 
   // Get the last index
-  const Thyra::Ordinal p = v1->space()->dim();
-  const Thyra::Ordinal g_last = p - 1;
+  const Thyra::Ordinal max_phi_order = v1->space()->dim();
+  const Thyra::Ordinal g_last = max_phi_order - 1;
 
   // TODO: can this small dim x dim vector be distributed? It should live on every rank.
   // If this is a distributed space, set only on the owning rank
