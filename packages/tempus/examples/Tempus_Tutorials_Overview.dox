@@ -48,7 +48,8 @@
  *
  *  <div style="margin:0.5em 0; padding:0.6em 0.8em; border:1px solid #ddd; border-radius:6px;">
  *    <b>Example 5: Time stepping algorithms</b><br>
- *    Introduce Stepper - introduce \ref Tempus::Stepper to perform
+ *    \ref example-05 "Introduce Stepper" - introduce
+ *    \ref Tempus::Stepper through \ref Tempus::StepperForwardEuler to perform
  *    Forward Euler timesteps.
  *  </div>
  *

@@ -59,8 +59,8 @@ using Teuchos::RCP;
  *
  *  <hr>
  *  \par Transition notes
- *  See \ref tempus_tutorial_transition_01_02 for a detailed explanation
- *  of what changed from \ref example-01.
+ *  See \ref tempus_tutorial_transition_02_03 for a detailed explanation
+ *  of what changed from \ref example-02.
  *
  *  \htmlonly
  *  <div style="text-align:center;">
