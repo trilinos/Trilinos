@@ -47,6 +47,7 @@ class PhiLinearSolver {
   ~PhiLinearSolver() {}
 
   void setLumpMassMatrix(const bool lump);
+  bool massInitialized() const;
   void clearMemory();
 
   /** \brief Set the eigensolver parameter list used by computeJacobianSpectrumBounds.
@@ -83,7 +84,7 @@ class PhiLinearSolver {
   // build and return extended LinOp
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> buildATilde(
       const Scalar dt,
-      const Teuchos::ArrayView<const Teuchos::RCP<const Thyra::VectorBase<Scalar>>> &rhs_B);
+      const Teuchos::ArrayView<const Teuchos::RCP<const Thyra::VectorBase<Scalar>>> &rhs_B) const;
 
   // build and return the right hand side for the extended LinOp
   Teuchos::RCP<Thyra::ProductVectorBase<Scalar>> buildv(
@@ -135,9 +136,9 @@ class PhiLinearSolver {
   // eigensolver parameters forwarded from the owning PhiEvaluator
   Teuchos::RCP<Teuchos::ParameterList> eigensolverPL_;
   // internal methods for the ATilde LinOp
-  Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> buildK(const Thyra::Ordinal max_phi_order);
+  Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> buildK(const Thyra::Ordinal max_phi_order) const;
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> buildB(
-      const Teuchos::ArrayView<const Teuchos::RCP<const Thyra::VectorBase<Scalar>>> &rhs_B);
+      const Teuchos::ArrayView<const Teuchos::RCP<const Thyra::VectorBase<Scalar>>> &rhs_B) const;
 };
 
 
@@ -280,7 +281,7 @@ class PhiEvaluator
   Teuchos::RCP<Teuchos::ParameterList> eigensolverPL_;
 
   //mutable
-  Teuchos::RCP<const Thyra::ModelEvaluatorBase::InArgs<Scalar>> inArgs_lin_;
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs_lin_;
 
   /** \brief  Internal method for a LinOp, used for default impl. of computePhi/computePhis
    *
