@@ -85,12 +85,12 @@ int main(int argc, char *argv[])
     Teuchos::RCP<const Thyra::ModelEvaluator<double> >
       model = Teuchos::rcp(new VanDerPol_ModelEvaluator_02<double>());
 
-    // Setup initial condition SolutionState --------------------
+    // Setup initial condition SolutionState
     auto solState = Tempus::createSolutionStateX(
                       model->getNominalValues().get_x()->clone_v());
     solState->setIndex   (0);
     solState->setTime    (0.0);
-    solState->setTimeStep(0.0);  // By convention, the IC has dt=0.
+    solState->setTimeStep(0.0);  // By convention, the IC has dt = 0.
     solState->setSolutionStatus(Tempus::Status::PASSED);  // ICs are considered passed.
     RCP<Thyra::VectorBase<double> > xDot_n =
       model->getNominalValues().get_x_dot()->clone_v();
@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
       RCP<Thyra::VectorBase<double> > x_n    = currentState->getX();
       RCP<Thyra::VectorBase<double> > x_np1  = workingState->getX();
 
-      // Set the timestep and time for the working solution i.e., n+1.
+      // Set the timestep and time for the working solution, i.e., n+1.
       int index = workingState->getIndex();  // Already incremented by initWorkingState()
       double dt = constDT;
       double time = index*dt;
@@ -156,8 +156,8 @@ int main(int argc, char *argv[])
     }
 
     // Test for regression.
-    auto finalState  = solHistory->getCurrentState();
-    RCP<Thyra::VectorBase<double> > x_n    = finalState->getX();
+    auto finalState = solHistory->getCurrentState();
+    RCP<Thyra::VectorBase<double> > x_n = finalState->getX();
     RCP<Thyra::VectorBase<double> > x_regress = x_n->clone_v();
     {
       Thyra::DetachedVectorView<double> x_regress_view(*x_regress);
