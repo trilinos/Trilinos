@@ -708,6 +708,9 @@ void StepperEPI<Scalar>::describe(
   out << "  stepperEPIAppAction_                = "
       << stepperEPIAppAction_ << std::endl;
   out << "----------------------------" << std::endl;
+
+  if (phiEvaluator_ != Teuchos::null)
+    phiEvaluator_->describe(out, verbLevel);
 }
 
 

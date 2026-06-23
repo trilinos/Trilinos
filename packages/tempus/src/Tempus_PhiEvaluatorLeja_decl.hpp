@@ -94,6 +94,9 @@ class PhiEvaluatorLeja
   /// \name Basic PhiEvaluatorLeja Methods
   //@{
 
+  std::string description() const;
+  void describe(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel) const;
+
   /// Set the linearization point for the Jacobian calculation
   // TODO: overwrite this, and compute optimal ellipse size in the future
   //void setLinearizationPoint(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs) overwrite;
@@ -124,7 +127,7 @@ class PhiEvaluatorLeja
   void adaptEvaluator() override;
 
   /// Set the divided difference method
-  void setDivideDifferenceMethod(const int ddMethod);
+  void setDividedDifferenceMethod(const int ddMethod);
 
   /// Get shifted and scaled leja point (z_i)
   LejaPoint getLpSc(const int lp_idx);
