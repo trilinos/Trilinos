@@ -80,11 +80,15 @@ class PhiLinearSolver {
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> buildL(const Scalar dt) const;
 
   // TODO: make that one public function
-  Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> buildATilde(const Scalar dt);
-  void buildK(const Thyra::Ordinal n);
-  void buildb(const Teuchos::ArrayView<const Teuchos::RCP<const Thyra::VectorBase<Scalar>>> &rhs_B);
-  Teuchos::RCP<Thyra::ProductVectorBase<Scalar>> buildv(const Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar>> space,
-              const Teuchos::RCP<const Thyra::VectorBase<Scalar>> x0) const;
+  // build and return extended LinOp
+  Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> buildATilde(
+      const Scalar dt,
+      const Teuchos::ArrayView<const Teuchos::RCP<const Thyra::VectorBase<Scalar>>> &rhs_B);
+
+  // build and return the right hand side for the extended LinOp
+  Teuchos::RCP<Thyra::ProductVectorBase<Scalar>> buildv(
+      const Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar>> space,
+      const Teuchos::RCP<const Thyra::VectorBase<Scalar>> x0) const;
 
   /** \brief Compute the extrema of the the scaled system Jacobian.
   *
@@ -130,6 +134,10 @@ class PhiLinearSolver {
 
   // eigensolver parameters forwarded from the owning PhiEvaluator
   Teuchos::RCP<Teuchos::ParameterList> eigensolverPL_;
+  // internal methods for the ATilde LinOp
+  Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> buildK(const Thyra::Ordinal max_phi_order);
+  Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> buildB(
+      const Teuchos::ArrayView<const Teuchos::RCP<const Thyra::VectorBase<Scalar>>> &rhs_B);
 };
 
 

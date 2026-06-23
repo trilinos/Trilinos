@@ -339,19 +339,17 @@ PhiEvaluator<Scalar>::computePhis(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> 
   }
 
   // Build extended matrix
-  this->phiLinSolv_->buildK(max_phi_order);
-  this->phiLinSolv_->buildb(rhs_B());
-  const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> Atilde = this->phiLinSolv_->buildATilde(cdt);
+  const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> ATilde
+    = this->phiLinSolv_->buildATilde(cdt, rhs_B());
 
   // Build initial vector and compute matrix exponential in place
-  auto v = this->phiLinSolv_->buildv(Atilde->domain(), rhs_B[0]);
+  auto v = this->phiLinSolv_->buildv(ATilde->domain(), rhs_B[0]);
 
   //Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   //Atilde->describe(*out, Teuchos::VERB_EXTREME);
-  //Atilde->domain()->describe(*out, Teuchos::VERB_EXTREME);
   //v->describe(*out, Teuchos::VERB_EXTREME);
 
-  Thyra::SolveStatus<Scalar> sStatus = this->computeLinOpPhi(0, Atilde, v.ptr(), cdt);
+  Thyra::SolveStatus<Scalar> sStatus = this->computeLinOpPhi(0, ATilde, v.ptr(), cdt);
 
   // Get the first block of the multi-vector calculated from 2x2 multi-matrix
   auto v0 = v->getVectorBlock(0);  // V block
@@ -469,7 +467,6 @@ void PhiLinearSolver<Scalar>::computeMassMatrix(const Thyra::ModelEvaluatorBase:
   if(!lumpMass_) {
     massMatrix_ = fullMassMatrix;
     inverseMassMatrix_ = Thyra::inverse<Scalar>(*appModel_->get_W_factory(), fullMassMatrix);
-    // std::cout << "Using full mass matrix for Phi evaluation." << std::endl;
   }
   else {
     // build lumped mass matrix (assumes all positive mass entries, does a simple sum)
@@ -486,10 +483,8 @@ void PhiLinearSolver<Scalar>::computeMassMatrix(const Thyra::ModelEvaluatorBase:
     massMatrix_ = Thyra::diagonal(lumpedMassDiagonal);
     inverseMassMatrix_ = Thyra::diagonal(invLumpedMassDiagonal);
 
-    // std::cout << "Using lumped mass matrix for Phi evaluation." << std::endl;
-
     // if the mass matrix is lumped, keep the memory allocated for fullMassMatrix around for the Jacobian
-    //jacobianMatrix_ = fullMassMatrix;
+    jacobianMatrix_ = fullMassMatrix;
 
     //Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
     //lumpedMassDiagonal->describe(*out, Teuchos::VERB_EXTREME);
@@ -513,103 +508,109 @@ Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> PhiLinearSolver<Scalar>::buildL(
 }
 
 template <class Scalar>
-Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> PhiLinearSolver<Scalar>::buildATilde(const Scalar dt)
+Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> PhiLinearSolver<Scalar>::buildATilde(
+    const Scalar dt,
+    const Teuchos::ArrayView<const Teuchos::RCP<const Thyra::VectorBase<Scalar>>> &rhs_B)
 {
   this->checkInitialized(PhiInitialization::JACOBIAN_AND_MASS);
 
-  // Combine linear operators M_inv and J and multiply by -dt (minus is for implicit to explicit conversion)
-  // Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  const Thyra::Ordinal max_phi_order = rhs_B.size() - 1;
+  auto KMatrix = this->buildK(max_phi_order);
+  auto BMatrix = this->buildB(rhs_B);
 
+  // Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   // invMassMatrix_->describe(*out, Teuchos::VERB_EXTREME);
   // jacobianMatrix_->describe(*out, Teuchos::VERB_EXTREME);
+
+  // Combine linear operators M_inv and J and multiply by -dt (minus is for implicit to explicit conversion)
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> A
     = Thyra::scale(-dt, Thyra::multiply<Scalar>(inverseMassMatrix_, jacobianMatrix_));
 
   // Spaces
-  auto V = A->domain();   // dim N, and also A->range()
-  auto W = KMatrix_->domain();   // dim p, and also K->range()
+  auto V = A->domain();         // dim N, and also A->range()
+  auto W = KMatrix->domain();   // dim max_phi_order, and also K->range()
 
   // Zero operator: V -> W  (for the (2,1) block)
   auto Z_VW = Thyra::zero<Scalar>(W, V);
 
   // Build block operator:
-  // [ A  b ]
+  // [ A  B ]
   // [ 0  K ]
-  Atilde_ = Thyra::block2x2<Scalar>(
+  Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> Atilde = Thyra::block2x2<Scalar>(
       A,            // (1,1): V->V
-      bMatrix_,     // (1,2): W->V
+      BMatrix,      // (1,2): W->V
       Z_VW,         // (2,1): V->W
-      KMatrix_      // (2,2): W->W
+      KMatrix       // (2,2): W->W
   );
 
-  return Atilde_;
+  return Atilde;
 }
 
 template <class Scalar>
-void PhiLinearSolver<Scalar>::buildK(const Thyra::Ordinal p)
+Teuchos::RCP<const Thyra::LinearOpBase<Scalar>>
+PhiLinearSolver<Scalar>::buildK(const Thyra::Ordinal max_phi_order)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
-      p < 1,
+      max_phi_order < 1,
       std::invalid_argument,
-      "buildK: p must be positive.");
+      "buildK: max_phi_order must be positive.");
 
-  // Space of dimension p
+  // Space of dimension max_phi_order
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar>> V =
-      Thyra::defaultSpmdVectorSpace<Scalar>(p);
+      Thyra::defaultSpmdVectorSpace<Scalar>(max_phi_order);
 
-  // Create a p-column multivector: rows = p, cols = p
-  Teuchos::RCP<Thyra::MultiVectorBase<Scalar>> K_mv = Thyra::createMembers(V, p);
+  // Create a column multivector: rows = cols = max_phi_order
+  Teuchos::RCP<Thyra::MultiVectorBase<Scalar>> K_mv = Thyra::createMembers(V, max_phi_order);
 
   // Initialize to zero
-  Thyra::assign(K_mv.ptr(), Scalar(0));
+  Thyra::assign(K_mv.ptr(), Scalar(0.0));
 
   // Fill superdiagonal: K(i, i+1) = 1
-  for (Thyra::Ordinal j = 1; j < p; ++j)
+  for (Thyra::Ordinal j = 1; j < max_phi_order; ++j)
   {
       // Column j, row j-1
       auto col_j = K_mv->col(j);
-      Thyra::set_ele(j - 1, Scalar(1), col_j.ptr());
+      Thyra::set_ele(j - 1, Scalar(1.0), col_j.ptr());
   }
 
-  // Wrap as LinearOp
-  KMatrix_ = K_mv;
+  // Wrap as LinearOp and return
+  return K_mv;
 }
 
 template <class Scalar>
-void PhiLinearSolver<Scalar>::buildb(const Teuchos::ArrayView<const Teuchos::RCP<const Thyra::VectorBase<Scalar>>> &rhs_B)
+Teuchos::RCP<const Thyra::LinearOpBase<Scalar>>
+PhiLinearSolver<Scalar>::buildB(
+  const Teuchos::ArrayView<const Teuchos::RCP<const Thyra::VectorBase<Scalar>>> &rhs_B)
 {
   this->checkInitialized(PhiInitialization::ONLY_MASS);
 
-  int p = rhs_B.size() - 1;
+  const Thyra::Ordinal max_phi_order = rhs_B.size() - 1;
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-      p < 1,
+      rhs_B.size() < 2,
       std::invalid_argument,
       "buildb: list of rhs must have at least two entries.");
 
   // N-dimensional space: use A's range (rows of an NxN operator)
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar>> V_N = inverseMassMatrix_->range();
 
-  const Thyra::Ordinal N = V_N->dim();
-
-  // Create an N x p multivector (N rows, p columns)
-  Teuchos::RCP<Thyra::MultiVectorBase<Scalar>> b_Np = Thyra::createMembers(V_N, p);
+  // Create an N x max_phi_order multivector (N rows, max_phi_order columns)
+  Teuchos::RCP<Thyra::MultiVectorBase<Scalar>> B_mv = Thyra::createMembers(V_N, max_phi_order);
 
   // Initialize to zero
-  Thyra::assign(b_Np.ptr(), Scalar(0));
+  Thyra::assign(B_mv.ptr(), Scalar(0.0));
 
   // Fill the columns with rhs_B vectors in reverse order, excluding the first entry
-  // TODO: This needs to be updated for higher order support
-  for (int k = 0; k < p; k++)
+  for (Thyra::Ordinal k = 0; k < max_phi_order; k++)
   {
-    if (rhs_B[p-k] != Teuchos::null)
+    if (rhs_B[max_phi_order - k] != Teuchos::null)
     {
-      auto col = b_Np->col(k);
-      Thyra::assign(col.ptr(), *rhs_B[p-k]);
+      auto col = B_mv->col(k);
+      Thyra::assign(col.ptr(), *rhs_B[max_phi_order - k]);
     }
   }
-  // Store b
-  bMatrix_ = b_Np;
+  // wrap B_mv as LinOp and return
+  return B_mv;
 }
 
 template <class Scalar>
