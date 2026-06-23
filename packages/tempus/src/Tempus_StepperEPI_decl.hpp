@@ -118,8 +118,16 @@ public:
     virtual void setInitialConditions(
         const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) override;
 
-    /// Set the initial conditions and make them consistent.
-    virtual void evaluateExponentialODE(Teuchos::RCP<Thyra::VectorBase<Scalar> >& f,
+    /// create InArgs from state and parameters
+    Thyra::ModelEvaluatorBase::InArgs<Scalar>
+    virtual createInArgsExponentialODE(
+        const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x,
+        const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xDot, const Scalar time,
+        const Teuchos::RCP<ExponentialODEParameters<Scalar> >& p);
+
+    /// evaluate an ODE residual for an exponential integrator
+    virtual void evaluateExponentialODE(
+        Teuchos::RCP<Thyra::VectorBase<Scalar> >& f,
         const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x,
         const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xDot, const Scalar time,
         const Teuchos::RCP<ExponentialODEParameters<Scalar> >& p);
