@@ -121,8 +121,8 @@ void StepperEPI<Scalar>::setInitialConditions(
 
   RCP<SolutionState<Scalar> > initialState = solutionHistory->getCurrentState();
 
-  RCP<Thyra::VectorBase<Scalar> > x        = initialState->getX();
-  RCP<Thyra::VectorBase<Scalar> > xDot     = initialState->getXDot();
+  RCP<Thyra::VectorBase<Scalar> > x = initialState->getX();
+  RCP<Thyra::VectorBase<Scalar> > xDot = initialState->getXDot();
 
   auto inArgs = this->getModel()->getNominalValues();
   // Use x from inArgs as ICs if null.
@@ -197,9 +197,8 @@ void StepperEPI<Scalar>::setInitialConditions(
     RCP<Thyra::VectorBase<Scalar>> Mf = Thyra::createMember(x->space());
     this->evaluateExponentialODE(Mf, x, xDot, t0, p);
 
-    // setup system Jacobian computation
-    // TODO: only using the mass matrix here, fix this.
-    phiEvaluator_->setLinearizationPoint(inArgs);
+    // setup system mass matrix
+    phiEvaluator_->setLinearizationPoint(inArgs, PhiInitialization::ONLY_MASS);
 
     // overwrite xDot with f = (-M) \ Mf
     Thyra::scale(Scalar(-1.0), Mf.ptr());
@@ -243,8 +242,9 @@ void StepperEPI<Scalar>::setInitialConditions(
     RCP<Thyra::VectorBase<Scalar>> Mf = Thyra::createMember(x->space());
     this->evaluateExponentialODE(Mf, x, xDot_temp, t0, p);
 
-    // setup system Jacobian computation
-    phiEvaluator_->setLinearizationPoint(inArgs);
+    if (icConsistency != "Consistent")
+      // setup system mass matrix
+      phiEvaluator_->setLinearizationPoint(inArgs, PhiInitialization::ONLY_MASS);
 
     // overwrite xDot_temp with Mf - (-M) * xDot
     phiEvaluator_->applyMass(xDot_temp.ptr(), xDot);
@@ -284,8 +284,8 @@ void StepperEPI<Scalar>::setInitialConditions(
 
 
 template <class Scalar>
-void StepperEPI<Scalar>::evaluateExponentialODE(
-    Teuchos::RCP<Thyra::VectorBase<Scalar> >& f,
+Thyra::ModelEvaluatorBase::InArgs<Scalar>
+StepperEPI<Scalar>::createInArgsExponentialODE(
     const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x,
     const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xDot, const Scalar time,
     const Teuchos::RCP<ExponentialODEParameters<Scalar> >& p)
@@ -299,20 +299,39 @@ void StepperEPI<Scalar>::evaluateExponentialODE(
   TEUCHOS_ASSERT(inArgs.supports(MEB::IN_ARG_x_dot))
   inArgs.set_x_dot(xDot);
 
-  // TODO: we could also rely on the user (takeStep) to set this, but double setting may be more robust
-  Thyra::assign(xDot.ptr(), ST::zero());
-
-  if (inArgs.supports(MEB::IN_ARG_t)) inArgs.set_t(time);
+  if (inArgs.supports(MEB::IN_ARG_t))
+    inArgs.set_t(time);
   if (inArgs.supports(MEB::IN_ARG_step_size))
     inArgs.set_step_size(p->timeStepSize_);
-  if (inArgs.supports(MEB::IN_ARG_alpha)) inArgs.set_alpha(Scalar(0.0));
-  if (inArgs.supports(MEB::IN_ARG_beta)) inArgs.set_beta(Scalar(1.0));
+  if (inArgs.supports(MEB::IN_ARG_alpha))
+    inArgs.set_alpha(Scalar(0.0));
+  if (inArgs.supports(MEB::IN_ARG_beta))
+    inArgs.set_beta(Scalar(1.0));
   if (inArgs.supports(MEB::IN_ARG_stage_number))
     inArgs.set_stage_number(p->stageNumber_);
 
+  return inArgs;
+}
+
+
+template <class Scalar>
+void StepperEPI<Scalar>::evaluateExponentialODE(
+    Teuchos::RCP<Thyra::VectorBase<Scalar> >& f,
+    const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x,
+    const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xDot, const Scalar time,
+    const Teuchos::RCP<ExponentialODEParameters<Scalar> >& p)
+{
+  typedef Thyra::ModelEvaluatorBase MEB;
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+
+  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>> appModel = this->getModel();
+
+  // TODO: we could also rely on the user (takeStep) to set this, but double setting may be more robust
+  Thyra::assign(xDot.ptr(), ST::zero());
+
+  MEB::InArgs<Scalar> inArgs = createInArgsExponentialODE(x, xDot, time, p);
   MEB::OutArgs<Scalar> outArgs = appModel->createOutArgs();
   outArgs.set_f(f);
-
   appModel->evalModel(inArgs, outArgs);
 }
 
@@ -402,21 +421,14 @@ void StepperEPI<Scalar>::takeStep(
     const Scalar time = workingState->getTime();
     const Scalar t0   = currentState->getTime();
     const Scalar dt = workingState->getTimeStep();
+    auto p = Teuchos::rcp(new ExponentialODEParameters<Scalar>(dt));
 
     stepperEPIAppAction_->execute(solutionHistory, thisStepper,
                                   StepperEPIAppAction<Scalar>::ACTION_LOCATION::BEFORE_EXP);
 
-    // Use the appModel to configure Jacobian and Mass
-    RCP<const Thyra::ModelEvaluator<Scalar>> appModel = this->getModel();
-    Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs = appModel->createInArgs();
-    // Model evaluator builds: alpha*u_dot + beta*F(u) = 0
-    inArgs.set_x(x);  // we need to set x here, sice this vector may get boundary conditions set
-    inArgs.set_t(t0);
-    // set x_dot == 0 to signal to some model evaluators that we want the implicit version
-    inArgs.set_x_dot(xDot);  // we need to make sure that this vector is equal to all zeros, ensured by evaluateImplicitODE
-
-    // setup system Jacobian computation at the current time
-    phiEvaluator_->setLinearizationPoint(inArgs);
+    // setup system Jacobian (and mass) at the current time
+    Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs = createInArgsExponentialODE(x, xDot, time, p);
+    phiEvaluator_->setLinearizationPoint(inArgs, PhiInitialization::JACOBIAN_AND_MASS);
 
     // if requested, update any hyperpameters of the phiEvaluator
     if ( (workingState->getIndex() < 2 || workingState->getIndex() % adapt_phi_evaluator_interval_ == 0)
@@ -425,9 +437,10 @@ void StepperEPI<Scalar>::takeStep(
       phiEvaluator_->adaptEvaluator();
     }
 
-    // compute the first RHS evaluation
-    auto p = Teuchos::rcp(new ExponentialODEParameters<Scalar>(dt));
     // compute the right hand side for at x (which is still equal to xOld)
+    // first RHS evaluation
+    // 
+    // compute the right hand side Mf at x (which is still equal to xOld)
     // and potentially set the correct Dirichlet BC to x
     RCP<Thyra::VectorBase<Scalar>> Mf = Thyra::createMember(x->space());
 

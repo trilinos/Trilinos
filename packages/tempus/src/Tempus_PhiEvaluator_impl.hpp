@@ -206,12 +206,15 @@ template <class Scalar>
 void PhiEvaluator<Scalar>::setModel(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>> appModel)
 {
   appModel_ = appModel;
-
+  // create a new phiLinSolv_
   phiLinSolv_ = Teuchos::rcp(new PhiLinearSolver<Scalar>(appModel_, lumpMassMatrix_));
 
   // Forward eigensolver parameters if they were set before setModel was called
   if (eigensolverPL_ != Teuchos::null)
     phiLinSolv_->setEigensolverParams(eigensolverPL_);
+  
+  // create InArgs
+  inArgs_lin_ = appModel_->createInArgs();
 }
 
 template<class Scalar>
@@ -226,7 +229,7 @@ void PhiEvaluator<Scalar>::setLumpMassMatrix(bool lumpMassMatrix)
 template<class Scalar>
 void PhiEvaluator<Scalar>::setConstantMassMatrix(bool constantMassMatrix)
 {
-  if (!constantMassMatrix && constantMassMatrix && this->phiLinSolv_ != Teuchos::null) {
+  if (!constantMassMatrix && constantMassMatrix_ && this->phiLinSolv_ != Teuchos::null) {
     this->phiLinSolv_->clearMemory();
   }
   constantMassMatrix_ = constantMassMatrix;
@@ -236,30 +239,26 @@ template <class Scalar>
 void PhiEvaluator<Scalar>::setLinearizationPoint(const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs,
                                                  const PhiInitialization& mode)
 {
-  // TODO: remove this copy, when the TakeStep goes out of scope, this pointer becomes invalid
-  //       it is only used if we need inArgs after this method finished, i.e., need to assemble more matrices later.
-  inArgs_lin_ = Teuchos::rcpFromRef(inArgs);
-
   // ensure that model and phiLinSolv are available
   checkInitialized();
 
-  //if (mode == PhiInitialization::JACOBIAN_AND_MASS) {
-    TEMPUS_FUNC_TIME_MONITOR("Tempus::PhiEvaluator::setLinearizationPoint (Mass and Jac assembly)");
+  // use owned inArgs and copy values
+  inArgs_lin_.setArgs(inArgs);
+
+  // compute all required matrices at current linearization point
+  if (!constantMassMatrix_ || !this->phiLinSolv_->massInitialized()) {
+    TEMPUS_FUNC_TIME_MONITOR("Tempus::PhiEvaluator::setLinearizationPoint (Mass assembly)");
     {
-      // compute all required matrices at current linearization point
       this->phiLinSolv_->setLumpMassMatrix(this->lumpMassMatrix_);
-      this->phiLinSolv_->computeMassMatrix(*inArgs_lin_);
-      this->phiLinSolv_->computeJacobian(*inArgs_lin_);
+      this->phiLinSolv_->computeMassMatrix(inArgs_lin_);
     }
-  //}
-  //else {
-  //  TEMPUS_FUNC_TIME_MONITOR("Tempus::PhiEvaluator::setLinearizationPoint (Mass assembly)");
-  //  {
-  //    // compute all required matrices at current linearization point
-  //    this->phiLinSolv_->setLumpMassMatrix(this->lumpMassMatrix_);
-  //    this->phiLinSolv_->computeMassMatrix(*inArgs_lin_);
-  //  }
-  //}
+  }
+  if (mode == PhiInitialization::JACOBIAN_AND_MASS) {
+    TEMPUS_FUNC_TIME_MONITOR("Tempus::PhiEvaluator::setLinearizationPoint (Jacobian assembly)");
+    {
+      this->phiLinSolv_->computeJacobian(inArgs_lin_);
+    }
+  }
 }
 
 template<class Scalar>
@@ -390,10 +389,10 @@ template <class Scalar>
 void PhiLinearSolver<Scalar>::setLumpMassMatrix(bool lump)
 {
   if (lumpMass_ != lump) {
+    // if lumping status has changed, clear the matrix, so that it will be rebuilt
     massMatrix_ == Teuchos::null;
     inverseMassMatrix_ == Teuchos::null;
   }
-
   lumpMass_ = lump;
 }
 
@@ -405,9 +404,16 @@ void PhiLinearSolver<Scalar>::setEigensolverParams(
 }
 
 template <class Scalar>
-void PhiLinearSolver<Scalar>::initialize()
+bool PhiLinearSolver<Scalar>::massInitialized() const
+{
+  // check if the mass matrix and inverse are initialized
+  return !(massMatrix_ == Teuchos::null || inverseMassMatrix_ == Teuchos::null);
+}
+
+template <class Scalar>
 void PhiLinearSolver<Scalar>::clearMemory()
 {
+  // this method can be used to clear all RCPs associated to big matrix allocations
   massMatrix_ = Teuchos::null;
   inverseMassMatrix_ = Teuchos::null;
   jacobianMatrix_ = Teuchos::null;
@@ -420,7 +426,7 @@ void PhiLinearSolver<Scalar>::checkInitialized(const PhiInitialization& mode) co
       appModel_ == Teuchos::null, std::logic_error,
       "Error - PhiLinearSolver::initialize() Model not set!\n");
   TEUCHOS_TEST_FOR_EXCEPTION(
-      massMatrix_ == Teuchos::null || inverseMassMatrix_ == Teuchos::null, std::logic_error,
+      !massInitialized(), std::logic_error,
       "Error - PhiLinearSolver::initialize() Mass matrix not computed!\n");
 
   if (mode == PhiInitialization::JACOBIAN_AND_MASS) {
@@ -444,18 +450,8 @@ void PhiLinearSolver<Scalar>::computeMassMatrix(const Thyra::ModelEvaluatorBase:
   // where F(u) is the explicit tendency
   MEB::InArgs<Scalar> inArgs_new  = appModel_->createInArgs();
   inArgs_new.setArgs(inArgs);
-  inArgs_new.set_x_dot(inArgs.get_x_dot());
-  // Set x_dot to ensure we call the implicit model evaluator
-  // for models that make a distiction based on x_dot==null
-  // TODO: check this
   inArgs_new.set_alpha(1.0);
   inArgs_new.set_beta(0.0);
-
-  //   TEUCHOS_TEST_FOR_EXCEPTION(inArgs_new.get_x().is_null(), std::runtime_error,
-  //   "computeMassMatrix: x is null");
-
-  // TEUCHOS_TEST_FOR_EXCEPTION(inArgs_new.get_x_dot().is_null(), std::runtime_error,
-  //   "computeMassMatrix: x_dot is null");
 
   // set only the mass matrix
   MEB::OutArgs<Scalar> outArgs = appModel_->createOutArgs();
@@ -485,10 +481,6 @@ void PhiLinearSolver<Scalar>::computeMassMatrix(const Thyra::ModelEvaluatorBase:
 
     // if the mass matrix is lumped, keep the memory allocated for fullMassMatrix around for the Jacobian
     jacobianMatrix_ = fullMassMatrix;
-
-    //Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-    //lumpedMassDiagonal->describe(*out, Teuchos::VERB_EXTREME);
-    //invLumpedMassDiagonal->describe(*out, Teuchos::VERB_EXTREME);
   }
   //Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   //massMatrix_->describe(*out, Teuchos::VERB_EXTREME);
@@ -510,17 +502,13 @@ Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> PhiLinearSolver<Scalar>::buildL(
 template <class Scalar>
 Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> PhiLinearSolver<Scalar>::buildATilde(
     const Scalar dt,
-    const Teuchos::ArrayView<const Teuchos::RCP<const Thyra::VectorBase<Scalar>>> &rhs_B)
+    const Teuchos::ArrayView<const Teuchos::RCP<const Thyra::VectorBase<Scalar>>> &rhs_B) const
 {
   this->checkInitialized(PhiInitialization::JACOBIAN_AND_MASS);
 
   const Thyra::Ordinal max_phi_order = rhs_B.size() - 1;
   auto KMatrix = this->buildK(max_phi_order);
   auto BMatrix = this->buildB(rhs_B);
-
-  // Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-  // invMassMatrix_->describe(*out, Teuchos::VERB_EXTREME);
-  // jacobianMatrix_->describe(*out, Teuchos::VERB_EXTREME);
 
   // Combine linear operators M_inv and J and multiply by -dt (minus is for implicit to explicit conversion)
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> A
@@ -548,7 +536,7 @@ Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> PhiLinearSolver<Scalar>::buildAT
 
 template <class Scalar>
 Teuchos::RCP<const Thyra::LinearOpBase<Scalar>>
-PhiLinearSolver<Scalar>::buildK(const Thyra::Ordinal max_phi_order)
+PhiLinearSolver<Scalar>::buildK(const Thyra::Ordinal max_phi_order) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
       max_phi_order < 1,
@@ -580,7 +568,7 @@ PhiLinearSolver<Scalar>::buildK(const Thyra::Ordinal max_phi_order)
 template <class Scalar>
 Teuchos::RCP<const Thyra::LinearOpBase<Scalar>>
 PhiLinearSolver<Scalar>::buildB(
-  const Teuchos::ArrayView<const Teuchos::RCP<const Thyra::VectorBase<Scalar>>> &rhs_B)
+  const Teuchos::ArrayView<const Teuchos::RCP<const Thyra::VectorBase<Scalar>>> &rhs_B) const
 {
   this->checkInitialized(PhiInitialization::ONLY_MASS);
 
@@ -689,8 +677,9 @@ void PhiLinearSolver<Scalar>::computeJacobian(const Thyra::ModelEvaluatorBase::I
 
   typedef Thyra::ModelEvaluatorBase MEB;
 
-  // first allocate space for the Jacobian matrix
-  jacobianMatrix_ = appModel_->create_W_op();
+  // first allocate space for the Jacobian matrix, if not available
+  if (jacobianMatrix_ == Teuchos::null)
+    jacobianMatrix_ = appModel_->create_W_op();
 
   // request only the Jacobian matrix from the physics
   // Model evaluator builds: alpha*u_dot - beta*M*F(u) = 0
