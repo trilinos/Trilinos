@@ -76,6 +76,7 @@ class PhiLinearSolver {
   void applyJacobian(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> Jf,
                      const Teuchos::RCP<const Thyra::VectorBase<Scalar>> f) const;
 
+  // build and return a dt-scaled LinOp
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> buildL(const Scalar dt) const;
 
   // TODO: make that one public function
@@ -120,7 +121,6 @@ class PhiLinearSolver {
   Teuchos::RCP<Thyra::LinearOpBase<Scalar>> jacobianMatrix_;
 
   // internal variables for extended matrix strategy
-  Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> expMassMatrix_;
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> Atilde_;
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> KMatrix_;
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> bMatrix_;
