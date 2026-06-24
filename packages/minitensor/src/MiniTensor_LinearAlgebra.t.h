@@ -4760,11 +4760,18 @@ std::pair<Tensor<T, N>, Tensor<T, N>> eig_sym_2x2(Tensor<T, N> const &A) {
     s1 = -0.5 * r;
   }
 
-  Tensor<T, N>
-  D(s0, 0.0, 0.0, s1);
-
   //
-  // Eigenvectors
+  // Eigenvectors. schur_sym returns the Jacobi rotation J = [c, s; -s, c]
+  // whose columns are the eigenvectors and which diagonalizes A as
+  // A = J * diag(l0, l1) * transpose(J), with the eigenvalue attached to
+  // column 0 of J being l0 = f - tan(theta) * g and to column 1 being
+  // l1 = h + tan(theta) * g (tan(theta) = s / c).
+  //
+  // The previous implementation used transpose(J) as V and paired the
+  // magnitude-ordered eigenvalues (s0, s1) to the columns through swap_diag, so
+  // V * D * transpose(V) did not reconstruct A for general off-diagonal cases
+  // (Trilinos issue #15389). Build V = J directly, and attach the accurate
+  // (s0, s1) eigenvalues to their matching columns.
   //
   T
   c, s;
@@ -4772,13 +4779,34 @@ std::pair<Tensor<T, N>, Tensor<T, N>> eig_sym_2x2(Tensor<T, N> const &A) {
   std::tie(c, s) = schur_sym(f, g, h);
 
   Tensor<T, N>
-  V(c, -s, s, c);
+  V(c, s, -s, c);
 
-  if (swap_diag == true) {
-    // swap eigenvectors if eigenvalues were swapped
+  T const l0 = f - (s / c) * g;
+
+  T d0, d1;
+  if (std::abs(l0 - s0) <= std::abs(l0 - s1)) {
+    d0 = s0;
+    d1 = s1;
+  } else {
+    d0 = s1;
+    d1 = s0;
+  }
+
+  //
+  // Return eigenvalues in descending order, permuting the eigenvectors to
+  // match, for consistency with the eig_sym_NxN path. For 2x2 this is a single
+  // compare-and-swap; done inline to avoid the heap allocation and matrix
+  // multiply of the general sort_permutation, as eig_sym is called per
+  // integration point in 2D mechanics.
+  //
+  if (d0 < d1) {
+    std::swap(d0, d1);
     std::swap(V(0, 0), V(0, 1));
     std::swap(V(1, 0), V(1, 1));
   }
+
+  Tensor<T, N>
+  D(d0, 0.0, 0.0, d1);
 
   return std::make_pair(V, D);
 }
