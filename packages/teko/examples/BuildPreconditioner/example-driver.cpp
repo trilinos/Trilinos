@@ -74,24 +74,28 @@ void run_driver() {
 
   std::vector<int> vec(2);
   vec[0] = 2;
-  vec[1] = 1;
+  vec[1] = 1; /*@ \label{lned:define-strided} @*/
 
   Teuchos::RCP<Teko::TpetraHelpers::StridedTpetraOperator> sA =
       Teuchos::rcp(new Teko::TpetraHelpers::StridedTpetraOperator(vec, A));
 
-  // Build the preconditioner
+  // Build the preconditioner /*@ \label{lned:construct-prec} @*/
   /////////////////////////////////////////////////////////
 
-  RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromStratimikos();
+  RCP<Teko::InverseLibrary> invLib =
+      Teko::InverseLibrary::buildFromStratimikos(); /*@ \label{lned:define-inv-params} @*/
 
-  RCP<Teko::InverseFactory> inverse = invLib->getInverseFactory("Amesos2");
+  RCP<Teko::InverseFactory> inverse /*@ \label{lned:define-inv-fact} @*/
+      = invLib->getInverseFactory("Amesos2");
 
-  RCP<Teko::NS::LSCStrategy> strategy = rcp(new Teko::NS::InvLSCStrategy(inverse, true));
+  RCP<Teko::NS::LSCStrategy> strategy =
+      rcp(new Teko::NS::InvLSCStrategy(inverse, true)); /*@ \label{lned:const-prec-strategy} @*/
 
   RCP<Teko::BlockPreconditionerFactory> precFact =
-      rcp(new Teko::NS::LSCPreconditionerFactory(strategy));
+      rcp(new Teko::NS::LSCPreconditionerFactory(strategy)); /*@ \label{lned:const-prec-fact} @*/
 
-  Teko::TpetraHelpers::TpetraBlockPreconditioner prec(precFact);
+  Teko::TpetraHelpers::TpetraBlockPreconditioner prec(
+      precFact); /*@ \label{lned:const-tpetra-prec} @*/
   prec.buildPreconditioner(sA);
 
   // Build and solve the linear system
@@ -101,7 +105,7 @@ void run_driver() {
   RCP<mv_t> B = b;
 
   using problem_t        = Belos::LinearProblem<ST, mv_t, op_t>;
-  RCP<problem_t> problem = rcp(new problem_t(A, X, B));
+  RCP<problem_t> problem = rcp(new problem_t(A, X, B)); /*@ \label{lned:belos-solve} @*/
 
   RCP<op_t> precOp = Teuchos::rcp(&prec, false);
   problem->setRightPrec(precOp);
