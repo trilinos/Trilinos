@@ -70,11 +70,9 @@ const Teuchos::RCP<const Tpetra::Operator<ST, LO, GO, NT> > ALOperator::GetBlock
                                                                                  int j) const {
   const Teuchos::RCP<Thyra::BlockedLinearOpBase<ST> > blkOp =
       Teuchos::rcp_dynamic_cast<Thyra::BlockedLinearOpBase<ST> >(blockedOperator_, true);
-
   RCP<const Thyra::TpetraLinearOp<ST, LO, GO, NT> > tOp =
       rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST, LO, GO, NT> >(blkOp->getBlock(i, j), true);
-
-  return tOp->getConstTpetraOperator();
+  return tOp != Teuchos::null ? tOp->getConstTpetraOperator() : Teuchos::null;
 }
 
 void ALOperator::checkDim(const std::vector<std::vector<GO> >& vars) {
@@ -124,29 +122,28 @@ void ALOperator::BuildALOperator() {
   // Velocity-velocity blocks: A_ij + gamma * B_i^T * W^{-1} * B_j
   for (int i = 0; i < dim_; i++) {
     for (int j = 0; j < dim_; j++) {
-      alOperator->setNonconstBlock(
+      alOperator->setBlock(
           i, j,
-          Teuchos::rcp_const_cast<Thyra::LinearOpBase<ST> >(Thyra::add(
+          Thyra::add(
               blockedOpBlocks[i][j],
               Thyra::scale(gamma_, Thyra::multiply(blockedOpBlocks[i][dim_], invPressureMassMatrix_,
-                                                   blockedOpBlocks[dim_][j])))));
+                                                   blockedOpBlocks[dim_][j]))));
     }
   }
 
   // Last row: [ B  -C ]
   for (int j = 0; j <= dim_; j++) {
-    alOperator->setNonconstBlock(
-        dim_, j, Teuchos::rcp_const_cast<Thyra::LinearOpBase<ST> >(blockedOpBlocks[dim_][j]));
+    alOperator->setBlock(dim_, j, blockedOpBlocks[dim_][j]);
   }
 
   // Last column: B_i^T - gamma * B_i^T * W^{-1} * C
   for (int i = 0; i < dim_; i++) {
-    alOperator->setNonconstBlock(
+    alOperator->setBlock(
         i, dim_,
-        Teuchos::rcp_const_cast<Thyra::LinearOpBase<ST> >(Thyra::add(
+        Thyra::add(
             blockedOpBlocks[i][dim_],
             Thyra::scale(-gamma_, Thyra::multiply(blockedOpBlocks[i][dim_], invPressureMassMatrix_,
-                                                  blockedOpBlocks[dim_][dim_])))));
+                                                  blockedOpBlocks[dim_][dim_]))));
   }
 
   alOperator->endBlockFill();
@@ -163,19 +160,14 @@ void ALOperator::BuildALOperator() {
   alOpRhs->beginBlockFill(dim_ + 1, dim_ + 1);
 
   for (int i = 0; i < dim_; i++) {
-    alOpRhs->setNonconstBlock(i, i,
-                              Teuchos::rcp_const_cast<Thyra::LinearOpBase<ST> >(
-                                  Thyra::identity<ST>(blockedOpBlocks[i][i]->range())));
+    alOpRhs->setBlock(i, i, Thyra::identity<ST>(blockedOpBlocks[i][i]->range()));
   }
-  alOpRhs->setNonconstBlock(dim_, dim_,
-                            Teuchos::rcp_const_cast<Thyra::LinearOpBase<ST> >(
-                                Thyra::identity<ST>(blockedOpBlocks[dim_][dim_]->range())));
+  alOpRhs->setBlock(dim_, dim_, Thyra::identity<ST>(blockedOpBlocks[dim_][dim_]->range()));
 
   for (int i = 0; i < dim_; i++) {
-    alOpRhs->setNonconstBlock(
+    alOpRhs->setBlock(
         i, dim_,
-        Teuchos::rcp_const_cast<Thyra::LinearOpBase<ST> >(Thyra::scale(
-            gamma_, Thyra::multiply(blockedOpBlocks[i][dim_], invPressureMassMatrix_))));
+        Thyra::scale(gamma_, Thyra::multiply(blockedOpBlocks[i][dim_], invPressureMassMatrix_)));
   }
 
   alOpRhs->endBlockFill();

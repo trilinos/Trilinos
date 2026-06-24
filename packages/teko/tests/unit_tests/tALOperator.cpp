@@ -74,11 +74,12 @@ RCP<const map_t> buildMap(const RCP<const Teuchos::Comm<int> >& comm, GO n) {
 }
 
 RCP<crs_t> buildDiagMatrix(const RCP<const map_t>& map, const std::vector<ST>& diag) {
-  auto A = rcp(new crs_t(map, 1));
-  for (size_t i = 0; i < diag.size(); ++i) {
-    GO gid = map->getGlobalElement(static_cast<LO>(i));
+  auto A      = rcp(new crs_t(map, 1));
+  LO numLocal = static_cast<LO>(map->getLocalNumElements());
+  for (LO i = 0; i < numLocal; ++i) {
+    GO gid = map->getGlobalElement(i);
     GO col = gid;
-    ST val = diag[i];
+    ST val = diag[static_cast<size_t>(gid)];
     A->insertGlobalValues(gid, Teuchos::ArrayView<const GO>(&col, 1),
                           Teuchos::ArrayView<const ST>(&val, 1));
   }
@@ -88,12 +89,13 @@ RCP<crs_t> buildDiagMatrix(const RCP<const map_t>& map, const std::vector<ST>& d
 
 RCP<crs_t> buildRectMatrix(const RCP<const map_t>& rowMap, const RCP<const map_t>& colMap,
                            const std::vector<std::vector<std::pair<GO, ST> > >& rows) {
-  auto A = rcp(new crs_t(rowMap, 4));
-  for (size_t i = 0; i < rows.size(); ++i) {
-    GO rowGid = rowMap->getGlobalElement(static_cast<LO>(i));
+  auto A      = rcp(new crs_t(rowMap, 4));
+  LO numLocal = static_cast<LO>(rowMap->getLocalNumElements());
+  for (LO i = 0; i < numLocal; ++i) {
+    GO rowGid = rowMap->getGlobalElement(i);
     std::vector<GO> cols;
     std::vector<ST> vals;
-    for (const auto& entry : rows[i]) {
+    for (const auto& entry : rows[static_cast<size_t>(rowGid)]) {
       cols.push_back(entry.first);
       vals.push_back(entry.second);
     }
@@ -149,7 +151,7 @@ void printVector(const std::string& label, const RCP<const vec_t>& v, Teuchos::F
 }
 
 RCP<const vec_t> applyReferenceBlockedOpByBlockedVec(
-    const Teko::LinearOp& op, const std::vector<std::vector<GO> >& blockedVec,
+    const Teko::LinearOp& op, const Teko::TpetraHelpers::BlockedTpetraOperator& blk,
     const RCP<const map_t>& flatMap) {
   auto xThyra = Thyra::createMembers(op->domain(), 1);
   auto yThyra = Thyra::createMembers(op->range(), 1);
@@ -159,19 +161,8 @@ RCP<const vec_t> applyReferenceBlockedOpByBlockedVec(
 
   op->apply(Thyra::NOTRANS, *xThyra, yThyra.ptr(), 1.0, 0.0);
 
-  auto yProd = Teuchos::rcp_dynamic_cast<Thyra::ProductMultiVectorBase<ST> >(yThyra, true);
-
   auto yFlat = rcp(new vec_t(flatMap));
-
-  for (size_t b = 0; b < blockedVec.size(); ++b) {
-    auto blk = yProd->getMultiVectorBlock(static_cast<int>(b));
-    auto col = blk->col(0);
-    Thyra::ConstDetachedVectorView<ST> view(*col);
-
-    for (size_t k = 0; k < blockedVec[b].size(); ++k) {
-      yFlat->replaceGlobalValue(blockedVec[b][k], view[k]);
-    }
-  }
+  blk.getMapStrategy()->copyThyraIntoTpetra(yThyra, *yFlat);
 
   return yFlat;
 }
@@ -346,7 +337,7 @@ TEUCHOS_UNIT_TEST(tALOperator, test_tpetra_apply_and_rhs) {
     al.apply(x, y);
 
     RCP<const vec_t> yRef =
-        applyReferenceBlockedOpByBlockedVec(refApplyOp, blockedVec, mat->getRangeMap());
+        applyReferenceBlockedOpByBlockedVec(refApplyOp, blk, mat->getRangeMap());
 
     auto diff = rcp(new vec_t(y.getMap()));
     diff->assign(y);
@@ -375,7 +366,7 @@ TEUCHOS_UNIT_TEST(tALOperator, test_tpetra_apply_and_rhs) {
     al.augmentRHS(rhs, rhsAug);
 
     RCP<const vec_t> rhsRef =
-        applyReferenceBlockedOpByBlockedVec(refRhsOp, blockedVec, mat->getRangeMap());
+        applyReferenceBlockedOpByBlockedVec(refRhsOp, blk, mat->getRangeMap());
 
     auto diff = rcp(new vec_t(rhsAug.getMap()));
     diff->assign(rhsAug);
