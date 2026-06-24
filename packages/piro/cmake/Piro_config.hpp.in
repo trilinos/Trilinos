@@ -28,6 +28,9 @@
 #cmakedefine HAVE_PIRO_ROL
 /* DEPRECATED */
 #cmakedefine Piro_ENABLE_ROL
+#cmakedefine HAVE_PIRO_HDSALIB
+/* DEPRECATED */
+#cmakedefine Piro_ENABLE_HdsaLib
 #cmakedefine HAVE_PIRO_IFPACK2
 /* DEPRECATED */
 #cmakedefine Piro_ENABLE_Ifpack2

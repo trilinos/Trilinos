@@ -40,6 +40,7 @@
 #include "Piro_CustomLBFGSSecant.hpp"
 #include "ROL_LinearOpScaledThyraVector.hpp"
 
+#ifdef HAVE_PIRO_HDSALIB
 #include "Piro_HDSA_MD_ROL_Data_Interface.hpp"
 #include "Piro_HDSA_MD_ROL_Elliptic_u_Prior_Interface.hpp"
 #include "Piro_HDSA_MD_ROL_Elliptic_z_Prior_Interface.hpp"
@@ -47,6 +48,7 @@
 #include "HDSA_MD_Posterior_Sampling.hpp"
 #include "HDSA_MD_Hessian_Analysis.hpp"
 #include "HDSA_MD_Update.hpp"
+#endif
 
 #endif
 
@@ -1175,7 +1177,9 @@ Piro::PerformHDSAAnalysis(
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
   else // no output
     out = Teuchos::rcp(new Teuchos::oblackholestream());
-#ifdef HAVE_PIRO_ROL
+
+
+#if defined(HAVE_PIRO_ROL) && defined(HAVE_PIRO_HDSALIB)
 
   using std::string;
   Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double>> model, adjointModel;
@@ -1743,8 +1747,8 @@ Piro::PerformHDSAAnalysis(
   (void)piroModel;
   (void)p;
   out = Teuchos::VerboseObjectBase::getDefaultOStream();
-  *out << "ERROR: Trilinos/Piro was not configured to include ROL analysis."
-       << "\nYou must enable ROL." << endl;
+  *out << "ERROR: Trilinos/Piro was not configured to include HDSA analysis."
+       << "\nYou must enable HDSA and ROL." << endl;
   return 0;  // should not fail tests
 #endif
 }
