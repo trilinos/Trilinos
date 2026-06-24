@@ -195,5 +195,19 @@ def launch_container(source_dir, packageEnablesFile, image, tag, genconfig_build
     # command to be executed
     cmd += ["bash", "-c", "echo \". /scripts/container_commands.sh\" >> $HOME/.bashrc; bash"]
     logger.debug(f"podman command = {cmd}")
-    subprocess.run(cmd,
-                   capture_output=False, universal_newlines=True)
+    ret = subprocess.run(cmd,
+                         capture_output=False, universal_newlines=True)
+    if ret.returncode != 0:
+        message = """
+        The podman container launch failed. Unfortunately there are lots of situations
+        in which this can happen. Some suggestions for narrowing down the problem:
+
+        - The podman installation is simply broken. Try running
+            podman run -it --rm docker.io/rockylinux/rockylinux bash -c "echo \"That worked!!!\""
+          to run a minimal Linux container as a test.
+
+        - Podman might be provided by a module. Try e.g.
+            module load aue/podman
+        """
+        print(message)
+        exit(1)
