@@ -24,11 +24,6 @@
 #include "Galeri_XpetraProblemFactory.hpp"
 #include "Galeri_XpetraParameters.hpp"
 
-#include "Xpetra_Map.hpp"
-#include "Xpetra_Matrix.hpp"
-#include "Xpetra_TpetraMap.hpp"
-#include "Xpetra_TpetraCrsMatrix.hpp"
-
 // Teko-Package includes
 #include "Teko_Utilities.hpp"
 #include "Teko_Config.h"
@@ -63,9 +58,7 @@ const RCP<Thyra::LinearOpBase<double> > buildSystem(const RCP<const Teuchos::Com
   galeriList.set("nx", size);
   galeriList.set("mx", comm->getSize());
 
-  RCP<const Xpetra::Map<LO, GO, NT> > xMap =
-      Galeri::Xpetra::CreateMap<LO, GO, NT>(Xpetra::UseTpetra, "Cartesian1D", comm, galeriList);
-  RCP<const map_t> tMap = Xpetra::toTpetra(xMap);
+  auto tMap = Galeri::Xpetra::CreateMap<LO, GO, map_t>("Cartesian1D", comm, galeriList);
 
   auto problem =
       Galeri::Xpetra::BuildProblem<ST, LO, GO, map_t, crs_t, mv_t>("Laplace1D", tMap, galeriList);
