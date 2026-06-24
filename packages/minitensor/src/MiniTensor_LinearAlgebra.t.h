@@ -4189,6 +4189,32 @@ svd(Tensor<T, N> const &A) {
 
     case 2:
       std::tie(U, S, V) = svd_2x2(A);
+      // svd_2x2 doubles as a building block inside svd_NxN's Jacobi sweep, so
+      // it returns the raw 2x2 factorization without the sign/order
+      // canonicalization that svd_NxN applies to its own result. Apply that
+      // canonicalization here, for the top-level 2D SVD only, so svd() returns
+      // the standard convention (nonnegative singular values in descending
+      // order) regardless of dimension. Folding a negative sign into the
+      // corresponding column of U preserves A = U S V^T.
+      for (Index i = 0; i < dimension; ++i) {
+        if (S(i, i) < 0.0) {
+          S(i, i) = -S(i, i);
+          for (Index j = 0; j < dimension; ++j) {
+            U(j, i) = -U(j, i);
+          }
+        }
+      }
+      // Sort descending. For 2x2 this is a single compare-and-swap of the two
+      // columns of U and V (and the two singular values), avoiding the heap
+      // allocation and matrix multiply that the general sort_permutation
+      // incurs.
+      if (S(0, 0) < S(1, 1)) {
+        std::swap(S(0, 0), S(1, 1));
+        std::swap(U(0, 0), U(0, 1));
+        std::swap(U(1, 0), U(1, 1));
+        std::swap(V(0, 0), V(0, 1));
+        std::swap(V(1, 0), V(1, 1));
+      }
       break;
 
   }

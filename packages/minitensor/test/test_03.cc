@@ -209,16 +209,8 @@ TEST(MiniTensor, EigSpdProperties)
 }
 
 //
-// Singular value decomposition: A = U S V^T with U and V orthonormal and S
-// diagonal.
-//
-// Note: only the invariants that hold across all dimensions are asserted here.
-// The NxN path canonicalizes the singular values to be nonnegative and sorted
-// in descending order, but the 2x2-specialized path currently does not -- it
-// can return a negative diagonal entry and a non-descending order. Asserting
-// nonnegativity / descending order here would therefore fail on the 2x2 path.
-// That inconsistency between svd_2x2 and svd_NxN is a separate fix; once the
-// 2x2 path canonicalizes its output, those two assertions should be added back.
+// Singular value decomposition: A = U S V^T, U and V orthonormal, S diagonal
+// with nonnegative singular values sorted in descending order.
 //
 TEST(MiniTensor, SvdProperties)
 {
@@ -240,6 +232,12 @@ TEST(MiniTensor, SvdProperties)
           << "svd V not orthonormal, dim " << dimension;
       ASSERT_LE(off_diagonal_error(S), TOL_ITERATIVE)
           << "svd S not diagonal, dim " << dimension;
+      ASSERT_TRUE(is_descending(S))
+          << "svd singular values not descending, dim " << dimension << ", sample " << sample;
+      for (Index i = 0; i < dimension; ++i) {
+        ASSERT_GE(S(i, i), -TOL_ITERATIVE)
+            << "svd singular value negative, dim " << dimension << ", sample " << sample;
+      }
     }
   }
 }
