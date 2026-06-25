@@ -69,6 +69,7 @@ class PhiEvaluatorLeja
   PhiEvaluatorLeja<Scalar>(std::string name)
     : PhiEvaluator<Scalar>(name),
       ddMethod_(0),
+      leja_sf_(1.0),
       leja_tol_(1.0e-6),
       leja_a_(-1.0),
       leja_b_(0.0),
@@ -103,8 +104,8 @@ class PhiEvaluatorLeja
   /// Set the parameters from a ParameterList
   void setPhiEvaluatorValues(Teuchos::RCP<Teuchos::ParameterList> pl) override;
 
-  /// compute the scale, normalized shift and normalized anisotropy parameters from ellipse a,b,c bounds
-  /// we use double here, to avoid issues with complex Scalar types
+  /// Compute the scale, normalized shift and normalized anisotropy
+  /// parameters from ellipse a,b,c bounds.
   constexpr std::tuple<double, double, double> getScaleFromBase();
 
   // transform base LejaPoint to shifted anisotropic transformed Leja point (not scaled)
@@ -113,8 +114,14 @@ class PhiEvaluatorLeja
   /// Set the polynomial expansion order
   void setExpansionOrder(const int expansionOrder);
 
-  /// Update the Leja ellipse parameters
+  /// Update the Leja ellipse parameters a,b,c
   void setLejaEllipse(const double a, const double b, const double c);
+
+  /// Get ellipse parameters a,b,c
+  Teuchos::Tuple<double, 3> getLejaEllipse();
+
+  /// Adaptively update the spectrum parameters a,b,c using Krylov-Schur
+  void adaptEvaluator() override;
 
   /// Set the divided difference method
   void setDivideDifferenceMethod(const int ddMethod);
@@ -140,6 +147,7 @@ private:
   int ddMethod_;
 
   // those are read as double from the input file regardless of scalar type
+  double leja_sf_;
   double leja_tol_;
   double leja_a_;
   double leja_b_;

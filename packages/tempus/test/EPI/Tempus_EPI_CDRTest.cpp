@@ -16,7 +16,6 @@
 #include "Thyra_DetachedVectorView.hpp"
 
 #include "Tempus_IntegratorBasic.hpp"
-
 #include "Tempus_StepperEPI.hpp"
 
 #include "../TestUtils/Tempus_ConvergenceTestUtils.hpp"
@@ -116,12 +115,15 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
       phiList.set("PhiEvaluator Type", "Leja")
              .set("Expansion Order", 100)
              .set("Leja DD Method", 2)
+             .set("Leja Ellipse Safety Factor", 1.05)
              .set("leja_tol", 1.e-12)
              .set("leja_a", -50000.0)
              .set("leja_c", 1000.0);
     }
     else if (caseName == "Taylor") {
+      // Invalid plist options for the Taylor PhiEvaluator
       phiList.remove("Leja DD Method", false);
+      phiList.remove("Leja Ellipse Safety Factor", false);
       phiList.remove("leja_tol", false);
       phiList.remove("leja_a", false);
       phiList.remove("leja_c", false);
