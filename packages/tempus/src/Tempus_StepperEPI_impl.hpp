@@ -36,6 +36,7 @@ StepperEPI<Scalar>::StepperEPI()
   this->setICConsistency("Consistent");
   this->setICConsistencyCheck(false);
   this->setZeroInitialGuess(false);
+  this->setOrder(2.0);
 
   this->setAppAction(Teuchos::null);
   this->setDefaultSolver();
@@ -58,6 +59,7 @@ StepperEPI<Scalar>::StepperEPI(
   this->setICConsistency(ICConsistency);
   this->setICConsistencyCheck(ICConsistencyCheck);
   this->setZeroInitialGuess(zeroInitialGuess);
+  this->setOrder(2.0);
 
   this->setAppAction(stepperEPIAppAction);
   this->setSolver(solver);
@@ -413,8 +415,7 @@ StepperEPI<Scalar>::computeRemf(
  */
 template<class Scalar>
 Teuchos::RCP<Tempus::StepperState<Scalar> >
-StepperEPI<Scalar>::
-getDefaultStepperState()
+StepperEPI<Scalar>::getDefaultStepperState()
 {
   Teuchos::RCP<Tempus::StepperState<Scalar> > stepperState =
     rcp(new StepperState<Scalar>(this->getStepperType()));
@@ -474,7 +475,6 @@ void StepperEPI<Scalar>::setStepperExponentialValues(
 
   temporal_finite_difference_eps_ = pl->get<double>("Epsilon for RHS finite difference", 1e-4);
   adapt_phi_evaluator_interval_ = pl->get<int>("Adapt PhiEvaluator Interval", -1);
-  order_ = pl->get<Scalar>("EPI Order", 2.0);
 
   if (pl != Teuchos::null) {
     // TODO read in the pl for the exponential solver

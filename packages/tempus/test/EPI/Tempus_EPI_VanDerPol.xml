@@ -46,7 +46,7 @@
     </ParameterList>
 
     <ParameterList name="Demo Stepper">
-      <Parameter name="Stepper Type" type="string" value="EPI"/>
+      <Parameter name="Stepper Type" type="string" value="EPI2"/>
       <Parameter name="Use FSAL"       type="bool" value="false"/>
       <Parameter name="Solver Name"    type="string" value="Demo Solver"/>
       <Parameter name="Predictor Stepper Type" type="string" value="None"/>

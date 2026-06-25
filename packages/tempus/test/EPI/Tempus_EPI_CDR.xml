@@ -38,7 +38,7 @@
     </ParameterList>
 
     <ParameterList name="Demo Stepper">
-      <Parameter name="Stepper Type"   type="string" value="EPI"/>
+      <Parameter name="Stepper Type"   type="string" value="EPI2"/>
       <Parameter name="Adapt PhiEvaluator Interval" type="int" value="10"/>
       <Parameter name="Use FSAL"       type="bool" value="false"/>
       <Parameter name="Initial Condition Consistency" type="string" value="None"/>
