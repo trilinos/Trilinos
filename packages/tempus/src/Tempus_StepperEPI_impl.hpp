@@ -238,6 +238,13 @@ void StepperEPI<Scalar>::takeStep(
     // setup system Jacobian computation at the current time
     phiEvaluator_->setLinearizationPoint(inArgs);
 
+    // if requested, update any hyperpameters of the phiEvaluator
+    if ( (workingState->getIndex() < 2 || workingState->getIndex() % adapt_phi_evaluator_interval_ == 0)
+      && (adapt_phi_evaluator_interval_ > 0))
+    {
+      phiEvaluator_->adaptEvaluator();
+    }
+
     // if requested, compute the time derivative for the nonaotonomous correction
     RCP<Thyra::VectorBase<Scalar>> dt_Mf_deriv = Teuchos::null;
     if (temporal_finite_difference_eps_ > 0.0) {
@@ -466,6 +473,7 @@ void StepperEPI<Scalar>::setStepperExponentialValues(
   Teuchos::RCP<Teuchos::ParameterList> phiPL = Teuchos::null;
 
   temporal_finite_difference_eps_ = pl->get<double>("Epsilon for RHS finite difference", 1e-4);
+  adapt_phi_evaluator_interval_ = pl->get<int>("Adapt PhiEvaluator Interval", -1);
   order_ = pl->get<Scalar>("EPI Order", 2.0);
 
   if (pl != Teuchos::null) {

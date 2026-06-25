@@ -14,6 +14,7 @@
 #include "Teuchos_RCPDecl.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_TimeMonitor.hpp"
+#include "Tempus_config.hpp"
 
 #include "Thyra_DefaultDiagonalLinearOp.hpp"
 #include "Thyra_LinearOpWithSolveFactoryBase.hpp"
@@ -38,6 +39,13 @@
 // For printing
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_VerbosityLevel.hpp"
+
+// Anasazi eigensolver (Block Krylov-Schur) for spectrum bound estimation
+#ifdef TEMPUS_ENABLE_ANASAZI
+#include "AnasaziThyraAdapter.hpp"
+#include "AnasaziBasicEigenproblem.hpp"
+#include "AnasaziBlockKrylovSchurSolMgr.hpp"
+#endif
 
 
 namespace Tempus {
@@ -121,6 +129,19 @@ PhiEvaluator<Scalar>::getValidParametersBasic() const
       "'true' - will lump the mass matrix for PhiEvaluators that support this feature.  "
       "'false' - will switch off mass lumping.");
 
+  pl->sublist("Eigensolver");
+  pl->sublist("Eigensolver").set("Which", "LM");
+  pl->sublist("Eigensolver").set("Block Size",                     2);
+  pl->sublist("Eigensolver").set("Num Blocks",                     16);
+  pl->sublist("Eigensolver").set("Maximum Restarts",               50);
+  pl->sublist("Eigensolver").set("Convergence Tolerance",          0.08);
+  pl->sublist("Eigensolver").set("Relative Convergence Tolerance", true);
+  pl->sublist("Eigensolver").set("Num Eigenvalues",                8,
+      "Number of eigenvalues used to estimate the Jacobian spectrum bounds.");
+  pl->sublist("Eigensolver").set("Dense Fallback Dimension",       64,
+      "Systems with dimension <= this value use a dense LAPACK eigensolver "
+      "instead of the iterative Block Krylov-Schur solver.");
+
   //pl->set("?", *member_->getNonconstParameterList());
 
   return pl;
@@ -154,6 +175,13 @@ void PhiEvaluator<Scalar>::setPhiEvaluatorValues(
 
   setLumpMassMatrix(pl->get<bool>("Lump Mass Matrix", true));
   setName(pl->name());
+
+  // Cache a copy of the "Eigensolver" sublist so setModel() can forward it
+  // to the PhiLinearSolver when it is constructed.
+  eigensolverPL_ =
+      Teuchos::rcp(new Teuchos::ParameterList(pl->sublist("Eigensolver")));
+  if (phiLinSolv_ != Teuchos::null)
+    phiLinSolv_->setEigensolverParams(eigensolverPL_);
 }
 
 
@@ -174,6 +202,10 @@ void PhiEvaluator<Scalar>::setModel(const Teuchos::RCP<const Thyra::ModelEvaluat
   appModel_ = appModel;
 
   phiLinSolv_ = Teuchos::rcp(new PhiLinearSolver<Scalar>(appModel_, lumpMassMatrix_));
+
+  // Forward eigensolver parameters if they were set before setModel was called
+  if (eigensolverPL_ != Teuchos::null)
+    phiLinSolv_->setEigensolverParams(eigensolverPL_);
 }
 
 template<class Scalar>
@@ -348,6 +380,13 @@ template <class Scalar>
 void PhiLinearSolver<Scalar>::setLumpMassMatrix(bool lump)
 {
   lumpMass_ = lump;
+}
+
+template <class Scalar>
+void PhiLinearSolver<Scalar>::setEigensolverParams(
+    Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  eigensolverPL_ = pl;
 }
 
 template <class Scalar>
@@ -575,7 +614,9 @@ void PhiLinearSolver<Scalar>::buildb(const Teuchos::ArrayView<const Teuchos::RCP
 }
 
 template <class Scalar>
-Teuchos::RCP<Thyra::ProductVectorBase<Scalar>> PhiLinearSolver<Scalar>::buildv(const Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar>> space, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> x0) const
+Teuchos::RCP<Thyra::ProductVectorBase<Scalar>> PhiLinearSolver<Scalar>::buildv(
+    const Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar>> space,
+    const Teuchos::RCP<const Thyra::VectorBase<Scalar>> x0) const
 {
   // Create v and initialize to zero
   Teuchos::RCP<Thyra::ProductVectorBase<Scalar>> v =
@@ -681,7 +722,8 @@ void PhiLinearSolver<Scalar>::applyJacobian(const Teuchos::Ptr<Thyra::VectorBase
 }
 
 template <class Scalar>
-Thyra::SolveStatus<Scalar> PhiLinearSolver<Scalar>::assembleAndsolveMpJ(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+Thyra::SolveStatus<Scalar> PhiLinearSolver<Scalar>::assembleAndsolveMpJ(
+                  const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
 									const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
 									const Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mf,
 									Scalar alpha, Scalar beta) const
@@ -805,6 +847,145 @@ Thyra::SolveStatus<Scalar> PhiLinearSolver<Scalar>::solveMpJ(const Teuchos::Ptr<
 
   return sStatus;
 }
+
+template <class Scalar>
+void PhiLinearSolver<Scalar>::computeJacobianSpectrumBounds(double& a, double& b, double& c)
+{
+  this->checkInitialized();
+
+  using MT = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+  typedef Thyra::MultiVectorBase<Scalar> MV;
+  typedef Thyra::LinearOpBase<Scalar>    OP;
+
+  MT a_val =  Teuchos::ScalarTraits<MT>::rmax();
+  MT b_val = -Teuchos::ScalarTraits<MT>::rmax();
+  MT c_val =  Teuchos::ScalarTraits<MT>::zero();
+
+  // Read eigensolver parameters from the stored ParameterList
+  const int inev = eigensolverPL_->get<int>("Num Eigenvalues", 8);
+  const int denseFallbackDim = eigensolverPL_->get<int>("Dense Fallback Dimension", 64);
+  const int blockSize = eigensolverPL_->get<int>("Block Size", 2);
+  const double eigTol = eigensolverPL_->get<double>("Convergence Tolerance", 0.08);
+  const int maxRestarts = eigensolverPL_->get<int>("Maximum Restarts", 50);
+  const bool relConvTol = eigensolverPL_->get<bool>("Relative Convergence Tolerance", true);
+  const std::string which = eigensolverPL_->get<std::string>("Which", "LM");
+
+  // Estimate up to the first nev eigenvalues
+  const int dim = static_cast<int>(jacobianMatrix_->domain()->dim());
+  const int nev      = std::min(inev, dim - 1);
+  const int numBlocks = std::min(2 * nev, dim);
+
+  // MinvJ = M^{-1}*J LinOp
+  Teuchos::RCP<const OP> MinvJ =
+      Thyra::scale<Scalar>(-1.0, Thyra::multiply<Scalar>(inverseMassMatrix_, jacobianMatrix_));
+
+  // Fallback to dense eigen solve for small systems.
+  if (dim <= denseFallbackDim) {
+    // std::cout << "=== Fallback to Dense Eigen Solve ===" << std::endl;
+    // Convert LinearOpBase to SerialDenseMatrix and compute eigenvalues directly.
+    auto denseMinvJ = operatorToDense(MinvJ);
+    Teuchos::Array<Scalar> eigs_re(dim);
+    Teuchos::Array<Scalar> eigs_im(dim);
+    denseEigenvalues(denseMinvJ, eigs_re, eigs_im);
+    for (int i=0; i < eigs_re.size(); ++i) {
+      auto evr = eigs_re[i];
+      auto evi = eigs_im[i];
+      // std::cout << "ev re: " << evr << " im: " << evi << std::endl;
+      a_val = std::min(a_val, evr);
+      b_val = std::max(b_val, evr);
+      c_val = std::max(c_val, std::abs(evi));
+    }
+    a = std::min(0.0, a_val);
+    b = std::max(0.0, b_val);
+    c = c_val;
+    return;
+  }
+
+#ifdef TEMPUS_ENABLE_ANASAZI
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      (blockSize * numBlocks) <= nev, std::logic_error,
+      "computeJacobianSpectrumBounds: requested number of eigenvalues (" << nev <<
+      "). System dim (" << dim << "). The blockSize=" << blockSize << " or numBlocks=" << numBlocks <<
+      " is too small. numBlocks*blockSize > nev is required.");
+
+  // Init eigenvec multivector: warmstart from previous eigenvectors if available
+  Teuchos::RCP<MV> initVec;
+  const bool canWarmstart =
+      evecsMinvJ_ != Teuchos::null &&
+      static_cast<int>(evecsMinvJ_->domain()->dim()) == blockSize &&
+      evecsMinvJ_->range()->isCompatible(*jacobianMatrix_->domain());
+
+  if (canWarmstart) {
+    // std::cout << "=== Warmstarting Krylov-Schur ===" << std::endl;
+    initVec = evecsMinvJ_;
+  } else {
+    initVec = Thyra::createMembers(jacobianMatrix_->domain(), blockSize);
+    Thyra::randomize(Scalar(-1), Scalar(1), initVec.ptr());
+  }
+
+  Teuchos::RCP<Anasazi::BasicEigenproblem<Scalar, MV, OP>> problem =
+      Teuchos::rcp(new Anasazi::BasicEigenproblem<Scalar, MV, OP>());
+
+  problem->setOperator(MinvJ);
+  problem->setA(Thyra::scale<Scalar>(-1.0, jacobianMatrix_));
+  problem->setM(massMatrix_);
+  problem->setInitVec(initVec);
+  problem->setNEV(nev);
+  problem->setHermitian(false);  // M^{-1}*J is generally non-symmetric
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      !problem->setProblem(), std::logic_error,
+      "computeJacobianSpectrumBounds: BasicEigenproblem::setProblem() failed.");
+
+  // Build the Anasazi solver parameter list from eigensolverPL_ with defaults.
+  // "Num Blocks" is derived from nev and dim, so it is always computed here.
+  // "Verbosity" is kept at Anasazi::Errors (not exposed in the user PL).
+  Teuchos::ParameterList anasaziPL;
+  anasaziPL.set("Which",                          which);
+  anasaziPL.set("Block Size",                     blockSize);
+  anasaziPL.set("Num Blocks",                     numBlocks);
+  anasaziPL.set("Maximum Restarts",               maxRestarts);
+  anasaziPL.set("Convergence Tolerance",          eigTol);
+  anasaziPL.set("Relative Convergence Tolerance", relConvTol);
+  anasaziPL.set("Verbosity",                      Anasazi::Errors);
+
+  Anasazi::BlockKrylovSchurSolMgr<Scalar, MV, OP> solverMgr(problem, anasaziPL);
+  solverMgr.solve();
+
+  // Extract the current Ritz values. Can be unconverged
+  const Anasazi::Eigensolution<Scalar, MV>& sol = problem->getSolution();
+  std::vector<Anasazi::Value<Scalar>> evals;
+  evals = solverMgr.getRitzValues();
+
+  // Compute spectrum bounds
+  // std::cout << "=== Krylov-Schur Ritz ===" << std::endl;
+  for (const auto& ev : evals) {
+    // std::cout << "ev re: " << ev.realpart << " im: " << ev.imagpart << std::endl;
+    a_val = std::min(a_val, ev.realpart);
+    b_val = std::max(b_val, ev.realpart);
+    c_val = std::max(c_val, std::abs(ev.imagpart));
+  }
+
+  // Store converged eigenvectors for warmstart on the next call
+  if (sol.numVecs > 0 && sol.Evecs != Teuchos::null) {
+    const int cols = std::min(blockSize, sol.numVecs);
+    evecsMinvJ_ = Thyra::createMembers(jacobianMatrix_->domain(), cols);
+    Thyra::assign(evecsMinvJ_.ptr(),
+                  *sol.Evecs->subView(Teuchos::Range1D(0, cols - 1)));
+  }
+
+  a = std::min(0.0, a_val);
+  b = std::max(0.0, b_val);
+  c = c_val;
+#else
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::logic_error,
+      "ANASAZI is unavailable and Block-Krylov-Schur Leja Ellipse update was requested. " <<
+      "Reconfigure with Tempus_ENALBE_Anasazi=ON.\n");
+#endif
+}
+
 
 
 }  // namespace Tempus

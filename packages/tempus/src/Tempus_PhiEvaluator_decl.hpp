@@ -10,10 +10,22 @@
 #include "Tempus_config.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_Describable.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_LAPACK.hpp"
+#include "Thyra_DetachedVectorView.hpp"
+#include "Thyra_DetachedMultiVectorView.hpp"
 
+#include "Thyra_VectorStdOps.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_VectorBase.hpp"
+#include "Thyra_LinearOpBase.hpp"
+#include "Thyra_DefaultIdentityLinearOp.hpp"
 #include "Thyra_ProductVectorBase.hpp"
 #include "Thyra_ModelEvaluator.hpp"
+
+#include "Teuchos_DefaultComm.hpp"
+#include "Thyra_SpmdVectorSpaceBase.hpp"
+#include "Teuchos_CommHelpers.hpp"
 
 namespace Tempus {
 
@@ -30,6 +42,14 @@ class PhiLinearSolver {
   ~PhiLinearSolver() {}
 
   void setLumpMassMatrix(const bool lump);
+
+  /** \brief Set the eigensolver parameter list used by computeJacobianSpectrumBounds.
+   *
+   *  The ParameterList should contain the entries defined in
+   *  PhiEvaluator::getValidParametersBasic() under the "Eigensolver" sublist.
+   *  When null, all eigensolver parameters fall back to compiled-in defaults.
+   */
+  void setEigensolverParams(Teuchos::RCP<Teuchos::ParameterList> pl);
 
   /** \brief Initialize PhiSolver
    *
@@ -56,7 +76,19 @@ class PhiLinearSolver {
   void buildK(const Thyra::Ordinal n);
   void buildb(const Teuchos::ArrayView<const Teuchos::RCP<const Thyra::VectorBase<Scalar>>> &rhs_B);
   Teuchos::RCP<Thyra::ProductVectorBase<Scalar>> buildv(const Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar>> space,
-							const Teuchos::RCP<const Thyra::VectorBase<Scalar>> x0) const;
+              const Teuchos::RCP<const Thyra::VectorBase<Scalar>> x0) const;
+
+  /** \brief Compute the extrema of the the scaled system Jacobian.
+  *
+  *   Computes the minimum real, maximum real and maximum imaginary components
+  *   of the Jacobian spectrum using Anasazi block Krylov-Schur.
+  *   These values maybe used to set hyperparameters of the PhiEvaluators.
+  *
+   @param a    The minimum real spectrum bound
+   @param b    The maximum real spectrum bound
+   @param c    The maximum imaginary spectrum bound
+  */
+  void computeJacobianSpectrumBounds(double& a, double& b, double& c);
 
   // Solve Mass plus Jacobian, for given inArgs (recompute matrices from from ModelEvaluator)
   Thyra::SolveStatus<Scalar> assembleAndsolveMpJ(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
@@ -89,6 +121,12 @@ class PhiLinearSolver {
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> Atilde_;
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> KMatrix_;
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> bMatrix_;
+
+  // internal storage for eigenvectors of the M^{-1}*J LinOp
+  Teuchos::RCP<Thyra::MultiVectorBase<Scalar>> evecsMinvJ_;
+
+  // eigensolver parameters forwarded from the owning PhiEvaluator
+  Teuchos::RCP<Teuchos::ParameterList> eigensolverPL_;
 };
 
 
@@ -163,13 +201,20 @@ class PhiEvaluator
   /// set the ModelEvaluator
   void setModel(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > appModel);
 
-
   /** \brief   Set the linearization point for the Jacobian calculation
    *
    *  The linearization point x and time t are taken from inArgs.
    *  This computes the Mass and Jacobian matrix for future use.
    */
   void setLinearizationPoint(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs);
+
+  /** \brief   Adapt internal PhiEvaluator hyperparameters to the current Jacobian.
+   *
+   *  Called after setLinearizationPoint.  Default implementation is a null-op.
+   *  This method should be overridden by inheriting PhiEvaluator implementations when
+   *  there are hyperparameters of the method that require analysis of the Jacobian.
+   */
+  virtual void adaptEvaluator() { this->isInitialized(); };
 
   /** \brief  Compute the Phi_k function of cdt*Jacobian for right hand side Mrhs_b
    *
@@ -178,8 +223,8 @@ class PhiEvaluator
    *  which is solved as part of this method.
    */
   virtual Thyra::SolveStatus<Scalar> computePhi(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
-						const int phi_order, const Scalar cdt,
-						const Teuchos::RCP<const Thyra::VectorBase<Scalar>> &Mrhs_b);
+            const int phi_order, const Scalar cdt,
+            const Teuchos::RCP<const Thyra::VectorBase<Scalar>> &Mrhs_b);
 
   /** \brief  Compute the Phi function of cdt times Jacobian for a linear combination with right hand side vectors Mrhs_B
    *
@@ -212,6 +257,9 @@ class PhiEvaluator
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>> appModel_;
   Teuchos::RCP<Tempus::PhiLinearSolver<Scalar>> phiLinSolv_;
 
+  /// Eigenvalue solver settings
+  Teuchos::RCP<Teuchos::ParameterList> eigensolverPL_;
+
   //mutable
   Teuchos::RCP<const Thyra::ModelEvaluatorBase::InArgs<Scalar>> inArgs_lin_;
 
@@ -221,11 +269,125 @@ class PhiEvaluator
    *  Computes v := phi_{phi_order}(L)v in place (overwriting the rhs with the result)
    */
   virtual Thyra::SolveStatus<Scalar> computeLinOpPhi(const int phi_order,
-						     const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> L,
-						     const Teuchos::Ptr<Thyra::VectorBase<Scalar>> v,
-						     const Scalar cdt=1.0
-						     ) = 0;
+                 const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> L,
+                 const Teuchos::Ptr<Thyra::VectorBase<Scalar>> v,
+                 const Scalar cdt=1.0
+                 ) = 0;
 };
+
+/// Nonmember helper to convert a Thyra LinearOp to a SerialDenseMatrix
+// ------------------------------------------------------------------------
+template <class Scalar>
+Teuchos::SerialDenseMatrix<int, Scalar>
+operatorToDense(Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> lop)
+{
+  const int numCols = static_cast<int>(lop->domain()->dim());
+  const int numRows = static_cast<int>(lop->range()->dim());
+
+  auto rangeSpmd =
+    Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<Scalar>>(
+        lop->range(), true);
+
+  auto domainSpmd =
+    Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<Scalar>>(
+        lop->domain(), true);
+
+  auto comm = rangeSpmd->getComm();
+  const int rank = comm.is_null() ? 0 : comm->getRank();
+  const int numProcs = comm.is_null() ? 1 : comm->getSize();
+
+  const int rowOffset   = static_cast<int>(rangeSpmd->localOffset());
+  const int rowLocalDim = static_cast<int>(rangeSpmd->localSubDim());
+
+  const int colOffset   = static_cast<int>(domainSpmd->localOffset());
+  const int colLocalDim = static_cast<int>(domainSpmd->localSubDim());
+
+  Teuchos::RCP<Thyra::MultiVectorBase<Scalar>> Id =
+      Thyra::createMembers(lop->domain(), numCols);
+
+  Thyra::assign(Id.ptr(), Scalar(0));
+
+  // Build distributed identity. Each rank sets only the identity entries
+  // whose domain rows it owns.
+  for (int jLocal = 0; jLocal < colLocalDim; ++jLocal) {
+    const int jGlobal = colOffset + jLocal;
+
+    Teuchos::RCP<Thyra::VectorBase<Scalar>> col_j = Id->col(jGlobal);
+    Thyra::set_ele(jGlobal, Scalar(1), col_j.ptr());
+  }
+
+  Teuchos::RCP<Thyra::MultiVectorBase<Scalar>> Y =
+      Thyra::createMembers(lop->range(), numCols);
+
+  Thyra::apply(*lop, Thyra::NOTRANS, *Id, Y.ptr(), Scalar(1), Scalar(0));
+
+  // Local contribution to the dense matrix.
+  // Column-major indexing: i + j*numRows.
+  std::vector<Scalar> localDense(numRows * numCols, Scalar(0));
+  std::vector<Scalar> globalDense(numRows * numCols, Scalar(0));
+
+  for (int j = 0; j < numCols; ++j) {
+    Teuchos::RCP<const Thyra::VectorBase<Scalar>> colY = Y->col(j);
+
+    if (rowLocalDim > 0) {
+      Thyra::Range1D localRange(rowOffset, rowOffset + rowLocalDim - 1);
+
+      Thyra::ConstDetachedVectorView<Scalar> localView(*colY, localRange);
+
+      for (int iLocal = 0; iLocal < rowLocalDim; ++iLocal) {
+        const int iGlobal = rowOffset + iLocal;
+        localDense[iGlobal + j * numRows] = localView[iGlobal];
+      }
+    }
+  }
+
+  // Combine local pieces. Since each row is owned by one rank,
+  // sum-reduction reconstructs the full dense matrix on every rank.
+  // Ignore the logic if comm is null.
+  if (comm.is_null()) {
+    globalDense = localDense;
+  }
+  else {
+    Teuchos::reduceAll(
+        *comm,
+        Teuchos::REDUCE_SUM,
+        static_cast<long int>(localDense.size()),
+        localDense.data(),
+        globalDense.data());
+  }
+
+  Teuchos::SerialDenseMatrix<int, Scalar> globalDenseMat(numRows, numCols);
+
+  for (int j = 0; j < numCols; ++j) {
+    for (int i = 0; i < numRows; ++i) {
+      globalDenseMat(i, j) = globalDense[i + j * numRows];
+    }
+  }
+
+  return globalDenseMat;
+}
+
+/// Nonmember helper to compute eigenvalues of a SerialDenseMatrix
+// ------------------------------------------------------------------------
+template<typename OrdinalType, typename Scalar>
+int denseEigenvalues(const Teuchos::SerialDenseMatrix<OrdinalType, Scalar>& A,
+                           Teuchos::Array<Scalar>& eigs_re,
+                           Teuchos::Array<Scalar>& eigs_im) {
+    OrdinalType n = A.numRows();
+    Teuchos::SerialDenseMatrix<OrdinalType, Scalar> A_copy(Teuchos::Copy, A);
+    Teuchos::LAPACK<OrdinalType, Scalar> lapack;
+    // Quick workspace query
+    Scalar lworkQuery = 0.0;
+    OrdinalType info = 0;
+    lapack.GEEV('N', 'N', n, A_copy.values(), A_copy.stride(), eigs_re.getRawPtr(), eigs_im.getRawPtr(),
+                nullptr, 1, nullptr, 1, &lworkQuery, -1, &info);
+    // Solve
+    OrdinalType lwork = static_cast<OrdinalType>(lworkQuery);
+    Teuchos::Array<Scalar> work(lwork);
+    lapack.GEEV('N', 'N', n, A_copy.values(), A_copy.stride(), eigs_re.getRawPtr(), eigs_im.getRawPtr(),
+                nullptr, 1, nullptr, 1, work.getRawPtr(), lwork, &info);
+    return info;
+}
 
 }  // namespace Tempus
 

@@ -68,6 +68,10 @@ PhiEvaluatorLeja<Scalar>::getValidParameters() const
       "leja_c", 0.5,
       "Maximum complex bound of the  ellipse bounding system spectrum. The default is 0.5.");
 
+  pl->set<double>(
+      "Leja Ellipse Safety Factor", 1.0,
+      "Safety scaling factor applied to the adapted Leja ellipse size. The default is 1.0.");
+
   return pl;
 }
 
@@ -364,6 +368,23 @@ void PhiEvaluatorLeja<Scalar>::setLejaEllipse(const double a, const double b, co
 }
 
 template <class Scalar>
+Teuchos::Tuple<double, 3> PhiEvaluatorLeja<Scalar>::getLejaEllipse()
+{
+  return Teuchos::tuple<double>(leja_a_, leja_b_, leja_c_);
+}
+
+template <class Scalar>
+void PhiEvaluatorLeja<Scalar>::adaptEvaluator()
+{
+  this->phiLinSolv_->computeJacobianSpectrumBounds(leja_a_, leja_b_, leja_c_);
+  // scale ellipse by saftey factor
+  leja_a_ *= leja_sf_;
+  leja_c_ *= leja_sf_;
+  std::cout << "Adapted Leja ellipse parameters. a=" <<
+    leja_a_ << " b=" << leja_b_ << " c=" << leja_c_ << std::endl;
+}
+
+template <class Scalar>
 void PhiEvaluatorLeja<Scalar>::setDivideDifferenceMethod(const int ddMethod)
 {
   ddMethod_ = ddMethod;
@@ -394,6 +415,7 @@ void PhiEvaluatorLeja<Scalar>::setPhiEvaluatorValues(
 
   //pl->validateParametersAndSetDefaults(*getValidParameters());
 
+  leja_sf_ = pl->get<double>("Leja Ellipse Safety Factor", 1.0);
   leja_tol_ = pl->get<double>("leja_tol", 1.0e-18);
   setDivideDifferenceMethod(pl->get<int>("Leja DD Method", 2));
   setExpansionOrder(pl->get<int>("Expansion Order", 300));
