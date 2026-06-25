@@ -46,8 +46,7 @@
     </ParameterList>
 
     <ParameterList name="Demo Stepper">
-      <Parameter name="Stepper Type" type="string" value="EPI"/>
-      <Parameter name="EPI Order" type="double" value="3.0"/>
+      <Parameter name="Stepper Type" type="string" value="EPI3"/>
       <Parameter name="Use FSAL" type="bool" value="false"/>
       <Parameter name="Initial Condition Consistency" type="string" value="Consistent"/>
       <Parameter name="Initial Condition Consistency Check" type="bool" value="false"/>
