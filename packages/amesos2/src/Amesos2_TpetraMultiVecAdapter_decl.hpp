@@ -288,6 +288,15 @@ namespace Amesos2 {
               const Teuchos::EVerbosityLevel verbLevel =
               Teuchos::Describable::verbLevel_default) const;
 
+    // Direct 2-D column-major device view access for single-process GPU solvers.
+    // Bypasses the do_get/do_put copy machinery when B and X are already device-resident.
+    auto getLocalDeviceView2d_ReadOnly() const {
+      return mv_->getLocalViewDevice(Tpetra::Access::ReadOnly);
+    }
+    auto getLocalDeviceView2d_OverwriteAll() const {
+      return mv_->getLocalViewDevice(Tpetra::Access::OverwriteAll);
+    }
+
   private:
     //! The multivector which this adapter wraps
     Teuchos::RCP<multivec_t> mv_;

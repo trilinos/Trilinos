@@ -275,6 +275,13 @@ namespace Amesos2 {
               const Teuchos::EVerbosityLevel verbLevel =
               Teuchos::Describable::verbLevel_default) const;
 
+    // Direct 2-D device view access for single-process GPU solvers.
+    Kokkos::View<const scalar_t**, Kokkos::LayoutLeft, ExecutionSpace>
+    getLocalDeviceView2d_ReadOnly() const { return *mv_; }
+
+    Kokkos::View<scalar_t**, Kokkos::LayoutLeft, ExecutionSpace>
+    getLocalDeviceView2d_OverwriteAll() const { return *mv_; }
+
   private:
 
     //! The multivector which this adapter wraps
