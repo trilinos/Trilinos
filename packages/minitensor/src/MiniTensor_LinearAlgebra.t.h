@@ -3523,6 +3523,9 @@ log_eig_sym(Tensor<T, N> const & A)
   std::tie(V, D) = eig_sym(A);
 
   for (Index i = 0; i < dimension; ++i) {
+    if (D(i, i) < T(0)) {
+      MT_ERROR_EXIT("Non-SPD input: negative eigenvalue.");
+    }
     D(i, i) = std::log(D(i, i));
   }
 
@@ -4381,6 +4384,12 @@ std::pair<Tensor<T, N>, Tensor<T, N>> polar_left_eig(Tensor<T, N> const &F) {
   Tensor<T, N>
   x = zero<T, N>(3);
 
+  for (Index i = 0; i < 3; ++i) {
+    if (eVal(i, i) < T(0)) {
+      MT_ERROR_EXIT("Non-SPD input: negative eigenvalue.");
+    }
+  }
+
   x(0,0) = std::sqrt(eVal(0,0));
   x(1,1) = std::sqrt(eVal(1,1));
   x(2,2) = std::sqrt(eVal(2,2));
@@ -4437,6 +4446,12 @@ std::pair<Tensor<T, N>, Tensor<T, N>> polar_right_eig(Tensor<T, N> const &F) {
   // compute sqrt() and inv(sqrt()) of eigenvalues
   Tensor<T, N>
   x = zero<T, N>(dimension);
+
+  for (Index i = 0; i < dimension; ++i) {
+    if (eVal(i, i) < T(0)) {
+      MT_ERROR_EXIT("Non-SPD input: negative eigenvalue.");
+    }
+  }
 
   x(0,0) = std::sqrt(eVal(0,0));
   x(1,1) = std::sqrt(eVal(1,1));
@@ -4510,6 +4525,9 @@ polar_left_logV_eig(Tensor<T, N> const &F) {
   DQ(dimension, Filler::ZEROS), DI(dimension, Filler::ZEROS), DL(dimension, Filler::ZEROS);
 
   for (Index i = 0; i < dimension; ++i) {
+    if (D(i,i) < T(0)) {
+      MT_ERROR_EXIT("Non-SPD input: negative eigenvalue.");
+    }
     DQ(i,i) = std::sqrt(D(i,i));
     DI(i,i) = 1.0 / DQ(i,i);
     DL(i,i) = std::log(DQ(i,i));
@@ -4550,6 +4568,11 @@ polar_left_logV_lame(Tensor<T, N> const &F) {
   std::tie(eVec, eVal) = eig_spd_cos(b);
 
   // compute sqrt() and inv(sqrt()) of eigenvalues
+  for (Index i = 0; i < 3; ++i) {
+    if (eVal(i,i) < T(0)) {
+      MT_ERROR_EXIT("Non-SPD input: negative eigenvalue.");
+    }
+  }
   Tensor<T, N> x = zero<T, N>(3);
   x(0,0) = std::sqrt(eVal(0,0));
   x(1,1) = std::sqrt(eVal(1,1));
