@@ -23,7 +23,6 @@
 #include "KokkosKernels_Handle.hpp"
 
 #include <Kokkos_Sort.hpp>
-#include <cstdint>
 
 using Teuchos::rcp;
 using Teuchos::RCP;
@@ -48,12 +47,12 @@ template <class MVType, class HostColorViewType>
 void set_probe_by_color_host(const Teuchos::RCP<MVType>& probeVec,
                              const HostColorViewType& h_colors, const LO numLocalCols,
                              const LO color) {
-  probeVec->putScalar(Teuchos::ScalarTraits<ST>::zero());
-
-  auto hostView = probeVec->getLocalViewHost(Tpetra::Access::ReadWrite);
+  auto hostView = probeVec->getLocalViewHost(Tpetra::Access::OverwriteAll);
   for (LO lcol = 0; lcol < numLocalCols; ++lcol) {
     if (static_cast<LO>(h_colors(lcol)) == color) {
       hostView(lcol, 0) = Teuchos::ScalarTraits<ST>::one();
+    } else {
+      hostView(lcol, 0) = Teuchos::ScalarTraits<ST>::zero();
     }
   }
 }
@@ -428,6 +427,8 @@ RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > ProbingPreconditionerFactory::probe(
 
     auto responseView = response->getLocalViewDevice(Tpetra::Access::ReadOnly);
     decode_probe_by_color(row_map_copy, entries_copy, colors, responseView, numRows, color, values);
+
+    exec_space().fence();
   }
 
   kh.destroy_distance2_graph_coloring_handle();
