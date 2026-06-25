@@ -46,8 +46,7 @@ struct LocalCrsGraphViews {
 
 template <class MVType, class HostColorViewType>
 void set_probe_by_color_host(const Teuchos::RCP<MVType>& probeVec,
-                             const HostColorViewType& h_colors,
-                             const LO numLocalCols,
+                             const HostColorViewType& h_colors, const LO numLocalCols,
                              const LO color) {
   probeVec->putScalar(Teuchos::ScalarTraits<ST>::zero());
 
@@ -97,8 +96,8 @@ LO compute_max_row_length(const RowPtrViewType& rowPtrs, const LO numRows) {
 }
 
 template <class RowMapViewType>
-typename RowMapViewType::non_const_value_type
-count_candidate_col_graph_edges(const RowMapViewType& row_map_copy, const LO numRows) {
+typename RowMapViewType::non_const_value_type count_candidate_col_graph_edges(
+    const RowMapViewType& row_map_copy, const LO numRows) {
   using row_map_value_type = typename RowMapViewType::non_const_value_type;
 
   row_map_value_type candidateEdgeCount = 0;
@@ -115,12 +114,12 @@ count_candidate_col_graph_edges(const RowMapViewType& row_map_copy, const LO num
 }
 
 template <class RowMapDeviceView, class EntriesDeviceView>
-LocalCrsGraphViews<
-    Kokkos::View<typename RowMapDeviceView::non_const_value_type*, typename RowMapDeviceView::device_type>,
-    Kokkos::View<typename EntriesDeviceView::non_const_value_type*, typename EntriesDeviceView::device_type> >
+LocalCrsGraphViews<Kokkos::View<typename RowMapDeviceView::non_const_value_type*,
+                                typename RowMapDeviceView::device_type>,
+                   Kokkos::View<typename EntriesDeviceView::non_const_value_type*,
+                                typename EntriesDeviceView::device_type> >
 build_column_intersection_graph_device(const RowMapDeviceView& row_map_in,
-                                       const EntriesDeviceView& entries_in,
-                                       const LO numRows,
+                                       const EntriesDeviceView& entries_in, const LO numRows,
                                        const LO numLocalCols) {
   using row_offset_type = typename RowMapDeviceView::non_const_value_type;
   using col_index_type  = typename EntriesDeviceView::non_const_value_type;
@@ -130,8 +129,7 @@ build_column_intersection_graph_device(const RowMapDeviceView& row_map_in,
   using row_map_out_type = Kokkos::View<row_offset_type*, device_type>;
   using entries_out_type = Kokkos::View<col_index_type*, device_type>;
 
-  const row_offset_type numCandidateKeys =
-      count_candidate_col_graph_edges(row_map_in, numRows);
+  const row_offset_type numCandidateKeys = count_candidate_col_graph_edges(row_map_in, numRows);
 
   Kokkos::View<row_offset_type*, device_type> candidateOffsets(
       Kokkos::ViewAllocateWithoutInitializing("teko_probe_candidate_offsets"),
@@ -141,7 +139,7 @@ build_column_intersection_graph_device(const RowMapDeviceView& row_map_in,
       "Teko::ProbingPreconditionerFactory::fill_candidate_offsets",
       Kokkos::RangePolicy<exec_space>(0, numRows), KOKKOS_LAMBDA(const LO row) {
         const row_offset_type d = row_map_in(row + 1) - row_map_in(row);
-        candidateOffsets(row) = (d > 1 ? d * (d - 1) : 0);
+        candidateOffsets(row)   = (d > 1 ? d * (d - 1) : 0);
       });
 
   Kokkos::parallel_scan(
@@ -162,16 +160,16 @@ build_column_intersection_graph_device(const RowMapDeviceView& row_map_in,
   Kokkos::parallel_for(
       "Teko::ProbingPreconditionerFactory::fill_candidate_keys",
       Kokkos::RangePolicy<exec_space>(0, numRows), KOKKOS_LAMBDA(const LO row) {
-        const auto rowStart = row_map_in(row);
-        const auto rowEnd   = row_map_in(row + 1);
+        const auto rowStart     = row_map_in(row);
+        const auto rowEnd       = row_map_in(row + 1);
         const row_offset_type d = rowEnd - rowStart;
-        row_offset_type pos = candidateOffsets(row);
+        row_offset_type pos     = candidateOffsets(row);
 
         for (row_offset_type i = 0; i < d; ++i) {
           const key_type src = static_cast<key_type>(entries_in(rowStart + i));
           for (row_offset_type j = 0; j < d; ++j) {
             if (i == j) continue;
-            const key_type dst = static_cast<key_type>(entries_in(rowStart + j));
+            const key_type dst   = static_cast<key_type>(entries_in(rowStart + j));
             candidateKeys(pos++) = src * numColsKey + dst;
           }
         }
@@ -185,8 +183,7 @@ build_column_intersection_graph_device(const RowMapDeviceView& row_map_in,
 
   Kokkos::parallel_for(
       "Teko::ProbingPreconditionerFactory::mark_unique_candidate_keys",
-      Kokkos::RangePolicy<exec_space>(0, numCandidateKeys),
-      KOKKOS_LAMBDA(const row_offset_type i) {
+      Kokkos::RangePolicy<exec_space>(0, numCandidateKeys), KOKKOS_LAMBDA(const row_offset_type i) {
         if (i == 0) {
           uniqueFlags(i) = 1;
         } else {
@@ -216,8 +213,7 @@ build_column_intersection_graph_device(const RowMapDeviceView& row_map_in,
 
   Kokkos::parallel_for(
       "Teko::ProbingPreconditionerFactory::pack_unique_keys",
-      Kokkos::RangePolicy<exec_space>(0, numCandidateKeys),
-      KOKKOS_LAMBDA(const row_offset_type i) {
+      Kokkos::RangePolicy<exec_space>(0, numCandidateKeys), KOKKOS_LAMBDA(const row_offset_type i) {
         if (uniqueFlags(i)) {
           uniqueKeys(uniqueOffsets(i)) = candidateKeys(i);
         }
@@ -230,9 +226,8 @@ build_column_intersection_graph_device(const RowMapDeviceView& row_map_in,
 
   Kokkos::parallel_for(
       "Teko::ProbingPreconditionerFactory::count_unique_keys_per_row",
-      Kokkos::RangePolicy<exec_space>(0, numUniqueKeys),
-      KOKKOS_LAMBDA(const row_offset_type i) {
-        const key_type key = uniqueKeys(i);
+      Kokkos::RangePolicy<exec_space>(0, numUniqueKeys), KOKKOS_LAMBDA(const row_offset_type i) {
+        const key_type key        = uniqueKeys(i);
         const row_offset_type src = static_cast<row_offset_type>(key / numColsKey);
         Kokkos::atomic_fetch_add(&rowCounts(src), row_offset_type(1));
       });
@@ -260,19 +255,17 @@ build_column_intersection_graph_device(const RowMapDeviceView& row_map_in,
 
   Kokkos::parallel_for(
       "Teko::ProbingPreconditionerFactory::init_fill_offsets",
-      Kokkos::RangePolicy<exec_space>(0, numLocalCols), KOKKOS_LAMBDA(const LO col) {
-        fillOffsets(col) = row_map_out(col);
-      });
+      Kokkos::RangePolicy<exec_space>(0, numLocalCols),
+      KOKKOS_LAMBDA(const LO col) { fillOffsets(col) = row_map_out(col); });
 
   Kokkos::parallel_for(
       "Teko::ProbingPreconditionerFactory::fill_col_graph_entries",
-      Kokkos::RangePolicy<exec_space>(0, numUniqueKeys),
-      KOKKOS_LAMBDA(const row_offset_type i) {
-        const key_type key = uniqueKeys(i);
+      Kokkos::RangePolicy<exec_space>(0, numUniqueKeys), KOKKOS_LAMBDA(const row_offset_type i) {
+        const key_type key        = uniqueKeys(i);
         const row_offset_type src = static_cast<row_offset_type>(key / numColsKey);
         const col_index_type dst  = static_cast<col_index_type>(key % numColsKey);
         const row_offset_type pos = Kokkos::atomic_fetch_add(&fillOffsets(src), row_offset_type(1));
-        entries_out(pos) = dst;
+        entries_out(pos)          = dst;
       });
 
   LocalCrsGraphViews<row_map_out_type, entries_out_type> out = {row_map_out, entries_out};
@@ -327,8 +320,8 @@ void ProbingPreconditionerFactory::setGraphOperator(const Teko::LinearOp& graphO
   RCP<const Thyra::TpetraLinearOp<ST, LO, GO, NT> > tOp =
       rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST, LO, GO, NT> >(graphOp, true);
   RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT> > crsMatrix =
-      rcp_dynamic_cast<const Tpetra::CrsMatrix<ST, LO, GO, NT> >(
-          tOp->getConstTpetraOperator(), true);
+      rcp_dynamic_cast<const Tpetra::CrsMatrix<ST, LO, GO, NT> >(tOp->getConstTpetraOperator(),
+                                                                 true);
   setGraph(crsMatrix->getCrsGraph());
 }
 
@@ -337,8 +330,8 @@ void ProbingPreconditionerFactory::setGraph(
   graph_ = graph;
 }
 
-RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> >
-ProbingPreconditionerFactory::probe(const LinearOp& lo) const {
+RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > ProbingPreconditionerFactory::probe(
+    const LinearOp& lo) const {
   TEUCHOS_TEST_FOR_EXCEPTION(graph_ == Teuchos::null, std::runtime_error,
                              "ProbingPreconditionerFactory::probe: probing graph is null");
 
@@ -352,12 +345,10 @@ ProbingPreconditionerFactory::probe(const LinearOp& lo) const {
   RCP<const Tpetra::Map<LO, GO, NT> > rowMap    = graph_->getRowMap();
   RCP<const Tpetra::Map<LO, GO, NT> > colMap    = graph_->getColMap();
 
-  using local_graph_device_type =
-      typename Tpetra::CrsGraph<LO, GO, NT>::local_graph_device_type;
-  using row_map_type      = typename local_graph_device_type::row_map_type;
-  using index_type        = typename local_graph_device_type::entries_type;
-  using local_matrix_type =
-      typename Tpetra::CrsMatrix<ST, LO, GO, NT>::local_matrix_device_type;
+  using local_graph_device_type = typename Tpetra::CrsGraph<LO, GO, NT>::local_graph_device_type;
+  using row_map_type            = typename local_graph_device_type::row_map_type;
+  using index_type              = typename local_graph_device_type::entries_type;
+  using local_matrix_type = typename Tpetra::CrsMatrix<ST, LO, GO, NT>::local_matrix_device_type;
   using values_type       = typename local_matrix_type::values_type::non_const_type;
   using exec_space        = typename NT::device_type::execution_space;
   using memory_space      = typename NT::device_type::memory_space;
@@ -365,20 +356,15 @@ ProbingPreconditionerFactory::probe(const LinearOp& lo) const {
   using entries_nonc_type = typename index_type::non_const_type;
 
   using kernel_handle_type =
-      KokkosKernels::Experimental::KokkosKernelsHandle<
-          typename row_map_type::value_type,
-          typename index_type::value_type,
-          ST,
-          exec_space,
-          memory_space,
-          memory_space>;
+      KokkosKernels::Experimental::KokkosKernelsHandle<typename row_map_type::value_type,
+                                                       typename index_type::value_type, ST,
+                                                       exec_space, memory_space, memory_space>;
 
   const LO numRows      = static_cast<LO>(graph_->getLocalNumRows());
   const LO numLocalCols = static_cast<LO>(colMap->getLocalNumElements());
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-      static_cast<size_t>(numLocalCols) != domainMap->getLocalNumElements(),
-      std::runtime_error,
+      static_cast<size_t>(numLocalCols) != domainMap->getLocalNumElements(), std::runtime_error,
       "ProbingPreconditionerFactory::probe: graph local column count ("
           << numLocalCols << ") does not match operator domain local size ("
           << domainMap->getLocalNumElements()
@@ -392,12 +378,12 @@ ProbingPreconditionerFactory::probe(const LinearOp& lo) const {
   {
     auto localGraphDevice = graph_->getLocalGraphDevice();
 
-    row_map_copy = row_map_nonc_type(
-        Kokkos::ViewAllocateWithoutInitializing("teko_probe_row_map_copy"),
-        localGraphDevice.row_map.extent(0));
-    entries_copy = entries_nonc_type(
-        Kokkos::ViewAllocateWithoutInitializing("teko_probe_entries_copy"),
-        localGraphDevice.entries.extent(0));
+    row_map_copy =
+        row_map_nonc_type(Kokkos::ViewAllocateWithoutInitializing("teko_probe_row_map_copy"),
+                          localGraphDevice.row_map.extent(0));
+    entries_copy =
+        entries_nonc_type(Kokkos::ViewAllocateWithoutInitializing("teko_probe_entries_copy"),
+                          localGraphDevice.entries.extent(0));
 
     Kokkos::deep_copy(row_map_copy, localGraphDevice.row_map);
     Kokkos::deep_copy(entries_copy, localGraphDevice.entries);
@@ -412,19 +398,17 @@ ProbingPreconditionerFactory::probe(const LinearOp& lo) const {
   kernel_handle_type kh;
   kh.create_distance2_graph_coloring_handle(KokkosGraph::COLORING_D2_DEFAULT);
 
-  KokkosGraph::Experimental::graph_color_distance2(
-      &kh, numLocalCols, colGraph.row_map, colGraph.entries);
+  KokkosGraph::Experimental::graph_color_distance2(&kh, numLocalCols, colGraph.row_map,
+                                                   colGraph.entries);
 
   auto coloringHandle = kh.get_distance2_graph_coloring_handle();
   auto colors         = coloringHandle->get_vertex_colors();
   const LO numColors  = static_cast<LO>(coloringHandle->get_num_colors());
 
-  TEUCHOS_TEST_FOR_EXCEPTION(
-      static_cast<LO>(colors.extent(0)) < numLocalCols,
-      std::runtime_error,
-      "ProbingPreconditionerFactory::probe: colors view extent ("
-          << colors.extent(0) << ") is smaller than local column count ("
-          << numLocalCols << ").");
+  TEUCHOS_TEST_FOR_EXCEPTION(static_cast<LO>(colors.extent(0)) < numLocalCols, std::runtime_error,
+                             "ProbingPreconditionerFactory::probe: colors view extent ("
+                                 << colors.extent(0) << ") is smaller than local column count ("
+                                 << numLocalCols << ").");
 
   values_type values(Kokkos::ViewAllocateWithoutInitializing("probed_values"), totalNumEntries);
   Kokkos::deep_copy(values, Teuchos::ScalarTraits<ST>::zero());
@@ -439,20 +423,17 @@ ProbingPreconditionerFactory::probe(const LinearOp& lo) const {
   for (LO color = 1; color <= numColors; ++color) {
     set_probe_by_color_host(probeVec, h_colors, numLocalCols, color);
 
-    tpetraOp->apply(*probeVec, *response, Teuchos::NO_TRANS,
-                    Teuchos::ScalarTraits<ST>::one(),
+    tpetraOp->apply(*probeVec, *response, Teuchos::NO_TRANS, Teuchos::ScalarTraits<ST>::one(),
                     Teuchos::ScalarTraits<ST>::zero());
 
     auto responseView = response->getLocalViewDevice(Tpetra::Access::ReadOnly);
-    decode_probe_by_color(row_map_copy, entries_copy, colors,
-                          responseView, numRows, color, values);
+    decode_probe_by_color(row_map_copy, entries_copy, colors, responseView, numRows, color, values);
   }
 
   kh.destroy_distance2_graph_coloring_handle();
 
   auto lclMat = local_matrix_type("probed_local_matrix", numRows, maxNumEntriesPerRow,
-                                  totalNumEntries, values,
-                                  row_map_copy, entries_copy);
+                                  totalNumEntries, values, row_map_copy, entries_copy);
 
   return Teuchos::rcp(
       new Tpetra::CrsMatrix<ST, LO, GO, NT>(lclMat, rowMap, colMap, domainMap, rangeMap));
