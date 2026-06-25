@@ -93,6 +93,9 @@ public:
     virtual void setModel(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel) override;
 
+    /// Set the order
+    void setOrder(Scalar order) {this->order_ = order;}
+
     /// Set the initial conditions and make them consistent.
     virtual void setInitialConditions (
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) override;
@@ -221,7 +224,6 @@ public:
 
 };
 
-
 /// Nonmember constructor - ModelEvaluator and ParameterList
 // ------------------------------------------------------------------------
 template<class Scalar>
@@ -230,6 +232,165 @@ createStepperEPI(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
   Teuchos::RCP<Teuchos::ParameterList> pl);
 
+
+// ----------------------------------------------------------------------------
+/** \brief EPI2 Definition.
+ *
+ *  See Tempus_StepperEPI for additional details.
+ */
+template <class Scalar>
+class StepperExponential_EPI2 : virtual public StepperEPI<Scalar> {
+ public:
+  StepperExponential_EPI2()
+  {
+    this->setStepperName("EPI2");
+    this->setStepperType("EPI2");
+    this->setUseFSAL(false);
+    this->setICConsistency("Consistent");
+    this->setICConsistencyCheck(false);
+    this->setZeroInitialGuess(false);
+    this->setAppAction(Teuchos::null);
+    this->setDefaultSolver();
+    this->setOrder(2.0);
+  }
+
+  StepperExponential_EPI2(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+    bool useFSAL,
+    std::string ICConsistency,
+    bool ICConsistencyCheck,
+    bool zeroInitialGuess,
+    const Teuchos::RCP<StepperEPIAppAction<Scalar> >& stepperEPIAppAction)
+  {
+    this->setStepperName("EPI2");
+    this->setStepperType("EPI2");
+    this->setUseFSAL(useFSAL);
+    this->setICConsistency(ICConsistency);
+    this->setICConsistencyCheck(ICConsistencyCheck);
+    this->setZeroInitialGuess(zeroInitialGuess);
+    this->setOrder(2.0);
+    this->setupTableau();
+
+    this->setAppAction(stepperEPIAppAction);
+    this->setSolver(solver);
+
+    if (appModel != Teuchos::null) {
+      this->setModel(appModel);
+      this->initialize();
+    }
+  }
+
+  std::string getDescription() const
+  {
+    std::ostringstream Description;
+    Description << this->getStepperType() << "\n";
+    return Description.str();
+  }
+
+ protected:
+  void setupTableau() {}
+};
+
+/// Nonmember constructor for EPI2
+// ------------------------------------------------------------------------
+template <class Scalar>
+Teuchos::RCP<StepperExponential_EPI2<Scalar> >
+createStepperExponential_EPI2(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+    Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperExponential_EPI2<Scalar>());
+  stepper->setStepperImplicitValues(pl);
+  stepper->setStepperExponentialValues(pl);
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
+}
+
+
+// ----------------------------------------------------------------------------
+/** \brief EPI3 Definition.
+ *
+ *  See Tempus_StepperEPI for additional details.
+ */
+template <class Scalar>
+class StepperExponential_EPI3 : virtual public StepperEPI<Scalar> {
+ public:
+  StepperExponential_EPI3()
+  {
+    this->setStepperName("EPI3");
+    this->setStepperType("EPI3");
+    this->setUseFSAL(false);
+    this->setICConsistency("Consistent");
+    this->setICConsistencyCheck(false);
+    this->setZeroInitialGuess(false);
+    this->setAppAction(Teuchos::null);
+    this->setDefaultSolver();
+    this->setOrder(3.0);
+  }
+
+  StepperExponential_EPI3(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+    bool useFSAL,
+    std::string ICConsistency,
+    bool ICConsistencyCheck,
+    bool zeroInitialGuess,
+    const Teuchos::RCP<StepperEPIAppAction<Scalar> >& stepperEPIAppAction)
+  {
+    this->setStepperName("EPI3");
+    this->setStepperType("EPI3");
+    this->setUseFSAL(useFSAL);
+    this->setICConsistency(ICConsistency);
+    this->setICConsistencyCheck(ICConsistencyCheck);
+    this->setZeroInitialGuess(zeroInitialGuess);
+    this->setOrder(3.0);
+    this->setupTableau();
+
+    this->setAppAction(stepperEPIAppAction);
+    this->setSolver(solver);
+
+    if (appModel != Teuchos::null) {
+      this->setModel(appModel);
+      this->initialize();
+    }
+  }
+
+  std::string getDescription() const
+  {
+    std::ostringstream Description;
+    Description << this->getStepperType() << "\n";
+    return Description.str();
+  }
+
+ protected:
+  void setupTableau() {}
+};
+
+/// Nonmember constructor for EPI3
+// ------------------------------------------------------------------------
+template <class Scalar>
+Teuchos::RCP<StepperExponential_EPI3<Scalar> >
+createStepperExponential_EPI3(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+    Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperExponential_EPI3<Scalar>());
+  stepper->setStepperImplicitValues(pl);
+  stepper->setStepperExponentialValues(pl);
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
+}
 
 } // namespace Tempus
 
