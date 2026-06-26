@@ -1,4 +1,4 @@
-SET(LIB_REQUIRED_DEP_PACKAGES Teuchos Thyra Stratimikos Anasazi Tpetra ThyraTpetraAdapters)
+SET(LIB_REQUIRED_DEP_PACKAGES Teuchos Thyra Stratimikos Anasazi Tpetra ThyraTpetraAdapters KokkosKernels)
 SET(LIB_OPTIONAL_DEP_PACKAGES Ifpack2 Amesos2 Belos)
 SET(TEST_REQUIRED_DEP_PACKAGES Belos Ifpack2 Galeri)
 SET(TEST_OPTIONAL_DEP_PACKAGES)
