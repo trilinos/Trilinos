@@ -18,11 +18,13 @@
 #include "Thyra_DefaultLinearOpSource.hpp"
 #include "Thyra_TpetraThyraWrappers.hpp"
 
-#include "KokkosGraph_Distance1ColorHandle.hpp"
-#include "KokkosGraph_Distance1Color.hpp"
+#include "KokkosGraph_Distance2ColorHandle.hpp"
+#include "KokkosGraph_Distance2Color.hpp"
 #include "KokkosKernels_Handle.hpp"
 
 #include <Kokkos_Sort.hpp>
+#include <cstdint>
+#include <vector>
 
 using Teuchos::rcp;
 using Teuchos::RCP;
@@ -45,14 +47,21 @@ struct LocalCrsGraphViews {
 
 template <class MVType, class HostColorViewType>
 void set_probe_by_color_host(const Teuchos::RCP<MVType>& probeVec,
-                             const HostColorViewType& h_colors, const LO numLocalCols,
-                             const LO color) {
-  auto hostView = probeVec->getLocalViewHost(Tpetra::Access::OverwriteAll);
+                             const HostColorViewType& h_colors,
+                             const std::vector<LO>& colLidToDomainLid, const LO color) {
+  const LO invalid = Teuchos::OrdinalTraits<LO>::invalid();
+
+  probeVec->putScalar(Teuchos::ScalarTraits<ST>::zero());
+
+  auto hostView         = probeVec->getLocalViewHost(Tpetra::Access::ReadWrite);
+  const LO numLocalCols = static_cast<LO>(colLidToDomainLid.size());
+
   for (LO lcol = 0; lcol < numLocalCols; ++lcol) {
     if (static_cast<LO>(h_colors(lcol)) == color) {
-      hostView(lcol, 0) = Teuchos::ScalarTraits<ST>::one();
-    } else {
-      hostView(lcol, 0) = Teuchos::ScalarTraits<ST>::zero();
+      const LO domainLid = colLidToDomainLid[static_cast<size_t>(lcol)];
+      if (domainLid != invalid) {
+        hostView(domainLid, 0) = Teuchos::ScalarTraits<ST>::one();
+      }
     }
   }
 }
@@ -307,9 +316,6 @@ void ProbingPreconditionerFactory::initializeFromParameterList(const Teuchos::Pa
     // noop
   } else {
     Teuchos::RCP<Teko::RequestHandler> rh = getRequestHandler();
-    TEUCHOS_TEST_FOR_EXCEPTION(rh == Teuchos::null, std::runtime_error,
-                               "ProbingPreconditionerFactory::initializeFromParameterList: "
-                               "RequestHandler is null, cannot request \"Probing Graph\".");
     rh->preRequest<RCP<const Tpetra::CrsGraph<LO, GO, NT> > >(Teko::RequestMesg("Probing Graph"));
     setGraph(
         rh->request<RCP<const Tpetra::CrsGraph<LO, GO, NT> > >(Teko::RequestMesg("Probing Graph")));
@@ -365,19 +371,6 @@ RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > ProbingPreconditionerFactory::probe(
   const LO numRows      = static_cast<LO>(graph_->getLocalNumRows());
   const LO numLocalCols = static_cast<LO>(colMap->getLocalNumElements());
 
-  TEUCHOS_TEST_FOR_EXCEPTION(
-      static_cast<size_t>(numLocalCols) != domainMap->getLocalNumElements(), std::runtime_error,
-      "ProbingPreconditionerFactory::probe: graph local column count ("
-          << numLocalCols << ") does not match operator domain local size ("
-          << domainMap->getLocalNumElements()
-          << "). The probing code assumes local column indices index the domain vector.");
-
-  TEUCHOS_TEST_FOR_EXCEPTION(static_cast<size_t>(numRows) != rangeMap->getLocalNumElements(),
-                             std::runtime_error,
-                             "ProbingPreconditionerFactory::probe: graph local row count ("
-                                 << numRows << ") does not match operator range local size ("
-                                 << rangeMap->getLocalNumElements() << ").");
-
   row_map_nonc_type row_map_copy;
   entries_nonc_type entries_copy;
   LO totalNumEntries     = 0;
@@ -404,12 +397,12 @@ RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > ProbingPreconditionerFactory::probe(
       build_column_intersection_graph_device(row_map_copy, entries_copy, numRows, numLocalCols);
 
   kernel_handle_type kh;
-  kh.create_graph_coloring_handle();
+  kh.create_distance2_graph_coloring_handle(KokkosGraph::COLORING_D2_DEFAULT);
 
-  KokkosGraph::Experimental::graph_color(&kh, numLocalCols, numLocalCols, colGraph.row_map,
-                                         colGraph.entries);
+  KokkosGraph::Experimental::graph_color_distance2(&kh, numLocalCols, colGraph.row_map,
+                                                   colGraph.entries);
 
-  auto coloringHandle = kh.get_graph_coloring_handle();
+  auto coloringHandle = kh.get_distance2_graph_coloring_handle();
   auto colors         = coloringHandle->get_vertex_colors();
   const LO numColors  = static_cast<LO>(coloringHandle->get_num_colors());
 
@@ -417,6 +410,18 @@ RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > ProbingPreconditionerFactory::probe(
                              "ProbingPreconditionerFactory::probe: colors view extent ("
                                  << colors.extent(0) << ") is smaller than local column count ("
                                  << numLocalCols << ").");
+
+  std::vector<LO> colLidToDomainLid(static_cast<size_t>(numLocalCols));
+  {
+    const LO invalid = Teuchos::OrdinalTraits<LO>::invalid();
+    for (LO lcol = 0; lcol < numLocalCols; ++lcol) {
+      const GO gid = colMap->getGlobalElement(lcol);
+      const LO dlid =
+          (gid == Teuchos::OrdinalTraits<GO>::invalid() ? invalid
+                                                        : domainMap->getLocalElement(gid));
+      colLidToDomainLid[static_cast<size_t>(lcol)] = dlid;
+    }
+  }
 
   values_type values(Kokkos::ViewAllocateWithoutInitializing("probed_values"), totalNumEntries);
   Kokkos::deep_copy(values, Teuchos::ScalarTraits<ST>::zero());
@@ -429,18 +434,16 @@ RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > ProbingPreconditionerFactory::probe(
       rcp(new Tpetra::MultiVector<ST, LO, GO, NT>(rangeMap, 1));
 
   for (LO color = 1; color <= numColors; ++color) {
-    set_probe_by_color_host(probeVec, h_colors, numLocalCols, color);
+    set_probe_by_color_host(probeVec, h_colors, colLidToDomainLid, color);
 
     tpetraOp->apply(*probeVec, *response, Teuchos::NO_TRANS, Teuchos::ScalarTraits<ST>::one(),
                     Teuchos::ScalarTraits<ST>::zero());
 
     auto responseView = response->getLocalViewDevice(Tpetra::Access::ReadOnly);
     decode_probe_by_color(row_map_copy, entries_copy, colors, responseView, numRows, color, values);
-
-    exec_space().fence();
   }
 
-  kh.destroy_distance2_graph_coloring_handle();
+  kh.destroy_graph_coloring_handle();
 
   auto lclMat = local_matrix_type("probed_local_matrix", numRows, maxNumEntriesPerRow,
                                   totalNumEntries, values, row_map_copy, entries_copy);
