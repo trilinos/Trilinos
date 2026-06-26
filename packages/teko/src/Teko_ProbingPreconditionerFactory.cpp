@@ -307,6 +307,9 @@ void ProbingPreconditionerFactory::initializeFromParameterList(const Teuchos::Pa
     // noop
   } else {
     Teuchos::RCP<Teko::RequestHandler> rh = getRequestHandler();
+    TEUCHOS_TEST_FOR_EXCEPTION(rh == Teuchos::null, std::runtime_error,
+                               "ProbingPreconditionerFactory::initializeFromParameterList: "
+                               "RequestHandler is null, cannot request \"Probing Graph\".");
     rh->preRequest<RCP<const Tpetra::CrsGraph<LO, GO, NT> > >(Teko::RequestMesg("Probing Graph"));
     setGraph(
         rh->request<RCP<const Tpetra::CrsGraph<LO, GO, NT> > >(Teko::RequestMesg("Probing Graph")));
