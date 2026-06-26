@@ -130,6 +130,27 @@ class TrapezoidRuleSolver
   void enableStaticInitSolve() { static_init_solve_ = true; };
   /** \brief .*/
   void disableStaticInitSolve() { static_init_solve_ = false; };
+
+  /** \brief Set the start time of the integration window.
+
+      By default the window (Initial Time, Final Time) is fixed at construction
+      from the "Trapezoid Rule" parameter list. These setters let a driver --
+      e.g. a coupling loop that advances the solver one outer step at a time --
+      retarget the window to successive segments of global simulation time
+      before each evalModel call, mirroring Piro::TempusSolver's
+      setStartTime/setFinalTime. The model then sees true simulation time
+      through InArgs::set_t (a time-dependent boundary condition, body force, or
+      material lookup gets the correct time instead of the fixed window's).
+      The internal time step delta_t = (Final - Initial) / Num Time Steps is
+      recomputed; the dynamics depend only on delta_t, so shifting the window's
+      origin leaves the integration unchanged. */
+  void setStartTime(const Scalar start_time) { t_init = start_time; delta_t = (t_final - t_init) / numTimeSteps; }
+  /** \brief Set the final time of the integration window (recomputes delta_t). */
+  void setFinalTime(const Scalar final_time) { t_final = final_time; delta_t = (t_final - t_init) / numTimeSteps; }
+  /** \brief Start time of the current integration window. */
+  Scalar getStartTime() const { return t_init; }
+  /** \brief Final time of the current integration window. */
+  Scalar getFinalTime() const { return t_final; }
   //@}
 
 
