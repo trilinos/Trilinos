@@ -372,6 +372,12 @@ RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > ProbingPreconditionerFactory::probe(
           << domainMap->getLocalNumElements()
           << "). The probing code assumes local column indices index the domain vector.");
 
+  TEUCHOS_TEST_FOR_EXCEPTION(static_cast<size_t>(numRows) != rangeMap->getLocalNumElements(),
+                             std::runtime_error,
+                             "ProbingPreconditionerFactory::probe: graph local row count ("
+                                 << numRows << ") does not match operator range local size ("
+                                 << rangeMap->getLocalNumElements() << ").");
+
   row_map_nonc_type row_map_copy;
   entries_nonc_type entries_copy;
   LO totalNumEntries     = 0;
