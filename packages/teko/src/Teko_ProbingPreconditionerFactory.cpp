@@ -18,8 +18,8 @@
 #include "Thyra_DefaultLinearOpSource.hpp"
 #include "Thyra_TpetraThyraWrappers.hpp"
 
-#include "KokkosGraph_Distance2ColorHandle.hpp"
-#include "KokkosGraph_Distance2Color.hpp"
+#include "KokkosGraph_Distance1ColorHandle.hpp"
+#include "KokkosGraph_Distance1Color.hpp"
 #include "KokkosKernels_Handle.hpp"
 
 #include <Kokkos_Sort.hpp>
@@ -395,12 +395,12 @@ RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > ProbingPreconditionerFactory::probe(
       build_column_intersection_graph_device(row_map_copy, entries_copy, numRows, numLocalCols);
 
   kernel_handle_type kh;
-  kh.create_distance2_graph_coloring_handle(KokkosGraph::COLORING_D2_DEFAULT);
+  kh.create_graph_coloring_handle();
 
-  KokkosGraph::Experimental::graph_color_distance2(&kh, numLocalCols, colGraph.row_map,
-                                                   colGraph.entries);
+  KokkosGraph::Experimental::graph_color(&kh, numLocalCols, numLocalCols, colGraph.row_map,
+                                         colGraph.entries);
 
-  auto coloringHandle = kh.get_distance2_graph_coloring_handle();
+  auto coloringHandle = kh.get_graph_coloring_handle();
   auto colors         = coloringHandle->get_vertex_colors();
   const LO numColors  = static_cast<LO>(coloringHandle->get_num_colors());
 
