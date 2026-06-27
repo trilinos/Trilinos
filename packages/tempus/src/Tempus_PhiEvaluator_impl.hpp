@@ -841,7 +841,7 @@ Thyra::SolveStatus<Scalar> PhiLinearSolver<Scalar>::solveMpJ(const Teuchos::Ptr<
 template <class Scalar>
 void PhiLinearSolver<Scalar>::computeJacobianSpectrumBounds(double& a, double& b, double& c)
 {
-  this->checkInitialized();
+  this->checkInitialized(PhiInitialization::JACOBIAN_AND_MASS);
 
   using MT = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
   typedef Thyra::MultiVectorBase<Scalar> MV;
