@@ -440,8 +440,8 @@ using namespace Intrepid2;
                   if (m_use_finite_volume)
                     {
                       FiniteVolumeMesh3D fvm(*eMesh.get_bulk_data());
-                      double sc_volume[numNodes];
-                      fvm.elementVolume(elem, sc_volume);
+                      std::vector<double> sc_volume(numNodes);
+                      fvm.elementVolume(elem, sc_volume.data());
                     }
 #endif
                   double min_edge_length = elem_min_edge_length[iCell];

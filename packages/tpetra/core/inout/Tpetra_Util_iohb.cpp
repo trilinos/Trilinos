@@ -336,6 +336,7 @@ int readHB_header(std::FILE* in_file, char* Title, char* Key, char* Type,
   }
   if (std::sscanf(line, "%*s") < 0)
     IOHBTerminate("Trilinos_Util_iohb.cpp: Null (or blank) third line of HB file.\n");
+  *(Type + 3) = '\0';
   if (std::sscanf(line, "%3c", Type) != 1)
     IOHBTerminate("Trilinos_Util_iohb.cpp: Invalid Type info, line 3 of Harwell-Boeing file.\n");
   upcase(Type);

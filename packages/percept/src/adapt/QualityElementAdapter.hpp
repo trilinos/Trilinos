@@ -151,7 +151,7 @@
         //int iedge_max = -1;
         double edge_len_max = 0.0;
         double edge_len_min = std::numeric_limits<double>::max();
-        double edge_lengths[numSubDimNeededEntities];
+        std::vector<double> edge_lengths(numSubDimNeededEntities);
         //bool marked[numSubDimNeededEntities];
         for (unsigned iSubDimOrd = 0; iSubDimOrd < numSubDimNeededEntities; iSubDimOrd++)
           {

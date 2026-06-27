@@ -99,6 +99,8 @@ jobs:
               exit 1
           fi
 
+          export no_proxy=my.cdash.org
+
           python3 ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
             --target-branch-name ${{ github.event.pull_request.base.ref }} \
             --genconfig-build-name ${GENCONFIG_BUILD_NAME} \
@@ -110,7 +112,7 @@ jobs:
             --build-dir /home/Trilinos/build \
             --dashboard-build-name=PR-${{ github.event.pull_request.number }}_${AT2_IMAGE}_debug_shared \
             --ctest-driver /home/runner/_work/Trilinos/Trilinos/cmake/SimpleTesting/cmake/ctest-driver.cmake \
-            --ctest-drop-site sems-cdash-son.sandia.gov/cdash \
+            --ctest-drop-site my.cdash.org \
             --filename-subprojects ./package_subproject_list.cmake \
             --filename-packageenables ./packageEnables.cmake \
             --max-cores-allowed=29 \
@@ -213,6 +215,8 @@ jobs:
               exit 1
           fi
 
+          export no_proxy=my.cdash.org
+
           python3 ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
             --target-branch-name ${{ github.event.pull_request.base.ref }} \
             --genconfig-build-name ${GENCONFIG_BUILD_NAME} \
@@ -224,7 +228,7 @@ jobs:
             --build-dir /home/Trilinos/build \
             --dashboard-build-name=PR-${{ github.event.pull_request.number }}_${AT2_IMAGE}_release-debug_shared \
             --ctest-driver /home/runner/_work/Trilinos/Trilinos/cmake/SimpleTesting/cmake/ctest-driver.cmake \
-            --ctest-drop-site sems-cdash-son.sandia.gov/cdash \
+            --ctest-drop-site my.cdash.org \
             --filename-subprojects ./package_subproject_list.cmake \
             --filename-packageenables ./packageEnables.cmake \
             --max-cores-allowed=29 \
@@ -326,7 +330,8 @@ jobs:
               exit 1
           fi
 
-          type python
+          export no_proxy=my.cdash.org
+
           python3 ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
             --target-branch-name ${{ github.event.pull_request.base.ref }} \
             --genconfig-build-name ${GENCONFIG_BUILD_NAME} \
@@ -338,7 +343,7 @@ jobs:
             --build-dir /home/Trilinos/build \
             --dashboard-build-name=PR-${{ github.event.pull_request.number }}_${AT2_IMAGE}_release_static \
             --ctest-driver /home/runner/_work/Trilinos/Trilinos/cmake/SimpleTesting/cmake/ctest-driver.cmake \
-            --ctest-drop-site sems-cdash-son.sandia.gov/cdash \
+            --ctest-drop-site my.cdash.org \
             --filename-subprojects ./package_subproject_list.cmake \
             --filename-packageenables ./packageEnables.cmake \
             --max-cores-allowed=56 \
@@ -443,6 +448,8 @@ jobs:
               exit 1
           fi
 
+          export no_proxy=my.cdash.org
+
           python3 ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
             --target-branch-name ${{ github.event.pull_request.base.ref }} \
             --genconfig-build-name ${GENCONFIG_BUILD_NAME} \
@@ -454,7 +461,7 @@ jobs:
             --build-dir /home/Trilinos/build \
             --dashboard-build-name=PR-${{ github.event.pull_request.number }}_${AT2_IMAGE}_release-debug_shared \
             --ctest-driver /home/runner/_work/Trilinos/Trilinos/cmake/SimpleTesting/cmake/ctest-driver.cmake \
-            --ctest-drop-site sems-cdash-son.sandia.gov/cdash \
+            --ctest-drop-site my.cdash.org \
             --filename-subprojects ./package_subproject_list.cmake \
             --filename-packageenables ./packageEnables.cmake \
             --max-cores-allowed=29 \
@@ -556,7 +563,8 @@ jobs:
               exit 1
           fi
 
-          type python
+          export no_proxy=my.cdash.org
+
           python3 ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
             --target-branch-name ${{ github.event.pull_request.base.ref }} \
             --genconfig-build-name ${GENCONFIG_BUILD_NAME} \
@@ -568,7 +576,7 @@ jobs:
             --build-dir /home/Trilinos/build \
             --dashboard-build-name=PR-${{ github.event.pull_request.number }}_${AT2_IMAGE}_release_static_uvm \
             --ctest-driver /home/runner/_work/Trilinos/Trilinos/cmake/SimpleTesting/cmake/ctest-driver.cmake \
-            --ctest-drop-site sems-cdash-son.sandia.gov/cdash \
+            --ctest-drop-site my.cdash.org \
             --filename-subprojects ./package_subproject_list.cmake \
             --filename-packageenables ./packageEnables.cmake \
             --max-cores-allowed=56 \
@@ -668,6 +676,8 @@ jobs:
               exit 1
           fi
 
+          export no_proxy=my.cdash.org
+
           python3 ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
             --target-branch-name ${{ github.event.pull_request.base.ref }} \
             --genconfig-build-name ${GENCONFIG_BUILD_NAME} \
@@ -679,7 +689,7 @@ jobs:
             --build-dir /home/Trilinos/build \
             --dashboard-build-name=PR-${{ github.event.pull_request.number }}_${AT2_IMAGE}_release-debug_shared \
             --ctest-driver /home/runner/_work/Trilinos/Trilinos/cmake/SimpleTesting/cmake/ctest-driver.cmake \
-            --ctest-drop-site sems-cdash-son.sandia.gov/cdash \
+            --ctest-drop-site my.cdash.org \
             --filename-subprojects ./package_subproject_list.cmake \
             --filename-packageenables ./packageEnables.cmake \
             --max-cores-allowed=29 \
@@ -782,6 +792,8 @@ jobs:
               exit 1
           fi
 
+          export no_proxy=my.cdash.org
+
           python3 ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
             --target-branch-name ${{ github.event.pull_request.base.ref }} \
             --genconfig-build-name ${GENCONFIG_BUILD_NAME} \
@@ -793,7 +805,7 @@ jobs:
             --build-dir /home/Trilinos/build \
             --dashboard-build-name=PR-${{ github.event.pull_request.number }}_${AT2_IMAGE}_release-debug_static_openmp \
             --ctest-driver /home/runner/_work/Trilinos/Trilinos/cmake/SimpleTesting/cmake/ctest-driver.cmake \
-            --ctest-drop-site sems-cdash-son.sandia.gov/cdash \
+            --ctest-drop-site my.cdash.org \
             --filename-subprojects ./package_subproject_list.cmake \
             --filename-packageenables ./packageEnables.cmake \
             --max-cores-allowed=29 \
@@ -885,7 +897,9 @@ jobs:
           printf "\n\n\n"
 
           echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}"
-          type python
+
+          export no_proxy=my.cdash.org
+
           python3 ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
             --target-branch-name ${{ github.event.pull_request.base.ref }} \
             --genconfig-build-name ${GENCONFIG_BUILD_NAME} \
@@ -897,7 +911,7 @@ jobs:
             --build-dir /home/Trilinos/build \
             --dashboard-build-name=PR-${{ github.event.pull_request.number }}_${AT2_IMAGE}_framework-tests \
             --ctest-driver /home/runner/_work/Trilinos/Trilinos/cmake/SimpleTesting/cmake/ctest-driver.cmake \
-            --ctest-drop-site sems-cdash-son.sandia.gov/cdash \
+            --ctest-drop-site my.cdash.org \
             --filename-subprojects ./package_subproject_list.cmake \
             --skip-create-packageenables
       - name: Build output logs
@@ -944,5 +958,5 @@ jobs:
       num-concurrent-tests: 16
       slots-per-gpu: 8
       skip-create-packageenables: true
-      extra-pr-driver-args: "--extra-configure-args=-C ${GITHUB_WORKSPACE}/packages/framework/cmake-fragments/ramses/gcc-mpi-openmp.cmake"
+      extra-pr-driver-args: --extra-configure-args=-C;${GITHUB_WORKSPACE}/packages/framework/cmake-fragments/ramses/gcc-mpi-openmp.cmake
 

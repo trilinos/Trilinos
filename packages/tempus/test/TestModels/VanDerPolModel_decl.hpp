@@ -20,6 +20,8 @@ namespace Tempus_Test {
 
 /** \brief van der Pol model problem for nonlinear electrical circuit.
  *
+ * \section tempus_vanderpol_model van der Pol Model
+ *
  * This is a canonical equation of a nonlinear oscillator (Hairer, Norsett,
  * and Wanner, pp. 111-115, and Hairer and Wanner, pp. 4-5) for an electrical
  * circuit.  In implicit ODE form, \f$ \mathcal{F}(\dot{x},x,t) = 0 \f$,

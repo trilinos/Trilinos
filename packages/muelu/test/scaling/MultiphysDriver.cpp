@@ -114,21 +114,27 @@ BuildPointCouplingMatrix(
     const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>& domainMap,
     Scalar value) {
   using Matrix = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using GO     = GlobalOrdinal;
 
   Teuchos::RCP<Matrix> A =
       Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(rangeMap, 1);
 
-  TEUCHOS_TEST_FOR_EXCEPTION(rangeMap->getLocalNumElements() != domainMap->getLocalNumElements(),
-                             std::runtime_error,
-                             "rangeMap and domainMap local sizes must match");
+  const auto rangeGids  = rangeMap->getLocalElementList();
+  const auto domainGids = domainMap->getLocalElementList();
 
-  Teuchos::ArrayView<const GlobalOrdinal> rowGids = rangeMap->getLocalElementList();
-  for (size_t i = 0; i < static_cast<size_t>(rowGids.size()); ++i) {
-    GlobalOrdinal row = rowGids[i];
-    LocalOrdinal lid  = rangeMap->getLocalElement(row);
-    GlobalOrdinal col = domainMap->getGlobalElement(lid);
+  const size_t nRangeLocal  = rangeGids.size();
+  const size_t nDomainLocal = domainGids.size();
 
-    Teuchos::Array<GlobalOrdinal> cols(1, col);
+  for (size_t i = 0; i < nRangeLocal; ++i) {
+    const GO row = rangeGids[i];
+
+    const size_t j = std::min(
+        (i * nDomainLocal) / nRangeLocal,
+        nDomainLocal - size_t(1));
+
+    const GO col = domainGids[j];
+
+    Teuchos::Array<GO> cols(1, col);
     Teuchos::Array<Scalar> vals(1, value);
     A->insertGlobalValues(row, cols(), vals());
   }
@@ -161,11 +167,14 @@ BuildProblem(const Teuchos::RCP<const Teuchos::Comm<int>>& comm,
   // Build the base scalar map for field 0
   Teuchos::RCP<const Map> mapU = BuildCartesianMap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(comm, lib, nx, ny);
 
+  const GlobalOrdinal nxP = nx;
+  const GlobalOrdinal nyP = ny / 3;
+
   // Shift field 1 GIDs for Xpetra-style blocked numbering
-  Teuchos::RCP<const Map> mapP = BuildCartesianMap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(comm, lib, nx, ny);
+  Teuchos::RCP<const Map> mapP = BuildCartesianMap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(comm, lib, nxP, nyP);
 
   auto [A00, coords0, nullspace0] = BuildLaplace2D<Scalar, LocalOrdinal, GlobalOrdinal, Node>(comm, lib, nx, ny, mapU);
-  auto [A11, coords1, nullspace1] = BuildLaplace2D<Scalar, LocalOrdinal, GlobalOrdinal, Node>(comm, lib, nx, ny, mapP);
+  auto [A11, coords1, nullspace1] = BuildLaplace2D<Scalar, LocalOrdinal, GlobalOrdinal, Node>(comm, lib, nxP, nyP, mapP);
 
   Teuchos::RCP<Matrix> A01 = BuildPointCouplingMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(mapU, mapP, alpha);
   Teuchos::RCP<Matrix> A10 = BuildPointCouplingMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(mapP, mapU, beta);
@@ -279,6 +288,25 @@ bool SolveWithMultiPhys(
 }
 #endif
 
+enum class SolvePath {
+  Monolithic,
+  Blocked
+};
+
+SolvePath ParseSolvePath(const std::string& path) {
+  if (path == "monolithic")
+    return SolvePath::Monolithic;
+  if (path == "blocked")
+    return SolvePath::Blocked;
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::invalid_argument,
+      "Invalid value for --path: \"" << path
+                                     << "\". Valid options are: monolithic, blocked");
+
+  return SolvePath::Monolithic;
+}
+
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib lib, int argc, char* argv[]) {
 #include <MueLu_UseShortNames.hpp>
@@ -314,6 +342,8 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib lib, int arg
 
     clp.setOption("xml", &mueluXmlFile,
                   "Required: XML file containing MueLu parameters");
+    clp.setOption("path", &pathString,
+                  "Solve path to run: monolithic or blocked");
 
     Teuchos::CommandLineProcessor::EParseCommandLineReturn parseResult = clp.parse(argc, argv);
     if (parseResult != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL)
@@ -326,6 +356,8 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib lib, int arg
 
     auto params = Teuchos::getParametersFromXmlFile(mueluXmlFile);
 
+    const SolvePath path = ParseSolvePath(pathString);
+
     Scalar alpha = Teuchos::as<Scalar>(alpha_in);
     Scalar beta  = Teuchos::as<Scalar>(beta_in);
 
@@ -333,8 +365,9 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib lib, int arg
 
 #ifdef HAVE_MUELU_BELOS
     int iters          = -1;
+    auto matrix        = path == SolvePath::Monolithic ? objs.monolithicA : Teuchos::rcp_dynamic_cast<Matrix>(objs.blockedA);
     const auto solveOK = SolveWithMultiPhys<Scalar, LocalOrdinal, GlobalOrdinal, Node>(
-        objs.monolithicA,
+        matrix,
         objs.auxMatrices,
         objs.nullspaces,
         objs.coords,

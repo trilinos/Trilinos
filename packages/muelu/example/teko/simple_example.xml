@@ -1,0 +1,37 @@
+<ParameterList>
+
+  <ParameterList name="SIMPLE">
+    <Parameter name="Type" type="string" value="NS SIMPLE"/>
+    <Parameter name="Inverse Velocity Type" type="string" value="MueLu-Velocity"/>
+    <Parameter name="Inverse Pressure Type" type="string" value="MueLu-Pressure"/>
+  </ParameterList>
+
+  <ParameterList name="MueLu-Pressure">
+    <Parameter name="Type" type="string" value="MueLu"/>
+    <Parameter name="verbosity" type="string" value="none"/>
+    <Parameter name="max levels" type="int" value="2"/>
+    <Parameter name="number of equations" type="int" value="1"/>
+    <Parameter name="multigrid algorithm" type="string" value="sa"/>
+    <Parameter name="coarse: type" type="string" value="KLU2"/>
+    <Parameter name="smoother: type" type="string" value="RELAXATION"/>
+    <ParameterList name="smoother: params">
+      <Parameter name="relaxation: type" type="string" value="Gauss-Seidel"/>
+      <Parameter name="relaxation: sweeps" type="int" value="2"/>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="MueLu-Velocity">
+    <Parameter name="Type" type="string" value="MueLu"/>
+    <Parameter name="verbosity" type="string" value="none"/>
+    <Parameter name="max levels" type="int" value="2"/>
+    <Parameter name="number of equations" type="int" value="2"/>
+    <Parameter name="multigrid algorithm" type="string" value="sa"/>
+    <Parameter name="coarse: type" type="string" value="KLU2"/>
+    <Parameter name="smoother: type" type="string" value="RELAXATION"/>
+    <ParameterList name="smoother: params">
+      <Parameter name="relaxation: type" type="string" value="Gauss-Seidel"/>
+      <Parameter name="relaxation: sweeps" type="int" value="2"/>
+    </ParameterList>
+  </ParameterList>
+
+</ParameterList>

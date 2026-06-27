@@ -111,7 +111,7 @@ TEUCHOS_UNIT_TEST(NOX_Tpetra_1DFEM, Responses)
     }
   }
 
-  Teuchos::Array<NOX::TMultiVector::mag_type> norms(1);
+  Teuchos::Array<NOX::TMultiVector::mag_type> norms(DgDx->getNumVectors());
   DgDx->norm2(norms);
   TEST_FLOATING_EQUALITY(norms[0],1.0,tol);
 

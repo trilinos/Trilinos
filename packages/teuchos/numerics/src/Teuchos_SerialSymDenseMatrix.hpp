@@ -447,7 +447,9 @@ SerialSymDenseMatrix<OrdinalType, ScalarType>::SerialSymDenseMatrix(
 
 template<typename OrdinalType, typename ScalarType>
 SerialSymDenseMatrix<OrdinalType, ScalarType>::SerialSymDenseMatrix(const SerialSymDenseMatrix<OrdinalType, ScalarType> &Source)
-  : numRowCols_(Source.numRowCols_), stride_(0), valuesCopied_(true),
+  : CompObject(Source),
+    BLAS<OrdinalType, ScalarType>(Source),
+    numRowCols_(Source.numRowCols_), stride_(0), valuesCopied_(true),
     values_(0), upper_(Source.upper_), UPLO_(Source.UPLO_)
 {
   if (!Source.valuesCopied_)

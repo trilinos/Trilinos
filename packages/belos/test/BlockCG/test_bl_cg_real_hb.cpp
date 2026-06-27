@@ -204,9 +204,9 @@ int main(int argc, char *argv[]) {
       std::cout << "Achieved tol : "<<ach_tol<<std::endl;
 
     // Clean up.
-    delete [] colptr;
-    delete [] rowind;
-    delete [] cvals;
+    free(colptr);
+    free(rowind);
+    free(cvals);
 
     success = ret==Belos::Converged && (unconvergedCause == Belos::SolverConverged) && !norm_failure;
 

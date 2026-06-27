@@ -385,7 +385,7 @@ void formLaplacian(const RCP<const CrsMatrix>& A, const bool weighted, const boo
             values[j] = ZERO;
           // Set the sign of off-diagonal elements
           else
-            values[j] = -abs(values[j]);
+            values[j] = -std::abs(values[j]);
 
           // Update the diagonal
           diagonal->sumIntoGlobalValue(i,-values[j]);

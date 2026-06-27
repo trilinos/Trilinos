@@ -21,7 +21,7 @@ on:
       ctest-drop-site:
         required: false
         type: string
-        default: "sems-cdash-son.sandia.gov/cdash"
+        default: "my.cdash.org"
       cdash-track:
         description: 'Pull Request, Nightly, or Experimental'
         required: false
@@ -58,6 +58,7 @@ jobs:
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
         with:
           fetch-depth: 1
+          ref: ${{ github.event.pull_request && '' || inputs.target-branch }}
       - name: Print debug outputs
         shell: bash -l {0}
         env:
@@ -144,6 +145,8 @@ jobs:
             extra_pr_driver_args=""
           fi
 
+          export no_proxy=my.cdash.org
+
           python3 ${TRILINOS_DIR}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
             --genconfig-build-name ${{ inputs.genconfig-string }} \
             ${{ inputs.target-branch && '--target-branch-name ' || '' }}${{ inputs.target-branch }} \
@@ -163,7 +166,7 @@ jobs:
             ${max_cores_allowed} \
             ${slots_per_gpu} \
             ${skip_create_packageenables} \
-            "${extra_pr_driver_args}"
+            ${extra_pr_driver_args}
       - name: Filtered build error logs
         if: success() || failure()
         shell: bash -l {0}

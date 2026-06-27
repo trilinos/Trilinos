@@ -5,7 +5,7 @@ TRIBITS_ADD_EXECUTABLE(
    AddMultiply_Example
    SOURCES 
       Driver.cpp
-   COMM mpi
+   COMM serial mpi
    )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(addmultiply_example_copyfiles

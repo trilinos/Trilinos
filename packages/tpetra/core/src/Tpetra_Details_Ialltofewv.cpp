@@ -227,9 +227,6 @@ int wait_impl(Ialltofewv::Req &req, Ialltofewv::Cache &cache) {
   // is this rank a root? linear search - nroots expected to be small
   const bool isRoot = std::find(req.roots, req.roots + req.nroots, rank) != req.roots + req.nroots;
 
-  const int AGG_TAG  = req.tag + 0;
-  const int ROOT_TAG = req.tag + 1;
-
   // Balance the number of incoming messages at each phase:
   // Aggregation = size / naggs * nroots
   // Root =        naggs
@@ -264,12 +261,12 @@ int wait_impl(Ialltofewv::Req &req, Ialltofewv::Cache &cache) {
       }
 #endif
       MPI_Irecv(&groupSendCounts[size_t(si) * size_t(req.nroots)], req.nroots, MPI_INT, si + rank,
-                req.tag, req.comm, &rreq);
+                req.aggTag, req.comm, &rreq);
       reqs.push_back(rreq);
     }
   }
   // send sendcounts to aggregator
-  MPI_Send(req.sendcounts, req.nroots, MPI_INT, myAgg, req.tag, req.comm);
+  MPI_Send(req.sendcounts, req.nroots, MPI_INT, myAgg, req.aggTag, req.comm);
 
   MPI_Waitall(reqs.size(), reqs.data(), MPI_STATUSES_IGNORE);
   reqs.resize(0);
@@ -319,7 +316,7 @@ int wait_impl(Ialltofewv::Req &req, Ialltofewv::Cache &cache) {
 #endif
           MPI_Request rreq;
           // &aggBuf(displ)
-          MPI_Irecv(aggBuf.data() + displ, count, req.sendtype, si + rank, req.tag, req.comm, &rreq);
+          MPI_Irecv(aggBuf.data() + displ, count, req.sendtype, si + rank, req.aggTag, req.comm, &rreq);
           reqs.push_back(rreq);
           displ += size_t(count) * sendSize;
         }
@@ -336,7 +333,7 @@ int wait_impl(Ialltofewv::Req &req, Ialltofewv::Cache &cache) {
     if (count) {
       MPI_Request sreq;
       MPI_Isend(&reinterpret_cast<const char *>(req.sendbuf)[displ], req.sendcounts[ri],
-                req.sendtype, myAgg, AGG_TAG, req.comm, &sreq);
+                req.sendtype, myAgg, req.aggTag, req.comm, &sreq);
       reqs.push_back(sreq);
     }
   }
@@ -373,7 +370,7 @@ int wait_impl(Ialltofewv::Req &req, Ialltofewv::Cache &cache) {
 
       if (count) {
         MPI_Request rreq;
-        MPI_Irecv(rootBuf.data() + displ, count, req.recvtype, aggSrc, ROOT_TAG, req.comm, &rreq);
+        MPI_Irecv(rootBuf.data() + displ, count, req.recvtype, aggSrc, req.rootTag, req.comm, &rreq);
         reqs.push_back(rreq);
         displ += size_t(count) * recvSize;
       }
@@ -389,7 +386,7 @@ int wait_impl(Ialltofewv::Req &req, Ialltofewv::Cache &cache) {
       const size_t count = rootCount[ri];
       if (count) {
         // &aggBuf[displ]
-        MPI_Send(aggBuf.data() + displ, count, req.sendtype, req.roots[ri], ROOT_TAG, req.comm);
+        MPI_Send(aggBuf.data() + displ, count, req.sendtype, req.roots[ri], req.rootTag, req.comm);
         displ += count * sendSize;
       }
     }

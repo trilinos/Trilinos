@@ -12,7 +12,8 @@
 namespace Tpetra::Details {
 
 DistributorActor::DistributorActor()
-  : mpiTag_(DEFAULT_MPI_TAG) {}
+  : mpiTag_(DEFAULT_MPI_TAG)
+  , ialltofewvRootTag_(DEFAULT_MPI_TAG) {}
 
 void DistributorActor::doWaits(const DistributorPlan& plan) {
   doWaitsRecv(plan);

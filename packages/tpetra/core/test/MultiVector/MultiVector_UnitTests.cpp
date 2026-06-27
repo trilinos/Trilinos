@@ -2215,19 +2215,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MultiVector, OffsetView, LO, GO, Scalar, Node)
     Array<Mag> a1(numSubVecs), a2(numSubVecs), a3(numSubVecs), aw(numVectors);  // after putScalar(): ...
     Array<Mag> changed(numSubVecs), zeros(numSubVecs, M0);
     for (int i = 0; i < 4; ++i) {
-      ArrayView<RCP<MV> > allMVs;  // (changed,three unchanged)
+      std::vector<RCP<MV> > allMVs;  // (changed,three unchanged)
       switch (i) {
         case 0:
-          allMVs = tuple<RCP<MV> >(A1e, A2e, A1o, A2o);
+          allMVs = {A1e, A2e, A1o, A2o};
           break;
         case 1:
-          allMVs = tuple<RCP<MV> >(A2e, A1o, A2o, A1e);
+          allMVs = {A2e, A1o, A2o, A1e};
           break;
         case 2:
-          allMVs = tuple<RCP<MV> >(A1o, A2o, A1e, A2e);
+          allMVs = {A1o, A2o, A1e, A2e};
           break;
         case 3:
-          allMVs = tuple<RCP<MV> >(A2o, A1e, A2e, A1o);
+          allMVs = {A2o, A1e, A2e, A1o};
           break;
       }
       allMVs[1]->norm2(b1());

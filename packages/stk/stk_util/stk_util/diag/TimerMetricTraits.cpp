@@ -35,7 +35,6 @@
 #include "stk_util/stk_config.h"
 #include "stk_util/diag/TimerMetricTraits.hpp"
 #include "stk_util/environment/CPUTime.hpp"           // for cpu_time
-#include "stk_util/environment/FormatMemorySize.hpp"  // for format_memory_size
 #include "stk_util/environment/FormatTime.hpp"        // for formatTime, TIMEFORMAT_HMS, TIMEFOR...
 #include "stk_util/environment/WallTime.hpp"          // for wall_time
 #include "stk_util/util/MallocUsed.h"                 // for malloc_used
@@ -96,14 +95,6 @@ MetricTraits<MPIByteCount>::value_now()
   return 0;
 }
 
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Nov 2025
-STK_DEPRECATED MetricTraits<HeapAlloc>::Type
-MetricTraits<HeapAlloc>::value_now()
-{
-  return ::malloc_used();
-}
-#endif
-
 std::string
 MetricTraits<LapCount>::table_header() {
   return "Count";
@@ -128,14 +119,6 @@ std::string
 MetricTraits<MPIByteCount>::table_header() {
   return "MPI Byte Count";
 }
-
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Nov 2025
-STK_DEPRECATED std::string
-MetricTraits<HeapAlloc>::table_header() {
-  return "Heap Allocated";
-}
-#endif
-
 
 std::string
 MetricTraits<CPUTime>::format(
@@ -175,15 +158,6 @@ MetricTraits<MPIByteCount>::format(
 
   return strout.str();
 }
-
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Nov 2025
-STK_DEPRECATED std::string
-MetricTraits<HeapAlloc>::format(
-  MetricTraits<HeapAlloc>::Type         count)
-{
-  return format_memory_size(count);
-}
-#endif
 
 } // namespace diag
 } // namespace stk

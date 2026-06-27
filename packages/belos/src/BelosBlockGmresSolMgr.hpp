@@ -202,7 +202,7 @@ public:
   //@{
 
   //! Set the linear problem that needs to be solved.
-  void setProblem( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem ) override { problem_ = problem; isSTSet_ = false; }
+  void setProblem( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem ) override { problem_ = problem; isSTSet_ = false; needsIterRebuild_ = true; }
 
   //! Set the parameters the solver manager should use to solve the linear problem.
   void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params ) override;
@@ -320,8 +320,12 @@ private:
   std::string label_;
   Teuchos::RCP<Teuchos::Time> timerSolve_;
 
+  // Cached iterator (reused across solve() calls to avoid reallocating Krylov subspace).
+  Teuchos::RCP<GmresIteration<ScalarType,MV,OP> > block_gmres_iter_;
+
   // Internal state variables.
   bool isSet_, isSTSet_;
+  bool needsIterRebuild_;
   bool loaDetected_;
 };
 
@@ -352,6 +356,7 @@ BlockGmresSolMgr<ScalarType,MV,OP>::BlockGmresSolMgr() :
   label_(label_default_),
   isSet_(false),
   isSTSet_(false),
+  needsIterRebuild_(true),
   loaDetected_(false)
 {}
 
@@ -385,6 +390,7 @@ BlockGmresSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
   label_(label_default_),
   isSet_(false),
   isSTSet_(false),
+  needsIterRebuild_(true),
   loaDetected_(false)
 {
 
@@ -752,6 +758,8 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuch
   }
 
   // Inform the solver manager that the current parameters were set.
+  // The cached iterator must be rebuilt since printer_, outputTest_, and ortho_ may have changed.
+  needsIterRebuild_ = true;
   isSet_ = true;
 }
 
@@ -944,12 +952,14 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
   //////////////////////////////////////////////////////////////////////////////////////
   // BlockGmres solver
 
-  Teuchos::RCP<GmresIteration<ScalarType,MV,OP> > block_gmres_iter;
-
-  if (isFlexible_)
-    block_gmres_iter = Teuchos::rcp( new BlockFGmresIter<ScalarType,MV,OP>(problem_,printer_,outputTest_,ortho_,plist) );
-  else
-    block_gmres_iter = Teuchos::rcp( new BlockGmresIter<ScalarType,MV,OP>(problem_,printer_,outputTest_,ortho_,plist) );
+  if (needsIterRebuild_) {
+    if (isFlexible_)
+      block_gmres_iter_ = Teuchos::rcp( new BlockFGmresIter<ScalarType,MV,OP>(problem_,printer_,outputTest_,ortho_,plist) );
+    else
+      block_gmres_iter_ = Teuchos::rcp( new BlockGmresIter<ScalarType,MV,OP>(problem_,printer_,outputTest_,ortho_,plist) );
+    needsIterRebuild_ = false;
+  }
+  Teuchos::RCP<GmresIteration<ScalarType,MV,OP> > &block_gmres_iter = block_gmres_iter_;
 
   // Enter solve() iterations
   {

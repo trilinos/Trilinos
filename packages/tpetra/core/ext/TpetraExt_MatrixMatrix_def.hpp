@@ -1882,7 +1882,7 @@ void mult_A_B_newmatrix(BlockCrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal
                                                        typename device_t::memory_space,
                                                        typename device_t::memory_space>;
   int team_work_size = 16;  // Defaults to 16 as per Deveci 12/7/16 - csiefer
-  std::string myalg("SPGEMM_KK_MEMORY");
+  std::string myalg("SPGEMM_DEFAULT");
   KokkosSparse::SPGEMMAlgorithm alg_enum = KokkosSparse::StringToSPGEMMAlgorithm(myalg);
 
   KernelHandle kh;
@@ -2326,7 +2326,7 @@ void KernelWrappers<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalOrdinalViewT
           LO Bkj = Bcolind[j];
           LO Cij = Bcol2Ccol[Bkj];
 
-          const bool badInsert = c_status[Cij] < OLD_ip || c_status[Cij] >= CSR_ip;
+          const bool badInsert = (Cij == LO_INVALID) || (c_status[Cij] < OLD_ip) || (c_status[Cij] >= CSR_ip);
           if (!badInsert)
             Cvals[c_status[Cij]] += Aval * Bvals[j];
           else if (throwOnInsert)
@@ -2342,7 +2342,7 @@ void KernelWrappers<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalOrdinalViewT
           LO Ikj = Icolind[j];
           LO Cij = Icol2Ccol[Ikj];
 
-          const bool badInsert = c_status[Cij] < OLD_ip || c_status[Cij] >= CSR_ip;
+          const bool badInsert = (Cij == LO_INVALID) || (c_status[Cij] < OLD_ip) || (c_status[Cij] >= CSR_ip);
           if (!badInsert)
             Cvals[c_status[Cij]] += Aval * Ivals[j];
           else if (throwOnInsert)
