@@ -22,8 +22,6 @@
 #ifndef AMESOS2_PARDISOMKL_DECL_HPP
 #define AMESOS2_PARDISOMKL_DECL_HPP
 
-#include <map>
-
 #include <Teuchos_StandardParameterEntryValidators.hpp>
 
 #include "Amesos2_SolverTraits.hpp"
@@ -85,6 +83,8 @@ namespace Amesos2 {
     typedef Kokkos::View<int_t*,              HostExecSpaceType>    host_size_type_array;
     typedef Kokkos::View<int_t*,              HostExecSpaceType>    host_ordinal_type_array;
     typedef Kokkos::View<solver_scalar_type*, HostExecSpaceType>    host_value_type_array;
+    typedef typename Kokkos::View<solver_scalar_type**, Kokkos::LayoutLeft,
+                                  typename HostExecSpaceType::memory_space> host_solver_scalar_view;
 
     /// \name Constructor/Destructor methods
     //@{
@@ -254,10 +254,10 @@ namespace Amesos2 {
     host_ordinal_type_array colind_view_;
     /// Stores the row indices of the nonzero entries
     host_size_type_array rowptr_view_;
-    /// Persisting, contiguous, 1D store for X
-    mutable Teuchos::Array<solver_scalar_type> xvals_;
-    /// Persisting, contiguous, 1D store for B
-    mutable Teuchos::Array<solver_scalar_type> bvals_;
+    /// Persisting, contiguous, 2D view for X
+    mutable host_solver_scalar_view xvals_;
+    /// Persisting, contiguous, 2D view for B
+    mutable host_solver_scalar_view bvals_;
 
     /// PardisoMKL internal data address pointer
     mutable void* pt_[64];
@@ -308,6 +308,11 @@ typedef Meta::make_list2<float,
 #endif
 };
 
+template <typename Scalar, typename LocalOrdinal, typename ExecutionSpace>
+struct solver_supports_matrix<PardisoMKL,
+  KokkosSparse::CrsMatrix<Scalar, LocalOrdinal, ExecutionSpace>> {
+  static const bool value = true;
+};
 } // end namespace Amesos
 
 #endif  // AMESOS2_PARDISOMKL_DECL_HPP

@@ -241,7 +241,7 @@ KLU2<Matrix,Vector>::solve_impl(
     const bool initialize_data = true;
     const bool do_not_initialize_data = false;
     if ( single_proc_optimization() && nrhs == 1 ) {
-      // no msp creation
+      // no map creation
       bDidAssignB = Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
         host_solve_array_t>::do_get(initialize_data, B, bValues_, as<size_t>(ld_rhs));
 
@@ -382,6 +382,7 @@ KLU2<Matrix,Vector>::solve_impl(
 
   // if bDidAssignX, then we solved straight to the adapter's X memory space without
   // requiring additional memory allocation, so the x data is already in place.
+  // TODO: should we check bDidAssignB?
   if(!bDidAssignX) {
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor redistTimer( this->timers_.vecRedistTime_ );

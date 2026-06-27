@@ -3523,6 +3523,9 @@ log_eig_sym(Tensor<T, N> const & A)
   std::tie(V, D) = eig_sym(A);
 
   for (Index i = 0; i < dimension; ++i) {
+    if (D(i, i) < T(0)) {
+      MT_ERROR_EXIT("Non-SPD input: negative eigenvalue.");
+    }
     D(i, i) = std::log(D(i, i));
   }
 
@@ -4189,6 +4192,32 @@ svd(Tensor<T, N> const &A) {
 
     case 2:
       std::tie(U, S, V) = svd_2x2(A);
+      // svd_2x2 doubles as a building block inside svd_NxN's Jacobi sweep, so
+      // it returns the raw 2x2 factorization without the sign/order
+      // canonicalization that svd_NxN applies to its own result. Apply that
+      // canonicalization here, for the top-level 2D SVD only, so svd() returns
+      // the standard convention (nonnegative singular values in descending
+      // order) regardless of dimension. Folding a negative sign into the
+      // corresponding column of U preserves A = U S V^T.
+      for (Index i = 0; i < dimension; ++i) {
+        if (S(i, i) < 0.0) {
+          S(i, i) = -S(i, i);
+          for (Index j = 0; j < dimension; ++j) {
+            U(j, i) = -U(j, i);
+          }
+        }
+      }
+      // Sort descending. For 2x2 this is a single compare-and-swap of the two
+      // columns of U and V (and the two singular values), avoiding the heap
+      // allocation and matrix multiply that the general sort_permutation
+      // incurs.
+      if (S(0, 0) < S(1, 1)) {
+        std::swap(S(0, 0), S(1, 1));
+        std::swap(U(0, 0), U(0, 1));
+        std::swap(U(1, 0), U(1, 1));
+        std::swap(V(0, 0), V(0, 1));
+        std::swap(V(1, 0), V(1, 1));
+      }
       break;
 
   }
@@ -4355,6 +4384,12 @@ std::pair<Tensor<T, N>, Tensor<T, N>> polar_left_eig(Tensor<T, N> const &F) {
   Tensor<T, N>
   x = zero<T, N>(3);
 
+  for (Index i = 0; i < 3; ++i) {
+    if (eVal(i, i) < T(0)) {
+      MT_ERROR_EXIT("Non-SPD input: negative eigenvalue.");
+    }
+  }
+
   x(0,0) = std::sqrt(eVal(0,0));
   x(1,1) = std::sqrt(eVal(1,1));
   x(2,2) = std::sqrt(eVal(2,2));
@@ -4411,6 +4446,12 @@ std::pair<Tensor<T, N>, Tensor<T, N>> polar_right_eig(Tensor<T, N> const &F) {
   // compute sqrt() and inv(sqrt()) of eigenvalues
   Tensor<T, N>
   x = zero<T, N>(dimension);
+
+  for (Index i = 0; i < dimension; ++i) {
+    if (eVal(i, i) < T(0)) {
+      MT_ERROR_EXIT("Non-SPD input: negative eigenvalue.");
+    }
+  }
 
   x(0,0) = std::sqrt(eVal(0,0));
   x(1,1) = std::sqrt(eVal(1,1));
@@ -4484,6 +4525,9 @@ polar_left_logV_eig(Tensor<T, N> const &F) {
   DQ(dimension, Filler::ZEROS), DI(dimension, Filler::ZEROS), DL(dimension, Filler::ZEROS);
 
   for (Index i = 0; i < dimension; ++i) {
+    if (D(i,i) < T(0)) {
+      MT_ERROR_EXIT("Non-SPD input: negative eigenvalue.");
+    }
     DQ(i,i) = std::sqrt(D(i,i));
     DI(i,i) = 1.0 / DQ(i,i);
     DL(i,i) = std::log(DQ(i,i));
@@ -4524,6 +4568,11 @@ polar_left_logV_lame(Tensor<T, N> const &F) {
   std::tie(eVec, eVal) = eig_spd_cos(b);
 
   // compute sqrt() and inv(sqrt()) of eigenvalues
+  for (Index i = 0; i < 3; ++i) {
+    if (eVal(i,i) < T(0)) {
+      MT_ERROR_EXIT("Non-SPD input: negative eigenvalue.");
+    }
+  }
   Tensor<T, N> x = zero<T, N>(3);
   x(0,0) = std::sqrt(eVal(0,0));
   x(1,1) = std::sqrt(eVal(1,1));
@@ -4760,11 +4809,18 @@ std::pair<Tensor<T, N>, Tensor<T, N>> eig_sym_2x2(Tensor<T, N> const &A) {
     s1 = -0.5 * r;
   }
 
-  Tensor<T, N>
-  D(s0, 0.0, 0.0, s1);
-
   //
-  // Eigenvectors
+  // Eigenvectors. schur_sym returns the Jacobi rotation J = [c, s; -s, c]
+  // whose columns are the eigenvectors and which diagonalizes A as
+  // A = J * diag(l0, l1) * transpose(J), with the eigenvalue attached to
+  // column 0 of J being l0 = f - tan(theta) * g and to column 1 being
+  // l1 = h + tan(theta) * g (tan(theta) = s / c).
+  //
+  // The previous implementation used transpose(J) as V and paired the
+  // magnitude-ordered eigenvalues (s0, s1) to the columns through swap_diag, so
+  // V * D * transpose(V) did not reconstruct A for general off-diagonal cases
+  // (Trilinos issue #15389). Build V = J directly, and attach the accurate
+  // (s0, s1) eigenvalues to their matching columns.
   //
   T
   c, s;
@@ -4772,13 +4828,34 @@ std::pair<Tensor<T, N>, Tensor<T, N>> eig_sym_2x2(Tensor<T, N> const &A) {
   std::tie(c, s) = schur_sym(f, g, h);
 
   Tensor<T, N>
-  V(c, -s, s, c);
+  V(c, s, -s, c);
 
-  if (swap_diag == true) {
-    // swap eigenvectors if eigenvalues were swapped
+  T const l0 = f - (s / c) * g;
+
+  T d0, d1;
+  if (std::abs(l0 - s0) <= std::abs(l0 - s1)) {
+    d0 = s0;
+    d1 = s1;
+  } else {
+    d0 = s1;
+    d1 = s0;
+  }
+
+  //
+  // Return eigenvalues in descending order, permuting the eigenvectors to
+  // match, for consistency with the eig_sym_NxN path. For 2x2 this is a single
+  // compare-and-swap; done inline to avoid the heap allocation and matrix
+  // multiply of the general sort_permutation, as eig_sym is called per
+  // integration point in 2D mechanics.
+  //
+  if (d0 < d1) {
+    std::swap(d0, d1);
     std::swap(V(0, 0), V(0, 1));
     std::swap(V(1, 0), V(1, 1));
   }
+
+  Tensor<T, N>
+  D(d0, 0.0, 0.0, d1);
 
   return std::make_pair(V, D);
 }

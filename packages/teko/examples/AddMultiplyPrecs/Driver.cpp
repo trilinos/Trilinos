@@ -8,132 +8,111 @@
 // @HEADER
 
 #include "Teuchos_ConfigDefs.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
+#include "Teuchos_DefaultComm.hpp"
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_CommHelpers.hpp"
 
 // Thyra includes
 #include "Thyra_LinearOpBase.hpp"
-#include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
-#include "Thyra_PreconditionerFactoryHelpers.hpp"
-#include "Thyra_DefaultMultipliedLinearOp.hpp"
-#include "Thyra_DefaultScaledAdjointLinearOp.hpp"
-#include "Thyra_DefaultBlockedLinearOp.hpp"
-#include "Thyra_DefaultPreconditioner.hpp"
-#include "Thyra_DefaultProductVector.hpp"
-#include "Thyra_DefaultBlockedLinearOp.hpp"
+#include "Thyra_TpetraLinearOp.hpp"
+#include "Thyra_TpetraThyraWrappers.hpp"
 
-// include basic Epetra information
-#ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#include "mpi.h"
-#else
-#include "Epetra_SerialComm.h"
-#endif
-#include "Epetra_Map.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_Vector.h"
-#include "Epetra_LinearProblem.h"
-#include "Epetra_Export.h"
+// Tpetra includes
+#include "Tpetra_Core.hpp"
+#include "Tpetra_Map.hpp"
+#include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_Vector.hpp"
+#include "Tpetra_MultiVector.hpp"
+#include "MatrixMarket_Tpetra.hpp"
 
-// EpetraExt
-#include "EpetraExt_CrsMatrixIn.h"
-#include "EpetraExt_VectorIn.h"
-#include "EpetraExt_VectorOut.h"
-#include "EpetraExt_MatrixMatrix.h"
-#include "EpetraExt_RowMatrixOut.h"
-
-// Thyra-Epetra adapter includes
-#include "Thyra_EpetraLinearOp.hpp"
-#include "Thyra_EpetraThyraWrappers.hpp"
-#include "Thyra_get_Epetra_Operator.hpp"
-#include "Thyra_DefaultBlockedLinearOp.hpp"
-
-// Teko-Package includes
+// Teko includes
 #include "Teko_Utilities.hpp"
 #include "Teko_InverseFactory.hpp"
 #include "Teko_JacobiPreconditionerFactory.hpp"
 #include "Teko_GaussSeidelPreconditionerFactory.hpp"
 #include "Teko_BlockInvDiagonalStrategy.hpp"
-#include "Teko_SIMPLEPreconditionerFactory.hpp"
-#include "Teko_LSCPreconditionerFactory.hpp"
-#include "Teko_StridedEpetraOperator.hpp"
-#include "Teko_EpetraBlockPreconditioner.hpp"
+#include "Teko_StridedTpetraOperator.hpp"
+#include "Teko_TpetraBlockPreconditioner.hpp"
 #include "Teko_AddPreconditionerFactory.hpp"
 #include "Teko_MultPreconditionerFactory.hpp"
+#include "Teko_ConfigDefs.hpp"
 
-// Aztec includes
-#include "AztecOO.h"
-#include "AztecOO_Operator.h"
-
-//#include <EcUtils++/directory.h>
+// Belos includes
+#include "BelosConfigDefs.hpp"
+#include "BelosLinearProblem.hpp"
+#include "BelosBlockGmresSolMgr.hpp"
+#include "BelosTpetraAdapter.hpp"
 
 #include <iostream>
-#include <fstream>
-#include <cmath>
+#include <vector>
 
-using Teuchos::null;
+using Teuchos::FancyOStream;
 using Teuchos::ParameterList;
 using Teuchos::RCP;
 using Teuchos::rcp;
-using Teuchos::rcp_dynamic_cast;
 
-//
-// Exercise the use of additive and multiplicative preconditioners
-// using AddPreconditionerFactory and MultPreconditionerFactory
-//
-int main(int argc, char* argv[]) {
-  // calls MPI_Init and MPI_Finalize
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-
-  // Handles some I/O to the output screen
+void run_driver() {
   RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
-#ifdef HAVE_MPI
-  Epetra_MpiComm Comm(MPI_COMM_WORLD);
-#else
-  Epetra_SerialComm Comm;
-#endif
+  using ST = double;
+  using LO = Teko::LO;
+  using GO = Teko::GO;
+  using NT = Teko::NT;
 
-  // get process information
-  int numProc = Comm.NumProc();
-  int myPID   = Comm.MyPID();
+  using map_t = Tpetra::Map<LO, GO, NT>;
+  using crs_t = Tpetra::CrsMatrix<ST, LO, GO, NT>;
+  using vec_t = Tpetra::Vector<ST, LO, GO, NT>;
+  using mv_t  = Tpetra::MultiVector<ST, LO, GO, NT>;
+  using op_t  = Tpetra::Operator<ST, LO, GO, NT>;
 
-  // output garbage
+  auto comm = Tpetra::getDefaultComm();
+
+  RCP<FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  fos->setOutputToRootOnly(0);
+
+  const int numProc = comm->getSize();
+  const int myPID   = comm->getRank();
+
   *out << "Approaching Barrier: proc = " << numProc << ", pid = " << myPID << std::endl;
-  Comm.Barrier();
+  Teuchos::barrier(*comm);
 
   RCP<Teuchos::ParameterList> paramList = Teuchos::getParametersFromXmlFile("solverparams.xml");
 
-  Epetra_Map map(15444, 0, Comm);
-  Epetra_CrsMatrix* ptrA = 0;
-  Epetra_Vector* ptrf    = 0;
-  Epetra_Vector* ptrx    = 0;
+  *fos << "Reading matrix market files" << std::endl;
 
-  std::cout << "Reading matrix market file" << std::endl;
-  EpetraExt::MatrixMarketFileToCrsMatrix("./modified.mm", map, map, map, ptrA);
-  EpetraExt::MatrixMarketFileToVector("./rhs_test.mm", map, ptrf);
-  EpetraExt::MatrixMarketFileToVector("./lhs_test.mm", map, ptrx);
+  RCP<crs_t> A = Tpetra::MatrixMarket::Reader<crs_t>::readSparseFile("./modified.mm", comm);
 
-  RCP<Epetra_CrsMatrix> A = rcp(ptrA);
-  RCP<Epetra_Vector> b    = rcp(ptrf);
-  RCP<Epetra_Vector> x    = rcp(ptrx);
+  RCP<const map_t> rangeMap  = A->getRangeMap();
+  RCP<const map_t> domainMap = A->getDomainMap();
 
-  std::cout << "Building strided operator" << std::endl;
-  std::vector<int> vec(2);
-  vec[0] = 2;
-  vec[1] = 1;
-  Teuchos::RCP<Teko::Epetra::StridedEpetraOperator> sA =
-      Teuchos::rcp(new Teko::Epetra::StridedEpetraOperator(vec, A));
+  RCP<vec_t> b = Tpetra::MatrixMarket::Reader<crs_t>::readVectorFile("./rhs_test.mm", comm,
+                                                                     rangeMap, false, false);
 
-  RCP<Teko::InverseFactory> inverse = Teko::invFactoryFromParamList(*paramList, "Amesos");
+  RCP<vec_t> x = Tpetra::MatrixMarket::Reader<crs_t>::readVectorFile("./lhs_test.mm", comm,
+                                                                     domainMap, false, false);
+
+  *fos << "Building strided operator" << std::endl;
+
+  std::vector<int> vars(2);
+  vars[0] = 2;
+  vars[1] = 1;
+
+  Teuchos::RCP<Teko::TpetraHelpers::StridedTpetraOperator> sA =
+      Teuchos::rcp(new Teko::TpetraHelpers::StridedTpetraOperator(vars, A));
+
+  RCP<Teko::InverseFactory> inverse = Teko::invFactoryFromParamList(*paramList, "Amesos2");
+
   RCP<Teko::BlockInvDiagonalStrategy> strategy = rcp(new Teko::InvFactoryDiagStrategy(inverse));
 
   RCP<Teko::BlockPreconditionerFactory> GSFactory =
       rcp(new Teko::GaussSeidelPreconditionerFactory(Teko::GS_UseLowerTriangle, strategy));
+
   RCP<Teko::BlockPreconditionerFactory> JacobiFactory =
       rcp(new Teko::JacobiPreconditionerFactory(strategy));
+
 #ifdef ADD_PREC
   RCP<Teko::BlockPreconditionerFactory> MasterFactory =
       rcp(new Teko::AddPreconditionerFactory(GSFactory, JacobiFactory));
@@ -142,18 +121,45 @@ int main(int argc, char* argv[]) {
       rcp(new Teko::MultPreconditionerFactory(GSFactory, JacobiFactory));
 #endif
 
-  Teko::Epetra::EpetraBlockPreconditioner MyPreconditioner(MasterFactory);
+  Teko::TpetraHelpers::TpetraBlockPreconditioner MyPreconditioner(MasterFactory);
   MyPreconditioner.buildPreconditioner(sA);
-  Epetra_LinearProblem problem(&*A, &*x, &*b);
 
-  // build solver
-  AztecOO solver(problem);
-  solver.SetAztecOption(AZ_solver, AZ_gmres);
-  solver.SetAztecOption(AZ_precond, AZ_none);
-  solver.SetAztecOption(AZ_kspace, 50);
-  solver.SetAztecOption(AZ_output, 10);
-  solver.SetPrecOperator(&MyPreconditioner);
-  solver.Iterate(100, 1e-5);
+  RCP<mv_t> X = x;
+  RCP<mv_t> B = rcp(new mv_t(b->getMap(), 1));
 
+  using problem_t        = Belos::LinearProblem<ST, mv_t, op_t>;
+  RCP<problem_t> problem = rcp(new problem_t(A, X, B));
+
+  RCP<op_t> precOp = Teuchos::rcp(&MyPreconditioner, false);
+  problem->setRightPrec(precOp);
+
+  const bool set = problem->setProblem();
+  TEUCHOS_TEST_FOR_EXCEPTION(!set, std::runtime_error,
+                             "Belos::LinearProblem::setProblem() failed.");
+
+  Teuchos::ParameterList belosList;
+  belosList.set("Maximum Iterations", 100);
+  belosList.set("Convergence Tolerance", 1e-5);
+  belosList.set("Num Blocks", 50);
+  belosList.set("Verbosity",
+                Belos::Errors + Belos::Warnings + Belos::IterationDetails + Belos::FinalSummary);
+  belosList.set("Output Frequency", 10);
+
+  using solver_t = Belos::BlockGmresSolMgr<ST, mv_t, op_t>;
+  solver_t solver(problem, rcpFromRef(belosList));
+
+  *fos << "Starting Belos solve" << std::endl;
+
+  Belos::ReturnType result = solver.solve();
+
+  TEUCHOS_TEST_FOR_EXCEPTION(result != Belos::Converged, std::runtime_error,
+                             "Belos solver failed to converge.");
+
+  *fos << "Solve converged" << std::endl;
+}
+
+int main(int argc, char* argv[]) {
+  Tpetra::ScopeGuard tpetraScope(&argc, &argv);
+  { run_driver(); }
   return 0;
 }
