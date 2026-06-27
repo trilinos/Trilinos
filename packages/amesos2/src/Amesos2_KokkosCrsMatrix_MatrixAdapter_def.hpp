@@ -103,6 +103,14 @@ namespace Amesos2 {
   }
 
   template <typename Scalar, typename LocalOrdinal, typename ExecutionSpace>
+  size_t
+  ConcreteMatrixAdapter<
+    KokkosSparse::CrsMatrix<Scalar,LocalOrdinal,ExecutionSpace>>::getLocalNNZ_impl() const
+  {
+    return this->mat_->nnz();
+  }
+
+  template <typename Scalar, typename LocalOrdinal, typename ExecutionSpace>
   const Teuchos::RCP<const Tpetra::Map<typename MatrixTraits<KokkosSparse::CrsMatrix<Scalar,LocalOrdinal,ExecutionSpace>>::local_ordinal_t,
                                        typename MatrixTraits<KokkosSparse::CrsMatrix<Scalar,LocalOrdinal,ExecutionSpace>>::global_ordinal_t,
                                        typename MatrixTraits<KokkosSparse::CrsMatrix<Scalar,LocalOrdinal,ExecutionSpace>>::node_t> >

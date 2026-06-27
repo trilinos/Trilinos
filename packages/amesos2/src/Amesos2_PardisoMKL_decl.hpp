@@ -273,9 +273,10 @@ namespace Amesos2 {
     // Partial factorization
     size_t schur_size_;
     int_t partial_facto_;
-    host_ordinal_type_array schur_part_;
-    host_value_type_array   schur_out_;
+    host_size_type_array  schur_part_;
+    host_value_type_array schur_out_;
     scalar_type* schur_out_ptr_;
+    mutable host_solver_scalar_view wvals_;
     bool only_forward_solve_;
     bool only_backward_solve_;
 

@@ -194,9 +194,11 @@ namespace Amesos2 {
       if (error == 0 && partial_facto_ != 0) {
         if (schur_out_ptr_ != nullptr) {
           // copy schur out if the output pointer is valid (assuming enough space has been allocated)
+          // Pardiso returns the Schur complement in row-major
+          // So, we transpose it to store in column-major
           for (size_t i = 0; i < schur_size_; i++) {
             for (size_t j = 0; j < schur_size_; j++) {
-              schur_out_ptr_[i+j*schur_size_] = as<scalar_type>(schur_out_[i+j*schur_size_]);
+              schur_out_ptr_[i+j*schur_size_] = as<scalar_type>(schur_out_[j+i*schur_size_]);
             }
           }
         }
@@ -270,10 +272,35 @@ namespace Amesos2 {
       if (only_forward_solve_) {
         // forward solve
         phase = 331;
+        if (wvals_.extent(0) != n_ || wvals_.extent(1) != nrhs_) {
+          Kokkos::resize(wvals_, n_, nrhs_);
+        }
       } else if (only_backward_solve_) {
         // backward solve
         phase = 333;
+        if (wvals_.extent(0) != n_ || wvals_.extent(1) != nrhs_) {
+          Kokkos::resize(wvals_, n_, nrhs_);
+        }
+        // scatter RHS vectors (based on schur-part)
+        // input RHS for backward-solve has interior part followed by schur complement
+        size_t n1 = 0;
+        size_t n2 = this->globalNumCols_-schur_size_;
+        for (global_size_type i=0; i<n_; i++) {
+          if (schur_part_(i) == 1) {
+            for (size_t j=0; j<nrhs_; j++) {
+              wvals_(i,j) = bvals_(n2,j);
+            }
+            n2 ++;
+          } else {
+            for (size_t j=0; j<nrhs_; j++) {
+              wvals_(i,j) = bvals_(n1,j);
+            }
+            n1 ++;
+          }
+        }
       }
+      solver_scalar_type *b_in  = (only_backward_solve_ ? wvals_.data() : bvals_.data());
+      solver_scalar_type *x_out = (only_forward_solve_  ? wvals_.data() : xvals_.data());
       function_map::pardiso( pt_,
                              const_cast<int_t*>(&maxfct_),
                              const_cast<int_t*>(&mnum_),
@@ -287,10 +314,28 @@ namespace Amesos2 {
                              &nrhs_,
                              const_cast<int_t*>(iparm_),
                              const_cast<int_t*>(&msglvl_),
-                             as<void*>(bvals_.data()),
-                             as<void*>(xvals_.data()), &error );
+                             as<void*>(b_in),
+                             as<void*>(x_out), &error );
+      if (only_forward_solve_) {
+        // gather solution vectors (based on schur-part)
+        // output vector should have interior part followed by schur complement
+        size_t n1 = 0;
+        size_t n2 = this->globalNumCols_-schur_size_;
+        for (global_size_type i=0; i<n_; i++) {
+          if (schur_part_(i) == 1) {
+            for (size_t j=0; j<nrhs_; j++) {
+              xvals_(n2,j) = wvals_(i,j);
+            }
+            n2 ++;
+          } else {
+            for (size_t j=0; j<nrhs_; j++) {
+              xvals_(n1,j) = wvals_(i,j);
+            }
+            n1 ++;
+          }
+        }
+      }
     }
-
     check_pardiso_mkl_error(Amesos2::SOLVE, error);
 
     /* Export X from root to the global space */
@@ -445,9 +490,12 @@ namespace Amesos2 {
     if(parameterList->isParameter("SchurPart")) {
       // copy schur-part to the internal view (in case the user-pointer go out of scope?)
       auto schur_part_ptr = parameterList->get<const local_ordinal_type*>("SchurPart");
+      Kokkos::resize(schur_part_, this->globalNumCols_);
+
       schur_size_ = 0;
       for (global_size_type i=0; i<this->globalNumCols_; i++) {
-        perm_[i] = schur_part_ptr[i];
+        schur_part_(i) = schur_part_ptr[i]; // keep track or schur part
+        perm_[i] = schur_part_ptr[i];       // input for pardiso
         if (perm_[i] == 1) schur_size_ ++;
       }
       // allocate internal storage to store the schur complement (user may not want it and may not provide a valid pointer?)
@@ -472,6 +520,10 @@ namespace Amesos2 {
     }
     if( parameterList->isParameter("MessageLevel") ){
       msglvl_ = parameterList->get<int>("MessageLevel");
+    }
+    if(parameterList->isParameter("verbose")){
+      bool verbose = parameterList->get<bool>("verbose");
+      if (verbose) msglvl_ = 1;
     }
     if( parameterList->isParameter("DebugLevel") ){
       debug_level_ = parameterList->get<int>("DebugLevel");
@@ -613,6 +665,7 @@ PardisoMKL<Matrix,Vector>::getValidParameters_impl() const
 
     pl->set("IsContiguous", true, "Whether GIDs contiguous");
     pl->set("MessageLevel", 0, "PardisoMKL message level (0 to turn off message, and 1 to turn on message");
+    pl->set("verbose", false, "Set PardisoMKL message level to be 1");
     pl->set("DebugLevel", 0, "Debug message level (0 for no message, and >0 for more message");
 
     valid_params = pl;
