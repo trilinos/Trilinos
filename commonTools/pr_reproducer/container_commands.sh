@@ -11,17 +11,14 @@ get_dependencies() {
 }
 
 configure_trilinos() {
-    if [ ! -f ${TRILINOS_DIR}/packages/framework/GenConfig/gen-config.sh ] ; then
-        echo "The GenConfig script could not be found. Please run get_dependencies"
-        return 1
-    fi
     source ${TRILINOS_DIR}/packages/framework/GenConfig/gen-config.sh --force --yes --ci-mode --cmake-fragment /workspace/pr.cmake ${GENCONFIG_BUILD_ID} ${TRILINOS_DIR}
-    if [ ! -f /workspace/pr.cmake ] ; then
-        echo "The file /workspace/pr.cmake did not get generated correctly."
-        return 1
-    fi
     rm -rf $TRILINOS_BUILD_DIR/CMakeCache.txt $TRILINOS_BUILD_DIR/CMakeFiles/
-    cmake -S $TRILINOS_DIR -B $TRILINOS_BUILD_DIR -C /workspace/pr.cmake -C /workspace/packageEnables.cmake -G Ninja |& tee $TRILINOS_BUILD_DIR/configure.log
+    IFS=" " read -r my_cmake_extra_args <<< ${CMAKE_EXTRA_ARGS}
+    if [ -f /workspace/packageEnables.cmake ]; then
+        cmake -S $TRILINOS_DIR -B $TRILINOS_BUILD_DIR -C /workspace/pr.cmake -C /workspace/packageEnables.cmake "${my_cmake_extra_args[@]}" -G Ninja ${CMAKE_EXTRA_ARGS} |& tee $TRILINOS_BUILD_DIR/configure.log
+    else
+        cmake -S $TRILINOS_DIR -B $TRILINOS_BUILD_DIR -C /workspace/pr.cmake "${my_cmake_extra_args[@]}" -G Ninja |& tee $TRILINOS_BUILD_DIR/configure.log
+    fi
 }
 
 build_trilinos() {

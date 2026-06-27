@@ -70,13 +70,11 @@ def get_pr_number(repo, upstream):
         return None
 
 
-def parse_AT2_workflows(source_dir):
-    AT2_workflow = source_dir/'.github'/'workflows'/'AT2.yml'
-    assert AT2_workflow.exists()
-
-    with open(AT2_workflow, 'r') as f:
-        data = yaml.load(f, Loader=Loader)
+def parse_workflow(workflow_file):
     pr_builds = {}
+
+    with open(workflow_file, 'r') as f:
+        data = yaml.load(f, Loader=Loader)
 
     # loop over jobs
     for jobname in data['jobs']:
@@ -84,27 +82,37 @@ def parse_AT2_workflows(source_dir):
 
         job = data['jobs'][jobname]
 
-        if 'env' not in job:
-            logger.debug("no \"env\" attribute")
+        cmake_extra_args = ""
+        if (('uses' in job) and (job['uses'] == "./.github/workflows/ci.yml")
+              and ('with' in job) and ('image' in job['with']) and ('genconfig-string' in job['with'])):
+            withBlock = job['with']
+            image, tag = withBlock['image'].split(':')
+            genconfig_build_id = withBlock['genconfig-string']
+            if "extra-pr-driver-args" in withBlock:
+                cmake_extra_args = withBlock["extra-pr-driver-args"].split("=")[-1].replace("${GITHUB_WORKSPACE}", "/workspace/trilinos/source").replace(";", " ")
+        else:
+            logger.debug("Could not parse job")
             continue
-        env = job['env']
-
-        if 'IMAGE' not in env:
-            logger.debug("no \"IMAGE\" attribute")
-            continue
-        image, tag = env["IMAGE"].split(":")
-
-        if 'GENCONFIG_BUILD_NAME' not in env:
-            logger.debug("no \"GENCONFIG_BUILD_NAME\" attribute")
-            continue
-        genconfig_build_id = env["GENCONFIG_BUILD_NAME"]
 
         pr_builds[jobname] = {"image": image,
                               "tag": tag,
-                              "genconfig_build_id": genconfig_build_id}
+                              "genconfig_build_id": genconfig_build_id,
+                              "cmake_extra_args": cmake_extra_args}
         logger.debug(f"\"{jobname}\" added")
 
     return pr_builds
+
+
+def parse_workflows(source_dir):
+    AT2_workflow = source_dir/'.github'/'workflows'/'AT2.yml'
+    assert AT2_workflow.exists()
+    builds = parse_workflow(AT2_workflow)
+
+    nightly_workflow = source_dir/'.github'/'workflows'/'nightly.yml'
+    assert nightly_workflow.exists()
+    builds.update(parse_workflow(nightly_workflow))
+
+    return builds
 
 
 def generate_package_enables(source_dir, packageEnablesFile, pr_base, pr_target, package_list_file=None):
@@ -132,7 +140,7 @@ def pull_image(image, tag):
                    capture_output=False, universal_newlines=True)
 
 
-def launch_container(source_dir, packageEnablesFile, image, tag, genconfig_build_id):
+def launch_container(source_dir, packageEnablesFile, image, tag, genconfig_build_id, extra_cmake_args=""):
     script_location = Path(os.path.abspath(__file__)).parent
 
     # command
@@ -148,9 +156,12 @@ def launch_container(source_dir, packageEnablesFile, image, tag, genconfig_build
             "-e" "TRILINOS_BUILD_DIR=/workspace/trilinos/build",
             "-e" "TRILINOS_INSTALL_DIR=/workspace/trilinos/install"]
     # mount package enables file
-    cmd += ["-v", f"{packageEnablesFile.absolute()}:/workspace/packageEnables.cmake"]
+    if packageEnablesFile.exists():
+        cmd += ["-v", f"{packageEnablesFile.absolute()}:/workspace/packageEnables.cmake"]
     # set environment variable for GenConfig
-    cmd += ["-e" f"GENCONFIG_BUILD_ID={genconfig_build_id}"]
+    cmd += ["-e", f"GENCONFIG_BUILD_ID={genconfig_build_id}"]
+    # add cmake args env variable
+    cmd += ["-e", f"CMAKE_EXTRA_ARGS={extra_cmake_args}"]
     # mount script with environment
     cmd += ["-v" f"{script_location}/container_commands.sh:/scripts/container_commands.sh:ro"]
     # workdir
@@ -195,19 +206,5 @@ def launch_container(source_dir, packageEnablesFile, image, tag, genconfig_build
     # command to be executed
     cmd += ["bash", "-c", "echo \". /scripts/container_commands.sh\" >> $HOME/.bashrc; bash"]
     logger.debug(f"podman command = {cmd}")
-    ret = subprocess.run(cmd,
-                         capture_output=False, universal_newlines=True)
-    if ret.returncode != 0:
-        message = """
-        The podman container launch failed. Unfortunately there are lots of situations
-        in which this can happen. Some suggestions for narrowing down the problem:
-
-        - The podman installation is simply broken. Try running
-            podman run -it --rm docker.io/rockylinux/rockylinux bash -c "echo \"That worked!!!\""
-          to run a minimal Linux container as a test.
-
-        - Podman might be provided by a module. Try e.g.
-            module load aue/podman
-        """
-        print(message)
-        exit(1)
+    subprocess.run(cmd,
+                   capture_output=False, universal_newlines=True)
