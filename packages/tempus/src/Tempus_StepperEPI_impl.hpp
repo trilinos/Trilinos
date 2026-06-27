@@ -450,9 +450,6 @@ void StepperEPI<Scalar>::takeStep(
       assign(Mf.ptr(), ST::zero());
       phiEvaluator_->applyMass(Mf.ptr(), xDotOld);
       Thyra::scale(Scalar(-1.0), Mf.ptr());
-
-      Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-      *out << "read xDotOld at t=" << t0 << " with fsal=" << this->getUseFSAL() << std::endl;
     }
     else {
       // Evaluate Mf = -M*f(xOld, t0).
@@ -504,9 +501,6 @@ void StepperEPI<Scalar>::takeStep(
         phiEvaluator_->applyMass(MfOld.ptr(), xDotOldOld);
         Thyra::scale(Scalar(-1.0), MfOld.ptr());
         computeRemf(remf, xOldOld, tOldOld, xOld, t0, dt, Mf, dt_Mf_deriv, MfOld);
-
-        Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-        *out << "read xDotOldOld at t=" << tOldOld << " with fsal=" << this->getUseFSAL() << std::endl;
       }
       else {
         computeRemf(remf, xOldOld, tOldOld, xOld, t0, dt, Mf, dt_Mf_deriv);
