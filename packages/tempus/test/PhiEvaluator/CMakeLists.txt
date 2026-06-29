@@ -13,6 +13,7 @@ ENDIF()
 IF (TEMPUS_ENABLE_EPETRA_STACK OR TEMPUS_ENABLE_TPETRA_STACK)
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Test_PhiEvaluator_CopyFiles
     DEST_FILES Tempus_PhiEvaluator_SinCos.xml
+    DEST_FILES Tempus_PhiEvaluator_Reaction.xml
     EXEDEPS PhiEvaluator
     )
 ENDIF()

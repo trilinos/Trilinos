@@ -137,7 +137,7 @@ TEUCHOS_UNIT_TEST(PhiEvaluator, Leja_SinCos)
       // check divided difference calculation against other versions
 
       phiEvaluator->setLejaEllipse(dt * leja_a, dt * leja_b, dt * leja_c);
-      phiEvaluator->setDivideDifferenceMethod(dd_m);
+      phiEvaluator->setDividedDifferenceMethod(dd_m);
       Teuchos::ArrayRCP<double> lp_dd_alt;
 
       Teuchos::RCP<Teuchos::Time> localTimer2;
@@ -272,7 +272,7 @@ TEUCHOS_UNIT_TEST(PhiEvaluator, Leja_Adapt_Reaction)
 {
   // Read params from .xml file
   RCP<ParameterList> pList =
-      getParametersFromXmlFile("../EPI/Tempus_EPI_Leja_Reaction.xml");
+      getParametersFromXmlFile("Tempus_PhiEvaluator_Reaction.xml");
 
   // Setup the SinCosModel as mock model
   RCP<ParameterList> scm_pl = sublist(pList, "ReactionModel", true);

@@ -42,10 +42,36 @@ PhiEvaluatorTaylor<Scalar>::getValidParameters() const
 }
 
 template <class Scalar>
+std::string PhiEvaluatorTaylor<Scalar>::description() const
+{
+  return ("Tempus::PhiEvaluatorTaylor - '" + this->name_ + "'");
+}
+
+template <class Scalar>
+void PhiEvaluatorTaylor<Scalar>::describe(
+    Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel) const
+{
+  PhiEvaluator<Scalar>::describe(out, verbLevel);
+
+  auto l_out = Teuchos::fancyOStream(out.getOStream());
+  Teuchos::OSTab ostab(*l_out, 2, this->description());
+  l_out->setOutputToRootOnly(0);
+
+  if ((Teuchos::as<int>(verbLevel) ==
+       Teuchos::as<int>(Teuchos::VERB_DEFAULT)) ||
+      (Teuchos::as<int>(verbLevel) >= Teuchos::as<int>(Teuchos::VERB_LOW))) {
+    *l_out << "  Expansion Order  = " << getExpansionOrder() << std::endl;
+  }
+
+  *l_out << std::string(this->description().length() + 8, '-') << std::endl;
+}
+
+
+template <class Scalar>
 Thyra::SolveStatus<Scalar>
 PhiEvaluatorTaylor<Scalar>::computeLinOpPhi(const int phi_order,
-					    const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> L,
-					    const Teuchos::Ptr<Thyra::VectorBase<Scalar>> v, const Scalar cdt)
+                                            const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> L,
+                                            const Teuchos::Ptr<Thyra::VectorBase<Scalar>> v, const Scalar cdt)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
       phi_order < 0,
@@ -158,11 +184,7 @@ void PhiEvaluatorTaylor<Scalar>::setPhiEvaluatorValues(
   setExpansionOrder(pl->get<int>("Expansion Order", 10));
 
   // TODO: make this configurable?
-  this->useAtildeForSingleRHS_ = true;
-
-  std::cout << "\nuseAtildeForSingleRHS_: " << this->useAtildeForSingleRHS_ << std::endl;
-  std::cout << "Parameter List: " << *pl << std::endl;
-  std::cout << "Expansion Order is " << getExpansionOrder() << std::endl;
+  this->useAtildeForSingleRHS_ = false;
 }
 
 

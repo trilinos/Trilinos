@@ -144,7 +144,9 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
              .set("Lump Mass Matrix", false);
     }
 
+    // Show information on setup:
     integrator = Tempus::createIntegratorBasic<double>(pl, model);
+    integrator->describe(*(integrator->getOStream()), Teuchos::VERB_MEDIUM);
 
     // Integrate to timeMax
     bool integratorStatus = integrator->advanceTime();

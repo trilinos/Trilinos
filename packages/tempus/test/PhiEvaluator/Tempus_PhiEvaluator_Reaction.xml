@@ -1,10 +1,14 @@
-<ParameterList name="EPI_CDR">
-  <ParameterList name="CDR Model">
-    <Parameter name="num elements" type="int" value="100"/>
-    <Parameter name="left end" type="double" value="0.0"/>
-    <Parameter name="right end" type="double" value="1.0"/>
-    <Parameter name="a (convection)" type="double" value="0.1"/>
-    <Parameter name="k (source)" type="double" value="0.0"/>
+<ParameterList name="EPI_Reaction">
+  <ParameterList name="ReactionModel">
+    <Parameter name="Accept model parameters"    type="bool" value="false"/>
+    <Parameter name="Provide nominal values"     type="bool" value="true"/>
+    <Parameter name="Coeff L1" type="double" value="1.0"/>
+    <Parameter name="Coeff L2" type="double" value="0.1"/>
+    <Parameter name="Coeff L3" type="double" value="0.01"/>
+    <Parameter name="IC x0"   type="double" value="1.0"/>
+    <Parameter name="IC x1"   type="double" value="0.0"/>
+    <Parameter name="IC x2"   type="double" value="0.0"/>
+    <Parameter name="IC t0"   type="double" value="0.0"/>
   </ParameterList>
   <ParameterList name="Tempus">
     <Parameter name="Integrator Name" type="string" value="Demo Integrator"/>
@@ -20,12 +24,12 @@
       </ParameterList>
       <ParameterList name="Time Step Control">
         <Parameter name="Initial Time"           type="double" value="0.0"/>
-        <Parameter name="Final Time"             type="double" value="0.001"/>
+        <Parameter name="Final Time"             type="double" value="1.0"/>
         <Parameter name="Initial Time Index"     type="int"    value="0"/>
-        <Parameter name="Final Time Index"       type="int"    value="1000000"/>
-        <Parameter name="Minimum Time Step"      type="double" value="0.000000001"/>
-        <Parameter name="Initial Time Step"      type="double" value="0.001"/>
-        <Parameter name="Maximum Time Step"      type="double" value="10.000"/>
+        <Parameter name="Final Time Index"       type="int"    value="10000"/>
+        <Parameter name="Minimum Time Step"      type="double" value="0.00001"/>
+        <Parameter name="Initial Time Step"      type="double" value="0.1"/>
+        <Parameter name="Maximum Time Step"      type="double" value="0.1"/>
         <Parameter name="Maximum Absolute Error" type="double" value="1.0e-8"/>
         <Parameter name="Maximum Relative Error" type="double" value="1.0e-8"/>
         <Parameter name="Output Time List"       type="string" value=""/>
@@ -34,46 +38,30 @@
         <Parameter name="Output Index Interval"  type="int"    value="1000"/>
         <Parameter name="Maximum Number of Stepper Failures" type="int" value="10"/>
         <Parameter name="Maximum Number of Consecutive Stepper Failures" type="int" value="5"/>
+        <ParameterList name="Time Step Control Strategy">
+           <Parameter name="Strategy Type" type="string" value="Constant"/>
+           <Parameter name="Time Step" type="double" value="1.0"/>
+        </ParameterList>
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="Demo Stepper">
-      <Parameter name="Stepper Type"   type="string" value="EPI2"/>
-      <Parameter name="Adapt PhiEvaluator Interval" type="int" value="10"/>
-      <Parameter name="Use FSAL"       type="bool" value="true"/>
-      <Parameter name="Initial Condition Consistency" type="string" value="Consistent"/>
-      <Parameter name="Initial Condition Consistency Check" type="bool" value="true"/>
-      <!--
-      <Parameter name="Stepper Type"   type="string" value="Trapezoidal Method"/>
-      <Parameter name="Use FSAL"       type="bool" value="true"/>
+      <Parameter name="Stepper Type" type="string" value="EPI"/>
+      <Parameter name="Use FSAL" type="bool" value="false"/>
       <Parameter name="Initial Condition Consistency" type="string" value="Consistent"/>
       <Parameter name="Initial Condition Consistency Check" type="bool" value="false"/>
-      -->
+
       <ParameterList name="PhiEvaluator">
         <Parameter name="PhiEvaluator Type" type="string" value="Leja"/>
-        <Parameter name="Expansion Order" type="int" value="100"/>
-        <Parameter name="Leja DD Method" type="int" value="2"/>
-        <Parameter name="Leja Ellipse Safety Factor" type="double" value="1.05"/>
+        <Parameter name="Expansion Order" type="int" value="50"/>
         <Parameter name="leja_tol" type="double" value="1e-12"/>
-        <Parameter name="leja_a" type="double" value="-50000.0"/>
-        <Parameter name="leja_c" type="double" value="1000."/>
-        <Parameter name="Lump Mass Matrix" type="bool" value="true"/>
-        <ParameterList name="Eigensolver">
-            <Parameter name="Convergence Tolerance" type="double" value="0.1"/>
-            <Parameter name="Block Size" type="int" value="2"/>
-            <Parameter name="Num Eigenvalues" type="int" value="8"/>
-        </ParameterList>
+        <Parameter name="leja_a" type="double" value="-1.0"/>
+        <Parameter name="leja_c" type="double" value="0.001"/>
       </ParameterList>
-      <!--
-      <ParameterList name="PhiEvaluator">
-        <Parameter name="Expansion Order" type="int" value="100"/>
-        <Parameter name="PhiEvaluator Type" type="string" value="Taylor"/>
-        <Parameter name="Lump Mass Matrix" type="bool" value="true"/>
-      </ParameterList>
-      -->
 
       <Parameter name="Solver Name"    type="string" value="Demo Solver"/>
       <Parameter name="Predictor Stepper Type" type="string" value="None"/>
+
       <ParameterList name="Demo Solver">
         <ParameterList name="NOX">
           <ParameterList name="Direction">
@@ -81,9 +69,6 @@
             <ParameterList name="Newton">
               <Parameter name="Forcing Term Method" type="string" value="Constant"/>
               <Parameter name="Rescue Bad Newton Solve" type="bool" value="1"/>
-              <ParameterList name="Linear Solver">
-                <Parameter name="Tolerance" type="double" value="1.0e-12"/>
-              </ParameterList>
             </ParameterList>
           </ParameterList>
           <ParameterList name="Line Search">
@@ -117,11 +102,11 @@
             <Parameter name="Number of Tests" type="int" value="2"/>
             <ParameterList name="Test 0">
               <Parameter name="Test Type" type="string" value="NormF"/>
-              <Parameter name="Tolerance" type="double" value="1.0e-12"/>
+              <Parameter name="Tolerance" type="double" value="1.0e-8"/>
             </ParameterList>
             <ParameterList name="Test 1">
               <Parameter name="Test Type" type="string" value="MaxIters"/>
-              <Parameter name="Maximum Iterations" type="int" value="100"/>
+              <Parameter name="Maximum Iterations" type="int" value="10"/>
             </ParameterList>
           </ParameterList>
     </ParameterList>

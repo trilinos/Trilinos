@@ -66,6 +66,10 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
   std::vector<double> StepSize;
   std::vector<double> xErrorNorm;
   std::vector<double> xDotErrorNorm;
+
+  // make this a test parameter
+  const bool test_xdot = true;
+
   const int nTimeStepSizes = 4;
   double dt                = 0.0005;
   if (caseName == "Taylor") dt /= 2;
@@ -102,10 +106,17 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
 
     model->set_W_factory(lowsFactory);
 
-    dt /= 2;
+    // adjust timestep
+    if (n > 0) dt /= 2;
+
+    // Not lumped mass needs smaller timestep for stability
+    if (!lumped && n == 0)
+      dt /= 8;
+
+    // read and adjust pList
+    RCP<ParameterList> pl = sublist(pList, "Tempus", true);
 
     // Setup the Integrator and reset initial time step
-    RCP<ParameterList> pl = sublist(pList, "Tempus", true);
     pl->sublist("Demo Integrator")
         .sublist("Time Step Control")
         .set("Initial Time Step", dt);
@@ -134,16 +145,23 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
 
     phiList.set("Lump Mass Matrix", lumped);
 
+    if (!test_xdot) {
+      // disable consitency checks
+      pl->sublist("Demo Stepper").set("Initial Condition Consistency", "None");
+      pl->sublist("Demo Stepper").set("Initial Condition Consistency Check", false);
+    }
+
     integrator = Tempus::createIntegratorBasic<double>(pl, model);
 
-    // Initial Conditions
-    // During the Integrator construction, the initial SolutionState
-    // is set by default to model->getNominalVales().get_x().  However,
-    // the application can set it also by integrator->initializeSolutionHistory.
-    RCP<Thyra::VectorBase<double>> x0 =
-          model->getNominalValues().get_x()->clone_v();
+    if (!test_xdot) {
+      // delete x_dot from the history
+      auto sh = integrator->getNonConstSolutionHistory();
+      auto state0 = sh->getCurrentState();
 
-    integrator->initializeSolutionHistory(0.0, x0);
+      Teuchos::RCP<const Thyra::VectorBase<double> > xdot_null;
+      state0->setXDot(xdot_null);
+      integrator->getStepper()->setInitialConditions(sh);
+    }
     integrator->initialize();
 
     // Integrate to timeMax
@@ -163,9 +181,12 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
     auto solution = Thyra::createMember(model->get_x_space());
     Thyra::copy(*(integrator->getX()), solution.ptr());
     solutions.push_back(solution);
-    auto solutionDot = Thyra::createMember(model->get_x_space());
-    Thyra::copy(*(integrator->getXDot()), solutionDot.ptr());
-    solutionsDot.push_back(solutionDot);
+
+    if (test_xdot) {
+      auto solutionDot = Thyra::createMember(model->get_x_space());
+      Thyra::copy(*(integrator->getXDot()), solutionDot.ptr());
+      solutionsDot.push_back(solutionDot);
+    }
 
     // Output finest temporal solution for plotting
     // This only works for ONE MPI process
@@ -201,11 +222,33 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
   double xSlope                        = 0.0;
   double xDotSlope                     = 0.0;
   RCP<Tempus::Stepper<double>> stepper = integrator->getStepper();
-  writeOrderError("Tempus_EPI_CDR_" + caseName + "-Error.dat", stepper, StepSize,
-                  solutions, xErrorNorm, xSlope, out);
 
-  TEST_COMPARE(std::abs(xErrorNorm[0]), <=, 1.0e-10);
-  TEST_COMPARE(std::abs(xErrorNorm[nTimeStepSizes - 2]), <=, 1.e-12);
+  std::string error_file("Tempus_EPI_CDR_" + caseName + "-Error.dat");
+  if (test_xdot) {
+    std::cout << solutionsDot.size() << " " << solutions.size() << std::endl;
+    writeOrderError(error_file, stepper, StepSize,
+                    solutions, xErrorNorm, xSlope, solutionsDot, xDotErrorNorm,
+                    xDotSlope, out);
+  }
+  else {
+    writeOrderError(error_file, stepper, StepSize,
+                    solutions, xErrorNorm, xSlope, out);
+  }
+
+  std::tuple tol_compare = {1e-13, 1e-9};
+  if (!lumped)
+    // The accuracy for the "Lump Mass Matrix" == False testcase is affected by the linear solver tolerance
+    tol_compare = {1e-5, 1e-1};
+  TEST_COMPARE(std::abs(xErrorNorm[0]), <=, std::get<0>(tol_compare));
+  TEST_COMPARE(std::abs(xErrorNorm[nTimeStepSizes - 2]), <=, std::get<0>(tol_compare));
+  if (test_xdot) {
+    TEST_COMPARE(std::abs(xDotErrorNorm[0]), <=, std::get<1>(tol_compare));
+    TEST_COMPARE(std::abs(xDotErrorNorm[nTimeStepSizes - 2]), <=, std::get<1>(tol_compare));
+  }
+  // Slopes are flat for EPI, due to exact solution.
+  //double order = stepper->getOrder();
+  //TEST_FLOATING_EQUALITY(xSlope, order, 0.01 );
+  //TEST_FLOATING_EQUALITY(xDotSlope, order, 0.01 );
 
   // ---------------------------------------------------------------
   // Run SDIRK 3 Stage 4th order at the finest EPI step as a baseline
@@ -279,7 +322,14 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
     out << "  ||EPI_fine||_2 = " << epiNorm << std::endl;
     out << "  ||SDIRK_fine||_2 = " << sdirkNorm << std::endl;
     out << "  ||EPI_fine - SDIRK_fine||_2 = " << sdirkDiffNorm << std::endl;
-    TEST_COMPARE(sdirkDiffNorm, <=, 1.0e-2);
+
+    // The accuracy for the "Lump Mass Matrix" == True testcase is affected
+    // since SDIRK does not perform Mass lumping
+    double tol_sdirk = 1e-2;
+    if (!lumped)
+       tol_sdirk = 1e-5;
+
+    TEST_COMPARE(sdirkDiffNorm, <=, tol_sdirk);
   }
 
   // Write fine mesh solution at final time
