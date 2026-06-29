@@ -76,6 +76,35 @@ PhiEvaluatorLeja<Scalar>::getValidParameters() const
 }
 
 template <class Scalar>
+std::string PhiEvaluatorLeja<Scalar>::description() const
+{
+  return ("Tempus::PhiEvaluatorLeja - '" + this->name_ + "'");
+}
+
+template <class Scalar>
+void PhiEvaluatorLeja<Scalar>::describe(
+    Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel) const
+{
+  PhiEvaluator<Scalar>::describe(out, verbLevel);
+
+  auto l_out = Teuchos::fancyOStream(out.getOStream());
+  Teuchos::OSTab ostab(*l_out, 2, this->description());
+  l_out->setOutputToRootOnly(0);
+
+  if ((Teuchos::as<int>(verbLevel) ==
+       Teuchos::as<int>(Teuchos::VERB_DEFAULT)) ||
+      (Teuchos::as<int>(verbLevel) >= Teuchos::as<int>(Teuchos::VERB_LOW))) {
+    *l_out << "  Expansion Order  = " << getExpansionOrder() << std::endl;
+    *l_out << "  Leja [a,b,c]     = " << leja_a_ << ", " << leja_b_ << ", " << leja_c_ << std::endl;
+    *l_out << "  leja_tol         = " << leja_tol_ << std::endl;
+    *l_out << "  Leja dd_method   = " << ddMethod_ << std::endl;
+  }
+
+  *l_out << std::string(this->description().length() + 8, '-') << std::endl;
+}
+
+
+template <class Scalar>
 Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int phi_order,
                      const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> L,
                      const Teuchos::Ptr<Thyra::VectorBase<Scalar>> v,
@@ -385,7 +414,7 @@ void PhiEvaluatorLeja<Scalar>::adaptEvaluator()
 }
 
 template <class Scalar>
-void PhiEvaluatorLeja<Scalar>::setDivideDifferenceMethod(const int ddMethod)
+void PhiEvaluatorLeja<Scalar>::setDividedDifferenceMethod(const int ddMethod)
 {
   ddMethod_ = ddMethod;
 }
@@ -417,21 +446,21 @@ void PhiEvaluatorLeja<Scalar>::setPhiEvaluatorValues(
 
   leja_sf_ = pl->get<double>("Leja Ellipse Safety Factor", 1.0);
   leja_tol_ = pl->get<double>("leja_tol", 1.0e-18);
-  setDivideDifferenceMethod(pl->get<int>("Leja DD Method", 2));
+  setDividedDifferenceMethod(pl->get<int>("Leja DD Method", 2));
   setExpansionOrder(pl->get<int>("Expansion Order", 300));
-
-  // TODO: has to be set to true, only matrix exponential is implemented
-  this->useAtildeForSingleRHS_ = true;
-
-  std::cout << "\nuseAtildeForSingleRHS_: " << this->useAtildeForSingleRHS_ << std::endl;
-  std::cout << "Parameter List: " << *pl << std::endl;
-  std::cout << "Expansion Order is " << getExpansionOrder() << std::endl;
 
   setLejaEllipse(
     pl->get<double>("leja_a", -1.0),
     pl->get<double>("leja_b", 0.0),
     pl->get<double>("leja_c", 0.5)
   );
+
+  // TODO: has to be set to true, only matrix exponential is implemented
+  this->useAtildeForSingleRHS_ = true;
+
+  //std::cout << "\nuseAtildeForSingleRHS_: " << this->useAtildeForSingleRHS_ << std::endl;
+  //std::cout << "Parameter List: " << *pl << std::endl;
+  //std::cout << "Expansion Order is " << getExpansionOrder() << std::endl;
 }
 
 template <class Scalar>

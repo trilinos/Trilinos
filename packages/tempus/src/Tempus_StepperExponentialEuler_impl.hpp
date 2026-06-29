@@ -286,6 +286,9 @@ void StepperExponentialEuler<Scalar>::describe(
   out << "  stepperEEAppAction_                = "
       << stepperEEAppAction_ << std::endl;
   out << "----------------------------" << std::endl;
+
+  if (phiEvaluator_ != Teuchos::null)
+    phiEvaluator_->describe(out, verbLevel);
 }
 
 

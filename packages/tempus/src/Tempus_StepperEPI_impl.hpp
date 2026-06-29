@@ -104,16 +104,235 @@ void StepperEPI<Scalar>::setInitialConditions(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
   using Teuchos::RCP;
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  using magScalar = typename ST::magnitudeType;
+  typedef Teuchos::ScalarTraits<magScalar> STM;
+
+  int numStates = solutionHistory->getNumStates();
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      numStates < 1, std::logic_error,
+      "Error - setInitialConditions() needs at least one SolutionState\n"
+      "        to set the initial condition.  Number of States = "
+          << numStates);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      (this->getOrderODE() == SECOND_ORDER_ODE), std::logic_error,
+      "Error - StepperEPI does not support SECOND_ORDER_ODE.\n");
 
   RCP<SolutionState<Scalar> > initialState = solutionHistory->getCurrentState();
 
-  // Check if we need Stepper storage for xDot
-  if (initialState->getXDot() == Teuchos::null)
-    this->setStepperXDot(initialState->getX()->clone_v());
-  else
-    this->setStepperXDot(initialState->getXDot());
+  RCP<Thyra::VectorBase<Scalar> > x = initialState->getX();
+  RCP<Thyra::VectorBase<Scalar> > xDot = initialState->getXDot();
 
-  StepperImplicit<Scalar>::setInitialConditions(solutionHistory);
+  auto inArgs = this->getModel()->getNominalValues();
+  // Use x from inArgs as ICs if null.
+  if (x == Teuchos::null) {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        (x == Teuchos::null) && (inArgs.get_x() == Teuchos::null),
+        std::logic_error,
+        "Error - setInitialConditions needs the ICs from the "
+        "SolutionHistory\n"
+        "        or getNominalValues()!\n");
+
+    x = inArgs.get_x()->clone_v();
+    initialState->setX(x);
+  }
+
+  // check and remember if the solutionHistory stores xdot
+  bool xDotHistoryStored = !(xDot == Teuchos::null);
+
+  // Check if we need to create local Stepper storage for xDot
+  if (!xDotHistoryStored) {
+    xDot = Thyra::createMember(x->space());
+    Thyra::assign(xDot.ptr(), ST::zero());
+    this->setStepperXDot(xDot);
+    }
+  else
+    this->setStepperXDot(xDot);
+
+  magScalar reldiff = STM::zero();
+  // Perform IC Consistency
+  std::string icConsistency = this->getICConsistency();
+  if (icConsistency == "None") {
+    // Mark xDot as not synced
+    initialState->setIsSynced(false);
+  }
+  else if (icConsistency == "Zero") {
+    // assign zero to xDot, even if something was provided in currentState
+    Thyra::assign(xDot.ptr(), ST::zero());
+
+    // TODO: Mark xDot as not synced or synced?
+    //initialState->setIsSynced(false);
+  }
+  else if (icConsistency == "App") {
+    auto x_dot = inArgs.get_x_dot();
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        x_dot == Teuchos::null, std::logic_error,
+        "Error - setInitialConditions() requested 'App' for IC consistency,\n"
+        "        but 'App' returned a null pointer for xDot!\n");
+    Thyra::assign(xDot.ptr(), *x_dot);
+
+    // TODO: Mark xDot as not synced or synced?
+    //initialState->setIsSynced(false);
+  }
+  else if (icConsistency == "Consistent") {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        !xDotHistoryStored, std::logic_error,
+        "Error - icConsistency = 'Consistent' requested, but xDot not provided in history.\n");
+    // TODO: since the user requested a "Consistent" initial condition,
+    // should we make sure that xDot will be saved to the history, even if Teuchos::zero initially?
+    // initialState->setXDot(xDot);
+    // xDotHistoryStored = true;
+
+    // xDot will be set to an all zero vector, to signal to the ModelEvaluator that we desire the implicit mode
+    // it must remain zero until the last call to ModelEvaluator, until the end of this method
+    Thyra::assign(xDot.ptr(), ST::zero());
+
+    const Scalar t0 = initialState->getTime();
+    const Scalar dt = initialState->getTimeStep();
+
+    auto p = Teuchos::rcp(new ExponentialODEParameters<Scalar>(dt));
+    // compute the right hand side for x
+    // and potentially set the correct Dirichlet BC to x
+    RCP<Thyra::VectorBase<Scalar>> Mf = Thyra::createMember(x->space());
+    this->evaluateExponentialODE(Mf, x, xDot, t0, p);
+
+    // setup system mass matrix
+    phiEvaluator_->setLinearizationPoint(inArgs, PhiInitialization::ONLY_MASS);
+
+    // overwrite xDot with f = (-M) \ Mf
+    Thyra::scale(Scalar(-1.0), Mf.ptr());
+    phiEvaluator_->solveMass(xDot.ptr(), Mf);
+    reldiff = STM::zero();  // TODO: make solveMass return the tolerance.
+
+    // At this point, x and xDot are sync'ed or consistent
+    // at the same time level for the initialState.
+    initialState->setIsSynced(true);
+
+    // TODO: we do not track potential failures in mass solve
+    // TEUCHOS_TEST_FOR_EXCEPTION(
+    //    sStatus.solveStatus != Thyra::SOLVE_STATUS_CONVERGED,
+    //    std::logic_error,
+    //    "Error - Solver failed while determining the initial conditions.\n"
+    //    "        Solver status is "
+    //        << Thyra::toString(sStatus.solveStatus) << ".\n");
+  }
+  else {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        true, std::logic_error,
+        "Error - setInitialConditions() invalid IC consistency, "
+            << icConsistency << ".\n");
+  }
+
+  // Test for consistency.
+  if (this->getICConsistencyCheck()) {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        !xDotHistoryStored, std::logic_error,
+        "Error - ICConsistenceCheck requested, but xDot not provided in history.\n");
+
+    RCP<Thyra::VectorBase<Scalar>> xDot_temp = Thyra::createMember(x->space());
+    Thyra::assign(xDot_temp.ptr(), ST::zero());
+
+    const Scalar t0 = initialState->getTime();
+    const Scalar dt = initialState->getTimeStep();
+
+    auto p = Teuchos::rcp(new ExponentialODEParameters<Scalar>(dt));
+    // compute the right hand side for x
+    // and potentially set the correct Dirichlet BC to x
+    RCP<Thyra::VectorBase<Scalar>> Mf = Thyra::createMember(x->space());
+    this->evaluateExponentialODE(Mf, x, xDot_temp, t0, p);
+
+    if (icConsistency != "Consistent")
+      // setup system mass matrix
+      phiEvaluator_->setLinearizationPoint(inArgs, PhiInitialization::ONLY_MASS);
+
+    // overwrite xDot_temp with Mf - (-M) * xDot
+    phiEvaluator_->applyMass(xDot_temp.ptr(), xDot);
+    Thyra::Vp_V(xDot_temp.ptr(), *Mf);
+
+    magScalar normX = Thyra::norm(*x);
+    if (normX == STM::zero())
+      reldiff = Thyra::norm(*xDot_temp);
+    else
+      reldiff = Thyra::norm(*xDot_temp) / normX;
+
+    magScalar eps = magScalar(100.0) * STM::eps();
+    RCP<Teuchos::FancyOStream> out = this->getOStream();
+    Teuchos::OSTab ostab(out, 1, "StepperImplicit::setInitialConditions()");
+    if (reldiff < eps) {
+      *out << "\n---------------------------------------------------\n"
+           << "Info -- Stepper = " << this->getStepperType() << "\n"
+           << "  Initial condition PASSED consistency check!\n"
+           << "  (||f(x,xDot,t)||/||x|| = " << reldiff << ") < "
+           << "(eps = " << eps << ")" << std::endl
+           << "---------------------------------------------------\n"
+           << std::endl;
+    }
+    else {
+      *out << "\n---------------------------------------------------\n"
+           << "Info -- Stepper = " << this->getStepperType() << "\n"
+           << "  Initial condition FAILED consistency check but continuing!\n"
+           << "  (||f(x,xDot,t)||/||x|| = " << reldiff << ") > "
+           << "(eps = " << eps << ")" << std::endl
+           << "  ||f(x,xDot,t)|| = " << Thyra::norm(*xDot_temp) << std::endl
+           << "  ||x||           = " << Thyra::norm(*x) << std::endl
+           << "---------------------------------------------------\n"
+           << std::endl;
+    }
+  }
+}
+
+
+template <class Scalar>
+Thyra::ModelEvaluatorBase::InArgs<Scalar>
+StepperEPI<Scalar>::createInArgsExponentialODE(
+    const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x,
+    const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xDot, const Scalar time,
+    const Teuchos::RCP<ExponentialODEParameters<Scalar> >& p)
+{
+  typedef Thyra::ModelEvaluatorBase MEB;
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+
+  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>> appModel = this->getModel();
+  MEB::InArgs<Scalar> inArgs = appModel->createInArgs();
+  inArgs.set_x(x);
+  TEUCHOS_ASSERT(inArgs.supports(MEB::IN_ARG_x_dot))
+  inArgs.set_x_dot(xDot);
+
+  if (inArgs.supports(MEB::IN_ARG_t))
+    inArgs.set_t(time);
+  if (inArgs.supports(MEB::IN_ARG_step_size))
+    inArgs.set_step_size(p->timeStepSize_);
+  if (inArgs.supports(MEB::IN_ARG_alpha))
+    inArgs.set_alpha(Scalar(0.0));
+  if (inArgs.supports(MEB::IN_ARG_beta))
+    inArgs.set_beta(Scalar(1.0));
+  if (inArgs.supports(MEB::IN_ARG_stage_number))
+    inArgs.set_stage_number(p->stageNumber_);
+
+  return inArgs;
+}
+
+
+template <class Scalar>
+void StepperEPI<Scalar>::evaluateExponentialODE(
+    Teuchos::RCP<Thyra::VectorBase<Scalar> >& f,
+    const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x,
+    const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xDot, const Scalar time,
+    const Teuchos::RCP<ExponentialODEParameters<Scalar> >& p)
+{
+  typedef Thyra::ModelEvaluatorBase MEB;
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+
+  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>> appModel = this->getModel();
+
+  // TODO: we could also rely on the user (takeStep) to set this, but double setting may be more robust
+  Thyra::assign(xDot.ptr(), ST::zero());
+
+  MEB::InArgs<Scalar> inArgs = createInArgsExponentialODE(x, xDot, time, p);
+  MEB::OutArgs<Scalar> outArgs = appModel->createOutArgs();
+  outArgs.set_f(f);
+  appModel->evalModel(inArgs, outArgs);
 }
 
 
@@ -146,19 +365,18 @@ void StepperEPI<Scalar>::takeStep(
       "Try setting in \"Solution History\"\n"
       "  \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"3\" for EPI3.\n"
       "  or \"Storage Type\" = \"Unlimited\"\n");
-    bool useEPI3 = false;
-    if (solutionHistory->getNumStates() >= 3 && order_ > 2.0) {
-      useEPI3 = true;
-    }
+
+    // use EPI3 if order is 3 and we have enough history, fall back to EPI2 in first step
+    bool useEPI3 = (solutionHistory->getNumStates() >= 3 && order_ > 2.0);
 
     Thyra::SolveStatus<Scalar> sStatus;
 
-    RCP<StepperEPI<Scalar> > thisStepper = Teuchos::rcpFromRef(*this);
+    RCP<StepperEPI<Scalar>> thisStepper = Teuchos::rcpFromRef(*this);
     stepperEPIAppAction_->execute(solutionHistory, thisStepper,
       StepperEPIAppAction<Scalar>::ACTION_LOCATION::BEGIN_STEP);
 
-    RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
-    RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
+    RCP<SolutionState<Scalar>> workingState = solutionHistory->getWorkingState();
+    RCP<SolutionState<Scalar>> currentState = solutionHistory->getCurrentState();
 
     // TODO: remove this.
     const bool very_verbose = false;
@@ -177,7 +395,7 @@ void StepperEPI<Scalar>::takeStep(
     }
 
     RCP<const Thyra::VectorBase<Scalar>> xOld = currentState->getX();
-    RCP<Thyra::VectorBase<Scalar>> x    = workingState->getX();
+    RCP<Thyra::VectorBase<Scalar>> x = workingState->getX();
 
     // we always use the memory of workingState to compute the new solution
     // and initialize it to xOld at the beginning of takeStep
@@ -194,51 +412,23 @@ void StepperEPI<Scalar>::takeStep(
     // save an RCP to the correct choice to xDot and this->getStepperXDot()
     if (workingState->getXDot() != Teuchos::null)
       this->setStepperXDot(workingState->getXDot());
-    RCP<Thyra::VectorBase<Scalar> > xDot = this->getStepperXDot();
+    RCP<Thyra::VectorBase<Scalar>> xDot = this->getStepperXDot();
+
+    // xDot will be set to an all zero vector, to signal to the ModelEvaluator that we desire the implicit mode
+    // it must remain zero until the last call to ModelEvaluator, until the end of this method
+    Thyra::assign(xDot.ptr(), ST::zero());
 
     const Scalar time = workingState->getTime();
     const Scalar t0   = currentState->getTime();
     const Scalar dt = workingState->getTimeStep();
+    auto p = Teuchos::rcp(new ExponentialODEParameters<Scalar>(dt));
 
     stepperEPIAppAction_->execute(solutionHistory, thisStepper,
-      StepperEPIAppAction<Scalar>::ACTION_LOCATION::BEFORE_EXP);
+                                  StepperEPIAppAction<Scalar>::ACTION_LOCATION::BEFORE_EXP);
 
-    // TODO: Transition away from using implicit solver methods
-    // and use ModelEvaluator directly
-
-    // Setup TimeDerivative (always sets xDot to zero internally)
-    // TODO: we do not need this for EPI, and should transition away from evaluateImplicitODE
-    RCP<TimeDerivative<Scalar> > timeDer;
-    timeDer = Teuchos::rcp(new StepperEPITimeDerivative<Scalar>());
-    // TODO: default argument is evaluationType_(SOLVE_FOR_X),
-    // which means that xDot will be calculated in evaluateImplicitODE (by WrapperModelEvaluatorBasic)
-    auto p = Teuchos::rcp(new ImplicitODEParameters<Scalar>(timeDer, dt, Scalar(0.0), Scalar(1.0)));
-
-    // compute the right hand side for at x (which is still equal to xOld)
-    // and potentially set the correct Dirichlet BC to x
-    // TODO: we rely on the fact that xDot is set to zero by evaluateImplicitODE
-    RCP<Thyra::VectorBase<Scalar>> Mf = Thyra::createMember(x->space());
-    this->evaluateImplicitODE(Mf, x, xDot, t0, p);
-
-    Teuchos::ArrayRCP<RCP<const Thyra::VectorBase<Scalar>>> Mrhs_B(3);
-    // Mrhs_B is default initialized with Teuchos::null
-    Mrhs_B[1] = Mf;
-
-    // Using the appModel
-    RCP<const Thyra::ModelEvaluator<Scalar>> appModel = this->getModel();
-    Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs = appModel->createInArgs();
-    // Model evaluator builds: alpha*u_dot + beta*F(u) = 0
-    inArgs.set_x(x);  // we need to set x here, sice this vector may get boundary conditions set
-    inArgs.set_t(t0);
-    // set x_dot == 0 to signal to some model evaluators that we want the implicit version
-    inArgs.set_x_dot(xDot);  // we need to make sure that this vector is equal to all zeros, ensured by evaluateImplicitODE
-
-    // initialize vector for the update
-    RCP<Thyra::VectorBase<Scalar>> vphi = Thyra::createMember(x->space());
-    assign(vphi.ptr(), ST::zero());  // Must initialize to a guess before solve!
-
-    // setup system Jacobian computation at the current time
-    phiEvaluator_->setLinearizationPoint(inArgs);
+    // setup system Jacobian (and mass) at the current time
+    Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs = createInArgsExponentialODE(x, xDot, time, p);
+    phiEvaluator_->setLinearizationPoint(inArgs, PhiInitialization::JACOBIAN_AND_MASS);
 
     // if requested, update any hyperpameters of the phiEvaluator
     if ( (workingState->getIndex() < 2 || workingState->getIndex() % adapt_phi_evaluator_interval_ == 0)
@@ -247,39 +437,47 @@ void StepperEPI<Scalar>::takeStep(
       phiEvaluator_->adaptEvaluator();
     }
 
+    // compute the right hand side for at x (which is still equal to xOld)
+    // first RHS evaluation
+    // 
+    // compute the right hand side Mf at x (which is still equal to xOld)
+    // and potentially set the correct Dirichlet BC to x
+    RCP<Thyra::VectorBase<Scalar>> Mf = Thyra::createMember(x->space());
+
+    RCP<Thyra::VectorBase<Scalar>> xDotOld = currentState->getXDot();
+    if (this->getUseFSAL() && currentState->getIsSynced() && xDotOld != Teuchos::null) {
+      // Get Mf = -M*f(xOld, t0) from xDotOld = f(xOld, t0)
+      assign(Mf.ptr(), ST::zero());
+      phiEvaluator_->applyMass(Mf.ptr(), xDotOld);
+      Thyra::scale(Scalar(-1.0), Mf.ptr());
+    }
+    else {
+      // Evaluate Mf = -M*f(xOld, t0).
+      // NB: this will also set the correct BC at time t0 to x
+      this->evaluateExponentialODE(Mf, x, xDot, t0, p);
+
+      // If the old state currentState has memory for xDot, save it now
+      // TODO: should we do this, or not touch currentState, and rely on the user to set FSAL?
+      if (xDotOld != Teuchos::null) {
+        // Compute xDotOld = f(xOld, t0)
+        assign(xDotOld.ptr(), ST::zero());
+        phiEvaluator_->solveMass(xDotOld.ptr(), Mf);
+        Thyra::scale(Scalar(-1.0), xDotOld.ptr());
+        // x and xDot are now sync'ed or consistent at the same time level for the currentState.
+        currentState->setIsSynced(true);
+        // TODO: for time-dependent Dirichlet conditions, we should also overwrite x0 with x?
+      }
+    }
+
+    Teuchos::ArrayRCP<RCP<const Thyra::VectorBase<Scalar>>> Mrhs_B(3);
+    // Mrhs_B is default initialized with Teuchos::null
+    Mrhs_B[1] = Mf;
+
     // if requested, compute the time derivative for the nonaotonomous correction
     RCP<Thyra::VectorBase<Scalar>> dt_Mf_deriv = Teuchos::null;
     if (temporal_finite_difference_eps_ > 0.0) {
       dt_Mf_deriv = Thyra::createMember(Mf->space());
-      RCP<Thyra::VectorBase<Scalar>> x_BC = x->clone_v();
-      this->evaluateImplicitODE(
-          dt_Mf_deriv, x_BC, xDot, t0 + dt * temporal_finite_difference_eps_, p);
-      // TODO: this will set the Dirichlet BC to the value at t0 + dt * eps
-      // we need to use a temporary x_BC here
-
-      // compute dt times the temporal finite difference of Mf:
-      // dt_Mf_deriv = (Mf(t + eps*dt) - Mf(t)) / eps
-      Scalar one_over_eps = Scalar(1. / temporal_finite_difference_eps_);
-      Thyra::linear_combination<Scalar>(Teuchos::tuple(-one_over_eps),
-                                        Teuchos::tuple(Mf.getConst().ptr()),
-                                        one_over_eps, dt_Mf_deriv.ptr());
-
-      // also compute the finite difference (x_BC - x) / eps, reusing storage
-      RCP<Thyra::VectorBase<Scalar>> dt_x_BC = x_BC;
-      Thyra::linear_combination<Scalar>(Teuchos::tuple(-one_over_eps),
-                                        Teuchos::tuple(x.getConst().ptr()),
-                                        one_over_eps, dt_x_BC.ptr());
-
-      // add dt_x_BC to dt_Mf_deriv:
-      // this simple logic should take care of _either_ inhomogeneous BC or RHS.
-      //
-      // TODO: In case both are inhomogeneous, dt_Mf_deriv contains two contributions:
-      // dt_Mf_deriv = (Mf(t + eps*dt, x + eps*dt_x_BC) - Mf(t, x)) / eps
-      //             = (Mf(t + eps*dt, x) - Mf(t, x)) / eps
-      //             + (Mf(t + eps*dt, x + eps*dt_x_BC) - Mf(t + eps*dt, x)) / eps
-      // The second term in the sum is approximately J(t + eps*dt, x) * dt_x_BC,
-      // which we may have to correct for
-      Thyra::Vp_V(dt_Mf_deriv.ptr(), *dt_x_BC);
+      this->computeTemporalFD(dt_Mf_deriv, x, t0, dt, Mf);
 
       // compute rhs for the phi_2 function.
       Mrhs_B[2] = dt_Mf_deriv;
@@ -290,23 +488,36 @@ void StepperEPI<Scalar>::takeStep(
       // Retrieve x_{n-1} when available (used by EPI3 formula, added in next step).
       // Note this last solution is obtained with getStateTimeIndexNM2()
       // On the first step only two states exist, so the method runs as pure EPI2.
-      Scalar tOldOld = solutionHistory->getStateTimeIndexNM2()->getTime();
-      RCP<const Thyra::VectorBase<Scalar>> xOldOld = solutionHistory->getStateTimeIndexNM2()->getX();
-      RCP<Thyra::VectorBase<Scalar>> xDotOldOld    = solutionHistory->getStateTimeIndexNM2()->getXDot();
-      // TODO: currently xDotOldOld is used incorrectly, as an argument to evaluateImplicitResidual.
-      // Does not matter since it is zero anyways. In the future xDotOldOld may contain the residual
-      // and be used to save an additional residual evaluation.
-      // TODO: do we need to pass xOld or x in the fourth argument?
-      RCP<Thyra::VectorBase<Scalar>> Remf = computeRemf(
-          xOldOld, xDotOldOld, tOldOld, xOld, t0, dt, Mf, dt_Mf_deriv);
+      RCP<SolutionState<Scalar>> NM2State = solutionHistory->getStateTimeIndexNM2();
+      Scalar tOldOld = NM2State->getTime();
+      RCP<const Thyra::VectorBase<Scalar>> xOldOld = NM2State->getX();
+      RCP<const Thyra::VectorBase<Scalar>> xDotOldOld = NM2State->getXDot();
+
+      // either retrieve from xDotOldOld, or compute remainder with new RHS eval
+      RCP<Thyra::VectorBase<Scalar>> remf = Thyra::createMember(Mf->space());
+      if (xDotOldOld != Teuchos::null && NM2State->getIsSynced()) {
+        RCP<Thyra::VectorBase<Scalar>> MfOld = Thyra::createMember(Mf->space());
+        assign(MfOld.ptr(), ST::zero());
+        phiEvaluator_->applyMass(MfOld.ptr(), xDotOldOld);
+        Thyra::scale(Scalar(-1.0), MfOld.ptr());
+        computeRemf(remf, xOldOld, tOldOld, xOld, t0, dt, Mf, dt_Mf_deriv, MfOld);
+      }
+      else {
+        computeRemf(remf, xOldOld, tOldOld, xOld, t0, dt, Mf, dt_Mf_deriv);
+      }
+
       // Subtract (2/3)*R from phi_2 term
-      Thyra::scale(Scalar(-2.0 / 3.0), Remf.ptr());
+      Thyra::scale(Scalar(-2.0 / 3.0), remf.ptr());
       if (Mrhs_B[2] != Teuchos::null) {
-        Thyra::Vp_V(Teuchos::rcp_const_cast<Thyra::VectorBase<Scalar>>(Mrhs_B[2]).ptr(), *Remf);
-      } else {
-        Mrhs_B[2] = Remf;
-      };
+        // add previous term, and set RCP to the sum
+        Thyra::Vp_V(remf.ptr(), *Mrhs_B[2]);
+      }
+      Mrhs_B[2] = remf;
     }
+
+    // initialize vector for the update
+    RCP<Thyra::VectorBase<Scalar>> vphi = Thyra::createMember(x->space());
+    assign(vphi.ptr(), ST::zero());  // Must initialize to a guess before solve!
 
     // if temporal_finite_difference_eps_ is positive or we use EPI3,
     // use the extension formula.
@@ -342,10 +553,25 @@ void StepperEPI<Scalar>::takeStep(
     stepperEPIAppAction_->execute(solutionHistory, thisStepper,
       StepperEPIAppAction<Scalar>::ACTION_LOCATION::AFTER_EXP);
 
-    // TODO: right now this just sets xDot to zero.
-    // Eventually, we want to check if the solutionHistory should store the correct xDot and compute it.
-    if (workingState->getXDot() != Teuchos::null)
-      timeDer->compute(x, xDot);
+    // If FSAL is on, and there is memory for xDot, compute new xDot and sync
+    if (this->getUseFSAL() && workingState->getXDot() != Teuchos::null) {
+      // Get xDot = f(x, t) from Mf = -M*f(x, t)
+      // reevaluate f at current time: this will also set the correct BC at time t to x
+      this->evaluateExponentialODE(Mf, x, xDot, time, p);
+      // solve the mass matrix and scale to obtain final xDot
+      phiEvaluator_->solveMass(xDot.ptr(), Mf);
+      Thyra::scale(Scalar(-1.0), xDot.ptr());
+
+      // xDot is a pointer to workingState->getXDot()
+      workingState->setIsSynced(true);
+
+      Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+      *out << "evaled f at t=" << time << " with fsal=" << this->getUseFSAL() << std::endl;
+    }
+    else {
+      // workingState->getXDot() is either a null pointer, or will be left as a zero vector
+      workingState->setIsSynced(false);
+    }
 
     // give the working state the status of the PhiEvaluator
     workingState->setSolutionStatus(sStatus);  // Converged --> pass.
@@ -358,52 +584,104 @@ void StepperEPI<Scalar>::takeStep(
 }
 
 
-template<class Scalar>
-Teuchos::RCP<Thyra::VectorBase<Scalar>>
-StepperEPI<Scalar>::computeRemf(
+template <class Scalar>
+void StepperEPI<Scalar>::computeTemporalFD(
+    Teuchos::RCP<Thyra::VectorBase<Scalar>>& dt_Mf_deriv,
+    const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& x,
+    const Scalar t0,
+    const Scalar dt,
+    const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& Mf
+)
+{
+  // evaluate Mf at t + dt * eps
+  auto p = Teuchos::rcp(new ExponentialODEParameters<Scalar>(dt));
+  Teuchos::RCP<Thyra::VectorBase<Scalar>> x_BC = x->clone_v();
+  Teuchos::RCP<Thyra::VectorBase<Scalar>> xDot = this->getStepperXDot();
+  this->evaluateExponentialODE(
+      dt_Mf_deriv, x_BC, xDot, t0 + dt * this->temporal_finite_difference_eps_, p);
+  // this sets the Dirichlet BC in x_BC to the value at t0 + dt * eps
+  // thus we need to use a temporary x_BC instead of x here
+
+  // compute dt times the temporal finite difference of Mf:
+  // dt_Mf_deriv = (Mf(t + eps*dt) - Mf(t)) / eps
+  Scalar one_over_eps = Scalar(1. / this->temporal_finite_difference_eps_);
+  Thyra::linear_combination<Scalar>(Teuchos::tuple(-one_over_eps),
+                                    Teuchos::tuple(Mf.getConst().ptr()),
+                                    one_over_eps, dt_Mf_deriv.ptr());
+
+  // also compute the finite difference (x_BC - x) / eps, reusing storage
+  Teuchos::RCP<Thyra::VectorBase<Scalar>> dt_x_BC = x_BC;
+  Thyra::linear_combination<Scalar>(Teuchos::tuple(-one_over_eps),
+                                    Teuchos::tuple(x.getConst().ptr()),
+                                    one_over_eps, dt_x_BC.ptr());
+
+  // add dt_x_BC to dt_Mf_deriv:
+  // this simple logic should take care of _either_ inhomogeneous BC or RHS.
+  //
+  // TODO: In case both are inhomogeneous, dt_Mf_deriv contains two contributions:
+  // dt_Mf_deriv = (Mf(t + eps*dt, x + eps*dt_x_BC) - Mf(t, x)) / eps
+  //             = (Mf(t + eps*dt, x) - Mf(t, x)) / eps
+  //             + (Mf(t + eps*dt, x + eps*dt_x_BC) - Mf(t + eps*dt, x)) / eps
+  // The second term in the sum is approximately J(t + eps*dt, x) * dt_x_BC,
+  // which we may have to correct for
+  Thyra::Vp_V(dt_Mf_deriv.ptr(), *dt_x_BC);
+}
+
+
+template <class Scalar>
+void StepperEPI<Scalar>::computeRemf(
+    Teuchos::RCP<Thyra::VectorBase<Scalar>>& remf,
     const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& xr,
-    const Teuchos::RCP<Thyra::VectorBase<Scalar>>& xrDot,
     const Scalar tr,
     const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& x0,
     const Scalar t0,
     const Scalar dt,
     const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& Mf,
-    const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& dt_Mf_deriv
+    const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& dt_Mf_deriv,
+    const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& Mfr
 )
 {
-  Teuchos::RCP<TimeDerivative<Scalar> > timeDer;
-  timeDer = Teuchos::rcp(new StepperEPITimeDerivative<Scalar>());
-  auto p = Teuchos::rcp(new ImplicitODEParameters<Scalar>(timeDer, dt, Scalar(0.0), Scalar(1.0)));
-
-  // Eval the rhs at (xr, tr)
-  // Mf_old = -M*F(xr, tr) = F_impl(xDot = 0, xr, tr)
-  Teuchos::RCP<Thyra::VectorBase<Scalar>> Mf_old = Thyra::createMember(xr->space());
-  // TODO: this will set xrDot to zero and re-set the BC in xr (that is why we need const_cast)
-  // In the current impl, does not hurt much, but we need a better way!
-  // if we save xrDot in the previous iteration correctly, we can just reuse it.
-  this->evaluateImplicitODE(Mf_old, Teuchos::rcp_const_cast<Thyra::VectorBase<Scalar>>(xr), xrDot, tr, p);
+  typedef Teuchos::ScalarTraits<Scalar> ST;
 
   // xd = xr - x0
-  Teuchos::RCP<Thyra::VectorBase<Scalar>> xd = Thyra::createMember(xr->space());
+  Teuchos::RCP<Thyra::VectorBase<Scalar>> xd = Thyra::createMember(x0->space());
   Thyra::V_VpStV(xd.ptr(), *xr, Scalar(-1.0), *x0);
 
-  // J_xd = -M*J * (xr - x0)
-  Teuchos::RCP<Thyra::VectorBase<Scalar>> MJ_xd = Thyra::createMember(x0->space());
-  phiEvaluator_->applyJacobian(MJ_xd.ptr(), xd);
+  // remf = J_xd = -M*J * (xr - x0)
+  Thyra::assign(remf.ptr(), ST::zero());
+  phiEvaluator_->applyJacobian(remf.ptr(), xd);
+  // TODO: could save one temp vector by extending the interface of apply Jacobian
 
-  // R = (Mf - Mf_old) + J_xd
-  // Mf is rhs at the current time: -M*F(x0, t0)
-  Thyra::Vp_V(MJ_xd.ptr(), *Mf);
-  Thyra::Vp_StV(MJ_xd.ptr(), Scalar(-1.0), *Mf_old);
-
-  // Time derivative remainder term only nonzero in nonautonomous case
-  // add  -(M * F') * (tr - t0) = -(dt * M * F') * ((tr - t0) / dt)
-  if (dt_Mf_deriv != Teuchos::null) {
-    Thyra::Vp_StV(MJ_xd.ptr(), Scalar((tr - t0) / dt), *dt_Mf_deriv);
+  // Evaluate the rhs -M*F at (xr, tr)
+  //   Mfr = -M*F(xr, tr) = F_impl(xDot = 0, xr, tr)
+  Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mfr_const;
+  if (Mfr != Teuchos::null) {
+    // use the provided Mfr vector
+    Mfr_const = Mfr;
+  }
+  else {
+    auto p = Teuchos::rcp(new ExponentialODEParameters<Scalar>(dt));
+    Teuchos::RCP<Thyra::VectorBase<Scalar>> Mfr = Thyra::createMember(x0->space());
+    Teuchos::RCP<Thyra::VectorBase<Scalar>> xr_temp = xd; // reuse xd memory
+    Thyra::copy(*xr, xr_temp.ptr());
+    // this will reset xDot to zero and re-set the BC in xr (that is why we need a non_const temporary)
+    // if we save Mfr in the previous iteration correctly, we can reuse it.
+    Teuchos::RCP<Thyra::VectorBase<Scalar>> xDot = this->getStepperXDot();
+    this->evaluateExponentialODE(Mfr, xr_temp, xDot, tr, p);
+    Mfr_const = Mfr;
   }
 
-  // TODO: let the outer function provide the memory.
-  return MJ_xd;
+  // update remf = (Mf - Mfr) + J_xd
+  // Mf is rhs at the current time: -M*F(x0, t0)
+  Thyra::linear_combination<Scalar>(Teuchos::tuple(Scalar(1.0), Scalar(-1.0)),
+                                    Teuchos::tuple(Mf.getConst().ptr(), Mfr.getConst().ptr()),
+                                    Scalar(1.0), remf.ptr());
+
+  // add time derivative remainder term; only nonzero in nonautonomous case
+  // add  -(M * F') * (tr - t0) = -(dt * M * F') * ((tr - t0) / dt)
+  if (dt_Mf_deriv != Teuchos::null) {
+    Thyra::Vp_StV(remf.ptr(), Scalar((tr - t0) / dt), *dt_Mf_deriv);
+  }
 }
 
 
@@ -437,6 +715,9 @@ void StepperEPI<Scalar>::describe(
   out << "  stepperEPIAppAction_                = "
       << stepperEPIAppAction_ << std::endl;
   out << "----------------------------" << std::endl;
+
+  if (phiEvaluator_ != Teuchos::null)
+    phiEvaluator_->describe(out, verbLevel);
 }
 
 
