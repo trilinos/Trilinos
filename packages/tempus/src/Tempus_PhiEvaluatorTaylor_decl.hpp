@@ -44,8 +44,10 @@ class PhiEvaluatorTaylor
   PhiEvaluatorTaylor<Scalar>() : PhiEvaluatorTaylor<Scalar>("PhiEvaluatorTaylor")
   { }
 
-
   /// \name Basic PhiEvaluatorTaylor Methods
+
+  std::string description() const;
+  void describe(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel) const;
 
   /// Return a valid ParameterList with current settings.
   Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const override;
