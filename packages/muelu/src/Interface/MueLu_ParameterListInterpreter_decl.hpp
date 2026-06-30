@@ -173,6 +173,7 @@ class ParameterListInterpreter : public HierarchyManager<Scalar, LocalOrdinal, G
   bool changedImplicitTranspose_;
 
   void SetEasyParameterList(const Teuchos::ParameterList& paramList);
+  void SetMinvAProjectionVariables(const Teuchos::ParameterList& paramList);
   void Validate(const Teuchos::ParameterList& paramList) const;
 
   void UpdateFactoryManager(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
@@ -233,6 +234,7 @@ class ParameterListInterpreter : public HierarchyManager<Scalar, LocalOrdinal, G
   bool useBlockNumber_;
   bool useMaterial_;
   bool useKokkos_;
+  bool projectM_ = false, projectMinv_ = false, projectMinvA_ = false;
   //@}
 
   //! Factory interpreter stuff

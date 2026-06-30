@@ -96,8 +96,8 @@ void HierarchyUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AddNonSerializab
       const ParameterList& levelList = nonSerialList.sublist(levelName);
       for (ParameterList::ConstIterator levelListEntry = levelList.begin(); levelListEntry != levelList.end(); levelListEntry++) {
         const std::string& name = levelListEntry->first;
-        TEUCHOS_TEST_FOR_EXCEPTION(name != "A" && name != "P" && name != "R" && name != "K" && name != "M" && name != "Mdiag" &&
-                                       name != "D0" && name != "Dk_1" && name != "Dk_2" &&
+        TEUCHOS_TEST_FOR_EXCEPTION(name != "A" && name != "P" && name != "R" && name != "K" && name != "M" && name != "Mdiag" && name != "Minv" &&
+                                       name != "MinvA" && name != "D0" && name != "Dk_1" && name != "Dk_2" &&
                                        name != "Mk_one" && name != "Mk_1_one" && name != "M1_beta" && name != "M1_alpha" &&
                                        name != "invMk_1_invBeta" && name != "invMk_2_invAlpha" &&
                                        name != "M1" && name != "Ms" && name != "M0inv" &&
@@ -140,7 +140,7 @@ void HierarchyUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AddNonSerializab
           M->SetFactory(name, NoFactory::getRCP());  // TAW: not sure about this: be aware that this affects all levels
                                                      //      However, A is accessible through NoFactory anyway, so it should
                                                      //      be fine here.
-        } else if (name == "P" || name == "R" || name == "K" || name == "M") {
+        } else if (name == "P" || name == "R" || name == "K" || name == "M" || name == "Minv" || name == "MinvA") {
           if (levelListEntry->second.isType<RCP<Operator>>()) {
             RCP<Operator> mat;
             mat = Teuchos::getValue<RCP<Operator>>(levelListEntry->second);
@@ -301,8 +301,8 @@ void HierarchyUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AddNonSerializab
         // Check if the name starts with "Nullspace", has length > 9, and the last character is a digit
         bool isNumberedNullspace = (name.rfind("Nullspace", 0) == 0 && name.length() > 9 && std::isdigit(name.back(), std::locale::classic()));
 
-        TEUCHOS_TEST_FOR_EXCEPTION(name != "P" && name != "R" && name != "K" && name != "M" && name != "Mdiag" &&
-                                       name != "D0" && name != "Dk_1" && name != "Dk_2" &&
+        TEUCHOS_TEST_FOR_EXCEPTION(name != "P" && name != "R" && name != "K" && name != "M" && name != "Mdiag" && name != "Minv" &&
+                                       name != "MinvA" && name != "D0" && name != "Dk_1" && name != "Dk_2" &&
                                        name != "Mk_one" && name != "Mk_1_one" && name != "M1_beta" && name != "M1_alpha" &&
                                        name != "invMk_1_invBeta" && name != "invMk_2_invAlpha" &&
                                        name != "M1" && name != "Ms" && name != "M0inv" &&
@@ -316,7 +316,7 @@ void HierarchyUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AddNonSerializab
                                        !IsParamValidVariable(name),
                                    Exceptions::InvalidArgument,
                                    std::string("MueLu::Utils::AddNonSerializableDataToHierarchy: user data parameter list contains unknown data type (") + name + ")");
-        if (name == "P" || name == "R" || name == "K" || name == "M" ||
+        if (name == "P" || name == "R" || name == "K" || name == "M" || name == "Minv" || name == "MinvA" ||
             name == "D0" || name == "Dk_1" || name == "Dk_2" ||
             name == "Mk_one" || name == "Mk_1_one" || name == "M1_beta" || name == "M1_alpha" ||
             name == "invMk_1_invBeta" || name == "invMk_2_invAlpha" ||

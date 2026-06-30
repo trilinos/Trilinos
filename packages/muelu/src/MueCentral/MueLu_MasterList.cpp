@@ -251,6 +251,7 @@ namespace MueLu {
   "<Parameter name=\"aggregate qualities: percentiles\" type=\"Array(double)\" value=\"{}\"/>"
   "<Parameter name=\"aggregate qualities: mode\" type=\"string\" value=\"eigenvalue\"/>"
   "<ParameterList name=\"export data\"/>"
+  "<ParameterList name=\"project auxiliary matrices\"/>"
   "<Parameter name=\"keep data\" type=\"string\" value=\"{}\"/>"
   "<Parameter name=\"print initial parameters\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"print unused parameters\" type=\"bool\" value=\"true\"/>"
@@ -781,6 +782,8 @@ namespace MueLu {
          ("aggregate qualities: mode","aggregate qualities: mode")
       
          ("export data","export data")
+      
+         ("project auxiliary matrices","project auxiliary matrices")
       
          ("keep data","keep data")
       

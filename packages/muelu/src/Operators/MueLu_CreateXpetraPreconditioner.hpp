@@ -105,6 +105,28 @@ CreateXpetraPreconditioner(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, Glo
     std::string paramXML = MueLu::ML2MueLuParameterTranslator::translate(paramList, "");
     paramList            = *Teuchos::getParametersFromXmlString(paramXML);
   }
+  //  Need to check if Muelu option is inconsistent with user data provided
+  bool Minv_Supplied = false, M_Supplied = false, MinvA_Supplied = false;
+  if (inParamList.isSublist("user data")) {
+    const Teuchos::ParameterList& userList = inParamList.sublist("user data");
+    if (userList.isParameter("M")) M_Supplied = true;
+    if (userList.isParameter("Minv")) Minv_Supplied = true;
+    if (userList.isParameter("MinvA")) Minv_Supplied = true;
+  }
+  std::string socUsesMatrix = inParamList.get<std::string>("aggregation: strength-of-connection: matrix");
+  if (socUsesMatrix == "MinvA") {
+    if (inParamList.isSublist("project auxiliary matrices")) {
+      auto projectList = inParamList.sublist("project auxiliary matrices");
+      TEUCHOS_TEST_FOR_EXCEPTION(projectList.isParameter("M") && !M_Supplied, Exceptions::Incompatible, "MueLu_CreateXpetraPreconditioner: Must supply M as it is listed in the project auxiliary matrices sublist");
+      TEUCHOS_TEST_FOR_EXCEPTION(projectList.isParameter("Minv") && (projectList.get("Minv", "") == "NoFactory") && !Minv_Supplied, Exceptions::Incompatible,
+                                 "MueLu_CreateXpetraPreconditioner: Must supply Minv  as NoFactory is listed as supplier of Minv  in the project auxiliary matrices sublist");
+      TEUCHOS_TEST_FOR_EXCEPTION(projectList.isParameter("MinvA") && (projectList.get("MinvA", "") == "NoFactory") && !MinvA_Supplied, Exceptions::Incompatible,
+                                 "MueLu_CreateXpetraPreconditioner: Must supply MinvA as NoFactory is listed as supplier of MinvA in the project auxiliary matrices sublist");
+    } else {  // default behavior if sublist("project auxiliary matrices") not user-supplied requires "M" to be user-supplied.
+      TEUCHOS_TEST_FOR_EXCEPTION(!M_Supplied, Exceptions::Incompatible, "MueLu_CreateXpetraPreconditioner: Must supply M when 'aggregation: strength-of-connection: matrix'= MinvA and sublist('project auxiliary matrices') not supplied.");
+    }
+  }
+
   mueLuFactory = rcp(new ParameterListInterpreter(paramList, op->getDomainMap()->getComm()));
 
   // Create Hierarchy

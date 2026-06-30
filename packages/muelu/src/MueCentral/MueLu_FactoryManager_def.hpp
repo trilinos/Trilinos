@@ -103,6 +103,8 @@ const RCP<const FactoryBase> FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal,
   } else {
     // No factory was created for this name, but we may know which one to create
     if (varName == "A") return SetAndReturnDefaultFactory(varName, rcp(new RAPFactory()));
+    if (varName == "MinvA") return NoFactory::getRCP();
+    if (varName == "Minv") return NoFactory::getRCP();
     if (varName == "Ainv") return SetAndReturnDefaultFactory(varName, rcp(new InverseApproximationFactory()));
     if (varName == "RAP Pattern") return GetFactory("A");
     if (varName == "AP Pattern") return GetFactory("A");
