@@ -351,9 +351,9 @@ namespace Intrepid2 {
                                   ">>> ERROR (Intrepid2::CellTools::getSubcvCoords): cell coords dimension(2) does not match to the dimension of the cell." );
 #endif
     constexpr bool are_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(subcvCoords)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(cellCoords)::memory_space>::accessible;
     static_assert(are_accessible, "CellTools<DeviceType>::getSubcvCoords(..): input/output views' memory spaces are not compatible with DeviceType");
 

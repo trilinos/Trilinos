@@ -35,6 +35,7 @@
 #include "MueLu_ConstraintFactory.hpp"
 #include "MueLu_CoordinatesTransferFactory.hpp"
 #include "MueLu_DirectSolver.hpp"
+#include "MueLu_EdgeProlongatorPatternFactory.hpp"
 #include "MueLu_EminPFactory.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_FacadeClassFactory.hpp"
@@ -45,6 +46,7 @@
 #include "MueLu_LineDetectionFactory.hpp"
 #include "MueLu_LocalOrdinalTransferFactory.hpp"
 #include "MueLu_MatrixAnalysisFactory.hpp"
+#include "MueLu_MatrixTransferFactory.hpp"
 #include "MueLu_MultiVectorTransferFactory.hpp"
 #include "MueLu_NotayAggregationFactory.hpp"
 #include "MueLu_NullspaceFactory.hpp"
@@ -77,6 +79,7 @@
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
 #include "MueLu_SemiCoarsenPFactory_kokkos.hpp"
 #include "MueLu_TentativePFactory_kokkos.hpp"
+#include "Teuchos_Assert.hpp"
 
 #ifdef HAVE_MUELU_MATLAB
 #include "../matlab/src/MueLu_MatlabSmoother_decl.hpp"
@@ -87,9 +90,16 @@
 #include "../matlab/src/MueLu_SingleLevelMatlabFactory_def.hpp"
 #endif
 
+#ifdef HAVE_MUELU_TEKO
+#include "MueLu_TekoSmoother_decl.hpp"
+#include "MueLu_TekoSmoother_def.hpp"
+#endif
+
 #if defined(HAVE_MUELU_INTREPID2) && defined(HAVE_MUELU_EXPERIMENTAL)
 #include "MueLu_IntrepidPCoarsenFactory.hpp"
 #endif
+
+#include "MueLu_Behavior.hpp"
 
 #include <unordered_set>
 
@@ -564,7 +574,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                              Exceptions::RuntimeError, "Unknown \"reuse: type\" value: \"" << reuseType << "\". Please consult User's Guide.");
 
   auto multigridAlgo = set_var_2list<std::string>(paramList, defaultList, "multigrid algorithm");
-  TEUCHOS_TEST_FOR_EXCEPTION(strings({"unsmoothed", "sa", "pg", "emin", "matlab", "pcoarsen", "classical", "smoothed reitzinger", "unsmoothed reitzinger", "replicate", "combine"}).count(multigridAlgo) == 0,
+  TEUCHOS_TEST_FOR_EXCEPTION(strings({"unsmoothed", "sa", "pg", "emin", "matlab", "pcoarsen", "classical", "smoothed reitzinger", "unsmoothed reitzinger", "emin reitzinger", "replicate", "combine"}).count(multigridAlgo) == 0,
                              Exceptions::RuntimeError, "Unknown \"multigrid algorithm\" value: \"" << multigridAlgo << "\". Please consult User's Guide.");
 #ifndef HAVE_MUELU_MATLAB
   TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo == "matlab", Exceptions::RuntimeError,
@@ -612,6 +622,8 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   // === Aggregation ===
   if (multigridAlgo == "unsmoothed reitzinger" || multigridAlgo == "smoothed reitzinger")
     UpdateFactoryManager_Reitzinger(paramList, defaultList, manager, levelID, keeps);
+  else if (multigridAlgo == "emin reitzinger")
+    UpdateFactoryManager_EminReitzinger(paramList, defaultList, manager, levelID, keeps);
   else
     UpdateFactoryManager_Aggregation_TentativeP(paramList, defaultList, manager, levelID, keeps);
 
@@ -638,11 +650,14 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   } else if (multigridAlgo == "sa" || multigridAlgo == "smoothed reitzinger") {
     // Smoothed aggregation
-    UpdateFactoryManager_SA(paramList, defaultList, manager, levelID, keeps);
+    UpdateFactoryManager_SA(multigridAlgo, paramList, defaultList, manager, levelID, keeps);
 
   } else if (multigridAlgo == "emin") {
     // Energy minimization
     UpdateFactoryManager_Emin(paramList, defaultList, manager, levelID, keeps);
+
+  } else if (multigridAlgo == "emin reitzinger") {
+    // pass
 
   } else if (multigridAlgo == "replicate") {
     UpdateFactoryManager_Replicate(paramList, defaultList, manager, levelID, keeps);
@@ -672,6 +687,13 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   // === RAP ===
   UpdateFactoryManager_RAP(paramList, defaultList, manager, levelID, keeps);
 
+  if (multigridAlgo == "smoothed reitzinger") {
+    // === CurlCurl ===
+    auto saDampingFactor = set_var_2list<double>(paramList, defaultList, "sa: damping factor");
+    if (saDampingFactor != 0.0)
+      UpdateFactoryManager_MatrixTransfer("CurlCurl", paramList, defaultList, manager, levelID, keeps);
+  }
+
   // == BlockNumber Transfer ==
   UpdateFactoryManager_LocalOrdinalTransfer("BlockNumber", multigridAlgo, paramList, defaultList, manager, levelID, keeps);
 
@@ -695,6 +717,12 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   // === Repartitioning ===
   UpdateFactoryManager_Repartition(paramList, defaultList, manager, levelID, keeps, nullSpaceFactory);
+
+  // === Auxiliary mass matrix for MinvA ===
+  auto socMatrix = set_var_2list<std::string>(paramList, defaultList, "aggregation: strength-of-connection: matrix");
+  if (socMatrix == "MinvA") {
+    UpdateFactoryManager_MatrixTransfer("M", paramList, defaultList, manager, levelID, keeps);
+  }
 
   // === Lower precision transfers ===
   UpdateFactoryManager_LowPrecision(paramList, defaultList, manager, levelID, keeps);
@@ -830,6 +858,11 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         preSmoother = rcp(new SmootherFactory(rcp(new MatlabSmoother(preSmootherParams))));
       else
 #endif
+#ifdef HAVE_MUELU_TEKO
+          if (preSmootherType == "teko")
+        preSmoother = rcp(new SmootherFactory(rcp(new TekoSmoother(preSmootherParams))));
+      else
+#endif
         preSmoother = rcp(new SmootherFactory(rcp(new TrilinosSmoother(preSmootherType, preSmootherParams, overlap))));
     }
 
@@ -877,6 +910,11 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 #ifdef HAVE_MUELU_MATLAB
         if (postSmootherType == "matlab")
           postSmoother = rcp(new SmootherFactory(rcp(new MatlabSmoother(postSmootherParams))));
+        else
+#endif
+#ifdef HAVE_MUELU_TEKO
+            if (postSmootherType == "teko")
+          postSmoother = rcp(new SmootherFactory(rcp(new TekoSmoother(postSmootherParams))));
         else
 #endif
           postSmoother = rcp(new SmootherFactory(rcp(new TrilinosSmoother(postSmootherType, postSmootherParams, overlap))));
@@ -992,6 +1030,11 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         coarseSmoother = rcp(new MatlabSmoother(coarseParams));
       else
 #endif
+#ifdef HAVE_MUELU_TEKO
+          if (coarseType == "teko")
+        coarseSmoother = rcp(new TekoSmoother(coarseParams));
+      else
+#endif
         coarseSmoother = rcp(new DirectSolver(coarseType, coarseParams));
     }
 
@@ -1000,7 +1043,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 }
 
 // =====================================================================================================
-// ========================================= TentativeP=================================================
+// ========================================= Reitzinger =================================================
 // =====================================================================================================
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -1028,6 +1071,69 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   manager.SetFactory("Ptent", rFactory);
   manager.SetFactory("D0", rFactory);
   manager.SetFactory("InPlaceMap", rFactory);
+}
+
+// =====================================================================================================
+// =============================== Algorithm: Energy Minimization Reitzinger ===========================
+// =====================================================================================================
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    UpdateFactoryManager_EminReitzinger(ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager,
+                                        int levelID, std::vector<keep_pair>& keeps) const {
+  ParameterList rParams;
+  test_and_set_param_2list<bool>(paramList, defaultList, "repartition: enable", rParams);
+  test_and_set_param_2list<bool>(paramList, defaultList, "repartition: use subcommunicators", rParams);
+  test_and_set_param_2list<bool>(paramList, defaultList, "tentative: constant column sums", rParams);
+  test_and_set_param_2list<bool>(paramList, defaultList, "tentative: calculate qr", rParams);
+
+  RCP<Factory> rFactory = rcp(new ReitzingerPFactory());
+  rFactory->SetParameterList(rParams);
+
+  // These are all going to be user provided, so NoFactory
+  rFactory->SetFactory("Pnodal", NoFactory::getRCP());
+  rFactory->SetFactory("NodeAggMatrix", NoFactory::getRCP());
+  // rFactory->SetFactory("NodeMatrix", NoFactory::getRCP());
+
+  if (levelID > 1)
+    rFactory->SetFactory("D0", this->GetFactoryManager(levelID - 1)->GetFactory("D0"));
+  else
+    rFactory->SetFactory("D0", NoFactory::getRCP());
+
+  manager.SetFactory("Ptent", rFactory);
+  manager.SetFactory("D0", rFactory);
+  manager.SetFactory("InPlaceMap", rFactory);
+
+  auto reuseType = set_var_2list<std::string>(paramList, defaultList, "reuse: type");
+
+  // Pattern
+  auto patternFactory = rcp(new EdgeProlongatorPatternFactory());
+  manager.SetFactory("Ppattern", patternFactory);
+
+  // Constraint
+  auto constraintFactory = rcp(new ConstraintFactory());
+  ParameterList constraintParams;
+  constraintFactory->SetFactory("Ppattern", manager.GetFactory("Ppattern"));
+  test_and_set_param_2list<std::string>(paramList, defaultList, "emin: least squares solver type", constraintParams);
+  constraintParams.set("emin: constraint type", "maxwell");
+  constraintFactory->SetParameterList(constraintParams);
+  manager.SetFactory("Constraint", constraintFactory);
+
+  // Emin Factory
+  auto P = rcp(new EminPFactory());
+
+  // Energy minimization
+  ParameterList Pparams;
+  test_and_set_param_2list<int>(paramList, defaultList, "emin: num iterations", Pparams);
+  test_and_set_param_2list<std::string>(paramList, defaultList, "emin: iterative method", Pparams);
+  if (reuseType == "emin") {
+    test_and_set_param_2list<int>(paramList, defaultList, "emin: num reuse iterations", Pparams);
+    Pparams.set("Keep P0", true);
+    Pparams.set("Keep Constraint0", true);
+  }
+  P->SetParameterList(Pparams);
+  P->SetFactory("P", constraintFactory);
+  P->SetFactory("Constraint", constraintFactory);
+  manager.SetFactory("P", P);
 }
 
 // =====================================================================================================
@@ -1146,6 +1252,12 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
           dropFactory->SetFactory("BlockNumber", this->GetFactoryManager(levelID - 1)->GetFactory("BlockNumber"));
         else
           dropFactory->SetFactory("BlockNumber", manager.GetFactory("BlockNumber"));
+      }
+    }
+
+    if (useKokkos_ && (levelID > 0)) {
+      if (dropParams.isParameter("aggregation: strength-of-connection: matrix") && dropParams.get<std::string>("aggregation: strength-of-connection: matrix") == "MinvA") {
+        dropFactory->SetFactory("M", this->GetFactoryManager(levelID - 1)->GetFactory("M"));
       }
     }
 
@@ -1297,6 +1409,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     ptentParams.sublist("matrixmatrix: kernel params", false) = defaultList.sublist("matrixmatrix: kernel params");
   test_and_set_param_2list<bool>(paramList, defaultList, "tentative: calculate qr", ptentParams);
   test_and_set_param_2list<bool>(paramList, defaultList, "tentative: build coarse coordinates", ptentParams);
+  test_and_set_param_2list<bool>(paramList, defaultList, "sa: keep tentative prolongator", ptentParams);
   Ptent->SetParameterList(ptentParams);
   Ptent->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
   Ptent->SetFactory("CoarseMap", manager.GetFactory("CoarseMap"));
@@ -1561,6 +1674,80 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         RAP->AddTransferFactory(manager.GetFactory(VarName));
       else
         RAPs->AddTransferFactory(manager.GetFactory(VarName));
+    }
+  }
+}
+
+// =====================================================================================================
+// =================================  MatrixTransferFactory ============================================
+// =====================================================================================================
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    UpdateFactoryManager_MatrixTransfer(const std::string& VarName, ParameterList& paramList, const ParameterList& defaultList,
+                                        FactoryManager& manager, int levelID, std::vector<keep_pair>& /* keeps */) const {
+  // NOTE: You would think this would be levelID > 0, but you'd be wrong, since the FactoryManager is basically
+  // offset by a level from the things which actually do the work.
+  if (levelID == 0)
+    manager.SetFactory(VarName, NoFactory::getRCP());
+  else if (levelID > 0) {
+    auto Afact   = manager.GetFactory("A");
+    auto RebalAc = rcp_const_cast<RebalanceAcFactory>(rcp_dynamic_cast<const RebalanceAcFactory>(Afact));
+    RCP<RAPFactory> RAP;
+    RCP<RAPShiftFactory> RAPs;
+    if (!RebalAc.is_null()) {
+      auto Afact2 = RebalAc->GetFactory("A");
+      RAP         = rcp_const_cast<RAPFactory>(rcp_dynamic_cast<const RAPFactory>(Afact2));
+      RAPs        = rcp_const_cast<RAPShiftFactory>(rcp_dynamic_cast<const RAPShiftFactory>(Afact2));
+    } else {
+      RAP  = rcp_const_cast<RAPFactory>(rcp_dynamic_cast<const RAPFactory>(Afact));
+      RAPs = rcp_const_cast<RAPShiftFactory>(rcp_dynamic_cast<const RAPShiftFactory>(Afact));
+    }
+
+    if (!RAP.is_null() || !RAPs.is_null()) {
+      RCP<Factory> mtf = rcp(new MatrixTransferFactory());
+
+      ParameterList transferParameters;
+      transferParameters.set("Matrix name", VarName);
+      transferParameters.set("transpose: use implicit", this->implicitTranspose_);
+      mtf->SetParameterList(transferParameters);
+
+      if (!RAP.is_null()) {
+        mtf->SetFactory("P", RAP->GetFactory("P"));
+        if (!this->implicitTranspose_)
+          mtf->SetFactory("R", RAP->GetFactory("R"));
+        RAP->AddTransferFactory(mtf);
+      } else {
+        mtf->SetFactory("P", RAPs->GetFactory("P"));
+        if (!this->implicitTranspose_)
+          mtf->SetFactory("R", RAPs->GetFactory("R"));
+        RAPs->AddTransferFactory(mtf);
+      }
+
+      auto enableRepart = set_var_2list<bool>(paramList, defaultList, "repartition: enable");
+      if (!enableRepart) {
+        manager.SetFactory(VarName, mtf);
+      } else {
+        auto rebalFact = rcp(new RebalanceAcFactory());
+        Teuchos::ParameterList rebalParams;
+        rebalParams.set("Matrix name", VarName);
+        auto useSubCommInPlace = set_var_2list<bool>(paramList, defaultList, "repartition: use subcommunicators in place");
+        rebalParams.set("repartition: use subcommunicators in place", useSubCommInPlace);
+        if (useSubCommInPlace) {
+          auto inPlaceMapFact = manager.GetFactory("InPlaceMap");
+          rebalFact->SetFactory("InPlaceMap", inPlaceMapFact);
+        } else {
+          TEUCHOS_ASSERT(!RebalAc.is_null());
+          RCP<const FactoryBase> importerFact;
+          importerFact = RebalAc->GetFactory("Importer");
+          rebalFact->SetFactory("Importer", importerFact);
+          RebalAc->AddRebalanceFactory(rebalFact);
+        }
+
+        rebalFact->SetParameterList(rebalParams);
+        rebalFact->SetFactory("A", mtf);
+
+        manager.SetFactory(VarName, rebalFact);
+      }
     }
   }
 }
@@ -2021,7 +2208,8 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     if (levelID >= (int)pcoarsen_schedule.size()) {
       // Past the p-coarsening levels, we do Smoothed Aggregation
       // NOTE: We should probably consider allowing other options past p-coarsening
-      UpdateFactoryManager_SA(paramList, defaultList, manager, levelID, keeps);
+      std::string multigridAlgo = "SA";
+      UpdateFactoryManager_SA(multigridAlgo, paramList, defaultList, manager, levelID, keeps);
 
     } else {
       // P-Coarsening
@@ -2059,7 +2247,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 // =====================================================================================================
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    UpdateFactoryManager_SA(ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager, int /* levelID */, std::vector<keep_pair>& keeps) const {
+    UpdateFactoryManager_SA(std::string& multigridAlgo, ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const {
   // Smoothed aggregation
   RCP<Factory> P = rcp(new SaPFactory());
   ParameterList Pparams;
@@ -2068,9 +2256,11 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   if (defaultList.isSublist("matrixmatrix: kernel params"))
     Pparams.sublist("matrixmatrix: kernel params", false) = defaultList.sublist("matrixmatrix: kernel params");
   test_and_set_param_2list<double>(paramList, defaultList, "sa: damping factor", Pparams);
+  test_and_set_param_2list<double>(paramList, defaultList, "sa: nodal damping factor", Pparams);
   test_and_set_param_2list<bool>(paramList, defaultList, "sa: calculate eigenvalue estimate", Pparams);
   test_and_set_param_2list<double>(paramList, defaultList, "sa: max eigenvalue", Pparams);
   test_and_set_param_2list<int>(paramList, defaultList, "sa: eigenvalue estimate num iterations", Pparams);
+  test_and_set_param_2list<double>(paramList, defaultList, "sa: diagonal replacement tolerance", Pparams);
   test_and_set_param_2list<bool>(paramList, defaultList, "sa: use rowsumabs diagonal scaling", Pparams);
   test_and_set_param_2list<double>(paramList, defaultList, "sa: rowsumabs diagonal replacement tolerance", Pparams);
   test_and_set_param_2list<double>(paramList, defaultList, "sa: rowsumabs diagonal replacement value", Pparams);
@@ -2078,6 +2268,12 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   test_and_set_param_2list<bool>(paramList, defaultList, "sa: enforce constraints", Pparams);
   // test_and_set_param_2list<std::string>(paramList, defaultList, "sa: eigen-analysis type", Pparams);
   test_and_set_param_2list<bool>(paramList, defaultList, "tentative: calculate qr", Pparams);
+
+  if ((multigridAlgo == "smoothed reitzinger") && (levelID > 0)) {
+    Pparams.set("sa: maxwell1 smoothing", true);
+    if (!Pparams.isType<double>("sa: damping factor") || (Pparams.get<double>("sa: damping factor") != 0.0))
+      P->SetFactory("CurlCurl", this->GetFactoryManager(levelID - 1)->GetFactory("CurlCurl"));
+  }
 
   P->SetParameterList(Pparams);
 
@@ -2777,11 +2973,11 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupO
                                   << "instead of " << A.GetFixedBlockSize() << " (provided matrix)." << std::endl
                                   << "You may want to check \"number of equations\" (or \"PDE equations\" for factory style list) parameter." << std::endl;
 
-    A.SetFixedBlockSize(blockSize_, dofOffset_);
+    if ((blockSize_ != 1) || (dofOffset_ != 0))
+      A.SetFixedBlockSize(blockSize_, dofOffset_);
 
-#ifdef HAVE_MUELU_DEBUG
-    MatrixUtils::checkLocalRowMapMatchesColMap(A);
-#endif  // HAVE_MUELU_DEBUG
+    if (Behavior::debug())
+      MatrixUtils::checkLocalRowMapMatchesColMap(A);
 
   } catch (std::bad_cast&) {
     this->GetOStream(Warnings0) << "Skipping setting block size as the operator is not a matrix" << std::endl;

@@ -164,10 +164,11 @@ using namespace Intrepid2;
 
         CubaturePoints(const IM& im) ;
 
-        void copyTo(MDArray& mda)
+        MDArray copy(const std::string& label)
         {
-          Kokkos::resize(mda, m_im.m_Cub_Points_Tag.num, m_im.m_Spatial_Dim_Tag.num);
-          Kokkos::deep_copy(mda, *this);
+          MDArray a(Kokkos::view_alloc(label, Kokkos::WithoutInitializing), m_im.m_Cub_Points_Tag.num, m_im.m_Spatial_Dim_Tag.num);
+          Kokkos::deep_copy(a, *this);
+          return a;
         }
 
         using BaseType::operator();
@@ -207,10 +208,11 @@ using namespace Intrepid2;
 
         void operator()(CellWorkSet& c, CubaturePoints& xi);
         
-        void copyTo(MDArray& mda)
+        MDArray copy(const std::string& label)
         {
-          Kokkos::resize(mda, m_im.m_Elements_Tag.num, m_im.m_Cub_Points_Tag.num, m_im.m_Spatial_Dim_Tag.num);
-          Kokkos::deep_copy(mda, *this);
+          MDArray a(Kokkos::view_alloc(label, Kokkos::WithoutInitializing), m_im.m_Elements_Tag.num, m_im.m_Cub_Points_Tag.num, m_im.m_Spatial_Dim_Tag.num);
+          Kokkos::deep_copy(a, *this);
+          return a;
         }
         
 	using BaseType::operator();
@@ -227,10 +229,11 @@ using namespace Intrepid2;
         Jacobian(const IM& im);
         void operator()(CubaturePoints& xi, CellWorkSet& c, CellTopology& topo);
 
-        void copyTo(MDArray& mda)
+        MDArray copy(const std::string& label)
         {
-          Kokkos::resize(mda, m_im.m_Elements_Tag.num, m_im.m_Cub_Points_Tag.num, m_im.m_Spatial_Dim_Tag.num, m_im.m_Spatial_Dim_Tag.num);
-          Kokkos::deep_copy(mda, *this);
+          MDArray a(Kokkos::view_alloc(label, Kokkos::WithoutInitializing), m_im.m_Elements_Tag.num, m_im.m_Cub_Points_Tag.num, m_im.m_Spatial_Dim_Tag.num, m_im.m_Spatial_Dim_Tag.num);
+          Kokkos::deep_copy(a, *this);
+          return a;
         }
 
         using BaseType::operator();

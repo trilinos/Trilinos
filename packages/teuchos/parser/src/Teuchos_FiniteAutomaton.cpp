@@ -412,12 +412,10 @@ void simplify(FiniteAutomaton& result, FiniteAutomaton const& fa) {
   FiniteAutomaton next = fa;
   int nstates_next = get_nstates(next);
   int nstates;
-  int i = 0;
   do {
     swap(prev, next);
     nstates = nstates_next;
     simplify_once(next, prev);
-    ++i;
     nstates_next = get_nstates(next);
   } while (nstates_next < nstates);
   swap(result, next);

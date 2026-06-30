@@ -2148,10 +2148,15 @@ void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(err, std::runtime_error, "getGlobalElements error");
     } else if (isGloballyIndexed()) {
       auto gblInds = getGlobalIndsViewHost(rowinfo);
-      std::memcpy(
-          (void*)indices.data(),
-          (const void*)gblInds.data(),
-          theNumEntries * sizeof(*indices.data()));
+      // Kokkos zero-extent views return null from .data(); glibc declares memcpy's
+      // dst/src params __attribute__((nonnull(1,2))), so UBSan nonnull-arg fires
+      // on a null pointer even when the byte count is zero.
+      if (theNumEntries > 0) {
+        std::memcpy(
+            (void*)indices.data(),
+            (const void*)gblInds.data(),
+            theNumEntries * sizeof(*indices.data()));
+      }
     }
   }
 }
@@ -4234,7 +4239,7 @@ void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
       if (!sorted) {
         // For this to work correctly, we require that the unused column entries have been filled
         // with indices that get ordered last.
-        KokkosSparse::sort_crs_graph(rowptr, colinds);
+        Import_Util::sortCrsEntries(rowptr, colinds);
         this->indicesAreSorted_ = true;  // we just sorted every row
       }
       if (!merged) {
@@ -4246,7 +4251,7 @@ void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
       auto rowptr  = rowPtrsPacked_dev_;
       auto colinds = lclIndsPacked_wdv.getDeviceView(Access::ReadWrite);
       if (!sorted && merged) {
-        KokkosSparse::sort_crs_graph(rowptr, colinds);
+        Import_Util::sortCrsEntries(rowptr, colinds);
         this->indicesAreSorted_ = true;  // we just sorted every row
       } else {
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(true, std::logic_error,
@@ -6824,8 +6829,7 @@ void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   if ((!reverseMode && xferAsImport != nullptr) ||
       (reverseMode && xferAsExport != nullptr)) {
     Import_Util::sortCrsEntries(CSR_rowptr(),
-                                CSR_colind_LID(),
-                                ::KokkosSparse::SortAlgorithm::DEFAULT);
+                                CSR_colind_LID());
   } else if ((!reverseMode && xferAsExport != nullptr) ||
              (reverseMode && xferAsImport != nullptr)) {
     Import_Util::sortAndMergeCrsEntries(CSR_rowptr(),

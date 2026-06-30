@@ -15,10 +15,10 @@
 #include "Tpetra_Export.hpp"
 #include "Tpetra_Details_computeOffsets.hpp"
 #include "Tpetra_Details_shortSort.hpp"
+#include "Tpetra_Import_Util2.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "KokkosSparse_Utils.hpp"
-#include "KokkosSparse_SortCrs.hpp"
 
 namespace Tpetra {
 
@@ -125,10 +125,25 @@ RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   using local_matrix_device_type = typename crs_matrix_type::local_matrix_device_type;
 
-  local_matrix_device_type lclMatrix          = crsMatrix->getLocalMatrixDevice();
+#if KOKKOSKERNELS_VERSION >= 50199
+  bool conjugate_values = Teuchos::ScalarTraits<Scalar>::isComplex;
+#else
+  bool conjugate_values = false;
+#endif
+  const char conjugateValuesParamName[] = "conjugate values";
+  if (!params.is_null() && params->isParameter(conjugateValuesParamName)) {
+    conjugate_values = params->get(conjugateValuesParamName, conjugate_values);
+  }
+
+  local_matrix_device_type lclMatrix = crsMatrix->getLocalMatrixDevice();
+#if KOKKOSKERNELS_VERSION >= 50199
+  local_matrix_device_type lclTransposeMatrix = KokkosSparse::Impl::transpose_matrix(lclMatrix, conjugate_values);
+#else
+  TEUCHOS_TEST_FOR_EXCEPTION(conjugate_values, std::runtime_error, "Kokkos-Kernels does not yet support conjugating the values.");
   local_matrix_device_type lclTransposeMatrix = KokkosSparse::Impl::transpose_matrix(lclMatrix);
+#endif
   if (sort)
-    KokkosSparse::sort_crs_matrix(lclTransposeMatrix);
+    Import_Util::sortCrsMatrix(lclTransposeMatrix);
 
   // Prebuild the importers and exporters the no-communication way,
   // flipping the importers and exporters around.
@@ -243,7 +258,7 @@ BlockCrsMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     local_matrix_device_type lclTransposeMatrix = KokkosSparse::Impl::transpose_bsr_matrix(lclMatrix);
 
     // BlockCrs requires that we sort stuff
-    KokkosSparse::sort_crs_matrix(lclTransposeMatrix);
+    Import_Util::sortCrsMatrix(lclTransposeMatrix);
     values = lclTransposeMatrix.values;
 
     // Prebuild the importers and exporters the no-communication way,

@@ -7,12 +7,12 @@
 // *****************************************************************************
 // @HEADER
 
+
+#include "Teuchos_EnvVariables.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_SystemInformation.hpp"
-#include <stdlib.h>
 
 namespace {
-
 
 TEUCHOS_UNIT_TEST( SystemInformation, Commands )
 {
@@ -32,13 +32,13 @@ TEUCHOS_UNIT_TEST( SystemInformation, EnvVariables ) {
     TEST_EQUALITY_CONST(values["BLAH_BLAH"], "NOT SET");
   }
 
-  setenv("BLAH_BLAH", "test", 1);
+  Teuchos::setEnvironmentVariable("BLAH_BLAH", "test", 1);
   {
     auto values = Teuchos::SystemInformation::collectSystemInformation();
     TEST_ASSERT(values.find("BLAH_BLAH") != values.end());
     TEST_EQUALITY_CONST(values["BLAH_BLAH"], "test");
   }
-  unsetenv("BLAH_BLAH");
+  Teuchos::unsetEnvironmentVariable("BLAH_BLAH");
 }
 
 

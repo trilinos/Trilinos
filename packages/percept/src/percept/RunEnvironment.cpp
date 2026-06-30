@@ -324,12 +324,12 @@ namespace {
     void RunEnvironment::
     setSierraOpts(int procRank, int /*argc*/, char* /*argv*/[])
     {
-      const bool m_debug2 = false;
+      const bool debug = false;
 
       Teuchos::oblackholestream blackhole;
       std::ostream &out = ( procRank == 0 ? std::cout : blackhole );
 
-      if (m_debug2)
+      if (debug)
         out << Teuchos::Teuchos_Version() << std::endl << std::endl;
 
       //clp.setDocString("Run environment options" );

@@ -257,9 +257,28 @@ Piro::TrapezoidRuleSolver<Scalar>::evalModelImpl(
   Scalar nrm = norm_2(*v);
   *out << "Initial Velocity = " << nrm << std::endl;
 
+  // Static-equilibrium start: solve the static problem K x = f (no inertia)
+  // and begin the transient from there with v = a = 0. Injecting
+  // fdt2 = tdt = 0 makes the decorator hand the model xdot = xdotdot = 0
+  // with alpha = omega = 0, beta = 1 -- a pure static solve. This is the
+  // physically appropriate start for problems (e.g. gravity-loaded soil)
+  // that have been in equilibrium since long before t = 0: it produces no
+  // spurious initial transient for the undamped Newmark scheme to carry.
+  if (static_init_solve_ == true) {
+    assign(x_pred_a.ptr(), *x);
+    assign(x_pred_v.ptr(), *x);
+    model->injectData(x, x_pred_a, 0.0, x_pred_v, 0.0, t);
+
+    noxSolver->evalModel(nox_inargs, nox_outargs);
+
+    assign(x.ptr(), *gx_out);
+    Thyra::put_scalar(0.0, v.ptr());
+    Thyra::put_scalar(0.0, a.ptr());
+    *out << "Static-equilibrium init solve: ||x_static|| = " << norm_2(*x) << std::endl;
+  }
    //calculate intial acceleration using small time step (1.0e-3*delta_t)
    // AGS: Check this for inital velocity
-  if (calc_init_accel_ == true) {
+  else if (calc_init_accel_ == true) {
     Scalar pert= 1.0e6 * 4.0 / (delta_t * delta_t);
     assign(x_pred_a.ptr(), *x);
     assign(x_pred_v.ptr(), *x);

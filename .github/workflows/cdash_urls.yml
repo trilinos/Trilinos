@@ -5,6 +5,9 @@ on:
     types:
       - opened
 
+permissions:
+  contents: read
+
 jobs:
   pre-checks:
         runs-on: ubuntu-latest
@@ -12,13 +15,13 @@ jobs:
           pull-requests: write
         steps:
         - name: Post CDash URLs
-          uses: mshick/add-pr-comment@64b8e914979889d746c99dea15a76e77ef64580a # v3.10.0.8.3.10.0
+          uses: mshick/add-pr-comment@ec328af66588ab8f77cdeb2c264f14aba45bbf59 # v3.12.0.8.3.12.0
           env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           with:
             message-id: cdash
             message: |
-              [CDash for AT2 results](https://sems-cdash-son.sandia.gov/cdash/index.php?project=Trilinos&display=project&filtercount=2&showfilters=1&filtercombine=and&field1=buildname&compare1=65&value1=PR-${{ github.event.number }}&field2=buildstarttime&compare2=84&value2=now) [Currently only accessible from Sandia networks]
+              [CDash for AT2 results](https://my.cdash.org/index.php?project=Trilinos&display=project&filtercount=2&showfilters=1&filtercombine=and&field1=buildname&compare1=65&value1=PR-${{ github.event.number }}&field2=buildstarttime&compare2=84&value2=now)
 
               <details>
 

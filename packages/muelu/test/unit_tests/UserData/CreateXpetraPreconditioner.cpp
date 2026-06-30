@@ -25,7 +25,6 @@
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
-#include "MueLu_AmesosSmoother.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"

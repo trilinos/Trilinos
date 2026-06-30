@@ -156,7 +156,7 @@ int main(int argc, char *argv[]) {
   MyPL.set("Saddle Solver Type", "Block Diagonal Preconditioned Minres");
 
   //
-  // Create an Epetra_MultiVector for an initial vector to start the solver.
+  // Create an Tpetra::MultiVector for an initial vector to start the solver.
   // Note:  This needs to have the same number of columns as the blocksize.
   //
   RCP<TMV> ivec = Teuchos::rcp( new TMV(K->getRowMap(), blockSize) );
@@ -385,7 +385,7 @@ void formLaplacian(const RCP<const CrsMatrix>& A, const bool weighted, const boo
             values[j] = ZERO;
           // Set the sign of off-diagonal elements
           else
-            values[j] = -abs(values[j]);
+            values[j] = -std::abs(values[j]);
 
           // Update the diagonal
           diagonal->sumIntoGlobalValue(i,-values[j]);

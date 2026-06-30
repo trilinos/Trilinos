@@ -73,7 +73,11 @@ if( NOT DEFINED skip_upload_config_files )
 endif()
 
 if( NOT DEFINED SKIP_RUN_TESTS )
-    set (SKIP_RUN_TESTS OFF)
+    set ( SKIP_RUN_TESTS OFF )
+endif()
+
+if( NOT DEFINED ENABLE_ASAN )
+    set ( ENABLE_ASAN OFF )
 endif()
 
 # -----------------------------------------------------------

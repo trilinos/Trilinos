@@ -45,7 +45,7 @@ class ThresholdAFilterFactory : public SingleLevelFactoryBase {
   //@{
 
   //! Constructor.
-  ThresholdAFilterFactory(const std::string& ename, const magnitudeType threshold, const bool keepDiagonal = true, const GlobalOrdinal expectedNNZperRow = -1);
+  ThresholdAFilterFactory(const std::string& ename, const magnitudeType threshold, const bool keepDiagonal = true);
 
   //! Input
   //@{
@@ -66,7 +66,6 @@ class ThresholdAFilterFactory : public SingleLevelFactoryBase {
   std::string varName_;            ///< name of input and output variable
   const magnitudeType threshold_;  ///< threshold parameter
   const bool keepDiagonal_;
-  const GlobalOrdinal expectedNNZperRow_;
 
 };  // class ThresholdAFilterFactory
 

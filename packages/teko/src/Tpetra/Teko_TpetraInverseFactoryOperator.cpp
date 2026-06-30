@@ -14,6 +14,7 @@
 
 // Thyra includes
 #include "Thyra_TpetraLinearOp.hpp"
+#include "Thyra_TpetraThyraWrappers.hpp"
 
 using Teuchos::RCP;
 using Teuchos::rcp;

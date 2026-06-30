@@ -36,12 +36,13 @@
 #include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_FactoryManager.hpp"
 
-#include "MueLu_IfpackSmoother.hpp"
 #include "MueLu_Level.hpp"
 
 // Galeri
 #include <Galeri_XpetraProblemFactory.hpp>
 #include <Galeri_XpetraMatrixTypes.hpp>
+#include <Galeri_MatrixTraits.hpp>
+#include <Galeri_XpetraUtils.hpp>
 
 namespace Galeri {
 namespace Xpetra {

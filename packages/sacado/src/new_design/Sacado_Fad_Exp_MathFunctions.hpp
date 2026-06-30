@@ -38,7 +38,9 @@ namespace std {                                                         \
 }
 
 UNARYFUNC_MACRO(exp, ExpOp)
+UNARYFUNC_MACRO(expm1, ExpM1Op)
 UNARYFUNC_MACRO(log, LogOp)
+UNARYFUNC_MACRO(log1p, Log1POp)
 UNARYFUNC_MACRO(log10, Log10Op)
 UNARYFUNC_MACRO(sqrt, SqrtOp)
 UNARYFUNC_MACRO(safe_sqrt, SafeSqrtOp)

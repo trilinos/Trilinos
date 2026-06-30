@@ -28,7 +28,6 @@
 #include "MueLu_RepartitionHeuristicFactory.hpp"
 #include "MueLu_RepartitionFactory.hpp"
 #include "MueLu_RepartitionBlockDiagonalFactory.hpp"
-#include "MueLu_IsorropiaInterface.hpp"
 #include "MueLu_RepartitionInterface.hpp"
 #include "MueLu_CloneRepartitionInterface.hpp"
 #include "MueLu_RebalanceBlockAcFactory.hpp"

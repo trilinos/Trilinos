@@ -59,11 +59,3 @@ for className in `cat $classList | grep -v ^\# | cut -d "-" -f1 | sed 's/ //'`
   uppercaseClassName=$(echo $className | tr '[a-z]' '[A-Z]')
   cat $tmpl | sed "s/\$TMPL_UPPERCASECLASS/$uppercaseClassName/g" | sed "s/\$TMPL_CLASS/$className/g" >> MueLu_UseShortNamesScalar.hpp
 done
-
-# AmesosSmoother and IfpackSmoother are special (they need only one template parameter)
-echo "#ifdef MUELU_AMESOSSMOOTHER_SHORT" >> MueLu_UseShortNamesOrdinal.hpp
-echo "typedef MueLu::AmesosSmoother<Node> AmesosSmoother;" >> MueLu_UseShortNamesOrdinal.hpp
-echo "#endif" >> MueLu_UseShortNamesOrdinal.hpp
-echo "#ifdef MUELU_IFPACKSMOOTHER_SHORT" >> MueLu_UseShortNamesOrdinal.hpp
-echo "typedef MueLu::IfpackSmoother<Node> IfpackSmoother;" >> MueLu_UseShortNamesOrdinal.hpp
-echo "#endif" >> MueLu_UseShortNamesOrdinal.hpp

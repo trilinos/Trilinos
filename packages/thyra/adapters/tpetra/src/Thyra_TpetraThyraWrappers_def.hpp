@@ -402,7 +402,6 @@ initializePreconditionedOp(
 
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-inline
 SolveStatus<Scalar> solve(
                           const LinearOpWithSolveBase<Scalar> &A,
                           const EOpTransp A_trans,
@@ -419,5 +418,84 @@ SolveStatus<Scalar> solve(
 
 } // namespace Thyra
 
+#define THYRATPETRAADAPTERS_TPETRATHYRAWRAPPERS_INSTANT(S, LO, GO, N)          \
+  template Teuchos::RCP<const Thyra::VectorSpaceBase<S>>                       \
+  Thyra::createVectorSpace(const RCP<const Tpetra::Map<LO, GO, N>> &);         \
+                                                                               \
+  template Teuchos::RCP<Thyra::VectorBase<S>> Thyra::createVector(             \
+      const Teuchos::RCP<Tpetra::Vector<S, LO, GO, N>> &,                      \
+      const Teuchos::RCP<const Thyra::VectorSpaceBase<S>>);                    \
+                                                                               \
+  template Teuchos::RCP<const Thyra::VectorBase<S>> Thyra::createConstVector(  \
+      const Teuchos::RCP<const Tpetra::Vector<S, LO, GO, N>> &,                \
+      const Teuchos::RCP<const Thyra::VectorSpaceBase<S>>);                    \
+                                                                               \
+  template Teuchos::RCP<Thyra::MultiVectorBase<S>> Thyra::createMultiVector(   \
+      const Teuchos::RCP<Tpetra::MultiVector<S, LO, GO, N>> &,                 \
+      const Teuchos::RCP<const Thyra::VectorSpaceBase<S>>,                     \
+      const Teuchos::RCP<const Thyra::VectorSpaceBase<S>>);                    \
+                                                                               \
+  template Teuchos::RCP<const Thyra::MultiVectorBase<S>>                       \
+  Thyra::createConstMultiVector(                                               \
+      const Teuchos::RCP<const Tpetra::MultiVector<S, LO, GO, N>> &,           \
+      const Teuchos::RCP<const Thyra::VectorSpaceBase<S>>,                     \
+      const Teuchos::RCP<const VectorSpaceBase<S>>);                           \
+                                                                               \
+  template Teuchos::RCP<Thyra::LinearOpBase<S>> Thyra::createLinearOp(         \
+      const Teuchos::RCP<Tpetra::Operator<S, LO, GO, N>> &,                    \
+      const Teuchos::RCP<const Thyra::VectorSpaceBase<S>>,                     \
+      const Teuchos::RCP<const Thyra::VectorSpaceBase<S>>);                    \
+                                                                               \
+  template Teuchos::RCP<const Thyra::LinearOpBase<S>>                          \
+  Thyra::createConstLinearOp(                                                  \
+      const Teuchos::RCP<const Tpetra::Operator<S, LO, GO, N>> &,              \
+      const Teuchos::RCP<const Thyra::VectorSpaceBase<S>>,                     \
+      const Teuchos::RCP<const Thyra::VectorSpaceBase<S>>);                    \
+                                                                               \
+  template Teuchos::RCP<Thyra::PreconditionerBase<S>> Thyra::initializePrec(   \
+      const Thyra::PreconditionerFactoryBase<S> &,                             \
+      const Teuchos::RCP<const Tpetra::Operator<S, LO, GO, N>> &,              \
+      const Teuchos::RCP<Thyra::PreconditionerBase<S>> &,                      \
+      const Thyra::ESupportSolveUse);                                          \
+                                                                               \
+  template Teuchos::RCP<Thyra::PreconditionerBase<S>> Thyra::initializePrec(   \
+      const Thyra::PreconditionerFactoryBase<S> &,                             \
+      const Teuchos::RCP<const Tpetra::CrsMatrix<S, LO, GO, N>> &,             \
+      const Teuchos::RCP<Thyra::PreconditionerBase<S>> &,                      \
+      const Thyra::ESupportSolveUse);                                          \
+                                                                               \
+  template Teuchos::RCP<Thyra::LinearOpWithSolveBase<S>>                       \
+  Thyra::linearOpWithSolve(                                                    \
+      const Thyra::LinearOpWithSolveFactoryBase<S> &,                          \
+      const Teuchos::RCP<const Tpetra::Operator<S, LO, GO, N>> &,              \
+      const Thyra::ESupportSolveUse);                                          \
+                                                                               \
+  template Teuchos::RCP<Thyra::LinearOpWithSolveBase<S>>                       \
+  Thyra::linearOpWithSolve(                                                    \
+      const Thyra::LinearOpWithSolveFactoryBase<S> &,                          \
+      const Teuchos::RCP<const Tpetra::CrsMatrix<S, LO, GO, N>> &,             \
+      const Thyra::ESupportSolveUse);                                          \
+                                                                               \
+  template Teuchos::RCP<Thyra::LinearOpWithSolveBase<S>>                       \
+  Thyra::initializePreconditionedOp(                                           \
+      const Thyra::LinearOpWithSolveFactoryBase<S> &,                          \
+      const Teuchos::RCP<const Tpetra::Operator<S, LO, GO, N>> &,              \
+      const Teuchos::RCP<Thyra::PreconditionerBase<S>> &,                      \
+      const Thyra::ESupportSolveUse);                                          \
+                                                                               \
+  template Teuchos::RCP<Thyra::LinearOpWithSolveBase<S>>                       \
+  Thyra::initializePreconditionedOp(                                           \
+      const Thyra::LinearOpWithSolveFactoryBase<S> &,                          \
+      const Teuchos::RCP<const Tpetra::CrsMatrix<S, LO, GO, N>> &,             \
+      const Teuchos::RCP<Thyra::PreconditionerBase<S>> &,                      \
+      const Thyra::ESupportSolveUse);                                          \
+                                                                               \
+  template Thyra::SolveStatus<S> Thyra::solve(                                 \
+      const Thyra::LinearOpWithSolveBase<S> &, const Thyra::EOpTransp,         \
+      const Teuchos::RCP<const Tpetra::MultiVector<S, LO, GO, N>> &,           \
+      const Teuchos::RCP<Tpetra::MultiVector<S, LO, GO, N>> &,                 \
+      const Teuchos::Ptr<const Thyra::SolveCriteria<S>>);                      \
+                                                                               \
+  template class Thyra::TpetraOperatorVectorExtraction<S, LO, GO, N>;
 
 #endif // THYRA_TPETRA_THYRA_WRAPPERS_HPP

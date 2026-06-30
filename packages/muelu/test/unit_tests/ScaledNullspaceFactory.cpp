@@ -32,7 +32,6 @@ namespace MueLuTests {
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ScaledNullspaceFactory, Test0, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
 #include "MueLu_UseShortNames.hpp"
   MUELU_TESTING_SET_OSTREAM;
-  MUELU_TESTING_LIMIT_EPETRA_SCOPE_TPETRA_IS_DEFAULT(Scalar, GlobalOrdinal, Node);
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
 
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();

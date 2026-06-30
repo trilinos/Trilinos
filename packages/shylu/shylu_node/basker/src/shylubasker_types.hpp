@@ -19,7 +19,6 @@
 #define BASKER_ATOMIC         //Use Atomics (OLD)
 #define BASKER_ATOMIC_2       //Use Atomics (OLD)
 #define BASKER_NO_LAMBDA      //Do not use lambda
-#define BASKER_2DL            //Use a 2D L
 #define BASKER_MULTIPLE_UPPER //Use multiple threads for upper
 #define BASKER_MULTIPLE_LOWER //Use multiple threads for lower
 #define HAVE_AMESOS           //Use Amesos orderings
@@ -85,10 +84,6 @@ enum BASKER_INCOMPLETE_CODE
   BASKER_INCOMPLETE_EXP
 };
 
-//MACRO DEFAULT INC SETTINGS
-#define BASKER_INC_LVL_VALUE        0
-#define BASKER_INC_TOL_VALUE      0.0001
-
 //MACRO INC FILL (this will become dynamic in the future)
 #define BASKER_FILL_USER           0.00
 #define BASKER_FILL_LESTIMATE      1.50
@@ -145,6 +140,7 @@ enum BASKER_INCOMPLETE_CODE
 #define INT_RANK2DARRAY           Kokkos::View<BASKER_INT**,         BASKER_EXE_SPACE>
 #define INT_1DARRAY               Kokkos::View<BASKER_INT*,          BASKER_EXE_SPACE>
 #define ENTRY_1DARRAY             Kokkos::View<BASKER_ENTRY*,        BASKER_EXE_SPACE>
+#define ENTRY_RANK2DARRAY         Kokkos::View<BASKER_ENTRY**,       BASKER_EXE_SPACE>
 #define BOOL_1DARRAY              Kokkos::View<BASKER_BOOL*,         BASKER_EXE_SPACE>
 #define BOOL_2DARRAY              Kokkos::View<BOOL_1DARRAY*,        BASKER_EXE_SPACE>
 
@@ -204,6 +200,16 @@ enum BASKER_INCOMPLETE_CODE
       if(a.data() == NULL)                            \
         throw std::bad_alloc();                       \
     }                                                 \
+  }
+#define MALLOC_ENTRY_RANK2DARRAY(a,s0,s1)   \
+  { \
+    BASKER_ASSERT(s0>0, "BASKER ASSERT MALLOC entry_rank2d: size to alloc > 0 fails"); \
+    BASKER_ASSERT(s1>0, "BASKER ASSERT MALLOC entry_rank2d: size to alloc > 0 fails"); \
+    if (Int(a.extent(0)) != s0 || Int(a.extent(1)) != s1) { \
+      Kokkos::resize(a, s0,s1);                             \
+      if(a.data() == NULL)                                  \
+        throw std::bad_alloc();                             \
+    }                                                       \
   }
 #define MALLOC_ENTRY_2DARRAY(a,s) \
   { \

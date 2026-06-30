@@ -51,7 +51,7 @@ template <class Scalar,
           class LocalOrdinal,
           class GlobalOrdinal, class LocalOrdinalViewType>
 struct KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosHIPWrapperNode, LocalOrdinalViewType> {
-  static inline void jacobi_A_B_newmatrix_kernel_wrapper(Scalar omega,
+  static inline void jacobi_A_B_newmatrix_kernel_wrapper(typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega,
                                                          const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosHIPWrapperNode>& Dinv,
                                                          CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosHIPWrapperNode>& Aview,
                                                          CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosHIPWrapperNode>& Bview,
@@ -64,7 +64,7 @@ struct KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat
                                                          const std::string& label                           = std::string(),
                                                          const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
-  static inline void jacobi_A_B_reuse_kernel_wrapper(Scalar omega,
+  static inline void jacobi_A_B_reuse_kernel_wrapper(typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega,
                                                      const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosHIPWrapperNode>& Dinv,
                                                      CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosHIPWrapperNode>& Aview,
                                                      CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosHIPWrapperNode>& Bview,
@@ -77,7 +77,7 @@ struct KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat
                                                      const std::string& label                           = std::string(),
                                                      const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
-  static inline void jacobi_A_B_newmatrix_KokkosKernels(Scalar omega,
+  static inline void jacobi_A_B_newmatrix_KokkosKernels(typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega,
                                                         const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosHIPWrapperNode>& Dinv,
                                                         CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosHIPWrapperNode>& Aview,
                                                         CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosHIPWrapperNode>& Bview,
@@ -128,7 +128,7 @@ void KernelWrappers<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::K
 
   // Options
   int team_work_size = 16;  // Defaults to 16 as per Deveci 12/7/16 - csiefer
-  std::string myalg("SPGEMM_KK_MEMORY");
+  std::string myalg("SPGEMM_DEFAULT");
   if (!params.is_null()) {
     if (params->isParameter("hip: algorithm"))
       myalg = params->get("hip: algorithm", myalg);
@@ -269,6 +269,12 @@ void KernelWrappers<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::K
   using Teuchos::RCP;
   using Teuchos::rcp;
 
+  // By default, if A*B results in an entry that is not supported by the graph of C, we throw.
+  // This option allows to override this behavior and silently ignores such entries.
+  bool throwOnInsert = true;
+  if (!params.is_null() && params->isType<bool>("MM Throw For Non-Existent Entries"))
+    throwOnInsert = params->get<bool>("MM Throw For Non-Existent Entries");
+
   RCP<Tpetra::Details::ProfilingRegion> MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: MMM: Reuse SerialCore"));
 
   // Lots and lots of typedefs
@@ -373,11 +379,13 @@ void KernelWrappers<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::K
           LO Bkj = Bcolind[j];
           LO Cij = Bcol2Ccol[Bkj];
 
-          TEUCHOS_TEST_FOR_EXCEPTION(c_status[Cij] < OLD_ip || c_status[Cij] >= CSR_ip,
-                                     std::runtime_error, "Trying to insert a new entry (" << i << "," << Cij << ") into a static graph "
-                                                                                          << "(c_status = " << c_status[Cij] << " of [" << OLD_ip << "," << CSR_ip << "))");
-
-          Cvals[c_status[Cij]] += Aval * Bvals[j];
+          const bool badInsert = (Cij == LO_INVALID) || (c_status[Cij] < OLD_ip) || (c_status[Cij] >= CSR_ip);
+          if (!badInsert)
+            Cvals[c_status[Cij]] += Aval * Bvals[j];
+          else if (throwOnInsert)
+            TEUCHOS_TEST_FOR_EXCEPTION(badInsert,
+                                       std::runtime_error, "Trying to insert a new entry (" << i << "," << Cij << ") into a static graph "
+                                                                                            << "(c_status = " << c_status[Cij] << " of [" << OLD_ip << "," << CSR_ip << "))");
         }
 
       } else {
@@ -387,11 +395,13 @@ void KernelWrappers<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::K
           LO Ikj = Icolind[j];
           LO Cij = Icol2Ccol[Ikj];
 
-          TEUCHOS_TEST_FOR_EXCEPTION(c_status[Cij] < OLD_ip || c_status[Cij] >= CSR_ip,
-                                     std::runtime_error, "Trying to insert a new entry (" << i << "," << Cij << ") into a static graph "
-                                                                                          << "(c_status = " << c_status[Cij] << " of [" << OLD_ip << "," << CSR_ip << "))");
-
-          Cvals[c_status[Cij]] += Aval * Ivals[j];
+          const bool badInsert = (Cij == LO_INVALID) || (c_status[Cij] < OLD_ip) || (c_status[Cij] >= CSR_ip);
+          if (!badInsert)
+            Cvals[c_status[Cij]] += Aval * Ivals[j];
+          else if (throwOnInsert)
+            TEUCHOS_TEST_FOR_EXCEPTION(badInsert,
+                                       std::runtime_error, "Trying to insert a new entry (" << i << "," << Cij << ") into a static graph "
+                                                                                            << "(c_status = " << c_status[Cij] << " of [" << OLD_ip << "," << CSR_ip << "))");
         }
       }
     }
@@ -405,7 +415,7 @@ template <class Scalar,
           class LocalOrdinal,
           class GlobalOrdinal,
           class LocalOrdinalViewType>
-void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosHIPWrapperNode, LocalOrdinalViewType>::jacobi_A_B_newmatrix_kernel_wrapper(Scalar omega,
+void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosHIPWrapperNode, LocalOrdinalViewType>::jacobi_A_B_newmatrix_kernel_wrapper(typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega,
                                                                                                                                                                  const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosHIPWrapperNode>& Dinv,
                                                                                                                                                                  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosHIPWrapperNode>& Aview,
                                                                                                                                                                  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosHIPWrapperNode>& Bview,
@@ -455,7 +465,7 @@ template <class Scalar,
           class LocalOrdinal,
           class GlobalOrdinal,
           class LocalOrdinalViewType>
-void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosHIPWrapperNode, LocalOrdinalViewType>::jacobi_A_B_reuse_kernel_wrapper(Scalar omega,
+void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosHIPWrapperNode, LocalOrdinalViewType>::jacobi_A_B_reuse_kernel_wrapper(typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega,
                                                                                                                                                              const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosHIPWrapperNode>& Dinv,
                                                                                                                                                              CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosHIPWrapperNode>& Aview,
                                                                                                                                                              CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosHIPWrapperNode>& Bview,
@@ -623,7 +633,7 @@ template <class Scalar,
           class LocalOrdinal,
           class GlobalOrdinal,
           class LocalOrdinalViewType>
-void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosHIPWrapperNode, LocalOrdinalViewType>::jacobi_A_B_newmatrix_KokkosKernels(Scalar omega,
+void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosHIPWrapperNode, LocalOrdinalViewType>::jacobi_A_B_newmatrix_KokkosKernels(typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega,
                                                                                                                                                                 const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosHIPWrapperNode>& Dinv,
                                                                                                                                                                 CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosHIPWrapperNode>& Aview,
                                                                                                                                                                 CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosHIPWrapperNode>& Bview,
@@ -700,7 +710,7 @@ void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::
 
   // Options
   int team_work_size = 16;
-  std::string myalg("SPGEMM_KK_MEMORY");
+  std::string myalg("SPGEMM_DEFAULT");
   if (!params.is_null()) {
     if (params->isParameter("hip: algorithm"))
       myalg = params->get("hip: algorithm", myalg);
@@ -718,6 +728,8 @@ void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::
   const bool useIntRowptrs =
       irph.shouldUseIntRowptrs() &&
       Aview.origMatrix->getApplyHelper()->shouldUseIntRowptrs();
+
+  const Scalar jacobiOmega = omega * Teuchos::ScalarTraits<Scalar>::one();
 
   if (useIntRowptrs) {
     int_handle_t kh;
@@ -751,7 +763,7 @@ void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::
                                               Aint.graph.row_map, Aint.graph.entries, Amat.values, false,
                                               Bint.graph.row_map, Bint.graph.entries, Bint.values, false,
                                               int_row_mapC, entriesC, valuesC,
-                                              omega, Dinv.getLocalViewDevice(Access::ReadOnly));
+                                              jacobiOmega, Dinv.getLocalViewDevice(Access::ReadOnly));
     // transfer the integer rowptrs back to the correct rowptr type
     Kokkos::parallel_for(
         int_row_mapC.size(), KOKKOS_LAMBDA(int i) { row_mapC(i) = int_row_mapC(i); });
@@ -781,7 +793,7 @@ void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::
                                               Amat.graph.row_map, Amat.graph.entries, Amat.values, false,
                                               Bmerged.graph.row_map, Bmerged.graph.entries, Bmerged.values, false,
                                               row_mapC, entriesC, valuesC,
-                                              omega, Dinv.getLocalViewDevice(Access::ReadOnly));
+                                              jacobiOmega, Dinv.getLocalViewDevice(Access::ReadOnly));
     kh.destroy_spgemm_handle();
   }
 

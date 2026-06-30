@@ -46,7 +46,9 @@ namespace Sacado {
     template <typename ExprT> class UnaryPlusOp;
     template <typename ExprT> class UnaryMinusOp;
     template <typename ExprT> class ExpOp;
+    template <typename ExprT> class ExpM1Op;
     template <typename ExprT> class LogOp;
+    template <typename ExprT> class Log1POp;
     template <typename ExprT> class Log10Op;
     template <typename ExprT> class SqrtOp;
     template <typename ExprT> class CosOp;

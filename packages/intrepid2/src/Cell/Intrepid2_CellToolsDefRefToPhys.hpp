@@ -139,13 +139,10 @@ namespace Intrepid2 {
                      const RefPointViewType  refPoints,
                      const WorksetType       worksetCell,
                      const HGradBasisPtrType basis ) {
-#ifdef HAVE_INTREPID2_DEBUG
-    CellTools_mapToPhysicalFrameArgs( physPoints, refPoints, worksetCell, basis->getBaseCellTopology() );
-#endif
     constexpr bool are_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(physPoints)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(refPoints)::memory_space>::accessible;
 
     static_assert(are_accessible, "CellTools<DeviceType>::mapToPhysicalFrame(..): input/output views' memory spaces are not compatible with DeviceType");
@@ -157,6 +154,7 @@ namespace Intrepid2 {
     const auto refPointRank = refPoints.rank();
     const auto numPoints = (refPointRank == 2 ? refPoints.extent(0) : refPoints.extent(1));
     const auto basisCardinality = basis->getCardinality();
+    const auto basisDimRange = Kokkos::pair<ordinal_type,ordinal_type>(0, basis->getDomainDimension());
 
     using valViewType = Kokkos::DynRankView<decltype(basis->getDummyOutputValue()),DeviceType>;
 
@@ -166,18 +164,15 @@ namespace Intrepid2 {
     case 2: {
       // refPoints is (P,D): single set of ref. points is mapped to one or multiple physical cells
       vals = Impl::createMatchingView<valViewType>(physPoints, "CellTools::mapToPhysicalFrame::vals", basisCardinality, numPoints);
-      basis->getValues(vals,
-                       refPoints,
-                       OPERATOR_VALUE);
+      const auto refPts = Kokkos::subdynrankview(refPoints, Kokkos::ALL(), basisDimRange); //needed for shell topologies
+      basis->getValues(vals, refPts, OPERATOR_VALUE);
       break;
     }
     case 3: {
       // refPoints is (C,P,D): multiple sets of ref. points are mapped to matching number of physical cells.
       vals = Impl::createMatchingView<valViewType>(physPoints, "CellTools::mapToPhysicalFrame::vals", numCells, basisCardinality, numPoints);
-      for (size_type cell=0;cell<numCells;++cell)
-        basis->getValues(Kokkos::subdynrankview( vals,      cell, Kokkos::ALL(), Kokkos::ALL() ),
-                         Kokkos::subdynrankview( refPoints, cell, Kokkos::ALL(), Kokkos::ALL() ),
-                         OPERATOR_VALUE);
+      const auto refPts = Kokkos::subdynrankview(refPoints, Kokkos::ALL(), Kokkos::ALL(), basisDimRange);  //needed for shell topologies
+      getHGradValues<OPERATOR_VALUE>(vals, refPts, basis.get());
       break;
     }
     }
@@ -187,6 +182,28 @@ namespace Intrepid2 {
     const auto loopSize = physPoints.extent(0)*physPoints.extent(1);
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
     Kokkos::parallel_for( policy, FunctorType(physPoints, worksetCell, vals) );
+  }
+
+  template<typename DeviceType>
+  template<typename PhysPointViewType,
+             typename RefPointViewType,
+             typename WorksetCellViewType>
+    void
+    CellTools<DeviceType>::
+    mapToPhysicalFrame(       PhysPointViewType    physPoints,
+                        const RefPointViewType     refPoints,
+                        const WorksetCellViewType  worksetCell,
+                        const shards::CellTopology cellTopo ) {
+    
+    #ifdef HAVE_INTREPID2_DEBUG
+      CellTools_mapToPhysicalFrameArgs( physPoints, refPoints, worksetCell, cellTopo );
+    #endif
+      using nonConstRefPointValueType = typename RefPointViewType::non_const_value_type;
+      auto basis = createHGradBasis<nonConstRefPointValueType,nonConstRefPointValueType>(cellTopo);
+      mapToPhysicalFrame(physPoints,
+                         refPoints,
+                         worksetCell,
+                         basis);
   }
 
   template<typename DeviceType>
@@ -244,9 +261,9 @@ namespace Intrepid2 {
                          const ordinal_type subcellOrd) {
 
     constexpr bool are_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(refSubcellPoints)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(paramPoints)::memory_space>::accessible;
     static_assert(are_accessible, "CellTools<DeviceType>::mapToReferenceSubcell(..): input/output views' memory spaces are not compatible with DeviceType");
 
@@ -282,11 +299,11 @@ namespace Intrepid2 {
                          const ordViewType                                                   subcellOrd) {
 
     constexpr bool are_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(refSubcellPoints)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(paramPoints)::memory_space>::accessible && 
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(subcellOrd)::memory_space>::accessible;
     static_assert(are_accessible, "CellTools<DeviceType>::mapToReferenceSubcell(..): input/output views' memory spaces are not compatible with DeviceType");
     

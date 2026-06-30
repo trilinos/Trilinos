@@ -21,11 +21,10 @@
 namespace MueLu {
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-ThresholdAFilterFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ThresholdAFilterFactory(const std::string& ename, const magnitudeType threshold, const bool keepDiagonal, const GlobalOrdinal expectedNNZperRow)
+ThresholdAFilterFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ThresholdAFilterFactory(const std::string& ename, const magnitudeType threshold, const bool keepDiagonal)
   : varName_(ename)
   , threshold_(threshold)
-  , keepDiagonal_(keepDiagonal)
-  , expectedNNZperRow_(expectedNNZperRow) {}
+  , keepDiagonal_(keepDiagonal) {}
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ThresholdAFilterFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& currentLevel) const {
@@ -38,10 +37,13 @@ void ThresholdAFilterFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   FactoryMonitor m(*this, "A filter (thresholding)", currentLevel);
 
   RCP<Matrix> Ain = Get<RCP<Matrix> >(currentLevel, varName_);
-  RCP<CrsMatrixWrap> Aout =
-      MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetThresholdedMatrix(Ain, threshold_, keepDiagonal_, expectedNNZperRow_);
+  RCP<Matrix> Aout =
+      MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetThresholdedMatrix(Ain, threshold_, keepDiagonal_);
 
-  GetOStream(Statistics0) << "Nonzeros in " << varName_ << "(input): " << Ain->getGlobalNumEntries() << ", Nonzeros after filtering " << varName_ << " (parameter: " << threshold_ << "): " << Aout->getGlobalNumEntries() << std::endl;
+  if (IsPrint(Statistics1)) {
+    rcp_const_cast<CrsGraph>(Aout->getCrsGraph())->computeGlobalConstants();
+    GetOStream(Statistics1) << "Nonzeros in " << varName_ << "(input): " << Ain->getGlobalNumEntries() << ", Nonzeros after filtering " << varName_ << " (parameter: " << threshold_ << "): " << Aout->getGlobalNumEntries() << std::endl;
+  }
   currentLevel.Set(varName_, Teuchos::rcp_dynamic_cast<Matrix>(Aout), this);
 }
 

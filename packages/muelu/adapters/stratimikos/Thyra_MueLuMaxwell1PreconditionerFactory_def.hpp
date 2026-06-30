@@ -118,7 +118,7 @@ void MueLuMaxwell1PreconditionerFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
   RCP<XpOp> xpPrecOp;
   if (startingOver == true) {
     // Convert to Xpetra
-    std::list<std::string> convertXpetra = {"Coordinates", "Nullspace", "Kn", "D0"};
+    std::list<std::string> convertXpetra = {"Coordinates", "Nullspace", "Kn", "D0", "CurlCurl"};
     for (auto it = convertXpetra.begin(); it != convertXpetra.end(); ++it)
       Converters<Scalar, LocalOrdinal, GlobalOrdinal, Node>::replaceWithXpetra(paramList, *it);
 
@@ -126,6 +126,14 @@ void MueLuMaxwell1PreconditionerFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
     for (auto itSublist = sublists.begin(); itSublist != sublists.end(); ++itSublist)
       if (paramList.isSublist(*itSublist)) {
         ParameterList& sublist = paramList.sublist(*itSublist);
+        if (sublist.isSublist("user data")) {
+          auto& userData = sublist.sublist("user data");
+          std::list<std::string> convertKeys;
+          for (auto it = userData.begin(); it != userData.end(); ++it)
+            convertKeys.push_back(userData.name(it));
+          for (auto it = convertKeys.begin(); it != convertKeys.end(); ++it)
+            Converters<Scalar, LocalOrdinal, GlobalOrdinal, Node>::replaceWithXpetra(userData, *it);
+        }
         for (int lvlNo = 0; lvlNo < 10; ++lvlNo) {
           if (sublist.isSublist("level " + std::to_string(lvlNo) + " user data")) {
             ParameterList& lvlList = sublist.sublist("level " + std::to_string(lvlNo) + " user data");

@@ -17,11 +17,11 @@ on:
         description: 'Max cores allowed that is detected on the system.'
         required: false
         type: number
-        default: 12
+        default: -1
       ctest-drop-site:
         required: false
         type: string
-        default: "sems-cdash-son.sandia.gov/cdash"
+        default: "my.cdash.org"
       cdash-track:
         description: 'Pull Request, Nightly, or Experimental'
         required: false
@@ -40,7 +40,11 @@ on:
         description: 'On a GPU machine, this is number of slots allowed per GPU. (e.g. 4 allows 4 MPI ranks per GPU)'
         required: false
         type: number
-        default: 0
+        default: -1
+      skip-create-packageenables:
+        required: false
+        type: boolean
+        default: false
       extra-pr-driver-args:
         description: 'Extra arguments to be used when calling PullRequestLinuxDriverTest.py'
         required: false
@@ -51,9 +55,10 @@ jobs:
     runs-on: ${{ fromJson(inputs.target-runner-labels) }}
     steps:
       - name: Clone Trilinos
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
           fetch-depth: 1
+          ref: ${{ github.event.pull_request && '' || inputs.target-branch }}
       - name: Print debug outputs
         shell: bash -l {0}
         env:
@@ -104,6 +109,44 @@ jobs:
 
           echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}"
           type python
+
+          if [ "${{ inputs.num-concurrent-tests }}" != "-1" ]
+          then
+            num_concurrent_tests="--num-concurrent-tests ${{ inputs.num-concurrent-tests }}"
+          else
+            num_concurrent_tests=""
+          fi
+
+          if [ "${{ inputs.max-cores-allowed }}" != "-1" ]
+          then
+            max_cores_allowed="--max-cores-allowed ${{ inputs.max-cores-allowed }}"
+          else
+            max_cores_allowed=""
+          fi
+
+          if [ "${{ inputs.slots-per-gpu }}" != "-1" ]
+          then
+            slots_per_gpu="--slots-per-gpu ${{ inputs.slots-per-gpu }}"
+          else
+            slots_per_gpu=""
+          fi
+
+          if [ "${{ inputs.skip-create-packageenables }}" == "true" ]
+          then
+            skip_create_packageenables="--skip-create-packageenables"
+          else
+            skip_create_packageenabels=""
+          fi
+
+          if [ -n "${{ inputs.extra-pr-driver-args }}" ]
+          then
+            extra_pr_driver_args="${{ inputs.extra-pr-driver-args }}"
+          else
+            extra_pr_driver_args=""
+          fi
+
+          export no_proxy=my.cdash.org
+
           python3 ${TRILINOS_DIR}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
             --genconfig-build-name ${{ inputs.genconfig-string }} \
             ${{ inputs.target-branch && '--target-branch-name ' || '' }}${{ inputs.target-branch }} \
@@ -116,13 +159,14 @@ jobs:
             ${{ inputs.dashboard-build-name && '--dashboard-build-name ' || '' }}${{ inputs.dashboard-build-name }} \
             --ctest-driver ${TRILINOS_DIR}/cmake/SimpleTesting/cmake/ctest-driver.cmake \
             --ctest-drop-site ${{ inputs.ctest-drop-site }} \
-            --pullrequest-cdash-track ${{ inputs.cdash-track }} \
+            --pullrequest-cdash-track "${{ inputs.cdash-track }}" \
             --filename-subprojects ./package_subproject_list.cmake \
             --filename-packageenables ./packageEnables.cmake \
-            ${{ inputs.max-cores-allowed && '--max-cores-allowed ' || '' }}${{ inputs.max-cores-allowed }} \
-            ${{ inputs.num-concurrent-tests && '--num-concurrent-tests ' || '' }}${{ inputs.num-concurrent-tests }} \
-            ${{ inputs.slots-per-gpu && '--slots-per-gpu ' || '' }}${{ inputs.slots-per-gpu }} \
-            ${{ inputs.extra-pr-driver-args }}
+            ${num_concurrent_tests} \
+            ${max_cores_allowed} \
+            ${slots_per_gpu} \
+            ${skip_create_packageenables} \
+            ${extra_pr_driver_args}
       - name: Filtered build error logs
         if: success() || failure()
         shell: bash -l {0}
@@ -147,7 +191,7 @@ jobs:
         env:
           NODE_USE_SYSTEM_CA: 1
         with:
-          name: ${{ github.job }}-artifacts
+          name: ${{ inputs.dashboard-build-name }}-artifacts
           path: /home/runner/artifacts/*
           retention-days: 90
       - name: Write Summary

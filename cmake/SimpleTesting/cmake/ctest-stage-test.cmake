@@ -14,14 +14,27 @@ banner("START test step")
 set(STAGE_TEST_ERROR OFF)
 
 if(NOT SKIP_RUN_TESTS)
-    if(CTEST_BUILD_NAME MATCHES .*_asan_.*)
+    if(ENABLE_ASAN)
         set(CTEST_MEMORYCHECK_TYPE "AddressSanitizer")
+
+        # Maximum detection settings
+        # 1. detect_leaks=1: Finds memory leaks (LSan)
+        # 2. halt_on_error=1: Crashes immediately on first bug
+        # 3. detect_stack_use_after_return=1: Finds pointers to local variables that escaped the function
+        # 4. check_initialization_order=1: Finds bugs where global variables in different files depend on each other
+        # 5. strict_string_checks=1: Enables more aggressive checks for libc functions (strcpy, memcpy, etc.)
+        # 6. detect_odr_violation=1: Finds "One Definition Rule" violations (same symbol in different libraries)
+        set(ENV{ASAN_OPTIONS} "detect_leaks=1:halt_on_error=1:detect_stack_use_after_return=1:check_initialization_order=1:strict_string_checks=1:detect_odr_violation=1")
         set(ENV{LSAN_OPTIONS} "suppressions=${CTEST_SOURCE_DIRECTORY}/packages/framework/asan_assets/lsan.supp")
+
         set(ENV{LD_PRELOAD} ${CTEST_SOURCE_DIRECTORY}/packages/framework/asan_assets/dummy_dlclose.so)
+
         ctest_memcheck(PARALLEL_LEVEL ${TEST_PARALLEL_LEVEL}
                        CAPTURE_CMAKE_ERROR captured_cmake_error
                        RETURN_VALUE test_error)
+
         unset(ENV{LD_PRELOAD})
+
         submit_by_parts( "MemCheck" )
     else()
         ctest_test(PARALLEL_LEVEL ${TEST_PARALLEL_LEVEL}

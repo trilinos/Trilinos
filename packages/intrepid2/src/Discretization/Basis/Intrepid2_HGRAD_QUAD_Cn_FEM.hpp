@@ -99,23 +99,18 @@ namespace Intrepid2 {
 
           workViewType work = createMatchingUnmanagedView<workViewType>(_work, ptr, (ptEnd-ptBegin)*_work.extent(0));
 
-          switch (opType) {
-          case OPERATOR_VALUE : {
+          if constexpr (opType == OPERATOR_VALUE) {
             auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange );
             Serial<opType>::getValues( output, input, work, _vinv );
-            break;
           }
-          case OPERATOR_CURL :
-          case OPERATOR_Dn : {
+          else if constexpr ((opType == OPERATOR_CURL) || (opType == OPERATOR_Dn)) {
             auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange, Kokkos::ALL() );
             Serial<opType>::getValues( output, input, work, _vinv, _opDn );
-            break;
           }
-          default: {
+          else {
             INTREPID2_TEST_FOR_ABORT( true,
                                       ">>> ERROR: (Intrepid2::Basis_HGRAD_QUAD_Cn_FEM::Functor) operator is not supported");
             
-          }
           }
         }
       };
@@ -181,9 +176,8 @@ namespace Intrepid2 {
     }
 
     virtual void 
-    getScratchSpaceSize(      ordinal_type& perTeamSpaceSize,
-                              ordinal_type& perThreadSpaceSize,
-                        const PointViewType inputPointsconst,
+    getScratchSpaceSize(      ordinal_type& perThreadSpaceSize,
+                        PointViewType inputPointsconst,
                         const EOperator operatorType = OPERATOR_VALUE) const override;
 
     KOKKOS_INLINE_FUNCTION
@@ -193,7 +187,7 @@ namespace Intrepid2 {
       const PointViewType  inputPoints,
       const EOperator operatorType,
       const typename Kokkos::TeamPolicy<typename DeviceType::execution_space>::member_type& team_member,
-      const typename DeviceType::execution_space::scratch_memory_space & scratchStorage, 
+      const int threadScratchLevel, 
       const ordinal_type subcellDim = -1,
       const ordinal_type subcellOrdinal = -1) const override;
 

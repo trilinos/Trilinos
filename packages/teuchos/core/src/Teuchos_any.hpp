@@ -127,8 +127,9 @@ public:
     : content(0)
     {}
 
-  //! Templated constructor
-  template<typename ValueType>
+  //! Templated constructor (excluded for any/any& to prevent infinite recursion via holder<any>)
+  template<typename ValueType,
+    std::enable_if_t<!std::is_same_v<std::decay_t<ValueType>, any>, int> = 0>
   explicit any(ValueType&& value)
     : content(new holder<std::decay_t<ValueType>>(std::forward<ValueType>(value)))
     {}
@@ -459,5 +460,13 @@ T & make_any_ref(any &rhs)
 }
 
 } // namespace Teuchos
+
+
+extern template std::string& Teuchos::any_cast<std::string>(Teuchos::any&);
+extern template int& Teuchos::any_cast<int>(Teuchos::any&);
+extern template long long& Teuchos::any_cast<long long>(Teuchos::any&);
+extern template bool& Teuchos::any_cast<bool>(Teuchos::any&);
+extern template double& Teuchos::any_cast<double>(Teuchos::any&);
+
 
 #endif // TEUCHOS_ANY_HPP

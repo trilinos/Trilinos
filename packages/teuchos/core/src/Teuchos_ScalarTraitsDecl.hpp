@@ -117,7 +117,7 @@ struct ScalarTraits
   //! Returns a random number (between -one() and +one()) of this scalar type.
   static inline T random()                   { return UndefinedScalarTraits<T>::notDefined(); }
   //! Returns the name of this scalar type.
-  static inline std::string name()           { (void)UndefinedScalarTraits<T>::notDefined(); return 0; }
+  static inline std::string name()           { (void)UndefinedScalarTraits<T>::notDefined(); return std::string(); }
   //! Returns a number of magnitudeType that is the square root of this scalar type \c x.
   static inline T squareroot(T x) { return UndefinedScalarTraits<T>::notDefined(); }
   //! Returns the result of raising one scalar \c x to the power \c y.

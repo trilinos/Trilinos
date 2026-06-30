@@ -40,6 +40,7 @@ class Projection {
 
  private:
   Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> localMap_;
+  Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tempMV_;
 };
 
 /*!
@@ -121,6 +122,8 @@ class Amesos2Smoother : public SmootherPrototype<Scalar, LocalOrdinal, GlobalOrd
  private:
   typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> Tpetra_CrsMatrix;
   typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> Tpetra_MultiVector;
+
+  void ApplyBlocked(MultiVector& X, const MultiVector& B) const;
 
   //! amesos2-specific key phrase that denote smoother type
   std::string type_;

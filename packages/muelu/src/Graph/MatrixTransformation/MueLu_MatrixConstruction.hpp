@@ -649,7 +649,6 @@ class VectorCountingFunctor<local_matrix_type, functor_type> {
   rowptr_type filtered_rowptr;
   rowptr_type graph_rowptr;
 
-  bool firstFunctor;
   functor_type functor;
 
 #ifdef MUELU_COALESCE_DROP_DEBUG

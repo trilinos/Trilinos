@@ -98,6 +98,8 @@ public:
         Note that the physical point can be in a space with larger dimension, e.g. if mapping a
         reference quadrilateral into a side in 3D space.
 
+        Note, it doesn't work with FAD Types
+
         \warning
         The array \c physPoints represents an arbitrary set (or sets) of points in the physical
         frame that are not required to belong in the physical cell (cells) that define(s) the reference
@@ -119,8 +121,13 @@ public:
     mapToReferenceFrame(const refPointViewType &refPoint, // refDim
         const phyPointViewType &physPoint, // physDim
         const nodeViewType &nodes,
-        const double tol = tolerence()) {  // numNodes,physDim
-      const ordinal_type refDim = refPoint.extent(0);
+        const double tol = tolerance(),
+        const typename phyPointViewType::value_type shellThickness = -1.0) {  // numNodes,physDim
+
+      bool isBeamOrShell = (shellThickness > 0); 
+
+      //for Beam or Shell elements, refPoint has dimension refDim+1  (e.g., shellQuadrilateral is a 3D topology, but maps according to the QUAD basis functions)
+      const ordinal_type refDim = refPoint.extent(0) - ordinal_type(isBeamOrShell);
       const ordinal_type physDim = physPoint.extent(0);
       const ordinal_type numNodes = nodes.extent(0);
 
@@ -165,18 +172,21 @@ public:
       Kokkos::AnonymousSpace,
       Kokkos::MemoryUnmanaged> oldRefPoint(ptr, refDim); ptr += refDim;
 
+      double xphyNorm = Kernels::Serial::norm(physPoint, NORM_TWO);
+
+      const auto refDimRange = Kokkos::pair<ordinal_type,ordinal_type>(0, refDim);
+      auto refPt = Kokkos::subview(refPoint,refDimRange); //needed for shell elements
+
       // set initial guess
-      for (ordinal_type j=0;j<refDim;++j) oldRefPoint(j) = 0;
+      Kernels::Serial::copy(oldRefPoint, refPt);
 
-      double xphyNorm = Kernels::Serial::norm(physPoint, NORM_ONE);
-
-      bool converged = false;
+      bool converged = false;      
       for (ordinal_type iter=0;iter<Parameters::MaxNewton;++iter) {
         // xtmp := F(oldRefPoint);
         implBasisType::template Serial<OPERATOR_VALUE>::getValues(vals, oldRefPoint);
         mapToPhysicalFrame(tmpPhysPoint, vals, nodes);
         Kernels::Serial::z_is_axby(tmpPhysPoint, 1.0, physPoint, -1.0, tmpPhysPoint);  //residual  xtmp := physPoint - F(oldRefPoint);
-        double residualNorm = Kernels::Serial::norm(tmpPhysPoint, NORM_ONE);
+        double residualNorm = Kernels::Serial::norm(tmpPhysPoint, NORM_TWO);
         if (residualNorm < tol*xphyNorm) {
           converged = true;
           break;
@@ -195,20 +205,35 @@ public:
         }
 
         // Newton
-        Kernels::Serial::gemv_notrans(1.0, invDf, tmpPhysPoint, 0.0, refPoint); // refPoint := DF^{-1}( physPoint - F(oldRefPoint))
-        Kernels::Serial::z_is_axby(refPoint, 1.0, oldRefPoint,  1.0, refPoint); // refPoint += oldRefPoint
+        Kernels::Serial::gemv_notrans(1.0, invDf, tmpPhysPoint, 0.0, refPt); // refPoint := DF^{-1}( physPoint - F(oldRefPoint))
 
-        // temporarily overwriting oldRefPoint with oldRefPoint-refPoint
-        Kernels::Serial::z_is_axby(oldRefPoint, 1.0, oldRefPoint, -1.0, refPoint);
+        double err = Kernels::Serial::norm(refPt, NORM_TWO); //error on increment
 
-        double err = Kernels::Serial::norm(oldRefPoint, NORM_ONE);
+        Kernels::Serial::z_is_axby(refPt, 1.0, oldRefPoint,  1.0, refPt); // refPoint += oldRefPoint
+
         if (err < tol) {
           converged = true;
           break;
         }
 
-        Kernels::Serial::copy(oldRefPoint, refPoint);
+        Kernels::Serial::copy(oldRefPoint, refPt);
       }
+
+      if(isBeamOrShell) {
+        implBasisType::template Serial<OPERATOR_GRAD>::getValues(grads, refPt);
+        CellTools::Serial::computeJacobian(jac, grads, nodes);
+        if (physDim==3) {
+          auto t1 = Kokkos::subview( jac, Kokkos::ALL(), 0);
+          auto t2 = Kokkos::subview( jac, Kokkos::ALL(), 1);
+          auto n = Kokkos::subview( invDf,  0,  Kokkos::ALL());  
+          Kernels::Serial::vector_product_d3(n, t1, t2);
+          refPoint(refDim) = (n(0)*tmpPhysPoint(0) + n(1)*tmpPhysPoint(1) + n(2)*tmpPhysPoint(2))*2.0/shellThickness/Kernels::Serial::norm(n, NORM_TWO);
+        } else { //physDim == 2
+          auto t1 = Kokkos::subview( jac, Kokkos::ALL(), 0);
+          refPoint(refDim) = (-t1(1)*tmpPhysPoint(0) + t1(0)*tmpPhysPoint(1))*2.0/shellThickness/Kernels::Serial::norm(t1, NORM_TWO);
+        }
+      }
+
       return converged;
     }
 

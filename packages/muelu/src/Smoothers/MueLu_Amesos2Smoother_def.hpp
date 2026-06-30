@@ -72,7 +72,9 @@ void Projection<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   // Project X onto orthonormal nullspace
   // Nullspace_ ^T * X
-  Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tempMV = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(localMap_, X.getNumVectors());
+  if (tempMV_.is_null() || tempMV_->getNumVectors() != X.getNumVectors())
+    tempMV_ = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(localMap_, X.getNumVectors());
+  Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& tempMV = tempMV_;
   tempMV->multiply(Teuchos::CONJ_TRANS, Teuchos::NO_TRANS, ONE, *Nullspace_, X, ZERO);
   auto dots      = tempMV->getLocalViewHost(Tpetra::Access::ReadOnly);
   bool doProject = true;
@@ -166,6 +168,10 @@ void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(Level& cu
     this->GetOStream(Warnings0) << "MueLu::Amesos2Smoother::Setup(): Setup() has already been called" << std::endl;
 
   RCP<Matrix> A = Factory::Get<RCP<Matrix> >(currentLevel, "A");
+  auto A_block  = rcp_dynamic_cast<BlockedCrsMatrix>(A);
+  if (A_block) {
+    A = A_block->Merge();
+  }
 
   // Do a quick check if we need to modify the matrix
   RCP<const Map> rowMap = A->getRowMap();
@@ -308,6 +314,13 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Apply(MultiVector& X, const MultiVector& B, bool /* InitialGuessIsZero */) const {
   TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::Amesos2Smoother::Apply(): Setup() has not been called");
 
+  RCP<BlockedMultiVector> blockedX = rcp_dynamic_cast<BlockedMultiVector>(rcpFromRef(X));
+  bool blocked                     = blockedX != Teuchos::null;
+  if (blocked) {
+    this->ApplyBlocked(X, B);
+    return;
+  }
+
   RCP<Tpetra_MultiVector> tX, tB;
   if (!useTransformation_) {
     tX = toTpetra(Teuchos::rcpFromRef(X));
@@ -356,6 +369,41 @@ void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Apply(MultiVect
       projection_->projectOut(X);
     }
   }
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ApplyBlocked(MultiVector& X, const MultiVector& B) const {
+  TEUCHOS_TEST_FOR_EXCEPTION(useTransformation_, Exceptions::RuntimeError,
+                             "MueLu::Amesos2Smoother::ApplyBlocked: useTransformation_ == true is not supported");
+
+  Teuchos::ParameterList pL = this->GetParameterList();
+  const auto fixNullspace   = pL.get<bool>("fix nullspace");
+  TEUCHOS_TEST_FOR_EXCEPTION(fixNullspace, Exceptions::RuntimeError,
+                             "MueLu::Amesos2Smoother::ApplyBlocked: \"fix nullspace\" == true is not supported");
+
+  RCP<BlockedMultiVector> blockedX       = rcp_dynamic_cast<BlockedMultiVector>(rcpFromRef(X));
+  RCP<const BlockedMultiVector> blockedB = rcp_dynamic_cast<const BlockedMultiVector>(rcpFromRef(B));
+  TEUCHOS_TEST_FOR_EXCEPTION(blockedX == Teuchos::null || blockedB == Teuchos::null, Exceptions::RuntimeError,
+                             "MueLu::Amesos2Smoother::ApplyBlocked: Input and/or output vector are not BlockedMultiVector!");
+
+  RCP<MultiVector> mergedX = blockedX->Merge();
+  RCP<MultiVector> mergedB = blockedB->Merge();
+
+  RCP<Tpetra_MultiVector> tX, tB;
+  tX = toTpetra(mergedX);
+  tB = toTpetra(mergedB);
+
+  prec_->setX(tX);
+  prec_->setB(tB);
+
+  prec_->solve();
+
+  prec_->setX(Teuchos::null);
+  prec_->setB(Teuchos::null);
+
+  RCP<MultiVector> xx = Teuchos::rcp(new BlockedMultiVector(blockedX->getBlockedMap(), mergedX));
+  SC zero = Teuchos::ScalarTraits<SC>::zero(), one = Teuchos::ScalarTraits<SC>::one();
+  X.update(one, *xx, zero);
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

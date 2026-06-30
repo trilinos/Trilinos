@@ -78,7 +78,7 @@ int HCURL_QUAD_In_FEM_Test01(const bool verbose) {
   typedef Kokkos::DynRankView<scalar_type, DeviceType> DynRankViewScalarValueType;
   typedef Kokkos::DynRankView<scalar_type, HostSpaceType> DynRankViewHostScalarValueType;
 
-  const scalar_type tol = tolerence();
+  const scalar_type tol = tolerance();
   int errorFlag = 0;
 
   typedef Basis_HCURL_QUAD_In_FEM<DeviceType,OutValueType,PointValueType> QuadBasisType;

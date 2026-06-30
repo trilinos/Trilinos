@@ -42,6 +42,7 @@
 #include "MueLu_PerfUtils.hpp"
 
 #include "MueLu_RepartitionUtilities.hpp"
+#include "MueLu_Behavior.hpp"
 
 namespace MueLu {
 
@@ -216,24 +217,24 @@ void RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level&
   //  * If a processor owns a partition, that partition number is equal to the processor rank
   //  * The decomposition vector contains the partitions ids that the corresponding GID belongs to
 
-#ifdef HAVE_MUELU_DEBUG
-  int myRank = comm->getRank();
-  ArrayRCP<const GO> decompEntries;
-  if (decomposition->getLocalLength() > 0)
-    decompEntries = decomposition->getData(0);
+  if (Behavior::debug()) {
+    int myRank = comm->getRank();
+    ArrayRCP<const GO> decompEntries;
+    if (decomposition->getLocalLength() > 0)
+      decompEntries = decomposition->getData(0);
 
-  // Test range of partition ids
-  int incorrectRank = -1;
-  for (int i = 0; i < decompEntries.size(); i++)
-    if (decompEntries[i] >= numProcs || decompEntries[i] < 0) {
-      incorrectRank = myRank;
-      break;
-    }
+    // Test range of partition ids
+    int incorrectRank = -1;
+    for (int i = 0; i < decompEntries.size(); i++)
+      if (decompEntries[i] >= numProcs || decompEntries[i] < 0) {
+        incorrectRank = myRank;
+        break;
+      }
 
-  int incorrectGlobalRank = -1;
-  MueLu_maxAll(comm, incorrectRank, incorrectGlobalRank);
-  TEUCHOS_TEST_FOR_EXCEPTION(incorrectGlobalRank > -1, Exceptions::RuntimeError, "pid " + Teuchos::toString(incorrectGlobalRank) + " encountered a partition number is that out-of-range");
-#endif
+    int incorrectGlobalRank = -1;
+    MueLu_maxAll(comm, incorrectRank, incorrectGlobalRank);
+    TEUCHOS_TEST_FOR_EXCEPTION(incorrectGlobalRank > -1, Exceptions::RuntimeError, "pid " + Teuchos::toString(incorrectGlobalRank) + " encountered a partition number is that out-of-range");
+  }
 
   // Step 1: Construct GIDs
   Array<GO> myGIDs;

@@ -24,7 +24,9 @@ namespace Sacado {
     template <typename T, typename E> class UnaryPlusOp;
     template <typename T, typename E> class UnaryMinusOp;
     template <typename T, typename E> class ExpOp;
+    template <typename T, typename E> class ExpM1Op;
     template <typename T, typename E> class LogOp;
+    template <typename T, typename E> class Log1POp;
     template <typename T, typename E> class Log10Op;
     template <typename T, typename E> class SqrtOp;
     template <typename T, typename E> class CosOp;

@@ -1,0 +1,186 @@
+/*! \page tempus_tutorial_transition_00_01 Transition from Example 0 to Example 1
+ *
+ *  \section tempus_tutorial_transition_00_01_goal Goal
+ *
+ *  The primary goal of \ref example-01 is to replace the raw arrays
+ *  with Thyra vectors, while preserving the same van der Pol
+ *  problem and the same Forward Euler stepping logic used in
+ *  \ref example-00.
+ *
+ *  New concepts introduced from `Teuchos` and `Thyra` are
+ *
+ *  - Teuchos::RCP
+ *    - <a href="https://www.osti.gov/servlets/purl/919177">Teuchos::RCP</a>
+ *      memory management can be compared to `std::shared_ptr`
+ *  - Thyra::VectorBase
+ *    - Replaces raw C++ arrays
+ *  - Thyra::VectorSpaceBase
+ *    - Introduced to define the state space.
+ *  - Thyra::DetactedVectorView and Thyra::ConstDetactedVectorView
+ *    - Detached vector views are used for direct element access.
+ *  - Thyra::V_VpSV, Thra::_V, Thyra::norm, Thyra::norm_2
+ *    - Thyra helper routines to express vector algebra.
+ *
+ *  This allows \ref Tempus and other Trilinos packages to operate on
+ *  <a href="https://www.osti.gov/servlets/purl/1264635">abstract numerical interfaces</a> rather than concrete array types.
+ *  Moving from raw arrays to Thyra vectors is the first step
+ *  toward interoperability with \ref Tempus steppers, model evaluators,
+ *  and solver infrastructure.
+ *
+ *  \section tempus_tutorial_transition_00_01_same What stays the same
+ *
+ *  - The van der Pol equations are unchanged.
+ *  - The timestepper is still Forward Euler.
+ *  - The time loop structure is the same.
+ *  - The regression check follows the same pattern.
+ *
+ *  \section tempus_tutorial_transition_00_01_snippets Selected code excerpts
+ *
+ *  Below are select code snippets and comments on the uses Teuchos::RCP
+ *  and Thyra functionality.
+ *
+ *  <hr style="border:0; border-top:5px solid #ccc;">
+ *  \subsection tempus_tutorial_transition_00_01_snippet1 Memory Allocation
+ *
+ *  <b>Setup Thyra vectors.</b> The raw `double` arrays are replaced by
+ *  Thyra vectors, which are created from a `Thyra::VectorSpaceBase`.
+ *  This step also introduces Teuchos::RCP, Trilinos's reference-counted
+ *  smart pointer.
+ *  
+ *  <b>Before</b>
+ *  @code
+ *  double x_n[2];
+ *  double xDot_n[2];
+ *  @endcode
+ *
+ *  <b>After</b>
+ *  @code
+ *  int vectorLength = 2;
+ *  RCP<const Thyra::VectorSpaceBase<double> > xSpace =
+ *    Thyra::defaultSpmdVectorSpace<double>(vectorLength);
+ *
+ *  RCP<Thyra::VectorBase<double> > x_n    = Thyra::createMember(xSpace);
+ *  RCP<Thyra::VectorBase<double> > xDot_n = Thyra::createMember(xSpace);
+ *  @endcode
+ *
+ *  The state is now represented through abstract vector interfaces rather
+ *  than fixed-size arrays.
+ *
+ *  <hr style="border:0; border-top:5px solid #ccc;">
+ *  \subsection tempus_tutorial_transition_00_01_snippet2 Assign Initial Conditions
+ *  <b>Initialize Thyra vectors.</b> Initial values are assigned through
+ *  `Thyra::DetachedVectorView`.  The local scope ensures the detached views
+ *  are destroyed immediately after use. 
+ *
+ *  <b>Before</b>
+ *  @code
+ *  x_n   [0] = 2.0;
+ *  x_n   [1] = 0.0;
+ *  xDot_n[0] = 0.0;
+ *  xDot_n[1] = -2.0/epsilon;
+ *  @endcode
+ *
+ *  <b>After</b>
+ *  @code
+ *  { // Scope to delete DetachedVectorViews
+ *    Thyra::DetachedVectorView<double> x_n_view(*x_n);
+ *    x_n_view[0] = 2.0;
+ *    x_n_view[1] = 0.0;
+ *    Thyra::DetachedVectorView<double> xDot_n_view(*xDot_n);
+ *    xDot_n_view[0] = 0.0;
+ *    xDot_n_view[1] = -2.0/epsilon;
+ *  }
+ *  @endcode
+ *
+ *  <hr style="border:0; border-top:5px solid #ccc;">
+ *  \subsection tempus_tutorial_transition_00_01_snippet3 Evaluate the RHS
+ *
+ *  <b>Evaluating the Right-Hand Side</b> The van der Pol right-hand side is
+ *  still evaluated directly in the application code, but element access now
+ *  goes through detached vector views.
+ *
+ *  <b>Before</b>
+ *  @code
+ *  xDot_n[0] = x_n[1];
+ *  xDot_n[1] = ((1.0 - x_n[0]*x_n[0])*x_n[1] - x_n[0])/epsilon;
+ *  @endcode
+ *
+ *  <b>After</b>
+ *  @code
+ *  {
+ *    Thyra::ConstDetachedVectorView<double> x_n_view(*x_n);
+ *    Thyra::DetachedVectorView<double> xDot_n_view(*xDot_n);
+ *    xDot_n_view[0] = x_n_view[1];
+ *    xDot_n_view[1] =
+ *      ((1.0-x_n_view[0]*x_n_view[0])*x_n_view[1]-x_n_view[0])/epsilon;
+ *  }
+ *  @endcode
+ *
+ *  Element-wise access is still possible, but it now uses Thyra utilities.
+ *
+ *  <hr style="border:0; border-top:5px solid #ccc;">
+ *  \subsection tempus_tutorial_transition_00_01_snippet4 Perform Forward Euler
+ *
+ *  <b>Use Thyra vector algebra.</b>  The Forward Euler update is expressed
+ *  with `Thyra::V_VpStV`, which performs the vector operation
+ *  \f$x^{n+1} = x^n + dt\,\dot{x}^n\f$.
+ *
+ *  <b>Before</b>
+ *  @code
+ *  x_np1[0] = x_n[0] + dt*xDot_n[0];
+ *  x_np1[1] = x_n[1] + dt*xDot_n[1];
+ *  @endcode
+ *
+ *  <b>After</b>
+ *  @code
+ *  Thyra::V_VpStV(x_np1.ptr(), *x_n, dt, *xDot_n);
+ *  @endcode
+ *
+ *  <hr style="border:0; border-top:5px solid #ccc;">
+ *  \subsection tempus_tutorial_transition_00_01_snippet5 Promote to the next time step
+ *
+ *  <b>Use Thyra vector assignment.</b> The accepted solution is copied into
+ *  the current state using `Thyra::V_V`.
+ *
+ *  <b>Before</b>
+ *  @code
+ *  x_n[0] = x_np1[0];
+ *  x_n[1] = x_np1[1];
+ *  n++;
+ *  @endcode
+ *
+ *  <b>After</b>
+ *  @code
+ *  Thyra::V_V(x_n.ptr(), *x_np1);
+ *  n++;
+ *  @endcode
+ *
+ *  <hr style="border:0; border-top:5px solid #ccc;">
+ *  \section tempus_tutorial_transition_00_01_compare How to compare the examples
+ *
+ *  A more detailed comparison can be viewed by diffing:
+ *  - `examples/00_Basic_Problem/00_Basic_Problem.cpp`
+ *  - `examples/01_Utilize_Thyra/01_Utilize_Thyra.cpp`
+ *
+ *  From the `packages/tempus` directory, a focused comparison of the main
+ *  time-integration logic between these two examples can be generated locally
+ *  in `bash` or `zsh` with:
+ *
+ *  @code{.sh}
+ *  git diff --no-index \
+ *    <(sed -n '75,135p' examples/00_Basic_Problem/00_Basic_Problem.cpp) \
+ *    <(sed -n '59,129p' examples/01_Utilize_Thyra/01_Utilize_Thyra.cpp)
+ *  @endcode
+ *
+ *  This ignores leading header lines (e.g., `#include` statements and
+ *  Doxygen comments) and trailing regression-testing lines.
+ *
+ *  <hr style="border:0; border-top:5px solid #ccc;">
+ *  \htmlonly
+ *  <div style="text-align:center;">
+ *    <a href="example-00.html">← Previous Example</a> |
+ *    <a href="example-01.html">Current Example</a> |
+ *    <a href="example-02.html">Next Example →</a>
+ *  </div>
+ *  \endhtmlonly
+ */

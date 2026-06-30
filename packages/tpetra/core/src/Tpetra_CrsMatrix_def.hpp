@@ -3149,7 +3149,12 @@ void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       bool err               = colMap.getGlobalElements(curLclInds.data(), numEntries, indices.data());
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(err, std::runtime_error, "getGlobalElements error");
       // FIXME - this should/could be a kokkos deep copy?
-      std::memcpy((void*)values.data(), (const void*)curVals.data(), numEntries * sizeof(*values.data()));
+      // Kokkos zero-extent views return null from .data(); glibc declares memcpy's
+      // dst/src params __attribute__((nonnull(1,2))), so UBSan nonnull-arg fires
+      // on a null pointer even when the byte count is zero.
+      if (numEntries > 0) {
+        std::memcpy((void*)values.data(), (const void*)curVals.data(), numEntries * sizeof(*values.data()));
+      }
     } else if (staticGraph_->isGloballyIndexed()) {
       auto curGblInds = staticGraph_->getGlobalIndsViewHost(rowinfo);
       auto curVals    = getValuesViewHost(rowinfo);
@@ -4503,7 +4508,7 @@ void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     if (!sorted) {
       // For this to work correctly, we require that the unused column entries have been filled
       // with indices that get ordered last.
-      Import_Util::sortCrsEntries(rowptr, colinds, values, ::KokkosSparse::SortAlgorithm::DEFAULT);
+      Import_Util::sortCrsEntries(rowptr, colinds, values);
       graph.indicesAreSorted_ = true;  // we just sorted every row
     }
     if (!merged) {
@@ -8317,8 +8322,7 @@ void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       Tpetra::Details::ProfilingRegion MMrc("Tpetra TAFC sortCrsEntries");
       Import_Util::sortCrsEntries(CSR_rowptr(),
                                   CSR_colind_LID(),
-                                  CSR_vals(),
-                                  ::KokkosSparse::SortAlgorithm::DEFAULT);
+                                  CSR_vals());
     } else if ((!reverseMode && xferAsExport != nullptr) ||
                (reverseMode && xferAsImport != nullptr)) {
       if (verbose) {
@@ -8492,8 +8496,7 @@ void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       Tpetra::Details::ProfilingRegion MMrc("Tpetra TAFC sortCrsEntries");
       Import_Util::sortCrsEntries(CSR_rowptr_d,
                                   CSR_colind_LID_d,
-                                  CSR_vals_d,
-                                  ::KokkosSparse::SortAlgorithm::DEFAULT);
+                                  CSR_vals_d);
     } else if ((!reverseMode && xferAsExport != nullptr) ||
                (reverseMode && xferAsImport != nullptr)) {
       if (verbose) {

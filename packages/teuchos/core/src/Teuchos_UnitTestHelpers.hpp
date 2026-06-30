@@ -133,13 +133,15 @@ see Teuchos_LocalTestingHelpers.hpp and Teuchos_TestingHelpers.hpp.
     TEST_GROUP##_##TEST_NAME##_UnitTest(const std::string& typeName) \
       : Teuchos::UnitTestBase( std::string(#TEST_GROUP)+"_"+typeName, #TEST_NAME ) \
     {} \
-    void runUnitTestImpl( Teuchos::FancyOStream &out, bool &success ) const; \
-    virtual std::string unitTestFile() const { return __FILE__; } \
-    virtual long int unitTestFileLineNumber() const { return __LINE__; } \
+    virtual void runUnitTestImpl( Teuchos::FancyOStream &out, bool &success ) const override \
+    { runUnitTestImplBody(out, success); } \
+    void runUnitTestImplBody( Teuchos::FancyOStream &out, bool &success ) const; \
+    virtual std::string unitTestFile() const override { return __FILE__; } \
+    virtual long int unitTestFileLineNumber() const override { return __LINE__; } \
   }; \
   \
   template<class TYPE> \
-        void TEST_GROUP##_##TEST_NAME##_UnitTest<TYPE>::runUnitTestImpl( \
+        void TEST_GROUP##_##TEST_NAME##_UnitTest<TYPE>::runUnitTestImplBody( \
     Teuchos::FancyOStream &out, bool &success ) const \
 
 /** \brief Instantiate a templated unit test with one template parameter.
@@ -279,13 +281,15 @@ see Teuchos_LocalTestingHelpers.hpp and Teuchos_TestingHelpers.hpp.
       :Teuchos::UnitTestBase( \
          std::string(#TEST_GROUP)+"_"+type1Name+"_"+type2Name, #TEST_NAME ) \
     {} \
-    void runUnitTestImpl( Teuchos::FancyOStream &out, bool &success ) const; \
-    virtual std::string unitTestFile() const { return __FILE__; } \
-    virtual long int unitTestFileLineNumber() const { return __LINE__; } \
+    virtual void runUnitTestImpl( Teuchos::FancyOStream &out, bool &success ) const override \
+    { runUnitTestImplBody(out, success); } \
+    void runUnitTestImplBody( Teuchos::FancyOStream &out, bool &success ) const; \
+    virtual std::string unitTestFile() const override { return __FILE__; } \
+    virtual long int unitTestFileLineNumber() const override { return __LINE__; } \
   }; \
   \
   template<class TYPE1, class TYPE2> \
-        void TEST_GROUP##_##TEST_NAME##_UnitTest<TYPE1,TYPE2>::runUnitTestImpl( \
+        void TEST_GROUP##_##TEST_NAME##_UnitTest<TYPE1,TYPE2>::runUnitTestImplBody( \
     Teuchos::FancyOStream &out, bool &success ) const \
 
 /** \brief Instantiate a templated unit test with two template parameters.
@@ -322,13 +326,15 @@ see Teuchos_LocalTestingHelpers.hpp and Teuchos_TestingHelpers.hpp.
       :Teuchos::UnitTestBase( \
          std::string(#TEST_GROUP)+"_"+type1Name+"_"+type2Name+"_"+type3Name, #TEST_NAME ) \
     {} \
-    void runUnitTestImpl( Teuchos::FancyOStream &out, bool &success ) const; \
-    virtual std::string unitTestFile() const { return __FILE__; } \
-    virtual long int unitTestFileLineNumber() const { return __LINE__; } \
+    virtual void runUnitTestImpl( Teuchos::FancyOStream &out, bool &success ) const override \
+    { runUnitTestImplBody(out, success); } \
+    void runUnitTestImplBody( Teuchos::FancyOStream &out, bool &success ) const; \
+    virtual std::string unitTestFile() const override { return __FILE__; } \
+    virtual long int unitTestFileLineNumber() const override { return __LINE__; } \
   }; \
   \
   template<class TYPE1, class TYPE2, class TYPE3> \
-        void TEST_GROUP##_##TEST_NAME##_UnitTest<TYPE1,TYPE2,TYPE3>::runUnitTestImpl( \
+        void TEST_GROUP##_##TEST_NAME##_UnitTest<TYPE1,TYPE2,TYPE3>::runUnitTestImplBody( \
     Teuchos::FancyOStream &out, bool &success ) const \
 
 
@@ -361,13 +367,15 @@ see Teuchos_LocalTestingHelpers.hpp and Teuchos_TestingHelpers.hpp.
       :Teuchos::UnitTestBase( \
          std::string(#TEST_GROUP)+"_"+type1Name+"_"+type2Name+"_"+type3Name+"_"+type4Name, #TEST_NAME ) \
     {} \
-    void runUnitTestImpl( Teuchos::FancyOStream &out, bool &success ) const; \
-    virtual std::string unitTestFile() const { return __FILE__; } \
-    virtual long int unitTestFileLineNumber() const { return __LINE__; } \
+    virtual void runUnitTestImpl( Teuchos::FancyOStream &out, bool &success ) const override \
+    { runUnitTestImplBody(out, success); } \
+    void runUnitTestImplBody( Teuchos::FancyOStream &out, bool &success ) const; \
+    virtual std::string unitTestFile() const override { return __FILE__; } \
+    virtual long int unitTestFileLineNumber() const override { return __LINE__; } \
   }; \
   \
   template<class TYPE1, class TYPE2, class TYPE3, class TYPE4> \
-        void TEST_GROUP##_##TEST_NAME##_UnitTest<TYPE1,TYPE2,TYPE3,TYPE4>::runUnitTestImpl( \
+        void TEST_GROUP##_##TEST_NAME##_UnitTest<TYPE1,TYPE2,TYPE3,TYPE4>::runUnitTestImplBody( \
     Teuchos::FancyOStream &out, bool &success ) const \
 
 

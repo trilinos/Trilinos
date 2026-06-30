@@ -82,8 +82,8 @@ class ANASAZITPETRA_MODELAPLACE_LIB_DLL_EXPORT ModeLaplace1DQ1 {
 
     ~ModeLaplace1DQ1() {}
 
-    Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LO,GO,Node> > getStiffness() const { return K; }
-    Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LO,GO,Node> > getMass()      const { return M; }
+    Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LO,GO,Node> > getStiffness() const { return K; }
+    Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LO,GO,Node> > getMass()      const { return M; }
 };
 
 template<class Scalar, class LO, class GO, class Node>

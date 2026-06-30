@@ -72,6 +72,7 @@ template <> struct LDL<Uplo::Lower, Algo::Serial> {
 
     if constexpr(runOnHost) {
       typedef typename ViewTypeA::non_const_value_type value_type;
+      typedef ArithTraits<value_type> arith_traits;
 
       static_assert(ViewTypeA::rank == 2, "A is not rank 2 view.");
       static_assert(ViewTypeP::rank == 1, "P is not rank 1 view.");
@@ -98,7 +99,7 @@ template <> struct LDL<Uplo::Lower, Algo::Serial> {
               fpiv[i] = 0;
 
               D(i, 0) = A(i, i);
-              D(i, 1) = A(i + 1, i); /// symmetric
+              D(i, 1) = arith_traits::conj(A(i + 1, i)); /// symmetric
               A(i, i) = one;
             }
             {
@@ -168,7 +169,7 @@ template <> struct LDL<Uplo::Lower, Algo::Serial> {
 };
 
 template <typename ArgUplo> struct LDL_nopiv<ArgUplo, Algo::Serial> {
-  template <typename ViewTypeA> inline static int invoke(const ViewTypeA &A) {
+  template <typename ViewTypeA> inline static int invoke(const ViewTypeA &A, const bool conjugate) {
 
     static constexpr bool runOnHost = run_tacho_on_host_v<typename ViewTypeA::execution_space>;
 
@@ -179,7 +180,7 @@ template <typename ArgUplo> struct LDL_nopiv<ArgUplo, Algo::Serial> {
       int r_val = 0;
       const ordinal_type m = A.extent(0);
       if (m > 0) {
-        LapackSerial<value_type>::sytrf_nopiv(ArgUplo::param, m, A.data(), A.stride(1), &r_val);
+        LapackSerial<value_type>::sytrf_nopiv(ArgUplo::param, conjugate, m, A.data(), A.stride(1), &r_val);
         TACHO_TEST_FOR_EXCEPTION(r_val, std::runtime_error, "LapackSerial (ldl-nopiv) returns non-zero error code.");
       }
       return r_val;
@@ -190,13 +191,13 @@ template <typename ArgUplo> struct LDL_nopiv<ArgUplo, Algo::Serial> {
   }
 
   template <typename MemberType, typename ViewTypeA>
-  KOKKOS_INLINE_FUNCTION static int invoke(MemberType &member, const ViewTypeA &A) {
+  KOKKOS_INLINE_FUNCTION static int invoke(MemberType &member, const ViewTypeA &A, const bool conjugate) {
 
     static constexpr bool runOnHost = run_tacho_on_host_v<typename ViewTypeA::execution_space>;
 
     if constexpr(runOnHost) {
       int r_val = 0;
-      r_val = invoke(A);
+      r_val = invoke(A, conjugate);
       //TACHO_TEST_FOR_EXCEPTION(r_val, std::runtime_error, "LapackSerial (ldl-nopiv) returns non-zero error code.");
       return r_val;
     } else {

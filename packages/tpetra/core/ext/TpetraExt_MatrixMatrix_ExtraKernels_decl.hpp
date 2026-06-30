@@ -72,7 +72,7 @@ static inline void mult_A_B_reuse_LowThreadGustavsonKernel(CrsMatrixStruct<Scala
                                                            const Teuchos::RCP<Teuchos::ParameterList>& params);
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class LocalOrdinalViewType>
-static inline void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(Scalar omega,
+static inline void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega,
                                                                  const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& Dinv,
                                                                  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& Aview,
                                                                  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& Bview,
@@ -86,7 +86,7 @@ static inline void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(Scalar omega,
                                                                  const Teuchos::RCP<Teuchos::ParameterList>& params);
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class LocalOrdinalViewType>
-static inline void jacobi_A_B_reuse_LowThreadGustavsonKernel(Scalar omega,
+static inline void jacobi_A_B_reuse_LowThreadGustavsonKernel(typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega,
                                                              const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& Dinv,
                                                              CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& Aview,
                                                              CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& Bview,
@@ -102,7 +102,7 @@ static inline void jacobi_A_B_reuse_LowThreadGustavsonKernel(Scalar omega,
 
 /***************************** Matrix-Matrix Generic Kernels *****************************/
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalOrdinalViewType>
-static inline void jacobi_A_B_newmatrix_MultiplyScaleAddKernel(Scalar omega,
+static inline void jacobi_A_B_newmatrix_MultiplyScaleAddKernel(typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega,
                                                                const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Dinv,
                                                                CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
                                                                CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,

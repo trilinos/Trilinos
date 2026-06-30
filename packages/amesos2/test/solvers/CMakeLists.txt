@@ -458,7 +458,7 @@ IF (${PACKAGE_NAME}_ENABLE_ShyLU_NodeBasker)
     TRIBITS_ADD_TEST(
     Solver_Test
     NAME ShyLUBasker_Solver_Test
-    ARGS "--xml-params=shylubasker_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor"
+    ARGS "--kokkos-num-threads=2 --xml-params=shylubasker_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor"
     STANDARD_PASS_OUTPUT
     NUM_MPI_PROCS 2
     COMM serial mpi

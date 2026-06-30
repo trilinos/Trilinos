@@ -101,6 +101,27 @@ namespace Intrepid2
     return std::abs(a - b) <= smaller_magnitude * epsilon;
   }
 
+  /**\brief Compute the norm 1 of a scalar value or Sacado Fad type.
+   * 
+   * For scalar values, the norm is the absolute value.
+   * For Sacado Fad types, the norm is the max of absolute values of all components (value and derivatives).
+   * 
+   * @tparam ScalarType The scalar type (double or Sacado::Fad type)
+   * @param value The value to compute the norm of
+   * @return The computed norm
+   */
+  template<typename ScalarType>
+  typename ScalarTraits<ScalarType>::scalar_type
+  computeMaxNorm(const ScalarType& value) {
+    if constexpr (!std::is_same<typename ScalarTraits<ScalarType>::scalar_type, ScalarType>::value) { //fad type
+      auto norm1 = std::abs(value.val());
+      for (int i = 0; i < value.size(); ++i)
+          norm1 = std::max(norm1, std::abs(value.fastAccessDx(i)));
+      return norm1;
+    } else
+      return std::abs(value);
+  }
+
   // conversion from the ref element [0,1] (used by ESEAS) to the ref element [-1,1] (used by Intrepid2)
   KOKKOS_INLINE_FUNCTION double fromZeroOne(double x_zero_one)
   {

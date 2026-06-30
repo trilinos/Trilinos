@@ -953,3 +953,34 @@ bool Teuchos::haveSameValuesSorted( const ParameterList& list1, const ParameterL
   }
   return true;
 }
+
+template Teuchos::ParameterList& Teuchos::ParameterList::set<std::string&>(std::string const&, std::string& , std::string const& ,
+  Teuchos::RCP<const Teuchos::ParameterEntryValidator> const& );
+
+template Teuchos::ParameterList& Teuchos::ParameterList::set<double&>(std::string const&, double& , std::string const& ,
+  Teuchos::RCP<const Teuchos::ParameterEntryValidator> const& );
+
+template Teuchos::ParameterList& Teuchos::ParameterList::set<long long&>(std::string const&, long long& , std::string const& ,
+  Teuchos::RCP<const Teuchos::ParameterEntryValidator> const& );
+
+template Teuchos::ParameterList& Teuchos::ParameterList::set<int&>(std::string const&, int& , std::string const& ,
+  Teuchos::RCP<const Teuchos::ParameterEntryValidator> const& );
+
+template Teuchos::ParameterList& Teuchos::ParameterList::set<bool&>(std::string const&, bool& , std::string const& ,
+  Teuchos::RCP<const Teuchos::ParameterEntryValidator> const& );
+
+
+template Teuchos::ParameterList& Teuchos::ParameterList::set<std::string>(std::string const&, std::string&& , std::string const& ,
+  Teuchos::RCP<const Teuchos::ParameterEntryValidator> const& );
+
+template Teuchos::ParameterList& Teuchos::ParameterList::set<double>(std::string const&, double&& , std::string const& ,
+  Teuchos::RCP<const Teuchos::ParameterEntryValidator> const& );
+
+template Teuchos::ParameterList& Teuchos::ParameterList::set<long long>(std::string const&, long long&& , std::string const& ,
+  Teuchos::RCP<const Teuchos::ParameterEntryValidator> const& );
+
+template Teuchos::ParameterList& Teuchos::ParameterList::set<int>(std::string const&, int&& , std::string const& ,
+  Teuchos::RCP<const Teuchos::ParameterEntryValidator> const& );
+
+template Teuchos::ParameterList& Teuchos::ParameterList::set<bool>(std::string const&, bool&& , std::string const& ,
+  Teuchos::RCP<const Teuchos::ParameterEntryValidator> const& );

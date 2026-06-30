@@ -1313,7 +1313,7 @@ int body(int argc, char *argv[]) {
 
 
   if (dump){
-    Tpetra::MatrixMarket::Writer<Tpetra_MultiVector>::writeDenseFile("coords.dat",nCoord);
+    Tpetra::MatrixMarket::Writer<Tpetra_CrsMatrix>::writeDenseFile("coords.dat",nCoord);
 
     // Put element to node mapping in multivector for output
     Tpetra_MultiVector elem2node(globalMapElem, numNodesPerElem);
@@ -1323,7 +1323,7 @@ int body(int argc, char *argv[]) {
         data[ielem]=globalNodeIds[elemToNode(ielem,inode)];
       }
     }
-    Tpetra::MatrixMarket::Writer<Tpetra_MultiVector>::writeDenseFile("elem2node.dat",elem2node);
+    Tpetra::MatrixMarket::Writer<Tpetra_CrsMatrix>::writeDenseFile("elem2node.dat",elem2node);
 
     // Put element to edge mapping in multivector for output
     Tpetra_MultiVector elem2edge(globalMapElem, numEdgesPerElem);
@@ -1333,7 +1333,7 @@ int body(int argc, char *argv[]) {
           data[ielem]=globalEdgeIds[elemToEdge(ielem,iedge)];
       }
     }
-    Tpetra::MatrixMarket::Writer<Tpetra_MultiVector>::writeDenseFile("elem2edge.dat",elem2edge);
+    Tpetra::MatrixMarket::Writer<Tpetra_CrsMatrix>::writeDenseFile("elem2edge.dat",elem2edge);
 
     // Put edge to node mapping in multivector for output
     Tpetra_MultiVector edge2node(globalMapC, numNodesPerEdge);
@@ -1347,7 +1347,7 @@ int body(int argc, char *argv[]) {
         }
       }
     }
-    Tpetra::MatrixMarket::Writer<Tpetra_MultiVector>::writeDenseFile("edge2node.dat",edge2node);
+    Tpetra::MatrixMarket::Writer<Tpetra_CrsMatrix>::writeDenseFile("edge2node.dat",edge2node);
   }
 
   // Define multi-vector for cell edge sign (fill during cell loop)
@@ -2025,20 +2025,20 @@ int body(int argc, char *argv[]) {
 
   if (dump) {
     // Node Coordinates
-    Tpetra::MatrixMarket::Writer<Tpetra_MultiVector>::writeDenseFile("coordx.dat",Nx);
-    Tpetra::MatrixMarket::Writer<Tpetra_MultiVector>::writeDenseFile("coordy.dat",Ny);
-    Tpetra::MatrixMarket::Writer<Tpetra_MultiVector>::writeDenseFile("coordz.dat",Nz);
+    Tpetra::MatrixMarket::Writer<Tpetra_CrsMatrix>::writeDenseFile("coordx.dat",Nx);
+    Tpetra::MatrixMarket::Writer<Tpetra_CrsMatrix>::writeDenseFile("coordy.dat",Ny);
+    Tpetra::MatrixMarket::Writer<Tpetra_CrsMatrix>::writeDenseFile("coordz.dat",Nz);
 
     // Edge Coordinates
-    Tpetra::MatrixMarket::Writer<Tpetra_MultiVector>::writeDenseFile("ecoordx.dat",EDGE_X);
-    Tpetra::MatrixMarket::Writer<Tpetra_MultiVector>::writeDenseFile("ecoordy.dat",EDGE_Y);
-    Tpetra::MatrixMarket::Writer<Tpetra_MultiVector>::writeDenseFile("ecoordz.dat",EDGE_Z);
+    Tpetra::MatrixMarket::Writer<Tpetra_CrsMatrix>::writeDenseFile("ecoordx.dat",EDGE_X);
+    Tpetra::MatrixMarket::Writer<Tpetra_CrsMatrix>::writeDenseFile("ecoordy.dat",EDGE_Y);
+    Tpetra::MatrixMarket::Writer<Tpetra_CrsMatrix>::writeDenseFile("ecoordz.dat",EDGE_Z);
 
     // Boundary Application
-    Tpetra::MatrixMarket::Writer<Tpetra_MultiVector>::writeDenseFile("boundary_v.dat",v);
+    Tpetra::MatrixMarket::Writer<Tpetra_CrsMatrix>::writeDenseFile("boundary_v.dat",v);
 
     // Edge signs
-    Tpetra::MatrixMarket::Writer<Tpetra_MultiVector>::writeDenseFile("edge_signs.dat",edgeSign);
+    Tpetra::MatrixMarket::Writer<Tpetra_CrsMatrix>::writeDenseFile("edge_signs.dat",edgeSign);
 
     Tpetra::MatrixMarket::Writer<Tpetra_CrsMatrix>::writeSparseFile("mag_k1_matrix.dat",StiffMatrixC);
     Tpetra::MatrixMarket::Writer<Tpetra_CrsMatrix>::writeSparseFile("mag_ms_matrix.dat",MassMatrixC);

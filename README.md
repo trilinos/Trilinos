@@ -1,10 +1,13 @@
 # Trilinos
-![Trilinos Logo](https://github.com/trilinos/Logos/blob/master/current/RGB/Horizontal/Navy/Trilinos_Logo_RGB_Horizontal_Navy.png)
+[<img src="https://github.com/trilinos/Logos/blob/master/current/RGB/Horizontal/Navy/Trilinos_Logo_RGB_Horizontal_Navy.png" width="25%" style="vertical-align: middle;">](https://trilinos.org)&emsp;&emsp;
+[<img src="https://github.com/hpsfoundation/hpsf-logos/blob/main/Logos/PNG/Horizontal/HPSF_horizontal-tagline-color.png" width="25%" style="vertical-align: middle;">](https://hpsf.io)&emsp;&emsp;
+[<img src="https://github.com/hpsfoundation/hpsf-logos/blob/main/Badges/HPSF_Project_Badge_Established.png" width="9%" style="vertical-align: middle;">](https://hpsf.io/projects/)&emsp;&emsp;
+[<img src="https://www.linuxfoundation.org/hubfs/lf-stacked-color.svg" width="25%" style="vertical-align: middle;">](https://linuxfoundation.org)
 
 [Website](https://trilinos.github.io) |
 [Documentation](https://trilinos.github.io/documentation.html) |
-[Mailing List](https://trilinos.github.io/mail_lists.html) |
-[Packages](http://trilinos.github.io/packages.html)
+[Contact Us](https://trilinos.github.io/support.html) |
+[Packages](https://trilinos.github.io/packages-by-area.html)
 
 
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/trilinos/Trilinos/badge)](https://securityscorecards.dev/viewer/?uri=github.com/trilinos/Trilinos)
@@ -28,7 +31,7 @@ unique design feature of Trilinos is its focus on packages.
 
 - [Quick configure, build and install hints for Trilinos](INSTALL.rst)
 
-- [Trilinos Configure, Build, Test, and Install Reference Guide](https://trilinos.org/docs/files/TrilinosBuildReference.html)
+- [Trilinos Configure, Build, Test, and Install Reference Guide](https://trilinos.github.io/TrilinosBuildReference.html)
 
 - To ensure appropriate parties receive your issues, please direct issues by mentioning the
   [Trilinos package owners](https://github.com/trilinos/Trilinos/wiki/Trilinos-Package-Owners).
@@ -36,23 +39,26 @@ unique design feature of Trilinos is its focus on packages.
 
 - For help with a particular package, see the website and accompanying
   documentation for that package. Links to these can be found down the
-  right side of any page on the website and at [the package website](https://trilinos.github.io/packages.html).
+  right side of any page on the website and at [the package website](https://trilinos.github.io/packages-by-area.html).
 
 - Sample build scripts for various platforms can be found in the
   sampleScripts directory.  Please note that these sample scripts are
   only a starting point for you to develop a script that works for
   your own platform.
 
-- If you have questions, please submit an issue on the Trilinos repo 
+- If you have questions, please submit an issue on the Trilinos repo
   [GitHub Issues page](https://github.com/trilinos/Trilinos/issues).
 
+### Build and Testing Dashboard
+
+Trilinos nightly and pull request testing results are available at https://my.cdash.org/index.php?project=Trilinos.
 
 ### License
 
 Trilinos is licensed on a per-package basis. Most packages are now
 under a BSD license, some are published under the (L)GPL. Details
 can be taken from the documentation of each package.  See COPYRIGHT,
-LICENSE, https://trilinos.github.io/license.html and individual package,
+LICENSE, https://trilinos.github.io/about.html#license-and-copyright and individual package,
 directory and/or file headers for additional information.
 
 ### How to cite Trilinos
@@ -63,10 +69,13 @@ If you are using Trilinos, please cite our software in your publications. Below 
 @article{TrilinosPaper,
   author = {Mayr, Matthias and Heinlein, Alexander and Glusa, Christian A. and Rajamanickam, Sivasankaran and Arnst, Maarten and Bartlett, Roscoe A. and Berger-Vergiat, Luc and Boman, Erik G. and Devine, Karen D. and Harper, Graham and Heroux, Michael A. and Hoemmen, Mark and Hu, Jonathan J. and Kelley, Brian and Kouri, Drew P. and Kuberry, Paul and Kim, Kyungjoo and Liegois, Kim and Ober, Curtis C. and Pawlowski, Roger P. and Pearson, Carl and Perego, Mauro and Phipps, Eric T. and Ridzal, Denis and Roberts, Nathan V. and Siefert, Christopher M. and Thornquist, Heidi K. and Tomasetti, Romin and Trott, Christian R. and Tuminaro, Raymond S. and Willenbring, James M. and Wolf, Michael and Yamazaki, Ichitaro},
   doi = {10.1145/3802822},
+  eid = {12},
   journal = {ACM Transactions on Mathematical Software},
+  number = {2},
+  pages = {12},
   title = {{T}rilinos: {E}nabling {S}cientific {C}omputing across {D}iverse {H}ardware {A}rchitectures at {S}cale},
   url = {https://doi.org/10.1145/3802822},
-  volume = {published online ahead of print},
+  volume = {52},
   year = {2026}}
 ```
 

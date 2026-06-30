@@ -83,6 +83,7 @@ functions that include the macro:
 #define DORGQR_F77  F77_BLAS_MANGLE(dorgqr, DORGQR)
 #define DPTTRS_F77  F77_BLAS_MANGLE(dpttrs, DPTTRS)
 #define DPTTRF_F77  F77_BLAS_MANGLE(dpttrf, DPTTRF)
+#define DSYEV_F77   F77_BLAS_MANGLE(dsyev,  DSYEV)
 
 namespace ROL {
   extern "C" {
@@ -106,6 +107,7 @@ namespace ROL {
     void PREFIX DORGQR_F77(const int* m, const int* n, const int* k, double* a, const int* lda, const double* tau, double* work, const int* lwork, int* info);
     void PREFIX DPTTRS_F77(const int* n, const int* nrhs, const double* d, const double* e, double* x , const int* ldx, int* info);
     void PREFIX DPTTRF_F77(const int* n, double* d, double* e, int* info);
+    void PREFIX DSYEV_F77(ROL_fcd jobz, ROL_fcd uplo, const int* n, double* a, const int* lda, double* w, double* work, const int* lwork, int* info);
   }
 
   template<typename Index, typename Real>
@@ -187,6 +189,8 @@ namespace ROL {
 
     //! Solves a tridiagonal system \c A*X=B using the \L*D*L' factorization of \c A computed by PTTRF.
     void PTTRS(const Index& n, const Index& nrhs, const Real* d, const Real* e, Real* B, const Index& ldb, Index* info) const;
+
+    void SYEV(const char& jobz, const char& uplo, const Index& n, Real* a, const Index& lda, Real* w, Real* work, const Index& lwork, Index* info)const;
   };
 
   template<>
@@ -274,6 +278,10 @@ namespace ROL {
 
     void PTTRF(const int& n, double* d, double* e, int* info) const {
       DPTTRF_F77(&n,d,e,info);
+    }
+
+    void SYEV(const char& jobz, const char& uplo, const int& n, double* a, const int& lda, double* w, double* work, const int& lwork, int* info) const {
+      DSYEV_F77(CHAR_MACRO(jobz), CHAR_MACRO(uplo), &n, a, &lda, w, work, &lwork, info);
     }
   };
 

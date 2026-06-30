@@ -31,7 +31,9 @@ namespace Intrepid2 {
     Teuchos::RCP<Cubature<DT,PT,WT> > r_val;
 
     switch (topologyKey) {
-    case shards::Line<>::key: {
+    case shards::Line<>::key:
+    case shards::Beam<>::key:
+    case shards::ShellLine<>::key: {
       INTREPID2_TEST_FOR_EXCEPTION( degree.size() < 1, std::invalid_argument,
                                     ">>> ERROR (DefaultCubatureFactory): Provided degree array is of insufficient length.");
       if (isValidPolyType(polytype))
@@ -40,7 +42,8 @@ namespace Intrepid2 {
         r_val = Teuchos::rcp(new CubatureDirectLineGauss<DT,PT,WT>(degree[0]));
       break;
     }
-    case shards::Triangle<>::key: {
+    case shards::Triangle<>::key: 
+    case shards::ShellTriangle<>::key: {
       INTREPID2_TEST_FOR_EXCEPTION( degree.size() < 1, std::invalid_argument,
                                     ">>> ERROR (DefaultCubatureFactory): Provided degree array is of insufficient length.");
       if(symmetric || (degree[0] > 20)) {
@@ -125,7 +128,10 @@ namespace Intrepid2 {
     }
     default: {
       INTREPID2_TEST_FOR_EXCEPTION( ( (topologyKey != shards::Line<>::key)               &&
+                                      (topologyKey != shards::Beam<>::key)               &&
+                                      (topologyKey != shards::ShellLine<>::key)          &&
                                       (topologyKey != shards::Triangle<>::key)           &&
+                                      (topologyKey != shards::ShellTriangle<>::key)      &&
                                       (topologyKey != shards::Quadrilateral<>::key)      &&
                                       (topologyKey != shards::ShellQuadrilateral<>::key) &&
                                       (topologyKey != shards::Tetrahedron<>::key)        &&

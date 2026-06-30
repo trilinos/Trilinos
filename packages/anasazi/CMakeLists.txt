@@ -109,10 +109,6 @@ IF (${PACKAGE_NAME}_ENABLE_RBGen)
   ADD_SUBDIRECTORY(src-rbgen)
 ENDIF()
 
-IF (Anasazi_ENABLE_Epetra)
-  ADD_SUBDIRECTORY(epetra)
-ENDIF()
-
 TRIBITS_ADD_TEST_DIRECTORIES(test)
 
 IF (Anasazi_ENABLE_ThyraCore)
@@ -126,10 +122,6 @@ ENDIF()
 #
 # Exclude files for source package.
 #
-
-TRIBITS_EXCLUDE_FILES(
-  epetra/src/ModalAnalysisSolvers
-  )
 
 #
 # D) Do standard postprocessing

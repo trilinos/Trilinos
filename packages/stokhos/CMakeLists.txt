@@ -60,9 +60,9 @@ TRIBITS_ADD_OPTION_AND_DEFINE(Stokhos_ENABLE_Ensemble_Scalar_Type
   ${Stokhos_ENABLE_Ensemble_Scalar_Type_Default} )
 
 IF(Stokhos_ENABLE_PCE_Scalar_Type)
-  MESSAGE(WARNING "The Kokkos-based PCE scalar type has been removed from Stokhos and can no longer be enabled.")
+  MESSAGE(FATAL_ERROR "The Kokkos-based PCE scalar type has been removed from Stokhos and can no longer be enabled.")
 ENDIF()
-SET(Stokhos_ENABLE_PCE_Scalar_Type OFF)
+SET(Stokhos_ENABLE_PCE_Scalar_Type OFF CACHE BOOL "Kokkos-based PCE scalar type has been removed from Stokhos and can no longer be enabled.")
 SET(HAVE_STOKHOS_PCE_SCALAR_TYPE OFF)
 
 IF(Stokhos_ENABLE_Ensemble_Scalar_Type AND NOT Stokhos_ENABLE_Sacado)

@@ -12,9 +12,7 @@
 #include "Teuchos_StrUtils.hpp"
 #include "Teuchos_TestForException.hpp"
 
-#if !defined(__GNUC__) || (__GNUC__ >= 10)
 #include <filesystem>
-#endif
 #include <iostream>
 #include <stdexcept>
 #include <set>
@@ -219,21 +217,20 @@ void initializeCollection() {
                                "environment variable TEUCHOS_USER_COMMANDS");
   }
 
-#if !defined(__GNUC__) || (__GNUC__ >= 10)
   try {
     const std::string executable = std::filesystem::canonical("/proc/self/exe").string();
     if (!executable.empty()) {
       registerCommand("ldd", "ldd " + executable, "ldd");
+      registerCommand("stat", "stat --printf %s " + executable, "stat");
     }
   } catch (std::filesystem::filesystem_error &) {
     // ignore
   }
-#endif
 
   // CPUs
   registerCommand("lscpu");
 
-  // temperature sensore
+  // temperature sensors
   registerCommand("sensors");
 
   // OpenMP
@@ -264,7 +261,7 @@ void initializeCollection() {
   registerCommand("sycl-ls", "sycl-ls --verbose", "sycl-ls");
 
   // package namespaced environment variables
-  for (auto &prefix : {"TEUCHOS", "KOKKOS", "TPETRA", "STK"})
+  for (auto &prefix : {"TEUCHOS", "KOKKOS", "TPETRA", "STK", "MUELU", "IFPACK2"})
     registerEnvironmentVariablePrefix(prefix);
 }
 
@@ -291,12 +288,12 @@ std::map<std::string, std::string> collectSystemInformation() {
 
   auto &environmentVariables = getEnvironmentVariablesSet();
   for (auto &envVariable : environmentVariables) {
-    const char *varVal = std::getenv(envVariable.c_str());
-    if (varVal == nullptr)
+    const char* varVal = Teuchos::getEnvironmentVariableValue(envVariable);
+    if(varVal == nullptr) {
       data[envVariable] = "NOT SET";
+    }
     else {
-      data[envVariable] =
-          Teuchos::getEnvironmentVariable<std::string>(envVariable, "");
+      data[envVariable] = varVal;
     }
   }
 

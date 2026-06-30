@@ -168,11 +168,13 @@ private:
   ordinal_type _device_solve_thres;  // bigger than this threshold, device function is used
   ordinal_type _variant;             // algorithmic variant in levelset 0: naive, 1: invert diagonals
   ordinal_type _nstreams;            // on cuda, multi streams are used
+  bool _team_on_user_stream;         // run team/batched kernel on user steram-0
 
-  bool _shift_diag;                  // shift diagonal with small perturbation
+  int _shift_diag;                   // shift diagonal with small perturbation
   mag_type _shift;
   value_type_array _dv;
 
+  int _replace_tiny_pivot;           // replace tiny pivot
   mag_type _pivot_tol;               // tolerance for tiny pivot perturbation
   bool _store_transpose;             // store transpose explicitly
 
@@ -223,14 +225,14 @@ public:
   void setLevelSetOptionDeviceLevelCut(const ordinal_type device_level_cut);
   void setLevelSetOptionDeviceFunctionThreshold(const ordinal_type device_factor_thres,
                                                 const ordinal_type device_solve_thres);
-  void setLevelSetOptionNumStreams(const ordinal_type nstreams);
+  void setLevelSetOptionNumStreams(const ordinal_type nstreams, const bool team_on_user_stream = false);
   void setLevelSetOptionAlgorithmVariant(const ordinal_type variant);
 
-  void shiftDiagonal();
+  void shiftDiagonal(const int option = 1);
   mag_type currentShift() { return _shift; }
   void setPivotTolerance(const mag_type pivot_tol);
   void useNoPivotTolerance();
-  void useDefaultPivotTolerance();
+  void useDefaultPivotTolerance(const int option = 1);
   void storeExplicitTranspose(bool flag);
 
   ///

@@ -231,7 +231,7 @@ bool DefaultBlockedLinearOp<Scalar>::blockExists(
 {
   assertBlockFillIsActive(false);
   assertBlockRowCol(i,j);
-  return true;
+  return !is_null(Ops_[numRowBlocks_ * j + i]);
 }
 
 
@@ -240,11 +240,7 @@ bool DefaultBlockedLinearOp<Scalar>::blockIsConst(
   const int i, const int j
   ) const
 {
-#ifdef TEUCHOS_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPT(!blockExists(i,j));
-#endif
-  assertBlockFillIsActive(false);
-  assertBlockRowCol(i,j);
+  if (!blockExists(i, j)) return false;
   return Ops_[numRowBlocks_*j+i].isConst();
 }
 
@@ -253,11 +249,7 @@ template<class Scalar>
 RCP<LinearOpBase<Scalar> >
 DefaultBlockedLinearOp<Scalar>::getNonconstBlock(const int i, const int j)
 {
-#ifdef TEUCHOS_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPT(!blockExists(i,j));
-#endif
-  assertBlockFillIsActive(false);
-  assertBlockRowCol(i,j);
+  if (!blockExists(i, j)) return Teuchos::null;
   return Ops_[numRowBlocks_*j+i].getNonconstObj();
 }
 
@@ -266,11 +258,7 @@ template<class Scalar>
 RCP<const LinearOpBase<Scalar> >
 DefaultBlockedLinearOp<Scalar>::getBlock(const int i, const int j) const
 {
-#ifdef TEUCHOS_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPT(!blockExists(i,j));
-#endif
-  assertBlockFillIsActive(false);
-  assertBlockRowCol(i,j);
+  if (!blockExists(i, j)) return Teuchos::null;
   return Ops_[numRowBlocks_*j+i];
 }
 

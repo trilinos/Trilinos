@@ -12,7 +12,9 @@
 
 #include "FROSch_SolverFactory_decl.hpp"
 
+#if defined(HAVE_SHYLU_DDFROSCH_THYRA) && defined(HAVE_SHYLU_DDFROSCH_STRATIMIKOS)
 #include "Stratimikos_FROSch_def.hpp"
+#endif
 
 
 namespace FROSch {

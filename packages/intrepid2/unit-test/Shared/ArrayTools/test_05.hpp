@@ -90,7 +90,7 @@ namespace Intrepid2 {
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 #endif 
 
-      const value_type tol = tolerence()*100.0;
+      const value_type tol = tolerance()*100.0;
       int errorFlag = 0;
 
       *outStream                                \

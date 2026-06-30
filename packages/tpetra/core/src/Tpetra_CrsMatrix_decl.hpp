@@ -821,9 +821,16 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
             const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
   //! Create a fill-complete CrsMatrix from all the things it needs.
-  ///   \param lclMatrix [in] In almost all cases the local matrix
-  ///     must be sorted on input, but if it isn't sorted,
-  ///     "sorted" must be set to false in params.
+  /// \param lclMatrix [in] In almost all cases the local matrix
+  ///   must be sorted on input, but if it isn't sorted,
+  ///   "sorted" must be set to false in params.
+  /// \param rowMap [in] Row map.
+  /// \param colMap [in] Column map.
+  /// \param domainMap [in] Domain map.
+  /// \param rangeMap [in] Range map.
+  /// \param importer [in] Import.
+  /// \param exporter [in] Export.
+  /// \param params [in/out] Optional list of parameters.
   CrsMatrix(const local_matrix_device_type& lclMatrix,
             const Teuchos::RCP<const map_type>& rowMap,
             const Teuchos::RCP<const map_type>& colMap,
@@ -1253,6 +1260,8 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   /// \param inds [in] Global column indices of that row to modify.
   /// \param newVals [in] For each k, increment the value in rowVals
   ///   corresponding to global column index inds[k] by newVals[k].
+  /// \param numElts [in] Number of elements in the inds and newVals arrays.
+  /// \param atomic [in] Whether to use atomic updates.
   ///
   /// \return The number of valid input column indices.  In case of
   ///   error other than one or more invalid column indices, this
@@ -2848,6 +2857,13 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
 
   /// \brief Compute a sparse matrix-MultiVector multiply.
   ///
+  /// \param X [in] Input MultiVector.
+  /// \param Y [in/out] Output MultiVector.
+  /// \param mode [in] Whether to apply the transpose (Teuchos::NO_TRANS,
+  ///   Teuchos::TRANS, Teuchos::CONJ_TRANS).
+  /// \param alpha [in] Scaling factor for the result.
+  /// \param beta [in] Scaling factor for Y before adding the result.
+  ///
   /// This method computes <tt>Y := beta*Y + alpha*Op(A)*X</tt>,
   /// where <tt>Op(A)</tt> is either \f$A\f$, \f$A^T\f$ (the
   /// transpose), or \f$A^H\f$ (the conjugate transpose).
@@ -3827,6 +3843,11 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
                        const bool force = false) const;
 
   //! Special case of apply() for <tt>mode == Teuchos::NO_TRANS</tt>.
+  ///
+  /// \param X_in [in] Input MultiVector.
+  /// \param Y_in [in/out] Output MultiVector.
+  /// \param alpha [in] Scaling factor for the result.
+  /// \param beta [in] Scaling factor for Y before adding the result.
   void
   applyNonTranspose(const MV& X_in,
                     MV& Y_in,
@@ -3834,6 +3855,13 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
                     Scalar beta) const;
 
   //! Special case of apply() for <tt>mode != Teuchos::NO_TRANS</tt>.
+  ///
+  /// \param X_in [in] Input MultiVector.
+  /// \param Y_in [in/out] Output MultiVector.
+  /// \param mode [in] Whether to apply the transpose (Teuchos::TRANS,
+  ///   or Teuchos::CONJ_TRANS).
+  /// \param alpha [in] Scaling factor for the result.
+  /// \param beta [in] Scaling factor for Y before adding the result.
   void
   applyTranspose(const MV& X_in,
                  MV& Y_in,

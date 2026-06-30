@@ -834,6 +834,14 @@ exp(const Base< Taylor<T> >& aa)
 
 template <typename T>
 Taylor<T>
+expm1(const Base< Taylor<T> >& aa)
+{
+  const Taylor<T>& a = aa.derived();
+  return exp(a) - 1.0;
+}
+
+template <typename T>
+Taylor<T>
 log(const Base< Taylor<T> >& aa)
 {
   const Taylor<T>& a = aa.derived();
@@ -853,6 +861,14 @@ log(const Base< Taylor<T> >& aa)
   }
 
   return c;
+}
+
+template <typename T>
+Taylor<T>
+log1p(const Base< Taylor<T> >& aa)
+{
+  const Taylor<T>& a = aa.derived();
+  return log(1.0+a);
 }
 
 template <typename T>

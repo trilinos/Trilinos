@@ -79,18 +79,21 @@ void MatrixLoad(Teuchos::RCP<const Teuchos::Comm<int> >& comm, Xpetra::Underlyin
                 const std::string& coordFile,
                 const std::string& coordMapFile, const std::string& nullFile,
                 const std::string& materialFile, const std::string& blockNumberFile,
+                const std::string& massFile,
                 Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& map,
                 Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& A,
                 Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LocalOrdinal, GlobalOrdinal, Node> >& coordinates,
                 Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& nullspace,
                 Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& material,
                 Teuchos::RCP<Xpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> >& blocknumber,
+                Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& mass,
                 Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& X,
                 Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& B,
                 const int numVectors,
                 Galeri::Xpetra::Parameters<GlobalOrdinal>& galeriParameters, Xpetra::Parameters& xpetraParameters,
                 std::ostringstream& galeriStream,
-                Teuchos::RCP<Teuchos::ParameterList> repartitionParams = {}) {
+                Teuchos::RCP<Teuchos::ParameterList> repartitionParams = {},
+                Teuchos::RCP<Teuchos::ParameterList> paramList         = {}) {
 #include <MueLu_UseShortNames.hpp>
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -130,7 +133,7 @@ void MatrixLoad(Teuchos::RCP<const Teuchos::Comm<int> >& comm, Xpetra::Underlyin
       map         = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian2D", comm, galeriList);
       coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<real_type, LO, GO, Map, RealValuedMultiVector>("2D", map, galeriList);
 
-    } else if (matrixType == "Laplace3D" || matrixType == "Brick3D" || matrixType == "Elasticity3D") {
+    } else if (matrixType == "Laplace3D" || matrixType == "Brick3D" || matrixType == "Elasticity3D" || matrixType == "HexFEM_LapStiff") {
       map         = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian3D", comm, galeriList);
       coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<real_type, LO, GO, Map, RealValuedMultiVector>("3D", map, galeriList);
     }
@@ -154,11 +157,31 @@ void MatrixLoad(Teuchos::RCP<const Teuchos::Comm<int> >& comm, Xpetra::Underlyin
       galeriList.set("front boundary", "Neumann");
       galeriList.set("back boundary", "Neumann");
     }
-
+    if (matrixType == "HexFEM_LapStiff") {
+      galeriList.set("right boundary", "Dirichlet");
+      galeriList.set("left boundary", "Neumann");
+      galeriList.set("bottom boundary", "Neumann");
+      galeriList.set("top boundary", "Neumann");
+      galeriList.set("front boundary", "Neumann");
+      galeriList.set("back boundary", "Neumann");
+    }
     RCP<Galeri::Xpetra::Problem<Map, CrsMatrixWrap, MultiVector> > Pr =
         Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>(galeriParameters.GetMatrixType(), map, galeriList);
     A         = Pr->BuildMatrix();
     nullspace = Pr->BuildNullspace();
+
+    // check if we need to generate a mass matrix
+    if ((paramList) && (paramList->isParameter("aggregation: strength-of-connection: matrix")) &&
+        (paramList->get<std::string>("aggregation: strength-of-connection: matrix") == "MinvA") && (massFile.empty())) {
+      if (matrixType == "HexFEM_LapStiff") {
+        Teuchos::ParameterList mass_Pl(galeriList);
+        mass_Pl.set("matrixType", "HexFEM_Mass");
+        RCP<Galeri::Xpetra::Problem<Map, CrsMatrixWrap, MultiVector> > PrForMass = Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>(mass_Pl.get<std::string>("matrixType"), map, mass_Pl);
+        mass                                                                     = PrForMass->BuildMatrix();
+      } else
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "MueLu options require mass matrix which galeri cannot generate");
+    }
+
     //  The coordinates used by Galeri here might not match the coordinates that come into this function.
     //  In particular, they might correspond to different stretch factors. To fix this, we overwrite the
     //  coordinate array with those that Galeri now provides.
@@ -289,6 +312,18 @@ void MatrixLoad(Teuchos::RCP<const Teuchos::Comm<int> >& comm, Xpetra::Underlyin
   if (!blockNumberFile.empty()) {
     RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 1g - Read block number")));
     blocknumber         = Xpetra::IO<SC, LO, GO, Node>::ReadMultiVectorLO(blockNumberFile, map)->getVectorNonConst(0);
+    comm->barrier();
+  }
+
+  if (!massFile.empty()) {
+    RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 1f - Read mass")));
+    mass                = Xpetra::IO<SC, LO, GO, Node>::Read(massFile, initialMap);
+    if (importer) {
+      Teuchos::ParameterList XpetraList;
+      auto targetMap = importer->getTargetMap();
+      auto newMatrix = MatrixFactory::Build(mass, *importer, *importer, targetMap, targetMap, rcp(&XpetraList, false));
+      mass.swap(newMatrix);
+    }
     comm->barrier();
   }
 

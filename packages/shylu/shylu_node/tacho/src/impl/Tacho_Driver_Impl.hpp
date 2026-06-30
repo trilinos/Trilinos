@@ -35,7 +35,7 @@ Driver<VT, DT>::Driver()
       #else
       _variant(-1), // sequential by default
       #endif
-      _nstreams(16), _shift_diag(false), _shift(0.0), _pivot_tol(0.0),
+      _nstreams(16), _team_on_user_stream(false), _shift_diag(0), _shift(0.0), _replace_tiny_pivot(0), _pivot_tol(0.0),
 #if defined(KOKKOS_ENABLE_HIP)
       _store_transpose(true)
 #else
@@ -201,25 +201,31 @@ template <typename VT, typename DT> void Driver<VT, DT>::setLevelSetOptionAlgori
   _variant = variant;
 }
 
-template <typename VT, typename DT> void Driver<VT, DT>::setLevelSetOptionNumStreams(const ordinal_type nstreams) {
+template <typename VT, typename DT> void Driver<VT, DT>::setLevelSetOptionNumStreams(const ordinal_type nstreams, const bool team_on_user_stream) {
   _nstreams = nstreams;
+  _team_on_user_stream = team_on_user_stream;
 }
 
 template <typename VT, typename DT> void Driver<VT, DT>::setPivotTolerance(const mag_type pivot_tol) {
   _pivot_tol = pivot_tol;
 }
 
-template <typename VT, typename DT> void Driver<VT, DT>::shiftDiagonal() {
-  _shift_diag = true;
+template <typename VT, typename DT> void Driver<VT, DT>::shiftDiagonal(const int option) {
+  _shift_diag = option;
 }
 
 template <typename VT, typename DT> void Driver<VT, DT>::useNoPivotTolerance() {
   _pivot_tol = 0.0;
 }
 
-template <typename VT, typename DT> void Driver<VT, DT>::useDefaultPivotTolerance() {
-  using arith_traits = ArithTraits<value_type>;
-  _pivot_tol = Kokkos::sqrt(arith_traits::epsilon());
+template <typename VT, typename DT> void Driver<VT, DT>::useDefaultPivotTolerance(const int option) {
+  _replace_tiny_pivot = option;
+  if (option == 1) {
+    using arith_traits = ArithTraits<value_type>;
+    _pivot_tol = Kokkos::sqrt(arith_traits::epsilon());
+  } else {
+    _pivot_tol = 0.0;
+  }
 }
 
 template <typename VT, typename DT> void Driver<VT, DT>::storeExplicitTranspose(bool flag) {
@@ -424,12 +430,9 @@ template <typename VT, typename DT> int Driver<VT, DT>::initialize() {
                           _blk_super_panel_colidx, _stree_parent, _stree_ptr, _stree_children, _stree_level, _stree_roots,
                           _verbose);
 
-    factory.setLevelSetMember(_variant, _device_level_cut, _device_factor_thres, _device_solve_thres, _store_transpose, _nstreams);
+    factory.setLevelSetMember(_variant, _device_level_cut, _device_factor_thres, _device_solve_thres, _store_transpose, _nstreams, _team_on_user_stream);
 
     factory.createObject(_N);
-  }
-  if (_shift_diag) {
-    Kokkos::resize(_dv, _m);
   }
   return 0;
 }
@@ -443,11 +446,15 @@ template <typename VT, typename DT> int Driver<VT, DT>::factorize(const value_ty
   if (method != _method) {
     setFactorizationMethod(method);
   }
+
+  const mag_type zero(0);
   mag_type shift(0.0);
-  if (_shift_diag) {
-    const value_type zero(0.0);
+  if (_shift_diag != 0 || _replace_tiny_pivot > 1) {
     const ordinal_type m = _m;
     Kokkos::RangePolicy<exec_space> range_policy(0, m);
+
+    // resize workspace (flag may be set per factorization)
+    Kokkos::resize(_dv, _m);
 
     // Compute alpha = ||A||_2
     value_type alpha(zero);
@@ -468,33 +475,50 @@ template <typename VT, typename DT> int Driver<VT, DT>::factorize(const value_ty
       range_policy, KOKKOS_LAMBDA (int i, value_type &tmp) {
         tmp += dv(i);
       }, alpha);
-    // Compute shift = sqrt(eps * ||A||_2)
+    // Compute shift = sqrt(eps) * ||A||_2
     shift = Kokkos::sqrt(arith_traits::abs(alpha * arith_traits::epsilon()));
   }
+  // internally keep track of the current shift
+  if (_shift_diag != 0) {
+    _shift = shift;
+  } else {
+    _shift = zero;
+  }
+  // internally save the pivot tol
+  if (_replace_tiny_pivot > 1) {
+    _pivot_tol = shift;
+  } else if (_replace_tiny_pivot != 1) {
+    _pivot_tol = zero;
+  }
+
   if (_verbose) {
     switch (_method) {
     case LDL_nopiv: {
       printf("TachoSolver: Factorize LDL (no pivot)\n");
-      if (_shift_diag) printf(" > shifting diagonal by %.2e\n",shift);
       printf("=====================================\n");
+      if (_shift_diag != 0) printf(" > shifting diagonal by %.2e\n",_shift);
+      if (_replace_tiny_pivot != 0) printf( " > using pivot tol = %.2e\n",_pivot_tol);
       break;
     }
     case Cholesky: {
       printf("TachoSolver: Factorize Cholesky\n");
-      if (_shift_diag) printf(" > shifting diagonal by %.2e\n",shift);
       printf("===============================\n");
+      if (_shift_diag != 0) printf(" > shifting diagonal by %.2e\n",_shift);
+      if (_replace_tiny_pivot != 0) printf( " > using pivot tol = %.2e\n",_pivot_tol);
       break;
     }
     case LDL: {
       printf("TachoSolver: Factorize LDL\n");
-      if (_shift_diag) printf(" > shifting diagonal by %.2e\n",shift);
       printf("==========================\n");
+      if (_shift_diag != 0) printf(" > shifting diagonal by %.2e\n",_shift);
+      if (_replace_tiny_pivot != 0) printf( " > using pivot tol = %.2e\n",_pivot_tol);
       break;
     }
     case SymLU: {
       printf("TachoSolver: Factorize SymLU\n");
-      if (_shift_diag) printf(" > shifting diagonal by %.2e\n",shift);
       printf("============================\n");
+      if (_shift_diag != 0) printf(" > shifting diagonal by %.2e\n",_shift);
+      if (_replace_tiny_pivot != 0) printf( " > using pivot tol = %.2e\n",_pivot_tol);
       break;
     }
     }
@@ -502,11 +526,10 @@ template <typename VT, typename DT> int Driver<VT, DT>::factorize(const value_ty
       printf( " Small matrix\n" );
     }
   }
-  _shift = shift; // internally keep track of the current shift
   if (_m <= _small_problem_thres) {
-    factorize_small_host(ax, shift);
+    factorize_small_host(ax, _shift);
   } else {
-    _N->factorize(ax, _store_transpose, shift, _pivot_tol, _verbose);
+    _N->factorize(ax, _store_transpose, _shift, _pivot_tol, _verbose);
   }
   return 0;
 }

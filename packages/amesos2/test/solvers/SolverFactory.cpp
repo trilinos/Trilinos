@@ -180,34 +180,33 @@ namespace {
     Teuchos::ParameterList amesos2_paramlist;
     if ( solverName == "ShyLUBasker" || solverName == "shylubasker" ) {
       amesos2_paramlist.setName("Amesos2");
-      Teuchos::ParameterList & shylubasker_paramlist = amesos2_paramlist.sublist("Basker");
-
+      Teuchos::ParameterList & shylubasker_paramlist = amesos2_paramlist.sublist("ShyLUBasker");
       shylubasker_paramlist.set("num_threads", 1,
           "Number of threads");
-      shylubasker_paramlist.set("pivot", false,
-          "Should not pivot");
-      shylubasker_paramlist.set("pivot_tol", .0001,
-          "Tolerance before pivot, currently not used");
-      shylubasker_paramlist.set("symmetric", false,
-          "Should Symbolic assume symmetric nonzero pattern");
-      shylubasker_paramlist.set("realloc" , false,
-          "Should realloc space if not enough");
-      shylubasker_paramlist.set("verbose", false,
-          "Information about factoring");
-      shylubasker_paramlist.set("verbose_matrix", false,
-          "Give Permuted Matrices");
-      shylubasker_paramlist.set("matching", true,
-          "Use WC matching (Not Supported)");
-      shylubasker_paramlist.set("matching_type", 0,
-          "Type of WC matching (Not Supported)");
-      shylubasker_paramlist.set("btf", true,
-          "Use BTF ordering");
-      shylubasker_paramlist.set("amd_btf", true,
-          "Use AMD on BTF blocks (Not Supported)");
-      shylubasker_paramlist.set("amd_dom", true,
-          "Use CAMD on ND blocks (Not Supported)");
-      shylubasker_paramlist.set("transpose", false,
-          "Solve the transpose A");
+      //shylubasker_paramlist.set("pivot", false,
+      //    "Should not pivot");
+      //shylubasker_paramlist.set("pivot_tol", .0001,
+      //    "Tolerance before pivot, currently not used");
+      //shylubasker_paramlist.set("symmetric", false,
+      //    "Should Symbolic assume symmetric nonzero pattern");
+      //shylubasker_paramlist.set("realloc" , false,
+      //    "Should realloc space if not enough");
+      //shylubasker_paramlist.set("verbose", true,
+      //    "Information about factoring");
+      //shylubasker_paramlist.set("verbose_matrix", false,
+      //    "Give Permuted Matrices");
+      //shylubasker_paramlist.set("matching", true,
+      //    "Use WC matching (Not Supported)");
+      //shylubasker_paramlist.set("matching_type", 0,
+      //    "Type of WC matching (Not Supported)");
+      //shylubasker_paramlist.set("btf", true,
+      //    "Use BTF ordering");
+      //shylubasker_paramlist.set("amd_btf", true,
+      //    "Use AMD on BTF blocks (Not Supported)");
+      //shylubasker_paramlist.set("amd_dom", true,
+      //    "Use CAMD on ND blocks (Not Supported)");
+      //shylubasker_paramlist.set("transpose", false,
+      //    "Solve the transpose A");
     }
 
     RCP<Trilinos::Details::LinearSolver<MV, OP, mag_type> > solver;
@@ -316,44 +315,42 @@ namespace {
           Teuchos::ParameterList amesos2_paramlist;
           if ( solverName == "shylubasker" ) {
             amesos2_paramlist.setName("Amesos2");
-            Teuchos::ParameterList & shylubasker_paramlist = amesos2_paramlist.sublist("Basker");
-
+            Teuchos::ParameterList & shylubasker_paramlist = amesos2_paramlist.sublist("ShyLUBasker");
             shylubasker_paramlist.set("num_threads", 4,
                 "Number of threads");
-            shylubasker_paramlist.set("pivot", false,
-                "Should not pivot");
-            shylubasker_paramlist.set("pivot_tol", .0001,
-                "Tolerance before pivot, currently not used");
-            shylubasker_paramlist.set("symmetric", false,
-                "Should Symbolic assume symmetric nonzero pattern");
-            shylubasker_paramlist.set("realloc" , false,
-                "Should realloc space if not enough");
-            shylubasker_paramlist.set("verbose", false,
-                "Information about factoring");
-            shylubasker_paramlist.set("verbose_matrix", false,
-                "Give Permuted Matrices");
-            shylubasker_paramlist.set("matching", true,
-                "Use WC matching (Not Supported)");
-            shylubasker_paramlist.set("matching_type", 0,
-                "Type of WC matching (Not Supported)");
-            shylubasker_paramlist.set("btf", true,
-                "Use BTF ordering");
-            shylubasker_paramlist.set("amd_btf", true,
-                "Use AMD on BTF blocks (Not Supported)");
-            shylubasker_paramlist.set("amd_dom", true,
-                "Use CAMD on ND blocks (Not Supported)");
-            shylubasker_paramlist.set("transpose", false,
-                "Solve the transpose A");
-
+            //shylubasker_paramlist.set("pivot", false,
+            //    "Should not pivot");
+            //shylubasker_paramlist.set("pivot_tol", .0001,
+            //    "Tolerance before pivot, currently not used");
+            //shylubasker_paramlist.set("symmetric", false,
+            //    "Should Symbolic assume symmetric nonzero pattern");
+            //shylubasker_paramlist.set("realloc" , false,
+            //    "Should realloc space if not enough");
+            //shylubasker_paramlist.set("verbose", false,
+            //    "Information about factoring");
+            //shylubasker_paramlist.set("verbose_matrix", false,
+            //    "Give Permuted Matrices");
+            //shylubasker_paramlist.set("matching", true,
+            //    "Use WC matching (Not Supported)");
+            //shylubasker_paramlist.set("matching_type", 0,
+            //    "Type of WC matching (Not Supported)");
+            //shylubasker_paramlist.set("btf", true,
+            //    "Use BTF ordering");
+            //shylubasker_paramlist.set("amd_btf", true,
+            //    "Use AMD on BTF blocks (Not Supported)");
+            //shylubasker_paramlist.set("amd_dom", true,
+            //    "Use CAMD on ND blocks (Not Supported)");
+            //shylubasker_paramlist.set("transpose", false,
+            //    "Solve the transpose A");
             solver->setParameters(Teuchos::rcpFromRef(amesos2_paramlist));
           }
         }
-        catch (...) {
+        catch (const std::exception& e) {
           out << "Amesos2::create threw an exception for solverName = \"" <<
             solverName << "\", MAT = " << TypeNameTraits<MAT>::name () <<
             ", and MV = " << TypeNameTraits<MV>::name () << ".  As a result, "
             "we will skip attempting to create this solver using Trilinos::"
-            "Details::getLinearSolver." << endl;
+            "Details::getLinearSolver." << e.what() << endl;
           skip = true;
         }
         if (solver.is_null ()) {

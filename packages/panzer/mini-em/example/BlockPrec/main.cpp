@@ -519,11 +519,50 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
                                      Teuchos::as<int>(mesh->getDimension()),
                                      comm, lin_solver_pl,req_handler, false, false, auxDofManager);
 
+    // Run the full auxiliary physics lifecycle before constructing the main
+    // physics evaluator.  auxPhysicsME->setupModel populates auxGlobalData
+    // with the LOCPair scatter containers (via buildAndRegisterScatterEvaluators),
+    // evalModel fills them, and then the aux assembler objects are freed.
+    // This ensures aux worksets and field managers never overlap in memory
+    // with the main physics data structures, lowering the HWM.
+    {
+      RCP<panzer::ModelEvaluator<Scalar> > auxPhysicsME = rcp(new panzer::ModelEvaluator<Scalar> (auxLinObjFactory, lowsFactory, globalData, false, 0.0));
+      auxPhysicsME->template disableEvaluationType<panzer::Traits::Tangent>();
+
+      {
+        Teuchos::TimeMonitor tMauxphysicsEval(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: setup auxiliary physics model evaluator")));
+
+        auxPhysicsME->setupModel(auxWkstContainer,auxPhysicsBlocks,aux_bcs,
+                                 *eqset_factory,
+                                 bc_factory,
+                                 cm_factory,
+                                 cm_factory,
+                                 closure_models,
+                                 user_data,false,"");
+
+        // auxGlobalData is now populated by buildAndRegisterScatterEvaluators
+        for(panzer::GlobalEvaluationDataContainer::const_iterator itr=auxGlobalData->begin();itr!=auxGlobalData->end();++itr)
+          auxPhysicsME->addNonParameterGlobalEvaluationData(itr->first,itr->second);
+      }
+
+      {
+        Teuchos::TimeMonitor tMauxphysicsEval(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: eval auxiliary physics model evaluator")));
+        Thyra::ModelEvaluatorBase::InArgs<Scalar> auxInArgs = auxPhysicsME->getNominalValues();
+        Thyra::ModelEvaluatorBase::OutArgs<Scalar> auxOutArgs = auxPhysicsME->createOutArgs();
+        Teuchos::RCP<Thyra::LinearOpBase<Scalar> > aux_W_op = auxPhysicsME->create_W_op();
+
+        auxOutArgs.set_W_op(aux_W_op);
+        auxPhysicsME->evalModel(auxInArgs, auxOutArgs);
+      }
+      // auxPhysicsME goes out of scope here, releasing its reference to auxWkstContainer.
+    }
+    // auxWkstContainer and auxPhysicsBlocks are outer-scope; free them explicitly.
+    auxWkstContainer = Teuchos::null;
+    auxPhysicsBlocks.clear();
+
     //setup model evaluators
     RCP<panzer::ModelEvaluator<Scalar> > physicsME = rcp(new panzer::ModelEvaluator<Scalar> (linObjFactory, lowsFactory, globalData, true, 0.0));
-    RCP<panzer::ModelEvaluator<Scalar> > auxPhysicsME = rcp(new panzer::ModelEvaluator<Scalar> (auxLinObjFactory, lowsFactory, globalData, false, 0.0));
     physicsME->template disableEvaluationType<panzer::Traits::Tangent>();
-    auxPhysicsME->template disableEvaluationType<panzer::Traits::Tangent>();
 
     // add a volume response functionals
     std::map<int,std::string> responseIndexToName;
@@ -563,35 +602,13 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
                             closure_models,
                             user_data,false,"");
 
-      // add auxiliary data to model evaluator
-      for(panzer::GlobalEvaluationDataContainer::const_iterator itr=auxGlobalData->begin();itr!=auxGlobalData->end();++itr)
-        physicsME->addNonParameterGlobalEvaluationData(itr->first,itr->second);
-    }
-
-    {
-      Teuchos::TimeMonitor tMauxphysicsEval(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: setup auxiliary physics model evaluator")));
-
-      auxPhysicsME->setupModel(auxWkstContainer,auxPhysicsBlocks,aux_bcs,
-                               *eqset_factory,
-                               bc_factory,
-                               cm_factory,
-                               cm_factory,
-                               closure_models,
-                               user_data,false,"");
-
-      // evaluate the auxiliary model to obtain auxiliary operators
-      for(panzer::GlobalEvaluationDataContainer::const_iterator itr=auxGlobalData->begin();itr!=auxGlobalData->end();++itr)
-        auxPhysicsME->addNonParameterGlobalEvaluationData(itr->first,itr->second);
-    }
-
-    {
-      Teuchos::TimeMonitor tMauxphysicsEval(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: eval auxiliary physics model evaluator")));
-      Thyra::ModelEvaluatorBase::InArgs<Scalar> auxInArgs = auxPhysicsME->getNominalValues();
-      Thyra::ModelEvaluatorBase::OutArgs<Scalar> auxOutArgs = auxPhysicsME->createOutArgs();
-      Teuchos::RCP<Thyra::LinearOpBase<Scalar> > aux_W_op = auxPhysicsME->create_W_op();
-
-      auxOutArgs.set_W_op(aux_W_op);
-      auxPhysicsME->evalModel(auxInArgs, auxOutArgs);
+      // Note: do NOT add auxGlobalData to physicsME here.  The assembly engine
+      // calls gedc.initialize() which would zero every LOCPair's ghosted
+      // container, destroying the aux matrices.  The preconditioner accesses
+      // auxGlobalData directly via OperatorRequestCallback, not through
+      // physicsME->nonParamGlobalEvaluationData_.  (The equivalent loop in
+      // the original code was a no-op because auxGlobalData was empty at that
+      // point; keep it that way intentionally.)
     }
 
     // setup a response library to write to the mesh

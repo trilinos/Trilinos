@@ -248,6 +248,15 @@ namespace Intrepid2 {
       return (a > b ? a : b);
     }
 
+    template <typename... Args>
+    requires (std::is_same_v<T, Args> && ...)
+    KOKKOS_FORCEINLINE_FUNCTION
+    static T max(const T a, const T b, Args... args) {
+        // Recursively find the max of everything after the first argument
+        T tmp_max = max(b, args...);
+        return (a > tmp_max) ? a : tmp_max;
+    }
+
     KOKKOS_FORCEINLINE_FUNCTION
     static T abs(const T a) {
       return (a > 0 ? a : T(-a));
@@ -333,6 +342,25 @@ namespace Intrepid2 {
     using device = typename InputView::device_type;
     using type = Kokkos::DynRankView<value, layout, device>;
   };
+
+
+  template <class DataType, class... Properties>
+  KOKKOS_INLINE_FUNCTION auto
+  as_scalar_1d_view(const Kokkos::View<DataType, Properties...> &view) {
+    using view_t = Kokkos::View<DataType, Properties...>;
+#ifdef HAVE_INTREPID2_SACADO
+    if constexpr (Kokkos::is_view_fad<view_t>::value) {
+      return Sacado::as_scalar_view(view);
+    } else
+#endif
+    return Kokkos::View<typename view_t::value_type*, Properties...>(view.data(), view.mapping().required_span_size());
+  }
+
+  template <class... Args>
+  KOKKOS_INLINE_FUNCTION auto
+  as_scalar_1d_view(const Kokkos::DynRankView<Args...> &dyn) {
+    return as_scalar_1d_view(dyn.ConstDownCast());
+  }
 
 
   namespace Impl

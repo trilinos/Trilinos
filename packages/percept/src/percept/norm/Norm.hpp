@@ -67,9 +67,12 @@
       void operator()(MDArray& integrand_values, MDArray& output_values, double /*time_value_optional*/=0.0) override
       {
         VERIFY_OP(integrand_values.size(), ==, output_values.size(), "LN_NormOp::operator() bad sizes");
+        const auto* iv = integrand_values.data();
+        auto* ov = output_values.data();
         for (size_t i = 0; i < integrand_values.size(); i++)
           {
-            output_values[i] = std::pow(std::fabs(integrand_values[i]), double(std::fabs(Power)) );
+            static constexpr double exponent = double(std::fabs(Power));
+            ov[i] = std::pow(std::fabs(iv[i]), exponent);
           }
       }
       virtual void operator()(MDArray& domain, MDArray& codomain, const stk::mesh::Entity /*element*/, const MDArray& /*parametric_coords*/, double time_value_optional=0.0) override
@@ -83,8 +86,9 @@
 
       void finalOp(const std::vector<double>& vin, std::vector<double>& vout) override
       {
+        static constexpr double exponent = 1./(double(std::fabs(Power)));
         for (unsigned i = 0; i < vin.size(); i++)
-          vout[i] = std::pow(vin[i], 1./(double(std::fabs(Power))) );
+          vout[i] = std::pow(vin[i], exponent );
       }
     };
 
@@ -225,8 +229,8 @@
         for (unsigned ipart=0; ipart < nparts; ipart++)
           {
             stk::mesh::Part& part = *parts[ipart];
-            bool auto_part2 = 0 != part.attribute<AutoPart>();
-            if (stk::mesh::is_auto_declared_part(part) || auto_part2)
+            bool is_auto_part = 0 != part.attribute<AutoPart>();
+            if (stk::mesh::is_auto_declared_part(part) || is_auto_part)
               continue;
 
             bool in_selector = (*m_selector)(part);

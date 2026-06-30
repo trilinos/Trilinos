@@ -35,6 +35,7 @@ template <typename ArgUplo> struct LDL_nopiv<ArgUplo, Algo::OnDevice> {
     using arith_traits = ArithTraits<value_type>;
 
     const auto &exec_instance = member;
+    const bool conjugate = false;
     const ordinal_type m = A.extent(0);
 
     int r_val(0);
@@ -53,7 +54,7 @@ template <typename ArgUplo> struct LDL_nopiv<ArgUplo, Algo::OnDevice> {
        Kokkos::parallel_for(policy_update, KOKKOS_LAMBDA(const ordinal_type &id) {
          ordinal_type k = (i+1) + id / mn;
          ordinal_type j = (i+1) + id % mn;
-         A(k, j) -= arith_traits::conj(A(i, k)) * A(i, i) * A(i, j);
+         A(k, j) -= (conjugate ? arith_traits::conj(A(i, k)) : A(i, k)) * A(i, i) * A(i, j);
        });
       #else
        policy_type policy_update(exec_instance, i+1, m);
@@ -90,9 +91,9 @@ template <typename ArgUplo> struct LDL_nopiv<ArgUplo, Algo::OnDevice> {
 
       ordinal_type m2 = m - i2;
       if (m2 > 0) {
-        // Compute off-diagonal blocks
+        // Compute off-diagonal blocks (no conjugate)
         auto A12 = Kokkos::subview(A, range_type(i1, i2), range_type(i2, m));
-        Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, Algo::OnDevice>::invoke(
+        Trsm<Side::Left, Uplo::Upper, Trans::Transpose, Algo::OnDevice>::invoke(
                   handle, Diag::Unit(), one, A11, A12);
 
         // Save A12 in workspace

@@ -103,7 +103,7 @@ TRIBITS_INCLUDE_DIRECTORIES(${DIR}
                     ${DIR}/boundconstraint
                     ${DIR}/constraint
                     ${DIR}/nlls
-                    ${DIR}/polyproj
+                    ${DIR}/projection
                     ${DIR}/objective
                     ${DIR}/operator
                     ${DIR}/simopt
@@ -115,7 +115,7 @@ APPEND_GLOB(HEADERS ${DIR}/*.hpp
                     ${DIR}/boundconstraint/*.hpp
                     ${DIR}/constraint/*.hpp
                     ${DIR}/nlls/*.hpp
-                    ${DIR}/polyproj/*.hpp
+                    ${DIR}/projection/*.hpp
                     ${DIR}/objective/*.hpp
                     ${DIR}/operator/*.hpp
                     ${DIR}/simopt/*.hpp
@@ -161,7 +161,7 @@ TRIBITS_INCLUDE_DIRECTORIES(${DIR}
                     ${DIR}/TypeE
                     ${DIR}/TypeG
                     ${DIR}/TypeU
-										${DIR}/TypeP
+                    ${DIR}/TypeP
                     ${DIR}/TypeB/pqn
                     ${DIR}/TypeG/augmentedlagrangian/
                     ${DIR}/TypeG/fletcher
@@ -177,7 +177,7 @@ APPEND_GLOB(HEADERS ${DIR}/*.hpp
                     ${DIR}/TypeE/*.hpp
                     ${DIR}/TypeG/*.hpp
                     ${DIR}/TypeU/*.hpp
-										${DIR}/TypeP/*.hpp
+                    ${DIR}/TypeP/*.hpp
                     ${DIR}/TypeB/pqn/*.hpp
                     ${DIR}/TypeG/augmentedlagrangian/*.hpp
                     ${DIR}/TypeG/fletcher/*.hpp
@@ -288,19 +288,31 @@ APPEND_GLOB(HEADERS ${DIR}/*.hpp
 
 TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/oed)
 TRIBITS_INCLUDE_DIRECTORIES(${DIR}
+                    ${DIR}/algorithm
                     ${DIR}/constraint
                     ${DIR}/factors
                     ${DIR}/objective
                     ${DIR}/objective/het
                     ${DIR}/objective/hom
+                    ${DIR}/vector
                     ${DIR}/utilities)
 APPEND_GLOB(HEADERS ${DIR}/*.hpp
+                    ${DIR}/algorithm/*.hpp
                     ${DIR}/constraint/*.hpp
                     ${DIR}/factors/*.hpp
                     ${DIR}/objective/*.hpp
                     ${DIR}/objective/het/*.hpp
                     ${DIR}/objective/hom/*.hpp
+                    ${DIR}/vector/*.hpp
                     ${DIR}/utilities/*.hpp)
+
+#
+# mol headers
+#
+
+TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/mol)
+TRIBITS_INCLUDE_DIRECTORIES(${DIR})
+APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 
 #
 # All sources

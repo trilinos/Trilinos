@@ -152,7 +152,7 @@ class OverlappingRowGraph : virtual public Ifpack2::Details::RowGraph<GraphType>
   /// \brief The number of entries in the given local row that are
   ///   owned by the calling process.
   ///
-  /// \param globalRow [in] Local index of the row.
+  /// \param localRow [in] Local index of the row.
   ///
   /// \return Teuchos::OrdinalTraits<size_t>::invalid() if the
   ///   specified row (either in the input graph or in the overlap
@@ -186,11 +186,11 @@ class OverlappingRowGraph : virtual public Ifpack2::Details::RowGraph<GraphType>
   ///   that are owned by the calling process.
   ///
   /// \param globalRow [in] Global index of the row.
-  /// \param indices [out] Global column indices in that row that are
+  /// \param gblColInds [out] Global column indices in that row that are
   ///   owned by the calling process.
-  /// \param numIndices [out] Number of indices returned in \c indices.
+  /// \param numIndices [out] Number of indices returned in \c gblColInds.
   ///
-  /// This method throws std::runtime_error if \c indices is not large
+  /// This method throws std::runtime_error if \c gblColInds is not large
   /// enough to hold the column indices in row \c globalRow.  If row
   /// \c globalRow does not belong to this process, then \c indices is
   /// not modified and \c numIndices is set to
@@ -219,7 +219,7 @@ class OverlappingRowGraph : virtual public Ifpack2::Details::RowGraph<GraphType>
   /// Teuchos::OrdinalTraits<size_t>::invalid() on output.
   virtual void
   getLocalRowCopy(local_ordinal_type localRow,
-                  nonconst_local_inds_host_view_type& gblColInds,
+                  nonconst_local_inds_host_view_type& indices,
                   size_t& numIndices) const;
 
   /// \brief Get a constant, nonpersisting, locally indexed view of
@@ -237,7 +237,7 @@ class OverlappingRowGraph : virtual public Ifpack2::Details::RowGraph<GraphType>
   /// does not store all the entries in that row.
   ///
   /// \pre <tt>isLocallyIndexed () && supportsRowViews ()</tt>
-  /// \post <tt>indices.size () == getNumEntriesInGlobalRow (LocalRow)</tt>
+  /// \post <tt>lclColInds.size () == getNumEntriesInLocalRow (lclRow)</tt>
   ///
   /// \param lclRow [in] Local index of the row.
   /// \param lclColInds [out] Local indices of the columns in the

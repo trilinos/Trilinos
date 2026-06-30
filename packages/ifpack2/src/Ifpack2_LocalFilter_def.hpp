@@ -14,6 +14,7 @@
 #include <Tpetra_Map.hpp>
 #include <Tpetra_MultiVector.hpp>
 #include <Tpetra_Vector.hpp>
+#include "Ifpack2_Details_Behavior.hpp"
 
 #ifdef HAVE_MPI
 #include "Teuchos_DefaultMpiComm.hpp"
@@ -63,16 +64,16 @@ LocalFilter<MatrixType>::
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-#ifdef HAVE_IFPACK2_DEBUG
-  if (!mapPairsAreFitted(*A)) {
-    std::cout << "WARNING: Ifpack2::LocalFilter:\n"
-              << "A's Map pairs are not fitted to each other on Process "
-              << A_->getRowMap()->getComm()->getRank() << " of the input matrix's "
-                                                          "communicator.\n"
-                                                          "This means that LocalFilter may not work with A.  "
-                                                          "Please see discussion of Bug 5992.";
+  if (Ifpack2::Details::Behavior::debug()) {
+    if (!mapPairsAreFitted(*A)) {
+      std::cout << "WARNING: Ifpack2::LocalFilter:\n"
+                << "A's Map pairs are not fitted to each other on Process "
+                << A_->getRowMap()->getComm()->getRank() << " of the input matrix's "
+                                                            "communicator.\n"
+                                                            "This means that LocalFilter may not work with A.  "
+                                                            "Please see discussion of Bug 5992.";
+    }
   }
-#endif  // HAVE_IFPACK2_DEBUG
 
   // Build the local communicator (containing this process only).
   RCP<const Teuchos::Comm<int> > localComm;
@@ -571,8 +572,7 @@ void LocalFilter<MatrixType>::
           << X.getNumVectors() << " columns, but Y has "
           << Y.getNumVectors() << " columns.");
 
-#ifdef HAVE_IFPACK2_DEBUG
-  {
+  if (Ifpack2::Details::Behavior::debug()) {
     typedef Teuchos::ScalarTraits<magnitude_type> STM;
     Teuchos::Array<magnitude_type> norms(X.getNumVectors());
     X.norm1(norms());
@@ -585,7 +585,6 @@ void LocalFilter<MatrixType>::
     }
     TEUCHOS_TEST_FOR_EXCEPTION(!good, std::runtime_error, "Ifpack2::LocalFilter::apply: The 1-norm of the input X is NaN or Inf.");
   }
-#endif  // HAVE_IFPACK2_DEBUG
 
   TEUCHOS_TEST_FOR_EXCEPTION(
       getBlockSize() > 1, std::runtime_error,
@@ -604,8 +603,7 @@ void LocalFilter<MatrixType>::
     applyNonAliased(X, Y, mode, alpha, beta);
   }
 
-#ifdef HAVE_IFPACK2_DEBUG
-  {
+  if (Ifpack2::Details::Behavior::debug()) {
     typedef Teuchos::ScalarTraits<magnitude_type> STM;
     Teuchos::Array<magnitude_type> norms(Y.getNumVectors());
     Y.norm1(norms());
@@ -618,7 +616,6 @@ void LocalFilter<MatrixType>::
     }
     TEUCHOS_TEST_FOR_EXCEPTION(!good, std::runtime_error, "Ifpack2::LocalFilter::apply: The 1-norm of the output Y is NaN or Inf.");
   }
-#endif  // HAVE_IFPACK2_DEBUG
 }
 
 template <class MatrixType>

@@ -340,14 +340,14 @@ class LocalFilter : virtual public Ifpack2::Details::RowMatrix<MatrixType>,
   //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
   /*!
     \param GlobalRow [in] Global row number for which indices are desired.
-    \param Indices [out] Global column indices corresponding to values.
-    \param Values [out] Row values
+    \param indices [out] Global column indices corresponding to values.
+    \param values [out] Row values
 
-    \pre <tt>isLocallyIndexed() == false</tt>
-    \post <tt>indices.size() == getNumEntriesInGlobalRow(GlobalRow)</tt>
+      \pre <tt>isLocallyIndexed() == false</tt>
+      \post <tt>indices.size() == getNumEntriesInGlobalRow(GlobalRow)</tt>
 
-    Note: If \c GlobalRow does not belong to this node, then \c indices is set to null.
-  */
+      Note: If \c GlobalRow does not belong to this node, then \c indices is set to null.
+    */
   virtual void
   getGlobalRowView(global_ordinal_type GlobalRow,
                    global_inds_host_view_type &indices,
@@ -356,14 +356,14 @@ class LocalFilter : virtual public Ifpack2::Details::RowMatrix<MatrixType>,
   //! Extract a const, non-persisting view of local indices in a specified row of the matrix.
   /*!
     \param LocalRow [in] Local row number for which indices are desired.
-    \param Indices [out] Local column indices corresponding to values.
-    \param Values [out] Row values
+    \param indices [out] Local column indices corresponding to values.
+    \param values [out] Row values
 
-    \pre <tt>isGloballyIndexed() == false</tt>
-    \post <tt>indices.size() == getNumEntriesInLocalRow(LocalRow)</tt>
+      \pre <tt>isGloballyIndexed() == false</tt>
+      \post <tt>indices.size() == getNumEntriesInLocalRow(LocalRow)</tt>
 
-    Note: If \c LocalRow does not belong to this node, then \c indices is set to null.
-  */
+      Note: If \c LocalRow does not belong to this node, then \c indices is set to null.
+    */
   virtual void
   getLocalRowView(local_ordinal_type LocalRow,
                   local_inds_host_view_type &indices,

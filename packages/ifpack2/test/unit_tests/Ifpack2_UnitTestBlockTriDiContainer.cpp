@@ -25,6 +25,8 @@
 #include "Ifpack2_UnitTestBlockTriDiContainerUtil.hpp"
 #include "Ifpack2_ETIHelperMacros.h"
 
+#include "KokkosBatched_Vector_SIMD.hpp"
+
 struct Input {
   Teuchos::RCP<const Teuchos::Comm<int> > comm;
   bool quiet, teuchos_test_btds, teuchos_test_jacobi, contiguous, verbose;
@@ -217,6 +219,15 @@ static LO run_teuchos_tests(const Input& in, Teuchos::FancyOStream& out, bool& s
   typedef LO Int;
   typedef tif_utest::BlockCrsMatrixMaker<Scalar, LO, GO> bcmm;
   typedef tif_utest::BlockTriDiContainerTester<Scalar, LO, GO> btdct;
+
+  if constexpr (KokkosKernels::ArithTraits<Scalar>::is_complex) {
+#if defined(KOKKOSBATCHED_IMPL_ENABLE_AVX) && defined(__AVX512F__)
+    if (in.comm->getRank() == 0) {
+      std::cout << "Skipping SIMD<Kokkos::complex<>> tests" << std::endl;
+    }
+    return 0;
+#endif
+  }
 
   tif_utest::BTDC_MatrixCache<Scalar, LO, GO> matrixCache;
 

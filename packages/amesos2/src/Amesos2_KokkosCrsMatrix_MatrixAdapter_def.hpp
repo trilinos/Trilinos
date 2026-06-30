@@ -43,7 +43,7 @@ namespace Amesos2 {
   const Teuchos::RCP<const Teuchos::Comm<int> >
   ConcreteMatrixAdapter<KokkosSparse::CrsMatrix<Scalar,LocalOrdinal,ExecutionSpace>>::getComm_impl() const
   {
-    return Tpetra::getDefaultComm(); // Kokkos CrsMatrix currently is just serial
+    return Teuchos::rcp(new Teuchos::SerialComm<int>());
   }
 
   template <typename Scalar, typename LocalOrdinal, typename ExecutionSpace>

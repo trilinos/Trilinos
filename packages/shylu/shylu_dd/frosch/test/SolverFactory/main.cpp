@@ -42,7 +42,6 @@ using namespace std;
 using namespace Teuchos;
 using namespace Xpetra;
 using namespace FROSch;
-using namespace Thyra;
 
 int main(int argc, char *argv[])
 {

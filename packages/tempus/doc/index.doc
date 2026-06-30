@@ -1,12 +1,3 @@
-//@HEADER
-// *****************************************************************************
-//          Tempus: Time Integration and Sensitivity Analysis Package
-//
-// Copyright 2017 NTESS and the Tempus contributors.
-// SPDX-License-Identifier: BSD-3-Clause
-// *****************************************************************************
-//@HEADER
-
 /* ************************************************************************ */
 /* ************************************************************************ */
 /* ************************************************************************ */
@@ -16,21 +7,21 @@
 
   \section introduction Introduction
 
-  Tempus is a Latin word meaning time as in “tempus fugit” -> “time flies”.
+  \ref Tempus is a Latin word meaning time as in “tempus fugit” -> “time flies”.
 
-  The Tempus package is a time-integration framework for advanced
+  The \ref Tempus package is a time-integration framework for advanced
   transient analysis, including various time integrators and embedded
   sensitivity analysis for next-generation code architectures. This
   framework provides “out-of-the-box” time-integration capabilities,
   which allows users to supply governing equations and easily switch
-  between various time integrators.  Additionally Tempus provides
+  between various time integrators.  Additionally \ref Tempus provides
   “build-your-own” capabilities, which allows applications to
-  incorporate various Tempus components to augment or replace
+  incorporate various \ref Tempus components to augment or replace
   application transient capabilities.  Other capabilities include
   embedded error analysis, sensitivity analysis, transient optimization
   with ROL.
 
-  Tempus provides a general infrastructure for the time evolution
+  \ref Tempus provides a general infrastructure for the time evolution
   of solutions through a variety of general integration schemes,
   and can be used from small systems of equations (e.g., single
   ODEs for the time evolution of plasticity models, and multiple
@@ -40,7 +31,7 @@
   
   \section capabilities Capabilities
 
-  Tempus provides time-integration methods for first and second-order ODEs
+  \ref Tempus provides time-integration methods for first and second-order ODEs
   in their explicit and implicit forms, 
   \f{eqnarray*}{
     \mbox{Explicit:} & \dot{x} = \mathbf{f}(x,t)    & \ddot{x} = \mathbf{f}(\dot{x},x,t) \\
@@ -49,19 +40,19 @@
 
   \subsection integrators Integrators
 
-  Tempus Integrators (e.g., Tempus::IntegratorBasic) are the time loop
+  \ref Tempus Integrators (e.g., \ref Tempus::IntegratorBasic) are the time loop
   structure for time integration and provide several features, e.g.,
   - Control the advancement of the solution from timestep to the next, e.g.,
     restart from failed timestep, selection of the next timestep size,
     solution output.
   - holds the solution history for the time integration
   - Applications can insert application-specific functionality into
-    Tempus::IntegratorBasic through observers, e.g., Tempus::IntegratorObserver.
-  - Applications can create their own integrators, derived from Tempus::Integrator.
+    \ref Tempus::IntegratorBasic through observers, e.g., \ref Tempus::IntegratorObserver.
+  - Applications can create their own integrators, derived from \ref Tempus::Integrator.
 
   \subsection steppers Time Steppers
 
-  Some features of Tempus::Stepper are
+  Some features of \ref Tempus::Stepper are
   - Timesteppers take a single timestep (PASS/FAIL) and operate on
     the supplied solution.
   - Steppers are stateless (i.e., do not hold on to data related to
@@ -75,10 +66,10 @@
   - Many Steppers take advantage of the First-Same-As-Last (FSAL) property,
     when possible, to reduce computational costs.
   - Applications can insert application-specific functionality into the
-    Tempus::Stepper through application actions, e.g., Tempus::StepperRKAppAction.
+    \ref Tempus::Stepper through application actions, e.g., \ref Tempus::StepperRKAppAction.
   - Applications can create their own steppers, derived from Stepper,
-    that can be used with other Tempus capabilities, e.g.,
-    \ref Tempus::IntegratorBasic "Integrator Basic" and \ref Tempus::SolutionHistory
+    that can be used with other \ref Tempus capabilities, e.g.,
+    \ref Tempus::IntegratorBasic and \ref Tempus::SolutionHistory
     "Solution History".
   - Steppers can mark solutions as failed (e.g., failure to reach solver
     tolerances), suggest timestep sizes, and calculate error estimates.
@@ -151,18 +142,18 @@
 
   \subsection solutions Solution State and Solution History
 
-  Solutions in Tempus are maintained in Tempus::SolutionState and incapsulate
+  Solutions in \ref Tempus are maintained in \ref Tempus::SolutionState and incapsulate
   the complete state of the solution for a particular time.  The primary
   requirement for SolutionState is that it contains all the information
   needed to restart the solution from scratch, e.g., check-pointing and
   recover from a failed timestep.  The four primary components of the
-  Tempus::SolutionState are
+  \ref Tempus::SolutionState are
   - The state - \f$x(t)\f$, \f$\dot{x}(t)\f$ (optional), and \f$\ddot{x}(t)\f$ (optional)
   - The metastate - timestep, time, order, error, etc.
   - The StepperState - any data needed by the stepper
   - The PhysicsState - any application-specific data
 
-  Tempus::SolutionState are stored in a Tempus::SolutionHistory, which
+  \ref Tempus::SolutionState are stored in a \ref Tempus::SolutionHistory, which
   is simply a container of SolutionStates, and
   - allows chronological and index access to SolutionStates
   - has multiple methods to handle the number of SolutionStates, e.g., all and last two states.
@@ -173,7 +164,7 @@
 
   \subsection timestepControl Timestep Control and Strategies
 
-  Tempus::TimeStepControl is used by the Tempus::IntegratorBasic to select
+  \ref Tempus::TimeStepControl is used by the \ref Tempus::IntegratorBasic to select
   the next timestep size, and has several basic capabilities:
   - simulation time min/max bounding
   - time index min/max bounding
@@ -184,8 +175,8 @@
   - ensure constant time steps
   - incorporate Stepper suggested time step
   
-  Additionally, Tempus provides timestep control strategies (e.g.,
-  Tempus::TimeStepControlStrategy) for various variable-timestepping
+  Additionally, \ref Tempus provides timestep control strategies (e.g.,
+  \ref Tempus::TimeStepControlStrategy) for various variable-timestepping
   capabilities, and include
   - constant and variable timestep control
   - PID integral timestep controller
@@ -194,40 +185,10 @@
 
   \section tutorials Tutorials
 
-  Here are some basic tutorials to illustrate how convert an application
-  use Tempus, and some of the features available.
+  These tutorials illustrate how an application can adopt \ref Tempus in a
+  stepwise fashion, beginning with a hand-written time integration loop
+  and progressively introducing \ref Thyra and \ref Tempus abstractions.
 
-  <table>
-    <tr><th> Title <th> Description
-    <tr><td> \ref example-00
-        <td> Introduces the problem used in following examples.
-    <tr><td> \ref example-01
-        <td> Utilize Thyra Vectors instead of C++ arrays.
-    <tr><td> \ref example-02
-        <td> Use ModelEvaluator for the problem description.
-    <tr><td> \ref example-03
-        <td> Introduce SolutionState to manage the solution evoluation.
-             Covers: solution vectors (\f$x\f$, \f$\dot{x}\f$, and
-             \f$\ddot{x}\f$) and metadata.
-    <tr><td> Adding SolutionHistory
-        <td> Adding SolutionHistory to store and interpolate solutions.
-             (under construction).
-    <tr><td> Use Steppers
-        <td> Use Steppers to enable various time steppers.
-             Covers: explicit and implicit ODE time steppers,
-             consistent initial conditions, and AppActions.
-    <tr><td> Introduce Time-step Controllers 
-        <td> Introduce TimeStepControllers to change the timestep size for
-             variable timestepping.
-             Covers: time step strategies and TimeEvents.
-    <tr><td> Utilize IntegratorBasic
-        <td> utilize IntegratorBasic to provide all the basic features
-             for Tempus time integrators.
-             Covers: IntegratorBasic and IntegratorObservers.
-  </table>
+  A tutorial overview page is available at \ref tempus_tutorials_overview.
 
-  Also, one can look at the tests and unit tests for examples of usage,
-  but these may not show standard usage or context as they are meant for
-  testing.
-
- */
+*/

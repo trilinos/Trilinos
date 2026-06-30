@@ -250,17 +250,17 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
-IF(TEKO_HAVE_EPETRA)
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    ProbingFactory
-    SOURCES
-    unit_tests/tProbingFactory.cpp
-    ${UNIT_TEST_DRIVER}
-    COMM serial mpi
-    ARGS ${SERIAL_ARGS_STRING}
-    NUM_MPI_PROCS 1
-  )
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  ProbingFactory
+  SOURCES
+  unit_tests/tProbingFactory.cpp
+  ${UNIT_TEST_DRIVER}
+  COMM serial mpi
+  ARGS ${SERIAL_ARGS_STRING}
+  NUM_MPI_PROCS 1
+)
 
+IF(TEKO_HAVE_EPETRA)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     DiagonalPreconditionerFactory
     SOURCES

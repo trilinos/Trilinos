@@ -46,6 +46,7 @@ namespace Amesos2 {
     typedef Tpetra::Map<>::global_ordinal_type                  global_ordinal_t;
     typedef size_t                                                 global_size_t;
     typedef Scalar                                                      scalar_t;
+    typedef scalar_t                                                host_value_t;
 
     typedef Kokkos::View<scalar_t**, Kokkos::LayoutLeft, ExecutionSpace> kokkos_view_t;
 
@@ -98,7 +99,7 @@ namespace Amesos2 {
     /// Returns the Teuchos::Comm object associated with this multi-vector
     Teuchos::RCP<const Teuchos::Comm<int> > getComm() const
     {
-      return Tpetra::getDefaultComm(); // serial only for Kokkos adapter right now
+      return Teuchos::rcp(new Teuchos::SerialComm<int>());
     }
 
     /// Get the length of vectors local to the calling node

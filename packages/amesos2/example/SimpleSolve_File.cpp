@@ -50,10 +50,16 @@ int main(int argc, char *argv[]) {
 #endif
   typedef Tpetra::CrsMatrix<Scalar,LO,GO> MAT;
   typedef Tpetra::MultiVector<Scalar,LO,GO> MV;
+  typedef Tpetra::MultiVector<LO,LO,GO> ID;
   typedef Tpetra::MatrixMarket::Reader<MAT> MMReader;
+  typedef Tpetra::MatrixMarket::Reader<typename Tpetra::CrsMatrix<LO, LO, GO>> IDReader;
+  typedef Tpetra::Map<LO,GO> MAP;
+
+  typedef Teuchos::ArrayRCP<const LO> SchurPart_type;
+  typedef Teuchos::Array<Scalar>      SchurOut_type;
+  typedef typename SchurOut_type::size_type size_type;
 
   using Tpetra::global_size_t;
-  using Tpetra::Map;
   using Tpetra::Import;
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -85,6 +91,7 @@ int main(int argc, char *argv[]) {
   std::string rhs_filename("");
   std::string solvername("Superlu");
   std::string xml_filename("");
+  std::string schur_filename("");
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
   cmdp.setOption("describe","no_describe",&describe_on,"Describe solver.");
@@ -95,6 +102,7 @@ int main(int argc, char *argv[]) {
   cmdp.setOption("rhs_filename",&rhs_filename,"Filename for Matrix-Market right-hand-side.");
   cmdp.setOption("solvername",&solvername,"Name of solver.");
   cmdp.setOption("xml_filename",&xml_filename,"XML Filename for Solver parameters.");
+  cmdp.setOption("schur_filename",&schur_filename,"XML Filename to specify the row IDs of Schur complement for partial factorization.");
   cmdp.setOption("multi-solve","no-multi-solve",&multi_solve,"Test multiple numFacto & solve per symbolic.");
   cmdp.setOption("print-matrix","no-print-matrix",&printMatrix,"Print the full matrix after reading it.");
   cmdp.setOption("print-solution","no-print-solution",&printSolution,"Print solution vector after solve.");
@@ -121,14 +129,14 @@ int main(int argc, char *argv[]) {
     A = MMReader::readSparseFile(mat_filename, comm);
   } else {
     if( verbose && myRank == 0) std::cout << " using map file " << map_filename << std::endl;
-    RCP<const Map<LO,GO> > rowMap = MMReader::readMapFile(map_filename, comm);
-    RCP<const Map<LO,GO> > colMap = Teuchos::null;
+    RCP<const MAP> rowMap = MMReader::readMapFile(map_filename, comm);
+    RCP<const MAP> colMap = Teuchos::null;
     A = MMReader::readSparseFile (mat_filename, rowMap, colMap, rowMap, rowMap);
   }
 
   // get the map (Range Map used for both X & B)
-  RCP<const Map<LO,GO> > rngmap = A->getRangeMap();
-  RCP<const Map<LO,GO> > dmnmap = A->getDomainMap();
+  RCP<const MAP> rngmap = A->getRangeMap();
+  RCP<const MAP> dmnmap = A->getDomainMap();
   GO nrows = A->getGlobalNumRows();
 
   // Create random X
@@ -242,10 +250,39 @@ int main(int argc, char *argv[]) {
     std::cout << solver->description() << std::endl << std::endl;
   }
 
+  size_type n2 = 0;
+  int partial_facto = 0;
+  RCP<ID> SchurPart;
+  SchurOut_type schurOut;
   if (xml_filename != "") {
-    Teuchos::ParameterList test_params =
-      Teuchos::ParameterXMLFileReader(xml_filename).getParameters();
+    Teuchos::ParameterList test_params = Teuchos::ParameterXMLFileReader(xml_filename).getParameters();
     Teuchos::ParameterList& amesos2_params = test_params.sublist("Amesos2");
+    if (Amesos2::tolower (solvername) == "shylubasker") {
+      // Partial factorization (only for ShyLU-Basker)
+      Teuchos::ParameterList& shylubasker_params = amesos2_params.sublist("ShyLUBasker");
+      partial_facto = (shylubasker_params.isParameter("PartialFacto") ? shylubasker_params.get<int>("PartialFacto") : 0);
+      if (partial_facto != 0 && myRank == 0) {
+        RCP<const Teuchos::Comm<LO> > SerialComm = rcp(new Teuchos::SerialComm<int>());
+        const LO indexBase = 0;
+        RCP<const MAP> SerialMap (new MAP (nrows, indexBase, SerialComm));
+
+        // row IDs for schur comp
+        if (schur_filename != "") {
+          if( verbose && myRank == 0) std::cout << "Reading Schur_Part from " << schur_filename << std::endl;
+          SchurPart = IDReader::readDenseFile (schur_filename, SerialComm, SerialMap);
+        } else {
+          SchurPart = rcp(new ID(SerialMap, 1));
+          SchurPart->putScalar(0); // no schur
+        }
+        SchurPart_type schurPart = SchurPart->getData(0);
+        shylubasker_params.set("SchurPart", schurPart.getRawPtr());
+
+        // storage for output schur comp
+        for (int i=0; i<nrows; i++) if (schurPart[i] == 1) n2 ++;
+        schurOut.resize(n2*n2);
+        shylubasker_params.set("SchurOut", schurOut.getRawPtr());
+      }
+    }
     *fos << amesos2_params.currentParametersString() << std::endl;
     solver->setParameters( Teuchos::rcpFromRef(amesos2_params) );
   }
@@ -303,6 +340,14 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE; //everyone should throw on failure
       }
       comm->barrier();
+      if (partial_facto == 2 && myRank == 0 && printMatrix) {
+        printf("S=[\n");
+        for (size_type i = 0; i < n2; i++) {
+          for (size_type j = 0; j < n2; j++) *fos << schurOut[i+j*n2];
+          *fos << std::endl;
+        }
+        printf("];\n");
+      }
     }
     // perform solve
     {
@@ -320,8 +365,8 @@ int main(int argc, char *argv[]) {
     }
     if(printSolution) {
       // Print the solution
-      RCP<Map<LO,GO> > root_map
-        = rcp( new Map<LO,GO>(nrows,myRank == 0 ? nrows : 0,0,comm) );
+      RCP<MAP> root_map
+        = rcp( new MAP(nrows,myRank == 0 ? nrows : 0,0,comm) );
       RCP<MV> Xhat = rcp( new MV(root_map,numVectors) );
       RCP<Import<LO,GO> > importer = rcp( new Import<LO,GO>(rngmap,root_map) );
       if( allprint ){

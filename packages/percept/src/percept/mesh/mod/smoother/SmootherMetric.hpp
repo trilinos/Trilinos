@@ -384,7 +384,7 @@
       {
         double eps = f.eps();
         unsigned n = f.get_n();
-        double v[n];
+        std::vector<double> v(n);
         for (unsigned i = 0; i < n; ++i)
           {
             v[i] = u[i];
@@ -392,9 +392,9 @@
         for (unsigned i = 0; i < n; ++i)
           {
             v[i] = u[i] + eps;
-            double fp = f(v);
+            double fp = f(v.data());
             v[i] = u[i] - eps;
-            double fm = f(v);
+            double fm = f(v.data());
             g[i] = (fp -fm)/(2.0*eps);
             v[i] = u[i];
           }
@@ -428,8 +428,8 @@
       {
         double eps = f.eps();
         unsigned n = f.get_n();
-        double v[n];
-        double d[n]; // stepsize
+        std::vector<double> v(n);
+        std::vector<double> d(n); // stepsize
         for (unsigned i = 0; i < n; ++i)
           {
             v[i] = u[i];
@@ -445,32 +445,32 @@
                 v[j] = u[j];
                 v[i] += d[i];
                 v[j] += d[j];
-                double fpp = f(v);
+                double fpp = f(v.data());
 
                 v[i] = u[i];
                 v[j] = u[j];
                 v[i] -= d[i];
                 v[j] += d[j];
-                double fmp = f(v);
+                double fmp = f(v.data());
 
                 v[i] = u[i];
                 v[j] = u[j];
                 v[i] += d[i];
                 v[j] -= d[j];
-                double fpm = f(v);
+                double fpm = f(v.data());
 
                 v[i] = u[i];
                 v[j] = u[j];
                 v[i] -= d[i];
                 v[j] -= d[j];
-                double fmm = f(v);
+                double fmm = f(v.data());
 
                 //h_col_major[i * n + j] = (fpp - fmp - fpm + fmm)/(4.0*eps*eps);
                 h_col_major[i * n + j] = ((fpp+fmm) - (fmp + fpm))/(4.0*d[i]*d[j]);
                 if (h_col_major[i * n + j] != h_col_major[i * n + j])
                   {
                     f.m_debug = true;
-                    double fm1 = f(v);
+                    double fm1 = f(v.data());
                     std::cout << "nan: fpp= " << fpp << " fmp= " << fmp << " fpm= " << fpm << " fmm= " << fmm << " eps= " << eps << " fm1= " << fm1 << std::endl;
                   }
                 v[i] = u[i];
@@ -478,7 +478,7 @@
 
                 if (0)
                   {
-                    double fm2 = f(v);
+                    double fm2 = f(v.data());
                     std::cout << std::setprecision(20);
                     std::cout << "i,j= " << i << " " << j << "u= " << u[0] << " " << u[1] << " fpp= " << fpp << " fmp= " << fmp << " fpm= " << fpm << " fmm= " << fmm
                               << " fm2= " << fm2
@@ -516,8 +516,8 @@
       double operator()(double *v)
       {
         unsigned n = get_n();
-        double grad[n];
-        m_f.analytic_gradient(v, grad);
+        std::vector<double> grad(n);
+        m_f.analytic_gradient(v, grad.data());
         return grad[m_index];
       }
     };
@@ -555,11 +555,11 @@
       void operator()(F& f, const double *u, double * h_col_major)
       {
         unsigned n = m_f.get_n();
-        double grad[n];
+        std::vector<double> grad(n);
         for (unsigned i = 0; i < n; ++i)
           {
             m_g.m_index = i;
-            m_h(m_g, u, grad);
+            m_h(m_g, u, grad.data());
             for (unsigned j = 0; j < n; ++j)
               {
                 h_col_major[i * n + j] = grad[j];
