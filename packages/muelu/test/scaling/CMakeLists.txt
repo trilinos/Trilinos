@@ -105,6 +105,8 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(
     material.mm
     material.xml
     MinvA.xml
+    MinvA_ProjM.xml
+    MinvA_ProjMinv.xml
     multiPhys4x4.mat
     multiPhys4x4.mat
     multiphys_blocked_smoother.xml
@@ -629,6 +631,24 @@ MUELU_ADD_SERIAL_AND_MPI_TEST(
   Driver
   NAME "MinvA"
   ARGS "--xml=MinvA.xml --its=30 --matrixType=HexFEM_LapStiff --nx=50 --ny=40 --nz=10   --stretchx=.013 --stretchy=.94 --stretchz=.97  --tol=1e-6 "
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "Belos converged"
+)
+
+MUELU_ADD_SERIAL_AND_MPI_TEST(
+  Driver
+  NAME "ProjectM"
+  ARGS "--xml=MinvA_ProjM.xml --its=30 --matrixType=HexFEM_LapStiff --nx=50 --ny=40 --nz=10   --stretchx=.013 --stretchy=.94 --stretchz=.97  --tol=1e-6 "
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "Belos converged"
+)
+
+MUELU_ADD_SERIAL_AND_MPI_TEST(
+  Driver
+  NAME "ProjectMinv"
+  ARGS "--xml=MinvA_ProjMinv.xml --its=30 --matrixType=HexFEM_LapStiff --nx=50 --ny=40 --nz=10   --stretchx=.013 --stretchy=.94 --stretchz=.97  --tol=1e-6 "
   NUM_MPI_PROCS 4
   COMM serial mpi
   PASS_REGULAR_EXPRESSION "Belos converged"
