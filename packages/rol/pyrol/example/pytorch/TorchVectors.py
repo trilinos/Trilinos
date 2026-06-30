@@ -205,20 +205,20 @@ class TensorDictVector(PythonVector):
         match reduction_type:
             case ROL.Elementwise.REDUCE_MIN:
                 ans = float('+inf')
-                for _, v in self.torch_dict.items():
+                for _, v in self.tensor_dict.items():
                     ans = min(ans, v.min().item())
             case ROL.Elementwise.REDUCE_MAX:
                 ans = float('-inf')
-                for _, v in self.torch_dict.items():
+                for _, v in self.tensor_dict.items():
                     ans = max(ans, v.max().item())
             case ROL.Elementwise.REDUCE_SUM:
                 ans = 0
-                for _, v in self.torch_dict.items():
+                for _, v in self.tensor_dict.items():
                     ans += torch.sum(v)
                 ans = ans.item()
             case ROL.Elementwise.REDUCE_AND:
                 ans = True
-                for _, v in self.torch_dict.items():
+                for _, v in self.tensor_dict.items():
                     ans = ans and v.all().item()
                     if ans == False:
                         break
@@ -253,6 +253,6 @@ class TensorDictVector(PythonVector):
             self[i] = op.apply(self[i])
 
     @torch.no_grad()
-    def applyBinary(self, other, op):
+    def applyBinary(self, op, other):
         for i in range(self.dimension()):
             self[i] = op.apply(self[i], other[i])

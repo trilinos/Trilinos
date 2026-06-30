@@ -4,61 +4,64 @@
  *
  *  \section progression_tutorial Progression Tutorial
  *
- *  These tutorials use the van der Pol problem to introduce \ref Tempus
- *  capabilities in a stepwise manner.  Starting from a simple application with
- *  a hand-written Forward Euler loop, the examples progressively introduce core
- *  \ref Tempus and Trilinos abstractions.  Each example is runnable on its own,
- *  and each step adds one major concept while preserving as much of the
- *  previous example structure as possible.
+ *  The progression tutorials use the van der Pol problem to introduce
+ *  \ref Tempus capabilities in a stepwise manner.  Starting from a simple
+ *  application with a hand-written Forward Euler loop, the examples
+ *  progressively introduce core \ref Tempus and Trilinos abstractions.
+ *  Each example is runnable on its own, and each step adds one major concept
+ *  while preserving as much of the previous example structure as possible.
  *
  *  The tutorial sequence introduces the following concepts:
  *
  *  <div style="margin:0.5em 0; padding:0.6em 0.8em; border:1px solid #ddd; border-radius:6px;">
- *    <b>Example 0: Problem Description</b><br>
+ *    <b>Example 0: Problem description</b><br>
  *    \ref example-00 "Basic Problem" - baseline application code for the
  *    van der Pol problem using raw C++ arrays and a hand-written
  *    Forward Euler loop.
  *  </div>
  *
  *  <div style="margin:0.5em 0; padding:0.6em 0.8em; border:1px solid #ddd; border-radius:6px;">
- *    <b>Example 1: Solution Data Representation</b><br>
- *    \ref example-01 "Utilize Thyra" - Replace raw arrays with
+ *    <b>Example 1: Solution data representation</b><br>
+ *    \ref example-01 "Utilize Thyra" - replace raw arrays with
  *    \ref Thyra vectors and vector-space abstractions.
  *  </div>
  *
  *  <div style="margin:0.5em 0; padding:0.6em 0.8em; border:1px solid #ddd; border-radius:6px;">
- *    <b>Example 2: Problem Model Evaluation</b><br>
- *    \ref example-02 "Use ModelEvaluator" - Use \ref Thyra::ModelEvaluator to
- *    describe the problem model.
+ *    <b>Example 2: Model evaluation</b><br>
+ *    \ref example-02 "Use ModelEvaluator" - use \ref Thyra::ModelEvaluator
+ *    to describe the problem model.
  *  </div>
  *
  *  <div style="margin:0.5em 0; padding:0.6em 0.8em; border:1px solid #ddd; border-radius:6px;">
- *    <b>Example 3: Solution Data Management</b><br>
- *    \ref example-03 "Introduce Solution State" - Introduce
+ *    <b>Example 3: Solution data management</b><br>
+ *    \ref example-03 "Introduce SolutionState" - introduce
  *    \ref Tempus::SolutionState to store the solution and selected
  *    integration metadata.
  *  </div>
  *
  *  <div style="margin:0.5em 0; padding:0.6em 0.8em; border:1px solid #ddd; border-radius:6px;">
- *    <b>Example 4: Solution State History</b><br>
- *    Add Solution History - Add \ref Tempus::SolutionHistory
- *    to manage multiple solution states.
+ *    <b>Example 4: Solution history</b><br>
+ *    \ref example-04 "Add SolutionHistory" - introduce
+ *    \ref Tempus::SolutionHistory to manage current and working solution
+ *    states during time integration.
  *  </div>
  *
  *  <div style="margin:0.5em 0; padding:0.6em 0.8em; border:1px solid #ddd; border-radius:6px;">
- *    <b>Example 5: Time Stepping Algorithms</b><br>
- *    Introduce Stepper - introduce \ref Tempus::Stepper to perform Forward Euler timesteps.
+ *    <b>Example 5: Time stepping algorithms</b><br>
+ *    \ref example-05 "Introduce Stepper" - introduce
+ *    \ref Tempus::Stepper through \ref Tempus::StepperForwardEuler to perform
+ *    Forward Euler timesteps.
  *  </div>
  *
  *  <div style="margin:0.5em 0; padding:0.6em 0.8em; border:1px solid #ddd; border-radius:6px;">
- *    <b>Example 6: Time Step Control</b><br>
- *    Introduce TimeStepControl — introduce \ref Tempus::TimeStepControl
+ *    <b>Example 6: Time step control</b><br>
+ *    Introduce TimeStepControl - introduce \ref Tempus::TimeStepControl
  *    to control timesteps with various strategies.
  *  </div>
  *
  *  <div style="margin:0.5em 0; padding:0.6em 0.8em; border:1px solid #ddd; border-radius:6px;">
- *    <b>Example 7: Orchestrate Multiple Time Steps</b><br>
- *    Utilize IntegratorBasic — use \ref Tempus::IntegratorBasic to manage
+ *    <b>Example 7: Time integrator orchestration</b><br>
+ *    Utilize IntegratorBasic - use \ref Tempus::IntegratorBasic to manage
  *    the overall time integration process.
  *  </div>
  *
@@ -69,9 +72,9 @@
  *
  *  A recommended reading order is:
  *
- *  - read the current example source,
- *  - read the transition page describing what changed from the previous step,
- *  - compare the files directly when line-by-line detail is needed.
+ *  - read the current example source
+ *  - read the transition page describing what changed from the previous step
+ *  - compare the files directly when line-by-line detail is needed
  *
  *  \htmlonly
  *  <div style="text-align:center;">

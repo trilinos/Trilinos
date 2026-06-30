@@ -11,12 +11,12 @@
  *
  *  - \ref Thyra::ModelEvaluator
  *    - provides a standard Trilinos interface for evaluating the application model
+ *  - `getNominalValues()`
+ *    - provides nominal initial conditions from the model
  *  - `Thyra::ModelEvaluatorBase::InArgs`
  *    - supplies the model inputs such as time and state
  *  - `Thyra::ModelEvaluatorBase::OutArgs`
  *    - receives the model outputs such as the right-hand side
- *  - `getNominalValues()`
- *    - provides nominal initial conditions from the model
  *  - `evalModel()`
  *    - evaluates the model using the supplied input and output arguments
  *
@@ -127,13 +127,14 @@
  *
  *  @code{.sh}
  *  git diff --no-index \
- *    <(sed -n '60,130p' examples/01_Utilize_Thyra/01_Utilize_Thyra.cpp) \
- *    <(sed -n '67,131p' examples/02_Use_ModelEvaluator/02_Use_ModelEvaluator.cpp)
+ *    <(sed -n '59,129p' examples/01_Utilize_Thyra/01_Utilize_Thyra.cpp) \
+ *    <(sed -n '66,130p' examples/02_Use_ModelEvaluator/02_Use_ModelEvaluator.cpp)
  *  @endcode
  *
- *  This ignores leading header lines (for example, `#include` statements and
+ *  This ignores leading header lines (e.g., `#include` statements and
  *  Doxygen comments) and trailing regression-testing lines.
  *
+ *  <hr style="border:0; border-top:5px solid #ccc;">
  *  \htmlonly
  *  <div style="text-align:center;">
  *    <a href="example-01.html">← Previous Example</a> |

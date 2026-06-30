@@ -11,7 +11,7 @@ system or those wanting a quick install without worrying about all the
 features and options that are available.  For a more in-depth document on what
 features and options are available and how to use them, see the document:
 
-  https://trilinos.org/docs/files/TrilinosBuildReference.html
+  https://trilinos.github.io/TrilinosBuildReference.html
 
 .. sectnum::
 
@@ -21,7 +21,7 @@ features and options are available and how to use them, see the document:
 Requirements
 ============
 
-* CMake 3.23.0 or newer
+* CMake 3.27.0 or newer
 * C and C++ compiler
 * Optionally a Fortran compiler
 * Optionally an installation of MPI

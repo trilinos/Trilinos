@@ -9,110 +9,146 @@
 
 // Teuchos includes /*@ \label{lnet:being-includes} @*/
 #include "Teuchos_ConfigDefs.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
 
 // Thyra includes
-#include "Thyra_EpetraLinearOp.hpp"
+#include "Thyra_TpetraLinearOp.hpp"
+#include "Thyra_TpetraThyraWrappers.hpp"
 
-// Epetra includes
-#include "mpi.h"
-#include "Epetra_MpiComm.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_Vector.h"
-#include "Epetra_LinearProblem.h"
+// Tpetra includes
+#include "Tpetra_Core.hpp"
+#include "Tpetra_Map.hpp"
+#include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_Vector.hpp"
+#include "Tpetra_MultiVector.hpp"
 
 // Teko-Package includes
 #include "Teko_Utilities.hpp"
 #include "Teko_InverseFactory.hpp"
 #include "Teko_InverseLibrary.hpp"
-#include "Teko_EpetraOperatorWrapper.hpp"
-#include "Teko_EpetraBlockPreconditioner.hpp"
+#include "Teko_TpetraOperatorWrapper.hpp"
+#include "Teko_TpetraBlockPreconditioner.hpp"
+#include "Teko_ConfigDefs.hpp"
 
 #include "ExamplePreconditionerFactory.cpp"
 
-#include <iostream> /*@ \label{lnet:end-includes} @*/
+#include <iostream>
+#include <vector> /*@ \label{lnet:end-includes} @*/
 
 // for simplicity
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-// utility function to construct Epetra operators
-RCP<Epetra_CrsMatrix> build2x2(double a, double b, double c, double d, Epetra_Comm& Comm) {
-  RCP<Epetra_Map> map          = rcp(new Epetra_Map(2, 0, Comm));
-  RCP<Epetra_CrsMatrix> matrix = rcp(new Epetra_CrsMatrix(Copy, *map, 2));
+// utility function to construct Tpetra operators
+RCP<Tpetra::CrsMatrix<Teko::ST, Teko::LO, Teko::GO, Teko::NT> > build2x2(
+    double a, double b, double c, double d, const RCP<const Teuchos::Comm<int> >& comm) {
+  using ST = Teko::ST;
+  using LO = Teko::LO;
+  using GO = Teko::GO;
+  using NT = Teko::NT;
 
-  int indicies[2] = {0, 1};
-  double values[2];
+  using map_t = Tpetra::Map<LO, GO, NT>;
+  using crs_t = Tpetra::CrsMatrix<ST, LO, GO, NT>;
+
+  RCP<const map_t> map = rcp(new map_t(2, 0, comm));
+  RCP<crs_t> matrix    = rcp(new crs_t(map, 2));
+
+  Teuchos::Array<GO> indices(2);
+  Teuchos::Array<ST> values(2);
+
+  indices[0] = 0;
+  indices[1] = 1;
 
   // build first row
-  values[0] = a;
-  values[1] = b;
-  matrix->InsertGlobalValues(0, 2, values, indicies);
+  if (map->isNodeGlobalElement(0)) {
+    values[0] = a;
+    values[1] = b;
+    matrix->insertGlobalValues(0, indices(), values());
+  }
 
   // build second row
-  values[0] = c;
-  values[1] = d;
-  matrix->InsertGlobalValues(1, 2, values, indicies);
+  if (map->isNodeGlobalElement(1)) {
+    values[0] = c;
+    values[1] = d;
+    matrix->insertGlobalValues(1, indices(), values());
+  }
 
-  // pack it up
-  matrix->FillComplete();
+  matrix->fillComplete();
 
   return matrix;
 }
 
-int main(int argc, char* argv[]) {
-  // calls MPI_Init and MPI_Finalize
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+void run_test() {
+  using ST = Teko::ST;
+  using LO = Teko::LO;
+  using GO = Teko::GO;
+  using NT = Teko::NT;
 
-  // build global communicator
-  Epetra_MpiComm Comm(MPI_COMM_WORLD);
+  using vec_t = Tpetra::Vector<ST, LO, GO, NT>;
+  using mv_t  = Tpetra::MultiVector<ST, LO, GO, NT>;
+
+  auto comm = Tpetra::getDefaultComm();
 
   // build the sub blocks
-  Teko::LinearOp A_00 = Thyra::epetraLinearOp(build2x2(1, 2, 2, 1, Comm));
-  Teko::LinearOp A_01 = Thyra::epetraLinearOp(build2x2(0, -1, 3, 4, Comm));
-  Teko::LinearOp A_10 = Thyra::epetraLinearOp(build2x2(1, 6, -3, 2, Comm));
-  Teko::LinearOp A_11 = Thyra::epetraLinearOp(build2x2(2, 1, 1, 2, Comm));
+  auto mat_00         = build2x2(1, 2, 2, 1, comm);
+  Teko::LinearOp A_00 = Thyra::tpetraLinearOp<ST, LO, GO, NT>(
+      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(mat_00->getRangeMap()),
+      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(mat_00->getDomainMap()), mat_00);
 
-  // build the Epetra operator
-  Teuchos::RCP<Teko::Epetra::EpetraOperatorWrapper> A =
-      Teuchos::rcp(new Teko::Epetra::EpetraOperatorWrapper(Teko::block2x2(A_00, A_01, A_10, A_11)));
+  auto mat_01         = build2x2(0, -1, 3, 4, comm);
+  Teko::LinearOp A_01 = Thyra::tpetraLinearOp<ST, LO, GO, NT>(
+      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(mat_01->getRangeMap()),
+      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(mat_01->getDomainMap()), mat_01);
 
-  // build the Epetra vector
-  Epetra_Vector b(A->OperatorRangeMap());
-  Epetra_Vector x(A->OperatorDomainMap());
-  x.PutScalar(0.0);
+  auto mat_10         = build2x2(1, 6, -3, 2, comm);
+  Teko::LinearOp A_10 = Thyra::tpetraLinearOp<ST, LO, GO, NT>(
+      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(mat_10->getRangeMap()),
+      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(mat_10->getDomainMap()), mat_10);
+
+  auto mat_11         = build2x2(2, 1, 1, 2, comm);
+  Teko::LinearOp A_11 = Thyra::tpetraLinearOp<ST, LO, GO, NT>(
+      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(mat_11->getRangeMap()),
+      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(mat_11->getDomainMap()), mat_11);
+
+  // build the Tpetra operator wrapper
+  Teuchos::RCP<Teko::TpetraHelpers::TpetraOperatorWrapper> A = Teuchos::rcp(
+      new Teko::TpetraHelpers::TpetraOperatorWrapper(Teko::block2x2(A_00, A_01, A_10, A_11)));
+
+  // build the Tpetra vectors
+  RCP<vec_t> b = rcp(new vec_t(A->getRangeMap()));
+  RCP<vec_t> x = rcp(new vec_t(A->getDomainMap()));
 
   // build the RHS vector
-  b[0] = 1;
-  b[1] = 2;
-  b[2] = 3;
-  b[3] = 4;
+  b->replaceGlobalValue(0, 1.0);
+  b->replaceGlobalValue(1, 2.0);
+  b->replaceGlobalValue(2, 3.0);
+  b->replaceGlobalValue(3, 4.0);
 
-  // Build the preconditioner /*@ \label{lnet:construct-prec} @*/
+  // Build the preconditioner
   /////////////////////////////////////////////////////////
 
-  // build an InverseLibrary
-  RCP<Teko::InverseLibrary> invLib =
-      Teko::InverseLibrary::buildFromStratimikos(); /*@ \label{lnet:define-inv-params} @*/
+  RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromStratimikos();
 
-  // build the inverse factory needed by the example preconditioner
-  RCP<const Teko::InverseFactory> inverse /*@ \label{lnet:define-inv-fact} @*/
-      = invLib->getInverseFactory("Amesos");
+  RCP<const Teko::InverseFactory> inverse = invLib->getInverseFactory("Amesos2");
 
-  // build the preconditioner factory
-  RCP<Teko::BlockPreconditionerFactory> precFact /*@ \label{lnet:const-prec-fact} @*/
-      = rcp(new ExamplePreconditionerFactory(inverse, 0.9));
+  RCP<Teko::BlockPreconditionerFactory> precFact =
+      rcp(new ExamplePreconditionerFactory(inverse, 0.9));
 
-  // using the preconditioner factory construct an Epetra_Operator
-  Teko::Epetra::EpetraBlockPreconditioner prec(precFact); /*@ \label{lnet:const-epetra-prec} @*/
-  prec.buildPreconditioner(A);  // fill epetra preconditioner using the strided operator
+  Teko::TpetraHelpers::TpetraBlockPreconditioner prec(precFact);
+  prec.buildPreconditioner(A);
 
   // apply the preconditioner
-  prec.ApplyInverse(b, x);
+  RCP<mv_t> B = b;
+  RCP<mv_t> X = x;
 
-  x.Print(std::cout);
+  prec.apply(*B, *X);
 
+  x->describe(*(Teuchos::VerboseObjectBase::getDefaultOStream()),
+              Teuchos::EVerbosityLevel::VERB_EXTREME);
+}
+
+int main(int argc, char* argv[]) {
+  Tpetra::ScopeGuard tpetraScope(&argc, &argv);
+  { run_test(); }
   return 0;
 }

@@ -19,8 +19,6 @@
 #ifndef AMESOS2_PARDISOMKL_DEF_HPP
 #define AMESOS2_PARDISOMKL_DEF_HPP
 
-#include <map>
-
 #include <Teuchos_Tuple.hpp>
 #include <Teuchos_toString.hpp>
 #include <Teuchos_StandardParameterEntryValidators.hpp>
@@ -220,19 +218,21 @@ namespace Amesos2 {
       }
     }
 
-    const size_t val_store_size = as<size_t>(ld_rhs * nrhs_);
-    xvals_.resize(val_store_size);
-    bvals_.resize(val_store_size);
-
     {                             // Get values from RHS B
 #ifdef HAVE_AMESOS2_TIMERS
       Teuchos::TimeMonitor mvConvTimer( this->timers_.vecConvTime_ );
       Teuchos::TimeMonitor redistTimer( this->timers_.vecRedistTime_ );
 #endif
 
-      Util::get_1d_copy_helper<
-        MultiVecAdapter<Vector>,
-        solver_scalar_type>::do_get(B, bvals_(),
+      const bool initialize_data = true;
+      const bool do_not_initialize_data = false;
+      Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+        host_solver_scalar_view>::do_get(initialize_data, B, bvals_,
+          as<size_t>(ld_rhs),
+          (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+          this->rowIndexBase_);
+      Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+        host_solver_scalar_view>::do_get(do_not_initialize_data, X, xvals_,
           as<size_t>(ld_rhs),
           (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
           this->rowIndexBase_);
@@ -257,8 +257,8 @@ namespace Amesos2 {
                              &nrhs_,
                              const_cast<int_t*>(iparm_),
                              const_cast<int_t*>(&msglvl_),
-                             as<void*>(bvals_.getRawPtr()),
-                             as<void*>(xvals_.getRawPtr()), &error );
+                             as<void*>(bvals_.data()),
+                             as<void*>(xvals_.data()), &error );
     }
 
     check_pardiso_mkl_error(Amesos2::SOLVE, error);
@@ -269,11 +269,11 @@ namespace Amesos2 {
       Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
 #endif
 
-      Util::put_1d_data_helper<
-      MultiVecAdapter<Vector>,
-        solver_scalar_type>::do_put(X, xvals_(),
+      Util::put_1d_data_helper_kokkos_view<
+        MultiVecAdapter<Vector>,host_solver_scalar_view>::do_put(X, xvals_,
           as<size_t>(ld_rhs),
-          (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED);
+          (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+          this->rowIndexBase_);
     }
     if (debug_level_ > 0) {
       if (debug_level_ == 1) {

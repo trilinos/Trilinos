@@ -124,13 +124,14 @@
  *
  *  @code{.sh}
  *  git diff --no-index \
- *    <(sed -n '67,131p' examples/02_Use_ModelEvaluator/02_Use_ModelEvaluator.cpp) \
- *    <(sed -n '75,148p' examples/03_Intro_SolutionState/03_Intro_SolutionState.cpp)
+ *    <(sed -n '66,130p' examples/02_Use_ModelEvaluator/02_Use_ModelEvaluator.cpp) \
+ *    <(sed -n '73,146p' examples/03_Intro_SolutionState/03_Intro_SolutionState.cpp)
  *  @endcode
  *
- *  This ignores leading header lines (for example, `#include` statements and
+ *  This ignores leading header lines (e.g., `#include` statements and
  *  Doxygen comments) and trailing regression-testing lines.
  *
+ *  <hr style="border:0; border-top:5px solid #ccc;">
  *  \htmlonly
  *  <div style="text-align:center;">
  *    <a href="example-02.html">← Previous Example</a> |

@@ -7,14 +7,14 @@
 // *****************************************************************************
 // @HEADER
 
-
+#include "Amesos2_config.h"
 #include "Amesos2_PardisoMKL_decl.hpp"
 
 #ifdef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
 
 #include "Amesos2_PardisoMKL_def.hpp"
 #include "Amesos2_ExplicitInstantiationHelpers.hpp"
-
+#include "TpetraCore_ETIHelperMacros.h"
 
 #ifdef HAVE_TPETRA_INST_INT_INT
 namespace Amesos2 {
@@ -86,8 +86,8 @@ namespace Amesos2 {
 #endif
 
 #include <Tpetra_KokkosCompat_DefaultNode.hpp>
-#include "TpetraCore_ETIHelperMacros.h"
 
+namespace Amesos2 {
 #define AMESOS2_PARDISOMKL_LOCAL_INSTANT(S,LO,GO,N)                        \
   template class Amesos2::PardisoMKL<Tpetra::CrsMatrix<S, LO, GO, N>,      \
                                   Tpetra::MultiVector<S, LO, GO,  N> >;
@@ -337,4 +337,9 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
 #endif
 #undef NODETYPE
 #endif
+
+// instantiate std::complex (not Kokkos::complex with Amesos2_Kokkos_Impl.hpp)
+#define AMESOS2_KOKKOS_IMPL_SOLVER_NAME PardisoMKL
+#include "Amesos2_Kokkos_std_Impl.hpp"
+}
 #endif  // HAVE_AMESOS2_EXPLICIT_INSTANTIATION

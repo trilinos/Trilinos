@@ -60,6 +60,11 @@ class TekoSmoother : public SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdina
     TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::TekoSmoother: Teko can only be used with SC=double. For more information refer to the doxygen documentation of TekoSmoother.");
   };
 
+  TekoSmoother(const Teuchos::ParameterList &paramList)
+    : type_("Teko smoother") {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::TekoSmoother: Teko can only be used with SC=double. For more information refer to the doxygen documentation of TekoSmoother.");
+  }
+
   //! Destructor
   virtual ~TekoSmoother() {}
   //@}
@@ -164,6 +169,20 @@ class TekoSmoother<double, int, GlobalOrdinal, Node> : public SmootherPrototype<
     , bThyOp_(Teuchos::null)
     , tekoParams_(Teuchos::null)
     , inverseOp_(Teuchos::null){};
+
+  /*! @brief Constructor
+   */
+  TekoSmoother(const Teuchos::ParameterList &paramList)
+    : type_("Teko smoother")
+    , A_(Teuchos::null)
+    , bA_(Teuchos::null)
+    , bThyOp_(Teuchos::null)
+    , tekoParams_(Teuchos::null)
+    , inverseOp_(Teuchos::null) {
+    this->SetParameter("Inverse Type", paramList.getEntry("Inverse Type"));
+    const auto &tekoSettings = paramList.sublist("Inverse Factory Library");
+    tekoParams_              = Teuchos::make_rcp<Teuchos::ParameterList>(tekoSettings);
+  };
 
   //! Destructor
   virtual ~TekoSmoother() {}

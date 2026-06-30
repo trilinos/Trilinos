@@ -9,6 +9,7 @@
 
 #include "Teko_StratimikosFactory.hpp"
 
+#include "Teko_TpetraInverseFactoryOperator.hpp"
 #include "Teuchos_Time.hpp"
 #include "Teuchos_AbstractFactoryStd.hpp"
 
@@ -28,6 +29,11 @@
 #include "Thyra_EpetraLinearOp.hpp"
 #include "EpetraExt_RowMatrixOut.h"
 #endif
+
+#include "Teko_ConfigDefs.hpp"
+#include "Teko_TpetraOperatorWrapper.hpp"
+#include "Teko_BlockedTpetraOperator.hpp"
+#include "Thyra_TpetraLinearOp.hpp"
 
 namespace Teko {
 
@@ -148,8 +154,8 @@ void StratimikosFactory::initializePrec(
 
 void StratimikosFactory::initializePrec_Thyra(
     const Teuchos::RCP<const Thyra::LinearOpSourceBase<double> > &fwdOpSrc,
-    Thyra::PreconditionerBase<double> *prec, const Thyra::ESupportSolveUse /* supportSolveUse */
-) const {
+    Thyra::PreconditionerBase<double> *prec,
+    const Thyra::ESupportSolveUse /* supportSolveUse */) const {
   using Teuchos::implicit_cast;
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -176,10 +182,9 @@ void StratimikosFactory::initializePrec_Thyra(
       Teuchos::dyn_cast<StratimikosFactoryPreconditioner>(*prec);
   Teuchos::RCP<LinearOpBase<double> > prec_Op = defaultPrec.getNonconstUnspecifiedPrecOp();
 
-  // Permform initialization if needed
+  // Perform initialization if needed
   const bool startingOver = (prec_Op == Teuchos::null);
   if (startingOver) {
-    // start over
     invLib_     = Teuchos::null;
     invFactory_ = Teuchos::null;
 
@@ -202,38 +207,113 @@ void StratimikosFactory::initializePrec_Thyra(
 
   if (mediumVerbosity) *out << "\nComputing the preconditioner ...\n";
 
-  // setup reordering if required
-  std::string reorderType = paramList_->get<std::string>("Reorder Type");
-  if (reorderType != "") {
-    Teuchos::RCP<const Thyra::BlockedLinearOpBase<double> > blkFwdOp =
-        Teuchos::rcp_dynamic_cast<const Thyra::BlockedLinearOpBase<double> >(fwdOp, true);
-    RCP<const Teko::BlockReorderManager> brm = Teko::blockedReorderFromString(reorderType);
-    Teko::LinearOp blockedFwdOp              = Teko::buildReorderedLinearOp(*brm, blkFwdOp);
+  // Parse XML-driven strided blocking decomposition
+  decomp_.clear();
+  {
+    std::stringstream ss;
+    ss << paramList_->get<std::string>("Strided Blocking", "1");
 
-    if (prec_Op == Teuchos::null) {
-      Teko::ModifiableLinearOp reorderedPrec = Teko::buildInverse(*invFactory_, blockedFwdOp);
-      prec_Op = Teuchos::rcp(new ReorderedLinearOp(brm, reorderedPrec));
-    } else {
-      Teko::ModifiableLinearOp reorderedPrec =
-          Teuchos::rcp_dynamic_cast<ReorderedLinearOp>(prec_Op, true)->getBlockedOp();
-      Teko::rebuildInverse(*invFactory_, blockedFwdOp, reorderedPrec);
+    while (!ss.eof()) {
+      int num = 0;
+      ss >> num;
+      if (!ss.fail()) {
+        TEUCHOS_ASSERT(num > 0);
+        decomp_.push_back(num);
+      }
     }
-  } else {
-    // no reordering required
-    if (prec_Op == Teuchos::null)
-      prec_Op = Teko::buildInverse(*invFactory_, fwdOp);
-    else
-      Teko::rebuildInverse(*invFactory_, fwdOp, prec_Op);
+
+    if (decomp_.empty()) decomp_.push_back(1);
   }
 
-  // construct preconditioner
-  timer.stop();
+  std::string reorderType = paramList_->get<std::string>("Reorder Type");
 
-  if (mediumVerbosity)
-    Teuchos::OSTab(out).o() << "=> Preconditioner construction time = " << timer.totalElapsedTime()
-                            << " sec\n";
+  // No blocking requested: preserve original Thyra path
+  if (decomp_.size() == 1) {
+    if (reorderType != "") {
+      Teuchos::RCP<const Thyra::BlockedLinearOpBase<double> > blkFwdOp =
+          Teuchos::rcp_dynamic_cast<const Thyra::BlockedLinearOpBase<double> >(fwdOp, true);
 
-  // Initialize the preconditioner
+      RCP<const Teko::BlockReorderManager> brm = Teko::blockedReorderFromString(reorderType);
+      Teko::LinearOp blockedFwdOp              = Teko::buildReorderedLinearOp(*brm, blkFwdOp);
+
+      if (prec_Op == Teuchos::null) {
+        Teko::ModifiableLinearOp reorderedPrec = Teko::buildInverse(*invFactory_, blockedFwdOp);
+        prec_Op = Teuchos::rcp(new ReorderedLinearOp(brm, reorderedPrec));
+      } else {
+        Teko::ModifiableLinearOp reorderedPrec =
+            Teuchos::rcp_dynamic_cast<ReorderedLinearOp>(prec_Op, true)->getBlockedOp();
+        Teko::rebuildInverse(*invFactory_, blockedFwdOp, reorderedPrec);
+      }
+    } else {
+      if (prec_Op == Teuchos::null)
+        prec_Op = Teko::buildInverse(*invFactory_, fwdOp);
+      else
+        Teko::rebuildInverse(*invFactory_, fwdOp, prec_Op);
+    }
+  } else {
+    // Multi-block case: XML-driven Tpetra wrapper path
+    timer.start(true);
+
+    // Extract underlying Tpetra operator from the incoming Thyra operator
+    RCP<const Thyra::TpetraLinearOp<ST, LO, GO, NT> > tpetraThyraOp =
+        rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST, LO, GO, NT> >(fwdOp, true);
+    RCP<const Tpetra::Operator<ST, LO, GO, NT> > tpetraOp = tpetraThyraOp->getConstTpetraOperator();
+
+    // Build explicit GID vectors for block decomposition
+    std::vector<std::vector<GO> > vars;
+    {
+      const auto rangeMap = tpetraOp->getRangeMap();
+
+      int numVars = 0;
+      for (std::size_t i = 0; i < decomp_.size(); i++) numVars += decomp_[i];
+
+      TEUCHOS_ASSERT((rangeMap->getLocalNumElements() % numVars) == 0);
+      TEUCHOS_ASSERT((rangeMap->getGlobalNumElements() % numVars) == 0);
+
+      vars.resize(decomp_.size());
+
+      const LO numMyElts = rangeMap->getLocalNumElements();
+      LO i               = 0;
+      while (i < numMyElts) {
+        for (std::size_t d = 0; d < decomp_.size(); d++) {
+          const int current = decomp_[d];
+          for (int v = 0; v < current; v++, i++) {
+            vars[d].push_back(rangeMap->getGlobalElement(i));
+          }
+        }
+      }
+    }
+
+    // Build blocked Tpetra wrapper
+    Teuchos::RCP<Teko::TpetraHelpers::BlockedTpetraOperator> wrappedFwdOp =
+        Teuchos::rcp(new Teko::TpetraHelpers::BlockedTpetraOperator(vars, tpetraOp));
+
+    // Optional reordering
+    if (reorderType != "") {
+      RCP<const Teko::BlockReorderManager> brm = Teko::blockedReorderFromString(reorderType);
+      wrappedFwdOp->Reorder(*brm);
+    }
+
+    // Build inverse through Tpetra wrapper path so external spaces remain monolithic
+    Teuchos::RCP<Teko::TpetraHelpers::InverseFactoryOperator> teko_precOp =
+        Teuchos::rcp(new Teko::TpetraHelpers::InverseFactoryOperator(invFactory_));
+    teko_precOp->initInverse(true);
+    teko_precOp->buildInverseOperator(
+        Teuchos::rcp_dynamic_cast<Tpetra::Operator<ST, LO, GO, NT> >(wrappedFwdOp));
+
+    prec_Op = Thyra::tpetraLinearOp<double, LO, GO, NT>(
+        Thyra::tpetraVectorSpace<double, LO, GO, NT>(teko_precOp->getRangeMap()),
+        Thyra::tpetraVectorSpace<double, LO, GO, NT>(teko_precOp->getDomainMap()),
+        Teuchos::rcp_dynamic_cast<Tpetra::Operator<ST, LO, GO, NT> >(teko_precOp));
+
+    timer.stop();
+    if (mediumVerbosity)
+      Teuchos::OSTab(out).o() << "> Blocked Tpetra construction time = " << timer.totalElapsedTime()
+                              << " sec\n";
+  }
+
+  if (mediumVerbosity) *out << "\nFinished computing the preconditioner ...\n";
+
   defaultPrec.initializeUnspecified(prec_Op);
   defaultPrec.incrIter();
   totalTimer.stop();

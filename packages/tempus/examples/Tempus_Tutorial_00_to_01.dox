@@ -22,7 +22,7 @@
  *    - Thyra helper routines to express vector algebra.
  *
  *  This allows \ref Tempus and other Trilinos packages to operate on
- *  abstract numerical interfaces rather than concrete array types.
+ *  <a href="https://www.osti.gov/servlets/purl/1264635">abstract numerical interfaces</a> rather than concrete array types.
  *  Moving from raw arrays to Thyra vectors is the first step
  *  toward interoperability with \ref Tempus steppers, model evaluators,
  *  and solver infrastructure.
@@ -168,13 +168,14 @@
  *
  *  @code{.sh}
  *  git diff --no-index \
- *    <(sed -n '81,141p' examples/00_Basic_Problem/00_Basic_Problem.cpp) \
- *    <(sed -n '60,130p' examples/01_Utilize_Thyra/01_Utilize_Thyra.cpp)
+ *    <(sed -n '75,135p' examples/00_Basic_Problem/00_Basic_Problem.cpp) \
+ *    <(sed -n '59,129p' examples/01_Utilize_Thyra/01_Utilize_Thyra.cpp)
  *  @endcode
  *
- *  This ignores leading header lines (for example, `#include` statements and
+ *  This ignores leading header lines (e.g., `#include` statements and
  *  Doxygen comments) and trailing regression-testing lines.
  *
+ *  <hr style="border:0; border-top:5px solid #ccc;">
  *  \htmlonly
  *  <div style="text-align:center;">
  *    <a href="example-00.html">← Previous Example</a> |

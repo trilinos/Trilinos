@@ -128,7 +128,7 @@ void KernelWrappers<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::K
 
   // Options
   int team_work_size = 16;  // Defaults to 16 as per Deveci 12/7/16 - csiefer
-  std::string myalg("SPGEMM_KK_MEMORY");
+  std::string myalg("SPGEMM_DEFAULT");
   if (!params.is_null()) {
     if (params->isParameter("hip: algorithm"))
       myalg = params->get("hip: algorithm", myalg);
@@ -710,7 +710,7 @@ void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::
 
   // Options
   int team_work_size = 16;
-  std::string myalg("SPGEMM_KK_MEMORY");
+  std::string myalg("SPGEMM_DEFAULT");
   if (!params.is_null()) {
     if (params->isParameter("hip: algorithm"))
       myalg = params->get("hip: algorithm", myalg);

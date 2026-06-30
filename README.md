@@ -1,10 +1,13 @@
 # Trilinos
-![Trilinos Logo](https://github.com/trilinos/Logos/blob/master/current/RGB/Horizontal/Navy/Trilinos_Logo_RGB_Horizontal_Navy.png)
+[<img src="https://github.com/trilinos/Logos/blob/master/current/RGB/Horizontal/Navy/Trilinos_Logo_RGB_Horizontal_Navy.png" width="25%" style="vertical-align: middle;">](https://trilinos.org)&emsp;&emsp;
+[<img src="https://github.com/hpsfoundation/hpsf-logos/blob/main/Logos/PNG/Horizontal/HPSF_horizontal-tagline-color.png" width="25%" style="vertical-align: middle;">](https://hpsf.io)&emsp;&emsp;
+[<img src="https://github.com/hpsfoundation/hpsf-logos/blob/main/Badges/HPSF_Project_Badge_Established.png" width="9%" style="vertical-align: middle;">](https://hpsf.io/projects/)&emsp;&emsp;
+[<img src="https://www.linuxfoundation.org/hubfs/lf-stacked-color.svg" width="25%" style="vertical-align: middle;">](https://linuxfoundation.org)
 
 [Website](https://trilinos.github.io) |
 [Documentation](https://trilinos.github.io/documentation.html) |
-[Mailing List](https://trilinos.github.io/mail_lists.html) |
-[Packages](http://trilinos.github.io/packages.html)
+[Contact Us](https://trilinos.github.io/support.html) |
+[Packages](https://trilinos.github.io/packages-by-area.html)
 
 
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/trilinos/Trilinos/badge)](https://securityscorecards.dev/viewer/?uri=github.com/trilinos/Trilinos)
@@ -28,7 +31,7 @@ unique design feature of Trilinos is its focus on packages.
 
 - [Quick configure, build and install hints for Trilinos](INSTALL.rst)
 
-- [Trilinos Configure, Build, Test, and Install Reference Guide](https://trilinos.org/docs/files/TrilinosBuildReference.html)
+- [Trilinos Configure, Build, Test, and Install Reference Guide](https://trilinos.github.io/TrilinosBuildReference.html)
 
 - To ensure appropriate parties receive your issues, please direct issues by mentioning the
   [Trilinos package owners](https://github.com/trilinos/Trilinos/wiki/Trilinos-Package-Owners).
@@ -36,7 +39,7 @@ unique design feature of Trilinos is its focus on packages.
 
 - For help with a particular package, see the website and accompanying
   documentation for that package. Links to these can be found down the
-  right side of any page on the website and at [the package website](https://trilinos.github.io/packages.html).
+  right side of any page on the website and at [the package website](https://trilinos.github.io/packages-by-area.html).
 
 - Sample build scripts for various platforms can be found in the
   sampleScripts directory.  Please note that these sample scripts are
@@ -55,7 +58,7 @@ Trilinos nightly and pull request testing results are available at https://my.cd
 Trilinos is licensed on a per-package basis. Most packages are now
 under a BSD license, some are published under the (L)GPL. Details
 can be taken from the documentation of each package.  See COPYRIGHT,
-LICENSE, https://trilinos.github.io/license.html and individual package,
+LICENSE, https://trilinos.github.io/about.html#license-and-copyright and individual package,
 directory and/or file headers for additional information.
 
 ### How to cite Trilinos

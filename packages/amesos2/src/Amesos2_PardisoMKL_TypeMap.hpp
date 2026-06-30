@@ -205,7 +205,6 @@ namespace Amesos2 {
     typedef PMKL::_DOUBLE_PRECISION_t magnitude_type;
   };
 
-
   template <>
   struct TypeMap<PardisoMKL,PMKL::_MKL_Complex8>
   {

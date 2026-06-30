@@ -107,6 +107,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(
     MinvA.xml
     multiPhys4x4.mat
     multiPhys4x4.mat
+    multiphys_blocked_smoother.xml
     multiphys_monolithic_smoother.xml
     null1.mat
     null2.mat
@@ -314,7 +315,7 @@ TRIBITS_ADD_TEST(
 TRIBITS_ADD_TEST(
   ComboPDriver
   NAME "ComboPTest"
-  ARGS "--linAlgebra=Tpetra --its=9"
+  ARGS "--linAlgebra=Tpetra --its=9 --xml=comboP.xml --nblks=4 --matrix=multiPhys4x4.mat --auxFiles=aux1.mat,aux2.mat,aux1.mat,aux2.mat --coordFiles=coords1.mat,coords2.mat,coords1.mat,coords2.mat --nullFiles=null1.mat,null2.mat,null1.mat,null2.mat"
   NUM_MPI_PROCS 4
   COMM mpi
   PASS_REGULAR_EXPRESSION "Belos converged"
@@ -322,8 +323,17 @@ TRIBITS_ADD_TEST(
 
 TRIBITS_ADD_TEST(
   MultiphysicsDriver
-  NAME "MultiphysicsTest"
-  ARGS "--xml=multiphys_monolithic_smoother.xml --expected-iters=5"
+  NAME "MultiphysicsTestMonolithicSmoother"
+  ARGS "--xml=multiphys_monolithic_smoother.xml --expected-iters=5 --path=monolithic"
+  NUM_MPI_PROCS 4
+  COMM mpi
+  PASS_REGULAR_EXPRESSION "Belos converged"
+)
+
+TRIBITS_ADD_TEST(
+  MultiphysicsDriver
+  NAME "MultiphysicsTestBlockedSmoother"
+  ARGS "--xml=multiphys_blocked_smoother.xml --expected-iters=8 --path=blocked"
   NUM_MPI_PROCS 4
   COMM mpi
   PASS_REGULAR_EXPRESSION "Belos converged|Skipping test"

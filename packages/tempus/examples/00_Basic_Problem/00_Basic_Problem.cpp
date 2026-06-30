@@ -25,7 +25,7 @@ using namespace std;
  *  the state or time integration algorithm.
  *
  *  The purpose of this example is to establish the baseline structure used
- *  throughout the tutorial sequence.  Later examples introduce \ref Tempus
+ *  throughout the progression tutorial.  Later examples introduce \ref Tempus
  *  and Trilinos capabilities one step at a time while preserving the same
  *  basic problem setup whenever possible.
  *
@@ -50,23 +50,17 @@ using namespace std;
  *
  *  This example demonstrates the basic structure of an application-level
  *  time integration loop:
- *  - declare the state and its time derivative
+ *  - declare the solution and its time derivative (stored in raw C++ arrays)
  *  - set the initial conditions
  *  - advance the solution from the initial time to the final time
- *    - select the timestep size
+ *    - set hardcoded timestep size
  *    - evaluate the right-hand side of the governing equations
  *    - apply the Forward Euler update
  *    - check a simple pass/fail criterion
- *    - accept the step and promote the solution
+ *    - accept the step and promote the solution to the next time step
  *
  *  The regression check at the end of the run is secondary to the tutorial
  *  discussion and can be ignored on a first reading.
- *
- *  In this version:
- *  - the solution is stored in raw C++ arrays,
- *  - the right-hand side is evaluated directly in the application code,
- *  - timestep management is handled manually,
- *  - solution status is tracked with local scalar variables.
  *
  *  The next example replaces raw arrays with \ref Thyra vectors while
  *  preserving the same overall algorithmic structure.
@@ -99,8 +93,8 @@ int main(int argc, char *argv[])
 
     // Timestep size
     double finalTime = 2.0;
-    int nTimeSteps = 2001;
-    const double constDT = finalTime/(nTimeSteps-1);
+    int nTimeSteps = 2000;
+    const double constDT = finalTime/nTimeSteps;
 
     // Advance the solution to the next timestep.
     cout << n << "  " << time << "  " << x_n[0] << "  " << x_n[1] << endl;
@@ -140,7 +134,7 @@ int main(int argc, char *argv[])
     }
 
     // Test for regression.
-    double x_regress[2];      // Regression results for nTimeSteps = 2001
+    double x_regress[2];      // Regression results for nTimeSteps = 2000
     x_regress[0] = -1.59496108218721311;
     x_regress[1] =  0.96359412806611255;
     double x_L2norm_error = 0.0;
@@ -158,23 +152,6 @@ int main(int argc, char *argv[])
       cout << "FAILED regression constraint!" << endl;
     }
 
-    double x_best[2];         // Best resolution with nTimeSteps = 2000000001
-    x_best[0]    = -1.58184083624543947;
-    x_best[1]    =  0.97844890081968072;
-    x_L2norm_error = 0.0;
-    double x_L2norm_best = 0.0;
-    for (int i=0; i < 2; i++) {
-      x_L2norm_error += (x_n[i]-x_best[i])*(x_n[i]-x_best[i]);
-      x_L2norm_best += x_best[1]*x_best[1];
-    }
-    x_L2norm_error = sqrt(x_L2norm_error);
-    x_L2norm_best  = sqrt(x_L2norm_best );
-    cout << "Relative L2 Norm of the error (best)       = "
-         << x_L2norm_error/x_L2norm_best << endl;
-    if ( x_L2norm_error > 0.02*x_L2norm_best) {
-      passed = false;
-      cout << "FAILED best constraint!" << endl;
-    }
     if (passed) success = true;
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);

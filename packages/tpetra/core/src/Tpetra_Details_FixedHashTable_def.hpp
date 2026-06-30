@@ -1276,9 +1276,15 @@ void FixedHashTable<KeyType, ValueType, DeviceType>::
   template class Details::FixedHashTable<LO, LO, Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>>;
 #endif
 #else
+#if defined(HAVE_TPETRA_INST_INT_INT)
+#define TPETRA_DETAILS_FIXEDHASHTABLE_INSTANT(LO, GO, NODE)                   \
+  template class Details::FixedHashTable<GO, LO, typename NODE::device_type>; \
+  template class Details::FixedHashTable<GO, LO, Kokkos::HostSpace::device_type>;
+#else
 #define TPETRA_DETAILS_FIXEDHASHTABLE_INSTANT(LO, GO, NODE)                       \
   template class Details::FixedHashTable<GO, LO, typename NODE::device_type>;     \
   template class Details::FixedHashTable<GO, LO, Kokkos::HostSpace::device_type>; \
   template class Details::FixedHashTable<LO, LO, Kokkos::HostSpace::device_type>;
+#endif
 #endif
 #endif

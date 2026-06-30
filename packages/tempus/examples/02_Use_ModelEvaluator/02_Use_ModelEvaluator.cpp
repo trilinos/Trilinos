@@ -36,25 +36,24 @@ using Teuchos::RCP;
  *  time integration algorithm.
  *
  *  Relative to \ref example-01:
- *  - the problem physics are encapsulated in `VanDerPol_ModelEvaluator_02`
+ *  - the problem physics are encapsulated in a \ref Thyra::ModelEvaluator, `VanDerPol_ModelEvaluator_02`
  *  - initial conditions are obtained from `getNominalValues()`
  *  - right-hand-side evaluation is performed through `evalModel()`
  *  - the application begins to separate the model definition from the
  *    time integration logic
  *
  *  \ref Thyra::ModelEvaluator provides a common Trilinos interface between
- *  application models and abstract numerical algorithms.  For \ref Tempus,
+ *  application models and  <a href="https://www.osti.gov/servlets/purl/1264635">abstract numerical algorithms</a>.  For \ref Tempus,
  *  this interface is the standard mechanism for exposing governing equations
  *  to steppers and integrators.
  *
  *  This example focuses only on the subset of \ref Thyra::ModelEvaluator
  *  behavior needed for explicit first-order ODEs.
  *
- *  A more detailed explanation of the changes from \ref example-01 is given in
- *  \ref tempus_tutorial_transition_01_02.
- *
- *  The next example introduces \ref Tempus::SolutionState to store the
- *  evolving solution together with selected time-integration metadata.
+ *  <hr>
+ *  \par Transition notes
+ *  See \ref tempus_tutorial_transition_01_02 for a detailed explanation
+ *  of what changed from \ref example-01.
  *
  *  \htmlonly
  *  <div style="text-align:center;">
@@ -84,8 +83,8 @@ int main(int argc, char *argv[])
 
     // Timestep size
     double finalTime = 2.0;
-    int nTimeSteps = 2001;
-    const double constDT = finalTime/(nTimeSteps-1);
+    int nTimeSteps = 2000;
+    const double constDT = finalTime/nTimeSteps;
 
     // Advance the solution to the next timestep.
     cout << n << "  " << time << "  " << get_ele(*(x_n), 0)
@@ -147,24 +146,6 @@ int main(int argc, char *argv[])
     if ( x_L2norm_error > 1.0e-08*x_L2norm_regress) {
       passed = false;
       cout << "FAILED regression constraint!" << endl;
-    }
-
-    RCP<Thyra::VectorBase<double> > x_best = x_n->clone_v();
-    {
-      Thyra::DetachedVectorView<double> x_best_view(*x_best);
-      x_best_view[0] = -1.59496108218721311;
-      x_best_view[1] =  0.96359412806611255;
-    }
-
-    Thyra::V_VmV(x_error.ptr(), *x_n, *x_best);
-           x_L2norm_error = Thyra::norm_2(*x_error);
-    double x_L2norm_best  = Thyra::norm_2(*x_best );
-
-    cout << "Relative L2 Norm of the error (best)       = "
-         << x_L2norm_error/x_L2norm_best << endl;
-    if ( x_L2norm_error > 0.02*x_L2norm_best) {
-      passed = false;
-      cout << "FAILED best constraint!" << endl;
     }
     if (passed) success = true;
   }

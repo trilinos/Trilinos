@@ -250,6 +250,14 @@ MpiComm (const RCP<const OpaqueWrapper<MPI_Comm> >& rawMpiComm,
     "Teuchos::MpiComm constructor: MPI_Comm_rank failed with "
     "error \"" << mpiErrorCodeToString (err) << "\".");
   tag_ = defaultTag; // set the default message tag
+  // Cache MPI_TAG_UB so incrementTag wraps within the valid tag range
+  // (see setupMembersFromComm and incrementTag).
+  {
+    int* tag_ub_val = nullptr;
+    int  found      = 0;
+    int const aerr  = MPI_Comm_get_attr (*rawMpiComm_, MPI_TAG_UB, &tag_ub_val, &found);
+    tagUb_ = (aerr == MPI_SUCCESS && found && tag_ub_val != nullptr && *tag_ub_val > minTag_) ? *tag_ub_val : 32767;
+  }
 }
 
 
@@ -327,6 +335,19 @@ void MpiComm<Ordinal>::setupMembersFromComm ()
   TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
     "Teuchos::MpiComm constructor: MPI_Comm_rank failed with "
     "error \"" << mpiErrorCodeToString (err) << "\".");
+
+  // Query the largest tag MPI will accept on this communicator. Tags
+  // above MPI_TAG_UB are rejected with MPI_ERR_TAG, and on real MPI
+  // implementations MPI_TAG_UB is far below INT_MAX (e.g. 2^23-1 on
+  // OpenMPI). incrementTag uses this to wrap the tag before it leaves the
+  // valid range. Fall back to the MPI-standard guaranteed minimum (32767)
+  // if the attribute is somehow unavailable.
+  {
+    int* tag_ub_val = nullptr;
+    int  found      = 0;
+    int const aerr  = MPI_Comm_get_attr (*rawMpiComm_, MPI_TAG_UB, &tag_ub_val, &found);
+    tagUb_ = (aerr == MPI_SUCCESS && found && tag_ub_val != nullptr && *tag_ub_val > minTag_) ? *tag_ub_val : 32767;
+  }
 
   // Set the default tag to make unique across all communicators
   if (tagCounter_ > maxTag_) {

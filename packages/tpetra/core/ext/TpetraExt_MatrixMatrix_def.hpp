@@ -1882,7 +1882,7 @@ void mult_A_B_newmatrix(BlockCrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal
                                                        typename device_t::memory_space,
                                                        typename device_t::memory_space>;
   int team_work_size = 16;  // Defaults to 16 as per Deveci 12/7/16 - csiefer
-  std::string myalg("SPGEMM_KK_MEMORY");
+  std::string myalg("SPGEMM_DEFAULT");
   KokkosSparse::SPGEMMAlgorithm alg_enum = KokkosSparse::StringToSPGEMMAlgorithm(myalg);
 
   KernelHandle kh;

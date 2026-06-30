@@ -15,7 +15,7 @@ add_subdirectory(rol)
 add_subdirectory(region)
 add_subdirectory(rebalance_utils)
 add_subdirectory(parser)
-add_subdirectory(unit_main)
+TRIBITS_ADD_TEST_DIRECTORIES(unit_main)
 TRIBITS_ADD_TEST_DIRECTORIES(unit_tests)
 
 SET(SOURCES_MAIN Apps_krino.cpp)

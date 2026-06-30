@@ -9,7 +9,8 @@ TRIBITS_ADD_EXECUTABLE(
     krino_unit
     SOURCES ${SOURCES}
     COMM serial mpi
-    NOEXEPREFIX NOEXESUFFIX)
+    NOEXEPREFIX NOEXESUFFIX
+    TESTONLYLIBS krino_unit_main_lib)
     
 TRIBITS_ADD_TEST(krino_unit
     NAME Krino_Basic

@@ -1,7 +1,0 @@
-This is for a steady 32x32 lid driven cavity problem using Bochev-Dohrmann
-stabilization with Re=100
-
-Coordinates
-   xcoords.mm = x coordinates
-   ycoords.mm = y coordinates
-   

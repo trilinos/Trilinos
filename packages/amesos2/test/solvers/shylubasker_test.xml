@@ -5,6 +5,24 @@
 
   <ParameterList name="arc130.mtx">
     <ParameterList name="ShyLUBasker">
+      <!-- Test Kokkos objects -->
+      <ParameterList name="kokkos">
+        <ParameterList name="run-int-longlong-p1-default">
+          <Parameter name="Scalar" type="string" value="double"/>
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="GlobalOrdinal" type="string" value="long long int"/>
+          <ParameterList name="solver_run_params">
+            <Parameter name="num_threads"  type="int" value="1" />
+            <Parameter name="btf"   type="bool" value="true" />
+            <Parameter name="transpose" type="bool" value="false" />
+            <Parameter name="pivot"    type="bool"   value="false" />
+            <Parameter name="pivot_tol" type="double" value=".001" />
+            <Parameter name="symmetric" type="bool" value="false" />
+            <Parameter name="realloc" type="bool" value="false"/>
+           </ParameterList> <!-- end solver_run_params -->
+        </ParameterList> <!-- end run-int-longlong-p#-default -->
+      </ParameterList>
+
       <!-- Test Tpetra objects -->
       <ParameterList name="tpetra">
 	<ParameterList name="run-int-int-p1-default">

@@ -32,22 +32,21 @@ using Teuchos::RCP;
  *  throughout \ref Tempus and other Trilinos packages.
  *
  *  Changes relative to \ref example-00:
+ *  - `Teuchos::RCP` is used for memory management.
  *  - state storage moves from raw arrays to `Thyra::VectorBase`,
  *  - a `Thyra::VectorSpaceBase` is introduced to define the state space,
  *  - vector initialization and element access use `Thyra::DetachedVectorView`,
  *  - vector algebra uses Thyra helper routines, `Thyra::V_VpStV`, `Thyra::norm`, `Thyra::V_V`
- *  - `Teuchos::RCP` is used for memory management.
  *
  *  This example shows how the same application logic can be expressed in
- *  terms of abstract numerical objects rather than concrete array storage.
+ *  terms of <a href="https://www.osti.gov/servlets/purl/1264635">abstract numerical objects</a> rather than concrete array storage.
  *  That abstraction is a prerequisite for later examples that introduce
  *  `Thyra::ModelEvaluator` and \ref Tempus solution-management objects.
  *
- *  A more detailed explanation of what changed from \ref example-00 is given in
- *  \ref tempus_tutorial_transition_00_01.
- *
- *  The next example moves the problem definition into a
- *  \ref Thyra::ModelEvaluator while preserving the same Forward Euler update.
+ *  <hr>
+ *  \par Transition notes
+ *  See \ref tempus_tutorial_transition_00_01 for a detailed explanation
+ *  of what changed from \ref example-00.
  *
  *  \htmlonly
  *  <div style="text-align:center;">
@@ -86,8 +85,8 @@ int main(int argc, char *argv[])
 
     // Timestep size
     double finalTime = 2.0;
-    int nTimeSteps = 2001;
-    const double constDT = finalTime/(nTimeSteps-1);
+    int nTimeSteps = 2000;
+    const double constDT = finalTime/nTimeSteps;
 
     // Advance the solution to the next timestep.
     cout << n << "  " << time << "  " << get_ele(*(x_n), 0)
@@ -146,24 +145,6 @@ int main(int argc, char *argv[])
     if ( x_L2norm_error > 1.0e-08*x_L2norm_regress) {
       passed = false;
       cout << "FAILED regression constraint!" << endl;
-    }
-
-    RCP<Thyra::VectorBase<double> > x_best = x_n->clone_v();
-    {
-      Thyra::DetachedVectorView<double> x_best_view(*x_best);
-      x_best_view[0] = -1.59496108218721311;
-      x_best_view[1] =  0.96359412806611255;
-    }
-
-    Thyra::V_VmV(x_error.ptr(), *x_n, *x_best);
-           x_L2norm_error = Thyra::norm_2(*x_error);
-    double x_L2norm_best  = Thyra::norm_2(*x_best );
-
-    cout << "Relative L2 Norm of the error (best)       = "
-         << x_L2norm_error/x_L2norm_best << endl;
-    if ( x_L2norm_error > 0.02*x_L2norm_best) {
-      passed = false;
-      cout << "FAILED best constraint!" << endl;
     }
     if (passed) success = true;
   }
