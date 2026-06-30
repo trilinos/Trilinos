@@ -12,5 +12,6 @@ TRIBITS_ADD_LIBRARY(
   krino_unit_main_lib
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
+  TESTONLY
   )
     

@@ -241,7 +241,7 @@ KLU2<Matrix,Vector>::solve_impl(
     const bool initialize_data = true;
     const bool do_not_initialize_data = false;
     if ( single_proc_optimization() && nrhs == 1 ) {
-      // no msp creation
+      // no map creation
       bDidAssignB = Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
         host_solve_array_t>::do_get(initialize_data, B, bValues_, as<size_t>(ld_rhs));
 
@@ -262,17 +262,23 @@ KLU2<Matrix,Vector>::solve_impl(
         }
       }
       if (!use_gather) {
+        const EDistribution dist = (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED;
+        if (distributionMap_.is_null()) {
+          typedef MultiVecAdapter<Vector> MVA;
+          distributionMap_ = Util::getDistributionMap<
+            typename MVA::local_ordinal_t, typename MVA::global_ordinal_t,
+            typename MVA::global_size_t,   typename MVA::node_t>(
+              dist, B->getGlobalLength(), B->getComm(),
+              this->rowIndexBase_, B->getMap());
+        }
+        auto distMapPtr = Teuchos::ptrInArg(*distributionMap_);
         bDidAssignB = Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
           host_solve_array_t>::do_get(initialize_data, B, bValues_,
-            as<size_t>(ld_rhs),
-            (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
-            this->rowIndexBase_);
+            as<size_t>(ld_rhs), distMapPtr, dist);
         // see Amesos2_Tacho_def.hpp for an explanation of why we 'get' X
         bDidAssignX = Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
           host_solve_array_t>::do_get(do_not_initialize_data, X, xValues_,
-            as<size_t>(ld_rhs),
-            (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
-            this->rowIndexBase_);
+            as<size_t>(ld_rhs), distMapPtr, dist);
       }
 
       // klu_tsolve is going to put the solution x into the input b.
@@ -382,6 +388,7 @@ KLU2<Matrix,Vector>::solve_impl(
 
   // if bDidAssignX, then we solved straight to the adapter's X memory space without
   // requiring additional memory allocation, so the x data is already in place.
+  // TODO: should we check bDidAssignB?
   if(!bDidAssignX) {
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor redistTimer( this->timers_.vecRedistTime_ );
@@ -392,11 +399,16 @@ KLU2<Matrix,Vector>::solve_impl(
       if (rval != 0) use_gather = false;
     }
     if (!use_gather) {
-      Util::put_1d_data_helper_kokkos_view<
-        MultiVecAdapter<Vector>,host_solve_array_t>::do_put(X, xValues_,
-          as<size_t>(ld_rhs),
-          (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
-          this->rowIndexBase_);
+      const EDistribution dist = (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED;
+      if (!distributionMap_.is_null()) {
+        Util::put_1d_data_helper_kokkos_view<
+          MultiVecAdapter<Vector>,host_solve_array_t>::do_put(X, xValues_,
+            as<size_t>(ld_rhs), Teuchos::ptrInArg(*distributionMap_), dist);
+      } else {
+        Util::put_1d_data_helper_kokkos_view<
+          MultiVecAdapter<Vector>,host_solve_array_t>::do_put(X, xValues_,
+            as<size_t>(ld_rhs), dist, this->rowIndexBase_);
+      }
     }
   }
   if (debug_level_ > 0) {
