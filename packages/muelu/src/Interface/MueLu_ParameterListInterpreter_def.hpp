@@ -176,8 +176,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetPar
     Validate(serialList);
     SetEasyParameterList(paramList);
   }
-  std::string socUsesMatrix = paramList.get<std::string>("aggregation: strength-of-connection: matrix");
-  if ((socUsesMatrix == "MinvA") && paramList.isSublist("user data")) {
+  if (paramList.isParameter("aggregation: strength-of-connection: matrix") && (paramList.get<std::string>("aggregation: strength-of-connection: matrix") == "MinvA") && paramList.isSublist("user data")) {
     //  check if Muelu option is inconsistent with user data provided. Here we
     //  assume that data has not been stripped out of user list.
     bool Minv_Supplied = false, M_Supplied = false, MinvA_Supplied = false;

@@ -113,8 +113,7 @@ CreateXpetraPreconditioner(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, Glo
     if (userList.isParameter("Minv")) Minv_Supplied = true;
     if (userList.isParameter("MinvA")) Minv_Supplied = true;
   }
-  std::string socUsesMatrix = inParamList.get<std::string>("aggregation: strength-of-connection: matrix");
-  if (socUsesMatrix == "MinvA") {
+  if (inParamList.isParameter("aggregation: strength-of-connection: matrix") && (inParamList.get<std::string>("aggregation: strength-of-connection: matrix") == "MinvA")) {
     if (inParamList.isSublist("project auxiliary matrices")) {
       auto projectList = inParamList.sublist("project auxiliary matrices");
       TEUCHOS_TEST_FOR_EXCEPTION(projectList.isParameter("M") && !M_Supplied, Exceptions::Incompatible, "MueLu_CreateXpetraPreconditioner: Must supply M as it is listed in the project auxiliary matrices sublist");
