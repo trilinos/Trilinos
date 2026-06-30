@@ -9,11 +9,9 @@
 
 #include "Teuchos_UnitTestRepository.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
-#include "Kokkos_Core.hpp"
+#include "Tpetra_Core.hpp"
 
 int main(int argc, char* argv[]) {
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-  Kokkos::initialize(argc, argv);
-  Teuchos::UnitTestRepository::setGloballyReduceTestResult(true);
+  Tpetra::ScopeGuard tpetraScope(&argc, &argv);
   return Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 }

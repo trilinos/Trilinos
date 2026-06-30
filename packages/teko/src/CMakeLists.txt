@@ -53,11 +53,9 @@ APPEND_GLOB(SOURCES
 
 IF(NOT TEKO_HAVE_EPETRA)
   LIST(REMOVE_ITEM SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/NS/Teko_ALOperator.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Teko_DiagonalPreconditionerOp.cpp
   )
   LIST(REMOVE_ITEM HEADERS
-    ${CMAKE_CURRENT_SOURCE_DIR}/NS/Teko_ALOperator.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Teko_DiagonalPreconditionerOp.hpp
   )
 ELSE()
