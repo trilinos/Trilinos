@@ -254,8 +254,12 @@ cuSOLVER<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Paramete
   if( parameterList->isParameter("Reorder") ){
     RCP<const ParameterEntryValidator> reorder_validator = valid_params->getEntry("Reorder").validator();
     parameterList->getEntry("Reorder").setValidator(reorder_validator);
-  }
+    }
+#ifdef HAVE_AMESOS2_METIS
   data_.bReorder = parameterList->get<bool>("Reorder", true);
+#else
+  data_.bReorder = parameterList->get<bool>("Reorder", false);
+#endif
 }
 
 template <class Matrix, class Vector>
@@ -264,11 +268,14 @@ cuSOLVER<Matrix,Vector>::getValidParameters_impl() const
 {
   static Teuchos::RCP<const Teuchos::ParameterList> valid_params;
 
-  if( is_null(valid_params) ){
+  if (is_null(valid_params)) {
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
 
+#ifdef HAVE_AMESOS2_METIS
     pl->set("Reorder", true, "Whether GIDs contiguous");
-
+#else
+    pl->set("Reorder", false, "Whether GIDs contiguous");
+#endif
     valid_params = pl;
   }
 

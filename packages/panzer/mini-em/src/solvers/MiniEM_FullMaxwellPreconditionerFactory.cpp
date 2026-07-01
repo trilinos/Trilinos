@@ -304,18 +304,23 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
        if (useAsPreconditioner)
          invS_E = Teko::buildInverse(*invLib.getInverseFactory("S_E Preconditioner"),S_E);
        else {
-         if (S_E_prec_.is_null())
-           S_E_prec_ = Teko::buildInverse(*invLib.getInverseFactory("S_E Preconditioner"),S_E);
-         else
+         if (S_E_prec_.is_null()) {
+           if (S_E_prec_type_ != "none") {
+             S_E_prec_ = Teko::buildInverse(*invLib.getInverseFactory("S_E Preconditioner"),S_E);
+           }
+         } else
            Teko::rebuildInverse(*invLib.getInverseFactory("S_E Preconditioner"),S_E, S_E_prec_);
-         invS_E = Teko::buildInverse(*invLib.getInverseFactory("S_E Solve"),S_E,S_E_prec_);
+         if (!S_E_prec_.is_null())
+           invS_E = Teko::buildInverse(*invLib.getInverseFactory("S_E Solve"),S_E,S_E_prec_);
+         else
+           invS_E = Teko::buildInverse(*invLib.getInverseFactory("S_E Solve"),S_E);
        }
      }
    }
 
 
    /////////////////////////////////////////////////
-   // Build block  inverse matrices               //
+   // Build block inverse matrices                //
    /////////////////////////////////////////////////
 
    if (!use_discrete_curl_) {
@@ -510,9 +515,12 @@ void FullMaxwellPreconditionerFactory::initializeFromParameterList(const Teuchos
 
      // S_E preconditioner
      Teuchos::ParameterList S_E_prec_pl = pl.sublist("S_E Preconditioner");
-     invLib.addStratPrecond("S_E Preconditioner",
-                            S_E_prec_pl.get<std::string>("Prec Type"),
-                            S_E_prec_pl.sublist("Prec Types"));
+     if (S_E_prec_pl.isType<std::string>("Prec Type") && S_E_prec_pl.isSublist("Prec Types"))
+       invLib.addStratPrecond("S_E Preconditioner",
+                              S_E_prec_pl.get<std::string>("Prec Type"),
+                              S_E_prec_pl.sublist("Prec Types"));
+     else
+       S_E_prec_type_ = "none";
    }
 
 }
