@@ -19,6 +19,8 @@ Build (MueLu::TentativePFactory_kokkos)
 Build (MueLu::UncoupledAggregationFactory)
 BuildScalar (MueLu::CoalesceDropFactory_kokkos)
 dropping scheme = "point-wise", strength-of-connection measure = "smoothed aggregation", strength-of-connection matrix = "A", threshold = 0, blocksize = 1, useBlocking = 0, symmetrizeDroppedGraph = 0
+project auxiliary matrices -> 
+ [empty list]
 BuildAggregates (Phase - (Dirichlet))
 BuildAggregatesRandom (Phase 1 (main))
 Build (MueLu::AmalgamationFactory)
@@ -51,6 +53,8 @@ Build (MueLu::TentativePFactory_kokkos)
 Build (MueLu::UncoupledAggregationFactory)
 BuildScalar (MueLu::CoalesceDropFactory_kokkos)
 dropping scheme = "point-wise", strength-of-connection measure = "smoothed aggregation", strength-of-connection matrix = "A", threshold = 0, blocksize = 1, useBlocking = 0, symmetrizeDroppedGraph = 0
+project auxiliary matrices -> 
+ [empty list]
 BuildAggregates (Phase - (Dirichlet))
 BuildAggregatesRandom (Phase 1 (main))
 BuildAggregatesRandom (Phase 2a (secondary))
@@ -81,10 +85,10 @@ Operator complexity = 1.44
 Smoother complexity = <ignored>
 Cycle type          = V
 
-level  rows  nnz    nnz/row  c ratio  procs
-  0  9999  29995  3.00                  4  
-  1  3335  10003  3.00     3.00         4  
-  2  1112  3334   3.00     3.00         4  
+level  rows    nnz  nnz/row  c ratio  procs
+  0    9999  29995     3.00               4
+  1    3335  10003     3.00     3.00      4
+  2    1112   3334     3.00     3.00      4
 
 Smoother (level 0) both : "Ifpack2::AdditiveSchwarz": {Initialized: true, Computed: true, Iterations: 1, Overlap level: 1, Subdomain reordering: "none", Combine mode: "ZERO", Global matrix dimensions: [9999, 9999], Inner solver: {"Ifpack2::RILUK": {Initialized: true, Computed: true, Level-of-fill: 0, Global matrix dimensions: [2500, 2500], Global nnz: 7498, "Ifpack2::LocalSparseTriangularSolver": {Label: "lower", Initialized: true, Computed: true, Matrix dimensions: [2500, 2500], Number of nonzeros: 2499}, "Ifpack2::LocalSparseTriangularSolver": {Label: "upper", Initialized: true, Computed: true, Matrix dimensions: [2500, 2500], Number of nonzeros: 2499}}}}
 
