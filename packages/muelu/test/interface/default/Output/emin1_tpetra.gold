@@ -32,6 +32,8 @@ Matrix filtering (MueLu::FilteredAFactory)
 Filtered matrix is not being constructed as no filtering is being done
 PrepareLeastSquaresSolveDirect (MueLu::DenseConstraint)
 Getting P from coarseLevel
+Reuse C pattern
+Reuse C pattern
 
 *******************************************************
 ***** Belos Iterative Solver:  Pseudo Block CG 
@@ -41,7 +43,9 @@ Getting P from coarseLevel
 *****   Test 1 : Belos::StatusTestGenResNorm<>: (2-Norm Imp Res Vec) , tol = 1e-08
 *******************************************************
 Iter 0, [ 1] :    6.665458e+01
-Iter 1, [ 1] :    2.307178e-13
+Reuse C pattern
+Reuse C pattern
+Iter 1, [ 1] :    6.447167e-12
 Transpose P (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
@@ -79,6 +83,8 @@ Matrix filtering (MueLu::FilteredAFactory)
 Filtered matrix is not being constructed as no filtering is being done
 PrepareLeastSquaresSolveDirect (MueLu::DenseConstraint)
 Getting P from coarseLevel
+Reuse C pattern
+Reuse C pattern
 
 *******************************************************
 ***** Belos Iterative Solver:  Pseudo Block CG 
@@ -88,7 +94,9 @@ Getting P from coarseLevel
 *****   Test 1 : Belos::StatusTestGenResNorm<>: (2-Norm Imp Res Vec) , tol = 1e-08
 *******************************************************
 Iter 0, [ 1] :    4.275004e+00
-Iter 1, [ 1] :    1.202650e-14
+Reuse C pattern
+Reuse C pattern
+Iter 1, [ 1] :    5.179015e-13
 Transpose P (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
