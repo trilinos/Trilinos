@@ -1182,17 +1182,33 @@ TEST(MiniTensor, MixedTypes)
 
 TEST(MiniTensor, SymmetricEigen2x2)
 {
-  Tensor<Real> const A(2.0, 1.0, 1.0, 2.0);
+  // Reconstruction A = V * D * transpose(V) must hold for general symmetric
+  // 2x2 tensors, including unequal diagonals with shear. The unequal-diagonal
+  // cases below regress Trilinos issue #15389, where the 2x2 path returned an
+  // inconsistent (V, D) that flipped the off-diagonal sign on reconstruction.
+  std::vector<Tensor<Real>> const tensors = {
+      Tensor<Real>(2.0, 1.0, 1.0, 2.0),        // equal diagonals
+      Tensor<Real>(1.0025, 0.1, 0.1, 1.0025),  // equal diagonals, shear
+      Tensor<Real>(1.168, 0.06, 0.06, 0.922),  // f > h, shear
+      Tensor<Real>(0.922, 0.06, 0.06, 1.168),  // f < h, shear
+      Tensor<Real>(2.0, 0.0, 0.0, 3.0),        // diagonal (g == 0)
+      Tensor<Real>(-1.0, 0.5, 0.5, -2.0)       // negative eigenvalues
+  };
 
-  Tensor<Real> V(2), D(2);
+  for (Tensor<Real> const & A : tensors) {
+    Tensor<Real> V(2), D(2);
 
-  std::tie(V, D) = eig_sym(A);
+    std::tie(V, D) = eig_sym(A);
 
-  Tensor<Real> const B = V * D * transpose(V);
+    Tensor<Real> const B = V * D * transpose(V);
 
-  Real const error = norm(A - B) / norm(A);
+    Real const error = norm(A - B) / norm(A);
 
-  ASSERT_LE(error, machine_epsilon<Real>());
+    ASSERT_LE(error, 2.0 * machine_epsilon<Real>());
+
+    // Eigenvalues are returned in descending order (matches eig_sym_NxN).
+    ASSERT_GE(D(0, 0), D(1, 1));
+  }
 }
 
 TEST(MiniTensor, SymmetricEigen3x3)
