@@ -2,7 +2,7 @@
 // *****************************************************************************
 //          Tempus: Time Integration and Sensitivity Analysis Package
 //
-// Copyright 2017 NTESS and the Tempus contributors.
+// Copyright 2026 NTESS and the Tempus contributors.
 // SPDX-License-Identifier: BSD-3-Clause
 // *****************************************************************************
 //@HEADER
