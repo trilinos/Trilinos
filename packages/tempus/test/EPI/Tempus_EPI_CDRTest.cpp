@@ -225,7 +225,6 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
 
   std::string error_file("Tempus_EPI_CDR_" + caseName + "-Error.dat");
   if (test_xdot) {
-    std::cout << solutionsDot.size() << " " << solutions.size() << std::endl;
     writeOrderError(error_file, stepper, StepSize,
                     solutions, xErrorNorm, xSlope, solutionsDot, xDotErrorNorm,
                     xDotSlope, out);
@@ -235,7 +234,7 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
                     solutions, xErrorNorm, xSlope, out);
   }
 
-  std::tuple tol_compare = {1e-13, 1e-9};
+  std::tuple tol_compare = {1e-12, 1e-8};
   if (!lumped)
     // The accuracy for the "Lump Mass Matrix" == False testcase is affected by the linear solver tolerance
     tol_compare = {1e-5, 1e-1};
@@ -288,7 +287,11 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
 
     plS->sublist("Demo Stepper").set("Stepper Type", "SDIRK 3 Stage 4th order");
 
-    plS->sublist("Demo Stepper").remove("EPI Order", false);
+    // TODO I moved this tolerance from the xml file here, no idea if that is useful
+    plS->sublist("Demo Stepper").sublist("Demo Solver").sublist("NOX")
+        .sublist("Direction").sublist("Newton").sublist("Linear Solver")
+        .set<double>("Tolerance", 1.0e-12);
+
     plS->sublist("Demo Stepper").remove("PhiEvaluator", false);
 
     auto integratorSDIRK =

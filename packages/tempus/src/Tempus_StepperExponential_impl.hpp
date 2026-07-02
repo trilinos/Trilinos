@@ -18,8 +18,8 @@ namespace Tempus {
 
 template <class Scalar>
 StepperExponential<Scalar>::StepperExponential():
-  appModel_{Teuchos::null},
-  phiEvaluator_{Teuchos::null},
+  appModel_(),
+  phiEvaluator_(),
   temporal_finite_difference_eps_{1.0e-5},
   adapt_phi_evaluator_interval_{-1}
 {
@@ -75,22 +75,34 @@ StepperExponential<Scalar>::getValidParametersBasicExponential() const
 {
   auto pl = this->getValidParametersBasic();
 
-  // TODO ducument and potentially rename these options.
+  // default values and docstrings for parameters are provided here:
+  // TODO: document and potentially rename these options.
   pl->template set<double>("Epsilon for RHS finite difference", temporal_finite_difference_eps_);
   pl->template set<int>("Adapt PhiEvaluator Interval", adapt_phi_evaluator_interval_);
 
   // add the PhiEvaluator sublist
-  //auto phiEvalPL = this->getSolver()->getParameterList();
   auto phiPL = Teuchos::parameterList("PhiEvaluator");
-  //phiPL->set("PhiEvaluator Type", *phiPL);
+  if (getPhiEvaluator() != Teuchos::null)
+  {
+    // get and copy the valid parameters and defaults of the current PhiEvaluator
+    auto validPhiPL = this->getPhiEvaluator()->getValidParameters();
+    phiPL = Teuchos::rcp(new Teuchos::ParameterList(*validPhiPL));
+  }
   pl->set("PhiEvaluator", *phiPL);
 
+  // TODO: should we remove this?
   // add some dummy variables for compatibility with StepperImplicit
+  // this will validate and default initialize some parameters used by Implicit Steppers
+  // to avoid throwing a validation error when those are provided
   pl->template set<std::string>("Solver Name", "Demo Solver");
+  auto noxSolverPL = Tempus::defaultSolverParameters();
   auto solverPL = Teuchos::parameterList("Demo Solver");
-  //solverPL->set("NOX", *noxSolverPL);
+  solverPL->set("NOX", *sublist(noxSolverPL, "NOX"));
   pl->set("Demo Solver", *solverPL);
   pl->template set<std::string>("Predictor Stepper Type", "None");
+  pl->template set<bool>("Zero Initial Guess", 0);
+
+  //pl->print(*this->getOStream());
 
   return pl;
 }
@@ -102,26 +114,27 @@ void StepperExponential<Scalar>::setStepperExponentialValues(
   Teuchos::RCP<Teuchos::ParameterList> phiPL = Teuchos::null;
 
   if (pl != Teuchos::null) {
-    // TODO: Currently, we can not validate because the PaameterList of many examples contains
-    // extra parameters, e.g., 'Solver Name', and the list of parameters for the PhiEvaluator is not known.
-    // pl->validateParametersAndSetDefaults(*this->getValidParameters());
+    if (pl->isSublist("PhiEvaluator")){
+      phiPL = sublist(pl, "PhiEvaluator");
+
+      // we always construct a PhiEvaluator at initialization, but the selected
+      // PhiEvaluator depends on the pList, and we need to reinitialize it here
+      auto phif = Teuchos::rcp(new PhiEvaluatorFactory<Scalar>());
+      auto phiEvaluator = phif->createPhiEvaluator(phiPL);
+      this->setPhiEvaluator(phiEvaluator);
+    }
+
+    // validate that the paramters from the user are valid, and ste defaults for missing values
+    pl->validateParametersAndSetDefaults(*this->getValidParameters());
+
+    // set the validated values, or their defaults
     this->setStepperValues(pl);
-    temporal_finite_difference_eps_ = pl->get<double>("Epsilon for RHS finite difference", 1e-4);
-    adapt_phi_evaluator_interval_ = pl->get<int>("Adapt PhiEvaluator Interval", -1);
-    phiPL = sublist(pl, "PhiEvaluator");
+    temporal_finite_difference_eps_ = pl->get<double>("Epsilon for RHS finite difference");
+    adapt_phi_evaluator_interval_ = pl->get<int>("Adapt PhiEvaluator Interval");
   }
 
-  // TODO: is this the right place to initialize the PhiEvaluator?
-  auto phif = Teuchos::rcp(new PhiEvaluatorFactory<Scalar>());
-  phiEvaluator_ = phif->createPhiEvaluator(phiPL);
 }
 
-/** \brief Provide a StepperState to the SolutionState.
- *  This Stepper does not have any special state data,
- *  so just provide the base class StepperState with the
- *  Stepper description.  This can be checked to ensure
- *  that the input StepperState can be used by this Stepper.
- */
 template<class Scalar>
 Teuchos::RCP<Tempus::StepperState<Scalar> >
 StepperExponential<Scalar>::getDefaultStepperState()
@@ -132,25 +145,13 @@ StepperExponential<Scalar>::getDefaultStepperState()
 }
 
 template <class Scalar>
-void StepperExponential<Scalar>::setModel(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
+void StepperExponential<Scalar>::setDefaultPhiEvaluator()
 {
-  validImplicitODE_DAE(appModel);
-  appModel_ = appModel;
+  // get a default PhiEvaluator
+  auto phif = Teuchos::rcp(new PhiEvaluatorFactory<Scalar>());
+  auto phiEvaluator = phif->createPhiEvaluator();
 
-  TEUCHOS_TEST_FOR_EXCEPTION(phiEvaluator_ == Teuchos::null, std::logic_error,
-                             "Error - PhiEvaluator is not set!\n");
-
-  phiEvaluator_->setModel(appModel);
-  phiEvaluator_->initialize();
-
-  this->isInitialized_ = false;
-}
-
-template<class Scalar>
-Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>> StepperExponential<Scalar>::getModel() const
-{
-  return appModel_;
+  this->setPhiEvaluator(phiEvaluator);
 }
 
 template<class Scalar>
@@ -170,6 +171,28 @@ template<class Scalar>
 Teuchos::RCP<Tempus::PhiEvaluator<Scalar>> StepperExponential<Scalar>::getPhiEvaluator() const
 {
   return phiEvaluator_;
+}
+
+template <class Scalar>
+void StepperExponential<Scalar>::setModel(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
+{
+  validImplicitODE_DAE(appModel);
+  appModel_ = appModel;
+
+  if (phiEvaluator_ != Teuchos::null)
+  {
+    phiEvaluator_->setModel(appModel);
+    phiEvaluator_->initialize();
+  }
+
+  this->isInitialized_ = false;
+}
+
+template<class Scalar>
+Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>> StepperExponential<Scalar>::getModel() const
+{
+  return appModel_;
 }
 
 template<class Scalar>

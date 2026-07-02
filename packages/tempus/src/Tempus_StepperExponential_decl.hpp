@@ -219,23 +219,23 @@ class StepperExponential : virtual public Tempus::Stepper<Scalar> {
 
   /** \brief Default constructor.
    *
-   *  Requires subsequent setModel(), initialize()
+   *  Requires subsequent setPhiEvaluator(), setModel(), and initialize()
   */
   StepperExponential();
+
+  /// Set the PhiEvaluator
+  virtual void setPhiEvaluator(
+    const Teuchos::RCP<Tempus::PhiEvaluator<Scalar> >& phiEvaluator);
+  /// Construct and set a default PhiEvaluator
+  virtual void setDefaultPhiEvaluator();
+  virtual Teuchos::RCP<Tempus::PhiEvaluator<Scalar> > getPhiEvaluator() const;
 
   /// Set the model
   virtual void setModel(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
       override;
-
   virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel()
       const override;
-
-  /// Set the PhiEvaluator
-  virtual void setPhiEvaluator(
-    const Teuchos::RCP<Tempus::PhiEvaluator<Scalar> >& phiEvaluator);
-
-  virtual Teuchos::RCP<Tempus::PhiEvaluator<Scalar> > getPhiEvaluator() const;
 
   /// Set the initial conditions and make them consistent.
   virtual void setInitialConditions(
@@ -313,7 +313,7 @@ class StepperExponential : virtual public Tempus::Stepper<Scalar> {
     const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& Mf
   );
 
-  // Check if temporal derivative is desired, and return optional epsilon by reference
+  // Check if temporal derivative is desired
   bool getTemporalDerivative()
   {
     return (temporal_finite_difference_eps_ > 0);
@@ -326,7 +326,7 @@ class StepperExponential : virtual public Tempus::Stepper<Scalar> {
   /// dt is the current time-step, not necessarily (tr-t0)
   /// Mf contains already evaluated -M*F(x0,t0)
   /// dt_Mf_deriv contains already evaluated dt*M*F'(t0)
-  /// Mfr is unused, currently, can contain -M*F(xr,tr)
+  /// Mfr can optionally contain -M*F(xr,tr), if already pre-evaluated
   void computeRemf(
     Teuchos::RCP<Thyra::VectorBase<Scalar>>& remf,
     const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& xr,
@@ -339,7 +339,7 @@ class StepperExponential : virtual public Tempus::Stepper<Scalar> {
     const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& Mfr = Teuchos::null
   );
 
-  // Check if temporal derivative is desired, and return optional epsilon by reference
+  // Check if PhiEvaluator adaptivity is desired and return positive interval number
   int getAdaptPhiEvaluator()
   {
     return adapt_phi_evaluator_interval_;
@@ -350,7 +350,6 @@ class StepperExponential : virtual public Tempus::Stepper<Scalar> {
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>> appModel_;
 
   /// RCP to the PhiEvaluator
-  /// TODO: define getter and setter
   Teuchos::RCP<PhiEvaluator<Scalar> > phiEvaluator_;
 
   /// Finite difference step size used for RHS time derivative estimation

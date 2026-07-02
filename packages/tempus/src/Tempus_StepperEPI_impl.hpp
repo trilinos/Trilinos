@@ -36,6 +36,7 @@ StepperEPI<Scalar>::StepperEPI()
   this->setICConsistencyCheck(false);
   this->setOrder(2.0);
 
+  this->setDefaultPhiEvaluator();
   this->setAppAction(Teuchos::null);
 }
 
@@ -43,6 +44,7 @@ StepperEPI<Scalar>::StepperEPI()
 template<class Scalar>
 StepperEPI<Scalar>::StepperEPI(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+  const Teuchos::RCP<Tempus::PhiEvaluator<Scalar>>& phiEvaluator,
   bool useFSAL,
   std::string ICConsistency,
   bool ICConsistencyCheck,
@@ -57,10 +59,9 @@ StepperEPI<Scalar>::StepperEPI(
 
   this->setAppAction(stepperEPIAppAction);
 
-  if (appModel != Teuchos::null) {
-    this->setModel(appModel);
-    this->initialize();
-  }
+  this->setModel(appModel);
+  this->setPhiEvaluator(phiEvaluator);
+  this->initialize();
 }
 
 template<class Scalar>
