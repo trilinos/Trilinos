@@ -135,6 +135,7 @@ PhiEvaluator<Scalar>::getValidParametersBasic() const
       "'true' - will cache the mass matrix."
       "'false' - will recompute the mass matrix every time-step.");
 
+  // TODO: document this, explain what it is used for
   pl->sublist("Eigensolver");
   pl->sublist("Eigensolver").set("Which", "LM");
   pl->sublist("Eigensolver").set("Block Size",                     2);
@@ -147,8 +148,6 @@ PhiEvaluator<Scalar>::getValidParametersBasic() const
   pl->sublist("Eigensolver").set("Dense Fallback Dimension",       64,
       "Systems with dimension <= this value use a dense LAPACK eigensolver "
       "instead of the iterative Block Krylov-Schur solver.");
-
-  
 
   return pl;
 }

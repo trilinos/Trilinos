@@ -35,13 +35,15 @@ StepperExponentialEuler<Scalar>::StepperExponentialEuler()
   this->setICConsistency("Consistent");
   this->setICConsistencyCheck(false);
 
+  this->setDefaultPhiEvaluator();
   this->setAppAction(Teuchos::null);
 }
 
 
-template<class Scalar>
+template <class Scalar>
 StepperExponentialEuler<Scalar>::StepperExponentialEuler(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>>& appModel,
+  const Teuchos::RCP<Tempus::PhiEvaluator<Scalar>>& phiEvaluator,
   bool useFSAL,
   std::string ICConsistency,
   bool ICConsistencyCheck,
@@ -55,10 +57,10 @@ StepperExponentialEuler<Scalar>::StepperExponentialEuler(
 
   this->setAppAction(stepperEEAppAction);
 
-  if (appModel != Teuchos::null) {
-    this->setModel(appModel);
-    this->initialize();
-  }
+  this->setModel(appModel);
+  this->setPhiEvaluator(phiEvaluator);
+
+  this->initialize();
 }
 
 template<class Scalar>

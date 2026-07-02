@@ -75,8 +75,7 @@ class StepperExponentialEuler :
 public:
 
   /** \brief Default constructor.
-   *
-   *  Requires subsequent setModel() and initialize()
+   *  Requires subsequent setPhiEvaluator(), setModel(), and initialize()
    *  calls before calling takeStep().
   */
   StepperExponentialEuler();
@@ -84,6 +83,7 @@ public:
   /// Constructor
   StepperExponentialEuler(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    const Teuchos::RCP<Tempus::PhiEvaluator<Scalar>>& phiEvaluator,
     bool useFSAL,
     std::string ICConsistency,
     bool ICConsistencyCheck,
