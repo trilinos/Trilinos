@@ -409,6 +409,9 @@ template <typename value_type> int driver(int argc, char *argv[]) {
               << ",\t avg. over (" << niters << " x " << nfacts << ") calls" << std::endl;
     std::cout << " Solve Time " << solve_time / (double)(niters*nsolves)
               << ",\t avg. over (" << niters << " x " << nsolves << ") calls" << std::endl;
+    if (!success) {
+      std::cerr << "\n Error: Some of the residual norms were too large\n\n";
+    }
 #endif
     if (verbose) {
       std::cout << std::endl;
