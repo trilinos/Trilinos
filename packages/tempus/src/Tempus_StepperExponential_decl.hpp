@@ -265,7 +265,8 @@ class StepperExponential : virtual public Tempus::Stepper<Scalar> {
       const Teuchos::RCP<SolutionHistory<Scalar> >& /* solutionHistory */)
       const override
   {
-    return Scalar(1.0e+99);
+    // return a large value that should still fit into any supported scalar type
+    return Scalar(Teuchos::ScalarTraits<Scalar>::rmax() / 1e2);
   }
 
   /// Get a default (initial) StepperState
