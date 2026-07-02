@@ -70,15 +70,15 @@ class StepperEPI :
 public:
 
   /** \brief Default constructor.
-   *
-   *  Requires subsequent setModel(), setSolver() and initialize()
+   *  Requires subsequent setPhiEvaluator(), setModel(), and initialize()
    *  calls before calling takeStep().
-  */
+   */
   StepperEPI();
 
   /// Constructor
   StepperEPI(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>>& appModel,
+    const Teuchos::RCP<Tempus::PhiEvaluator<Scalar>>& phiEvaluator,
     bool useFSAL,
     std::string ICConsistency,
     bool ICConsistencyCheck,
