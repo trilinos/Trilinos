@@ -55,8 +55,9 @@
  *
  *  <div style="margin:0.5em 0; padding:0.6em 0.8em; border:1px solid #ddd; border-radius:6px;">
  *    <b>Example 6: Time step control</b><br>
- *    Introduce TimeStepControl - introduce \ref Tempus::TimeStepControl
- *    to control timesteps with various strategies.
+ *    \ref example-06 "Introduce TimeStepControl" - introduce
+ *    \ref Tempus::TimeStepControl to manage timestep sizes independently of
+ *    the stepper.
  *  </div>
  *
  *  <div style="margin:0.5em 0; padding:0.6em 0.8em; border:1px solid #ddd; border-radius:6px;">

@@ -1,0 +1,134 @@
+/*! \page tempus_tutorial_transition_05_06 Transition from Example 5 to Example 6
+ *
+ *  \section tempus_tutorial_transition_05_06_goal Goal
+ *
+ *  The primary goal of \ref example-06 is to introduce
+ *  \ref Tempus::TimeStepControl while preserving the same
+ *  \ref Thyra::ModelEvaluator-based van der Pol model, the same
+ *  \ref Tempus::SolutionHistory, the same
+ *  \ref Tempus::StepperForwardEuler, and the same application-managed time
+ *  loop used in \ref example-05.
+ *
+ *  \ref Tempus::TimeStepControl manages timestep-size selection independently
+ *  of the stepper.  This allows timestep policy to be changed without
+ *  changing the stepping algorithm itself.
+ *
+ *  New concepts introduced are:
+ *
+ *  - \ref Tempus::TimeStepControl
+ *    - manages timestep-size selection and related integration limits
+ *    - The default \ref Tempus::TimeStepControlStrategy is for constant time
+ *      step (i.e., \ref Tempus::TimeStepControlStrategyConstant).
+ *  - `setFinalTime(...)`
+ *    - sets the final integration time
+ *  - `setNumTimeSteps(...)`
+ *    - sets the number of time steps for constant-timestep control
+ *  - `initialize()`
+ *    - completes setup of the timestep-control object
+ *  - `setNextTimeStep(...)`
+ *    - determines the timestep metadata for the next step using the
+ *      \ref Tempus::SolutionHistory
+ *
+ *  This is the first step in separating timestep-size control from the
+ *  application-managed time loop.  Rather than hardcoding a timestep size in
+ *  the example, the application now delegates that choice to a dedicated
+ *  Tempus control object.
+ *
+ *  \section tempus_tutorial_transition_05_06_same What stays the same
+ *
+ *  - The van der Pol model is still provided by a \ref Thyra::ModelEvaluator.
+ *  - The application still manages the overall time loop directly.
+ *  - The application still manages the \ref Tempus::SolutionHistory.
+ *  - The Forward Euler step is still performed by
+ *    \ref Tempus::StepperForwardEuler.
+ *  - The regression check follows the same pattern.
+ *
+ *  \section tempus_tutorial_transition_05_06_snippets Selected code excerpts
+ *
+ *  The code excerpts below highlight the main changes needed to replace
+ *  hardcoded timestep selection with \ref Tempus::TimeStepControl.
+ *
+ *  <hr style="border:0; border-top:5px solid #ccc;">
+ *  \subsection tempus_tutorial_transition_05_06_snippet1 Construct and initialize TimeStepControl
+ *
+ *  <b>Create and initialize a TimeStepControl.</b>  The application now
+ *  constructs a \ref Tempus::TimeStepControl and initializes it with the
+ *  final time and number of time steps used for constant-timestep control.
+ *  For constant timestep size strategy (i.e., \ref Tempus::TimeStepControlStrategyConstant),
+ *  one can specify number of time steps and the final time, and 
+ *  \ref Tempus::TimeStepControl will internally determine the timestep size.
+ *
+ *  <b>Before</b>
+ *  @code
+ *  double finalTime = 2.0;
+ *  int nTimeSteps = 2000;
+ *  const double constDT = finalTime/nTimeSteps;
+ *  @endcode
+ *
+ *  <b>After</b>
+ *  @code
+ *  auto timeStepControl = Teuchos::rcp(new Tempus::TimeStepControl<double>());
+ *  double finalTime = 2.0;
+ *  int nTimeSteps = 2000;
+ *  timeStepControl->setFinalTime(finalTime);
+ *  timeStepControl->setNumTimeSteps(nTimeSteps);
+ *  timeStepControl->initialize();
+ *  @endcode
+ *
+ *  This introduces a dedicated Tempus object for timestep-size control.
+ *
+ *  <hr style="border:0; border-top:5px solid #ccc;">
+ *  \subsection tempus_tutorial_transition_05_06_snippet2 Replace hardcoded timestep selection
+ *
+ *  <b>Use TimeStepControl to set the next timestep.</b>  Instead of assigning
+ *  a hardcoded timestep size in the application, the control object now
+ *  determines the next timestep metadata using the current solution history, 
+ *  and sets it on the working state.
+ *
+ *  <b>Before</b>
+ *  @code
+ *  auto workingState = solHistory->getWorkingState();
+ *  int index = workingState->getIndex();
+ *  double dt = constDT;
+ *  double time = index*dt;
+ *  workingState->setTime(time);
+ *  workingState->setTimeStep(dt);
+ *  @endcode
+ *
+ *  <b>After</b>
+ *  @code
+ *  timeStepControl->setNextTimeStep(solHistory, integratorStatus);
+ *  @endcode
+ *
+ *  The time loop is still application-controlled, but timestep selection now
+ *  comes from a dedicated Tempus control object.
+ *
+ *  <hr style="border:0; border-top:5px solid #ccc;">
+ *  \section tempus_tutorial_transition_05_06_compare How to compare the examples
+ *
+ *  A more detailed comparison can be made by diffing:
+ *  - `examples/05_Intro_Stepper/05_Intro_Stepper.cpp`
+ *  - `examples/06_Intro_TimeStepControl/06_Intro_TimeStepControl.cpp`
+ *
+ *  From the `packages/tempus` directory, a focused comparison of the main
+ *  time-integration logic between these two examples can be generated locally
+ *  in `bash` or `zsh` with:
+ *
+ *  @code{.sh}
+ *  git diff --no-index \
+ *    <(sed -n '77,138p' examples/05_Intro_Stepper/05_Intro_Stepper.cpp) \
+ *    <(sed -n '79,138p' examples/06_Intro_TimeStepControl/06_Intro_TimeStepControl.cpp)
+ *  @endcode
+ *
+ *  This ignores leading header lines (e.g., `#include` statements and
+ *  Doxygen comments) and trailing regression-testing lines.
+ *
+ *  <hr style="border:0; border-top:5px solid #ccc;">
+ *  \htmlonly
+ *  <div style="text-align:center;">
+ *    <a href="example-05.html">← Previous Example</a> |
+ *    <a href="example-06.html">Current Example</a> |
+ *    <a href="example-07.html">Next Example →</a>
+ *  </div>
+ *  \endhtmlonly
+ */
