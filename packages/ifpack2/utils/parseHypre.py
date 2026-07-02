@@ -16,6 +16,7 @@
 
 
 import re
+import os
 from sys import argv
 
 assert len(argv) == 3
