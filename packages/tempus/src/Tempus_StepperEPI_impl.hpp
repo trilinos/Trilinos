@@ -167,8 +167,8 @@ void StepperEPI<Scalar>::takeStep(
     stepperEPIAppAction_->execute(solutionHistory, thisStepper,
                                   StepperEPIAppAction<Scalar>::ACTION_LOCATION::BEFORE_EXP);
 
-    // setup system Jacobian (and mass) at the current time
-    Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs = this->createInArgsExponentialODE(x, xDot, time, p);
+    // setup system Jacobian (and mass) at the current time t0
+    Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs = this->createInArgsExponentialODE(x, xDot, t0, p);
     this->getPhiEvaluator()->setLinearizationPoint(inArgs, PhiInitialization::JACOBIAN_AND_MASS);
 
     // if requested, update any hyperpameters of the phiEvaluator
@@ -179,8 +179,7 @@ void StepperEPI<Scalar>::takeStep(
       this->getPhiEvaluator()->adaptEvaluator();
     }
 
-    // compute the right hand side for at x (which is still equal to xOld)
-    // first RHS evaluation
+    // First RHS evaluation
     // 
     // compute the right hand side Mf at x (which is still equal to xOld)
     // and potentially set the correct Dirichlet BC to x
@@ -300,6 +299,13 @@ void StepperEPI<Scalar>::takeStep(
       // Get xDot = f(x, t) from Mf = -M*f(x, t)
       // reevaluate f at current time: this will also set the correct BC at time t to x
       this->evaluateExponentialODE(Mf, x, xDot, time, p);
+
+      // in the (untested) case that the mass matrix depends on time, we should recompute it here
+      // if the matrix is constant in time and cached properly, this should be a NOOP
+      Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs
+        = this->createInArgsExponentialODE(x, xDot, time, p);
+      this->getPhiEvaluator()->setLinearizationPoint(inArgs, PhiInitialization::ONLY_MASS);
+
       // solve the mass matrix and scale to obtain final xDot
       this->getPhiEvaluator()->solveMass(xDot.ptr(), Mf);
       Thyra::scale(Scalar(-1.0), xDot.ptr());
