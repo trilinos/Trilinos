@@ -785,7 +785,6 @@ namespace Intrepid2 {
         std::map<ordinal_type, std::map<ordinal_type,double> > transposeOperator; // column to (row -> weight) lookup
         std::set<ordinal_type> opRows(nonIdentityDofs.begin(), nonIdentityDofs.end());
         
-        const ordinal_type numRows = static_cast<ordinal_type>(nonIdentityDofs.size());
         for (ordinal_type rowOrdinal = 0; rowOrdinal < numRows; rowOrdinal++)
         {
           const ordinal_type & rowID = nonIdentityDofs[rowOrdinal];
