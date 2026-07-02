@@ -17,6 +17,16 @@ IF (${PACKAGE_NAME}_ENABLE_HYPRE)
   ELSE ()
     MESSAGE(FATAL_ERROR "Failed to parse Hypre headers")
   ENDIF ()
+
+  # some header names are different if using hypre 3+, add some logic 
+  INCLUDE(CheckIncludeFileCXX)
+  SET(CMAKE_REQUIRED_INCLUDES ${HYPRE_INCLUDE_DIRS})  
+  CHECK_INCLUDE_FILE_CXX("_hypre_krylov.h" HAVE_IFPACK2_HYPRE_UNDERSCORE_KRYLOV_H)
+  CHECK_INCLUDE_FILE_CXX("krylov.h" HAVE_IFPACK2_HYPRE_KRYLOV_H)
+
+  IF (NOT HAVE_IFPACK2_HYPRE_UNDERSCORE_KRYLOV_H AND NOT HAVE_IFPACK2_HYPRE_KRYLOV_H)
+    MESSAGE(FATAL_ERROR "Ifpack2 HYPRE support requires either _hypre_krylov.h or krylov.h")
+  ENDIF ()  
 ENDIF ()
 
 #

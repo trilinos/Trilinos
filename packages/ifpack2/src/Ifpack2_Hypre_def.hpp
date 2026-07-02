@@ -20,7 +20,11 @@
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "HYPRE_IJ_mv.h"
 #include "HYPRE_parcsr_ls.h"
+#if HAVE_IFPACK2_HYPRE_UNDERSCORE_KRYLOV_H
+#include "_hypre_krylov.h"
+#else
 #include "krylov.h"
+#endif
 #include "_hypre_parcsr_mv.h"
 #include "_hypre_IJ_mv.h"
 #include "HYPRE_parcsr_mv.h"
