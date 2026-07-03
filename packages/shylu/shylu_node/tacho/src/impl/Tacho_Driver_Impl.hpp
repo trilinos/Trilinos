@@ -29,7 +29,7 @@ Driver<VT, DT>::Driver()
 #ifdef TACHO_DEPRECATED_PARAMETERS
       _serial_thres_size(-1), _mb(-1), _nb(-1), _front_update_mode(-1), _levelset(0),
 #endif
-      _device_level_cut(0), _device_factor_thres(128), _device_solve_thres(128),
+      _device_level_cut(0), _device_factor_thres(64), _device_solve_thres(128),
       #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP) || defined(KOKKOS_ENABLE_SYCL)
       _variant(2),
       #else
