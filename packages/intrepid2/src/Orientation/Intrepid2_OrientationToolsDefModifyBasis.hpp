@@ -107,10 +107,10 @@ namespace Intrepid2 {
             for (ordinal_type edgeId=0;edgeId<numEdges;++edgeId)
             {
               //            bool havePrinted = false;
-              auto & edgeOp = edgeOperatorData(edgeId, ortEdges[edgeId], transpose);
-              auto & rowIndices = edgeOp.rowIndices;
-              auto & colIndices = edgeOp.packedColumnIndices;
-              auto & weights    = edgeOp.packedWeights;
+              const auto edgeOp = edgeOperatorData(edgeId, ortEdges[edgeId], transpose);
+              const auto rowIndices = edgeOp.rowIndices;
+              const auto colIndices = edgeOp.packedColumnIndices;
+              const auto weights    = edgeOp.packedWeights;
               
               const ordinal_type numRowIndices = rowIndices.extent_int(0);
               if (edgeOp.isWeightedPermutation)
@@ -134,7 +134,7 @@ namespace Intrepid2 {
               }
               else
               {
-                auto & rowOffsets = edgeOp.offsetsForRowOrdinal;
+                const auto rowOffsets = edgeOp.offsetsForRowOrdinal;
                 for (ordinal_type pointOrdinal=0;pointOrdinal<numPoints;pointOrdinal++)
                 {
                   for (ordinal_type rowOrdinal=0; rowOrdinal<numRowIndices; rowOrdinal++)
@@ -175,10 +175,10 @@ namespace Intrepid2 {
             // apply operators on each face
             for (ordinal_type faceId=0;faceId<numFaces;++faceId)
             {
-              auto & faceOp = faceOperatorData(faceId, ortFaces[faceId], transpose);
-              auto & rowIndices = faceOp.rowIndices;
-              auto & colIndices = faceOp.packedColumnIndices;
-              auto & weights    = faceOp.packedWeights;
+              const auto faceOp = faceOperatorData(faceId, ortFaces[faceId], transpose);
+              const auto rowIndices = faceOp.rowIndices;
+              const auto colIndices = faceOp.packedColumnIndices;
+              const auto weights    = faceOp.packedWeights;
               
               ordinal_type numRowIndices = rowIndices.extent_int(0);
               if (faceOp.isWeightedPermutation)
@@ -202,7 +202,7 @@ namespace Intrepid2 {
               }
               else
               {
-                auto & rowOffsets = faceOp.offsetsForRowOrdinal;
+                const auto rowOffsets = faceOp.offsetsForRowOrdinal;
                 for (ordinal_type pointOrdinal=0;pointOrdinal<numPoints;pointOrdinal++)
                 {
                   for (ordinal_type rowOrdinal=0; rowOrdinal<numRowIndices; rowOrdinal++)
@@ -380,9 +380,6 @@ namespace Intrepid2 {
       RealSpaceTools<DT>::clone(output, input);
 
     if ((cellDim < 3) || basis->requireOrientation()) {
-      auto ordinalToTag = Kokkos::create_mirror_view_and_copy(typename DT::memory_space(), basis->getAllDofTags());
-      auto tagToOrdinal = Kokkos::create_mirror_view_and_copy(typename DT::memory_space(), basis->getAllDofOrdinal());
-
       const ordinal_type
         numCells  = output.extent(0),
         //numBasis  = output.extent(1),
@@ -520,9 +517,6 @@ namespace Intrepid2 {
     if ((cellDim < 3) || basisRight->requireOrientation()) {
       const bool leftMultiply = false;
       const bool transpose = true; // NVR: added this September 2025; I think to date we have only ever run this with symmetric orientation operations, so that it has not mattered to date.
-      auto ordinalToTag = Kokkos::create_mirror_view_and_copy(typename DT::memory_space(), basisRight->getAllDofTags());
-      auto tagToOrdinal = Kokkos::create_mirror_view_and_copy(typename DT::memory_space(), basisRight->getAllDofOrdinal());
-
       const ordinal_type
         numOtherFields = numFieldsLeft,
         dimBasis       = output.extent(3); //returns 1 when output.rank() < 4;
