@@ -7,7 +7,6 @@ else()
 endif()
 
 if( STANDALONE_ROL )
-
   cmake_minimum_required(VERSION 3.23)
 
   set(CMAKE_POSITION_INDEPENDENT_CODE ON)
@@ -119,7 +118,60 @@ if( STANDALONE_ROL )
   if(ENABLE_EXAMPLES)
     add_subdirectory(example)
   endif()
+  
+  # Collect headers recursively from all roots
+  # If something doesn't show up, provide a change here
+  set(PROJECT_HEADERS)
+  foreach(dir IN LISTS ROL_CORE_DIRS)
+      file(GLOB_RECURSE headers_in_dir
+          CONFIGURE_DEPENDS
+          "${dir}/*.h"
+          "${dir}/*.hpp"
+          "${dir}/*.hh"
+          "${dir}/*.hxx"
+      )
+      list(APPEND PROJECT_HEADERS ${headers_in_dir})
+  endforeach()
+  foreach(dir IN LISTS ROL_COMPATIBILITY_INCLUDES)
+      file(GLOB_RECURSE headers_in_dir
+          CONFIGURE_DEPENDS
+          "${dir}/*.h"
+          "${dir}/*.hpp"
+          "${dir}/*.hh"
+          "${dir}/*.hxx"
+      )
+      list(APPEND PROJECT_HEADERS ${headers_in_dir})
+  endforeach()
 
+  # Remove duplicates in case patterns overlap
+  list(REMOVE_DUPLICATES PROJECT_HEADERS)
+  
+  # Check for basename collisions when flattening
+  set(_seen_names)
+  set(_duplicate_names)
+
+  foreach(hdr IN LISTS PROJECT_HEADERS)
+      get_filename_component(hdr_name "${hdr}" NAME)
+      list(FIND _seen_names "${hdr_name}" _idx)
+      if(_idx GREATER -1)
+          list(APPEND _duplicate_names "${hdr_name}")
+      else()
+          list(APPEND _seen_names "${hdr_name}")
+      endif()
+  endforeach()
+  
+  install(
+		TARGETS rol   
+		#TARGETS Teuchos_TestForException  
+    LIBRARY DESTINATION lib 
+    #ARCHIVE DESTINATION lib 
+  )
+
+  # Install all headers into one flat include directory
+  foreach(hdr IN LISTS PROJECT_HEADERS)
+      install(FILES "${hdr}" DESTINATION include)
+  endforeach()
+  install(FILES "${CMAKE_CURRENT_BINARY_DIR}/ROL_config.h" DESTINATION include)
 else() # Build with Trilinos
   include(cmake/TrilinosROL.cmake)
 endif()

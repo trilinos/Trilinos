@@ -20,6 +20,7 @@
 #include "ROL_ScaledObjective.hpp"
 #include "ROL_ScalarLinearConstraint.hpp"
 #include "ROL_LinearCombinationObjective.hpp"
+#include "ROL_ChainRuleObjective.hpp"
 
 #include "ROL_OED_ObjectiveArray.hpp"
 #include "ROL_OED_ProbabilityConstraint.hpp"
@@ -39,7 +40,7 @@ private:
   const Ptr<Vector<Real>>          obs_;
 
   // Parsed from parameter list
-  const bool useStorage_, useScale_, useL1_, useDWP_;
+  const bool useStorage_, useScale_, useL1_, useDWP_, useBPT_;
   const Real L1penParam_, DWPparam_;
   const unsigned DWPtype_;
   Real objScale_, conScale_;
@@ -126,6 +127,8 @@ private:
   void buildBoundConstraint(bool useMinMax = false);
   void buildEqualityConstraint(bool useMinMax = false);
   void buildInequalityConstraint(bool useMinMax = false);
+  void buildPenalties(std::vector<Ptr<Objective<Real>>>& ovec, std::vector<Real>& wvec);
+  void buildRobustObjective(ParameterList& list, bool useMinMax = false);
   void computeObjectiveScaling(const Ptr<Objective<Real>> &obj);
   //void checkConstraint(const Ptr<Constraint_SimOpt<Real>> &con,
   //                     std::ostream &stream) const;

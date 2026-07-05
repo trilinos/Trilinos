@@ -21,6 +21,7 @@ template<typename Real>
 class DoubleWellPenalty : public Objective<Real>, public ProfiledClass<Real,std::string> {
 private:
   const unsigned type_;
+  bool bdalg_;
 
   std::vector<Real>& getData(Vector<Real> &x) const;
   const std::vector<Real>& getConstData(const Vector<Real> &x) const;
@@ -30,7 +31,13 @@ private:
   using ProfiledClass<Real,std::string>::stopTimer;
 
 public:
-  DoubleWellPenalty(unsigned type = 1u);
+  DoubleWellPenalty(unsigned type=1u);
+
+  // Set flag to true if being called from binary design algorithm
+  // and the problem being solved is a robust OED problem.  Called
+  // only from ROL::OED::BinaryDesignAlgorithm.  User does should
+  // never call this function.
+  void forBinaryDesignAlgorithm(bool robustProblem) { bdalg_=robustProblem; }
 
   Real value( const Vector<Real> &x, Real &tol ) override;
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) override;

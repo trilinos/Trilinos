@@ -58,10 +58,34 @@ ROL_ADD_EXECUTABLE(
   ADD_DIR_TO_NAME
   )
 
+ROL_ADD_EXECUTABLE(
+  Test
+  SOURCES example_10.cpp
+  ADD_DIR_TO_NAME
+  )
+
+ROL_ADD_EXECUTABLE(
+  BinaryPathFollowing
+  SOURCES example_11.cpp
+  ADD_DIR_TO_NAME
+  )
+
+ROL_ADD_EXECUTABLE(
+  BinaryPenaltyTransformation
+  SOURCES example_12.cpp
+  ADD_DIR_TO_NAME
+  )
+
+ROL_ADD_EXECUTABLE(
+  BinaryConstraint
+  SOURCES example_13.cpp
+  ADD_DIR_TO_NAME
+  )
+
 ROL_COPY_FILES_TO_BINARY_DIR(
   OEDExampleDataCopy
   SOURCE_FILES
-    input.xml input_02.xml input_03.xml input_06.xml
+    input.xml input_02.xml input_03.xml input_06.xml input_11.xml
     plotResults.m pointsGL.txt weightsGL.txt
   SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
   DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
