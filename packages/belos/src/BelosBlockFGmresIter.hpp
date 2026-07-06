@@ -689,12 +689,12 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
         prevind[i] = i;
       }
       Vprev = MVT::CloneView (*V_, prevind);
-      Array<RCP<const MV> > AVprev (1, Vprev);
+      Teuchos::Array<RCP<const MV> > AVprev (1, Vprev);
 
       // Get a view of the part of the Hessenberg matrix needed to hold the ortho coeffs.
       // Ortho always writes into H_ (the raw Hessenberg).
       RCP<DM> subH = DMT::Subview(*H_, lclDim, blockSize_, 0, curDim_);
-      Array<RCP<DM> > AsubH;
+      Teuchos::Array<RCP<DM> > AsubH;
       AsubH.append (subH);
 
       // Get a view of the part of the Hessenberg matrix needed to hold the norm coeffs.
@@ -710,10 +710,13 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
       // If keeping the Hessenberg separately, copy the new columns into R_
       // before updateLSQR() overwrites them with the QR factorization.
       if (keepHessenberg_) {
-        RCP<DM> subR = DMT::Subview(*R_, lclDim, blockSize_, 0, curDim_);
-        subR->assign (*subH);
-        RCP<DM> subR2 = DMT::Subview(*R_, blockSize_, blockSize_, lclDim, curDim_);
-        subR2->assign (*subH2);
+        // Copy over the orthogonalization coefficients.
+        RCP<DM> subR = DMT::Subview(*R_,lclDim,blockSize_,0,curDim_ );
+        DMT::Assign(*subR,*subH);
+
+        // Copy over the lower diagonal block of the Hessenberg matrix.
+        RCP<DM> subR2 = DMT::Subview(*R_,blockSize_,blockSize_,lclDim,curDim_ );
+        DMT::Assign(*subR2,*subH2);
       }
 
       //
