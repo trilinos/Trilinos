@@ -30,12 +30,56 @@ namespace Intrepid2 {
    Each orientation operator corresponds to a subcell (face or edge) of a basis, and applies the specified orientation map to the part of the basis
    corresponding to the subcell.  The assumption is that the input and output vectors supplied prior to application of any orientation operators
    are identical, allowing the identity map to be implemented as a no-op.
+
+   The operator object is stored in a Kokkos::View and copied between host and device.  To keep that safe for non-UVM CUDA builds, it deliberately
+   stores only raw device pointers plus extents, rather than nested Kokkos::View handles.
   */
   template<class DeviceType>
   class OrientationOperator {
   public:
-    using UnmanagedOrdinalView = Kokkos::View<ordinal_type*, typename DeviceType::memory_space, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
-    using UnmanagedDoubleView  = Kokkos::View<      double*, typename DeviceType::memory_space, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+    template<class ValueType>
+    struct RawView1D {
+      ValueType* ptr;
+      size_type extent0;
+
+      KOKKOS_INLINE_FUNCTION
+      RawView1D()
+      : ptr(nullptr), extent0(0)
+      {}
+
+      KOKKOS_INLINE_FUNCTION
+      RawView1D(ValueType* ptr_, const size_type extent0_)
+      : ptr(ptr_), extent0(extent0_)
+      {}
+
+      KOKKOS_INLINE_FUNCTION
+      ValueType& operator()(const ordinal_type i) const {
+        return ptr[i];
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      ValueType& operator[](const ordinal_type i) const {
+        return ptr[i];
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      ordinal_type extent_int(const ordinal_type i) const {
+        return (i == 0) ? static_cast<ordinal_type>(extent0) : 1;
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      size_type extent(const ordinal_type i) const {
+        return (i == 0) ? extent0 : 1;
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      ValueType* data() const {
+        return ptr;
+      }
+    };
+
+    using UnmanagedOrdinalView = RawView1D<ordinal_type>;
+    using UnmanagedDoubleView  = RawView1D<double>;
     
     // only stores deviations from the identity
     UnmanagedOrdinalView rowIndices;           // index in basis (the field ordinal)

@@ -95,7 +95,7 @@ namespace Intrepid2 {
                                    numEdges, numOrts, 2);
     }
     
-    // NOTE: the OrientationOperators within operatorsHost contain *device* views.
+    // NOTE: the OrientationOperators within operatorsHost contain raw device pointers.
     auto operatorsHost = Kokkos::create_mirror_view(operators);
 
     if (matDim1 == 0)
@@ -231,7 +231,7 @@ namespace Intrepid2 {
                                    numFaces, numOrts, 2);
     }
     
-    // NOTE: the OrientationOperators within operatorsHost contain *device* views.
+    // NOTE: the OrientationOperators within operatorsHost contain raw device pointers.
     auto operatorsHost = Kokkos::create_mirror_view(operators);
 
     if (matDim2 == 0)
