@@ -96,7 +96,7 @@ namespace Intrepid2 {
     }
     
     // NOTE: the OrientationOperators within operatorsHost contain *device* views.
-    auto operatorsHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), operators);
+    auto operatorsHost = Kokkos::create_mirror_view(operators);
 
     if (matDim1 == 0)
     {
@@ -232,7 +232,7 @@ namespace Intrepid2 {
     }
     
     // NOTE: the OrientationOperators within operatorsHost contain *device* views.
-    auto operatorsHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), operators);
+    auto operatorsHost = Kokkos::create_mirror_view(operators);
 
     if (matDim2 == 0)
     {
