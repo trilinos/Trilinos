@@ -390,8 +390,8 @@ void PhiLinearSolver<Scalar>::setLumpMassMatrix(bool lump)
 {
   if (lumpMass_ != lump) {
     // if lumping status has changed, clear the matrix, so that it will be rebuilt
-    massMatrix_ == Teuchos::null;
-    inverseMassMatrix_ == Teuchos::null;
+    massMatrix_ = Teuchos::null;
+    inverseMassMatrix_ = Teuchos::null;
   }
   lumpMass_ = lump;
 }
