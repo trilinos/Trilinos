@@ -45,12 +45,15 @@ using Teuchos::RCP;
  *  both the stepping algorithm and the surrounding application logic.
  *  It should be noted that the Tempus::Stepper can provide a suggested
  *  next timestep size, but the final timestep size selection occurs in
- *  \ref Tempus:TimeStepControl.
+ *  \ref Tempus::TimeStepControl.
  *
  *  Relative to \ref example-05:
  *  - timestep control is moved into \ref Tempus::TimeStepControl
  *  - the application initializes a dedicated timestep-control object
- *  - timestep metadata is now managed through the control object and solution history
+ *  - the time loop uses the control object to determine whether the current
+ *    time and step index remain in range
+ *  - timestep metadata for each new working state is assigned through the
+ *    control object rather than directly in the application
  *  - the stepper and solution-history logic remain essentially unchanged
  *
  *  The central idea behind \ref Tempus::TimeStepControl is that timestep size
@@ -62,6 +65,7 @@ using Teuchos::RCP;
  *  - setting the final integration time
  *  - setting the number of time steps for constant-timestep control
  *  - using the control object to determine timestep metadata for each step
+ *  - using the control object to test whether time and step index remain in range
  *
  *  <hr>
  *  \par Transition notes
@@ -112,8 +116,8 @@ int main(int argc, char *argv[])
 
     // Advance the solution to the next timestep.
     while (solHistory->getCurrentState()->getSolutionStatus() == Tempus::Status::PASSED &&
-           solHistory->getCurrentState()->getTime() < finalTime &&
-           solHistory->getCurrentState()->getIndex() < nTimeSteps) {
+           timeStepControl->timeInRange(solHistory->getCurrentTime()) &&
+           timeStepControl->indexInRange(solHistory->getCurrentIndex())) {
 
       // Initialize next time step using SolutionHistory
       solHistory->initWorkingState();

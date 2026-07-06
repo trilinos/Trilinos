@@ -45,7 +45,7 @@ using Teuchos::RCP;
  *  Relative to \ref example-04:
  *  - the Forward Euler update is performed by a \ref Tempus::Stepper
  *  - the specific stepper used is \ref Tempus::StepperForwardEuler
- *  - the application still manages the time loop and solution history
+ *  - the application still manages the time loop and \ref Tempus::SolutionHistory
  *  - the stepper advances the working state using the model and timestep
  *    information already stored in the history
  *
@@ -107,8 +107,8 @@ int main(int argc, char *argv[])
 
     // Advance the solution to the next timestep.
     while (solHistory->getCurrentState()->getSolutionStatus() == Tempus::Status::PASSED &&
-           solHistory->getCurrentState()->getTime() < finalTime &&
-           solHistory->getCurrentState()->getIndex() < nTimeSteps) {
+           solHistory->getCurrentTime() < finalTime &&
+           solHistory->getCurrentIndex() < nTimeSteps  ) {
 
       // Initialize next time step using SolutionHistory
       solHistory->initWorkingState();

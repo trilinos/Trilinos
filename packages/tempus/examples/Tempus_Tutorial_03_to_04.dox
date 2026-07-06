@@ -20,6 +20,10 @@
  *    - returns the current accepted solution state
  *  - `getWorkingState()`
  *    - returns the tentative working solution state
+ *  - `getCurrentTime()`
+ *    - returns the time of the current accepted solution state
+ *  - `getCurrentIndex()`
+ *    - returns the index of the current accepted solution state
  *  - `promoteWorkingState()`
  *    - promotes the accepted working state to become the new current state
  *
@@ -95,8 +99,8 @@
  *  @code
  *  while (solHistory->getCurrentState()->getSolutionStatus() ==
  *           Tempus::Status::PASSED &&
- *         solHistory->getCurrentState()->getTime() < finalTime &&
- *         solHistory->getCurrentState()->getIndex() < nTimeSteps) {
+ *         solHistory->getCurrentTime() < finalTime &&
+ *         solHistory->getCurrentIndex() < nTimeSteps) {
  *
  *    solHistory->initWorkingState();
  *    auto currentState = solHistory->getCurrentState();
@@ -164,8 +168,9 @@
  *  solHistory->promoteWorkingState();
  *  @endcode
  *
- *  The step result is now associated with the working state, and the history
- *  object manages the promotion of that state to the current state.
+ *  The new solution is written into the working state, the step result is
+ *  associated with that state, and the history object manages promotion of
+ *  that state to become the new current state.
  *
  *  <hr style="border:0; border-top:5px solid #ccc;">
  *  \section tempus_tutorial_transition_03_04_compare How to compare the examples
@@ -180,8 +185,8 @@
  *
  *  @code{.sh}
  *  git diff --no-index \
- *    <(sed -n '69,149p' examples/03_Intro_SolutionState/03_Intro_SolutionState.cpp) \
- *    <(sed -n '128,213p' examples/04_Adding_SolutionHistory/04_Adding_SolutionHistory.cpp)
+ *    <(sed -n '73,146p' examples/03_Intro_SolutionState/03_Intro_SolutionState.cpp) \
+ *    <(sed -n '79,157p' examples/04_Adding_SolutionHistory/04_Adding_SolutionHistory.cpp)
  *  @endcode
  *
  *  This ignores leading header lines (e.g., `#include` statements and

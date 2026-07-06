@@ -105,8 +105,8 @@ int main(int argc, char *argv[])
 
     // Advance the solution to the next timestep.
     while (solHistory->getCurrentState()->getSolutionStatus() == Tempus::Status::PASSED &&
-           solHistory->getCurrentState()->getTime() < finalTime &&
-           solHistory->getCurrentState()->getIndex() < nTimeSteps) {
+           solHistory->getCurrentTime() < finalTime &&
+           solHistory->getCurrentIndex() < nTimeSteps  ) {
 
       // Initialize next time step using SolutionHistory
       solHistory->initWorkingState();
