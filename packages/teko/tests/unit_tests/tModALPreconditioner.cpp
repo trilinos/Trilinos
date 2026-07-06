@@ -16,8 +16,6 @@
 #include <iostream>
 #include <fstream>
 #include <cmath>
-#include <sys/types.h>
-#include <unistd.h>
 
 // Teuchos
 #include "Teuchos_ConfigDefs.hpp"
@@ -92,7 +90,7 @@ TEUCHOS_UNIT_TEST(tModALPreconditioner, test_tpetra) {
   auto comm = Tpetra::getDefaultComm();
 
   int myPID = comm->getRank();
-  out << "MPI_PID = " << myPID << ", UNIX_PID = " << getpid() << std::endl;
+  out << "MPI_PID = " << myPID << std::endl;
 
   // Maps
   int dim   = 2;
