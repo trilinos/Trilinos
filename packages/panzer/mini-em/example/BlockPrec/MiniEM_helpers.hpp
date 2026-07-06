@@ -50,7 +50,8 @@ namespace mini_em {
     GMRES,
     MAXWELL1_RS,
     MAXWELL1_SA_RS,
-    MAXWELL1_EMIN
+    MAXWELL1_EMIN,
+    DIRECT
   };
 
   void getMesh(Teuchos::ParameterList &mesh_pl,

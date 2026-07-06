@@ -203,7 +203,7 @@ def launch_container(source_dir, packageEnablesFile, image, tag, genconfig_build
         in which this can happen. Some suggestions for narrowing down the problem:
 
         - The podman installation is simply broken. Try running
-            podman run -it --rm docker.io/rockylinux/rockylinux bash -c "echo \"That worked!!!\""
+            podman run -it --rm docker.io/rockylinux/rockylinux bash -c "echo \\"That worked\\""
           to run a minimal Linux container as a test.
 
         - Podman might be provided by a module. Try e.g.
