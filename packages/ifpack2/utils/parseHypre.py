@@ -16,6 +16,7 @@
 
 
 import re
+import os
 from sys import argv
 
 assert len(argv) == 3
@@ -37,7 +38,7 @@ functionCharStar = re.compile(r'\s*HYPRE_Int\s+(HYPRE_[a-zA-Z]+Set[a-zA-Z]+)\s*\
 
 files = ["HYPRE_IJ_mv.h",
          "HYPRE_parcsr_ls.h",
-         "krylov.h",
+         "krylov.h" if os.path.exists(os.path.join(hypreInclude, "krylov.h")) else "_hypre_krylov.h",
          "_hypre_parcsr_mv.h",
          "_hypre_IJ_mv.h",
          "HYPRE_parcsr_mv.h",
