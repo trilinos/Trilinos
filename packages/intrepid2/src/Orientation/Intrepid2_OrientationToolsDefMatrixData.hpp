@@ -98,9 +98,24 @@ namespace Intrepid2 {
     // NOTE: the OrientationOperators within operatorsHost contain raw device pointers.
     auto operatorsHost = Kokkos::create_mirror_view(operators);
 
+    // Initialize all entries to identity.  Kokkos::View allocation does not guarantee
+    // that each OrientationOperator object has been semantically initialized, and
+    // uninitialized pointer/extent fields can cause non-UVM CUDA failures.
+    for (ordinal_type subcellOrdinal=0; subcellOrdinal<static_cast<ordinal_type>(operatorsHost.extent(0)); ++subcellOrdinal)
+    {
+      for (ordinal_type ortOrdinal=0; ortOrdinal<static_cast<ordinal_type>(operatorsHost.extent(1)); ++ortOrdinal)
+      {
+        for (ordinal_type transposeInt=0; transposeInt<static_cast<ordinal_type>(operatorsHost.extent(2)); ++transposeInt)
+        {
+          operatorsHost(subcellOrdinal, ortOrdinal, transposeInt) = OrientationOperator<DT>();
+        }
+      }
+    }
+
     if (matDim1 == 0)
     {
       // no non-trivial edge operators (no edge dofs)
+      Kokkos::deep_copy(operators, operatorsHost);
       return operators;
     }
     
@@ -234,9 +249,24 @@ namespace Intrepid2 {
     // NOTE: the OrientationOperators within operatorsHost contain raw device pointers.
     auto operatorsHost = Kokkos::create_mirror_view(operators);
 
+    // Initialize all entries to identity.  Kokkos::View allocation does not guarantee
+    // that each OrientationOperator object has been semantically initialized, and
+    // uninitialized pointer/extent fields can cause non-UVM CUDA failures.
+    for (ordinal_type subcellOrdinal=0; subcellOrdinal<static_cast<ordinal_type>(operatorsHost.extent(0)); ++subcellOrdinal)
+    {
+      for (ordinal_type ortOrdinal=0; ortOrdinal<static_cast<ordinal_type>(operatorsHost.extent(1)); ++ortOrdinal)
+      {
+        for (ordinal_type transposeInt=0; transposeInt<static_cast<ordinal_type>(operatorsHost.extent(2)); ++transposeInt)
+        {
+          operatorsHost(subcellOrdinal, ortOrdinal, transposeInt) = OrientationOperator<DT>();
+        }
+      }
+    }
+
     if (matDim2 == 0)
     {
       // no non-trivial face operators (no face dofs)
+      Kokkos::deep_copy(operators, operatorsHost);
       return operators;
     }
     
