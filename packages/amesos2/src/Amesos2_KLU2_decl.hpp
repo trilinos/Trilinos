@@ -54,6 +54,7 @@ public:
   typedef typename super_type::local_ordinal_type        local_ordinal_type;
   typedef typename super_type::global_ordinal_type      global_ordinal_type;
   typedef typename super_type::global_size_type            global_size_type;
+  typedef typename super_type::node_type                         node_type;
 
   typedef TypeMap<Amesos2::KLU2,scalar_type>                    type_map;
 
@@ -232,6 +233,12 @@ private:
 
   /// Persisting 1D store for B
   mutable host_solve_array_t bValues_;
+
+  /// Cached distribution map for B/X redistribution; avoids recomputing the
+  /// gather map (MPI collective) on every solve call.
+  mutable Teuchos::RCP<const Tpetra::Map<local_ordinal_type,
+                                          global_ordinal_type,
+                                          node_type>> distributionMap_;
 
   /// Transpose flag
   /// 0: Non-transpose, 1: Transpose, 2: Conjugate-transpose

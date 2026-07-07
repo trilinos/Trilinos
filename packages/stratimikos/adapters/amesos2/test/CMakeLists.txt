@@ -37,9 +37,29 @@ IF(Amesos2_ENABLE_CSS_MKL)
     )
 ENDIF()
 
+IF(Amesos2_ENABLE_ShyLU_NodeTacho)
+  TRIBITS_ADD_TEST(
+    test_single_amesos2_tpetra_solver_driver
+    POSTFIX_AND_ARGS_0 Tacho
+    --show-all-tests --solver-type=TACHO --verbose --matrix-file=tacho_test.mtx
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    )
+ENDIF()
+
+IF(Amesos2_ENABLE_CUSOLVER)
+  TRIBITS_ADD_TEST(
+    test_single_amesos2_tpetra_solver_driver
+    POSTFIX_AND_ARGS_0 cuSOLVER
+    --show-all-tests --solver-type=cuSOLVER --verbose --matrix-file=tacho_test.mtx
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    )
+ENDIF()
+
 TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyAmesos2TestFiles
   DEST_FILES
-    orsirr_2.mtx
+    orsirr_2.mtx tacho_test.mtx
   SOURCE_DIR
     "${PACKAGE_SOURCE_DIR}/../amesos2/test/matrices"
   EXEDEPS

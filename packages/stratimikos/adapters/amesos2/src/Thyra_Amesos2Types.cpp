@@ -41,6 +41,18 @@ const Amesos2::ESolverType Amesos2::solverTypeValues[Amesos2::numSolverTypes] =
 #ifdef HAVE_AMESOS2_MUMPS
   ,Amesos2::MUMPS
 #endif
+#ifdef HAVE_AMESOS2_UMFPACK
+  ,Amesos2::UMFPACK
+#endif
+#ifdef HAVE_AMESOS2_SHYLU_NODETACHO
+  ,Amesos2::TACHO
+#endif
+#ifdef HAVE_AMESOS2_STRUMPACK
+  ,Amesos2::STRUMPACK
+#endif
+#ifdef HAVE_AMESOS2_CUSOLVER
+  ,Amesos2::CUSOLVER
+#endif
 };
 
 const char* Amesos2::solverTypeNames[Amesos2::numSolverTypes] =
@@ -73,6 +85,18 @@ const char* Amesos2::solverTypeNames[Amesos2::numSolverTypes] =
 #ifdef HAVE_AMESOS2_MUMPS
   ,"MUMPS"
 #endif
+#ifdef HAVE_AMESOS2_UMFPACK
+  ,"UMFPACK"
+#endif
+#ifdef HAVE_AMESOS2_SHYLU_NODETACHO
+  ,"TACHO"
+#endif
+#ifdef HAVE_AMESOS2_STRUMPACK
+  ,"STRUMPACK"
+#endif
+#ifdef HAVE_AMESOS2_CUSOLVER
+  ,"cuSOLVER"
+#endif
 };
 
 const bool Amesos2::supportsUnsymmetric[Amesos2::numSolverTypes] =
@@ -103,6 +127,18 @@ const bool Amesos2::supportsUnsymmetric[Amesos2::numSolverTypes] =
   ,false //don't know, being conservative
 #endif
 #ifdef HAVE_AMESOS2_MUMPS
+  ,true
+#endif
+#ifdef HAVE_AMESOS2_UMFPACK
+  ,true
+#endif
+#ifdef HAVE_AMESOS2_SHYLU_NODETACHO
+  ,false
+#endif
+#ifdef HAVE_AMESOS2_STRUMPACK
+  ,true
+#endif
+#ifdef HAVE_AMESOS2_CUSOLVER
   ,true
 #endif
 };
