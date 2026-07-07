@@ -46,6 +46,8 @@ int PointToBlockDiagPermute<Scalar, LocalOrdinal, GlobalOrdinal, Node>::setParam
   list_ = list;
 
   contiguousBlockSize_ = list_.get("contiguous block size", 0);
+  TEUCHOS_TEST_FOR_EXCEPTION(contiguousBlockSize_ < 0, std::runtime_error,
+                             "PointToBlockDiagPermute: contiguous block size must be non-negative");
   contiguousBlockMode_ = (contiguousBlockSize_ != 0);
   purelyLocalMode_     = true;
 
@@ -54,6 +56,14 @@ int PointToBlockDiagPermute<Scalar, LocalOrdinal, GlobalOrdinal, Node>::setParam
   }
 
   numBlocks_ = list_.get("number of local blocks", 0);
+  TEUCHOS_TEST_FOR_EXCEPTION(numBlocks_ < 0, std::runtime_error,
+                             "PointToBlockDiagPermute: invalid number of local blocks");
+
+  if (numBlocks_ == 0) {
+    blockStarts_.assign(1, 0);
+    blockGids_.clear();
+    return 0;
+  }
 
   TEUCHOS_TEST_FOR_EXCEPTION(!list_.isParameter("block start index"), std::runtime_error,
                              "PointToBlockDiagPermute: missing block start index");
@@ -62,8 +72,10 @@ int PointToBlockDiagPermute<Scalar, LocalOrdinal, GlobalOrdinal, Node>::setParam
   blockStarts_ = list_.get<Teuchos::Array<int>>("block start index");
   blockGids_   = list_.get<Teuchos::Array<GlobalOrdinal>>("block entry gids");
 
-  TEUCHOS_TEST_FOR_EXCEPTION(numBlocks_ <= 0, std::runtime_error,
-                             "PointToBlockDiagPermute: invalid number of local blocks");
+  TEUCHOS_TEST_FOR_EXCEPTION(blockStarts_.size() < numBlocks_ + 1, std::runtime_error,
+                             "PointToBlockDiagPermute: block start index array size is too small");
+  TEUCHOS_TEST_FOR_EXCEPTION(blockGids_.size() < blockStarts_[numBlocks_], std::runtime_error,
+                             "PointToBlockDiagPermute: block entry gids array size is too small");
 
   return 0;
 }
@@ -72,15 +84,22 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 int PointToBlockDiagPermute<Scalar, LocalOrdinal, GlobalOrdinal, Node>::setupContiguousMode() {
   if (!contiguousBlockMode_) return 0;
 
-  const auto rowMap            = matrix_->getRowMap();
+  const auto rowMap = matrix_->getRowMap();
+  if (rowMap->getLocalNumElements() == 0) {
+    numBlocks_ = 0;
+    blockStarts_.assign(1, 0);
+    blockGids_.clear();
+    return 0;
+  }
+
   const GlobalOrdinal minMyGID = rowMap->getMinGlobalIndex();
   const GlobalOrdinal maxMyGID = rowMap->getMaxGlobalIndex();
   const GlobalOrdinal base     = rowMap->getIndexBase();
 
   const GlobalOrdinal myFirstBlockGID =
       static_cast<GlobalOrdinal>(contiguousBlockSize_ *
-                                     std::ceil(static_cast<double>(minMyGID - base) /
-                                               static_cast<double>(contiguousBlockSize_)) +
+                                     std::floor(static_cast<double>(minMyGID - base) /
+                                                static_cast<double>(contiguousBlockSize_)) +
                                  base);
 
   numBlocks_ = static_cast<int>(
@@ -118,7 +137,6 @@ int PointToBlockDiagPermute<Scalar, LocalOrdinal, GlobalOrdinal, Node>::extractB
   const LocalOrdinal numMyRows = static_cast<LocalOrdinal>(rowMap->getLocalNumElements());
 
   std::vector<int> localToBlock(numMyRows, -1);
-  std::vector<int> blockOffset(numMyRows, -1);
 
   for (int b = 0; b < numBlocks_; ++b) {
     for (int j = blockStarts_[b]; j < blockStarts_[b + 1]; ++j) {
@@ -126,7 +144,6 @@ int PointToBlockDiagPermute<Scalar, LocalOrdinal, GlobalOrdinal, Node>::extractB
       LocalOrdinal lid  = rowMap->getLocalElement(gid);
       if (lid != Teuchos::OrdinalTraits<LocalOrdinal>::invalid()) {
         localToBlock[lid] = b;
-        blockOffset[lid]  = j - blockStarts_[b];
       }
     }
   }
@@ -135,9 +152,14 @@ int PointToBlockDiagPermute<Scalar, LocalOrdinal, GlobalOrdinal, Node>::extractB
       Teuchos::rcp(new crs_type(rowMap, contiguousBlockSize_ > 0 ? contiguousBlockSize_ : 8));
 
   typename crs_type::nonconst_local_inds_host_view_type inds(
-      "inds", matrix_->getGlobalMaxNumRowEntries());
+      "inds", matrix_->getLocalMaxNumRowEntries());
   typename crs_type::nonconst_values_host_view_type vals(
-      "vals", matrix_->getGlobalMaxNumRowEntries());
+      "vals", matrix_->getLocalMaxNumRowEntries());
+
+  std::vector<GlobalOrdinal> outCols;
+  std::vector<Scalar> outVals;
+  outCols.reserve(contiguousBlockSize_ > 0 ? contiguousBlockSize_ : 8);
+  outVals.reserve(contiguousBlockSize_ > 0 ? contiguousBlockSize_ : 8);
 
   for (LocalOrdinal lrow = 0; lrow < numMyRows; ++lrow) {
     int blockNum = localToBlock[lrow];
@@ -148,16 +170,19 @@ int PointToBlockDiagPermute<Scalar, LocalOrdinal, GlobalOrdinal, Node>::extractB
     size_t numEntries = Teuchos::OrdinalTraits<size_t>::invalid();
     matrix_->getLocalRowCopy(lrow, inds, vals, numEntries);
 
-    std::vector<GlobalOrdinal> outCols;
-    std::vector<Scalar> outVals;
+    outCols.clear();
+    outVals.clear();
 
     for (size_t k = 0; k < numEntries; ++k) {
       LocalOrdinal lcol = inds(k);
       if (lcol == Teuchos::OrdinalTraits<LocalOrdinal>::invalid()) continue;
-      if (lcol >= static_cast<LocalOrdinal>(localToBlock.size())) continue;
-      if (localToBlock[lcol] != blockNum) continue;
 
       GlobalOrdinal colGid = colMap->getGlobalElement(lcol);
+      if (colGid == Teuchos::OrdinalTraits<GlobalOrdinal>::invalid()) continue;
+      LocalOrdinal rowLid = rowMap->getLocalElement(colGid);
+      if (rowLid == Teuchos::OrdinalTraits<LocalOrdinal>::invalid()) continue;
+      if (localToBlock[rowLid] != blockNum) continue;
+
       outCols.push_back(colGid);
       outVals.push_back(vals(k));
     }
