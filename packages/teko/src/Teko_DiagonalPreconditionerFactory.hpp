@@ -13,8 +13,16 @@
 // Teko includes
 #include "Teko_PreconditionerState.hpp"
 #include "Teko_PreconditionerFactory.hpp"
+#include "Teko_ConfigDefs.hpp"
 
 class EpetraExt_PointToBlockDiagPermute;
+
+namespace Tpetra {
+namespace Ext {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class PointToBlockDiagPermute;
+}
+}  // namespace Tpetra
 
 namespace Teko {
 
@@ -30,6 +38,7 @@ class DiagonalPrecondState : public Teko::PreconditionerState {
   DiagonalPrecondState();
 
   Teuchos::RCP<EpetraExt_PointToBlockDiagPermute> BDP_;
+  Teuchos::RCP<Tpetra::Ext::PointToBlockDiagPermute<ST, LO, GO, NT> > BDP_tpetra_;
 };
 
 /** \brief Preconditioner factory for building explcit inverse of diagonal operators.

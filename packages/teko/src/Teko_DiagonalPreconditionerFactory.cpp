@@ -9,17 +9,10 @@
 
 #include "Teko_DiagonalPreconditionerFactory.hpp"
 #include "Teko_DiagonalPreconditionerOp.hpp"
-#ifdef TEKO_HAVE_EPETRA
-#include "Thyra_get_Epetra_Operator.hpp"
-#include "Epetra_CrsMatrix.h"
-#include "EpetraExt_PointToBlockDiagPermute.h"
-#endif
 
 #include "Teko_TpetraHelpers.hpp"
-#ifdef TEKO_HAVE_EPETRA
-#include "Thyra_EpetraLinearOp.hpp"
-#endif
 #include "Thyra_TpetraLinearOp.hpp"
+#include "TpetraExt_PointToBlockDiagPermute_decl.hpp"
 
 using Teuchos::rcp;
 using Teuchos::RCP;
@@ -39,35 +32,35 @@ RCP<PreconditionerState> DiagonalPreconditionerFactory::buildPreconditionerState
 LinearOp DiagonalPreconditionerFactory::buildPreconditionerOperator(
     LinearOp& lo, PreconditionerState& state) const {
   if (diagonalType_ == BlkDiag) {
-    TEUCHOS_TEST_FOR_EXCEPTION(TpetraHelpers::isTpetraLinearOp(lo), std::runtime_error,
-                               "BlkDiag not implemented for Tpetra operators");
-#ifdef TEKO_HAVE_EPETRA
-    // Sanity check the state
     DiagonalPrecondState& MyState = Teuchos::dyn_cast<DiagonalPrecondState>(state);
 
-    // Get the underlying Epetra_CrsMatrix, if we have one
-    Teuchos::RCP<const Epetra_Operator> eo = Thyra::get_Epetra_Operator(*lo);
-    TEUCHOS_ASSERT(eo != Teuchos::null);
-    Teuchos::RCP<const Epetra_CrsMatrix> MAT =
-        Teuchos::rcp_dynamic_cast<const Epetra_CrsMatrix>(eo);
-    TEUCHOS_ASSERT(MAT != Teuchos::null);
+    if (TpetraHelpers::isTpetraLinearOp(lo)) {
+      RCP<const Thyra::TpetraLinearOp<ST, LO, GO, NT> > tlo =
+          Teuchos::rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST, LO, GO, NT> >(lo, true);
+      RCP<const Tpetra::Operator<ST, LO, GO, NT> > top = tlo->getConstTpetraOperator();
+      RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT> > MAT =
+          Teuchos::rcp_dynamic_cast<const Tpetra::CrsMatrix<ST, LO, GO, NT> >(top, true);
 
-    // Create a new EpetraExt_PointToBlockDiagPermute for the state object, if we don't have one
-    Teuchos::RCP<EpetraExt_PointToBlockDiagPermute> BDP;
-    if (MyState.BDP_ == Teuchos::null) {
-      BDP = Teuchos::rcp(new EpetraExt_PointToBlockDiagPermute(*MAT));
-      BDP->SetParameters(List_);
-      BDP->Compute();
-      MyState.BDP_ = BDP;
+      RCP<Tpetra::Ext::PointToBlockDiagPermute<ST, LO, GO, NT> > BDP;
+      if (MyState.BDP_tpetra_ == Teuchos::null) {
+        BDP = Teuchos::rcp(new Tpetra::Ext::PointToBlockDiagPermute<ST, LO, GO, NT>(*MAT));
+        BDP->setParameters(List_);
+        BDP->compute();
+        MyState.BDP_tpetra_ = BDP;
+      } else {
+        BDP = MyState.BDP_tpetra_;
+      }
+
+      RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > Hcrs = BDP->createCrsMatrix();
+      return Thyra::tpetraLinearOp<ST, LO, GO, NT>(
+          Thyra::tpetraVectorSpace<ST, LO, GO, NT>(Hcrs->getRangeMap()),
+          Thyra::tpetraVectorSpace<ST, LO, GO, NT>(Hcrs->getDomainMap()), Hcrs);
     }
 
-    RCP<Epetra_FECrsMatrix> Hcrs = rcp(MyState.BDP_->CreateFECrsMatrix());
-    return Thyra::epetraLinearOp(Hcrs);
-
-    // Build the LinearOp object  (NTS: swapping the range and domain)
-    // LinearOp MyOp = Teuchos::rcp(new
-    // DiagonalPreconditionerOp(MyState.BDP_,lo->domain(),lo->range()));
-#endif
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
+                               "DiagonalPreconditionerFactory::buildPreconditionerOperator: "
+                               "BlkDiag requested, but operator is neither supported Tpetra nor "
+                               "supported Epetra.");
   }
 
   return getInvDiagonalOp(lo, diagonalType_);
