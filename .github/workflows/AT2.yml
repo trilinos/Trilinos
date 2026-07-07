@@ -95,7 +95,7 @@ jobs:
           printf "\n\n\n"
 
           echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}"
-          if [ "${IMAGE}" ~= "${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" ] ; then
+          if [ "${IMAGE}" != "${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" ] ; then
               exit 1
           fi
 
@@ -152,7 +152,7 @@ jobs:
     needs: pre-checks
     runs-on: [self-hosted, clang-19.1.7-openmpi-4.1.6, 20260507]
     env:
-      IMAGE: registry-ex.sandia.gov/trilinos-project/trilinos-containers/production/ubi9-clang-19.1.6-openmpi-4.1.6:20260507
+      IMAGE: registry-ex.sandia.gov/trilinos-project/trilinos-containers/production/ubi9-clang-19.1.7-openmpi-4.1.6:20260507
       GENCONFIG_BUILD_NAME: rhel_clang-openmpi_release-debug_shared_no-kokkos-arch_no-asan_no-complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables
     if: ${{ needs.pre-checks.outputs.should_skip != 'true' && (github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED') }}
     steps:
@@ -211,7 +211,7 @@ jobs:
           printf "\n\n\n"
 
           echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}"
-          if [ "${IMAGE}" ~= "${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" ] ; then
+          if [ "${IMAGE}" != "${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" ] ; then
               exit 1
           fi
 
@@ -326,7 +326,7 @@ jobs:
           printf "\n\n\n"
 
           echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}"
-          if [ "${IMAGE}" ~= "${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" ] ; then
+          if [ "${IMAGE}" != "${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" ] ; then
               exit 1
           fi
 
@@ -444,7 +444,7 @@ jobs:
           printf "\n\n\n"
 
           echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}"
-          if [ "${IMAGE}" ~= "${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" ] ; then
+          if [ "${IMAGE}" != "${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" ] ; then
               exit 1
           fi
 
@@ -559,7 +559,7 @@ jobs:
           printf "\n\n\n"
 
           echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}"
-          if [ "${IMAGE}" ~= "${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" ] ; then
+          if [ "${IMAGE}" != "${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" ] ; then
               exit 1
           fi
 
@@ -672,7 +672,7 @@ jobs:
           printf "\n\n\n"
 
           echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}"
-          if [ "${IMAGE}" ~= "${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" ] ; then
+          if [ "${IMAGE}" != "${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" ] ; then
               exit 1
           fi
 
@@ -788,7 +788,7 @@ jobs:
           printf "\n\n\n"
 
           echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}"
-          if [ "${IMAGE}" ~= "${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" ] ; then
+          if [ "${IMAGE}" != "${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" ] ; then
               exit 1
           fi
 
