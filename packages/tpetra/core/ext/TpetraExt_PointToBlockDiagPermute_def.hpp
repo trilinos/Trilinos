@@ -107,7 +107,10 @@ int PointToBlockDiagPermute<Scalar, LocalOrdinal, GlobalOrdinal, Node>::setupCon
                 static_cast<double>(contiguousBlockSize_)));
 
   blockStarts_.resize(numBlocks_ + 1);
-  blockGids_.resize(numBlocks_ * contiguousBlockSize_);
+
+  const size_t numBlockEntries =
+      static_cast<size_t>(numBlocks_) * static_cast<size_t>(contiguousBlockSize_);
+  blockGids_.resize(numBlockEntries);
 
   blockStarts_[numBlocks_] = numBlocks_ * contiguousBlockSize_;
 
