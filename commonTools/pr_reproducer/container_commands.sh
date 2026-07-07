@@ -21,7 +21,12 @@ configure_trilinos() {
         return 1
     fi
     rm -rf $TRILINOS_BUILD_DIR/CMakeCache.txt $TRILINOS_BUILD_DIR/CMakeFiles/
-    cmake -S $TRILINOS_DIR -B $TRILINOS_BUILD_DIR -C /workspace/pr.cmake -C /workspace/packageEnables.cmake -G Ninja |& tee $TRILINOS_BUILD_DIR/configure.log
+    IFS=" " read -r my_cmake_extra_args <<< ${CMAKE_EXTRA_ARGS}
+    if [ -f /workspace/packageEnables.cmake ]; then
+        cmake -S $TRILINOS_DIR -B $TRILINOS_BUILD_DIR -C /workspace/pr.cmake -C /workspace/packageEnables.cmake "${my_cmake_extra_args[@]}" -G Ninja ${CMAKE_EXTRA_ARGS} |& tee $TRILINOS_BUILD_DIR/configure.log
+    else
+        cmake -S $TRILINOS_DIR -B $TRILINOS_BUILD_DIR -C /workspace/pr.cmake "${my_cmake_extra_args[@]}" -G Ninja |& tee $TRILINOS_BUILD_DIR/configure.log
+    fi
 }
 
 build_trilinos() {
