@@ -116,7 +116,7 @@ jobs:
           printf "\n\n\n"
 
           echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}"
-          if [ "${{ inputs.image }}" ~= "${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" ] ; then
+          if [ "${{ inputs.image }}" != "${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" ] ; then
               exit 1
           fi
           type python
