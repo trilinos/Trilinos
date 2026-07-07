@@ -9,6 +9,11 @@
       \textit{rowmap\_X\_level.mm}; c) its column map (for matrices) is saved in
       \textit{colmap\_X\_level.mm}.}
           
+\cba{project auxiliary matrices}{\parameterlist}{Fine level matrices that will be projected down the hierarchy.
+      Currently, the list can contain any of the following parameter names
+      (``M'', ``Minv'', ``MinvA'') of type \texttt{string} and value
+      (``NoFactory'' or ``CoalesceDrop'') indicating factory which creates data.}
+          
 \cbb{print initial parameters}{bool}{true}{Print parameters provided for a hierarchy construction.}
           
 \cbb{print unused parameters}{bool}{true}{Print parameters unused during a hierarchy construction.}
