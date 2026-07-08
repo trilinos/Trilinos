@@ -165,24 +165,24 @@ namespace {
     Xhat->randomize();
 
     {
-      // Create ShyLU-Basker solver
+      // Create PardisoMKL solver
       RCP<Amesos2::Solver<MAT,MV> > solver
         = Amesos2::create<MAT,MV>("PARDISOMKL", A, Xhat, B );
 
       // Parameters
       Teuchos::ParameterList amesos2_paramlist;
       amesos2_paramlist.setName("Amesos2");
-      Teuchos::ParameterList & shylubasker_paramlist = amesos2_paramlist.sublist("PARDISOMKL");
+      Teuchos::ParameterList & pardiso_paramlist = amesos2_paramlist.sublist("PARDISOMKL");
       // partial factorization currently requires at least two threads
-      shylubasker_paramlist.set("PartialFacto", 1, "Partial Factorization");
+      pardiso_paramlist.set("PartialFacto", 1, "Partial Factorization");
       // Schur part has odd row IDs
       Teuchos::Array<LO> schurPart(numGlobal);
       for( size_t i = 0; i < numGlobal; i++) {
         if (i%2 == 0) schurPart[i] = 0;
         if (i%2 == 1) schurPart[i] = 1;
       }
-      shylubasker_paramlist.set("SchurPart", (const LO*)schurPart.getRawPtr());
-      shylubasker_paramlist.set("MessageLevel", 1);
+      pardiso_paramlist.set("SchurPart", (const LO*)schurPart.getRawPtr());
+      pardiso_paramlist.set("MessageLevel", 1);
       solver->setParameters(Teuchos::rcpFromRef(amesos2_paramlist));
 
       // Solve A*Xhat = B for Xhat using the Bakser solver
@@ -256,16 +256,16 @@ namespace {
     Xhat->randomize();
 
     {
-      // Create ShyLU-Basker solver
+      // Create PardisoMKL solver
       RCP<Amesos2::Solver<MAT,MV> > solver
         = Amesos2::create<MAT,MV>("PARDISOMKL", A, Xhat, B );
 
       // Parameters
       Teuchos::ParameterList amesos2_paramlist;
       amesos2_paramlist.setName("Amesos2");
-      Teuchos::ParameterList & shylubasker_paramlist = amesos2_paramlist.sublist("PARDISOMKL");
+      Teuchos::ParameterList & pardiso_paramlist = amesos2_paramlist.sublist("PARDISOMKL");
       // partial factorization currently requires at least two threads
-      shylubasker_paramlist.set("PartialFacto", 2, "Partial Factorization");
+      pardiso_paramlist.set("PartialFacto", 2, "Partial Factorization");
       // Schur part has odd row IDs
       Teuchos::Array<LO> schurPart(numGlobal);
       for( size_t i = 0; i < numGlobal; i++) {
@@ -274,9 +274,9 @@ namespace {
       }
       const size_t numSchur = numGlobal/2;
       Teuchos::Array<SCALAR> schurOut(numSchur*numSchur);
-      shylubasker_paramlist.set("SchurPart", (const LO*)schurPart.getRawPtr());
-      shylubasker_paramlist.set("SchurOut", (SCALAR*)schurOut.getRawPtr());
-      shylubasker_paramlist.set("MessageLevel", 1);
+      pardiso_paramlist.set("SchurPart", (const LO*)schurPart.getRawPtr());
+      pardiso_paramlist.set("SchurOut", (SCALAR*)schurOut.getRawPtr());
+      pardiso_paramlist.set("MessageLevel", 1);
       solver->setParameters(Teuchos::rcpFromRef(amesos2_paramlist));
 
       // Solve A*Xhat = B for Xhat using the Bakser solver

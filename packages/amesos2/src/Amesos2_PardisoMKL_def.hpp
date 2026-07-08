@@ -87,7 +87,6 @@ namespace Amesos2 {
      */
     int_t error = 0;
     void *bdummy, *xdummy;
-
     if( this->root_ && pardiso_initialized_){
       int_t phase = -1;         // release all internal solver memory
       function_map::pardiso( pt_, const_cast<int_t*>(&maxfct_),
@@ -125,7 +124,7 @@ namespace Amesos2 {
       Teuchos::TimeMonitor symbFactTimer( this->timers_.symFactTime_ );
 #endif
 
-      solver_scalar_type bdummy, xdummy;
+      solver_scalar_type bdummy, xdummy; // to be cased to void*
       if( pardiso_initialized_){
         int_t phase = -1;         // release all internal solver memory
         function_map::pardiso( pt_, const_cast<int_t*>(&maxfct_),
@@ -183,7 +182,7 @@ namespace Amesos2 {
 #endif
 
       int_t phase = 22;
-      solver_scalar_type bdummy;
+      solver_scalar_type bdummy; // to be casted to void*
       solver_scalar_type *xdummy = schur_out_.data();
       function_map::pardiso( pt_, const_cast<int_t*>(&maxfct_),
                              const_cast<int_t*>(&mnum_), &mtype_, &phase, &n_,
@@ -281,8 +280,9 @@ namespace Amesos2 {
         if (wvals_.extent(0) != n_ || wvals_.extent(1) != nrhs_) {
           Kokkos::resize(wvals_, n_, nrhs_);
         }
-        // scatter RHS vectors (based on schur-part)
-        // input RHS for backward-solve has interior part followed by schur complement
+        // for consistent interface with other solvers (e.g., ShyLU-Basker)
+        //  scatter RHS vectors (based on schur-part)
+        //  input RHS for backward-solve has interior part followed by schur complement
         size_t n1 = 0;
         size_t n2 = this->globalNumCols_-schur_size_;
         for (global_size_type i=0; i<n_; i++) {
@@ -317,8 +317,9 @@ namespace Amesos2 {
                              as<void*>(b_in),
                              as<void*>(x_out), &error );
       if (only_forward_solve_) {
-        // gather solution vectors (based on schur-part)
-        // output vector should have interior part followed by schur complement
+        // for consistent interface with other solvers (e.g., ShyLU-Basker)
+        //  gather solution vectors (based on schur-part)
+        //  output vector should have interior part followed by schur complement
         size_t n1 = 0;
         size_t n2 = this->globalNumCols_-schur_size_;
         for (global_size_type i=0; i<n_; i++) {
