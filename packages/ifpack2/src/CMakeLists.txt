@@ -1,33 +1,33 @@
 INCLUDE(TrilinosCreateClientTemplateHeaders)
 
 # Parse the Hypre headers
-IF (${PACKAGE_NAME}_ENABLE_HYPRE)
-  IF (Python3_EXECUTABLE)
+IF(${PACKAGE_NAME}_ENABLE_HYPRE)
+  IF(Python3_EXECUTABLE)
     EXECUTE_PROCESS(
       COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/../utils/parseHypre.py ${HYPRE_INCLUDE_DIRS} Ifpack2_HypreParameterMap.hpp
       WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
       RESULT_VARIABLE RETURN_VALUE
       OUTPUT_STRIP_TRAILING_WHITESPACE
-      )
-  ELSE ()
+    )
+  ELSE()
     MESSAGE(FATAL_ERROR "Python needed to parse Hypre headers")
-  ENDIF ()
-  IF (RETURN_VALUE EQUAL 0)
+  ENDIF()
+  IF(RETURN_VALUE EQUAL 0)
     MESSAGE("-- Parsed Hypre headers")
-  ELSE ()
+  ELSE()
     MESSAGE(FATAL_ERROR "Failed to parse Hypre headers")
-  ENDIF ()
+  ENDIF()
 
-  # some header names are different if using hypre 3+, add some logic 
+  # some header names are different if using hypre 3+, add some logic
   INCLUDE(CheckIncludeFileCXX)
-  SET(CMAKE_REQUIRED_INCLUDES ${HYPRE_INCLUDE_DIRS})  
+  SET(CMAKE_REQUIRED_INCLUDES ${HYPRE_INCLUDE_DIRS})
   CHECK_INCLUDE_FILE_CXX("_hypre_krylov.h" HAVE_IFPACK2_HYPRE_UNDERSCORE_KRYLOV_H)
   CHECK_INCLUDE_FILE_CXX("krylov.h" HAVE_IFPACK2_HYPRE_KRYLOV_H)
 
-  IF (NOT HAVE_IFPACK2_HYPRE_UNDERSCORE_KRYLOV_H AND NOT HAVE_IFPACK2_HYPRE_KRYLOV_H)
+  IF(NOT HAVE_IFPACK2_HYPRE_UNDERSCORE_KRYLOV_H AND NOT HAVE_IFPACK2_HYPRE_KRYLOV_H)
     MESSAGE(FATAL_ERROR "Ifpack2 HYPRE support requires either _hypre_krylov.h or krylov.h")
-  ENDIF ()  
-ENDIF ()
+  ENDIF()
+ENDIF()
 
 #
 # A) Package-specific configuration options
@@ -52,22 +52,21 @@ APPEND_GLOB(SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR})
 
 # SupportGraph requires some TPLs and options to be enabled.
-IF (${PACKAGE_NAME}_ENABLE_Experimental AND ${PACKAGE_NAME}_ENABLE_Lemon AND ${PACKAGE_NAME}_ENABLE_Amesos2 AND ${PACKAGE_NAME}_ENABLE_Cholmod)
+IF(${PACKAGE_NAME}_ENABLE_Experimental
+   AND ${PACKAGE_NAME}_ENABLE_Lemon
+   AND ${PACKAGE_NAME}_ENABLE_Amesos2
+   AND ${PACKAGE_NAME}_ENABLE_Cholmod
+)
   TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR}/supportgraph)
   TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/supportgraph)
-  SET(HEADERS ${HEADERS}
-    supportgraph/Ifpack2_SupportGraph_decl.hpp
-    supportgraph/Ifpack2_SupportGraph_def.hpp
-    )
-  SET(SOURCES ${SOURCES}
-    supportgraph/Ifpack2_SupportGraph.cpp
-    )
+  SET(HEADERS ${HEADERS} supportgraph/Ifpack2_SupportGraph_decl.hpp supportgraph/Ifpack2_SupportGraph_def.hpp)
+  SET(SOURCES ${SOURCES} supportgraph/Ifpack2_SupportGraph.cpp)
 ENDIF()
 
 # Must glob the binary dir last to get all of the auto-generated headers
 TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_BINARY_DIR})
 APPEND_GLOB(HEADERS ${CMAKE_CURRENT_BINARY_DIR}/*.hpp)
-APPEND_SET(HEADERS ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h )
+APPEND_SET(HEADERS ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h)
 # APPEND_SET(HEADERS ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_ETIHelperMacros.h )
 
 # Automatically generate ETI (explicit template instantiation) files
@@ -82,7 +81,8 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
   # IFPACK2_ETI_CLASSES and IFPACK2_ETI_LO_GO_CLASSES are global
   # variables so that Stokhos can do ETI.
 
-  GLOBAL_SET(IFPACK2_ETI_CLASSES
+  GLOBAL_SET(
+    IFPACK2_ETI_CLASSES
     AdditiveSchwarz
     BlockRelaxation
     BorderedOperator
@@ -123,12 +123,10 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
     Details::TriDiSolver
     Experimental::RBILUK
     Details::LinearSolverFactory
-    )
+  )
 
   IF(Ifpack2_ENABLE_Amesos2)
-    APPEND_GLOBAL_SET(IFPACK2_ETI_CLASSES
-      Details::Amesos2Wrapper
-      )
+    APPEND_GLOBAL_SET(IFPACK2_ETI_CLASSES Details::Amesos2Wrapper)
   ENDIF()
 
   IF(${PACKAGE_NAME}_ENABLE_Experimental_KokkosKernels_Features)
@@ -138,7 +136,8 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
   ENDIF()
 
   IF(Ifpack2_ENABLE_ShyLU_NodeFastILU)
-    APPEND_GLOBAL_SET(IFPACK2_ETI_CLASSES
+    APPEND_GLOBAL_SET(
+      IFPACK2_ETI_CLASSES
       Details::FastILU_Base
       Details::Filu
       Details::Fic
@@ -147,33 +146,42 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
   ENDIF()
 
   IF(Ifpack2_ENABLE_HYPRE)
-    APPEND_GLOBAL_SET(IFPACK2_ETI_CLASSES
-      Hypre
-      )
+    APPEND_GLOBAL_SET(IFPACK2_ETI_CLASSES Hypre)
   ENDIF()
 
   # Set the list of Ifpack2 classes templated on <LO, GO, Node> for
   # which we want to do ETI using this system.  These classes usually
   # operate on sparse graphs (instances of Tpetra::CrsGraph or
   # Tpetra::RowGraph, which also take these template parameters).
-  GLOBAL_SET(IFPACK2_ETI_LO_GO_CLASSES
+  GLOBAL_SET(
+    IFPACK2_ETI_LO_GO_CLASSES
     LinearPartitioner
     OverlappingPartitioner
     Details::OverlappingRowGraph
-    )
+  )
 
   # LGN templates
-  TPETRA_PROCESS_ETI_TEMPLATES_LGN(SRCS
+  TPETRA_PROCESS_ETI_TEMPLATES_LGN(
+    SRCS
     "Ifpack2_ETI_LO_GO_NT.tmpl"
     "${IFPACK2_ETI_LO_GO_CLASSES}"
-    "${Ifpack2_ETI_LORDS}" "${Ifpack2_ETI_GORDS}" "${Ifpack2_ETI_NODES}")
+    "${Ifpack2_ETI_LORDS}"
+    "${Ifpack2_ETI_GORDS}"
+    "${Ifpack2_ETI_NODES}"
+  )
   LIST(APPEND SOURCES ${SRCS})
 
   # SLGN templates
-  TPETRA_PROCESS_ETI_TEMPLATES_SLGN(SRCS
+  TPETRA_PROCESS_ETI_TEMPLATES_SLGN(
+    SRCS
     "Ifpack2_ETI_SC_LO_GO_NT.tmpl"
     "${IFPACK2_ETI_CLASSES}"
-    "${Ifpack2_ETI_SCALARS}" "${Ifpack2_ETI_LORDS}" "${Ifpack2_ETI_GORDS}" "${Ifpack2_ETI_NODES}" FALSE)
+    "${Ifpack2_ETI_SCALARS}"
+    "${Ifpack2_ETI_LORDS}"
+    "${Ifpack2_ETI_GORDS}"
+    "${Ifpack2_ETI_NODES}"
+    FALSE
+  )
   LIST(APPEND SOURCES ${SRCS})
 
 ENDIF()
@@ -188,7 +196,7 @@ TRIBITS_ADD_LIBRARY(
   ifpack2
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  )
+)
 
 #
 # Make a trivial change here if you want CMake to run, due to changes
