@@ -712,6 +712,14 @@ namespace Intrepid2 {
   void OrientationTools<DT>::clearCoeffMatrix() {
     ortCoeffData.clear();
     ortInvCoeffData.clear();
+    
+    edgeOperatorData.clear();
+    invEdgeOperatorData.clear();
+    faceOperatorData.clear();
+    invFaceOperatorData.clear();
+   
+    doubleViewAllocations.clear();
+    ordinalViewAllocations.clear();
   }
 
   template<typename DT>
@@ -745,10 +753,10 @@ namespace Intrepid2 {
         Kokkos::View<ordinal_type*,DT> packedColumnIndices("OrientationOperator: packedColumnIndices", numWeights);
         Kokkos::View<double*,      DT> packedWeights("OrientationOperator: packedWeights", numWeights);
         
-        auto rowIndicesHost          = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), rowIndices);
-        auto offsetForRowOrdinalHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), offsetForRowOrdinal);
-        auto packedColumnIndicesHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), packedColumnIndices);
-        auto packedWeightsHost       = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), packedWeights);
+        auto rowIndicesHost          = Kokkos::create_mirror_view(rowIndices);
+        auto offsetForRowOrdinalHost = Kokkos::create_mirror_view(offsetForRowOrdinal);
+        auto packedColumnIndicesHost = Kokkos::create_mirror_view(packedColumnIndices);
+        auto packedWeightsHost       = Kokkos::create_mirror_view(packedWeights);
         
         for (int rowOrdinal=0; rowOrdinal<numRows; rowOrdinal++)
         {
