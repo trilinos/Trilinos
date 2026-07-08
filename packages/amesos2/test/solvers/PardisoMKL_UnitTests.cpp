@@ -119,202 +119,227 @@ namespace {
     typedef typename ST::magnitudeType Mag;
     const size_t numVecs = 1;
 
-    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
-    const size_t myRank = comm->getRank();
-    const size_t numRanks = comm->getSize();
-    if (myRank==0) {
-      std::cout << std::endl
-                << " >> UnitTest for PardisoMKL:Partial1 with Scalar = "
-                << ST::name() << " <<" << std::endl << std::endl;
-    }
+    for (int test = 0; test < 2; test++) {
+      // test-0 with default-comm, matrix will be gather to mpi-0 and only mpi-0 computes Schur complement
+      // test-1 with serial-comm, all processes calls pardiso and computes schur complement independently
+      RCP<const Comm<int> > comm = (test == 0 ? Tpetra::getDefaultComm() :
+                                                Teuchos::rcp_dynamic_cast<const Comm<int>>(Teuchos::rcp(new Teuchos::SerialComm<int>())));
+      const size_t myRank = comm->getRank();
+      const size_t numRanks = comm->getSize();
 
-    // Construct matrix
-    const SCALAR one  = ST::one();
-    const SCALAR mone = -one;
-    const SCALAR two  = one + one;
-    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    const size_t numLocal = 10;
-    const size_t numGlobal = numLocal*numRanks;
-    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm) );
-    RCP<MAT> A = rcp( new MAT(map, 3) );
-    GO base = numLocal*myRank;
-    for( size_t i = 0; i < numLocal; ++i ){
-      if (base+i > 0) {
-        A->insertGlobalValues(base+i,tuple<GO>(base+i-1),tuple<SCALAR>(mone));
+      RCP<const Comm<int> > global_comm = Tpetra::getDefaultComm(); // just for printing
+      if (global_comm->getRank()==0) {
+        std::cout << std::endl
+                  << " >> UnitTest for PardisoMKL:Partial1 with Scalar = " << ST::name()
+                  << " and " << (test == 0 ? "DefaultComm" : "SerialComm") << " <<" << std::endl << std::endl;
       }
-      A->insertGlobalValues(base+i,tuple<GO>(base+i),tuple<SCALAR>(two));
-      if (base+i < numGlobal-1) {
-        A->insertGlobalValues(base+i,tuple<GO>(base+i+1),tuple<SCALAR>(mone));
+
+      // Construct matrix
+      // NOTE: with serial-comm, every process construct its own 10-by-10 matrix, independently
+      //       with global-comm, all the process construct a (10*numRanks)-by-(10*numRanks) matrix, jointly
+      // Schur complement will half of the global matrix
+      const SCALAR one  = ST::one();
+      const SCALAR mone = -one;
+      const SCALAR two  = one + one;
+      const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+      const size_t numLocal = 10;
+      const size_t numGlobal = numLocal*numRanks;
+      RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm) );
+      RCP<MAT> A = rcp( new MAT(map, 3) );
+      GO base = numLocal*myRank;
+      for( size_t i = 0; i < numLocal; ++i ){
+        if (base+i > 0) {
+          A->insertGlobalValues(base+i,tuple<GO>(base+i-1),tuple<SCALAR>(mone));
+        }
+        A->insertGlobalValues(base+i,tuple<GO>(base+i),tuple<SCALAR>(two));
+        if (base+i < numGlobal-1) {
+          A->insertGlobalValues(base+i,tuple<GO>(base+i+1),tuple<SCALAR>(mone));
+        }
       }
-    }
-    A->fillComplete();
+      A->fillComplete();
 
-    RCP<const Map<LO,GO,Node> > dmnmap = A->getDomainMap();
-    RCP<const Map<LO,GO,Node> > rngmap = A->getRangeMap();
+      RCP<const Map<LO,GO,Node> > dmnmap = A->getDomainMap();
+      RCP<const Map<LO,GO,Node> > rngmap = A->getRangeMap();
 
-    RCP<MV> X = rcp(new MV(dmnmap,numVecs));
-    RCP<MV> B = rcp(new MV(rngmap,numVecs));
-    RCP<MV> Xhat = rcp(new MV(dmnmap,numVecs));
-    X->setObjectLabel("X");
-    B->setObjectLabel("B");
-    Xhat->setObjectLabel("Xhat");
-    X->randomize();
+      RCP<MV> X = rcp(new MV(dmnmap,numVecs));
+      RCP<MV> B = rcp(new MV(rngmap,numVecs));
+      RCP<MV> Xhat = rcp(new MV(dmnmap,numVecs));
+      X->setObjectLabel("X");
+      B->setObjectLabel("B");
+      Xhat->setObjectLabel("Xhat");
+      X->randomize();
 
-    A->apply(*X,*B);            // no transpose
+      A->apply(*X,*B);            // no transpose
 
-    Xhat->randomize();
+      Xhat->randomize();
 
-    {
-      // Create PardisoMKL solver
-      RCP<Amesos2::Solver<MAT,MV> > solver
-        = Amesos2::create<MAT,MV>("PARDISOMKL", A, Xhat, B );
+      {
+        // Create PardisoMKL solver
+        RCP<Amesos2::Solver<MAT,MV> > solver
+          = Amesos2::create<MAT,MV>("PARDISOMKL", A, Xhat, B );
 
-      // Parameters
-      Teuchos::ParameterList amesos2_paramlist;
-      amesos2_paramlist.setName("Amesos2");
-      Teuchos::ParameterList & pardiso_paramlist = amesos2_paramlist.sublist("PARDISOMKL");
-      // partial factorization currently requires at least two threads
-      pardiso_paramlist.set("PartialFacto", 1, "Partial Factorization");
-      // Schur part has odd row IDs
-      Teuchos::Array<LO> schurPart(numGlobal);
-      for( size_t i = 0; i < numGlobal; i++) {
-        if (i%2 == 0) schurPart[i] = 0;
-        if (i%2 == 1) schurPart[i] = 1;
+        // Parameters
+        Teuchos::ParameterList amesos2_paramlist;
+        amesos2_paramlist.setName("Amesos2");
+        Teuchos::ParameterList & pardiso_paramlist = amesos2_paramlist.sublist("PARDISOMKL");
+        // partial factorization currently requires at least two threads
+        pardiso_paramlist.set("PartialFacto", 1, "Partial Factorization");
+        // Schur part has odd row IDs
+        Teuchos::Array<LO> schurPart(numGlobal);
+        for( size_t i = 0; i < numGlobal; i++) {
+          if (i%2 == 0) schurPart[i] = 0;
+          if (i%2 == 1) schurPart[i] = 1;
+        }
+        pardiso_paramlist.set("SchurPart", (const LO*)schurPart.getRawPtr());
+        pardiso_paramlist.set("MessageLevel", (global_comm->getRank() == 0 ? 1 : 0));
+        solver->setParameters(Teuchos::rcpFromRef(amesos2_paramlist));
+
+        // Solve A*Xhat = B for Xhat using the PardisoMKL solver
+        solver->symbolicFactorization();
+        solver->numericFactorization();
+        solver->solve();
+
+        // Check result of solve
+        Array<Mag> xhatnorms(numVecs), xnorms(numVecs);
+        Xhat->norm2(xhatnorms());
+        X->norm2(xnorms());
+        if (global_comm->getRank()==0) {
+          for (int i=0; i<xnorms.size(); i++)
+            std::cout << "err[" << i << "]  = " << xnorms[i] << " - " << xhatnorms[i]
+                      << " = " << xnorms[i]-xhatnorms[i] << std::endl;
+        }
+        TEST_COMPARE_FLOATING_ARRAYS( xhatnorms, xnorms, 0.005 );
       }
-      pardiso_paramlist.set("SchurPart", (const LO*)schurPart.getRawPtr());
-      pardiso_paramlist.set("MessageLevel", 1);
-      solver->setParameters(Teuchos::rcpFromRef(amesos2_paramlist));
-
-      // Solve A*Xhat = B for Xhat using the Bakser solver
-      solver->symbolicFactorization();
-      solver->numericFactorization();
-      solver->solve();
-
-      // Check result of solve
-      Array<Mag> xhatnorms(numVecs), xnorms(numVecs);
-      Xhat->norm2(xhatnorms());
-      X->norm2(xnorms());
-      if (myRank==0) {
-        for (int i=0; i<xnorms.size(); i++)
-          std::cout << "err[" << i << "]  = " << xnorms[i] << " - " << xhatnorms[i]
-                    << " = " << xnorms[i]-xhatnorms[i] << std::endl;
-      }
-      TEST_COMPARE_FLOATING_ARRAYS( xhatnorms, xnorms, 0.005 );
     }
   }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( PardisoMKL, Partial2, SCALAR, LO, GO )
   {
     typedef ScalarTraits<SCALAR> ST;
-
-    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
-    const size_t myRank = comm->getRank();
-    if (myRank==0) {
-      std::cout << std::endl
-                << " >> UnitTest for PardisoMKL::Partial2 with Scalar = "
-                << ST::name() << " <<" << std::endl << std::endl;
-    }
     typedef CrsMatrix<SCALAR,LO,GO,Node> MAT;
     typedef MultiVector<SCALAR,LO,GO,Node> MV;
-    const size_t numRanks = comm->getSize();
-    const size_t numVecs = 1;
 
-    // Construct matrix
-    const SCALAR one  = ST::one();
-    const SCALAR mone = -one;
-    const SCALAR two  = one + one;
-    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    const size_t numLocal = 10;
-    const size_t numGlobal = numLocal*numRanks;
-    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm) );
-    RCP<MAT> A = rcp( new MAT(map, 3) );
-    GO base = numLocal*myRank;
-    for( size_t i = 0; i < numLocal; ++i ){
-      if (base+i > 0) {
-        A->insertGlobalValues(base+i,tuple<GO>(base+i-1),tuple<SCALAR>(mone));
+    for (int test = 0; test < 2; test++) {
+      // test-0 with default-comm, matrix will be gather to mpi-0 and only mpi-0 computes Schur complement
+      // test-1 with serial-comm, all processes calls pardiso and computes schur complement independently
+      RCP<const Comm<int> > comm = (test == 0 ? Tpetra::getDefaultComm() :
+                                                Teuchos::rcp_dynamic_cast<const Comm<int>>(Teuchos::rcp(new Teuchos::SerialComm<int>())));
+      const size_t myRank = comm->getRank();
+
+      RCP<const Comm<int> > global_comm = Tpetra::getDefaultComm(); // just for printing
+      if (global_comm->getRank()==0) {
+        std::cout << std::endl
+                  << " >> UnitTest for PardisoMKL::Partial2 with Scalar = " << ST::name()
+                  << " and " << (test == 0 ? "DefaultComm" : "SerialComm") << " <<" << std::endl << std::endl;
       }
-      A->insertGlobalValues(base+i,tuple<GO>(base+i),tuple<SCALAR>(two));
-      if (base+i < numGlobal-1) {
-        A->insertGlobalValues(base+i,tuple<GO>(base+i+1),tuple<SCALAR>(mone));
+      const size_t numRanks = comm->getSize();
+      const size_t numVecs = 1;
+
+      // Construct matrix
+      // NOTE: with serial-comm, every process construct its own 10-by-10 matrix, independently
+      //       with global-comm, all the process construct a (10*numRanks)-by-(10*numRanks) matrix, jointly
+      // Schur complement will half of the global matrix
+      const SCALAR one  = ST::one();
+      const SCALAR mone = -one;
+      const SCALAR two  = one + one;
+      const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+      const size_t numLocal = 10;
+      const size_t numGlobal = numLocal*numRanks;
+      RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm) );
+      RCP<MAT> A = rcp( new MAT(map, 3) );
+      GO base = numLocal*myRank;
+      for( size_t i = 0; i < numLocal; ++i ){
+        if (base+i > 0) {
+          A->insertGlobalValues(base+i,tuple<GO>(base+i-1),tuple<SCALAR>(mone));
+        }
+        A->insertGlobalValues(base+i,tuple<GO>(base+i),tuple<SCALAR>(two));
+        if (base+i < numGlobal-1) {
+          A->insertGlobalValues(base+i,tuple<GO>(base+i+1),tuple<SCALAR>(mone));
+        }
       }
-    }
-    A->fillComplete();
+      A->fillComplete();
 
-    RCP<const Map<LO,GO,Node> > dmnmap = A->getDomainMap();
-    RCP<const Map<LO,GO,Node> > rngmap = A->getRangeMap();
+      RCP<const Map<LO,GO,Node> > dmnmap = A->getDomainMap();
+      RCP<const Map<LO,GO,Node> > rngmap = A->getRangeMap();
 
-    RCP<MV> X = rcp(new MV(dmnmap,numVecs));
-    RCP<MV> B = rcp(new MV(rngmap,numVecs));
-    RCP<MV> Xhat = rcp(new MV(dmnmap,numVecs));
-    X->setObjectLabel("X");
-    B->setObjectLabel("B");
-    Xhat->setObjectLabel("Xhat");
-    X->randomize();
+      RCP<MV> X = rcp(new MV(dmnmap,numVecs));
+      RCP<MV> B = rcp(new MV(rngmap,numVecs));
+      RCP<MV> Xhat = rcp(new MV(dmnmap,numVecs));
+      X->setObjectLabel("X");
+      B->setObjectLabel("B");
+      Xhat->setObjectLabel("Xhat");
+      X->randomize();
 
-    A->apply(*X,*B);            // no transpose
+      A->apply(*X,*B);            // no transpose
 
-    Xhat->randomize();
+      Xhat->randomize();
 
-    {
-      // Create PardisoMKL solver
-      RCP<Amesos2::Solver<MAT,MV> > solver
-        = Amesos2::create<MAT,MV>("PARDISOMKL", A, Xhat, B );
+      {
+        // Create PardisoMKL solver
+        RCP<Amesos2::Solver<MAT,MV> > solver
+          = Amesos2::create<MAT,MV>("PARDISOMKL", A, Xhat, B );
 
-      // Parameters
-      Teuchos::ParameterList amesos2_paramlist;
-      amesos2_paramlist.setName("Amesos2");
-      Teuchos::ParameterList & pardiso_paramlist = amesos2_paramlist.sublist("PARDISOMKL");
-      // partial factorization currently requires at least two threads
-      pardiso_paramlist.set("PartialFacto", 2, "Partial Factorization");
-      // Schur part has odd row IDs
-      Teuchos::Array<LO> schurPart(numGlobal);
-      for( size_t i = 0; i < numGlobal; i++) {
-        if (i%2 == 0) schurPart[i] = 0;
-        if (i%2 == 1) schurPart[i] = 1;
-      }
-      const size_t numSchur = numGlobal/2;
-      Teuchos::Array<SCALAR> schurOut(numSchur*numSchur);
-      pardiso_paramlist.set("SchurPart", (const LO*)schurPart.getRawPtr());
-      pardiso_paramlist.set("SchurOut", (SCALAR*)schurOut.getRawPtr());
-      pardiso_paramlist.set("MessageLevel", 1);
-      solver->setParameters(Teuchos::rcpFromRef(amesos2_paramlist));
+        // Parameters
+        Teuchos::ParameterList amesos2_paramlist;
+        amesos2_paramlist.setName("Amesos2");
+        Teuchos::ParameterList & pardiso_paramlist = amesos2_paramlist.sublist("PARDISOMKL");
+        // partial factorization currently requires at least two threads
+        pardiso_paramlist.set("PartialFacto", 2, "Partial Factorization");
+        // Schur part has odd row IDs
+        Teuchos::Array<LO> schurPart(numGlobal);
+        for( size_t i = 0; i < numGlobal; i++) {
+          if (i%2 == 0) schurPart[i] = 0;
+          if (i%2 == 1) schurPart[i] = 1;
+        }
+        const size_t numSchur = numGlobal/2;
+        Teuchos::Array<SCALAR> schurOut(numSchur*numSchur);
+        pardiso_paramlist.set("SchurPart", (const LO*)schurPart.getRawPtr());
+        pardiso_paramlist.set("SchurOut", (SCALAR*)schurOut.getRawPtr());
+        pardiso_paramlist.set("MessageLevel", (global_comm->getRank() == 0 ? 1 : 0));
+        solver->setParameters(Teuchos::rcpFromRef(amesos2_paramlist));
 
-      // Solve A*Xhat = B for Xhat using the Bakser solver
-      solver->symbolicFactorization();
-      solver->numericFactorization();
+        // Solve A*Xhat = B for Xhat using the PardisoMKL solver
+        solver->symbolicFactorization();
+        solver->numericFactorization();
 
-      // Check result of solve
-      const SCALAR zero = ST::zero();
-      const SCALAR half  = one / two;
-      Teuchos::Array<SCALAR> schur(numSchur*numSchur, zero);
-      if (myRank == 0) {
-        for( size_t i = 0; i < numSchur; ++i ){
-          if (i > 0) {
-            schur[i-1 + i*numSchur] = -half;
-          }
-          if (i == numSchur-1) {
-            schur[i + i*numSchur] = one+half;
-          } else {
-            schur[i + i*numSchur] = one;
-          }
-          if (base+i < numSchur-1) {
-            schur[i+1 + i*numSchur] = -half;
+        // Check result of solve
+        const SCALAR zero = ST::zero();
+        const SCALAR half  = one / two;
+        Teuchos::Array<SCALAR> schur(numSchur*numSchur, zero);
+        if (myRank == 0) {
+          // NOTE: with serial comm, every one has myRank == 0, and compute Schur complement independently
+          for( size_t i = 0; i < numSchur; ++i ){
+            if (i > 0) {
+              schur[i-1 + i*numSchur] = -half;
+            }
+            if (i == numSchur-1) {
+              schur[i + i*numSchur] = one+half;
+            } else {
+              schur[i + i*numSchur] = one;
+            }
+            if (base+i < numSchur-1) {
+              schur[i+1 + i*numSchur] = -half;
+            }
           }
         }
-        printf("[\n");
-        for( size_t i = 0; i < numSchur; ++i ){
-          for( size_t j = 0; j < numSchur; ++j ) printf("%e ",schurOut[i+j*numSchur]);
-          printf("\n");
+        if (global_comm->getRank() == 0) {
+          std::cout << "[" << std::endl;
+          for( size_t i = 0; i < numSchur; ++i ){
+            std::cout << "  ";
+            for( size_t j = 0; j < numSchur; ++j ) std::cout << schurOut[i+j*numSchur] << " ";
+            std::cout << std::endl;
+          }
+          std::cout << "];" << std::endl;
+          std::cout << "[" << std::endl;
+          for( size_t i = 0; i < numSchur; ++i ){
+            std::cout << "  ";
+            for( size_t j = 0; j < numSchur; ++j ) std::cout << schur[i+j*numSchur] << " ";
+            std::cout << std::endl;
+          }
+          std::cout << "];" << std::endl;
         }
-        printf("];\n");
-        printf("[\n");
-        for( size_t i = 0; i < numSchur; ++i ){
-          for( size_t j = 0; j < numSchur; ++j ) printf("%e ",schur[i+j*numSchur]);
-          printf("\n");
-        }
-        printf("];\n");
+        TEST_COMPARE_FLOATING_ARRAYS( schurOut, schur, 0.005 );
       }
-      TEST_COMPARE_FLOATING_ARRAYS( schurOut, schur, 0.005 );
     }
   }
 
