@@ -23,7 +23,7 @@
 #include "BelosDenseMatTraits.hpp"
 
 #include "Kokkos_Random.hpp"
-#include "Kokkos_ArithTraits.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
 //Kokkos BLAS files:
 #include "KokkosBlas1_scal.hpp"
 #include "KokkosBlas1_axpby.hpp"
@@ -39,16 +39,16 @@ namespace Belos {
     Kokkos::parallel_for(Kokkos::MDRangePolicy<typename V::execution_space, Kokkos::Rank<2>>({0, 0}, {dst.extent(0), dst.extent(1)}),
     KOKKOS_LAMBDA(int i, int j)
     {
-      dst(i, j) = Kokkos::ArithTraits<typename W::non_const_value_type>::conj( src(j, i) );
+      dst(i, j) = KokkosKernels::ArithTraits<typename W::non_const_value_type>::conj( src(j, i) );
     });
   }
 
   //! Full specialization of Belos::DenseMatSolver for Kokkos::DualView.
   template<class Scalar>
-  class KokkosDenseSolver : public DenseSolver<Scalar, Kokkos::DualView<typename Kokkos::ArithTraits<Scalar>::val_type **,Kokkos::LayoutLeft>>
+  class KokkosDenseSolver : public DenseSolver<Scalar, Kokkos::DualView<typename KokkosKernels::ArithTraits<Scalar>::val_type **,Kokkos::LayoutLeft>>
   {
   public:
-    typedef typename Kokkos::ArithTraits<Scalar>::val_type IST; //Impl Scalar Type, as used in Tpetra
+    typedef typename KokkosKernels::ArithTraits<Scalar>::val_type IST; //Impl Scalar Type, as used in Tpetra
     typedef DenseMatTraits<Scalar, Kokkos::DualView<IST**,Kokkos::LayoutLeft>>     DMT;
  
     //! @name Constructor/Destructor Methods
@@ -262,10 +262,10 @@ namespace Belos {
   // (e.g. getStatic2dDualView) return a LayoutLeft view.  Should we 
   // hard-code that parameter he
   template<class Scalar>
-  class DenseMatTraits<Scalar, Kokkos::DualView<typename Kokkos::ArithTraits<Scalar>::val_type **,Kokkos::LayoutLeft>>{
+  class DenseMatTraits<Scalar, Kokkos::DualView<typename KokkosKernels::ArithTraits<Scalar>::val_type **,Kokkos::LayoutLeft>>{
 
   public:
-    typedef typename Kokkos::ArithTraits<Scalar>::val_type IST; //Impl Scalar Type, as used in Tpetra
+    typedef typename KokkosKernels::ArithTraits<Scalar>::val_type IST; //Impl Scalar Type, as used in Tpetra
     
     //@{ \name Creation methods
 
@@ -519,28 +519,43 @@ namespace Belos {
     
     //!  \brief Adds sourceDM to thisDM and returns answer in thisDM.
     static void Add( Kokkos::DualView<IST**,Kokkos::LayoutLeft>& thisDM, const Kokkos::DualView<IST**,Kokkos::LayoutLeft>& sourceDM) {
-      KokkosBlas::axpy(1.0,sourceDM.view_device(), thisDM.view_device()); //axpy(alpha,x,y), y = y + alpha*x
-      thisDM.modify_device();
+      if (sourceDM.need_sync_device()) {
+        thisDM.sync_host();
+        KokkosBlas::axpy(1.0,sourceDM.view_host(), thisDM.view_host()); //axpy(alpha,x,y), y = y + alpha*x
+        thisDM.modify_host();
+        std::cout << "Add: Modified on host." << std::endl;
+      } else {
+        thisDM.sync_device();
+        KokkosBlas::axpy(1.0,sourceDM.view_device(), thisDM.view_device()); //axpy(alpha,x,y), y = y + alpha*x
+        thisDM.modify_device();
         std::cout << "Add: Modified on device." << std::endl;
+      }
     }
 
     //!  \brief Fill all entries with \c value. Value is zero if not specified.
-    static void PutScalar( Kokkos::DualView<IST**,Kokkos::LayoutLeft>& dm, Scalar value = Teuchos::ScalarTraits<Scalar>::zero()){ 
+    static void PutScalar( Kokkos::DualView<IST**,Kokkos::LayoutLeft>& dm, Scalar value = Teuchos::ScalarTraits<Scalar>::zero()) {
+      dm.clear_sync_state();
       Kokkos::deep_copy( dm.view_device(), value);
       dm.modify_device();
-        std::cout << "PutScalar: Modified on device." << std::endl;
+      std::cout << "PutScalar: Modified on device." << std::endl;
     }
 
     //!  \brief Multiply all entries by a scalar. DM = value.*DM
-    static void Scale( Kokkos::DualView<IST**,Kokkos::LayoutLeft>& dm, Scalar value) { 
-      KokkosBlas::scal( dm.view_device(), value, dm.view_device());
-      dm.modify_device();
+    static void Scale( Kokkos::DualView<IST**,Kokkos::LayoutLeft>& dm, Scalar value) {
+      if (dm.need_sync_device()) {
+        KokkosBlas::scal( dm.view_host(), value, dm.view_host());
+        dm.modify_host();
+      } else {
+        KokkosBlas::scal( dm.view_device(), value, dm.view_device());
+        dm.modify_device();
         std::cout << "Scale: Modified on device." << std::endl;
+      }
     }
 
     //!  \brief Fill the Kokkos::DualView with random entries.
     //!   Entries are assumed to be the same on each MPI rank (each matrix copy). 
-    static void Randomize( Kokkos::DualView<IST**,Kokkos::LayoutLeft>& dm) { 
+    static void Randomize( Kokkos::DualView<IST**,Kokkos::LayoutLeft>& dm) {
+      dm.clear_sync_state();
       int rand_seed = std::rand();
       Kokkos::Random_XorShift64_Pool<> pool(rand_seed); 
       Kokkos::fill_random(dm.view_device(), pool, -1,1);
@@ -550,28 +565,29 @@ namespace Belos {
 
     //!  \brief Copies entries of source to dest (deep copy). 
     static void Assign( Kokkos::DualView<IST**,Kokkos::LayoutLeft>& dest, const Kokkos::DualView<IST**,Kokkos::LayoutLeft>& source) { 
-      Kokkos::deep_copy(dest,source); //Brian Kelley says this works on dual views.
+      Kokkos::deep_copy(dest, source);
       //TODO: But do we really want to do this? What if we only need the host pieces copied right now?
       // Note: going with first solution. See discussion on SubViewCopy. 
     }
 
     //!  \brief Returns the Frobenius norm of the dense matrix.
     static typename Teuchos::ScalarTraits<Scalar>::magnitudeType NormFrobenius(const Kokkos::DualView<const IST**,Kokkos::LayoutLeft>& dm) { 
-      using KAT = Kokkos::ArithTraits<IST>;
+      using KAT = KokkosKernels::ArithTraits<IST>;
       using mag_t = typename KAT::mag_type;
       mag_t frobNorm;
+      auto dev_view = dm.view_device();
       Kokkos::parallel_reduce(Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0, 0}, {dm.extent(0), dm.extent(1)}),
-          KOKKOS_LAMBDA(size_t i, size_t j, mag_t& lfrobNorm)
-          {
-          mag_t absVal = KAT::abs((dm.view_device())(i, j));
-          lfrobNorm += absVal * absVal;
-          }, frobNorm);
+                              KOKKOS_LAMBDA(size_t i, size_t j, mag_t& lfrobNorm)
+                              {
+                                mag_t absVal = KAT::abs(dev_view(i, j));
+                                lfrobNorm += absVal * absVal;
+                              }, frobNorm);
       return Kokkos::sqrt(frobNorm);
     }
 
     //!  \brief Returns the one-norm of the dense matrix.
     static typename Teuchos::ScalarTraits<Scalar>::magnitudeType NormOne( Kokkos::DualView<IST**,Kokkos::LayoutLeft>& dm) {  
-      using KAT = Kokkos::ArithTraits<IST>;
+      using KAT = KokkosKernels::ArithTraits<IST>;
       IST sum = 0, max_sum = 0; 
       SyncDeviceToHost(dm); //TODO Kokkos-ify this
       //Kokkos::parallel_for(dm.extent_int(1), 
