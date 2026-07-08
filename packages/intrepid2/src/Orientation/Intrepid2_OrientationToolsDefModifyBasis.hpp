@@ -291,6 +291,9 @@ namespace Intrepid2 {
       
       const auto op_tuple = createOperators(basis);
       
+      const auto edgeOpData = std::get<0>(op_tuple);
+      const auto faceOpData = std::get<1>(op_tuple);
+      
       ordinal_type numEdges(0), numFaces(0);
       if (basis->requireOrientation()) {
         numEdges = cellTopo.getEdgeCount()*ordinal_type(basis->getDofCount(EDGE_DIM, 0) > 0);
@@ -299,6 +302,13 @@ namespace Intrepid2 {
       // "side" orientations
       if      (cellDim == 1) numEdges = 1;
       else if (cellDim == 2) numFaces = 1;
+      
+      std::cout << "cellDim=" << cellDim
+                << " numEdges=" << numEdges
+                << " numFaces=" << numFaces
+                << " edgeOpExtent0=" << std::get<0>(op_tuple).extent(0)
+                << " faceOpExtent0=" << std::get<1>(op_tuple).extent(0)
+                << std::endl;
       
       bool leftMultiply = true;
       
