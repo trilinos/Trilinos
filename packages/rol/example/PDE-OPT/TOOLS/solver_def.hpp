@@ -84,11 +84,11 @@ void Solver<Real>::setA(ROL::Ptr<Tpetra::CrsMatrix<>> &A) {
       // Transpose solver.
       problemBelos_trans_ = ROL::makePtr<Belos::LinearProblem<Real,MV,OP>>();
       problemBelos_trans_->setOperator(A_trans_);
-      solverBelos_trans_ = ROL::makePtr<Belos::BlockGmresSolMgr<Real,MV,OP>>(problemBelos_trans_, parlistBelos);
+      solverBelos_trans_ = ROL::makePtr<Belos::BlockGmresSolMgr<Real,MV,OP,DM>>(problemBelos_trans_, parlistBelos);
       // Forward solver.
       problemBelos_ = ROL::makePtr<Belos::LinearProblem<Real,MV,OP>>();
       problemBelos_->setOperator(A);
-      solverBelos_ = ROL::makePtr<Belos::BlockGmresSolMgr<Real,MV,OP>>(problemBelos_, parlistBelos);
+      solverBelos_ = ROL::makePtr<Belos::BlockGmresSolMgr<Real,MV,OP,DM>>(problemBelos_, parlistBelos);
       firstSolve_ = false;
     }
     else {

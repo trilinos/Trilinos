@@ -44,7 +44,7 @@ namespace Ifpack2 {
 }
 
 namespace Belos {
-  template <typename tSC, typename tMV, typename tOP> class BlockGmresSolMgr;
+  template <typename tSC, typename tMV, typename tOP, typename DM> class BlockGmresSolMgr;
   template <typename tSC, typename tMV, typename tOP> class LinearProblem;
 }
 
@@ -58,7 +58,8 @@ class Solver {
   typedef Tpetra::Map<>::global_ordinal_type GO;
   typedef Tpetra::Map<>::node_type NO;
   typedef Tpetra::MultiVector<Real,LO,GO,NO> MV;
-  typedef Tpetra::Operator<Real,LO,GO,NO> OP;
+  typedef Tpetra::Operator<Real, LO, GO, NO> OP;
+  using DM = Teuchos::SerialDenseMatrix<int, Real>;
 
 private:
 
@@ -68,8 +69,8 @@ private:
   ROL::Ptr<MueLu::TpetraOperator<Real,LO,GO,NO>> mueLuPreconditioner_trans_;
   ROL::Ptr<Ifpack2::Preconditioner<Real,LO,GO,NO>> ifpack2Preconditioner_;
   ROL::Ptr<Ifpack2::Preconditioner<Real,LO,GO,NO>> ifpack2Preconditioner_trans_;
-  ROL::Ptr<Belos::BlockGmresSolMgr<Real,MV,OP>> solverBelos_;
-  ROL::Ptr<Belos::BlockGmresSolMgr<Real,MV,OP>> solverBelos_trans_;
+  ROL::Ptr<Belos::BlockGmresSolMgr<Real,MV,OP,DM>> solverBelos_;
+  ROL::Ptr<Belos::BlockGmresSolMgr<Real,MV,OP,DM>> solverBelos_trans_;
   ROL::Ptr<Belos::LinearProblem<Real,MV,OP>> problemBelos_;
   ROL::Ptr<Belos::LinearProblem<Real,MV,OP>> problemBelos_trans_;
 
