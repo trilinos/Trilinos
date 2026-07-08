@@ -115,7 +115,7 @@ buildLocalCrsFromRowMatrix(const Teuchos::RCP<const typename ILUT<MatrixType>::r
   RCP<crs_matrix_type> A_local_crs_nc =
       rcp(new crs_matrix_type(A_local->getRowMap(),
                               A_local->getColMap(),
-                              entriesPerRow));
+                              entriesPerRow()));
 
   nonconst_local_inds_host_view_type indices("indices", A_local->getLocalMaxNumRowEntries());
   nonconst_values_host_view_type values("values", A_local->getLocalMaxNumRowEntries());
@@ -123,7 +123,7 @@ buildLocalCrsFromRowMatrix(const Teuchos::RCP<const typename ILUT<MatrixType>::r
   for (local_ordinal_type i = 0; i < numRows; i++) {
     size_t numEntries = 0;
     A_local->getLocalRowCopy(i, indices, values, numEntries);
-    A_local_crs_nc->insertLocalValues(i, numEntries,
+    A_local_crs_nc->insertLocalValues(i, static_cast<local_ordinal_type>(numEntries),
                                       reinterpret_cast<scalar_type*>(values.data()),
                                       indices.data());
   }
@@ -151,7 +151,7 @@ static void refreshCachedSourceCrsFromRowMatrix(
   for (local_ordinal_type i = 0; i < numRows; i++) {
     size_t numEntries = 0;
     A_local->getLocalRowCopy(i, indices, values, numEntries);
-    source_crs_nc->replaceLocalValues(i, numEntries,
+    source_crs_nc->replaceLocalValues(i, static_cast<local_ordinal_type>(numEntries),
                                       reinterpret_cast<scalar_type*>(values.data()),
                                       indices.data());
   }
@@ -545,7 +545,7 @@ void ILUT<MatrixType>::initialize() {
         A_local_crs_ = Ifpack2::Details::getCrsMatrix(A_local_);
         if (A_local_crs_.is_null()) {
           A_local_crs_nc_ = buildLocalCrsFromRowMatrix<MatrixType>(A_local_);
-          A_local_crs_    = rcp_const_cast<const crs_matrix_type>(A_local_crs_nc_);
+          A_local_crs_    = A_local_crs_nc_;
         }
       }
       auto A_local_crs_device = A_local_crs_->getLocalMatrixDevice();
