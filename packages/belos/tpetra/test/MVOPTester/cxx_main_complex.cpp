@@ -231,7 +231,6 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MultiVector, DenseTest, O1, O2, Scalar )
   {
-    typedef Tpetra::MultiVector<Scalar,O1,O2> MV;
     typedef Teuchos::SerialDenseMatrix<int,Scalar> DM;
     // Create an output manager to handle the I/O from the solver
     RCP<OutputManager<Scalar> > MyOM = rcp( new OutputManager<Scalar>(Warnings,rcp(&out,false)) );

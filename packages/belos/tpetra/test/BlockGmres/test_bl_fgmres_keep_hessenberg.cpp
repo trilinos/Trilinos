@@ -47,10 +47,10 @@ using Teuchos::rcp;
 // StatusTest that snapshots H and R from BlockFGmresIter after each
 // iteration.  Returns Undefined so it never affects convergence decisions.
 // -----------------------------------------------------------------------
-template <class SC, class MV, class OP>
+template <class SC, class MV, class OP, class DM>
 class HessenbergCapture : public Belos::StatusTest<SC, MV, OP> {
  public:
-  using State = Belos::GmresIterationState<SC, MV>;
+  using State = Belos::GmresIterationState<SC, MV, DM>;
 
   int                                     curDim = 0;
   bool                                    sawFGmresIter = false;
@@ -58,7 +58,7 @@ class HessenbergCapture : public Belos::StatusTest<SC, MV, OP> {
   RCP<Teuchos::SerialDenseMatrix<int,SC>> R;   // deep copy of QR-rotated R
 
   Belos::StatusType checkStatus(Belos::Iteration<SC, MV, OP>* it) override {
-    auto* fg = dynamic_cast<Belos::BlockFGmresIter<SC, MV, OP>*>(it);
+    auto* fg = dynamic_cast<Belos::BlockFGmresIter<SC, MV, OP, DM>*>(it);
     if (fg) {
       sawFGmresIter = true;
       State s = fg->getState();
@@ -116,7 +116,7 @@ bool runCase(bool keepHessenberg, int numBlocks, bool verbose)
   using NT  = typename Tpetra::MultiVector<SC>::node_type;
   using MV  = Tpetra::MultiVector<SC,LO,GO,NT>;
   using OP  = Tpetra::Operator<SC,LO,GO,NT>;
-  using SDM = Teuchos::SerialDenseMatrix<int,SC>;
+  using DM = Teuchos::SerialDenseMatrix<int,SC>;
   using STS = Teuchos::ScalarTraits<SC>;
   using MT  = typename STS::magnitudeType;
   using STM = Teuchos::ScalarTraits<MT>;
@@ -158,7 +158,7 @@ bool runCase(bool keepHessenberg, int numBlocks, bool verbose)
   params->set("Keep Hessenberg",       keepHessenberg);
   params->set("Verbosity",             Belos::Errors);
 
-  auto capture = rcp(new HessenbergCapture<SC,MV,OP>());
+  auto capture = rcp(new HessenbergCapture<SC,MV,OP,DM>());
   Belos::BlockGmresSolMgr<SC,MV,OP> solver(problem, params);
   solver.setDebugStatusTest(capture);
 
@@ -206,8 +206,8 @@ bool runCase(bool keepHessenberg, int numBlocks, bool verbose)
     return false;
   }
 
-  const SDM& H = *capture->H;
-  const SDM& R = *capture->R;
+  const DM& H = *capture->H;
+  const DM& R = *capture->R;
 
   if (keepHessenberg) {
     // H must have at least one nonzero subdiagonal entry (raw Hessenberg).

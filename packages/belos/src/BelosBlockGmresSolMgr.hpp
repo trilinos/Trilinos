@@ -324,7 +324,7 @@ private:
   Teuchos::RCP<Teuchos::Time> timerSolve_;
 
   // Cached iterator (reused across solve() calls to avoid reallocating Krylov subspace).
-  Teuchos::RCP<GmresIteration<ScalarType,MV,OP> > block_gmres_iter_;
+  Teuchos::RCP<GmresIteration<ScalarType,MV,OP,DM> > block_gmres_iter_;
 
   // Internal state variables.
   bool isSet_, isSTSet_;
@@ -961,7 +961,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP,DM>::solve() {
       block_gmres_iter_ = Teuchos::rcp( new BlockGmresIter<ScalarType,MV,OP,DM>(problem_,printer_,outputTest_,ortho_,plist) );
     needsIterRebuild_ = false;
   }
-  Teuchos::RCP<GmresIteration<ScalarType,MV,OP> > &block_gmres_iter = block_gmres_iter_;
+  Teuchos::RCP<GmresIteration<ScalarType,MV,OP,DM> > &block_gmres_iter = block_gmres_iter_;
 
   // Enter solve() iterations
   {

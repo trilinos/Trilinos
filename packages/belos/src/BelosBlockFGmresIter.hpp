@@ -444,7 +444,7 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
           R_ = DMT::Create(newsd, newsd-blockSize_);
         }
         else {
-          R_->shapeUninitialized (newsd, newsd - blockSize_);
+          DMT::Reshape(*R_, newsd, newsd - blockSize_);
         }
 
         // H_ holds the raw (pre-QR) upper Hessenberg matrix.
@@ -455,7 +455,7 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
             H_ = DMT::Create(newsd, newsd-blockSize_);
           }
           else {
-            H_->shapeUninitialized (newsd, newsd - blockSize_);
+            DMT::Reshape(*H_, newsd, newsd - blockSize_);
           }
         }
         else {
@@ -551,7 +551,6 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
     using Teuchos::RCP;
     using Teuchos::rcp;
     using std::endl;
-    typedef Teuchos::ScalarTraits<ScalarType> STS;
 
     // Initialize the state storage if it isn't already.
     if (! stateStorageInitialized_) {
@@ -710,10 +709,10 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
       // If keeping the Hessenberg separately, copy the new columns into R_
       // before updateLSQR() overwrites them with the QR factorization.
       if (keepHessenberg_) {
-        RCP<SDM> subR = rcp (new SDM (View, *R_, lclDim, blockSize_, 0, curDim_));
-        subR->assign (*subH);
-        RCP<SDM> subR2 = rcp (new SDM (View, *R_, blockSize_, blockSize_, lclDim, curDim_));
-        subR2->assign (*subH2);
+        RCP<DM> subR = DMT::Subview(*R_, lclDim, blockSize_, 0, curDim_);
+        DMT::Assign(*subR, *subH);
+        RCP<DM> subR2 = DMT::Subview(*R_, blockSize_, blockSize_, lclDim, curDim_);
+        DMT::Assign(*subR2, *subH2);
       }
 
       //

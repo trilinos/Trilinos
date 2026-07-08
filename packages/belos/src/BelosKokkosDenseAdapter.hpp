@@ -33,22 +33,22 @@
 namespace Belos {
 
   //! Helper function for copying Kokkos::DualView into conjugate Kokkos::DualView
-  template<typename V>
-  void kokkos_transpose(V& dst, const V& src)
+  template<typename V, typename W>
+  void kokkos_transpose(V& dst, W& src)
   {
     Kokkos::parallel_for(Kokkos::MDRangePolicy<typename V::execution_space, Kokkos::Rank<2>>({0, 0}, {dst.extent(0), dst.extent(1)}),
     KOKKOS_LAMBDA(int i, int j)
     {
-      dst(i, j) = Kokkos::ArithTraits<typename V::non_const_value_type>::conj( src(j, i) );
+      dst(i, j) = Kokkos::ArithTraits<typename W::non_const_value_type>::conj( src(j, i) );
     });
   }
 
   //! Full specialization of Belos::DenseMatSolver for Kokkos::DualView.
   template<class Scalar>
-  class KokkosDenseSolver : public DenseSolver<Scalar, Kokkos::DualView<typename Kokkos::Details::ArithTraits<Scalar>::val_type **,Kokkos::LayoutLeft>>
+  class KokkosDenseSolver : public DenseSolver<Scalar, Kokkos::DualView<typename Kokkos::ArithTraits<Scalar>::val_type **,Kokkos::LayoutLeft>>
   {
   public:
-    typedef typename Kokkos::Details::ArithTraits<Scalar>::val_type IST; //Impl Scalar Type, as used in Tpetra
+    typedef typename Kokkos::ArithTraits<Scalar>::val_type IST; //Impl Scalar Type, as used in Tpetra
     typedef DenseMatTraits<Scalar, Kokkos::DualView<IST**,Kokkos::LayoutLeft>>     DMT;
  
     //! @name Constructor/Destructor Methods
@@ -262,10 +262,10 @@ namespace Belos {
   // (e.g. getStatic2dDualView) return a LayoutLeft view.  Should we 
   // hard-code that parameter he
   template<class Scalar>
-  class DenseMatTraits<Scalar, Kokkos::DualView<typename Kokkos::Details::ArithTraits<Scalar>::val_type **,Kokkos::LayoutLeft>>{
+  class DenseMatTraits<Scalar, Kokkos::DualView<typename Kokkos::ArithTraits<Scalar>::val_type **,Kokkos::LayoutLeft>>{
 
   public:
-    typedef typename Kokkos::Details::ArithTraits<Scalar>::val_type IST; //Impl Scalar Type, as used in Tpetra
+    typedef typename Kokkos::ArithTraits<Scalar>::val_type IST; //Impl Scalar Type, as used in Tpetra
     
     //@{ \name Creation methods
 
@@ -308,12 +308,12 @@ namespace Belos {
                                  (Kokkos::view_alloc(Kokkos::WithoutInitializing,"BelosDenseCreateCopy"),dm.extent_int(1),dm.extent_int(0)));
         if(tmpCopyRCP->need_sync_device()) {
           // tmpCopyRCP is only up to date on the host
-          kokkos_transpose(tmpCopyRCP->h_view, dm.h_view);
+          kokkos_transpose(tmpCopyRCP->view_host(), dm.view_host());
           tmpCopyRCP->clear_sync_state();
           tmpCopyRCP->modify_host();
         }
         else {
-          kokkos_transpose(tmpCopyRCP->d_view, dm.d_view);
+          kokkos_transpose(tmpCopyRCP->view_device(), dm.view_device());
           tmpCopyRCP->clear_sync_state();
           tmpCopyRCP->modify_device();
         }

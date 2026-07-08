@@ -1032,32 +1032,16 @@ namespace Belos {
 #endif // HAVE_BELOS_TPETRA_TIMERS
 
       const Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero();
-      const size_t numRowsC = C.extent(0);
-      const size_t numColsC = C.extent(1);
 
       // Return C = alpha * A^(conj trans) * B
 
-      // If numRowsC == numColsC == 1, then we can call dot().
-      if (numRowsC == size_t (1) && numColsC == size_t (1)) {
-        if (alpha == ZERO) {
-          // Short-circuit, as required by BLAS semantics.
-          C.h_view(0,0) = IST(alpha);
-          C.modify_host();
-          C.sync_device(); //TODO should this be counted somehow? Not in a DMT interface.
-          return;
-        }
-        //TODO This case has build problems. Pushing to multiply for now.
-        //LATER: Check performance. Should we be calling do instead? 
-        //
-        /*auto subview1d = Kokkos::subview(C.h_view,Kokkos::ALL,1);
-        A.dot (B, subview1d);
+      if (alpha == ZERO) {
+        // Short-circuit, as required by BLAS semantics.
+        Kokkos::deep_copy(C.view_host(), IST(alpha));
         C.modify_host();
-        if (alpha != Teuchos::ScalarTraits<Scalar>::one()) {
-          C.h_view(0,0) *= alpha;
-        }
-        return;*/
+        return;
       }
-      MV C_mv = impl::makeStaticLocalMultiVector(A,C);
+      MV C_mv = impl::makeStaticLocalMultiVector(A, C);
       // Filling with zero should be unnecessary, in theory, but not
       // in practice, alas (Issue_3235 test fails).
       // TODO: double-check what was going on here in that issue.
@@ -1077,7 +1061,6 @@ namespace Belos {
       //
       // Note: Multiply does all the right things, syncing data if it needs to.
       C_mv.multiply(Teuchos::CONJ_TRANS, Teuchos::NO_TRANS, alpha, A, B, ZERO);
-      C.modify_device();
     }
     
     //==============================================================

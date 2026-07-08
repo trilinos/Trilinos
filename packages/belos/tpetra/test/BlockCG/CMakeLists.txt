@@ -77,7 +77,7 @@ IF (Tpetra_INST_COMPLEX_DOUBLE)
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Tpetra_BlockCG_complex_hb_test
-    SOURCES test_bl_cg_complex_hb.cpp
+    SOURCES test_cg_complex_hb.cpp
     ARGS
         "--verbose"
         "--verbose --pseudo"
