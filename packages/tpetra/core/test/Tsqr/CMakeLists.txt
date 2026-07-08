@@ -1,12 +1,10 @@
-IF (${PACKAGE_NAME}_ENABLE_TSQR)
+IF(${PACKAGE_NAME}_ENABLE_TSQR)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     TsqrAdaptor
-    SOURCES
-      TsqrAdaptor.cpp
-      ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    SOURCES TsqrAdaptor.cpp ${TEUCHOS_STD_UNIT_TEST_MAIN}
     COMM serial mpi
     NUM_MPI_PROCS 1
     ARGS ""
     STANDARD_PASS_OUTPUT
-    )
+  )
 ENDIF()
