@@ -607,13 +607,13 @@ Teuchos::RCP<Matrix> HexFEM_LapStiffProblem<Scalar, LocalOrdinal, GlobalOrdinal,
     nz              = nx;
     TEUCHOS_TEST_FOR_EXCEPTION(nx * ny * nz != n, std::logic_error, "You need to specify nx, ny, and nz");
   }
-  Scalar one      = Teuchos::ScalarTraits<Scalar>::one();
-  Scalar stretchx = (Scalar)this->list_.get("stretchx", one);
-  Scalar stretchy = (Scalar)this->list_.get("stretchy", one);
-  Scalar stretchz = (Scalar)this->list_.get("stretchz", one);
-  Scalar lx       = (Scalar)this->list_.get("lx", one);
-  Scalar ly       = (Scalar)this->list_.get("ly", one);
-  Scalar lz       = (Scalar)this->list_.get("lz", one);
+  const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+  Scalar stretchx  = (Scalar)this->list_.get("stretchx", one);
+  Scalar stretchy  = (Scalar)this->list_.get("stretchy", one);
+  Scalar stretchz  = (Scalar)this->list_.get("stretchz", one);
+  Scalar lx        = (Scalar)this->list_.get("lx", one);
+  Scalar ly        = (Scalar)this->list_.get("ly", one);
+  Scalar lz        = (Scalar)this->list_.get("lz", one);
   Scalar hx, hy, hz;
 
   // not sure why in other galeri spots nx+1,ny+1,nz+1 are used. When
@@ -624,29 +624,35 @@ Teuchos::RCP<Matrix> HexFEM_LapStiffProblem<Scalar, LocalOrdinal, GlobalOrdinal,
 
   // Unassembled stiffness matrix coefficients
 
-  Scalar Sdiag     = (hy * hz) / (9. * hx) + (hx * (hy * hy + hz * hz)) / (9. * hy * hz);
-  Scalar Sxneigh   = (-1. / 9.) * (hy * hz) / hx + (hx * (hy * hy + hz * hz)) / (18. * hy * hz);
-  Scalar Syneigh   = (hx * hy) / (18. * hz) - (hx * hz) / (9. * hy) + (hy * hz) / (18. * hx);
-  Scalar Szneigh   = (-1 / 9.) * (hx * hy) / hz + (hx * hz) / (18. * hy) + (hy * hz) / (18. * hx);
-  Scalar Sxyneigh  = (hx * hy) / (36. * hz) - (hx * hz) / (18. * hy) - (hy * hz) / (18. * hx);
-  Scalar Sxzneigh  = (-1 / 18.) * (hx * hy) / hz + (hx * hz) / (36. * hy) - (hy * hz) / (18. * hx);
-  Scalar Syzneigh  = (hy * hz) / (36. * hx) - (hx * (hy * hy + hz * hz)) / (18. * hy * hz);
-  Scalar Sxyzneigh = (-1 / 36.) * (hy * hz) / hx - (hx * (hy * hy + hz * hz)) / (36. * hy * hz);
+  const Scalar two       = 2;
+  const Scalar four      = 4;
+  const Scalar eight     = 8;
+  const Scalar nine      = 9;
+  const Scalar eighteen  = 18;
+  const Scalar thirtySix = 36;
+  Scalar Sdiag           = (hy * hz) / (nine * hx) + (hx * (hy * hy + hz * hz)) / (nine * hy * hz);
+  Scalar Sxneigh         = (-one / nine) * (hy * hz) / hx + (hx * (hy * hy + hz * hz)) / (eighteen * hy * hz);
+  Scalar Syneigh         = (hx * hy) / (eighteen * hz) - (hx * hz) / (nine * hy) + (hy * hz) / (eighteen * hx);
+  Scalar Szneigh         = (-one / nine) * (hx * hy) / hz + (hx * hz) / (eighteen * hy) + (hy * hz) / (eighteen * hx);
+  Scalar Sxyneigh        = (hx * hy) / (thirtySix * hz) - (hx * hz) / (eighteen * hy) - (hy * hz) / (eighteen * hx);
+  Scalar Sxzneigh        = (-one / eighteen) * (hx * hy) / hz + (hx * hz) / (thirtySix * hy) - (hy * hz) / (eighteen * hx);
+  Scalar Syzneigh        = (hy * hz) / (thirtySix * hx) - (hx * (hy * hy + hz * hz)) / (eighteen * hy * hz);
+  Scalar Sxyzneigh       = (-one / thirtySix) * (hy * hz) / hx - (hx * (hy * hy + hz * hz)) / (thirtySix * hy * hz);
 
   // We assume an interior stencil. So the diagonal entry has 8
   // contributions, while off-diagonals have either 1, 2, or 4
   // contributions
-  Scalar S111 = Sxyzneigh, S211 = Syzneigh * 2., S311 = Sxyzneigh;
-  Scalar S121 = Sxzneigh * 2.0, S221 = Szneigh * 4., S321 = Sxzneigh * 2.0;
-  Scalar S131 = Sxyzneigh, S231 = Syzneigh * 2., S331 = Sxyzneigh;
+  Scalar S111 = Sxyzneigh, S211 = Syzneigh * two, S311 = Sxyzneigh;
+  Scalar S121 = Sxzneigh * two, S221 = Szneigh * four, S321 = Sxzneigh * two;
+  Scalar S131 = Sxyzneigh, S231 = Syzneigh * two, S331 = Sxyzneigh;
 
-  Scalar S112 = Sxyneigh * 2., S212 = Syneigh * 4., S312 = Sxyneigh * 2.;
-  Scalar S122 = Sxneigh * 4., S222 = Sdiag * 8., S322 = Sxneigh * 4.;
-  Scalar S132 = Sxyneigh * 2., S232 = Syneigh * 4., S332 = Sxyneigh * 2.;
+  Scalar S112 = Sxyneigh * two, S212 = Syneigh * four, S312 = Sxyneigh * two;
+  Scalar S122 = Sxneigh * four, S222 = Sdiag * eight, S322 = Sxneigh * four;
+  Scalar S132 = Sxyneigh * two, S232 = Syneigh * four, S332 = Sxyneigh * two;
 
-  Scalar S113 = Sxyzneigh, S213 = Syzneigh * 2., S313 = Sxyzneigh;
-  Scalar S123 = Sxzneigh * 2.0, S223 = Szneigh * 4., S323 = Sxzneigh * 2.0;
-  Scalar S133 = Sxyzneigh, S233 = Syzneigh * 2., S333 = Sxyzneigh;
+  Scalar S113 = Sxyzneigh, S213 = Syzneigh * two, S313 = Sxyzneigh;
+  Scalar S123 = Sxzneigh * two, S223 = Szneigh * four, S323 = Sxzneigh * two;
+  Scalar S133 = Sxyzneigh, S233 = Syzneigh * two, S333 = Sxyzneigh;
 
   // 27-pt stencil given by
   //
@@ -740,19 +746,24 @@ Teuchos::RCP<Matrix> HexFEM_MassProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map
   hy = stretchy * ly / ((Scalar)(ny - 1));
   hz = stretchz * lz / ((Scalar)(nz - 1));
 
-  Scalar alpha = hx * hy * hz / 216.;
+  const Scalar four              = 4;
+  const Scalar sixteen           = 16;
+  const Scalar sixtyFour         = 64;
+  const Scalar twoHundredSixteen = 216;
 
-  Scalar M111 = alpha * 1.0, M211 = alpha * 4.0, M311 = alpha * 1.0;
-  Scalar M121 = alpha * 4.0, M221 = alpha * 16.0, M321 = alpha * 4.0;
-  Scalar M131 = alpha * 1.0, M231 = alpha * 4.0, M331 = alpha * 1.0;
+  Scalar alpha = hx * hy * hz / twoHundredSixteen;
 
-  Scalar M112 = alpha * 4.0, M212 = alpha * 16.0, M312 = alpha * 4.0;
-  Scalar M122 = alpha * 16.0, M222 = alpha * 64.0, M322 = alpha * 16.0;
-  Scalar M132 = alpha * 4.0, M232 = alpha * 16.0, M332 = alpha * 4.0;
+  Scalar M111 = alpha * one, M211 = alpha * four, M311 = alpha * one;
+  Scalar M121 = alpha * four, M221 = alpha * sixteen, M321 = alpha * four;
+  Scalar M131 = alpha * one, M231 = alpha * four, M331 = alpha * one;
 
-  Scalar M113 = alpha * 1.0, M213 = alpha * 4.0, M313 = alpha * 1.0;
-  Scalar M123 = alpha * 4.0, M223 = alpha * 16.0, M323 = alpha * 4.0;
-  Scalar M133 = alpha * 1.0, M233 = alpha * 4.0, M333 = alpha * 1.0;
+  Scalar M112 = alpha * four, M212 = alpha * sixteen, M312 = alpha * four;
+  Scalar M122 = alpha * sixteen, M222 = alpha * sixtyFour, M322 = alpha * sixteen;
+  Scalar M132 = alpha * four, M232 = alpha * sixteen, M332 = alpha * four;
+
+  Scalar M113 = alpha * one, M213 = alpha * four, M313 = alpha * one;
+  Scalar M123 = alpha * four, M223 = alpha * sixteen, M323 = alpha * four;
+  Scalar M133 = alpha * one, M233 = alpha * four, M333 = alpha * one;
 
   // 27-pt stencil given by
   //
