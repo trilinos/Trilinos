@@ -75,8 +75,10 @@ public:
   typedef Kokkos::DefaultHostExecutionSpace                     HostExecSpaceType;
   typedef typename HostExecSpaceType::memory_space              HostMemSpaceType;
 
-  typedef Kokkos::View<local_ordinal_type*, HostExecSpaceType>  host_ordinal_type_view;
-  typedef Kokkos::View<mumps_type*, HostExecSpaceType>          host_value_type_view;
+  typedef Kokkos::View<local_ordinal_type*,  HostExecSpaceType>  host_ordinal_type_view;
+  typedef Kokkos::View<mumps_type*,  HostExecSpaceType>          host_value_type_view;
+  typedef typename Kokkos::View<mumps_type**, Kokkos::LayoutLeft,
+                                typename HostExecSpaceType::memory_space> host_mv_view;
 
   MUMPS(Teuchos::RCP<const Matrix> A,
           Teuchos::RCP<Vector>       X,
@@ -199,9 +201,11 @@ private:
   host_ordinal_type_view host_col_ptr_view_;
 
   /// Persisting 1D store for X
-  mutable Teuchos::Array<mumps_type> xvals_;  local_ordinal_type ldx_;
+  mutable host_mv_view xvals_;
+  local_ordinal_type ldx_;
   /// Persisting 1D store for B
-  mutable Teuchos::Array<mumps_type> bvals_;  local_ordinal_type ldb_;
+  mutable host_mv_view bvals_;
+  local_ordinal_type ldb_;
 
   mutable MUMPS_STRUC_C mumps_par;
 
@@ -344,6 +348,12 @@ struct solver_traits<MUMPS> {
 #else
   typedef Meta::make_list2<float, double> supported_scalars;
 #endif
+};
+
+template <typename Scalar, typename LocalOrdinal, typename ExecutionSpace>
+struct solver_supports_matrix<MUMPS,
+  KokkosSparse::CrsMatrix<Scalar, LocalOrdinal, ExecutionSpace>> {
+  static const bool value = true;
 };
 
 } // end namespace Amesos2
