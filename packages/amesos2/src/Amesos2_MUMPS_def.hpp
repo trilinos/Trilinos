@@ -62,13 +62,16 @@ namespace Amesos2
     RCP<const Comm<int> > matComm = this->matrixA_->getComm();
     //Add Exception Checking
     TEUCHOS_TEST_FOR_EXCEPTION(
-                               matComm.is_null(), std::logic_error, "Amesos2::Comm");
+      matComm.is_null(), std::logic_error, "Amesos2::MUMPS:: matComm is null");
     RCP<const MpiComm<int> > matMpiComm = 
       rcp_dynamic_cast<const MpiComm<int> >(matComm);
     //Add Exception Checking
     TEUCHOS_TEST_FOR_EXCEPTION(
-                               matMpiComm->getRawMpiComm().is_null(), 
-                               std::logic_error, "Amesos2::MPI");
+      matMpiComm.is_null(), 
+      std::logic_error, "Amesos2::MUMPS:: matMPIComm is null");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      matMpiComm->getRawMpiComm().is_null(), 
+      std::logic_error, "Amesos2::MUMPS:: rawMPIComm is null");
     MPI_Comm rawMpiComm = (* (matMpiComm->getRawMpiComm()) )();
     mumps_par.comm_fortran = (int) MPI_Comm_c2f(rawMpiComm);
     #endif  
@@ -194,33 +197,44 @@ namespace Amesos2
     const global_size_type ld_rhs = this->root_ ? X->getGlobalLength() : 0;
     const size_t nrhs = X->getGlobalNumVectors();
     const size_t val_store_size = Teuchos::as<size_t>(ld_rhs * nrhs);
+
+    const bool initialize_data = true;
+    const bool do_not_initialize_data = false;
     {
       #ifdef HAVE_AMESOS2_TIMERS
       Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
       #endif
 
-      xvals_.resize(val_store_size);
-      bvals_.resize(val_store_size);
-
-      Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
-        mumps_type>::do_get(B, bvals_(), Teuchos::as<size_t>(ld_rhs),
+      Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+        host_mv_view>::do_get(initialize_data, B, bvals_,
+          Teuchos::as<size_t>(ld_rhs),
           (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
           this->rowIndexBase_);
+      Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+        host_mv_view>::do_get(do_not_initialize_data, X, xvals_,
+          Teuchos::as<size_t>(ld_rhs),
+          (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+          this->rowIndexBase_);
+
+      // copy b to x to give x to MUMPS
+      Kokkos::deep_copy(xvals_, bvals_);
     }
     int ierr = 0; // returned error code
     if ( this->globalNumRows_ > 0 ) {
-      mumps_par.nrhs = nrhs;
-      mumps_par.lrhs = mumps_par.n;
-      mumps_par.job = 3;
-
-      if ( this->root_ ) 
-        {
-          mumps_par.rhs = bvals_.getRawPtr();
-        }
-
       #ifdef HAVE_AMESOS2_TIMERS
       Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
       #endif
+
+      mumps_par.nrhs = nrhs;
+      mumps_par.lrhs = mumps_par.n;
+      mumps_par.job = 3;
+      if ( this->root_ ) 
+      {
+        // MUMPS is called with all MPI ranks
+        //  but only root rank has the actual data.
+        // (b has been copied into x)
+        mumps_par.rhs = xvals_.data();
+      }
 
       function_map::mumps_c(&(mumps_par));
       MUMPS_ERROR();
@@ -230,9 +244,11 @@ namespace Amesos2
       Teuchos::TimeMonitor redistTimer2(this->timers_.vecRedistTime_);
       #endif
 
-      Util::put_1d_data_helper<
-        MultiVecAdapter<Vector>,mumps_type>::do_put(X, bvals_(), Teuchos::as<size_t>(ld_rhs),
-          (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED);
+      Util::put_1d_data_helper_kokkos_view<MultiVecAdapter<Vector>,
+        host_mv_view>::do_put(X, xvals_,
+          Teuchos::as<size_t>(ld_rhs),
+          (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+          this->rowIndexBase_);
     }
     // ch: see function loadA_impl()
     MUMPS_MATRIX_LOAD_PREORDERING = false;
