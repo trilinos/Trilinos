@@ -10,7 +10,7 @@ TRIBITS_ADD_TEST(
   MatrixMatrix_UnitTests
   NAME MatrixMatrix_UnitTests_OptimizedTAFC
   ARGS "--matnames-file=\"matrixsystems.xml\" --v"
-  ENVIRONMENT  MM_TAFC_OptimizationCoreCount=1
+  ENVIRONMENT  MM_TAFC_OptimizationCoreCount=1 TPETRA_VERBOSE=1
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
