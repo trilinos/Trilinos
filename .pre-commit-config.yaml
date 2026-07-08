@@ -49,3 +49,6 @@
    - id: cmake-format
      name: cmake-format MueLu
      files: "packages/muelu/.*CMakeLists.txt"
+   - id: cmake-format
+     name: cmake-format Tpetra
+     files: "packages/tpetra/.*CMakeLists.txt"

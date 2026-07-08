@@ -6,22 +6,22 @@ TRIBITS_ADD_EXECUTABLE(
 )
 
 TRIBITS_ADD_TEST(
-    FEMAssembly
-    NAME FEMAssembly_InsertGlobalIndicesFESP
-    ARGS "--with-insert-global-indices-fe --num-elements-x=200 --num-elements-y=200"
-    COMM serial mpi
-    NUM_MPI_PROCS 4
-    STANDARD_PASS_OUTPUT
-  )
+  FEMAssembly
+  NAME FEMAssembly_InsertGlobalIndicesFESP
+  ARGS "--with-insert-global-indices-fe --num-elements-x=200 --num-elements-y=200"
+  COMM serial mpi
+  NUM_MPI_PROCS 4
+  STANDARD_PASS_OUTPUT
+)
 
 TRIBITS_ADD_TEST(
-    FEMAssembly 
-    NAME FEMAssembly_InsertGlobalIndicesFESPKokkos
-    ARGS "--with-insert-global-indices-fe --num-elements-x=200 --num-elements-y=200 --with-kokkos"
-    COMM serial mpi
-    NUM_MPI_PROCS 4
-    STANDARD_PASS_OUTPUT
-  )
+  FEMAssembly
+  NAME FEMAssembly_InsertGlobalIndicesFESPKokkos
+  ARGS "--with-insert-global-indices-fe --num-elements-x=200 --num-elements-y=200 --with-kokkos"
+  COMM serial mpi
+  NUM_MPI_PROCS 4
+  STANDARD_PASS_OUTPUT
+)
 
 TRIBITS_ADD_TEST(
   FEMAssembly
@@ -45,20 +45,19 @@ TRIBITS_ADD_TEST(
 # Performance Testing
 ###################################
 
-set(COUNTER 1)
-set(MAX_COUNT 11)
+SET(COUNTER 1)
+SET(MAX_COUNT 11)
 WHILE(COUNTER LESS MAX_COUNT)
-  math(EXPR NP "${COUNTER} * ${COUNTER}")
+  MATH(EXPR NP "${COUNTER} * ${COUNTER}")
   TRIBITS_ADD_TEST(
-      FEMAssembly
-      NAME Performance_StrongScaling_FEMAssembly_InsertGlobalIndicesFESPKokkos
-      ARGS "--with-insert-global-indices-fe --num-elements-x=8192 --num-elements-y=8192 --with-kokkos"
-      COMM mpi
-      NUM_MPI_PROCS ${NP}
-      STANDARD_PASS_OUTPUT
-      RUN_SERIAL
-      CATEGORIES PERFORMANCE
+    FEMAssembly
+    NAME Performance_StrongScaling_FEMAssembly_InsertGlobalIndicesFESPKokkos
+    ARGS "--with-insert-global-indices-fe --num-elements-x=8192 --num-elements-y=8192 --with-kokkos"
+    COMM mpi
+    NUM_MPI_PROCS ${NP}
+    STANDARD_PASS_OUTPUT
+    RUN_SERIAL
+    CATEGORIES PERFORMANCE
   )
-  math(EXPR COUNTER "${COUNTER} + 1")
+  MATH(EXPR COUNTER "${COUNTER} + 1")
 ENDWHILE()
-
