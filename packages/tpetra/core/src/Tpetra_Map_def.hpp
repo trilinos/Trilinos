@@ -1042,7 +1042,7 @@ Map<LocalOrdinal, GlobalOrdinal, Node>::
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-void Map<LocalOrdinal, GlobalOrdinal, Node>::computeGlobalConstants() {
+void Map<LocalOrdinal, GlobalOrdinal, Node>::computeGlobalConstants() const {
   using GO  = global_ordinal_type;
   using GST = global_size_t;
 
@@ -2106,6 +2106,9 @@ void Map<LocalOrdinal, GlobalOrdinal, Node>::setupDirectory() const {
   // Only create the Directory if it hasn't been created yet.
   // This is a collective operation.
   if (!directory_->initialized()) {
+    // non-contiguous directory needs global constants
+    if (isDistributed() && !isUniform() && !isContiguous())
+      computeGlobalConstants();
     directory_->initialize(*this);
   }
 }
