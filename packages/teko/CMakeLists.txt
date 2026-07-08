@@ -30,13 +30,6 @@ ELSE()
    GLOBAL_SET(HAVE_MUELU OFF)
 ENDIF()
 
-# Enable ML block Smoothers
-IF(ML_ENABLE_TekoSmoothers)
-   SET(Teko_ENABLE_ML_SMOOTHERS ON)
-ELSE()
-   SET(Teko_ENABLE_ML_SMOOTHERS OFF)
-ENDIF()
-
 # enable development mode
 IF(${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE)
    SET(Teko_ENABLE_DEV_MODE ON)
@@ -63,7 +56,6 @@ TRIBITS_ADD_EXAMPLE_DIRECTORIES(examples)
 TRIBITS_EXCLUDE_FILES(
   tests/data/nsjac.mm
   tests/data/nsjac_1.mm
-  src/mlutils
   )
 
 #
