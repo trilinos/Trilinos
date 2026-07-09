@@ -86,7 +86,7 @@ void PreconditionerSetup(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, Globa
                          bool setNullSpace,
                          int numRebuilds,
                          Teuchos::RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& H,
-                         Teuchos::RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& Prec,
+                         Teuchos::RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& /*Prec*/,
                          Teuchos::FancyOStream& out,
                          bool sacrifice = false) {
 #include <MueLu_UseShortNames.hpp>
@@ -295,7 +295,7 @@ void SystemSolve(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal
                  Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& X,
                  Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& B,
                  Teuchos::RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& H,
-                 Teuchos::RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& Prec,
+                 Teuchos::RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& /*Prec*/,
                  Teuchos::FancyOStream& out,
                  std::string solveType,
                  std::string belosType,

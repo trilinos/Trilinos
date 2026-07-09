@@ -21,7 +21,6 @@
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
-#include <Teuchos_DefaultComm.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MatrixMatrix.hpp>
@@ -29,8 +28,6 @@
 #include <Xpetra_Map.hpp>
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_CrsMatrixWrap.hpp>
-#include <Xpetra_VectorFactory.hpp>
-#include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_Parameters.hpp>
 // Galeri
 #include <Galeri_XpetraParameters.hpp>

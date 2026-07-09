@@ -1400,7 +1400,7 @@ void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::IsPreconditioner(cons
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DumpCurrentGraph(int currLevel) const {
+void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DumpCurrentGraph(int /*currLevel*/) const {
   if (GetProcRankVerbose() != 0)
     return;
 #if defined(HAVE_MUELU_BOOST) && defined(HAVE_MUELU_BOOST_FOR_REAL) && defined(BOOST_VERSION) && (BOOST_VERSION >= 104400)
