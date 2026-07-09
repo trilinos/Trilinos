@@ -159,68 +159,6 @@ RCP<const Teuchos::Comm<Thyra::Ordinal> > TpetraOperatorWrapper::getThyraComm(
                              "blocks to be SPMD std::vector spaces");
 
   return spmd->getComm();
-  /*
-    const Thyra::ConstLinearOperator<double> thyraOp = rcpFromRef(inOp);
-
-    RCP<Teuchos::RCP<const Teuchos::Comm<int>>> rtn;
-    // VectorSpace<double> vs = thyraOp.domain().getBlock(0);
-    RCP<const VectorSpaceBase<double> > vs = thyraOp.domain().getBlock(0).constPtr();
-
-    // search for an SpmdVectorSpaceBase object
-    RCP<const SpmdVectorSpaceBase<double> > spmd;
-    RCP<const VectorSpaceBase<double> > current = vs;
-    while(current!=Teuchos::null) {
-       // try to cast to a product vector space first
-       RCP<const ProductVectorSpaceBase<double> > prod
-             = rcp_dynamic_cast<const ProductVectorSpaceBase<double> >(current);
-
-       // figure out what type it is
-       if(prod==Teuchos::null) {
-          // hopfully this is a SPMD vector space
-          spmd = rcp_dynamic_cast<const SpmdVectorSpaceBase<double> >(current);
-
-          break;
-       }
-       else {
-          // get first convenient vector space
-          current = prod->getBlock(0);
-       }
-    }
-
-    TEUCHOS_TEST_FOR_EXCEPTION(spmd==Teuchos::null, std::runtime_error,
-                       "TpetraOperatorWrapper requires std::vector space "
-                       "blocks to be SPMD std::vector spaces");
-
-    const SerialComm<Thyra::Ordinal>* serialComm
-      = dynamic_cast<const SerialComm<Thyra::Ordinal>*>(spmd->getComm().get());
-
-  #ifdef HAVE_MPI
-    const MpiComm<Thyra::Ordinal>* mpiComm
-      = dynamic_cast<const MpiComm<Thyra::Ordinal>*>(spmd->getComm().get());
-
-    TEUCHOS_TEST_FOR_EXCEPTION(mpiComm==0 && serialComm==0, std::runtime_error,
-                       "SPMD std::vector space has a communicator that is "
-                       "neither a serial comm nor an MPI comm");
-
-    if (mpiComm != 0)
-      {
-        rtn = rcp(new Tpetra::MpiComm(MPI_COMM_WORLD));
-      }
-    else
-      {
-        rtn = rcp(new Tpetra::SerialComm());
-      }
-  #else
-    TEUCHOS_TEST_FOR_EXCEPTION(serialComm==0, std::runtime_error,
-                       "SPMD std::vector space has a communicator that is "
-                       "neither a serial comm nor an MPI comm");
-    rtn = rcp(new Tpetra::SerialComm());
-
-  #endif
-
-    TEUCHOS_TEST_FOR_EXCEPTION(rtn.get()==0, std::runtime_error, "null communicator created");
-    return rtn;
-  */
 }
 
 int TpetraOperatorWrapper::GetBlockRowCount() {
