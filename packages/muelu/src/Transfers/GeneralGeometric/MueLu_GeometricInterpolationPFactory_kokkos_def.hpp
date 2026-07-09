@@ -55,7 +55,7 @@ RCP<const ParameterList> GeometricInterpolationPFactory_kokkos<Scalar, LocalOrdi
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void GeometricInterpolationPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    DeclareInput(Level& fineLevel, Level& coarseLevel) const {
+    DeclareInput(Level& fineLevel, Level& /*coarseLevel*/) const {
   const ParameterList& pL = GetParameterList();
 
   Input(fineLevel, "A");

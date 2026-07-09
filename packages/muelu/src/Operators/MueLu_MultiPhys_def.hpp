@@ -259,13 +259,13 @@ bool MultiPhys<Scalar, LocalOrdinal, GlobalOrdinal, Node>::hasTransposeApply() c
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void MultiPhys<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    initialize(const Teuchos::RCP<Matrix>& AmatMultiPhysics,
-               const Teuchos::ArrayRCP<RCP<Matrix>> arrayOfAuxMatrices,
-               const Teuchos::ArrayRCP<Teuchos::RCP<MultiVector>> arrayOfNullspaces,
-               const Teuchos::ArrayRCP<Teuchos::RCP<RealValuedMultiVector>> arrayOfCoords,
-               const int nBlks,
+    initialize(const Teuchos::RCP<Matrix>& /*AmatMultiPhysics*/,
+               const Teuchos::ArrayRCP<RCP<Matrix>> /*arrayOfAuxMatrices*/,
+               const Teuchos::ArrayRCP<Teuchos::RCP<MultiVector>> /*arrayOfNullspaces*/,
+               const Teuchos::ArrayRCP<Teuchos::RCP<RealValuedMultiVector>> /*arrayOfCoords*/,
+               const int /*nBlks*/,
                Teuchos::ParameterList& List,
-               const Teuchos::ArrayRCP<Teuchos::RCP<MultiVector>> arrayOfMaterials) {
+               const Teuchos::ArrayRCP<Teuchos::RCP<MultiVector>> /*arrayOfMaterials*/) {
   arrayOfHierarchies_.resize(nBlks_);
   for (int i = 0; i < nBlks_; i++) arrayOfHierarchies_[i] = Teuchos::null;
 

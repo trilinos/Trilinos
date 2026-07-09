@@ -37,7 +37,6 @@
 
 #include "MueLu_Zoltan2Interface.hpp"
 
-#include <vector>
 #include <algorithm>
 #include <utility>
 #include <cmath>

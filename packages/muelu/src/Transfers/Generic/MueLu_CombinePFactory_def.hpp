@@ -308,7 +308,7 @@ void CombinePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& f
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void CombinePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    BuildPBlockedImpl(Level& fineLevel, Level& coarseLevel, std::false_type) const {
+    BuildPBlockedImpl(Level& /*fineLevel*/, Level& /*coarseLevel*/, std::false_type) const {
 #if defined(HAVE_XPETRA_THYRA) && defined(HAVE_MUELU_THYRA)
   std::ostringstream oss;
   oss << "CombinePFactory::BuildPBlocked requires Thyra ETI support for this "

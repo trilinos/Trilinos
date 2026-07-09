@@ -108,7 +108,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(LWGraph_kokkos, LocalGraphData, Scalar, LocalO
     auto lclLWGraph = *graph;
     Kokkos::parallel_reduce(
         "MueLu:TentativePF:Build:compute_agg_sizes", Kokkos::RangePolicy<typename NO::execution_space, size_t>(0, 1),
-        KOKKOS_LAMBDA(const LO i, int& incorrect) {
+        KOKKOS_LAMBDA(const LO /*i*/, int& incorrect) {
           if (lclLWGraph.GetNodeNumVertices() != numrows)
             incorrect++;
           if (lclLWGraph.GetNodeNumEdges() != nument)

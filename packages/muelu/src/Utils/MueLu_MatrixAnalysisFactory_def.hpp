@@ -39,7 +39,7 @@ RCP<const ParameterList> MatrixAnalysisFactory<Scalar, LocalOrdinal, GlobalOrdin
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void MatrixAnalysisFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
+void MatrixAnalysisFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level & /*fineLevel*/, Level &coarseLevel) const {
   Input(coarseLevel, "A");
 }
 

@@ -50,7 +50,7 @@ class FakeSmootherPrototype : public SmootherPrototype<Scalar, LocalOrdinal, Glo
     SmootherPrototype::IsSetup(true);
   }
 
-  void Apply(MultiVector& x, const MultiVector& rhs, bool InitialGuessIsZero) const {
+  void Apply(MultiVector& /*x*/, const MultiVector& /*rhs*/, bool /*InitialGuessIsZero*/) const {
     TEUCHOS_TEST_FOR_EXCEPTION(1, Exceptions::NotImplemented, "MueLu::FakeSmootherPrototype()::Apply(): this class is for test purpose only.")
   }
 

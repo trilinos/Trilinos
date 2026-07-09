@@ -25,7 +25,6 @@
 #include <MueLu_UncoupledAggregationFactory.hpp>
 
 #include <MueLu_SingleLevelFactoryBase.hpp>
-#include <MueLu_Factory.hpp>
 
 namespace MueLuTests {
 

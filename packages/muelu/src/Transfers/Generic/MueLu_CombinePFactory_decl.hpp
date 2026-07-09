@@ -16,7 +16,6 @@
 #include <Xpetra_MultiVector.hpp>
 #include <Xpetra_Matrix_fwd.hpp>
 
-#include "MueLu_ConfigDefs.hpp"
 #include "MueLu_PFactory.hpp"
 #include "MueLu_CombinePFactory_fwd.hpp"
 

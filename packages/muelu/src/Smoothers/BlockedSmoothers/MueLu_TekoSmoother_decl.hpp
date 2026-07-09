@@ -60,7 +60,7 @@ class TekoSmoother : public SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdina
     TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::TekoSmoother: Teko can only be used with SC=double. For more information refer to the doxygen documentation of TekoSmoother.");
   };
 
-  TekoSmoother(const Teuchos::ParameterList &paramList)
+  TekoSmoother(const Teuchos::ParameterList & /*paramList*/)
     : type_("Teko smoother") {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::TekoSmoother: Teko can only be used with SC=double. For more information refer to the doxygen documentation of TekoSmoother.");
   }
