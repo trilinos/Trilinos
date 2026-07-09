@@ -300,7 +300,7 @@ Teuchos::RCP<Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> 
 #endif  // HAVE_IFPACK2_XPETRA
 
 template <class SC, class LO, class GO, class NO>
-void solverWarmup(Teuchos::RCP<const Teuchos::Comm<int>>& comm, Teuchos::RCP<Tpetra::RowMatrix<>> Ablock, const Teuchos::Array<Teuchos::Array<LO>>& parts, int sublinesPerLineSchur, bool overlapCommAndComp, int nvecs) {
+void solverWarmup(Teuchos::RCP<const Teuchos::Comm<int>>& /*comm*/, Teuchos::RCP<Tpetra::RowMatrix<>> Ablock, const Teuchos::Array<Teuchos::Array<LO>>& parts, int sublinesPerLineSchur, bool overlapCommAndComp, int nvecs) {
   using row_matrix_type = Tpetra::RowMatrix<>;
   using MV              = Tpetra::MultiVector<>;
   using BTDC            = Ifpack2::BlockTriDiContainer<row_matrix_type>;
