@@ -60,7 +60,7 @@ RCP<PreconditionerBase<Scalar>> MueLuMaxwell1PreconditionerFactory<Scalar, Local
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void MueLuMaxwell1PreconditionerFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    initializePrec(const RCP<const LinearOpSourceBase<Scalar>>& fwdOpSrc, PreconditionerBase<Scalar>* prec, const ESupportSolveUse supportSolveUse) const {
+    initializePrec(const RCP<const LinearOpSourceBase<Scalar>>& fwdOpSrc, PreconditionerBase<Scalar>* prec, const ESupportSolveUse /*supportSolveUse*/) const {
   // we are using typedefs here, since we are using objects from different packages (Xpetra, Thyra,...)
   typedef Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> XpOp;
   typedef Xpetra::ThyraUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node> XpThyUtils;

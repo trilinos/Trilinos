@@ -2438,7 +2438,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, ClassicScalarWitho
   auto lclLWGraph = *graph;
   Kokkos::parallel_reduce(
       "MueLu:TentativePF:Build:compute_agg_sizes", Kokkos::RangePolicy<typename NO::execution_space, size_t>(0, 1),
-      KOKKOS_LAMBDA(const LO i, int &correct) {
+      KOKKOS_LAMBDA(const LO /*i*/, int &correct) {
         if (comm_size == 1) {
           auto v0 = lclLWGraph.getNeighborVertices(0);
           auto v1 = lclLWGraph.getNeighborVertices(1);
@@ -2515,7 +2515,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, ClassicScalarWithF
   auto lclLWGraph = *graph;
   Kokkos::parallel_reduce(
       "MueLu:TentativePF:Build:compute_agg_sizes", Kokkos::RangePolicy<typename NO::execution_space, size_t>(0, 1),
-      KOKKOS_LAMBDA(const LO i, int &correct) {
+      KOKKOS_LAMBDA(const LO /*i*/, int &correct) {
         if (comm_size == 1) {
           auto v0 = lclLWGraph.getNeighborVertices(0);
           auto v1 = lclLWGraph.getNeighborVertices(1);
@@ -2594,7 +2594,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, ClassicBlockWithou
   auto lclLWGraph = *graph;
   Kokkos::parallel_reduce(
       "MueLu:TentativePF:Build:compute_agg_sizes", Kokkos::RangePolicy<typename NO::execution_space, size_t>(0, 1),
-      KOKKOS_LAMBDA(const LO i, int &correct) {
+      KOKKOS_LAMBDA(const LO /*i*/, int &correct) {
         if (comm_size == 1 && lclLWGraph.getNeighborVertices(0).length == 1) {
           correct = true;
         } else {

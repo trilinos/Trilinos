@@ -27,7 +27,6 @@
 #include "MueLu_AggregationPhase2bAlgorithm.hpp"
 #include "MueLu_AggregationPhase3Algorithm.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
-#include "MueLu_AmalgamationInfo.hpp"
 #include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
 #include "MueLu_FactoryManagerBase.hpp"

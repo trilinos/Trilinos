@@ -17,7 +17,6 @@
 #include <MueLu_CoalesceDropFactory.hpp>
 #include <MueLu_UncoupledAggregationFactory.hpp>
 #include <MueLu_StructuredAggregationFactory.hpp>
-#include <MueLu_UncoupledAggregationFactory.hpp>
 #include <MueLu_HybridAggregationFactory.hpp>
 #include <MueLu_AmalgamationFactory.hpp>
 #include <MueLu_AmalgamationInfo.hpp>
@@ -139,7 +138,7 @@ class AggregateGenerator {
 
   // Little utility to generate uncoupled aggregates with some specified root nodes on interface.
   static RCP<Aggregates>
-  gimmeInterfaceAggregates(const RCP<Matrix>& A, RCP<AmalgamationInfo>& amalgInfo, Teuchos::Array<LO>& nodeOnInterface) {
+  gimmeInterfaceAggregates(const RCP<Matrix>& A, RCP<AmalgamationInfo>& /*amalgInfo*/, Teuchos::Array<LO>& nodeOnInterface) {
     Level level;
     TestHelpers::TestFactory<SC, LO, GO, NO>::createSingleLevelHierarchy(level);
     level.Set("A", A);
@@ -177,9 +176,9 @@ class AggregateGenerator {
 
   // Little utility to generate hybrid structured and uncoupled aggregates
   static RCP<Aggregates>
-  gimmeHybridAggregates(const RCP<Matrix>& A, RCP<AmalgamationInfo>& amalgInfo,
+  gimmeHybridAggregates(const RCP<Matrix>& A, RCP<AmalgamationInfo>& /*amalgInfo*/,
                         const std::string regionType,
-                        Array<GO> gNodesPerDir, Array<LO> lNodesPerDir,
+                        Array<GO> /*gNodesPerDir*/, Array<LO> lNodesPerDir,
                         const LO numDimensions) {
     Level level;
     TestHelpers::TestFactory<SC, LO, GO, NO>::createSingleLevelHierarchy(level);

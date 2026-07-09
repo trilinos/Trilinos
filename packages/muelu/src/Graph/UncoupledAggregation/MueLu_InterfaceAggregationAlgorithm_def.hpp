@@ -84,7 +84,7 @@ void InterfaceAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggr
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-void InterfaceAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregates(Teuchos::ParameterList const& /* params */, LWGraph_kokkos const& graph, Aggregates& aggregates, typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatType& aggStat, LO& numNonAggregatedNodes) const {
+void InterfaceAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregates(Teuchos::ParameterList const& /* params */, LWGraph_kokkos const& /*graph*/, Aggregates& /*aggregates*/, typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatType& /*aggStat*/, LO& /*numNonAggregatedNodes*/) const {
   TEUCHOS_ASSERT(false);
 }
 

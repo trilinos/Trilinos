@@ -136,11 +136,11 @@ class TpetraOperatorAsRowMatrix : public Tpetra::RowMatrix<Scalar, LocalOrdinal,
     throw MueLu::Exceptions::RuntimeError("Not implemented.");
   }
 
-  size_t getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const {
+  size_t getNumEntriesInGlobalRow(GlobalOrdinal /*globalRow*/) const {
     throw MueLu::Exceptions::RuntimeError("Not implemented.");
   }
 
-  size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const {
+  size_t getNumEntriesInLocalRow(LocalOrdinal /*localRow*/) const {
     throw MueLu::Exceptions::RuntimeError("Not implemented.");
   }
 
@@ -173,32 +173,32 @@ class TpetraOperatorAsRowMatrix : public Tpetra::RowMatrix<Scalar, LocalOrdinal,
   }
 
   void
-  getGlobalRowCopy(GlobalOrdinal GlobalRow,
-                   nonconst_global_inds_host_view_type& Indices,
-                   nonconst_values_host_view_type& Values,
-                   size_t& NumEntries) const {
+  getGlobalRowCopy(GlobalOrdinal /*GlobalRow*/,
+                   nonconst_global_inds_host_view_type& /*Indices*/,
+                   nonconst_values_host_view_type& /*Values*/,
+                   size_t& /*NumEntries*/) const {
     throw MueLu::Exceptions::RuntimeError("Not implemented.");
   }
 
   void
-  getLocalRowCopy(LocalOrdinal LocalRow,
-                  nonconst_local_inds_host_view_type& Indices,
-                  nonconst_values_host_view_type& Values,
-                  size_t& NumEntries) const {
+  getLocalRowCopy(LocalOrdinal /*LocalRow*/,
+                  nonconst_local_inds_host_view_type& /*Indices*/,
+                  nonconst_values_host_view_type& /*Values*/,
+                  size_t& /*NumEntries*/) const {
     throw MueLu::Exceptions::RuntimeError("Not implemented.");
   }
 
   void
-  getGlobalRowView(GlobalOrdinal GlobalRow,
-                   global_inds_host_view_type& indices,
-                   values_host_view_type& values) const {
+  getGlobalRowView(GlobalOrdinal /*GlobalRow*/,
+                   global_inds_host_view_type& /*indices*/,
+                   values_host_view_type& /*values*/) const {
     throw MueLu::Exceptions::RuntimeError("Not implemented.");
   }
 
   void
-  getLocalRowView(LocalOrdinal LocalRow,
-                  local_inds_host_view_type& indices,
-                  values_host_view_type& values) const {
+  getLocalRowView(LocalOrdinal /*LocalRow*/,
+                  local_inds_host_view_type& /*indices*/,
+                  values_host_view_type& /*values*/) const {
     throw MueLu::Exceptions::RuntimeError("Not implemented.");
   }
 
@@ -209,11 +209,11 @@ class TpetraOperatorAsRowMatrix : public Tpetra::RowMatrix<Scalar, LocalOrdinal,
       diag = *diag_;
   }
 
-  void leftScale(const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) {
+  void leftScale(const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& /*x*/) {
     throw MueLu::Exceptions::RuntimeError("Not implemented.");
   }
 
-  void rightScale(const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) {
+  void rightScale(const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& /*x*/) {
     throw MueLu::Exceptions::RuntimeError("Not implemented.");
   }
 

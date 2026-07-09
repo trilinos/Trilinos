@@ -214,7 +214,7 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildBasedOnPrimalInterfaceDofMap(
-    const std::string &prefix, Level &currentLevel) const {
+    const std::string & /*prefix*/, Level &currentLevel) const {
   const GlobalOrdinal GO_ZERO = Teuchos::ScalarTraits<LocalOrdinal>::zero();
   const GlobalOrdinal GO_ONE  = Teuchos::ScalarTraits<GlobalOrdinal>::one();
 

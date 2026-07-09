@@ -31,7 +31,7 @@ namespace MueLuTests {
 // helper function
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > CreateBlocked2x2MatrixThyra(const Teuchos::Comm<int>& comm, Xpetra::UnderlyingLib lib) {
+Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > CreateBlocked2x2MatrixThyra(const Teuchos::Comm<int>& /*comm*/, Xpetra::UnderlyingLib lib) {
   typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
   typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> Matrix;
   typedef Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> MapExtractor;
@@ -64,7 +64,7 @@ Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > CreateBlocked3x3MatrixThyra(const Teuchos::Comm<int>& comm, Xpetra::UnderlyingLib lib) {
+Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > CreateBlocked3x3MatrixThyra(const Teuchos::Comm<int>& /*comm*/, Xpetra::UnderlyingLib lib) {
   typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
   typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> Matrix;
   typedef Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> MapExtractor;

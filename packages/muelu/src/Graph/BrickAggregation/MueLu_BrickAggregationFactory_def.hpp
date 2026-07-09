@@ -32,8 +32,6 @@
 #include "MueLu_Utilities.hpp"
 #include "MueLu_LWGraph.hpp"
 
-#include "MueLu_LWGraph.hpp"
-
 namespace MueLu {
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
