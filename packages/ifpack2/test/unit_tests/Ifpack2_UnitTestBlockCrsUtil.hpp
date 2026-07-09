@@ -193,7 +193,7 @@ struct BlockCrsMatrixMaker {
   template <typename Array3D>
   static void fill_block_row(
       const Int I, const Int J, const Int K, const GO* gids, const Int n_blocks,
-      const Int diag_idx, const Int max_blocks, Array3D blockrow) {
+      const Int /*diag_idx*/, const Int /*max_blocks*/, Array3D blockrow) {
     const Int bs = blockrow.extent_int(2);
     TEUCHOS_TEST_FOR_EXCEPT_MSG(blockrow.extent_int(1) != bs, "Blocks must be square.");
     TEUCHOS_TEST_FOR_EXCEPT_MSG(blockrow.extent_int(0) < n_blocks,
@@ -621,8 +621,8 @@ struct BlockCrsMatrixMaker {
 #endif
 
   static Teuchos::RCP<Tpetra_MultiVector> make_multivector(
-      const StructuredBlock& sb, const Teuchos::RCP<const Tpetra_BlockCrsMatrix>& m,
-      const Int bs, const Int nvec) {
+      const StructuredBlock& /*sb*/, const Teuchos::RCP<const Tpetra_BlockCrsMatrix>& m,
+      const Int /*bs*/, const Int nvec) {
     auto mv        = Teuchos::rcp(new Tpetra_MultiVector(m->getDomainMap(), nvec));
     auto v         = mv->getLocalViewHost(Tpetra::Access::OverwriteAll);
     const auto map = mv->getMap();

@@ -115,7 +115,7 @@ class Preconditioner : virtual public Tpetra::Operator<Scalar, LocalOrdinal, Glo
   virtual bool supportsZeroStartingSolution() { return false; };
 
   //! Set this preconditioner's parameters.
-  virtual void setZeroStartingSolution(bool zeroStartingSolution) { TEUCHOS_ASSERT(false); };
+  virtual void setZeroStartingSolution(bool /*zeroStartingSolution*/) { TEUCHOS_ASSERT(false); };
 
   /// @brief Set up the graph structure of this preconditioner.
   ///
