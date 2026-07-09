@@ -334,7 +334,7 @@ void StepperExplicit<Scalar>::evaluateExplicitODE(
 
 template <class Scalar>
 void StepperExplicit<Scalar>::describe(
-    Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel) const
+    Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel /*verbLevel*/) const
 {
   auto l_out = Teuchos::fancyOStream(out.getOStream());
   Teuchos::OSTab ostab(*l_out, 2, this->description());

@@ -294,7 +294,7 @@ void HarmonicOscillatorModel<Scalar>::evalModelImpl(
 
 template <class Scalar>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
-HarmonicOscillatorModel<Scalar>::get_p_space(int l) const
+HarmonicOscillatorModel<Scalar>::get_p_space(int /*l*/) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::logic_error,
@@ -304,7 +304,7 @@ HarmonicOscillatorModel<Scalar>::get_p_space(int l) const
 
 template <class Scalar>
 Teuchos::RCP<const Teuchos::Array<std::string> >
-HarmonicOscillatorModel<Scalar>::get_p_names(int l) const
+HarmonicOscillatorModel<Scalar>::get_p_names(int /*l*/) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::logic_error,

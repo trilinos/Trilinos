@@ -53,7 +53,7 @@ VanDerPolModel<Scalar>::VanDerPolModel(
 
 template <class Scalar>
 Thyra::ModelEvaluatorBase::InArgs<Scalar>
-VanDerPolModel<Scalar>::getExactSolution(double t) const
+VanDerPolModel<Scalar>::getExactSolution(double /*t*/) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::logic_error,
@@ -63,7 +63,7 @@ VanDerPolModel<Scalar>::getExactSolution(double t) const
 
 template <class Scalar>
 Thyra::ModelEvaluatorBase::InArgs<Scalar>
-VanDerPolModel<Scalar>::getExactSensSolution(int j, double t) const
+VanDerPolModel<Scalar>::getExactSensSolution(int /*j*/, double /*t*/) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
       !isInitialized_, std::logic_error,

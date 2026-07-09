@@ -276,7 +276,7 @@ class StepperBDF2ModifierTest
   /// Modify BDF2 Stepper at end of takeStep.
   virtual void modify(
       Teuchos::RCP<Tempus::SolutionHistory<double> > sh,
-      Teuchos::RCP<Tempus::StepperBDF2<double> > stepper,
+      Teuchos::RCP<Tempus::StepperBDF2<double> > /*stepper*/,
       const typename Tempus::StepperBDF2AppAction<double>::ACTION_LOCATION
           actLoc)
   {
