@@ -45,7 +45,10 @@ export {
   using ::Kokkos::Impl::is_view_ctor_property;
   using ::Kokkos::Impl::is_view_label;
   using ::Kokkos::Impl::LabelTag;
+  using ::Kokkos::Impl::LayoutFromArrayLayout;
   using ::Kokkos::Impl::MDSpanViewTraits;
+  using ::Kokkos::Impl::MemoryTraitsFromAccessor;
+  using ::Kokkos::Impl::MirrorViewType;
   using ::Kokkos::Impl::ParseViewExtents;
   using ::Kokkos::Impl::rank_dynamic;
   using ::Kokkos::Impl::RankDataType;
@@ -59,6 +62,7 @@ export {
   using ::Kokkos::Impl::SpaceAwareAccessor;
   using ::Kokkos::Impl::SubviewExtents;
   using ::Kokkos::Impl::SubviewLegalArgsCompileTime;
+  using ::Kokkos::Impl::transform_kokkos_slice_to_mdspan_slice;
   using ::Kokkos::Impl::ViewArguments;
   using ::Kokkos::Impl::ViewArrayAnalysis;
   using ::Kokkos::Impl::ViewCopy;
@@ -73,6 +77,20 @@ export {
   using ::Kokkos::Impl::with_properties_if_unset;
   using ::Kokkos::Impl::WithoutInitializing_t;
   }  // namespace Impl
+
+  // Kokkos view iterators
+  namespace Experimental {
+  namespace Impl {
+  using ::Kokkos::Experimental::Impl::are_iterators;
+  using ::Kokkos::Experimental::Impl::are_iterators_v;
+  using ::Kokkos::Experimental::Impl::are_random_access_iterators;
+  using ::Kokkos::Experimental::Impl::are_random_access_iterators_v;
+  using ::Kokkos::Experimental::Impl::is_iterable_view;
+  using ::Kokkos::Experimental::Impl::is_iterator;
+  using ::Kokkos::Experimental::Impl::is_iterator_v;
+  using ::Kokkos::Experimental::Impl::RandomAccessIterator;
+  }  // namespace Impl
+  }  // namespace Experimental
 
   // execution policies
   namespace Impl {
