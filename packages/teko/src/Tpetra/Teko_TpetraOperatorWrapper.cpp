@@ -110,7 +110,7 @@ void TpetraOperatorWrapper::apply(const Tpetra::MultiVector<ST, LO, GO, NT>& X,
     Thyra::assign(tX.ptr(), 0.0);
     Thyra::assign(tY.ptr(), 0.0);
 
-    // copy epetra X into thyra X
+    // copy Tpetra X into thyra X
     mapStrategy_->copyTpetraIntoThyra(X, tX.ptr());
     mapStrategy_->copyTpetraIntoThyra(
         Y, tY.ptr());  // if this matrix isn't block square, this probably won't work!
@@ -118,7 +118,7 @@ void TpetraOperatorWrapper::apply(const Tpetra::MultiVector<ST, LO, GO, NT>& X,
     // perform matrix vector multiplication
     thyraOp_->apply(Thyra::NOTRANS, *tX, tY.ptr(), alpha, beta);
 
-    // copy thyra Y into epetra Y
+    // copy thyra Y into Tpetra Y
     mapStrategy_->copyThyraIntoTpetra(tY, Y);
   } else {
     TEUCHOS_ASSERT(false);
@@ -162,7 +162,7 @@ RCP<const Teuchos::Comm<Thyra::Ordinal> > TpetraOperatorWrapper::getThyraComm(
   /*
     const Thyra::ConstLinearOperator<double> thyraOp = rcpFromRef(inOp);
 
-    RCP<Epetra_Comm> rtn;
+    RCP<Teuchos::RCP<const Teuchos::Comm<int>>> rtn;
     // VectorSpace<double> vs = thyraOp.domain().getBlock(0);
     RCP<const VectorSpaceBase<double> > vs = thyraOp.domain().getBlock(0).constPtr();
 
@@ -204,17 +204,17 @@ RCP<const Teuchos::Comm<Thyra::Ordinal> > TpetraOperatorWrapper::getThyraComm(
 
     if (mpiComm != 0)
       {
-        rtn = rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+        rtn = rcp(new Tpetra::MpiComm(MPI_COMM_WORLD));
       }
     else
       {
-        rtn = rcp(new Epetra_SerialComm());
+        rtn = rcp(new Tpetra::SerialComm());
       }
   #else
     TEUCHOS_TEST_FOR_EXCEPTION(serialComm==0, std::runtime_error,
                        "SPMD std::vector space has a communicator that is "
                        "neither a serial comm nor an MPI comm");
-    rtn = rcp(new Epetra_SerialComm());
+    rtn = rcp(new Tpetra::SerialComm());
 
   #endif
 

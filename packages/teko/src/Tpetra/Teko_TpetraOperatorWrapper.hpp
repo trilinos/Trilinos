@@ -29,12 +29,12 @@ class MappingStrategy {
  public:
   virtual ~MappingStrategy() {}
 
-  /** \brief Copy an Epetra_MultiVector into a Thyra::MultiVectorBase
+  /** \brief Copy A Tpetra::MultiVector into a Thyra::MultiVectorBase
    *
-   * Copy an Epetra_MultiVector into a Thyra::MultiVectorBase. The exact
+   * Copy A Tpetra::MultiVector into a Thyra::MultiVectorBase. The exact
    * method for copying is specified by the concrete implementations.
    *
-   * \param[in]     epetraX Vector to be copied into the Thyra object
+   * \param[in]     TpetraX Vector to be copied into the Thyra object
    * \param[in,out] thyraX  Destination Thyra object
    */
   virtual void copyTpetraIntoThyra(
@@ -42,13 +42,13 @@ class MappingStrategy {
       const Teuchos::Ptr<Thyra::MultiVectorBase<ST> >& thyraX) const = 0;
   // const TpetraOperatorWrapper & eow) const = 0;
 
-  /** \brief Copy an Thyra::MultiVectorBase into a Epetra_MultiVector
+  /** \brief Copy an Thyra::MultiVectorBase into a Tpetra::MultiVector
    *
-   * Copy an Thyra::MultiVectorBase into an Epetra_MultiVector. The exact
+   * Copy an Thyra::MultiVectorBase into A Tpetra::MultiVector. The exact
    * method for copying is specified by the concrete implementations.
    *
    * \param[in]     thyraX  Source Thyra object
-   * \param[in,out] epetraX Destination Epetra object
+   * \param[in,out] TpetraX Destination Tpetra object
    */
   virtual void copyThyraIntoTpetra(const RCP<const Thyra::MultiVectorBase<ST> >& thyraX,
                                    Tpetra::MultiVector<ST, LO, GO, NT>& tpetraX) const = 0;
@@ -121,25 +121,25 @@ class DefaultMappingStrategy : public MappingStrategy {
 
   virtual ~DefaultMappingStrategy() {}
 
-  /** \brief Copy an Epetra_MultiVector into a Thyra::MultiVectorBase
+  /** \brief Copy A Tpetra::MultiVector into a Thyra::MultiVectorBase
    *
-   * Copy an Epetra_MultiVector into a Thyra::MultiVectorBase. The exact
+   * Copy A Tpetra::MultiVector into a Thyra::MultiVectorBase. The exact
    * method for copying is specified by the concrete implementations.
    *
-   * \param[in]     epetraX Vector to be copied into the Thyra object
+   * \param[in]     TpetraX Vector to be copied into the Thyra object
    * \param[in,out] thyraX  Destination Thyra object
    */
   virtual void copyTpetraIntoThyra(const Tpetra::MultiVector<ST, LO, GO, NT>& tpetraX,
                                    const Teuchos::Ptr<Thyra::MultiVectorBase<ST> >& thyraX) const;
   // const TpetraOperatorWrapper & eow) const;
 
-  /** \brief Copy an Thyra::MultiVectorBase into a Epetra_MultiVector
+  /** \brief Copy an Thyra::MultiVectorBase into a Tpetra::MultiVector
    *
-   * Copy an Thyra::MultiVectorBase into an Epetra_MultiVector. The exact
+   * Copy an Thyra::MultiVectorBase into A Tpetra::MultiVector. The exact
    * method for copying is specified by the concrete implementations.
    *
    * \param[in]     thyraX  Source Thyra object
-   * \param[in,out] epetraX Destination Epetra object
+   * \param[in,out] TpetraX Destination Tpetra object
    */
   virtual void copyThyraIntoTpetra(const RCP<const Thyra::MultiVectorBase<ST> >& thyraX,
                                    Tpetra::MultiVector<ST, LO, GO, NT>& tpetraX) const;
@@ -163,9 +163,9 @@ class DefaultMappingStrategy : public MappingStrategy {
 };
 
 /** \brief
- * Implements the Epetra_Operator interface with a Thyra LinearOperator. This
+ * Implements the Tpetra::Operator interface with a Thyra LinearOperator. This
  * enables the use of absrtact Thyra operators in AztecOO as preconditioners and
- * operators, without being rendered into concrete Epetra matrices. This is my own
+ * operators, without being rendered into concrete Tpetra matrices. This is my own
  * modified version that was originally in Thyra.
  */
 class TpetraOperatorWrapper : public Tpetra::Operator<ST, LO, GO, NT> {
@@ -225,7 +225,7 @@ class TpetraOperatorWrapper : public Tpetra::Operator<ST, LO, GO, NT> {
   //! Return the thyra operator associated with this wrapper
   const RCP<const Thyra::LinearOpBase<ST> > getThyraOp() const { return thyraOp_; }
 
-  //! Get the mapping strategy for this wrapper (translate between Thyra and Epetra)
+  //! Get the mapping strategy for this wrapper (translate between Thyra and Tpetra)
   const RCP<const MappingStrategy> getMapStrategy() const { return mapStrategy_; }
 
   //! Get the number of block rows in this operator

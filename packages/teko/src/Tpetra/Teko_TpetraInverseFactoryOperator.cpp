@@ -50,15 +50,15 @@ void InverseFactoryOperator::initInverse(bool clearOld) {
   invOperator_ = Teuchos::null;
 }
 
-/** \brief Build this inverse operator from an Tpetra::Operator<ST,LO,GO,NT>
+/** \brief Build this inverse operator from A Tpetra::Operator<ST,LO,GO,NT>
  * passed in to this object.
  *
- * Build this inverse opeerator from an Tpetra::Operator<ST,LO,GO,NT>
+ * Build this inverse opeerator from A Tpetra::Operator<ST,LO,GO,NT>
  * passed in to this object. If this Tpetra::Operator<ST,LO,GO,NT>
- * is an EpetraOperatorWrapper object then the block Thyra components
+ * is an TpetraOperatorWrapper object then the block Thyra components
  * are extracted.
  *
- * \param[in] A The Epetra source operator.
+ * \param[in] A The Tpetra source operator.
  * \param[in] clear If true, than any previous state saved by the operator
  *                  is discarded.
  */
@@ -66,7 +66,7 @@ void InverseFactoryOperator::buildInverseOperator(
     const Teuchos::RCP<const Tpetra::Operator<ST, LO, GO, NT> >& A, bool clear) {
   Teko_DEBUG_SCOPE("InverseFactoryOperator::buildInverseOperator", 10);
 
-  // extract EpetraOperatorWrapper (throw on failure) and corresponding thyra operator
+  // extract TpetraOperatorWrapper (throw on failure) and corresponding thyra operator
   RCP<const Thyra::LinearOpBase<ST> > thyraA = extractLinearOp(A);
 
   // set the mapping strategy
@@ -103,17 +103,17 @@ void InverseFactoryOperator::buildInverseOperator(
   TEUCHOS_ASSERT(setConstFwdOp_ == true);
 }
 
-/** \brief Rebuild this inverse from an Tpetra::Operator<ST,LO,GO,NT>  passed
+/** \brief Rebuild this inverse from A Tpetra::Operator<ST,LO,GO,NT>  passed
  * in this to object.
  *
- * Rebuild this inverse from an Tpetra::Operator<ST,LO,GO,NT>  passed
+ * Rebuild this inverse from A Tpetra::Operator<ST,LO,GO,NT>  passed
  * in this to object.  If <code>buildInverseOperator</code> has not been called
  * the inverse operator will be built instead. Otherwise efforts are taken
  * to only rebuild what is neccessary. Also, that this Tpetra::Operator<ST,LO,GO,NT>
- * may be an EpetraOperatorWrapper object, so the block Thyra components
+ * may be an TpetraOperatorWrapper object, so the block Thyra components
  * can be extracted.
  *
- * \param[in] A The Epetra source operator. (Should be a EpetraOperatorWrapper!)
+ * \param[in] A The Tpetra source operator. (Should be a TpetraOperatorWrapper!)
  */
 void InverseFactoryOperator::rebuildInverseOperator(
     const Teuchos::RCP<const Tpetra::Operator<ST, LO, GO, NT> >& A) {
@@ -146,7 +146,7 @@ void InverseFactoryOperator::rebuildInverseOperator(
 
   fwdOp_.initialize(A);
 
-  // build from constant epetra operator
+  // build from constant Tpetra operator
   rebuildInverseOperator(A.getConst());
 
   TEUCHOS_ASSERT(setConstFwdOp_ == true);
@@ -154,10 +154,10 @@ void InverseFactoryOperator::rebuildInverseOperator(
 
 Teuchos::RCP<const Thyra::LinearOpBase<ST> > InverseFactoryOperator::extractLinearOp(
     const Teuchos::RCP<const Tpetra::Operator<ST, LO, GO, NT> >& A) const {
-  // extract EpetraOperatorWrapper (throw on failure) and corresponding thyra operator
+  // extract TpetraOperatorWrapper (throw on failure) and corresponding thyra operator
   const RCP<const TpetraOperatorWrapper>& eow = rcp_dynamic_cast<const TpetraOperatorWrapper>(A);
 
-  // if it is an EpetraOperatorWrapper, then get the Thyra operator
+  // if it is an TpetraOperatorWrapper, then get the Thyra operator
   if (eow != Teuchos::null) return eow->getThyraOp();
 
   // otherwise wrap it up as a thyra operator
@@ -168,10 +168,10 @@ Teuchos::RCP<const Thyra::LinearOpBase<ST> > InverseFactoryOperator::extractLine
 
 Teuchos::RCP<const MappingStrategy> InverseFactoryOperator::extractMappingStrategy(
     const Teuchos::RCP<const Tpetra::Operator<ST, LO, GO, NT> >& A) const {
-  // extract EpetraOperatorWrapper (throw on failure) and corresponding thyra operator
+  // extract TpetraOperatorWrapper (throw on failure) and corresponding thyra operator
   const RCP<const TpetraOperatorWrapper>& eow = rcp_dynamic_cast<const TpetraOperatorWrapper>(A);
 
-  // if it is an EpetraOperatorWrapper, then get the Thyra operator
+  // if it is an TpetraOperatorWrapper, then get the Thyra operator
   if (eow != Teuchos::null) return eow->getMapStrategy();
 
   // otherwise wrap it up as a thyra operator

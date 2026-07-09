@@ -55,7 +55,7 @@ class TpetraReorderedMappingStrategy : public MappingStrategy {
   //@{
 
   /** Virtual function defined in MappingStrategy.  This copies
-   * an Tpetra::MultiVector<ST,LO,GO,NT> into a Thyra::MultiVectorBase with
+   * A Tpetra::MultiVector<ST,LO,GO,NT> into a Thyra::MultiVectorBase with
    * blocking handled by the strides defined in the constructor.
    *
    * \param[in]     tpetra_X  source Tpetra::MultiVector<ST,LO,GO,NT>
@@ -65,7 +65,7 @@ class TpetraReorderedMappingStrategy : public MappingStrategy {
                                    const Teuchos::Ptr<Thyra::MultiVectorBase<ST> >& thyra_X) const;
 
   /** Virtual function defined in MappingStrategy.  This copies
-   * an Tpetra::MultiVector<ST,LO,GO,NT> into a Thyra::MultiVectorBase with
+   * A Tpetra::MultiVector<ST,LO,GO,NT> into a Thyra::MultiVectorBase with
    * blocking handled by the strides defined in the constructor.
    *
    * \param[in]     thyra_Y  source Thyra::MultiVectorBase

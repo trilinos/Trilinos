@@ -15,11 +15,11 @@
 
 #include "Teko_ConfigDefs.hpp"
 
-#ifdef TEKO_HAVE_EPETRA
-// Epetra includes
-#include "Epetra_Operator.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_MultiVector.h"
+#ifdef TEKO_HAVE_Tpetra
+// Tpetra includes
+#include "Tpetra::Operator.h"
+#include "Tpetra::CrsMatrix.h"
+#include "Tpetra::MultiVector.h"
 #endif
 
 // Teuchos includes
@@ -122,25 +122,25 @@ bool isTpetraLinearOp(const Teko::LinearOp& op);
 Teuchos::RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT> > getTpetraCrsMatrix(const Teko::LinearOp& op,
                                                                           ST* scalar, bool* transp);
 
-#ifdef TEKO_HAVE_EPETRA
-/** Takes an Epetra_CrsMatrix (from Trilinos_Util::CrsMatrixGallery for example) and converts to a
+#ifdef TEKO_HAVE_Tpetra
+/** Takes A Tpetra::CrsMatrix (from Trilinos_Util::CrsMatrixGallery for example) and converts to a
  * Tpetra::CrsMatrix
  *
- * \param[in]  A_e    An RCP pointer to the Epetra_CrsMatrix
+ * \param[in]  A_e    An RCP pointer to the Tpetra::CrsMatrix
  * \param[in]  comm   The Tpetra communicator
  *
  * \returns an RCP pointer to the Tpetra::CrsMatrix
  */
-Teuchos::RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT> > epetraCrsMatrixToTpetra(
-    const Teuchos::RCP<const Epetra_CrsMatrix> A_e,
+Teuchos::RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT> > TpetraCrsMatrixToTpetra(
+    const Teuchos::RCP<const Tpetra::CrsMatrix> A_e,
     const Teuchos::RCP<const Teuchos::Comm<int> > comm);
 
-Teuchos::RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > nonConstEpetraCrsMatrixToTpetra(
-    const Teuchos::RCP<Epetra_CrsMatrix> A_e, const Teuchos::RCP<const Teuchos::Comm<int> > comm);
+Teuchos::RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > nonConstTpetraCrsMatrixToTpetra(
+    const Teuchos::RCP<Tpetra::CrsMatrix> A_e, const Teuchos::RCP<const Teuchos::Comm<int> > comm);
 
-Teuchos::RCP<const Tpetra::Map<LO, GO, NT> > epetraMapToTpetra(
-    const Epetra_Map eMap, const Teuchos::RCP<const Teuchos::Comm<int> > comm);
-#endif  // TEKO_HAVE_EPETRA
+Teuchos::RCP<const Tpetra::Map<LO, GO, NT> > TpetraMapToTpetra(
+    const Tpetra::Map eMap, const Teuchos::RCP<const Teuchos::Comm<int> > comm);
+#endif  // TEKO_HAVE_Tpetra
 
 /** A class that zeros out chosen rows of a matrix-vector
  * product.
