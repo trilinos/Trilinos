@@ -33,12 +33,12 @@ template <bool isComparable, class Scalar>
 class VectorStdOpsTesterComparable {
 public:
   static bool checkComparableStdOps(
-    const VectorSpaceBase<Scalar> &vecSpc,
-    const Ptr<VectorBase<Scalar> > &z,
-    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType &error_tol,
-    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType &warning_tol,
-    const Ptr<std::ostream> &out,
-    const bool &dumpAll
+    const VectorSpaceBase<Scalar> & /*vecSpc*/,
+    const Ptr<VectorBase<Scalar> > & /*z*/,
+    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType & /*error_tol*/,
+    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType & /*warning_tol*/,
+    const Ptr<std::ostream> & /*out*/,
+    const bool & /*dumpAll*/
     )
     {
       return Teuchos::ScalarTraits<Scalar>::ThisShouldNotCompile();
@@ -50,12 +50,12 @@ template <class Scalar>
 class VectorStdOpsTesterComparable<false,Scalar> {
 public:
   static bool checkComparableStdOps(
-    const VectorSpaceBase<Scalar> &vecSpc,
-    const Ptr<VectorBase<Scalar> > &z,
-    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType &error_tol,
-    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType &warning_tol,
+    const VectorSpaceBase<Scalar> & /*vecSpc*/,
+    const Ptr<VectorBase<Scalar> > & /*z*/,
+    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType & /*error_tol*/,
+    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType & /*warning_tol*/,
     const Ptr<std::ostream> &out,
-    const bool &dumpAll
+    const bool & /*dumpAll*/
     )
     {
       if (nonnull(out)) *out

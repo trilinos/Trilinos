@@ -13,13 +13,11 @@
 #include "Thyra_MultiVectorStdOps_decl.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_VectorSpaceBase.hpp"
-#include "Thyra_VectorStdOps.hpp"
 #include "Thyra_MultiVectorBase.hpp"
 #include "Thyra_VectorBase.hpp"
 #include "RTOpPack_ROpSum.hpp"
 #include "RTOpPack_ROpNorm1.hpp"
 #include "RTOpPack_ROpNormInf.hpp"
-#include "Teuchos_Assert.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_as.hpp"
 

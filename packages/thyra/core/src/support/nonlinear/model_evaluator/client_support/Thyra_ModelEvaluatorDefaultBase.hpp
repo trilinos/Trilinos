@@ -962,35 +962,35 @@ ModelEvaluatorDefaultBase<Scalar>::create_hess_f_xx() const
 
 template<class Scalar>
 RCP<LinearOpBase<Scalar> >
-ModelEvaluatorDefaultBase<Scalar>::create_hess_f_xp(int l) const
+ModelEvaluatorDefaultBase<Scalar>::create_hess_f_xp(int  /*l*/) const
 {
   return Teuchos::null;
 }
 
 template<class Scalar>
 RCP<LinearOpBase<Scalar> >
-ModelEvaluatorDefaultBase<Scalar>::create_hess_f_pp( int l1, int l2 ) const
+ModelEvaluatorDefaultBase<Scalar>::create_hess_f_pp( int  /*l1*/, int  /*l2*/ ) const
 {
   return Teuchos::null;
 }
 
 template<class Scalar>
 RCP<LinearOpBase<Scalar> >
-ModelEvaluatorDefaultBase<Scalar>::create_hess_g_xx(int j) const
+ModelEvaluatorDefaultBase<Scalar>::create_hess_g_xx(int  /*j*/) const
 {
   return Teuchos::null;
 }
 
 template<class Scalar>
 RCP<LinearOpBase<Scalar> >
-ModelEvaluatorDefaultBase<Scalar>::create_hess_g_xp( int j, int l ) const
+ModelEvaluatorDefaultBase<Scalar>::create_hess_g_xp( int  /*j*/, int  /*l*/ ) const
 {
   return Teuchos::null;
 }
 
 template<class Scalar>
 RCP<LinearOpBase<Scalar> >
-ModelEvaluatorDefaultBase<Scalar>::create_hess_g_pp( int j, int l1, int l2 ) const
+ModelEvaluatorDefaultBase<Scalar>::create_hess_g_pp( int  /*j*/, int  /*l1*/, int  /*l2*/ ) const
 {
   return Teuchos::null;
 }
