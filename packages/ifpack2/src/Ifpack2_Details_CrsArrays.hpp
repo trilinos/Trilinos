@@ -49,7 +49,7 @@ struct CrsArrayReader {
   // \param[in] A The matrix
   // \param[out] vals The values array on device (allocated inside function)
   // \param[in] rowptrs The rowptrs host view provided by getStructure()
-  static void getValues(const TRowMatrix* A, ScalarArray& vals, OrdinalArrayHost& rowptrs) {
+  static void getValues(const TRowMatrix* A, ScalarArray& vals, OrdinalArrayHost& /*rowptrs*/) {
     auto Acrs  = dynamic_cast<const TCrsMatrix*>(A);
     auto Abcrs = dynamic_cast<const TBcrsMatrix*>(A);
     if (Acrs) {

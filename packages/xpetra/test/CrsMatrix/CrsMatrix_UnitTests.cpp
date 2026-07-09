@@ -27,7 +27,6 @@
 #include <Xpetra_BlockedCrsMatrix.hpp>
 #include <Xpetra_CrsMatrix.hpp>
 #include <Xpetra_Exceptions.hpp>
-#include "Teuchos_ScalarTraits.hpp"
 
 namespace {
 

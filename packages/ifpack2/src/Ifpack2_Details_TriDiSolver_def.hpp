@@ -604,7 +604,7 @@ void TriDiSolver<MatrixType, false>::extract(Teuchos::SerialTriDiMatrix<int, sca
 //////////////////////////////////////////////////////////////////////
 
 template <class MatrixType>
-TriDiSolver<MatrixType, true>::TriDiSolver(const Teuchos::RCP<const row_matrix_type>& A) {
+TriDiSolver<MatrixType, true>::TriDiSolver(const Teuchos::RCP<const row_matrix_type>& /*A*/) {
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented");
 }
 
@@ -621,7 +621,7 @@ TriDiSolver<MatrixType, true>::getRangeMap() const {
 }
 
 template <class MatrixType>
-void TriDiSolver<MatrixType, true>::setParameters(const Teuchos::ParameterList& params) {
+void TriDiSolver<MatrixType, true>::setParameters(const Teuchos::ParameterList& /*params*/) {
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented");
 }
 
@@ -675,7 +675,7 @@ TriDiSolver<MatrixType, true>::getMatrix() const {
 }
 
 template <class MatrixType>
-void TriDiSolver<MatrixType, true>::setMatrix(const Teuchos::RCP<const row_matrix_type>& A) {
+void TriDiSolver<MatrixType, true>::setMatrix(const Teuchos::RCP<const row_matrix_type>& /*A*/) {
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented");
 }
 
@@ -696,11 +696,11 @@ void TriDiSolver<MatrixType, true>::compute() {
 
 template <class MatrixType>
 void TriDiSolver<MatrixType, true>::apply(
-    const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& X,
-    Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& Y,
-    Teuchos::ETransp mode,
-    scalar_type alpha,
-    scalar_type beta) const {
+    const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& /*X*/,
+    Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& /*Y*/,
+    Teuchos::ETransp /*mode*/,
+    scalar_type /*alpha*/,
+    scalar_type /*beta*/) const {
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented");
 }
 
@@ -711,8 +711,8 @@ TriDiSolver<MatrixType, true>::description() const {
 }
 
 template <class MatrixType>
-void TriDiSolver<MatrixType, true>::describe(Teuchos::FancyOStream& out,
-                                             const Teuchos::EVerbosityLevel verbLevel) const {
+void TriDiSolver<MatrixType, true>::describe(Teuchos::FancyOStream& /*out*/,
+                                             const Teuchos::EVerbosityLevel /*verbLevel*/) const {
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented");
 }
 

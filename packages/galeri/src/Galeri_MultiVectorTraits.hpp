@@ -44,7 +44,7 @@ class MultiVectorTraits {
  public:
   typedef void type;
 
-  static Teuchos::RCP<MultiVector> Build(const Teuchos::RCP<const Map>& map, size_t num) { return UndefinedMultiVectorTraits<MultiVector>::notDefined(); }
+  static Teuchos::RCP<MultiVector> Build(const Teuchos::RCP<const Map>&  /*map*/, size_t  /*num*/) { return UndefinedMultiVectorTraits<MultiVector>::notDefined(); }
 };
 
 /* Specialized traits for Map = Tpetra::Map<...> */
