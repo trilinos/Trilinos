@@ -154,7 +154,7 @@ void NOX::ObserverReusePreconditioner::runPreIterate(const NOX::Solver::Generic&
   }
 }
 
-void NOX::ObserverReusePreconditioner::runPostIterate(const NOX::Solver::Generic& solver)
+void NOX::ObserverReusePreconditioner::runPostIterate(const NOX::Solver::Generic&  /*solver*/)
 {++iterations_since_last_update_;}
 
 void NOX::ObserverReusePreconditioner::runPostSolve(const NOX::Solver::Generic& solver)

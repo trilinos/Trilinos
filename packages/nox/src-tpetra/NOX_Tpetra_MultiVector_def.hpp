@@ -106,7 +106,7 @@ init(double gamma)
 
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 Abstract::MultiVector& MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-random(bool useSeed, int seed)
+random(bool  /*useSeed*/, int  /*seed*/)
 {
     if (!tpetraMultiVec->isDistributed())
     {
