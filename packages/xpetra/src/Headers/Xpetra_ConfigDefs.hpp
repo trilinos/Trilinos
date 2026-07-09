@@ -209,7 +209,7 @@ class firstArg {
   typedef Arg1 first_argument_type;
   typedef Arg2 second_argument_type;
   typedef Arg1 result_type;
-  inline Arg1 operator()(const Arg1 &arg1, const Arg2 &arg2) { return arg1; }
+  inline Arg1 operator()(const Arg1 &arg1, const Arg2 & /*arg2*/) { return arg1; }
 };
 
 template <class Arg1, class Arg2>
@@ -218,7 +218,7 @@ class secondArg {
   typedef Arg1 first_argument_type;
   typedef Arg2 second_argument_type;
   typedef Arg2 result_type;
-  inline Arg2 operator()(const Arg1 &arg1, const Arg2 &arg2) { return arg2; }
+  inline Arg2 operator()(const Arg1 & /*arg1*/, const Arg2 &arg2) { return arg2; }
 };
 
 }  // namespace Xpetra
