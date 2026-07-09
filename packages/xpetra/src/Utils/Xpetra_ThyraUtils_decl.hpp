@@ -34,7 +34,6 @@
 #include <Thyra_SpmdVectorSpaceBase.hpp>
 #include <Thyra_ProductVectorSpaceBase.hpp>
 #include <Thyra_ProductMultiVectorBase.hpp>
-#include <Thyra_VectorSpaceBase.hpp>
 #include <Thyra_DefaultProductVectorSpace.hpp>
 #include <Thyra_DefaultBlockedLinearOp.hpp>
 #include <Thyra_LinearOpBase.hpp>
