@@ -16,6 +16,7 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosTpetraAdapter.hpp"
+#include "BelosKokkosDenseAdapter.hpp"
 #include "BelosBlockCGSolMgr.hpp"
 #include "BelosPseudoBlockCGSolMgr.hpp"
 #include "BelosTpetraTestFramework.hpp"
@@ -27,21 +28,18 @@
 #include <Tpetra_Core.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 
-// I/O for Harwell-Boeing files
-#include <Tpetra_Util_iohb.h>
-
-template <typename ScalarType>
-int run(int argc, char *argv[])
-{
-  using BSC = typename Tpetra::MultiVector<ScalarType>::scalar_type;
-  using ST  = typename std::complex<BSC>;
+template <class ScalarType, class DM>
+int run (int argc, char *argv[]) {
+  using ST = std::complex<ScalarType>;
+  using IST = typename Tpetra::MultiVector<ST>::impl_scalar_type;
+  using DM = typename Kokkos::DualView<IST**,Kokkos::LayoutLeft>;
   
   using OP = typename Tpetra::Operator<ST>;
   using MV = typename Tpetra::MultiVector<ST>;
   using tcrsmatrix_t = Tpetra::CrsMatrix<ST>;
-  
+
   using OPT = typename Belos::OperatorTraits<ST,MV,OP>;
-  using MVT = typename Belos::MultiVecTraits<ST,MV>;
+  using MVT = typename Belos::MultiVecTraits<ST,MV,DM>;
 
   using SCT = typename Teuchos::ScalarTraits<ST>;
   using MT  = typename SCT::magnitudeType;
@@ -142,11 +140,11 @@ int run(int argc, char *argv[])
     return -1;
   }
 
-  RCP<Belos::SolverManager<ST,MV,OP> > solver;
+  RCP<Belos::SolverManager<ST,MV,OP,DM> > solver;
   if (pseudo)
-    solver = Teuchos::rcp( new Belos::PseudoBlockCGSolMgr<ST,MV,OP>( rcpFromRef(problem), rcpFromRef(belosList) ) );
+    solver = Teuchos::rcp( new Belos::PseudoBlockCGSolMgr<ST,MV,OP,DM>( rcpFromRef(problem), rcpFromRef(belosList) ) );
   else
-    solver = Teuchos::rcp( new Belos::BlockCGSolMgr<ST,MV,OP>( rcpFromRef(problem), rcpFromRef(belosList) ) );
+    solver = Teuchos::rcp( new Belos::BlockCGSolMgr<ST,MV,OP,DM>( rcpFromRef(problem), rcpFromRef(belosList) ) );
 
   // Print out information about problem
   if (proc_verbose) {
@@ -198,10 +196,5 @@ int run(int argc, char *argv[])
   return 0;
 } // end test_bl_cg_complex_hb.cpp
 
-int main(int argc, char *argv[]) {
-  return run<double>(argc,argv);
 
-  // wrapped with a check: CMake option Trilinos_ENABLE_FLOAT=ON
-  // return run<float>(argc,argv);
-}
-
+BELOS_TPETRA_MAIN(run, typename Tpetra::MultiVector<std::complex<double>>::scalar_type);

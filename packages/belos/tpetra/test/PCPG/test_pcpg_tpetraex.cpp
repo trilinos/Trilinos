@@ -36,6 +36,8 @@
 #include <BelosPCPGSolMgr.hpp>
 #include <BelosLinearProblem.hpp>
 #include <BelosTpetraAdapter.hpp>
+#include <BelosKokkosDenseAdapter.hpp>
+#include "BelosTpetraTestFramework.hpp"
 
 // Tpetra
 #include <Tpetra_Core.hpp>
@@ -56,8 +58,7 @@
 #include <Teuchos_StandardCatchMacros.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 
-
-template<typename ScalarType>
+template <class ScalarType, class DM>
 int run(int argc, char *argv[]) {
     using ST = typename Tpetra::Vector<ScalarType>::scalar_type;
     using LO = typename Tpetra::Vector<>::local_ordinal_type;
@@ -70,6 +71,8 @@ int run(int argc, char *argv[]) {
     using OP  = typename Tpetra::Operator<ST,LO,GO,NT>;
     using MVT = typename Belos::MultiVecTraits<ST,MV>;
     using OPT = typename Belos::OperatorTraits<ST,MV,OP>;
+
+    using IST = typename Tpetra::MultiVector<>::impl_scalar_type;
 
     using tcrsmatrix_t   = Tpetra::CrsMatrix<ST,LO,GO,NT>;
     using tmap_t         = Tpetra::Map<LO,GO,NT>;
@@ -290,8 +293,8 @@ int run(int argc, char *argv[]) {
         }
 
         // Create an iterative solver manager.
-        RCP< Belos::SolverManager<ST,MV,OP> > solver
-        = rcp( new Belos::PCPGSolMgr<ST,MV,OP>(problem, rcp(&belosList,false)) );
+        RCP< Belos::SolverManager<ST,MV,OP,DM> > solver
+        = rcp( new Belos::PCPGSolMgr<ST,MV,OP,DM>(problem, rcp(&belosList,false)) );
 
         ////////////////////////////////////////////////////
         //                  Iterate PCPG                  //
@@ -363,8 +366,5 @@ int run(int argc, char *argv[]) {
     return (success ? EXIT_SUCCESS : EXIT_FAILURE);
 } // run
 
-int main(int argc, char *argv[]) {
-    // run with different ST
-    run<double>(argc, argv);
-    // run<float>(argc, argv); // FAILS -- will need to change tolerance
-}
+
+BELOS_TPETRA_MAIN(run, typename Tpetra::MultiVector<>::scalar_type);

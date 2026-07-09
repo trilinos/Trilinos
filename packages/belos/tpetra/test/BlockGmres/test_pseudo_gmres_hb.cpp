@@ -28,10 +28,11 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosTpetraTestFramework.hpp"
+#include "BelosKokkosDenseAdapter.hpp"
 #include "BelosPseudoBlockGmresSolMgr.hpp"
 
 
-template <typename ScalarType>
+template <class ScalarType, class DM>
 int run(int argc, char *argv[]) {
 
   using ST = typename Tpetra::CrsMatrix<ScalarType>::scalar_type;
@@ -43,10 +44,12 @@ int run(int argc, char *argv[]) {
   using MV  = typename Tpetra::MultiVector<ST,LO,GO,NT>;
   using MT = typename Teuchos::ScalarTraits<ST>::magnitudeType;
 
+  using IST = typename Tpetra::MultiVector<>::impl_scalar_type;
+
   using tmap_t       = Tpetra::Map<LO,GO,NT>;
   using tcrsmatrix_t = Tpetra::CrsMatrix<ST,LO,GO,NT>;
 
-  using MVT = typename Belos::MultiVecTraits<ST,MV>;
+  using MVT = typename Belos::MultiVecTraits<ST,MV,DM>;
   using OPT = typename Belos::OperatorTraits<ST,MV,OP>;
 
   using Teuchos::RCP;
@@ -148,8 +151,8 @@ int run(int argc, char *argv[]) {
     // *********************Perform initial solve*************************
     // *******************************************************************
 
-    RCP< Belos::SolverManager<ST,MV,OP> > initSolver
-      = rcp( new Belos::PseudoBlockGmresSolMgr<ST,MV,OP>( rcp(&initProblem,false), rcp(&belosList,false) ) );
+    RCP< Belos::SolverManager<ST,MV,OP,DM> > initSolver
+      = rcp( new Belos::PseudoBlockGmresSolMgr<ST,MV,OP,DM>( rcp(&initProblem,false), rcp(&belosList,false) ) );
 
     // Perform solve
     Belos::ReturnType ret = initSolver->solve();
@@ -281,8 +284,4 @@ int run(int argc, char *argv[]) {
   return success ? EXIT_SUCCESS : EXIT_FAILURE;
 } // run
 
-int main(int argc, char *argv[]) {
-  // run with different ST
-  return run<double>(argc,argv);
-  // run<float>(argc,argv); // FAILS
-}
+BELOS_TPETRA_MAIN(run, typename Tpetra::MultiVector<>::scalar_type);

@@ -25,7 +25,9 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosTpetraAdapter.hpp"
+#include "BelosKokkosDenseAdapter.hpp"
 #include "BelosGmresPolySolMgr.hpp"
+#include "BelosTpetraTestFramework.hpp"
 
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_ParameterList.hpp>
@@ -43,14 +45,16 @@ using std::cout;
 using std::vector;
 using Teuchos::tuple;
 
-int main(int argc, char *argv[]) {
-  typedef Tpetra::MultiVector<>::scalar_type ST;
+template <class ScalarType, class DM>
+int run(int argc, char *argv[]) {
+  typedef typename Tpetra::MultiVector<ScalarType>::scalar_type ST;
+  typedef typename Tpetra::MultiVector<ScalarType>::impl_scalar_type IST;
   typedef ScalarTraits<ST>                SCT;
-  typedef SCT::magnitudeType               MT;
+  typedef typename SCT::magnitudeType               MT;
   typedef Tpetra::Operator<ST>             OP;
   typedef Tpetra::MultiVector<ST>          MV;
   typedef Belos::OperatorTraits<ST,MV,OP> OPT;
-  typedef Belos::MultiVecTraits<ST,MV>    MVT;
+  typedef Belos::MultiVecTraits<ST,MV,DM> MVT;
 
   Tpetra::ScopeGuard tpetraScope(&argc,&argv);
 
@@ -187,7 +191,7 @@ int main(int argc, char *argv[]) {
     // ********* Using the GMRES Poly Solver Manager *********************
     // *******************************************************************
     //
-    Belos::GmresPolySolMgr<ST,MV,OP> solver( rcpFromRef(problem), rcpFromRef(polyList) );
+    Belos::GmresPolySolMgr<ST,MV,OP,DM> solver( rcpFromRef(problem), rcpFromRef(polyList) );
 
     //
     // **********Print out information about problem*******************
@@ -243,3 +247,5 @@ int main(int argc, char *argv[]) {
 
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 } // end test_hybrid_gmres_hb.cpp
+
+BELOS_TPETRA_MAIN(run, typename Tpetra::MultiVector<>::scalar_type);

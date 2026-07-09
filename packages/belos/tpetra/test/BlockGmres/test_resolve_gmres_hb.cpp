@@ -25,8 +25,9 @@
 #include "BelosBlockGmresSolMgr.hpp"
 #include "BelosTpetraTestFramework.hpp"
 #include "BelosPseudoBlockGmresSolMgr.hpp"
+#include "BelosKokkosDenseAdapter.hpp"
 
-template <typename ScalarType>
+template <class ScalarType, class DM>
 int run(int argc, char *argv[]) {
   //
   Teuchos::GlobalMPISession session(&argc, &argv, nullptr);
@@ -40,12 +41,13 @@ int run(int argc, char *argv[]) {
   using MV  = typename Tpetra::MultiVector<ST,LO,GO,NT>;
   using SCT = typename Teuchos::ScalarTraits<ST>;
   using MT  = typename SCT::magnitudeType;
-  using MGT = typename Teuchos::ScalarTraits<MT>;
+
+  using IST = typename Tpetra::MultiVector<ScalarType>::impl_scalar_type;
 
   using tmap_t       = Tpetra::Map<LO,GO,NT>;
   using tcrsmatrix_t = Tpetra::CrsMatrix<ST,LO,GO,NT>;
 
-  using MVT = typename Belos::MultiVecTraits<ST,MV>;
+  using MVT = typename Belos::MultiVecTraits<ST,MV,DM>;
   using OPT = typename Belos::OperatorTraits<ST,MV,OP>;
 
   using Teuchos::RCP;
@@ -71,7 +73,6 @@ int run(int argc, char *argv[]) {
     std::string filename("orsirr1.hb");
     std::string ortho("DGKS");
     MT tol = 1.0e-5;  // relative residual tolerance
-    MT compTol = 10*MGT::prec();
 
     Teuchos::CommandLineProcessor cmdp(false,true);
     cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
@@ -140,11 +141,11 @@ int run(int argc, char *argv[]) {
     // *************Start the block Gmres iteration*************************
     // *******************************************************************
 
-    RCP< Belos::SolverManager<ST,MV,OP> > solver;
+    RCP< Belos::SolverManager<ST,MV,OP,DM> > solver;
     if (pseudo)
-      solver = rcp( new Belos::PseudoBlockGmresSolMgr<ST,MV,OP>( rcp(&problem,false), rcp(&belosList,false) ) );
+      solver = rcp( new Belos::PseudoBlockGmresSolMgr<ST,MV,OP,DM>( rcp(&problem,false), rcp(&belosList,false) ) );
     else
-      solver = rcp( new Belos::BlockGmresSolMgr<ST,MV,OP>( rcp(&problem,false), rcp(&belosList,false) ) );
+      solver = rcp( new Belos::BlockGmresSolMgr<ST,MV,OP,DM>( rcp(&problem,false), rcp(&belosList,false) ) );
 
     // Perform solve
     Belos::ReturnType ret = solver->solve();
@@ -160,12 +161,11 @@ int run(int argc, char *argv[]) {
 
     // Get the number of iterations for this solve.
     int numIters = solver->getNumIters();
-    if (procVerbose)
-      std::cout << "Number of iterations performed for this solve: " << numIters << std::endl;
+    std::cout << "Number of iterations performed for this solve: " << numIters << std::endl;
 
     // Compute actual residuals.
-    std::vector<MT> actual_resids( numrhs );
-    std::vector<MT> rhs_norm( numrhs );
+    std::vector<ST> actual_resids( numrhs );
+    std::vector<ST> rhs_norm( numrhs );
     MV resid(Map, numrhs);
     OPT::Apply( *A, *X, resid );
     MVT::MvAddMv( -1.0, resid, 1.0, *B, resid );
@@ -190,8 +190,7 @@ int run(int argc, char *argv[]) {
 
     // Get the number of iterations for this solve.
     numIters = solver->getNumIters();
-    if (procVerbose)
-      std::cout << "Number of iterations performed for this solve (manager reset): " << numIters << std::endl;
+    std::cout << "Number of iterations performed for this solve (manager reset): " << numIters << std::endl;
 
     if (ret==Belos::Converged) {
       // Ok
@@ -203,7 +202,7 @@ int run(int argc, char *argv[]) {
     }
 
     // Compute actual residuals.
-    std::vector<MT> actual_resids2( numrhs );
+    std::vector<ST> actual_resids2( numrhs );
     MV resid2(Map, numrhs);
     OPT::Apply( *A, *X, resid2 );
     MVT::MvAddMv( -1.0, resid2, 1.0, *B, resid2 );
@@ -215,9 +214,9 @@ int run(int argc, char *argv[]) {
       std::cout<< "---------- Actual Residuals (manager reset) ----------"<<std::endl<<std::endl;
       for ( int i=0; i<numrhs; i++) {
         std::cout<<"Problem "<<i<<" : \t"<< actual_resids[i]/rhs_norm[i] <<std::endl;
-        if ( actual_resids2[i]/rhs_norm[i] > compTol ) {
+        if ( actual_resids2[i] > SCT::prec() ) {
           badRes = true;
-          std::cout << "Resolve residual vector is too different from first solve residual vector: " << actual_resids2[i]/rhs_norm[i] << std::endl;
+          std::cout << "Resolve residual vector is too different from first solve residual vector: " << actual_resids2[i] << std::endl;
         }
       }
     }
@@ -240,8 +239,7 @@ int run(int argc, char *argv[]) {
 
     // Get the number of iterations for this solve.
     numIters = solver->getNumIters();
-    if (procVerbose)
-      std::cout << "Number of iterations performed for this solve (manager setProblem()): " << numIters << std::endl;
+    std::cout << "Number of iterations performed for this solve (manager setProblem()): " << numIters << std::endl;
 
     if (ret==Belos::Converged) {
       // Ok
@@ -263,9 +261,9 @@ int run(int argc, char *argv[]) {
       std::cout<< "---------- Actual Residuals (manager setProblem()) ----------"<<std::endl<<std::endl;
       for ( int i=0; i<numrhs; i++) {
         std::cout<<"Problem "<<i<<" : \t"<< actual_resids[i]/rhs_norm[i] <<std::endl;
-        if ( actual_resids2[i]/rhs_norm[i] > compTol ) {
+        if ( actual_resids2[i] > SCT::prec() ) {
           badRes = true;
-          std::cout << "Resolve residual vector is too different from first solve residual vector: " << actual_resids2[i]/rhs_norm[i] << std::endl;
+          std::cout << "Resolve residual vector is too different from first solve residual vector: " << actual_resids2[i] << std::endl;
         }
       }
     }
@@ -287,8 +285,7 @@ int run(int argc, char *argv[]) {
 
     // Get the number of iterations for this solve.
     numIters = solver->getNumIters();
-    if (procVerbose)
-      std::cout << "Number of iterations performed for this solve (label reset): " << numIters << std::endl;
+    std::cout << "Number of iterations performed for this solve (label reset): " << numIters << std::endl;
 
     if (ret==Belos::Converged) {
       // Ok
@@ -310,9 +307,9 @@ int run(int argc, char *argv[]) {
       std::cout<< "---------- Actual Residuals (label reset) ----------"<<std::endl<<std::endl;
       for ( int i=0; i<numrhs; i++) {
         std::cout<<"Problem "<<i<<" : \t"<< actual_resids[i]/rhs_norm[i] <<std::endl;
-        if ( actual_resids2[i]/rhs_norm[i] > compTol ) {
+        if ( actual_resids2[i] > SCT::prec() ) {
           badRes = true;
-          std::cout << "Resolve residual vector is too different from first solve residual vector: " << actual_resids2[i]/rhs_norm[i] << std::endl;
+          std::cout << "Resolve residual vector is too different from first solve residual vector: " << actual_resids2[i] << std::endl;
         }
       }
     }
@@ -338,9 +335,9 @@ int run(int argc, char *argv[]) {
 
     // Create the solver without either the problem or parameter list.
     if (pseudo)
-      solver = rcp( new Belos::PseudoBlockGmresSolMgr<ST,MV,OP>() );
+      solver = rcp( new Belos::PseudoBlockGmresSolMgr<ST,MV,OP,DM>() );
     else
-      solver = rcp( new Belos::BlockGmresSolMgr<ST,MV,OP>() );
+      solver = rcp( new Belos::BlockGmresSolMgr<ST,MV,OP,DM>() );
 
     // Set the problem after the solver construction.
     solver->setProblem( rcp( &problem2, false ) );
@@ -365,8 +362,7 @@ int run(int argc, char *argv[]) {
 
     // Get the number of iterations for this solve.
     numIters = solver->getNumIters();
-    if (procVerbose)
-      std::cout << "Number of iterations performed for this solve (new solver): " << numIters << std::endl;
+    std::cout << "Number of iterations performed for this solve (new solver): " << numIters << std::endl;
 
     // Compute actual residuals.
     OPT::Apply( *A, *X2, resid2 );
@@ -379,9 +375,9 @@ int run(int argc, char *argv[]) {
       std::cout<< "---------- Actual Residuals (new solver) ----------"<<std::endl<<std::endl;
       for ( int i=0; i<numrhs; i++) {
         std::cout<<"Problem "<<i<<" : \t"<< actual_resids[i]/rhs_norm[i] <<std::endl;
-        if ( actual_resids2[i]/rhs_norm[i] > compTol ) {
+        if ( actual_resids2[i] > SCT::prec() ) {
           badRes = true;
-          std::cout << "Resolve residual vector is too different from first solve residual vector: " << actual_resids2[i]/rhs_norm[i] << std::endl;
+          std::cout << "Resolve residual vector is too different from first solve residual vector: " << actual_resids2[i] << std::endl;
         }
       }
     }
@@ -412,8 +408,4 @@ int run(int argc, char *argv[]) {
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 } // run
 
-int main(int argc, char *argv[]) {
-  // run with different ST
-  return run<double>(argc,argv);
-  // run<float>(argc,argv); // FAILS
-}
+BELOS_TPETRA_MAIN(run, typename Tpetra::MultiVector<>::scalar_type);

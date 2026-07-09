@@ -1,6 +1,6 @@
 
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
+BELOS_ADD_EXECUTABLE_AND_TEUCHOS_AND_KOKKOS_TESTS(
   Tpetra_OrthoManager_test
   SOURCES belos_orthomanager_tpetra.cpp
   ARGS "--ortho=ICGS --verbose"
@@ -15,15 +15,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Tpetra_OrthoManager_benchmark
   SOURCES belos_orthomanager_tpetra_benchmark.cpp
   ARGS "--ortho=ICGS --verbose"
-  COMM serial mpi
-  )
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  Tpetra_KokkosDense_OrthoManager_test
-  SOURCES belos_orthomanager_kokkosdense_tpetra.cpp
-  ARGS "--ortho=ICGS --verbose"
-  ARGS "--ortho=IMGS --verbose"
-  ARGS "--ortho=DGKS --verbose"
   COMM serial mpi
   )
 

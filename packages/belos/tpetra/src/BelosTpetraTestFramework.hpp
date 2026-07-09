@@ -15,9 +15,12 @@
 /// \author Mark Hoemmen
 
 #include "BelosTpetraAdapter.hpp"
+#include "BelosTpetraBehavior.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
 #include "MatrixMarket_Tpetra.hpp"
 #include "Teuchos_ArrayView.hpp"
 #include "Teuchos_FancyOStream.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
@@ -117,7 +120,7 @@ namespace Belos {
           std::vector<int> rnnz(dim,0);
           for (int *ri=rowind; ri<rowind+nnz; ++ri) {
             ++rnnz[*ri-1];
-          }  
+          }
           rnnzmax = *std::max_element(rnnz.begin(),rnnz.end());
         }
         else {
@@ -147,8 +150,8 @@ namespace Belos {
           const int *rptr = rowind;
           for (int c=0; c<dim; ++c) {
             for (int colnnz=0; colnnz < colptr[c+1]-colptr[c]; ++colnnz) {
-              A->insertGlobalValues (static_cast<global_ordinal_type> (*rptr++ - 1), 
-                                     Teuchos::tuple<global_ordinal_type> (c), 
+              A->insertGlobalValues (static_cast<global_ordinal_type> (*rptr++ - 1),
+                                     Teuchos::tuple<global_ordinal_type> (c),
                                      Teuchos::tuple (sptr[0]));
               sptr++;
             }
@@ -737,5 +740,26 @@ namespace Belos {
 
   } // namespace Tpetra
 } // namespace Belos
+
+#define BELOS_TPETRA_MAIN(MAIN, SCALAR_TYPE)                                   \
+  int main(int argc, char *argv[]) {                                           \
+    using Ordinal = int;                                                       \
+                                                                               \
+    std::string denseMatrixAbstraction =                                       \
+        Belos::Behavior::denseMatrixAbstraction();                             \
+    if (denseMatrixAbstraction == "Teuchos") {                                 \
+      using DM = Teuchos::SerialDenseMatrix<Ordinal, SCALAR_TYPE>;             \
+      return MAIN<SCALAR_TYPE, DM>(argc, argv);                                \
+    } else if ((denseMatrixAbstraction == "Kokkos")) {                         \
+      using IST = KokkosKernels::ArithTraits<SCALAR_TYPE>::val_type;           \
+      using DM = Kokkos::DualView<IST **, Kokkos::LayoutLeft>;                 \
+      return MAIN<SCALAR_TYPE, DM>(argc, argv);                                \
+    } else {                                                                   \
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,                     \
+                                 "The requested dense matrix abstraction \"" + \
+                                     denseMatrixAbstraction +                  \
+                                     "\" is not valid.");                      \
+    }                                                                          \
+  }
 
 #endif // __Belos_TpetraTestFramework_hpp

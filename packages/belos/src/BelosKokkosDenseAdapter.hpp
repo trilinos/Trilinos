@@ -23,7 +23,7 @@
 #include "BelosDenseMatTraits.hpp"
 
 #include "Kokkos_Random.hpp"
-#include "Kokkos_ArithTraits.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
 //Kokkos BLAS files:
 #include "KokkosBlas1_scal.hpp"
 #include "KokkosBlas1_axpby.hpp"
@@ -39,16 +39,16 @@ namespace Belos {
     Kokkos::parallel_for(Kokkos::MDRangePolicy<typename V::execution_space, Kokkos::Rank<2>>({0, 0}, {dst.extent(0), dst.extent(1)}),
     KOKKOS_LAMBDA(int i, int j)
     {
-      dst(i, j) = Kokkos::ArithTraits<typename V::non_const_value_type>::conj( src(j, i) );
+      dst(i, j) = KokkosKernels::ArithTraits<typename V::non_const_value_type>::conj( src(j, i) );
     });
   }
 
   //! Full specialization of Belos::DenseMatSolver for Kokkos::DualView.
   template<class Scalar>
-  class KokkosDenseSolver : public DenseSolver<Scalar, Kokkos::DualView<typename Kokkos::Details::ArithTraits<Scalar>::val_type **,Kokkos::LayoutLeft>>
+  class KokkosDenseSolver : public DenseSolver<Scalar, Kokkos::DualView<typename KokkosKernels::ArithTraits<Scalar>::val_type **,Kokkos::LayoutLeft>>
   {
   public:
-    typedef typename Kokkos::Details::ArithTraits<Scalar>::val_type IST; //Impl Scalar Type, as used in Tpetra
+    typedef typename KokkosKernels::ArithTraits<Scalar>::val_type IST; //Impl Scalar Type, as used in Tpetra
     typedef DenseMatTraits<Scalar, Kokkos::DualView<IST**,Kokkos::LayoutLeft>>     DMT;
  
     //! @name Constructor/Destructor Methods
@@ -262,10 +262,10 @@ namespace Belos {
   // (e.g. getStatic2dDualView) return a LayoutLeft view.  Should we 
   // hard-code that parameter he
   template<class Scalar>
-  class DenseMatTraits<Scalar, Kokkos::DualView<typename Kokkos::Details::ArithTraits<Scalar>::val_type **,Kokkos::LayoutLeft>>{
+  class DenseMatTraits<Scalar, Kokkos::DualView<typename KokkosKernels::ArithTraits<Scalar>::val_type **,Kokkos::LayoutLeft>>{
 
   public:
-    typedef typename Kokkos::Details::ArithTraits<Scalar>::val_type IST; //Impl Scalar Type, as used in Tpetra
+    typedef typename KokkosKernels::ArithTraits<Scalar>::val_type IST; //Impl Scalar Type, as used in Tpetra
     
     //@{ \name Creation methods
 
@@ -539,7 +539,7 @@ namespace Belos {
 
     //!  \brief Returns the Frobenius norm of the dense matrix.
     static typename Teuchos::ScalarTraits<Scalar>::magnitudeType NormFrobenius(const Kokkos::DualView<const IST**,Kokkos::LayoutLeft>& dm) { 
-      using KAT = Kokkos::ArithTraits<IST>;
+      using KAT = KokkosKernels::ArithTraits<IST>;
       using mag_t = typename KAT::mag_type;
       mag_t frobNorm;
       Kokkos::parallel_reduce(Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0, 0}, {dm.extent(0), dm.extent(1)}),
@@ -553,7 +553,7 @@ namespace Belos {
 
     //!  \brief Returns the one-norm of the dense matrix.
     static typename Teuchos::ScalarTraits<Scalar>::magnitudeType NormOne( Kokkos::DualView<IST**,Kokkos::LayoutLeft>& dm) {  
-      using KAT = Kokkos::ArithTraits<IST>;
+      using KAT = KokkosKernels::ArithTraits<IST>;
       IST sum = 0, max_sum = 0; 
       SyncDeviceToHost(dm); //TODO Kokkos-ify this
       //Kokkos::parallel_for(dm.extent_int(1), 

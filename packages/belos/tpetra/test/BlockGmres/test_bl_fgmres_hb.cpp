@@ -18,6 +18,8 @@
 #include "BelosTpetraAdapter.hpp"
 #include "BelosTpetraOperator.hpp"
 #include "BelosBlockGmresSolMgr.hpp"
+#include "BelosKokkosDenseAdapter.hpp"
+#include "BelosTpetraTestFramework.hpp"
 
 // I/O for Harwell-Boeing files
 #include "Tpetra_MatrixIO.hpp"
@@ -39,14 +41,16 @@ using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::ParameterList;
 
-int main(int argc, char *argv[]) {
-  typedef Tpetra::MultiVector<>::scalar_type ST;
+template <class ScalarType, class DM>
+int run(int argc, char *argv[]) {
+  typedef typename Tpetra::MultiVector<ScalarType>::scalar_type ST;
+  typedef typename Tpetra::MultiVector<ScalarType>::impl_scalar_type IST;
   typedef Teuchos::ScalarTraits<ST>       SCT;
-  typedef SCT::magnitudeType               MT;
+  typedef typename SCT::magnitudeType               MT;
   typedef Tpetra::Operator<ST>             OP;
   typedef Tpetra::MultiVector<ST>          MV;
   typedef Belos::OperatorTraits<ST,MV,OP> OPT;
-  typedef Belos::MultiVecTraits<ST,MV>    MVT;
+  typedef Belos::MultiVecTraits<ST,MV,DM> MVT;
 
   Tpetra::ScopeGuard tpetraScope(&argc,&argv);
 
@@ -182,7 +186,7 @@ int main(int argc, char *argv[]) {
     // *************Start the block Gmres iteration***********************
     // *******************************************************************
     //
-    Belos::BlockGmresSolMgr<ST,MV,OP> solver( rcpFromRef(problem), rcpFromRef(belosList) );
+    Belos::BlockGmresSolMgr<ST,MV,OP,DM> solver( rcpFromRef(problem), rcpFromRef(belosList) );
 
     //
     // **********Print out information about problem*******************
@@ -235,4 +239,6 @@ int main(int argc, char *argv[]) {
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
-} // end test_bl_fgmres_hb.cpp
+} // end test_kokkos_bl_fgmres_hb.cpp
+
+BELOS_TPETRA_MAIN(run, typename Tpetra::MultiVector<>::scalar_type);

@@ -2,7 +2,7 @@ ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Experimental)
 ASSERT_DEFINED(Tpetra_INST_COMPLEX_DOUBLE)
 
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
+BELOS_ADD_EXECUTABLE_AND_TEUCHOS_AND_KOKKOS_TESTS(
   Tpetra_gcrodr_hb_test
   SOURCES test_gcrodr_hb.cpp
   ARGS
@@ -12,40 +12,25 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  Tpetra_KokkosDense_gcrodr_hb_test
-  SOURCES test_kokkos_gcrodr_hb.cpp
-  ARGS 
-  "--verbose --filename=sherman5.hb --tol=1e-4 --num-rhs=2 --max-subspace=61 --recycle=23 --max-cycles=75 --ortho-type=ICGS"
-  "--verbose --filename=sherman5.hb --tol=1e-4 --num-rhs=2 --max-subspace=61 --recycle=23 --max-cycles=75 --ortho-type=IMGS"
-  "--verbose --filename=sherman5.hb --tol=1e-4 --num-rhs=2 --max-subspace=61 --recycle=23 --max-cycles=75 --ortho-type=DGKS"
-  COMM serial mpi
-  )
-
 TRIBITS_COPY_FILES_TO_BINARY_DIR(Tpetra_CopyTestGCRODRFiles
     SOURCE_DIR ${Belos_SOURCE_DIR}/testmatrices
     SOURCE_FILES sherman5.hb
-    EXEDEPS Tpetra_gcrodr_hb_test Tpetra_KokkosDense_gcrodr_hb_test
+    EXEDEPS Tpetra_gcrodr_hb_test
     )
 
 IF (Tpetra_INST_COMPLEX_DOUBLE)
 
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    BELOS_ADD_EXECUTABLE_AND_TEUCHOS_AND_KOKKOS_TESTS(
       Tpetra_gcrodr_complex_hb
       SOURCES test_gcrodr_complex_hb.cpp
       ARGS
         "--verbose --filename=mhd1280b.cua"
       )
 
-    TRIBITS_ADD_EXECUTABLE(
-      Tpetra_KokkosDense_gcrodr_complex_hb
-      SOURCES test_kokkos_gcrodr_complex_hb.cpp
-      )
-
     TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTpetraGCRODRComplexFiles
       SOURCE_DIR ${Belos_SOURCE_DIR}/testmatrices
       SOURCE_FILES mhd1280b.cua 
-      EXEDEPS Tpetra_gcrodr_complex_hb Tpetra_KokkosDense_gcrodr_complex_hb
+      EXEDEPS Tpetra_gcrodr_complex_hb
     )
 
 ENDIF()
