@@ -426,6 +426,14 @@ namespace Amesos2 {
       iparm_[9] = getIntegralValue<int>(*parameterList, "IPARM(10)");
     }
 
+    // Scale vector for stability
+    if( parameterList->isParameter("IPARM(11)") )
+    {
+      RCP<const ParameterEntryValidator> mwm_validator = valid_params->getEntry("IPARM(11)").validator();
+      parameterList->getEntry("IPARM(11)").setValidator(mwm_validator);
+      iparm_[10] = getIntegralValue<int>(*parameterList, "IPARM(11)");
+    }
+
     // First check if the control object requests a transpose solve.
     // Then solver specific options can override this.
     iparm_[11] = this->control_.useTranspose_ ? 2 : 0;
@@ -469,6 +477,14 @@ namespace Amesos2 {
       parameterList->getEntry("IPARM(25)").setValidator(par_fbsolve_validator);
       iparm_[24] = getIntegralValue<int>(*parameterList, "IPARM(25)");
     } 
+
+    // Check matrix
+    if( parameterList->isParameter("IPARM(27)") )
+    {
+      RCP<const ParameterEntryValidator> check_validator = valid_params->getEntry("IPARM(27)").validator();
+      parameterList->getEntry("IPARM(27)").setValidator(check_validator);
+      iparm_[26] = getIntegralValue<int>(*parameterList, "IPARM(27)");
+    }
 
     // Graph compression scheme for METIS.
     if( parameterList->isParameter("IPARM(60)") )
