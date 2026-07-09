@@ -74,12 +74,12 @@ jobs:
     - if: matrix.build-mode == 'manual'
       name: Generate CMake fragments
       run: |
-          git fetch origin ${GITHUB_BASE_REF}
+          git fetch origin ${GITHUB_BASE_REF:-${GITHUB_REF}}
 
           mkdir -p trilinos_build && cd trilinos_build
 
           source ${GITHUB_WORKSPACE}/packages/framework/GenConfig/gen-config.sh --force --cmake-fragment genconfig_fragment.cmake rhel8_gcc-openmpi_debug_shared_no-kokkos-arch_no-asan_complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables
-          ${GITHUB_WORKSPACE}/commonTools/framework/get-changed-trilinos-packages.sh origin/${GITHUB_BASE_REF} HEAD package_enables.cmake package_subprojects.cmake
+          ${GITHUB_WORKSPACE}/commonTools/framework/get-changed-trilinos-packages.sh origin/${GITHUB_BASE_REF:-${GITHUB_REF}} HEAD package_enables.cmake package_subprojects.cmake
 
     - if: matrix.build-mode == 'manual'
       name: Configure and build Trilinos
