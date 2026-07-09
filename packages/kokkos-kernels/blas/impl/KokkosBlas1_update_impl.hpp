@@ -5,7 +5,7 @@
 
 #include "KokkosKernels_config.h"
 #include "Kokkos_Core.hpp"
-#include "Kokkos_InnerProductSpaceTraits.hpp"
+#include "KokkosKernels_InnerProductSpaceTraits.hpp"
 
 namespace KokkosBlas {
 namespace Impl {
@@ -202,7 +202,7 @@ struct V_Update_Functor {
   V_Update_Functor(const typename XV::non_const_value_type& alpha, const XV& X,
                    const typename YV::non_const_value_type& beta, const YV& Y,
                    const typename ZV::non_const_value_type& gamma, const ZV& Z)
-      : numCols(X.extent(1)), alpha_(alpha), X_(X), beta_(beta), Y_(Y), gamma_(gamma), Z_(Z) {
+      : numCols(1), alpha_(alpha), X_(X), beta_(beta), Y_(Y), gamma_(gamma), Z_(Z) {
     static_assert(Kokkos::is_view<XV>::value,
                   "KokkosBlas::Impl::"
                   "V_Update_Functor: X is not a Kokkos::View.");

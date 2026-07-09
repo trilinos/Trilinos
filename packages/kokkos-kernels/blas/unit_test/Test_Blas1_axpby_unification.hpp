@@ -2474,8 +2474,10 @@ int test_axpby_mv_unification() {
   return 1;
 }
 
-#if defined(KOKKOSKERNELS_INST_FLOAT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+// Almost all the axpby unification tests use a/x/b/y combinations that are not ETI'd.
+// The ones that are ETI'd are already covered by Test_Blas1_axpby.hpp. So only
+// build these when testing non-ETI types.
+#if !defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
 TEST_F(TestCategory, axpby_unification_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::axpby_unification_float");
   test_axpby_unification<float, float, float, float, TestDevice>();
@@ -2486,10 +2488,6 @@ TEST_F(TestCategory, axpby_mv_unification_float) {
   test_axpby_mv_unification<float, float, float, float, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
-#endif
-
-#if defined(KOKKOSKERNELS_INST_DOUBLE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, axpby_unification_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::axpby_unification_double");
   test_axpby_unification<double, double, double, double, TestDevice>();
@@ -2500,10 +2498,6 @@ TEST_F(TestCategory, axpby_mv_unification_double) {
   test_axpby_mv_unification<double, double, double, double, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
-#endif
-
-#if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, axpby_unification_complex_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::axpby_unification_complex_double");
   test_axpby_unification<Kokkos::complex<double>, Kokkos::complex<double>, Kokkos::complex<double>,
@@ -2516,10 +2510,6 @@ TEST_F(TestCategory, axpby_mv_unification_complex_double) {
                             Kokkos::complex<double>, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
-#endif
-
-#if defined(KOKKOSKERNELS_INST_INT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, axpby_unification_int) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::axpby_unification_int");
   test_axpby_unification<int, int, int, int, TestDevice>();
@@ -2530,9 +2520,7 @@ TEST_F(TestCategory, axpby_mv_unification_int) {
   test_axpby_mv_unification<int, int, int, int, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
-#endif
 
-#if !defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
 TEST_F(TestCategory, axpby_unification_double_int) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::axpby_unification_double_int");
   test_axpby_unification<double, double, int, int, TestDevice>();

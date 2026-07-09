@@ -475,6 +475,17 @@ class KokkosSPGEMM {
                             nnz_lno_persistent_work_view_t &color_adj, c_row_view_t &rowmapC,
                             c_nnz_view_t &entryIndicesC_);
 
+ private:
+  static inline SPGEMMAlgorithm select_algorithm(HandleType *handle) {
+    auto sh          = handle->get_spgemm_handle();
+    auto handle_algo = sh->get_algorithm_type();
+    if (handle_algo == SPGEMM_DEFAULT) {
+      return sh->get_default_native_algorithm();
+    }
+    return handle_algo;
+  }
+
+ public:
   KokkosSPGEMM(HandleType *handle_, nnz_lno_t m_, nnz_lno_t n_, nnz_lno_t k_, const_a_lno_row_view_t row_mapA_,
                const_a_lno_nnz_view_t entriesA_, bool transposeA_, const_b_lno_row_view_t row_mapB_,
                const_b_lno_nnz_view_t entriesB_, bool transposeB_)
@@ -495,7 +506,7 @@ class KokkosSPGEMM {
         use_dynamic_schedule(handle_->is_dynamic_scheduling()),
         KOKKOSKERNELS_VERBOSE(handle_->get_verbose()),
         MyEnumExecSpace(this->handle->get_handle_exec_space()),
-        spgemm_algorithm(this->handle->get_spgemm_handle()->get_algorithm_type()),
+        spgemm_algorithm(select_algorithm(this->handle)),
         spgemm_accumulator(this->handle->get_spgemm_handle()->get_accumulator_type())
   //,row_mapC(), entriesC(), valsC()
   {}
@@ -521,7 +532,7 @@ class KokkosSPGEMM {
         use_dynamic_schedule(handle_->is_dynamic_scheduling()),
         KOKKOSKERNELS_VERBOSE(handle_->get_verbose()),
         MyEnumExecSpace(this->handle->get_handle_exec_space()),
-        spgemm_algorithm(this->handle->get_spgemm_handle()->get_algorithm_type()),
+        spgemm_algorithm(select_algorithm(this->handle)),
         spgemm_accumulator(this->handle->get_spgemm_handle()->get_accumulator_type())
   //,row_mapB(), entriesC(), valsC()
   {}
@@ -556,10 +567,10 @@ class KokkosSPGEMM {
    *
    */
   template <typename a_row_view_t, typename a_nnz_view_t, typename b_oldrow_view_t, typename b_row_view_t>
-  struct PredicMaxRowNNZ;
+  struct PredictMaxRowNNZ;
 
-  struct PredicMaxRowNNZIntersection;
-  struct PredicMaxRowNNZ_p;
+  struct PredictMaxRowNNZIntersection;
+  struct PredictMaxRowNNZ_p;
 
  private:
   /**

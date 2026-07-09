@@ -235,19 +235,16 @@ namespace Impl {
     }                                                                                                                 \
   };
 
-#define KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL_EXT(ETI_SPEC_AVAIL)                                                    \
-  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL(Kokkos::LayoutLeft, float, float, Kokkos::Experimental::SYCL,                \
-                                       Kokkos::Experimental::SYCLDeviceUSMSpace, oneapi::mkl::blas::row_major::dot, \
-                                       ETI_SPEC_AVAIL)                                                              \
-  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL(Kokkos::LayoutLeft, double, double, Kokkos::Experimental::SYCL,              \
-                                       Kokkos::Experimental::SYCLDeviceUSMSpace, oneapi::mkl::blas::row_major::dot, \
-                                       ETI_SPEC_AVAIL)                                                              \
-  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL(Kokkos::LayoutLeft, Kokkos::complex<float>, std::complex<float>,             \
-                                       Kokkos::Experimental::SYCL, Kokkos::Experimental::SYCLDeviceUSMSpace,        \
-                                       oneapi::mkl::blas::row_major::dotc, ETI_SPEC_AVAIL)                          \
-  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL(Kokkos::LayoutLeft, Kokkos::complex<double>, std::complex<double>,           \
-                                       Kokkos::Experimental::SYCL, Kokkos::Experimental::SYCLDeviceUSMSpace,        \
-                                       oneapi::mkl::blas::row_major::dotc, ETI_SPEC_AVAIL)
+#define KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL_EXT(ETI_SPEC_AVAIL)                                                       \
+  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL(Kokkos::LayoutLeft, float, float, Kokkos::SYCL, Kokkos::SYCLDeviceUSMSpace,     \
+                                       oneapi::mkl::blas::row_major::dot, ETI_SPEC_AVAIL)                              \
+  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL(Kokkos::LayoutLeft, double, double, Kokkos::SYCL, Kokkos::SYCLDeviceUSMSpace,   \
+                                       oneapi::mkl::blas::row_major::dot, ETI_SPEC_AVAIL)                              \
+  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL(Kokkos::LayoutLeft, Kokkos::complex<float>, std::complex<float>, Kokkos::SYCL,  \
+                                       Kokkos::SYCLDeviceUSMSpace, oneapi::mkl::blas::row_major::dotc, ETI_SPEC_AVAIL) \
+  KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL(Kokkos::LayoutLeft, Kokkos::complex<double>, std::complex<double>,              \
+                                       Kokkos::SYCL, Kokkos::SYCLDeviceUSMSpace, oneapi::mkl::blas::row_major::dotc,   \
+                                       ETI_SPEC_AVAIL)
 
 KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL_EXT(true)
 KOKKOSBLAS1_DOT_TPL_SPEC_DECL_ONEMKL_EXT(false)

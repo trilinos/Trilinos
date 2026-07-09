@@ -45,7 +45,7 @@ namespace Test {
 
 // Run GS on the given vectors, where the handle is already set up.
 template <typename Handle, typename crsMat_t, typename vec_t>
-void run_gauss_seidel(Handle &kh, crsMat_t input_mat, vec_t x_vector, vec_t y_vector, bool is_symmetric_graph,
+void run_gauss_seidel(Handle& kh, crsMat_t input_mat, vec_t x_vector, vec_t y_vector, bool is_symmetric_graph,
                       typename crsMat_t::value_type omega,
                       int apply_type = 0  // 0 for symmetric, 1 for forward, 2 for backward.
 ) {
@@ -122,9 +122,9 @@ void run_gauss_seidel(crsMat_t input_mat, GSAlgorithm gs_algorithm, vec_t x_vect
 }
 
 template <typename ExecSpace, typename Handle, typename crsMat_t, typename vec_t>
-void run_gauss_seidel_streams(std::vector<ExecSpace> &instances, std::vector<Handle> &kh,
-                              std::vector<crsMat_t> &input_mat, std::vector<vec_t> &x_vector,
-                              std::vector<vec_t> &y_vector, bool is_symmetric_graph,
+void run_gauss_seidel_streams(std::vector<ExecSpace>& instances, std::vector<Handle>& kh,
+                              std::vector<crsMat_t>& input_mat, std::vector<vec_t>& x_vector,
+                              std::vector<vec_t>& y_vector, bool is_symmetric_graph,
                               typename crsMat_t::value_type omega,
                               int apply_type,  // 0 for symmetric, 1 for forward, 2 for backward.
                               int nstreams = 1) {
@@ -243,8 +243,8 @@ void test_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
   using namespace Test;
   srand(245);
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
-  typedef Kokkos::View<scalar_t **, KokkosKernels::default_layout, device> scalar_view2d_t;
-  typedef Kokkos::View<scalar_t **, KokkosKernels::default_layout, Kokkos::HostSpace> host_scalar_view2d_t;
+  typedef Kokkos::View<scalar_t**, KokkosKernels::default_layout, device> scalar_view2d_t;
+  typedef Kokkos::View<scalar_t**, KokkosKernels::default_layout, Kokkos::HostSpace> host_scalar_view2d_t;
   typedef typename KokkosKernels::ArithTraits<scalar_t>::mag_type mag_t;
 
   lno_t numCols      = numRows;
@@ -377,7 +377,7 @@ void test_sequential_sor(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t ro
   // initial solution is zero
   Kokkos::deep_copy(x_host, zero);
   // get the inverse diagonal (only needed on host)
-  Kokkos::View<scalar_t *, Kokkos::HostSpace> invDiag("diag^-1", numRows);
+  Kokkos::View<scalar_t*, Kokkos::HostSpace> invDiag("diag^-1", numRows);
   for (lno_t i = 0; i < numRows; i++) {
     for (size_type j = rowmap(i); j < rowmap(i + 1); j++) {
       if (entries(j) == i) invDiag(i) = one / values(j);
@@ -497,7 +497,9 @@ void test_gauss_seidel_long_rows(lno_t numRows, lno_t numLongRows, lno_t nnzPerS
   typedef typename crsMat_t::row_map_type::non_const_type rowmap_view_t;
   typedef typename KokkosKernels::ArithTraits<scalar_t>::mag_type mag_t;
   const scalar_t one = KokkosKernels::ArithTraits<scalar_t>::one();
-  srand(245);
+  // Host matrix generation: avoid MSVC's RAND_MAX==32767 and rand()%N, which skew
+  // off-diagonals and break diagonal dominance vs POSIX rand(). Use a portable RNG.
+  std::mt19937 rng(245u);
   std::vector<size_type> rowmap = {0};
   std::vector<lno_t> entries;
   std::vector<scalar_t> values;
@@ -508,22 +510,23 @@ void test_gauss_seidel_long_rows(lno_t numRows, lno_t numLongRows, lno_t nnzPerS
     else
       rowLengths.push_back(nnzPerShortRow);
   }
-  std::shuffle(rowLengths.begin(), rowLengths.end(), std::mt19937(std::random_device()()));
+  std::shuffle(rowLengths.begin(), rowLengths.end(), rng);
   size_type totalEntries = 0;
-  int randSteps          = 1000000;
   scalar_t offDiagBase;
   {
     scalar_t unused;
     Test::getRandomBounds(0.6, unused, offDiagBase);
   }
+  std::uniform_int_distribution<lno_t> colDist(0, numRows - 1);
+  std::uniform_real_distribution<double> offDiagCoeffDist(-0.3, 0.3);
   for (lno_t i = 0; i < numRows; i++) {
     for (lno_t ent = 0; ent < rowLengths[i]; ent++) {
       if (ent == 0) {
         entries.push_back(i);
         values.push_back(2.5 * one);
       } else {
-        entries.push_back(rand() % numRows);
-        values.push_back((-0.3 + (0.6 * (rand() % randSteps) / randSteps)) * offDiagBase);
+        entries.push_back(colDist(rng));
+        values.push_back(static_cast<scalar_t>(offDiagCoeffDist(rng)) * offDiagBase);
       }
     }
     totalEntries += rowLengths[i];
@@ -532,9 +535,9 @@ void test_gauss_seidel_long_rows(lno_t numRows, lno_t numLongRows, lno_t nnzPerS
   scalar_view_t valuesView(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Values"), totalEntries);
   entries_view_t entriesView(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Entries"), totalEntries);
   rowmap_view_t rowmapView(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Rowmap"), numRows + 1);
-  Kokkos::deep_copy(valuesView, Kokkos::View<scalar_t *, Kokkos::HostSpace>(values.data(), totalEntries));
-  Kokkos::deep_copy(entriesView, Kokkos::View<lno_t *, Kokkos::HostSpace>(entries.data(), totalEntries));
-  Kokkos::deep_copy(rowmapView, Kokkos::View<size_type *, Kokkos::HostSpace>(rowmap.data(), numRows + 1));
+  Kokkos::deep_copy(valuesView, Kokkos::View<scalar_t*, Kokkos::HostSpace>(values.data(), totalEntries));
+  Kokkos::deep_copy(entriesView, Kokkos::View<lno_t*, Kokkos::HostSpace>(entries.data(), totalEntries));
+  Kokkos::deep_copy(rowmapView, Kokkos::View<size_type*, Kokkos::HostSpace>(rowmap.data(), numRows + 1));
   crsMat_t input_mat("A", numRows, numRows, totalEntries, valuesView, rowmapView, entriesView);
   input_mat = KokkosSparse::sort_and_merge_matrix(input_mat);
   if (symmetric) {

@@ -3,5 +3,7 @@ kokkoskernels_include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 kokkoskernels_add_executable(graph_color    SOURCES KokkosGraph_color.cpp)
 kokkoskernels_add_executable(graph_color_d2 SOURCES KokkosGraph_color_d2.cpp)
+kokkoskernels_add_executable(graph_loadbalance SOURCES KokkosGraph_loadbalance.cpp)
 kokkoskernels_add_executable(graph_mis_d2   SOURCES KokkosGraph_mis_d2.cpp)
 kokkoskernels_add_executable(graph_triangle SOURCES KokkosGraph_triangle.cpp)
+kokkoskernels_add_executable(graph_merge       SOURCES KokkosGraph_merge.cpp)

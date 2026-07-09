@@ -11,6 +11,7 @@
 #include "KokkosBlas1_nrm2.hpp"
 #include "KokkosBlas1_scal.hpp"
 #include "KokkosBlas1_axpby.hpp"
+#include "KokkosKernels_InnerProductSpaceTraits.hpp"
 
 #include "KokkosODE_Types.hpp"
 
@@ -28,7 +29,7 @@ KOKKOS_FUNCTION KokkosODE::Experimental::newton_solver_status NewtonSolve(
   // Define the type returned by nrm2 to store
   // the norm of the residual.
   using norm_type =
-      typename Kokkos::Details::InnerProductSpaceTraits<typename ini_vec_type::non_const_value_type>::mag_type;
+      typename KokkosKernels::Details::InnerProductSpaceTraits<typename ini_vec_type::non_const_value_type>::mag_type;
   sys.residual(y0, rhs);
   const norm_type norm0 = KokkosBlas::serial_nrm2(rhs);
   norm_type norm        = KokkosKernels::ArithTraits<norm_type>::zero();

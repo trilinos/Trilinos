@@ -53,22 +53,6 @@
 #endif
 #endif
 
-// Macro that tells GCC not to worry if a variable isn't being used.
-// Generalized attributes were not implemented in GCC until 4.8:
-//
-// https://gcc.gnu.org/gcc-4.7/cxx0x_status.html
-// https://gcc.gnu.org/gcc-4.8/cxx0x_status.html
-//
-// Thus, we can't use [[unused]]; we have to use the older GCC syntax
-// for variable attributes.  Be careful also of compilers that define
-// the __GNUC__ macro but might not necessarily actually be GCC
-// compliant.
-#if defined(__GNUC__) && !defined(KOKKOSKERNELS_UNUSED_ATTRIBUTE)
-#define KOKKOSKERNELS_UNUSED_ATTRIBUTE __attribute__((unused))
-#else
-#define KOKKOSKERNELS_UNUSED_ATTRIBUTE
-#endif  // __GNUC__
-
 #if defined(KOKKOS_COMPILER_GNU)
 #define KOKKOSKERNELS_GNU_COMPILER_FENCE __sync_synchronize();
 #else

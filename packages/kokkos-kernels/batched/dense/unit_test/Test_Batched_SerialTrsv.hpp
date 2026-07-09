@@ -401,19 +401,12 @@ int test_batched_trsv() {
                                                   AlgoTagType>(1);
     Test::Trsv::impl_test_batched_trsv_analytical<DeviceType, ScalarType, ValueType, LayoutType, ParamTagType,
                                                   AlgoTagType>(2);
-
-    // FIXME: ConjTranspose with blocking is not implemented yet
-    if constexpr (!std::is_same_v<typename ParamTagType::trans, Trans::ConjTranspose>) {
-      Test::Trsv::impl_test_batched_trsv_blocking<DeviceType, ScalarType, ValueType, LayoutType, ParamTagType,
-                                                  AlgoTagType>(0, 10);
-    }
+    Test::Trsv::impl_test_batched_trsv_blocking<DeviceType, ScalarType, ValueType, LayoutType, ParamTagType,
+                                                AlgoTagType>(0, 10);
 
     for (int i = 0; i < 10; ++i) {
-      // FIXME: ConjTranspose with blocking is not implemented yet
-      if constexpr (!std::is_same_v<typename ParamTagType::trans, Trans::ConjTranspose>) {
-        Test::Trsv::impl_test_batched_trsv_blocking<DeviceType, ScalarType, ValueType, LayoutType, ParamTagType,
-                                                    AlgoTagType>(1, i);
-      }
+      Test::Trsv::impl_test_batched_trsv_blocking<DeviceType, ScalarType, ValueType, LayoutType, ParamTagType,
+                                                  AlgoTagType>(1, i);
       Test::Trsv::impl_test_batched_trsv<DeviceType, ScalarType, ValueType, LayoutType, ParamTagType, AlgoTagType>(1,
                                                                                                                    i);
       Test::Trsv::impl_test_batched_trsv<DeviceType, ScalarType, ValueType, LayoutType, ParamTagType, AlgoTagType>(2,
@@ -428,19 +421,12 @@ int test_batched_trsv() {
                                                   AlgoTagType>(1);
     Test::Trsv::impl_test_batched_trsv_analytical<DeviceType, ScalarType, ValueType, LayoutType, ParamTagType,
                                                   AlgoTagType>(2);
-
-    // FIXME: ConjTranspose with blocking is not implemented yet
-    if constexpr (!std::is_same_v<typename ParamTagType::trans, Trans::ConjTranspose>) {
-      Test::Trsv::impl_test_batched_trsv_blocking<DeviceType, ScalarType, ValueType, LayoutType, ParamTagType,
-                                                  AlgoTagType>(0, 10);
-    }
+    Test::Trsv::impl_test_batched_trsv_blocking<DeviceType, ScalarType, ValueType, LayoutType, ParamTagType,
+                                                AlgoTagType>(0, 10);
 
     for (int i = 0; i < 10; ++i) {
-      // FIXME: ConjTranspose with blocking is not implemented yet
-      if constexpr (!std::is_same_v<typename ParamTagType::trans, Trans::ConjTranspose>) {
-        Test::Trsv::impl_test_batched_trsv_blocking<DeviceType, ScalarType, ValueType, LayoutType, ParamTagType,
-                                                    AlgoTagType>(1, i);
-      }
+      Test::Trsv::impl_test_batched_trsv_blocking<DeviceType, ScalarType, ValueType, LayoutType, ParamTagType,
+                                                  AlgoTagType>(1, i);
       Test::Trsv::impl_test_batched_trsv<DeviceType, ScalarType, ValueType, LayoutType, ParamTagType, AlgoTagType>(1,
                                                                                                                    i);
       Test::Trsv::impl_test_batched_trsv<DeviceType, ScalarType, ValueType, LayoutType, ParamTagType, AlgoTagType>(2,

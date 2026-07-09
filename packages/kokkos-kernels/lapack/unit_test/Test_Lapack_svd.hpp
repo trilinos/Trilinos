@@ -6,6 +6,7 @@
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
 #include <KokkosKernels_TestUtils.hpp>
+#include <KokkosKernels_TestMatrixUtils.hpp>
 #include <KokkosBlas3_gemm.hpp>
 
 #include <KokkosLapack_svd.hpp>
@@ -106,18 +107,17 @@ int impl_analytic_2x2_svd() {
   AMatrix A("A", 2, 2), U("U", 2, 2), Vt("Vt", 2, 2), Aref("A ref", 2, 2);
   vector_type S("S", 2);
 
-  typename AMatrix::host_mirror_type A_h = Kokkos::create_mirror_view(A);
-
   // A = [3  0]
   //     [4  5]
   // USV = 1/sqrt(10) [1  -3] * sqrt(5) [3  0] *  1/sqrt(2) [ 1  1]
   //                  [3   1]           [0  1]              [-1  1]
-  A_h(0, 0) = 3;
-  A_h(1, 0) = 4;
-  A_h(1, 1) = 5;
-
-  Kokkos::deep_copy(A, A_h);
-  Kokkos::deep_copy(Aref, A_h);
+  // clang-format off
+  std::vector<std::vector<scalar_type>> A_data = {
+      {3, 0},
+      {4, 5}};
+  // clang-format on
+  Test::fill_view_from_fixture(A, A_data);
+  Kokkos::deep_copy(Aref, A);
 
   KokkosLapack::svd("A", "A", A, S, U, Vt);
   // Don't really need to fence here as we deep_copy right after...
@@ -138,12 +138,14 @@ int impl_analytic_2x2_svd() {
   // or of oposite sign we check the first
   // component of the vectors to determine
   // the proper signed comparison.
-  std::vector<scalar_type> Uref = {
-      static_cast<scalar_type>(1 / Kokkos::sqrt(10)), static_cast<scalar_type>(3 / Kokkos::sqrt(10)),
-      static_cast<scalar_type>(-3 / Kokkos::sqrt(10)), static_cast<scalar_type>(1 / Kokkos::sqrt(10))};
-  std::vector<scalar_type> Vtref = {
-      static_cast<scalar_type>(1 / Kokkos::sqrt(2)), static_cast<scalar_type>(-1 / Kokkos::sqrt(2)),
-      static_cast<scalar_type>(1 / Kokkos::sqrt(2)), static_cast<scalar_type>(1 / Kokkos::sqrt(2))};
+  // clang-format off
+  std::vector<std::vector<scalar_type>> Uref = {
+      { static_cast<scalar_type>(1 / Kokkos::sqrt(10)), static_cast<scalar_type>(-3 / Kokkos::sqrt(10))},
+      { static_cast<scalar_type>(3 / Kokkos::sqrt(10)), static_cast<scalar_type>( 1 / Kokkos::sqrt(10))}};
+  std::vector<std::vector<scalar_type>> Vtref = {
+      {static_cast<scalar_type>( 1 / Kokkos::sqrt(2)), static_cast<scalar_type>(1 / Kokkos::sqrt(2))},
+      {static_cast<scalar_type>(-1 / Kokkos::sqrt(2)), static_cast<scalar_type>(1 / Kokkos::sqrt(2))}};
+  // clang-format on
 
   // Both rotations and reflections are valid
   // vector basis so we need to check both signs
@@ -205,23 +207,19 @@ int impl_analytic_2x3_svd() {
   AMatrix A("A", 2, 3), U("U", 2, 2), Vt("Vt", 3, 3), Aref("A ref", 2, 3);
   vector_type S("S", 2);
 
-  typename AMatrix::host_mirror_type A_h = Kokkos::create_mirror_view(A);
-
   // A = [3  2   2]
   //     [2  3  -2]
   // USVt = 1/sqrt(2) [1   1] * [5  0  0] *  1/(3*sqrt(2)) [        3 3 0]
   //                  [1  -1]   [0  3  0]                  [        1 -1 4]
   //                                                       [2*sqrt(2) -2*sqrt(2)
   //                                                       -sqrt(2)]
-  A_h(0, 0) = 3;
-  A_h(0, 1) = 2;
-  A_h(0, 2) = 2;
-  A_h(1, 0) = 2;
-  A_h(1, 1) = 3;
-  A_h(1, 2) = -2;
-
-  Kokkos::deep_copy(A, A_h);
-  Kokkos::deep_copy(Aref, A_h);
+  // clang-format off
+  std::vector<std::vector<scalar_type>> A_data = {
+      { 3,  2,  2},
+      { 2,  3, -2}};
+  // clang-format on
+  Test::fill_view_from_fixture(A, A_data);
+  Kokkos::deep_copy(Aref, A);
 
   try {
     KokkosLapack::svd("A", "A", A, S, U, Vt);
@@ -334,8 +332,6 @@ int impl_analytic_3x2_svd() {
   AMatrix A("A", 3, 2), U("U", 3, 3), Vt("Vt", 2, 2), Aref("A ref", 3, 2);
   vector_type S("S", 2);
 
-  typename AMatrix::host_mirror_type A_h = Kokkos::create_mirror_view(A);
-
   // Note this is simply the transpose of the 2x3 matrix in the test above
   // A = [3  2]
   //     [2  3]
@@ -343,15 +339,14 @@ int impl_analytic_3x2_svd() {
   // USVt = 1/(3*sqrt(2)) [3   1   2*sqrt(2)] * [5  0] * 1/sqrt(2) [1   1]
   //                      [3  -1  -2*sqrt(2)]   [0  3]             [1  -1]
   //                      [0   4     sqrt(2)]   [0  0]
-  A_h(0, 0) = 3;
-  A_h(0, 1) = 2;
-  A_h(1, 0) = 2;
-  A_h(1, 1) = 3;
-  A_h(2, 0) = 2;
-  A_h(2, 1) = -2;
-
-  Kokkos::deep_copy(A, A_h);
-  Kokkos::deep_copy(Aref, A_h);
+  // clang-format off
+  std::vector<std::vector<scalar_type>> A_data = {
+      { 3,  2},
+      { 2,  3},
+      { 2, -2}};
+  // clang-format on
+  Test::fill_view_from_fixture(A, A_data);
+  Kokkos::deep_copy(Aref, A);
 
   KokkosLapack::svd("A", "A", A, S, U, Vt);
   // Don't really need to fence here as we deep_copy right after...
@@ -542,7 +537,7 @@ template <class Scalar, class Device>
 int test_svd_wrapper() {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK) || defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
   if constexpr (std::is_same_v<typename Device::memory_space, Kokkos::HostSpace>) {
-    // Using a device side space with LAPACK/MKL
+    // Using a host side space with LAPACK/MKL
     return test_svd<Scalar, Device>();
   }
 #endif
