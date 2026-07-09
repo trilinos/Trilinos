@@ -12,7 +12,6 @@
 #include <Teuchos_Tuple.hpp>
 #include <Teuchos_CommHelpers.hpp>
 
-#include "Teuchos_Array.hpp"
 #include "Teuchos_as.hpp"
 
 #include "Xpetra_ConfigDefs.hpp"

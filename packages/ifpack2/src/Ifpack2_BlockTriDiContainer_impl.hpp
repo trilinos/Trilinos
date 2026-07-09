@@ -1019,7 +1019,7 @@ template <typename local_ordinal_type>
 local_ordinal_type getAutomaticNSubparts(const local_ordinal_type num_parts,
                                          const local_ordinal_type num_teams,
                                          const local_ordinal_type line_length,
-                                         const local_ordinal_type block_size) {
+                                         const local_ordinal_type /*block_size*/) {
   // BMK: replaced theoretical model with empirical model
   // This is a linear regression based on data from a grid search.
   // The independent terms in the regression are:

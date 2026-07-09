@@ -177,7 +177,7 @@ class TpetraRowMatrix
   }
 
   //! Get a copy of the diagonal entries owned by this node, with local row indices.
-  void getLocalDiagCopy(Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &diag) const { TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+  void getLocalDiagCopy(Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & /*diag*/) const { TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
   //{ XPETRA_MONITOR("TpetraRowMatrix::getLocalDiagCopy"); mtx_->getLocalDiagCopy(diag); }
 
   //@}
@@ -209,7 +209,7 @@ class TpetraRowMatrix
   }
 
   //! Computes the operator-multivector application.
-  void apply(const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &X, MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &Y, Teuchos::ETransp mode = Teuchos::NO_TRANS, Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(), Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const { TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+  void apply(const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & /*X*/, MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & /*Y*/, Teuchos::ETransp /*mode*/ = Teuchos::NO_TRANS, Scalar /*alpha*/ = Teuchos::ScalarTraits<Scalar>::one(), Scalar /*beta*/ = Teuchos::ScalarTraits<Scalar>::zero()) const { TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
   //{ XPETRA_MONITOR("TpetraRowMatrix::apply"); mtx_->apply(X, Y, mode, alpha, beta); }
 
   //@}

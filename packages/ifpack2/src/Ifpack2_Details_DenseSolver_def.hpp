@@ -614,7 +614,7 @@ void DenseSolver<MatrixType, false>::
 
 template <class MatrixType>
 DenseSolver<MatrixType, true>::
-    DenseSolver(const Teuchos::RCP<const row_matrix_type>& A) {
+    DenseSolver(const Teuchos::RCP<const row_matrix_type>& /*A*/) {
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented");
 }
 
@@ -632,7 +632,7 @@ DenseSolver<MatrixType, true>::getRangeMap() const {
 
 template <class MatrixType>
 void DenseSolver<MatrixType, true>::
-    setParameters(const Teuchos::ParameterList& params) {
+    setParameters(const Teuchos::ParameterList& /*params*/) {
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented");
 }
 
@@ -687,7 +687,7 @@ DenseSolver<MatrixType, true>::getMatrix() const {
 
 template <class MatrixType>
 void DenseSolver<MatrixType, true>::
-    setMatrix(const Teuchos::RCP<const row_matrix_type>& A) {
+    setMatrix(const Teuchos::RCP<const row_matrix_type>& /*A*/) {
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented");
 }
 
@@ -708,11 +708,11 @@ void DenseSolver<MatrixType, true>::compute() {
 
 template <class MatrixType>
 void DenseSolver<MatrixType, true>::
-    apply(const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& X,
-          Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& Y,
-          Teuchos::ETransp mode,
-          scalar_type alpha,
-          scalar_type beta) const {
+    apply(const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& /*X*/,
+          Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& /*Y*/,
+          Teuchos::ETransp /*mode*/,
+          scalar_type /*alpha*/,
+          scalar_type /*beta*/) const {
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented");
 }
 
@@ -724,8 +724,8 @@ DenseSolver<MatrixType, true>::description() const {
 
 template <class MatrixType>
 void DenseSolver<MatrixType, true>::
-    describe(Teuchos::FancyOStream& out,
-             const Teuchos::EVerbosityLevel verbLevel) const {
+    describe(Teuchos::FancyOStream& /*out*/,
+             const Teuchos::EVerbosityLevel /*verbLevel*/) const {
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented");
 }
 
