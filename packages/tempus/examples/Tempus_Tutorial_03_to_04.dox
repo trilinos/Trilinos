@@ -4,8 +4,9 @@
  *
  *  The primary goal of \ref example-04 is to move from a single
  *  \ref Tempus::SolutionState to a \ref Tempus::SolutionHistory while
- *  preserving the same \ref Thyra::ModelEvaluator-based model and the same
- *  explicit Forward Euler update used in \ref example-03.
+ *  preserving the same \ref Thyra::ModelEvaluator-based model, the same
+ *  explicit Forward Euler update, the same simple tabular output, and the same
+ *  regression-testing workflow used in \ref example-03.
  *
  *  New concepts introduced are:
  *
@@ -28,7 +29,7 @@
  *    - promotes the accepted working state to become the new current state
  *
  *  This is the first step in moving from state-based solution management
- *  to history-based solution management.  That transition is important
+ *  to history-based solution management. That transition is important
  *  because many time integration algorithms require access to multiple
  *  states, including the current solution, tentative working states,
  *  and previously accepted states.
@@ -38,7 +39,8 @@
  *  - The van der Pol model is still provided by a \ref Thyra::ModelEvaluator.
  *  - The timestepper is still Forward Euler.
  *  - The application still controls the time loop directly.
- *  - The regression check follows the same pattern.
+ *  - The output table still reports the step index, time, \f$x_0\f$, and \f$x_1\f$.
+ *  - The regression check remains a separate final comparison.
  *
  *  \section tempus_tutorial_transition_03_04_snippets Selected code excerpts
  *
@@ -48,7 +50,7 @@
  *  <hr style="border:0; border-top:5px solid #ccc;">
  *  \subsection tempus_tutorial_transition_03_04_snippet1 Create the solution history
  *
- *  <b>Create a SolutionHistory.</b>  The initial condition is still stored in
+ *  <b>Create a SolutionHistory.</b> The initial condition is still stored in
  *  a \ref Tempus::SolutionState, but that state is now inserted into a
  *  \ref Tempus::SolutionHistory.
  *
@@ -80,7 +82,7 @@
  *  <hr style="border:0; border-top:5px solid #ccc;">
  *  \subsection tempus_tutorial_transition_03_04_snippet2 Access current and working states
  *
- *  <b>Use SolutionHistory to access states.</b>  Instead of working directly
+ *  <b>Use SolutionHistory to access states.</b> Instead of working directly
  *  with a single solution state, the application now asks the history object
  *  for the current and working states.
  *
@@ -115,7 +117,7 @@
  *  <hr style="border:0; border-top:5px solid #ccc;">
  *  \subsection tempus_tutorial_transition_03_04_snippet3 Update metadata on the working state
  *
- *  <b>Assign metadata to the working state.</b>  The timestep index, time,
+ *  <b>Assign metadata to the working state.</b> The timestep index, time,
  *  and timestep size are associated with the working state created by the
  *  history object.
  *
@@ -141,7 +143,7 @@
  *  <hr style="border:0; border-top:5px solid #ccc;">
  *  \subsection tempus_tutorial_transition_03_04_snippet4 Record and promote the working state
  *
- *  <b>Promote the accepted working state.</b>  The step outcome is recorded
+ *  <b>Promote the accepted working state.</b> The step outcome is recorded
  *  on the working state, and the history object promotes it when the step
  *  completes.
  *
@@ -172,6 +174,10 @@
  *  associated with that state, and the history object manages promotion of
  *  that state to become the new current state.
  *
+ *  As in the updated examples, the regression comparison remains separate from
+ *  step status. Final tutorial success is determined after the loop by
+ *  combining the final state status with the result of the regression test.
+ *
  *  <hr style="border:0; border-top:5px solid #ccc;">
  *  \section tempus_tutorial_transition_03_04_compare How to compare the examples
  *
@@ -185,8 +191,8 @@
  *
  *  @code{.sh}
  *  git diff --no-index \
- *    <(sed -n '73,146p' examples/03_Intro_SolutionState/03_Intro_SolutionState.cpp) \
- *    <(sed -n '79,157p' examples/04_Adding_SolutionHistory/04_Adding_SolutionHistory.cpp)
+ *    <(sed -n '83,184p' examples/03_Intro_SolutionState/03_Intro_SolutionState.cpp) \
+ *    <(sed -n '88,195p' examples/04_Adding_SolutionHistory/04_Adding_SolutionHistory.cpp)
  *  @endcode
  *
  *  This ignores leading header lines (e.g., `#include` statements and

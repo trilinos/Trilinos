@@ -13,6 +13,8 @@
 #include <math.h>
 #include "Teuchos_StandardCatchMacros.hpp"
 
+#include "../00_Basic_Problem/Tutorial_Regression_Tester.hpp"
+
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_DefaultSpmdVectorSpace.hpp"
 #include "Thyra_DetachedVectorView.hpp"
@@ -34,17 +36,17 @@ using Teuchos::RCP;
  *
  *  This example introduces \ref Tempus::TimeStepControl, which manages
  *  timestep-size selection independently of the stepper and application time
- *  loop.  The van der Pol model is still provided through a
+ *  loop. The van der Pol model is still provided through a
  *  \ref Thyra::ModelEvaluator, the Forward Euler step is still performed by
  *  \ref Tempus::StepperForwardEuler, and the application still manages the
- *  overall time loop and \ref Tempus::SolutionHistory.  However, timestep-size
+ *  overall time loop and \ref Tempus::SolutionHistory. However, timestep-size
  *  selection is now delegated to a \ref Tempus::TimeStepControl object rather
  *  than being hardcoded directly in the application.
  *
  *  The main purpose of this step is to separate timestep-selection policy from
  *  both the stepping algorithm and the surrounding application logic.
- *  It should be noted that the Tempus::Stepper can provide a suggested
- *  next timestep size, but the final timestep size selection occurs in
+ *  It should be noted that a \ref Tempus::Stepper may suggest a future
+ *  timestep size, but the final timestep-size selection occurs in
  *  \ref Tempus::TimeStepControl.
  *
  *  Relative to \ref example-05:
@@ -66,6 +68,12 @@ using Teuchos::RCP;
  *  - setting the number of time steps for constant-timestep control
  *  - using the control object to determine timestep metadata for each step
  *  - using the control object to test whether time and step index remain in range
+ *
+ *  The example continues to print the evolving solution in a simple table with
+ *  columns for step index, time, \f$x_0\f$, and \f$x_1\f$. As in the previous
+ *  examples, overall tutorial success should require both a successful
+ *  integration status and a passing regression comparison of the final
+ *  solution.
  *
  *  <hr>
  *  \par Transition notes
@@ -114,6 +122,20 @@ int main(int argc, char *argv[])
 
     Tempus::Status integratorStatus = Tempus::Status::WORKING;
 
+    // Output
+    cout << std::fixed;
+    cout << std::setw(8)  << "index"
+         << std::setw(10) << "time"
+         << std::setw(12) << "x_0"
+         << std::setw(12) << "x_1" << endl;
+
+    auto currentState = solHistory->getCurrentState();
+    cout << std::setw(8)  << currentState->getIndex()
+         << std::setw(10) << std::setprecision(3) << currentState->getTime()
+         << std::setw(12) << std::setprecision(4) << Thyra::get_ele(*(currentState->getX()), 0)
+         << std::setw(12) << std::setprecision(4) << Thyra::get_ele(*(currentState->getX()), 1)
+         << endl;
+
     // Advance the solution to the next timestep.
     while (solHistory->getCurrentState()->getSolutionStatus() == Tempus::Status::PASSED &&
            timeStepControl->timeInRange(solHistory->getCurrentTime()) &&
@@ -133,35 +155,21 @@ int main(int argc, char *argv[])
 
       // Output
       if (solHistory->getCurrentState()->getIndex() % 100 == 0) {
-        auto currentState = solHistory->getCurrentState();
-        cout << currentState->getIndex() << "  " << currentState->getTime()
-             << "  " << Thyra::get_ele(*(currentState->getX()), 0)
-             << "  " << Thyra::get_ele(*(currentState->getX()), 1) << endl;
+        currentState = solHistory->getCurrentState();
+        cout << std::setw(8)  << currentState->getIndex()
+             << std::setw(10) << std::setprecision(3) << currentState->getTime()
+             << std::setw(12) << std::setprecision(4) << Thyra::get_ele(*(currentState->getX()), 0)
+             << std::setw(12) << std::setprecision(4) << Thyra::get_ele(*(currentState->getX()), 1)
+             << endl;
       }
     }
 
     // Test for regression.
     auto finalState = solHistory->getCurrentState();
-    RCP<Thyra::VectorBase<double> > x_n = finalState->getX();
-    RCP<Thyra::VectorBase<double> > x_regress = x_n->clone_v();
-    {
-      Thyra::DetachedVectorView<double> x_regress_view(*x_regress);
-      x_regress_view[0] = -1.59496108218721311;
-      x_regress_view[1] =  0.96359412806611255;
-    }
+    bool passed = (finalState->getSolutionStatus() == Tempus::Status::PASSED);
+    bool regressionPassed = tutorialRegressionTest(finalState);
 
-    RCP<Thyra::VectorBase<double> > x_error = x_n->clone_v();
-    Thyra::V_VmV(x_error.ptr(), *x_n, *x_regress);
-    double x_L2norm_error   = Thyra::norm_2(*x_error  );
-    double x_L2norm_regress = Thyra::norm_2(*x_regress);
-
-    cout << "Relative L2 Norm of the error (regression) = "
-         << x_L2norm_error/x_L2norm_regress << endl;
-    if ( x_L2norm_error > 1.0e-08*x_L2norm_regress) {
-      finalState->setSolutionStatus(Tempus::Status::FAILED);
-      cout << "FAILED regression constraint!" << endl;
-    }
-    if (finalState->getSolutionStatus() == Tempus::Status::PASSED) success = true;
+    if (passed && regressionPassed) success = true;
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 

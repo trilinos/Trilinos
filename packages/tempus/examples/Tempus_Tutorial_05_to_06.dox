@@ -6,11 +6,11 @@
  *  \ref Tempus::TimeStepControl while preserving the same
  *  \ref Thyra::ModelEvaluator-based van der Pol model, the same
  *  \ref Tempus::SolutionHistory, the same
- *  \ref Tempus::StepperForwardEuler, and the same application-managed time
- *  loop used in \ref example-05.
+ *  \ref Tempus::StepperForwardEuler, the same simple tabular output, and the
+ *  same application-managed time loop used in \ref example-05.
  *
  *  \ref Tempus::TimeStepControl manages timestep-size selection independently
- *  of the stepper.  This allows timestep policy to be changed without
+ *  of the stepper. This allows timestep policy to be changed without
  *  changing the stepping algorithm itself.
  *
  *  New concepts introduced are:
@@ -34,7 +34,7 @@
  *    - checks whether the current step index remains within the control limits
  *
  *  This is the first step in separating timestep-size control from the
- *  application-managed time loop.  Rather than hardcoding a timestep size in
+ *  application-managed time loop. Rather than hardcoding a timestep size in
  *  the example, the application now delegates that choice to a dedicated
  *  Tempus control object.
  *
@@ -45,7 +45,8 @@
  *  - The application still manages the \ref Tempus::SolutionHistory.
  *  - The Forward Euler step is still performed by
  *    \ref Tempus::StepperForwardEuler.
- *  - The regression check follows the same pattern.
+ *  - The output table still reports the step index, time, \f$x_0\f$, and \f$x_1\f$.
+ *  - The regression check remains a separate final comparison.
  *
  *  \section tempus_tutorial_transition_05_06_snippets Selected code excerpts
  *
@@ -55,7 +56,7 @@
  *  <hr style="border:0; border-top:5px solid #ccc;">
  *  \subsection tempus_tutorial_transition_05_06_snippet1 Construct and initialize TimeStepControl
  *
- *  <b>Create and initialize a TimeStepControl.</b>  The application now
+ *  <b>Create and initialize a TimeStepControl.</b> The application now
  *  constructs a \ref Tempus::TimeStepControl and initializes it with the
  *  final time and number of time steps used for constant-timestep control.
  *  For the constant-timestep strategy
@@ -81,35 +82,9 @@
  *  This introduces a dedicated Tempus object for timestep-size control.
  *
  *  <hr style="border:0; border-top:5px solid #ccc;">
- *  \subsection tempus_tutorial_transition_05_06_snippet3 Use TimeStepControl in the loop condition
- *
- *  <b>Use TimeStepControl to enforce integration limits.</b>  The application
- *  now queries the control object to determine whether the current time and
- *  current step index remain in range.
- *
- *  <b>Before</b>
- *  @code
- *  while (solHistory->getCurrentState()->getSolutionStatus() ==
- *           Tempus::Status::PASSED &&
- *         solHistory->getCurrentTime() < finalTime &&
- *         solHistory->getCurrentIndex() < nTimeSteps) {
- *  @endcode
- *
- *  <b>After</b>
- *  @code
- *  while (solHistory->getCurrentState()->getSolutionStatus() ==
- *           Tempus::Status::PASSED &&
- *         timeStepControl->timeInRange(solHistory->getCurrentTime()) &&
- *         timeStepControl->indexInRange(solHistory->getCurrentIndex())) {
- *  @endcode
- *
- *  The loop is still managed by the application, but the integration limits
- *  now come from \ref Tempus::TimeStepControl.
- *
- *  <hr style="border:0; border-top:5px solid #ccc;">
  *  \subsection tempus_tutorial_transition_05_06_snippet2 Replace hardcoded timestep selection
  *
- *  <b>Use TimeStepControl to set the next timestep.</b>  Instead of assigning
+ *  <b>Use TimeStepControl to set the next timestep.</b> Instead of assigning
  *  a hardcoded timestep size in the application, the control object now
  *  determines the next timestep metadata using the current solution history
  *  and the current integrator status.
@@ -133,6 +108,35 @@
  *  comes from a dedicated Tempus control object.
  *
  *  <hr style="border:0; border-top:5px solid #ccc;">
+ *  \subsection tempus_tutorial_transition_05_06_snippet3 Use TimeStepControl in the loop condition
+ *
+ *  <b>Use TimeStepControl to enforce integration limits.</b> The application
+ *  now queries the control object to determine whether the current time and
+ *  current step index remain in range.
+ *
+ *  <b>Before</b>
+ *  @code
+ *  while (solHistory->getCurrentState()->getSolutionStatus() ==
+ *           Tempus::Status::PASSED &&
+ *         solHistory->getCurrentTime() < finalTime &&
+ *         solHistory->getCurrentIndex() < nTimeSteps) {
+ *  @endcode
+ *
+ *  <b>After</b>
+ *  @code
+ *  while (solHistory->getCurrentState()->getSolutionStatus() ==
+ *           Tempus::Status::PASSED &&
+ *         timeStepControl->timeInRange(solHistory->getCurrentTime()) &&
+ *         timeStepControl->indexInRange(solHistory->getCurrentIndex())) {
+ *  @endcode
+ *
+ *  The loop is still managed by the application, but the integration limits
+ *  now come from \ref Tempus::TimeStepControl.
+ *
+ *  As in the updated examples, final tutorial success is determined after the
+ *  loop by combining the final state status with the separate regression test.
+ *
+ *  <hr style="border:0; border-top:5px solid #ccc;">
  *  \section tempus_tutorial_transition_05_06_compare How to compare the examples
  *
  *  A more detailed comparison can be made by diffing:
@@ -145,8 +149,8 @@
  *
  *  @code{.sh}
  *  git diff --no-index \
- *    <(sed -n '77,138p' examples/05_Intro_Stepper/05_Intro_Stepper.cpp) \
- *    <(sed -n '83,142p' examples/06_Intro_TimeStepControl/06_Intro_TimeStepControl.cpp)
+ *    <(sed -n '86,177p' examples/05_Intro_Stepper/05_Intro_Stepper.cpp) \
+ *    <(sed -n '91,180p' examples/06_Intro_TimeStepControl/06_Intro_TimeStepControl.cpp)
  *  @endcode
  *
  *  This ignores leading header lines (e.g., `#include` statements and
