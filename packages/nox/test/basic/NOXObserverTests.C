@@ -61,7 +61,7 @@ namespace NOX_UNIT_TEST {
     clone(NOX::CopyType ) const {return Teuchos::null;}
     double norm(NOX::Abstract::Vector::NormType ) const {return 0.0;}
     double norm(const NOX::Abstract::Vector& ) const {return 0.0;}
-    double innerProduct(const NOX::Abstract::Vector& y) const {return 0.0;}
+    double innerProduct(const NOX::Abstract::Vector&  /*y*/) const {return 0.0;}
     NOX::size_type length() const {return 0;}
   };
 

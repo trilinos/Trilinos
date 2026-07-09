@@ -142,16 +142,16 @@ public:
 
   // Dummy
   Teuchos::RCP<const thyra_vec_space> get_f_multiplier_space() const{return Teuchos::null;}
-  Teuchos::RCP<const thyra_vec_space> get_g_multiplier_space(int j) const{return Teuchos::null;}
+  Teuchos::RCP<const thyra_vec_space> get_g_multiplier_space(int  /*j*/) const{return Teuchos::null;}
   ::Thyra::ModelEvaluatorBase::InArgs<Scalar> getLowerBounds() const{return prototypeInArgs_;}
   ::Thyra::ModelEvaluatorBase::InArgs<Scalar> getUpperBounds() const{return prototypeInArgs_;}
   Teuchos::RCP<::Thyra::LinearOpWithSolveBase<Scalar>> create_W() const{return Teuchos::null;}
   Teuchos::RCP<::Thyra::LinearOpBase<Scalar>> create_hess_f_xx() const{return Teuchos::null;}
-  Teuchos::RCP<::Thyra::LinearOpBase<Scalar>> create_hess_f_xp(int l) const{return Teuchos::null;}
-  Teuchos::RCP<::Thyra::LinearOpBase<Scalar>> create_hess_f_pp( int l1, int l2 ) const{return Teuchos::null;}
-  Teuchos::RCP<::Thyra::LinearOpBase<Scalar>> create_hess_g_xx(int j) const{return Teuchos::null;}
-  Teuchos::RCP<::Thyra::LinearOpBase<Scalar>> create_hess_g_xp( int j, int l ) const{return Teuchos::null;}
-  Teuchos::RCP<::Thyra::LinearOpBase<Scalar>> create_hess_g_pp( int j, int l1, int l2 ) const{return Teuchos::null;}
+  Teuchos::RCP<::Thyra::LinearOpBase<Scalar>> create_hess_f_xp(int  /*l*/) const{return Teuchos::null;}
+  Teuchos::RCP<::Thyra::LinearOpBase<Scalar>> create_hess_f_pp( int  /*l1*/, int  /*l2*/ ) const{return Teuchos::null;}
+  Teuchos::RCP<::Thyra::LinearOpBase<Scalar>> create_hess_g_xx(int  /*j*/) const{return Teuchos::null;}
+  Teuchos::RCP<::Thyra::LinearOpBase<Scalar>> create_hess_g_xp( int  /*j*/, int  /*l*/ ) const{return Teuchos::null;}
+  Teuchos::RCP<::Thyra::LinearOpBase<Scalar>> create_hess_g_pp( int  /*j*/, int  /*l1*/, int  /*l2*/ ) const{return Teuchos::null;}
   void reportFinalPoint (const ::Thyra::ModelEvaluatorBase::InArgs<Scalar> &finalPoint, const bool wasSolved);
   //@}
 
