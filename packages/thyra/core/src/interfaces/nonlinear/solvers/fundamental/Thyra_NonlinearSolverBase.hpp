@@ -232,7 +232,7 @@ bool NonlinearSolverBase<Scalar>::is_W_current() const
 
 template <class Scalar>
 RCP<LinearOpWithSolveBase<Scalar> >
-NonlinearSolverBase<Scalar>::get_nonconst_W(const bool forceUpToDate)
+NonlinearSolverBase<Scalar>::get_nonconst_W(const bool  /*forceUpToDate*/)
 {
   return Teuchos::null;
 }
@@ -245,7 +245,7 @@ NonlinearSolverBase<Scalar>::get_W() const
 }
 
 template <class Scalar>
-void NonlinearSolverBase<Scalar>::set_W_is_current(bool W_is_current)
+void NonlinearSolverBase<Scalar>::set_W_is_current(bool  /*W_is_current*/)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
     true, std::logic_error,
