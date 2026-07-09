@@ -42,7 +42,8 @@ class BasicMappingStrategy : public MappingStrategy {
    *
    * \param[in]      rMap   Range map
    * \param[in]      dMap   Domain map
-   * \param[in]      comm   Teuchos::RCP<const Teuchos::Comm<int>> object related to the map
+   * \param[in]      comm   Teuchos::RCP<const Teuchos::Comm<Thyra::Ordinal>> object related to the
+   * map
    */
   BasicMappingStrategy(const Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& rMap,
                        const Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& dMap,

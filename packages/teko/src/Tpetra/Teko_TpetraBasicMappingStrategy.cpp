@@ -28,7 +28,7 @@ namespace TpetraHelpers {
 //    arguments:
 //       vars - Number of different variables
 //       map  - original Tpetra::Map to be broken up
-//       comm - Teuchos::RCP<const Teuchos::Comm<int>> object related to the map
+//       comm - Teuchos::RCP<const Teuchos::Comm<Thyra::Ordinal>> object related to the map
 //
 BasicMappingStrategy::BasicMappingStrategy(const Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& rMap,
                                            const Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& dMap,
