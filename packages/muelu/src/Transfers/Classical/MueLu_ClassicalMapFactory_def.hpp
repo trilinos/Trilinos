@@ -29,8 +29,6 @@
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
 
-#include "MueLu_LWGraph.hpp"
-
 #ifdef HAVE_MUELU_ZOLTAN2
 #include "MueLu_Zoltan2GraphAdapter.hpp"
 #include <Zoltan2_XpetraCrsGraphAdapter.hpp>

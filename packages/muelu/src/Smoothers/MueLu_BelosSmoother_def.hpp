@@ -78,7 +78,7 @@ void BelosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(Level& curr
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void BelosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupBelos(Level& currentLevel) {
+void BelosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupBelos(Level& /*currentLevel*/) {
   bool useTpetra = A_->getRowMap()->lib() == Xpetra::UseTpetra;
 
   if (useTpetra) {

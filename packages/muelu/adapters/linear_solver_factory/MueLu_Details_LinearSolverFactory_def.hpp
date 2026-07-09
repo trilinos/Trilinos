@@ -214,7 +214,7 @@ class LinearSolver<Tpetra::MultiVector<Scalar, LO, GO, Node>,
 template <class MV, class OP, class NormType>
 Teuchos::RCP<Trilinos::Details::LinearSolver<MV, OP, NormType> >
 LinearSolverFactory<MV, OP, NormType>::
-    getLinearSolver(const std::string& solverName) {
+    getLinearSolver(const std::string& /*solverName*/) {
   using Teuchos::rcp;
   return rcp(new MueLu::Details::LinearSolver<MV, OP, NormType>());
 }

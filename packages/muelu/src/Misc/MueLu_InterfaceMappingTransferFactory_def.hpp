@@ -22,7 +22,7 @@ RCP<const ParameterList> InterfaceMappingTransferFactory<LocalOrdinal, GlobalOrd
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-void InterfaceMappingTransferFactory<LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
+void InterfaceMappingTransferFactory<LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &fineLevel, Level & /*coarseLevel*/) const {
   Input(fineLevel, "CoarseDualNodeID2PrimalNodeID");
 }
 

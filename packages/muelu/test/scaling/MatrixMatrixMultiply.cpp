@@ -53,7 +53,7 @@ unsigned int generateSeed(Teuchos::Comm<int> const &comm, const double initSeed 
 
 //- -- --------------------------------------------------------
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int argc, char *argv[]) {
+int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib & /*lib*/, int argc, char *argv[]) {
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::StackedTimer;

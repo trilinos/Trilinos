@@ -43,7 +43,7 @@ class XpetraThyraLinearOp : public Xpetra::Operator<Scalar, LocalOrdinal, Global
 
   //! Constructor
   XpetraThyraLinearOp(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> A,
-                      RCP<ParameterList> params)
+                      RCP<ParameterList> /*params*/)
     : A_(A) {
     throw Exceptions::RuntimeError("Interface not supported");
   };
@@ -68,11 +68,11 @@ class XpetraThyraLinearOp : public Xpetra::Operator<Scalar, LocalOrdinal, Global
     \param[in]  X - Xpetra::MultiVector of dimension NumVectors to multiply with matrix.
     \param[out] Y - Xpetra::MultiVector of dimension NumVectors containing result.
   */
-  void apply(const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& X,
-             Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Y,
-             Teuchos::ETransp mode = Teuchos::NO_TRANS,
-             Scalar alpha          = Teuchos::ScalarTraits<Scalar>::one(),
-             Scalar beta           = Teuchos::ScalarTraits<Scalar>::one()) const {
+  void apply(const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& /*X*/,
+             Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& /*Y*/,
+             Teuchos::ETransp /*mode*/ = Teuchos::NO_TRANS,
+             Scalar /*alpha*/          = Teuchos::ScalarTraits<Scalar>::one(),
+             Scalar /*beta*/           = Teuchos::ScalarTraits<Scalar>::one()) const {
     throw Exceptions::RuntimeError("Interface not supported");
   }
 
@@ -80,9 +80,9 @@ class XpetraThyraLinearOp : public Xpetra::Operator<Scalar, LocalOrdinal, Global
   bool hasTransposeApply() const { return false; }
 
   //! Compute a residual R = B - (*this) * X
-  void residual(const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& X,
-                const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
-                Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& R) const {
+  void residual(const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& /*X*/,
+                const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& /*B*/,
+                Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& /*R*/) const {
     throw Exceptions::RuntimeError("Interface not supported");
   }
 
@@ -151,9 +151,9 @@ class XpetraThyraLinearOp<double, LocalOrdinal, GlobalOrdinal, Node> : public Xp
   */
   void apply(const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& X,
              Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Y,
-             Teuchos::ETransp mode = Teuchos::NO_TRANS,
-             Scalar alpha          = Teuchos::ScalarTraits<Scalar>::one(),
-             Scalar beta           = Teuchos::ScalarTraits<Scalar>::one()) const {
+             Teuchos::ETransp /*mode*/ = Teuchos::NO_TRANS,
+             Scalar alpha              = Teuchos::ScalarTraits<Scalar>::one(),
+             Scalar beta               = Teuchos::ScalarTraits<Scalar>::one()) const {
     RCP<const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> rcpX = Teuchos::rcpFromRef(X);
     RCP<const Thyra::MultiVectorBase<Scalar>> thyraX                               = Xpetra::ThyraUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::toThyraMultiVector(rcpX);
 

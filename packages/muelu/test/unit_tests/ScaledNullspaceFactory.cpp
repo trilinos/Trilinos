@@ -21,7 +21,6 @@
 #include <MueLu_ScaledNullspaceFactory.hpp>
 #include <MueLu_NullspaceFactory.hpp>
 #include <MueLu_TentativePFactory.hpp>
-#include <MueLu_TentativePFactory.hpp>
 #include <MueLu_TransPFactory.hpp>
 #include <MueLu_RAPFactory.hpp>
 #include <MueLu_SmootherFactory.hpp>

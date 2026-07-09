@@ -51,7 +51,7 @@ class GeneralGeometricPFactoryTester {
   virtual ~GeneralGeometricPFactoryTester() {}
   //@}
 
-  void TestComputeLinearInterpolationStencil(const GeneralGeometricPFactory& fac,
+  void TestComputeLinearInterpolationStencil(const GeneralGeometricPFactory& /*fac*/,
                                              const LO numDimension,
                                              const Array<Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> > coord,
                                              std::vector<double>& stencil)

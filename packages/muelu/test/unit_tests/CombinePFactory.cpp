@@ -23,7 +23,6 @@
 #include "MueLu_CombinePFactory.hpp"
 #include "MueLu_Exceptions.hpp"
 
-#include <Xpetra_StridedMapFactory.hpp>
 #include <Xpetra_BlockedCrsMatrix.hpp>
 
 #if defined(HAVE_XPETRA_THYRA) && defined(HAVE_MUELU_THYRA)

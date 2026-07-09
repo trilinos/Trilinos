@@ -1151,7 +1151,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     UpdateFactoryManager_Reitzinger(ParameterList& paramList, const ParameterList& defaultList,
-                                    FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const {
+                                    FactoryManager& manager, int levelID, std::vector<keep_pair>& /*keeps*/) const {
   ParameterList rParams;
   test_and_set_param_2list<bool>(paramList, defaultList, "repartition: enable", rParams);
   test_and_set_param_2list<bool>(paramList, defaultList, "repartition: use subcommunicators", rParams);
@@ -1182,7 +1182,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     UpdateFactoryManager_EminReitzinger(ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager,
-                                        int levelID, std::vector<keep_pair>& keeps) const {
+                                        int levelID, std::vector<keep_pair>& /*keeps*/) const {
   ParameterList rParams;
   test_and_set_param_2list<bool>(paramList, defaultList, "repartition: enable", rParams);
   test_and_set_param_2list<bool>(paramList, defaultList, "repartition: use subcommunicators", rParams);
@@ -1537,7 +1537,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     UpdateFactoryManager_RAP(ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager,
-                             int levelID, std::vector<keep_pair>& keeps) const {
+                             int /*levelID*/, std::vector<keep_pair>& keeps) const {
   if (paramList.isParameter("A") && !paramList.get<RCP<Matrix>>("A").is_null()) {
     // We have user matrix A
     manager.SetFactory("A", NoFactory::getRCP());
@@ -1761,7 +1761,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 // =====================================================================================================
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    UpdateFactoryManager_LocalOrdinalTransfer(const std::string& VarName, const std::string& multigridAlgo, ParameterList& paramList, const ParameterList& /* defaultList */,
+    UpdateFactoryManager_LocalOrdinalTransfer(const std::string& VarName, const std::string& multigridAlgo, ParameterList& /*paramList*/, const ParameterList& /* defaultList */,
                                               FactoryManager& manager, int levelID, std::vector<keep_pair>& /* keeps */) const {
   // NOTE: You would think this would be levelID > 0, but you'd be wrong, since the FactoryManager is basically
   // offset by a level from the things which actually do the work.
@@ -1868,7 +1868,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     UpdateFactoryManager_BlockNumber(ParameterList& paramList, const ParameterList& defaultList,
-                                     FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const {
+                                     FactoryManager& manager, int /*levelID*/, std::vector<keep_pair>& /*keeps*/) const {
   if (useBlockNumber_) {
     ParameterList myParams;
     RCP<Factory> fact = rcp(new InitialBlockNumberFactory());
@@ -1884,7 +1884,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     UpdateFactoryManager_Restriction(ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager,
-                                     int levelID, std::vector<keep_pair>& /* keeps */) const {
+                                     int /*levelID*/, std::vector<keep_pair>& /* keeps */) const {
   auto multigridAlgo = set_var_2list<std::string>(paramList, defaultList, "multigrid algorithm");
   bool have_userR    = false;
   if (paramList.isParameter("R") && !paramList.get<RCP<Matrix>>("R").is_null())
@@ -2186,7 +2186,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     UpdateFactoryManager_LowPrecision(ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager,
-                                      int levelID, std::vector<keep_pair>& keeps) const {
+                                      int /*levelID*/, std::vector<keep_pair>& /*keeps*/) const {
   auto enableLowPrecision = set_var_2list<bool>(paramList, defaultList, "transfers: half precision");
 
   if (enableLowPrecision) {
@@ -2533,7 +2533,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 // =====================================================================================================
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    UpdateFactoryManager_Replicate(ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager, int /* levelID */, std::vector<keep_pair>& keeps) const {
+    UpdateFactoryManager_Replicate(ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager, int /* levelID */, std::vector<keep_pair>& /*keeps*/) const {
   auto P = rcp(new MueLu::ReplicatePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>());
 
   ParameterList Pparams;
@@ -2548,7 +2548,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 // =====================================================================================================
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    UpdateFactoryManager_Combine(ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager, int /* levelID */, std::vector<keep_pair>& keeps) const {
+    UpdateFactoryManager_Combine(ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager, int /* levelID */, std::vector<keep_pair>& /*keeps*/) const {
   auto P = rcp(new MueLu::CombinePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>());
 
   ParameterList Pparams;
