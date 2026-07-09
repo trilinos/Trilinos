@@ -52,7 +52,7 @@ class StepperNewmarkImplicitDFormModifierXBase
    *  function.
    */
   void execute(Teuchos::RCP<SolutionHistory<Scalar> > sh,
-               Teuchos::RCP<StepperNewmarkImplicitDForm<Scalar> > stepper,
+               Teuchos::RCP<StepperNewmarkImplicitDForm<Scalar> > /*stepper*/,
                const typename StepperNewmarkImplicitDFormAppAction<
                    Scalar>::ACTION_LOCATION actLoc)
   {

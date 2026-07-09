@@ -53,7 +53,7 @@ class StepperBDF2ModifierXBase
    */
   void execute(
       Teuchos::RCP<SolutionHistory<Scalar> > sh,
-      Teuchos::RCP<StepperBDF2<Scalar> > stepper,
+      Teuchos::RCP<StepperBDF2<Scalar> > /*stepper*/,
       const typename StepperBDF2AppAction<Scalar>::ACTION_LOCATION actLoc)
   {
     using Teuchos::RCP;

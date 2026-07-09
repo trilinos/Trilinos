@@ -60,7 +60,7 @@ class TimeEventBase {
    *  \param time [in] The input time.
    *  \return True if time is near an event (within absolute tolerance).
    */
-  virtual bool isTime(Scalar time) const { return false; }
+  virtual bool isTime(Scalar /*time*/) const { return false; }
 
   /** \brief How much time until the next event.
    *
@@ -72,7 +72,7 @@ class TimeEventBase {
    *
    *  \return The time to the next event.
    */
-  virtual Scalar timeToNextEvent(Scalar time) const { return defaultTime_; }
+  virtual Scalar timeToNextEvent(Scalar /*time*/) const { return defaultTime_; }
 
   /** \brief Return the time of the next event following the input time.
    *
@@ -90,7 +90,7 @@ class TimeEventBase {
    *  \param time [in] Input time.
    *  \return Time of the next event.
    */
-  virtual Scalar timeOfNextEvent(Scalar time) const { return defaultTime_; }
+  virtual Scalar timeOfNextEvent(Scalar /*time*/) const { return defaultTime_; }
 
   /** \brief Test if an event occurs within the time range.
    *
@@ -109,7 +109,7 @@ class TimeEventBase {
    *
    *  \return True if a time event is within the range.
    */
-  virtual bool eventInRange(Scalar time1, Scalar time2) const { return false; }
+  virtual bool eventInRange(Scalar /*time1*/, Scalar /*time2*/) const { return false; }
 
   /** \brief Test if index is an event.
    *
@@ -121,7 +121,7 @@ class TimeEventBase {
    *  \param index [in] The input index.
    *  \return True if index is an event.
    */
-  virtual bool isIndex(int index) const { return false; }
+  virtual bool isIndex(int /*index*/) const { return false; }
 
   /** \brief How many indices until the next event.
    *
@@ -132,7 +132,7 @@ class TimeEventBase {
    *
    *  \return The index to the next event.
    */
-  virtual int indexToNextEvent(int index) const { return defaultIndex_; }
+  virtual int indexToNextEvent(int /*index*/) const { return defaultIndex_; }
 
   /** \brief Return the index of the next event following the input index.
    *
@@ -150,7 +150,7 @@ class TimeEventBase {
    *  \param index [in] Input index.
    *  \return Index of the next event.
    */
-  virtual int indexOfNextEvent(int index) const { return defaultIndex_; }
+  virtual int indexOfNextEvent(int /*index*/) const { return defaultIndex_; }
 
   /** \brief Test if an event occurs within the index range.
    *
@@ -167,11 +167,11 @@ class TimeEventBase {
    *
    *  \return True if a index event is within the range.
    */
-  virtual bool eventInRangeIndex(int index1, int index2) const { return false; }
+  virtual bool eventInRangeIndex(int /*index1*/, int /*index2*/) const { return false; }
 
   /// Describe member data.
   virtual void describe(Teuchos::FancyOStream &out,
-                        const Teuchos::EVerbosityLevel verbLevel) const
+                        const Teuchos::EVerbosityLevel /*verbLevel*/) const
   {
     auto l_out = Teuchos::fancyOStream(out.getOStream());
     Teuchos::OSTab ostab(*l_out, 2, "TimeEventBase");
