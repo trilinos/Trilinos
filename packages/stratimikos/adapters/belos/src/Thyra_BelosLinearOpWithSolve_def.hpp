@@ -679,24 +679,6 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
   SolveStatus<Scalar> solveStatus;
 
   switch (belosSolveStatus) {
-    case Belos::Unconverged: {
-      solveStatus.solveStatus = SOLVE_STATUS_UNCONVERGED;
-      // Set achievedTol even if the solver did not converge.  This is
-      // helpful for things like nonlinear solvers, which might be
-      // able to use a partially converged result, and which would
-      // like to know the achieved convergence tolerance for use in
-      // computing bounds.  It's also helpful for estimating whether a
-      // small increase in the maximum iteration count might be
-      // helpful next time.
-      try {
-        // Some solvers might not have implemented achievedTol().
-        // The default implementation throws std::runtime_error.
-        solveStatus.achievedTol = iterativeSolver_->achievedTol();
-      } catch (std::runtime_error&) {
-        // Do nothing; use the default value of achievedTol.
-      }
-      break;
-    }
     case Belos::Converged: {
       solveStatus.solveStatus = SOLVE_STATUS_CONVERGED;
       if (nonnull(generalSolveCriteriaBelosStatusTest)) {
@@ -724,7 +706,26 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
       }
       break;
     }
-    TEUCHOS_SWITCH_DEFAULT_DEBUG_ASSERT();
+    default: {
+    //case Belos::Unconverged: {
+      solveStatus.solveStatus = SOLVE_STATUS_UNCONVERGED;
+      // Set achievedTol even if the solver did not converge.  This is
+      // helpful for things like nonlinear solvers, which might be
+      // able to use a partially converged result, and which would
+      // like to know the achieved convergence tolerance for use in
+      // computing bounds.  It's also helpful for estimating whether a
+      // small increase in the maximum iteration count might be
+      // helpful next time.
+      try {
+        // Some solvers might not have implemented achievedTol().
+        // The default implementation throws std::runtime_error.
+        solveStatus.achievedTol = iterativeSolver_->achievedTol();
+      } catch (std::runtime_error&) {
+        // Do nothing; use the default value of achievedTol.
+      }
+      break;
+    }
+    //TEUCHOS_SWITCH_DEFAULT_DEBUG_ASSERT();
   }
 
   std::ostringstream ossmessage;
