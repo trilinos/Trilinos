@@ -316,12 +316,12 @@ namespace Intrepid2 {
       using FunctorType = F_modifyBasisByOrientationOperator
       <decltype(orts),
       decltype(output),decltype(input),
-      decltype(std::get<0>(op_tuple))>;
+      decltype(edgeOpData)>;
       Kokkos::parallel_for
       (policy,
        FunctorType(orts,
                    output, input,
-                   std::get<0>(op_tuple), std::get<1>(op_tuple), numEdges, numFaces,
+                   edgeOpData, faceOpData, numEdges, numFaces,
                    numPoints, dimBasis, leftMultiply, transpose));
     }
   }
@@ -507,17 +507,19 @@ namespace Intrepid2 {
       else if (cellDim == 2) numFaces = 1;
       
       const auto op_tuple = createOperators(basisLeft);
+      auto edgeOpData = std::get<0>(op_tuple);
+      auto faceOpData = std::get<1>(op_tuple);
       
       const Kokkos::RangePolicy<typename DT::execution_space> policy(0, numCells);
       using FunctorType = F_modifyBasisByOrientationOperator
       <decltype(orts),
       decltype(outputLeft),decltype(input),
-      decltype(std::get<0>(op_tuple))>;
+      decltype(edgeOpData)>;
       Kokkos::parallel_for
       (policy,
        FunctorType(orts,
                    outputLeft, input,
-                   std::get<0>(op_tuple), std::get<1>(op_tuple), numEdges, numFaces,
+                   edgeOpData, faceOpData, numEdges, numFaces,
                    numOtherFields, dimBasis, leftMultiply, transpose));
     }
     
@@ -544,17 +546,19 @@ namespace Intrepid2 {
       }
       
       const auto op_tuple = createOperators(basisRight);
+      auto edgeOpData = std::get<0>(op_tuple);
+      auto faceOpData = std::get<1>(op_tuple);
       
       const Kokkos::RangePolicy<typename DT::execution_space> policy(0, numCells);
       using FunctorType = F_modifyBasisByOrientationOperator
       <decltype(orts),
       decltype(output),decltype(input),
-      decltype(std::get<0>(op_tuple))>;
+      decltype(edgeOpData)>;
       Kokkos::parallel_for
       (policy,
        FunctorType(orts,
                    output, outputLeft,
-                   std::get<0>(op_tuple), std::get<1>(op_tuple), numEdges, numFaces,
+                   edgeOpData, faceOpData, numEdges, numFaces,
                    numOtherFields, dimBasis, leftMultiply, transpose));
     }
   }
