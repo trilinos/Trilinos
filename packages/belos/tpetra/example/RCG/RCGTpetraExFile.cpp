@@ -151,7 +151,6 @@ int run(int argc, char *argv[])
     
     // Perform solve
     Belos::ReturnType ret = newSolver->solve();
-    Belos::UnconvergedCauseType unconvergedCause = newSolver->getUnconvergedCause();
     
     // Compute actual residuals
     bool badRes = false;
@@ -171,7 +170,7 @@ int run(int argc, char *argv[])
       }
     }
 
-    if (ret==Belos::Converged && (unconvergedCause==Belos::SolverConverged) && !badRes) {
+    if (ret==Belos::Converged && !badRes) {
       success = true;
       if (proc_verbose)
         std::cout << std::endl << "SUCCESS:  Belos converged!" << std::endl;

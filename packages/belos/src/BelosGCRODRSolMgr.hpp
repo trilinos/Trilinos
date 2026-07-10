@@ -1309,7 +1309,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,true>::solve() {
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  this->unconvergedCause_ = Undetermined;
+  ReturnType retType = Undetermined;
 
   // Set the current parameters if they were not set before.
   // NOTE:  This may occur if the user generated the solver manager with the default constructor and
@@ -1498,16 +1498,16 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,true>::solve() {
         }
         catch (const StatusTestNaNError& e) {
           // A NaN was detected in the solver.  Set the solution to zero and return unconverged.
-          this->unconvergedCause_ = NaNDetected;
+          retType = NaNDetected;
           achievedTol_ = MT::one();
           Teuchos::RCP<MV> X = problem_->getLHS();
           MVT::MvInit( *X, SCT::zero() );
           printer_->stream(Warnings) << "Belos::GCRODRSolMgr::solve(): Warning! NaN has been detected!" 
                                      << std::endl;
-          return Unconverged; 
+          return retType; 
         }
         catch (const std::exception &e) {
-          this->unconvergedCause_ = NonspecificException;
+          retType = NonspecificException;
           printer_->stream(Errors) << "Error! Caught exception in GCRODRIter::iterate() at iteration "
                                    << gcrodr_prime_iter->getNumIters() << std::endl
                                    << e.what() << std::endl;
@@ -1721,7 +1721,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,true>::solve() {
           ////////////////////////////////////////////////////////////////////////////////////
           else if ( maxIterTest_->getStatus() == Passed ) {
             // we don't have convergence
-            this->unconvergedCause_ = MaxItersReached;
+            retType = MaxItersReached;
             isConverged = false;
             break;  // break from while(1){gcrodr_iter->iterate()}
           }
@@ -1747,7 +1747,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,true>::solve() {
 
             // NOTE:  If we have hit the maximum number of restarts then quit
             if (numRestarts >= maxRestarts_) {
-              this->unconvergedCause_ = MaxRestartsReached;
+              retType = MaxRestartsReached;
               isConverged = false;
               break; // break from while(1){gcrodr_iter->iterate()}
             }
@@ -1788,7 +1788,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,true>::solve() {
           ////////////////////////////////////////////////////////////////////////////////////
 
           else {
-            this->unconvergedCause_ = InconsistentState;
+            retType = InconsistentState;
             TEUCHOS_TEST_FOR_EXCEPTION(true,
               std::logic_error, "Belos::GCRODRSolMgr::solve: "
               "Invalid return from GCRODRIter::iterate().");
@@ -1801,13 +1801,13 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,true>::solve() {
           // Check to see if the most recent least-squares solution yielded convergence.
           sTest_->checkStatus( &*gcrodr_iter );
           if (convTest_->getStatus() != Passed) {
-            this->unconvergedCause_ = OrthonormFailure;
+            retType = OrthonormFailure;
             isConverged = false;
           }
           break;
         }
         catch (const std::exception& e) {
-          this->unconvergedCause_ = NonspecificException;
+          retType = NonspecificException;
           printer_->stream(Errors)
             << "Error! Caught exception in GCRODRIter::iterate() at iteration "
             << gcrodr_iter->getNumIters() << std::endl << e.what() << std::endl;
@@ -1887,10 +1887,10 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,true>::solve() {
     achievedTol_ = *std::max_element (pTestValues->begin(), pTestValues->end());
   }
 
-  if (isConverged) {
-    this->unconvergedCause_ = SolverConverged;
+  if (!isConverged) {
+    return retType; // return from solve()
   }
-  return isConverged ? Converged : Unconverged; // return from solve()
+  return Converged; // return from solve()
 }
 
 //  Given existing recycle space and Krylov space, build new recycle space

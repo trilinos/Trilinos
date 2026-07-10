@@ -237,19 +237,15 @@ testSolver (Teuchos::FancyOStream& out,
   myOut << "Solve the linear system" << endl;
   solver->setProblem (lp);
   const Belos::ReturnType belosResult = solver->solve ();
-  const Belos::UnconvergedCauseType unconvergedCause = solver->getUnconvergedCause ();
 
   myOut << "Belos solver wrapper result: "
 	<< (belosResult == Belos::Converged ? "Converged" : "Unconverged")
-	<< endl
-        << "Unconverged cause: " << Belos::convertUnconvergedCauseTypeToString (unconvergedCause)
         << endl
 	<< "Number of iterations: " << solver->getNumIters ()
 	<< endl;
 
   TEST_ASSERT( solver->getNumIters () <= maxAllowedNumIters );
   TEST_ASSERT( belosResult == Belos::Converged );
-  TEST_ASSERT( unconvergedCause == Belos::SolverConverged );
 
   myOut << "Check the explicit residual norm(s)" << endl;
 

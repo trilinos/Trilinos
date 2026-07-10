@@ -150,9 +150,8 @@ testSolver (Teuchos::FancyOStream& out,
   out << "Set up the solver" << endl;
   solver->setProblem (problem);
 
-  out << "Apply solver to \"solve\" AX=B for X, and check if it fails to converge with 'MaxItersReached' unconverged cause." << endl;
+  out << "Apply solver to \"solve\" AX=B for X, and check if it fails to converge with 'MaxItersReached'." << endl;
   Belos::ReturnType ret;
-  Belos::UnconvergedCauseType unconvergedCause;
 
   try {
     ret = solver->solve ();
@@ -162,12 +161,10 @@ testSolver (Teuchos::FancyOStream& out,
     success = false;
     return;
   }
-  unconvergedCause = solver->getUnconvergedCause();
   out << "ret = " << convertReturnTypeToString(ret)
-      << ", unconvergedCause = " << convertUnconvergedCauseTypeToString(unconvergedCause)
       << endl;
 
-  if ( (ret != Belos::Unconverged) || (unconvergedCause != Belos::MaxItersReached) ) {
+  if ( (ret != Belos::MaxItersReached) ) {
     success = false;
     return;
   }

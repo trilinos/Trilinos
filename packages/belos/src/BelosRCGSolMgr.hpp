@@ -1025,7 +1025,7 @@ void RCGSolMgr<ScalarType,MV,OP,true>::initializeStateStorage() {
 
 template<class ScalarType, class MV, class OP>
 ReturnType RCGSolMgr<ScalarType,MV,OP,true>::solve() {
-  this->unconvergedCause_ = Undetermined;
+  ReturnType retType = Undetermined;
 
   Teuchos::LAPACK<int,ScalarType> lapack;
   std::vector<int> index(recycleBlocks_);
@@ -1270,7 +1270,7 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,true>::solve() {
           ////////////////////////////////////////////////////////////////////////////////////
           else if ( maxIterTest_->getStatus() == Passed ) {
             // we don't have convergence
-            this->unconvergedCause_ = MaxItersReached;
+            retType = MaxItersReached;
             isConverged = false;
             break; // break from while(1){rcg_iter->iterate()}
           }
@@ -1721,23 +1721,23 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,true>::solve() {
           //
           ////////////////////////////////////////////////////////////////////////////////////
           else {
-            this->unconvergedCause_ = InconsistentState;
+            retType = InconsistentState;
             TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
                                "Belos::RCGSolMgr::solve(): Invalid return from RCGIter::iterate().");
           }
         }
         catch (const StatusTestNaNError& e) {
           // A NaN was detected in the solver.  Set the solution to zero and return unconverged.
-          this->unconvergedCause_ = NaNDetected;
+          retType = NaNDetected;
           achievedTol_ = MT::one();
           Teuchos::RCP<MV> X = problem_->getLHS();
           MVT::MvInit( *X, SCT::zero() );
           printer_->stream(Warnings) << "Belos::RCGSolMgr::solve(): Warning! NaN has been detected!" 
                                      << std::endl;
-          return Unconverged;
+          return retType;
         }
         catch (const std::exception &e) {
-          this->unconvergedCause_ = NonspecificException;
+          retType = NonspecificException;
           printer_->stream(Errors) << "Error! Caught std::exception in RCGIter::iterate() at iteration "
                                    << rcg_iter->getNumIters() << std::endl
                                    << e.what() << std::endl;
@@ -1854,9 +1854,8 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,true>::solve() {
   }
 
   if (!isConverged) {
-    return Unconverged; // return from RCGSolMgr::solve()
+    return retType; // return from RCGSolMgr::solve()
   }
-  this->unconvergedCause_ = SolverConverged;
   return Converged; // return from RCGSolMgr::solve()
 }
 

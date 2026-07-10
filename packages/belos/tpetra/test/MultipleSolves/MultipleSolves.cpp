@@ -181,8 +181,7 @@ testResiduals (bool& success,
                const Tpetra::MultiVector<>& B,
                const Tpetra::MultiVector<>& X_exact,
                const MT& tol,
-               const Belos::ReturnType& ret,
-               const Belos::UnconvergedCauseType& unconvergedCause)
+               const Belos::ReturnType& ret)
 {
   const size_t numRhs = X.getNumVectors ();
 
@@ -230,7 +229,7 @@ testResiduals (bool& success,
     out << "]" << endl;
   }
 
-  if (ret == Belos::Converged && (unconvergedCause == Belos::SolverConverged) && !badRes) {
+  if (ret == Belos::Converged && !badRes) {
     out << "Belos converged!" << endl;
   } else {
     success = false;
@@ -300,10 +299,9 @@ TEUCHOS_UNIT_TEST( MultipleSolves, GMRES )
 
   // Ask Belos to solve the linear system.
   Belos::ReturnType ret = solver->solve ();
-  Belos::UnconvergedCauseType unconvergedCause = solver->getUnconvergedCause();
 
   // Evaluate the result.
-  testResiduals (success, out, *A, *X, *B, *X_exact, tol, ret, unconvergedCause);
+  testResiduals (success, out, *A, *X, *B, *X_exact, tol, ret);
 
   //
   // Second solve: Exact solution is all 1.5.  We pick this because
@@ -325,10 +323,9 @@ TEUCHOS_UNIT_TEST( MultipleSolves, GMRES )
 
   // Ask Belos to solve the linear system.
   ret = solver->solve ();
-  unconvergedCause = solver->getUnconvergedCause();
 
   // Evaluate the result.
-  testResiduals (success, out, *A, *X, *B, *X_exact, tol, ret, unconvergedCause);
+  testResiduals (success, out, *A, *X, *B, *X_exact, tol, ret);
 }
 
 
@@ -393,10 +390,9 @@ TEUCHOS_UNIT_TEST( MultipleSolves, CG )
 
   // Ask Belos to solve the linear system.
   Belos::ReturnType ret = solver->solve ();
-  Belos::UnconvergedCauseType unconvergedCause = solver->getUnconvergedCause();
 
   // Evaluate the result.
-  testResiduals (success, out, *A, *X, *B, *X_exact, tol, ret, unconvergedCause);
+  testResiduals (success, out, *A, *X, *B, *X_exact, tol, ret);
 
   //
   // Second solve: Exact solution is all 1.5.  We pick this because
@@ -418,10 +414,9 @@ TEUCHOS_UNIT_TEST( MultipleSolves, CG )
 
   // Ask Belos to solve the linear system.
   ret = solver->solve ();
-  unconvergedCause = solver->getUnconvergedCause();
 
   // Evaluate the result.
-  testResiduals (success, out, *A, *X, *B, *X_exact, tol, ret, unconvergedCause);
+  testResiduals (success, out, *A, *X, *B, *X_exact, tol, ret);
 }
 
 } // namespace (anonymous)

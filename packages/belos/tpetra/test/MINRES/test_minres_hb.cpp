@@ -252,7 +252,6 @@ int run(int argc, char *argv[]) {
     // Solve the linear system.
     verbOut << "Solving the linear system" << std::endl << std::endl;
     Belos::ReturnType ret = newSolver->solve();
-    Belos::UnconvergedCauseType unconvergedCause = newSolver->getUnconvergedCause();
     verbOut << "Belos results:" << std::endl
       << "- Number of iterations: "
       << newSolver->getNumIters () << std::endl
@@ -287,7 +286,7 @@ int run(int argc, char *argv[]) {
         }
       }
     }
-    success = (ret == Belos::Converged && (unconvergedCause==Belos::SolverConverged) && !badRes);
+    success = (ret == Belos::Converged && !badRes);
     
     if (success) {
       verbOut << std::endl << "End Result: TEST PASSED" << std::endl;

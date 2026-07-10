@@ -185,9 +185,8 @@ testSolver (Teuchos::FancyOStream& out,
   out << "Set up the solver" << endl;
   solver->setProblem (problem);
 
-  out << "Apply solver to \"solve\" AX=B for X, and check if it fails to converge with 'OrthonormFailure' unconverged cause." << endl;
+  out << "Apply solver to \"solve\" AX=B for X, and check if it fails to converge with 'OrthonormFailure'." << endl;
   Belos::ReturnType ret;
-  Belos::UnconvergedCauseType unconvergedCause;
 
   try {
     ret = solver->solve ();
@@ -197,12 +196,10 @@ testSolver (Teuchos::FancyOStream& out,
     success = false;
     return;
   }
-  unconvergedCause = solver->getUnconvergedCause();
   out << "ret = " << convertReturnTypeToString(ret)
-      << ", unconvergedCause = " << convertUnconvergedCauseTypeToString(unconvergedCause)
       << endl;
 
-  if ( (ret != Belos::Unconverged) || (unconvergedCause != Belos::OrthonormFailure) ) {
+  if ( (ret != Belos::OrthonormFailure) ) {
     success = false;
     return;
   }

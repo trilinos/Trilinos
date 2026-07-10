@@ -155,7 +155,6 @@ try {
   //
   Belos::ReturnType ret;
   ret = newSolver->solve();
-  Belos::UnconvergedCauseType unconvergedCause = newSolver->getUnconvergedCause();
   int numIters1 = newSolver->getNumIters();
 
   //
@@ -189,7 +188,7 @@ try {
   int numIters3 = newSolver->getNumIters();
 
   //
-  if (ret!=Belos::Converged || unconvergedCause!=Belos::SolverConverged || badRes || numIters1 < numIters2 || numIters2 < numIters3) {
+  if (ret!=Belos::Converged || badRes || numIters1 < numIters2 || numIters2 < numIters3) {
     success = false;
     std::cout << std::endl << "ERROR: Belos GCRODR TEST FAILED!" << std::endl;
   } else {

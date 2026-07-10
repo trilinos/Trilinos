@@ -1770,7 +1770,7 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP>::solve() {
   using Teuchos::rcp;
   using Teuchos::rcp_const_cast;
 
-  this->unconvergedCause_ = Undetermined;
+  ReturnType retType = Undetermined;
 
   // MLP: NEED TO ADD CHECK IF PARAMETERS ARE SET LATER
 
@@ -2021,23 +2021,23 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP>::solve() {
           // Check to see if the most recent least-squares solution yielded convergence.
           sTest_->checkStatus( &*block_gmres_iter );
           if (convTest_->getStatus() != Passed) {
-            this->unconvergedCause_ = OrthonormFailure;
+            retType = OrthonormFailure;
             isConverged = false;
           }
         }
       } // end catch (const GmresIterationOrthoFailure &e)
       catch (const StatusTestNaNError& e) {
         // A NaN was detected in the solver.  Set the solution to zero and return unconverged.
-        this->unconvergedCause_ = NaNDetected;
+        retType = NaNDetected;
         achievedTol_ = MT::one();
         Teuchos::RCP<MV> X = problem_->getLHS();
         MVT::MvInit( *X, SCT::zero() );
         printer_->stream(Warnings) << "Belos::BlockGCRODRSolMgr::solve(): Warning! NaN has been detected!" 
                                      << std::endl;
-        return Unconverged;
+        return retType;
       }
       catch (const std::exception &e) {
-        this->unconvergedCause_ = NonspecificException;
+        retType = NonspecificException;
         printer_->stream(Errors) << "Error! Caught std::exception in BlockGmresIter::iterate() at iteration "
                                  << block_gmres_iter->getNumIters() << std::endl
                                  << e.what() << std::endl;
@@ -2176,7 +2176,7 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP>::solve() {
         // ***********************************
         else if(maxIterTest_->getStatus() == Passed ){
           // no convergence; hit maxit
-          this->unconvergedCause_ = MaxItersReached;
+          retType = MaxItersReached;
           isConverged = false;
           break; // from while(1)
         } //end elseif reached maxit
@@ -2196,7 +2196,7 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP>::solve() {
           printer_->stream(Debug) << " Generated new recycled subspace using RHS index " << currIdx[0] << " of dimension " << keff << std::endl << std::endl;
           // NOTE: If we have hit the maximum number of restarts, then we will quit
           if(numRestarts >= maxRestarts_) {
-            this->unconvergedCause_ = MaxRestartsReached;
+            retType = MaxRestartsReached;
             isConverged = false;
             break; //from while(1)
           } //end if max restarts
@@ -2235,7 +2235,7 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP>::solve() {
         // Something is wrong, and it is probably our fault.
         // ****************************************************************
         else {
-          this->unconvergedCause_ = InconsistentState;
+          retType = InconsistentState;
           TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Belos::BlockGCRODRSolMgr::solve(): Invalid return from BlockGCRODRIter::iterate().");
         } //end else (no status test passed)
 
@@ -2246,7 +2246,7 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP>::solve() {
         // Check to see if the most recent least-squares solution yielded convergence.
         sTest_->checkStatus( &*block_gcrodr_iter );
         if (convTest_->getStatus() != Passed) {
-          this->unconvergedCause_ = OrthonormFailure;
+          retType = OrthonormFailure;
 	  isConverged = false;
         }
         break;
@@ -2340,8 +2340,7 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP>::solve() {
   // just for the vectors from the last deflation?
   achievedTol_ = *std::max_element (pTestValues->begin(), pTestValues->end());
 
-  if (!isConverged) return Unconverged; // return from BlockGCRODRSolMgr::solve()
-  this->unconvergedCause_ = SolverConverged;
+  if (!isConverged) return retType; // return from BlockGCRODRSolMgr::solve()
   return Converged; // return from BlockGCRODRSolMgr::solve()
 } //end solve()
 

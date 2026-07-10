@@ -216,7 +216,6 @@ int run(int argc, char *argv[]) {
 
     // Perform solve
     Belos::ReturnType ret = newSolver->solve();
-    Belos::UnconvergedCauseType unconvergedCause = newSolver->getUnconvergedCause();
 
     stacked_timer->stopBaseTimer();
     Teuchos::StackedTimer::OutputOptions options;
@@ -249,7 +248,7 @@ int run(int argc, char *argv[]) {
       }
     }
 
-    if (ret==Belos::Converged && (unconvergedCause==Belos::SolverConverged) && !badRes) {
+    if (ret==Belos::Converged && !badRes) {
       if (procVerbose)
         *out << "End Result: TEST PASSED" << std::endl;
     } else {

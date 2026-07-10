@@ -174,7 +174,6 @@ int run(int argc, char *argv[]) {
 
     // Perform solve
     Belos::ReturnType ret = newSolver->solve();
-    Belos::UnconvergedCauseType unconvergedCause = newSolver->getUnconvergedCause();
 
     // Get the number of iterations for this solve.
     int numIters = newSolver->getNumIters();
@@ -199,7 +198,7 @@ int run(int argc, char *argv[]) {
       }
     }
 
-    if (ret==Belos::Converged && (unconvergedCause==Belos::SolverConverged) && !badRes) {
+    if (ret==Belos::Converged && !badRes) {
       success = true;
       if (procVerbose)
         std::cout << std::endl << "SUCCESS:  Belos converged!" << std::endl;

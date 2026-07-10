@@ -174,7 +174,6 @@ int main(int argc, char *argv[]) {
     // Perform solve
     //
     Belos::ReturnType ret = solver.solve();
-    Belos::UnconvergedCauseType unconvergedCause = solver.getUnconvergedCause();
     //
     // Compute actual residuals.
     //
@@ -197,7 +196,7 @@ int main(int argc, char *argv[]) {
       if (actRes > tol) badRes = true;
     }
 
-    success = (ret==Belos::Converged && (unconvergedCause==Belos::SolverConverged) && !badRes);
+    success = (ret==Belos::Converged && !badRes);
 
     if (success) {
       if (proc_verbose)

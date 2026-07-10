@@ -694,7 +694,7 @@ PCPGSolMgr<ScalarType,MV,OP,true>::getValidParameters() const
 // solve()
 template<class ScalarType, class MV, class OP>
 ReturnType PCPGSolMgr<ScalarType,MV,OP,true>::solve() {
-  this->unconvergedCause_ = Undetermined;
+  ReturnType retType = Undetermined;
 
   // Set the current parameters if are not set already.
   if (!isSet_) { setParameters( params_ ); }
@@ -849,7 +849,7 @@ ReturnType PCPGSolMgr<ScalarType,MV,OP,true>::solve() {
           ////////////////////////////////////////////////////////////////////////////////////
           else if ( maxIterTest_->getStatus() == Passed ) {
             // we don't have convergence
-            this->unconvergedCause_ = MaxItersReached;
+            retType = MaxItersReached;
             isConverged = false;
             break;  // break from while(1){pcpg_iter->iterate()}
           }
@@ -861,23 +861,23 @@ ReturnType PCPGSolMgr<ScalarType,MV,OP,true>::solve() {
           // Something is wrong, and it is probably the developers fault.
           //
           ////////////////////////////////////////////////////////////////////////////////////
-            this->unconvergedCause_ = InconsistentState;
+            retType = InconsistentState;
             TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
                                "Belos::PCPGSolMgr::solve(): Invalid return from PCPGIter::iterate().");
           } // end if
         } // end try
         catch (const StatusTestNaNError& e) {
           // A NaN was detected in the solver.  Set the solution to zero and return unconverged.
-          this->unconvergedCause_ = NaNDetected;
+          retType = NaNDetected;
           achievedTol_ = MT::one();
           Teuchos::RCP<MV> X = problem_->getLHS();
           MVT::MvInit( *X, SCT::zero() );
           printer_->stream(Warnings) << "Belos::PCPG::solve(): Warning! NaN has been detected!" 
                                      << std::endl;
-          return Unconverged;
+          return retType;
         }
         catch (const std::exception &e) {
-          this->unconvergedCause_ = NonspecificException;
+          retType = NonspecificException;
           printer_->stream(Errors) << "Error! Caught exception in PCPGIter::iterate() at iteration "
                                    << pcpg_iter->getNumIters() << std::endl
                                    << e.what() << std::endl;
@@ -1068,9 +1068,8 @@ ReturnType PCPGSolMgr<ScalarType,MV,OP,true>::solve() {
   numIters_ = maxIterTest_->getNumIters();
 
   if (!isConverged) {
-    return Unconverged; // return from PCPGSolMgr::solve()
+    return retType; // return from PCPGSolMgr::solve()
   }
-  this->unconvergedCause_ = SolverConverged;
   return Converged; // return from PCPGSolMgr::solve()
 }
 

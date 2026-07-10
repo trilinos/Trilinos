@@ -219,7 +219,6 @@ int run(int argc, char *argv[])
         std::cout << "MINRES solver threw an exception: " << e.what() << std::endl;
       throw e;
     }
-    Belos::UnconvergedCauseType unconvergedCause = newSolver->getUnconvergedCause();
     //
     // Compute actual residuals.
     //
@@ -240,7 +239,7 @@ int run(int argc, char *argv[])
       }
     }
 
-    if (ret==Belos::Converged && (unconvergedCause==Belos::SolverConverged) && !badRes) {
+    if (ret==Belos::Converged && !badRes) {
       success = true;
       if (proc_verbose)
         std::cout << std::endl << "End Result: TEST PASSED" << std::endl;

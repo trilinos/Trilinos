@@ -154,7 +154,6 @@ int run(int argc, char *argv[]) {
 
     // Perform solve
     Belos::ReturnType ret = initSolver->solve();
-    Belos::UnconvergedCauseType unconvergedCause = initSolver->getUnconvergedCause();
 
     // Compute actual residuals.
     std::vector<int> initIndex( initNumRHS );
@@ -179,7 +178,7 @@ int run(int argc, char *argv[]) {
       }
     }
 
-    if (ret == Belos::Converged && (unconvergedCause == Belos::SolverConverged) && !badRes) {
+    if (ret == Belos::Converged && !badRes) {
       // Ok
     }
     else {
@@ -231,9 +230,8 @@ int run(int argc, char *argv[]) {
 
     // Perform solve
     ret = augSolver->solve();
-    unconvergedCause = augSolver->getUnconvergedCause();
 
-    if (ret == Belos::Converged && (unconvergedCause == Belos::SolverConverged)) {
+    if (ret == Belos::Converged) {
       // Ok
     }
     else {
@@ -282,7 +280,7 @@ int run(int argc, char *argv[]) {
         if (actRes > tol ) badRes = true;
       }
     }
-    if (ret == Belos::Converged && (unconvergedCause == Belos::SolverConverged) && !badRes) {
+    if (ret == Belos::Converged && !badRes) {
       success = true;
       if (procVerbose)
         std::cout << "End Result: TEST PASSED" << std::endl;

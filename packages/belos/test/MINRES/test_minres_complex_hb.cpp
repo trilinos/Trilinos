@@ -164,7 +164,6 @@ bool proc_verbose = false;
   // Perform solve
   //
   Belos::ReturnType ret = solver.solve();
-  Belos::UnconvergedCauseType unconvergedCause = solver->getUnconvergedCause();
   //
   // Compute actual residuals.
   //
@@ -188,7 +187,7 @@ bool proc_verbose = false;
   delete [] rowind;
   delete [] cvals;
 
-success = ret==Belos::Converged && (unconvergedCause == Belos::SolverConverged) && !norm_failure;
+success = ret==Belos::Converged && !norm_failure;
 
 if (success) {
   if (proc_verbose)

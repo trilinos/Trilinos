@@ -716,7 +716,7 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::solve ()
 {
   const char prefix[] = "Belos::PseudoBlockCGSolMgr::solve: ";
 
-  this->unconvergedCause_ = Undetermined;
+  ReturnType retType = Undetermined;
 
   // Set the current parameters if they were not set before.
   // NOTE:  This may occur if the user generated the solver manager with the default constructor and
@@ -878,7 +878,7 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::solve ()
           ////////////////////////////////////////////////////////////////////////////////////
           else if ( maxIterTest_->getStatus() == Passed ) {
             // we don't have convergence
-            this->unconvergedCause_ = MaxItersReached;
+            retType = MaxItersReached;
             isConverged = false;
             break;  // break from while(1){block_cg_iter->iterate()}
           }
@@ -891,23 +891,23 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::solve ()
           ////////////////////////////////////////////////////////////////////////////////////
 
           else {
-            this->unconvergedCause_ = InconsistentState;
+            retType = InconsistentState;
             TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
                                "Belos::PseudoBlockCGSolMgr::solve(): Invalid return from PseudoBlockCGIter::iterate().");
           }
         }
         catch (const StatusTestNaNError& e) {
           // A NaN was detected in the solver.  Set the solution to zero and return unconverged.
-          this->unconvergedCause_ = NaNDetected;
+          retType = NaNDetected;
           achievedTol_ = MT::one();
           Teuchos::RCP<MV> X = problem_->getLHS();
           MVT::MvInit( *X, SCT::zero() );
           printer_->stream(Warnings) << "Belos::PseudoBlockCGSolMgr::solve(): Warning! NaN has been detected!"
                                      << std::endl;
-          return Unconverged;
+          return retType;
         }
         catch (const std::exception &e) {
-          this->unconvergedCause_ = NonspecificException;
+          retType = NonspecificException;
           printer_->stream(Errors) << "Error! Caught std::exception in PseudoBlockCGIter::iterate() at iteration "
                                    << block_cg_iter->getNumIters() << std::endl
                                    << e.what() << std::endl;
@@ -972,10 +972,9 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::solve ()
     condEstPerf = true;
   }
 
-  if (! isConverged) {
-    return Unconverged; // return from PseudoBlockCGSolMgr::solve()
+  if (!isConverged) {
+    return retType; // return from PseudoBlockCGSolMgr::solve()
   }
-  this->unconvergedCause_ = SolverConverged;
   return Converged; // return from PseudoBlockCGSolMgr::solve()
 }
 

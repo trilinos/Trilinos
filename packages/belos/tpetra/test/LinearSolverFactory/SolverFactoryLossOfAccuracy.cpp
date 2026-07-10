@@ -270,9 +270,8 @@ testSolver (Teuchos::FancyOStream& out,
   out << "Set up the solver" << endl;
   solver->setProblem (problem);
 
-  out << "Apply solver to \"solve\" AX=B for X, and check if it fails to converge with 'LossOfAccuracyDetected' unconverged cause." << endl;
+  out << "Apply solver to \"solve\" AX=B for X, and check if it fails to converge with 'LossOfAccuracyDetected'." << endl;
   Belos::ReturnType ret;
-  Belos::UnconvergedCauseType unconvergedCause;
 
   try {
     ret = solver->solve ();
@@ -282,14 +281,12 @@ testSolver (Teuchos::FancyOStream& out,
     success = false;
     return;
   }
-  unconvergedCause = solver->getUnconvergedCause();
   out << "ret = " << convertReturnTypeToString(ret)
-      << ", unconvergedCause = " << convertUnconvergedCauseTypeToString(unconvergedCause)
       << ", solver->isLOADetected() = " << solver->isLOADetected()
       << endl;
 
-  // Check that solver returned Unconverged.
-  if ( (ret != Belos::Unconverged) || (unconvergedCause != Belos::LossOfAccuracyDetected) || (solver->isLOADetected() != true) ) {
+  // Check that solver returned properly.
+  if ( (ret != Belos::LossOfAccuracyDetected) || (solver->isLOADetected() != true) ) {
     success = false;
     return;
   }

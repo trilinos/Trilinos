@@ -145,7 +145,6 @@ try {
   //
   Belos::ReturnType ret;
   ret = newSolver->solve();
-  Belos::UnconvergedCauseType unconvergedCause = newSolver->getUnconvergedCause();
 
   //
   // Compute actual residuals.
@@ -165,7 +164,7 @@ try {
     if (actRes > tol) badRes = true;
   }
 
-  if (ret==Belos::Converged && (unconvergedCause == Belos::SolverConverged) && !badRes) {
+  if (ret==Belos::Converged && !badRes) {
     success = true;
     std::cout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
   } else {

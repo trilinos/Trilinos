@@ -180,7 +180,6 @@ int main(int argc, char *argv[]) {
     // Perform solve
     //
     Belos::ReturnType ret = solver->solve();
-    Belos::UnconvergedCauseType unconvergedCause = solver->getUnconvergedCause();
     //
     // Compute actual residuals.
     //
@@ -208,7 +207,7 @@ int main(int argc, char *argv[]) {
     free(rowind);
     free(cvals);
 
-    success = ret==Belos::Converged && (unconvergedCause == Belos::SolverConverged) && !norm_failure;
+    success = ret==Belos::Converged && !norm_failure;
 
     if (success) {
       if (proc_verbose)

@@ -165,7 +165,6 @@ testSolver (Teuchos::FancyOStream& out,
   out << "Apply solver to \"solve\" AX=B for X.  Belos already has solver tests;"
     " the point is to check that solve() doesn't throw if it encounters a NaN." << endl;
   Belos::ReturnType ret;
-  Belos::UnconvergedCauseType unconvergedCause;
 
   try {
     ret = solver->solve ();
@@ -175,9 +174,7 @@ testSolver (Teuchos::FancyOStream& out,
     success = false;
     return;
   }
-  unconvergedCause = solver->getUnconvergedCause();
   out << "ret = " << convertReturnTypeToString(ret)
-      << ", unconvergedCause = " << convertUnconvergedCauseTypeToString(unconvergedCause)
       << endl;
 
   // Check that the solution vector is zeros, the achieved tolerance is 1, and the solver return Unconverged.
@@ -190,7 +187,7 @@ testSolver (Teuchos::FancyOStream& out,
     if ( normX[i] != MTS::zero() )
       nonZeroX = true;
   } 
-  if ( nonZeroX || (ret != Belos::Unconverged) || (unconvergedCause != Belos::NaNDetected) || ( solver->achievedTol() != MTS::one() ) ) {
+  if ( nonZeroX || (ret != Belos::NaNDetected) || ( solver->achievedTol() != MTS::one() ) ) {
     success = false;
     return;
   }

@@ -184,12 +184,11 @@ int run(int argc, char *argv[])
   MVT::MvInit( *X, SCT::zero() );
   solver.reset(Belos::Problem);
   ret = solver.solve();
-  Belos::UnconvergedCauseType unconvergedCause = solver.getUnconvergedCause ();
   numIters3=solver.getNumIters();
 
   if (proc_verbose) { std::cout << "Third solve took " << numIters3 << " iterations." << std::endl; }
 
-  if ( ret==Belos::Converged && (unconvergedCause==Belos::SolverConverged) && !badRes && numIters1 >= numIters2 && numIters2 >= numIters3 ) {
+  if ( ret==Belos::Converged && !badRes && numIters1 >= numIters2 && numIters2 >= numIters3 ) {
     // Ok
   }
   else {
