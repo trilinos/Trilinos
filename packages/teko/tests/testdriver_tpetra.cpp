@@ -39,8 +39,9 @@
 #include "src/tNeumannSeries_tpetra.hpp"
 #include "src/tPCDStrategy_tpetra.hpp"
 
-#ifdef TEKO_HAVE_EPETRA
 #include "src/tDiagonalPreconditionerFactory_tpetra.hpp"
+
+#ifdef TEKO_HAVE_EPETRA
 #include "src/tBlockJacobiPreconditionerFactory_tpetra.hpp"
 #include "src/tExplicitOps_tpetra.hpp"
 #include "src/Tpetra/tTpetraOperatorWrapper.hpp"
