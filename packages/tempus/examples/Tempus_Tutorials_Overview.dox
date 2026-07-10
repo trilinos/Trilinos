@@ -5,11 +5,18 @@
  *  \section progression_tutorial Progression Tutorial
  *
  *  The progression tutorials use the van der Pol problem to introduce
- *  \ref Tempus capabilities in a stepwise manner.  Starting from a simple
+ *  \ref Tempus capabilities in a stepwise manner. Starting from a simple
  *  application with a hand-written Forward Euler loop, the examples
  *  progressively introduce core \ref Tempus and Trilinos abstractions.
  *  Each example is runnable on its own, and each step adds one major concept
  *  while preserving as much of the previous example structure as possible.
+ *
+ *  Across the progression examples, the same basic problem is retained so the
+ *  reader can focus on what changes in the software structure rather than on a
+ *  changing mathematical model. The examples also print the evolving solution
+ *  in a simple table with columns for the step index, time, \f$x_0\f$, and
+ *  \f$x_1\f$, and they conclude with a regression comparison against shared
+ *  gold values for the final solution.
  *
  *  The tutorial sequence introduces the following concepts:
  *
@@ -55,14 +62,15 @@
  *
  *  <div style="margin:0.5em 0; padding:0.6em 0.8em; border:1px solid #ddd; border-radius:6px;">
  *    <b>Example 6: Time step control</b><br>
- *    Introduce TimeStepControl - introduce \ref Tempus::TimeStepControl
- *    to control timesteps with various strategies.
+ *    \ref example-06 "Introduce TimeStepControl" - introduce
+ *    \ref Tempus::TimeStepControl to control timestep sizes independently of
+ *    the stepper.
  *  </div>
  *
  *  <div style="margin:0.5em 0; padding:0.6em 0.8em; border:1px solid #ddd; border-radius:6px;">
  *    <b>Example 7: Time integrator orchestration</b><br>
- *    Utilize IntegratorBasic - use \ref Tempus::IntegratorBasic to manage
- *    the overall time integration process.
+ *    Utilize IntegratorBasic - use \ref Tempus::IntegratorBasic to manage the
+ *    overall time integration process.
  *  </div>
  *
  *  This progression is intended to show how applications can adopt
@@ -76,9 +84,17 @@
  *  - read the transition page describing what changed from the previous step
  *  - compare the files directly when line-by-line detail is needed
  *
+ *  The early examples show the control flow explicitly in application code.
+ *  Later examples move more of that responsibility into \ref Tempus objects
+ *  such as \ref Tempus::SolutionState, \ref Tempus::SolutionHistory,
+ *  \ref Tempus::Stepper, and \ref Tempus::TimeStepControl. This progression
+ *  is intentional: the tutorials are designed to make it clear which pieces
+ *  of logic remain in the application and which pieces are delegated to
+ *  \ref Tempus as the abstraction level increases.
+ *
  *  \htmlonly
  *  <div style="text-align:center;">
- *    <a href="example-00.html">Begin with Example 0: Problem Description →</a>
+ *    <a href="example-00.html">Begin with Example 0: Basic Problem →</a>
  *  </div>
  *  \endhtmlonly
  */

@@ -13,6 +13,8 @@
 #include <math.h>
 #include "Teuchos_StandardCatchMacros.hpp"
 
+#include "../00_Basic_Problem/Tutorial_Regression_Tester.hpp"
+
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_DefaultSpmdVectorSpace.hpp"
 #include "Thyra_DetachedVectorView.hpp"
@@ -28,27 +30,35 @@ using Teuchos::RCP;
 /** \page example-02 Example 2: Use ModelEvaluator
  *
  *  This example moves the van der Pol model into a
- *  \ref Thyra::ModelEvaluator.  The time integration loop still performs a
- *  hand-written Forward Euler update, but the right-hand side evaluation and
+ *  \ref Thyra::ModelEvaluator. The time integration loop still performs a
+ *  hand-written Forward Euler update, but the right-hand-side evaluation and
  *  nominal initial conditions are now obtained through the model interface.
  *
  *  The main purpose of this step is to separate the problem physics from the
  *  time integration algorithm.
  *
  *  Relative to \ref example-01:
- *  - the problem physics are encapsulated in a \ref Thyra::ModelEvaluator, `VanDerPol_ModelEvaluator_02`
+ *  - the problem physics are encapsulated in a \ref Thyra::ModelEvaluator,
+ *    `VanDerPol_ModelEvaluator_02`
  *  - initial conditions are obtained from `getNominalValues()`
  *  - right-hand-side evaluation is performed through `evalModel()`
- *  - the application begins to separate the model definition from the
- *    time integration logic
+ *  - the application begins to separate the model definition from the time
+ *    integration logic
  *
  *  \ref Thyra::ModelEvaluator provides a common Trilinos interface between
- *  application models and  <a href="https://www.osti.gov/servlets/purl/1264635">abstract numerical algorithms</a>.  For \ref Tempus,
- *  this interface is the standard mechanism for exposing governing equations
- *  to steppers and integrators.
+ *  application models and
+ *  <a href="https://www.osti.gov/servlets/purl/1264635">abstract numerical algorithms</a>.
+ *  For \ref Tempus, this interface is the standard mechanism for exposing
+ *  governing equations to steppers and integrators.
  *
  *  This example focuses only on the subset of \ref Thyra::ModelEvaluator
  *  behavior needed for explicit first-order ODEs.
+ *
+ *  As in the previous examples, the code prints the evolving solution in a
+ *  simple table with columns for the step index, time, \f$x_0\f$, and
+ *  \f$x_1\f$. The variable `passed` still indicates whether the hand-written
+ *  stepping loop succeeds, while overall tutorial success additionally
+ *  requires the final regression comparison to pass.
  *
  *  <hr>
  *  \par Transition notes
@@ -86,9 +96,19 @@ int main(int argc, char *argv[])
     int nTimeSteps = 2000;
     const double constDT = finalTime/nTimeSteps;
 
+    // Output
+    cout << std::fixed;
+    cout << std::setw(8)  << "index"
+         << std::setw(10) << "time"
+         << std::setw(12) << "x_0"
+         << std::setw(12) << "x_1" << endl;
+
+    cout << std::setw(8)  << n
+         << std::setw(10) << std::setprecision(3) << time
+         << std::setw(12) << std::setprecision(4) << get_ele(*x_n, 0)
+         << std::setw(12) << std::setprecision(4) << get_ele(*x_n, 1) << endl;
+
     // Advance the solution to the next timestep.
-    cout << n << "  " << time << "  " << get_ele(*(x_n), 0)
-                              << "  " << get_ele(*(x_n), 1) << endl;
     while (passed && time < finalTime && n < nTimeSteps) {
 
       // Initialize next time step
@@ -123,31 +143,17 @@ int main(int argc, char *argv[])
       }
 
       // Output
-      if ( n%100 == 0 )
-        cout << n << "  " << time << "  " << get_ele(*(x_n), 0)
-                                  << "  " << get_ele(*(x_n), 1) << endl;
+      if (n % 100 == 0)
+        cout << std::setw(8)  << n
+             << std::setw(10) << std::setprecision(3) << time
+             << std::setw(12) << std::setprecision(4) << get_ele(*x_n, 0)
+             << std::setw(12) << std::setprecision(4) << get_ele(*x_n, 1) << endl;
     }
 
     // Test for regression.
-    RCP<Thyra::VectorBase<double> > x_regress = x_n->clone_v();
-    {
-      Thyra::DetachedVectorView<double> x_regress_view(*x_regress);
-      x_regress_view[0] = -1.59496108218721311;
-      x_regress_view[1] =  0.96359412806611255;
-    }
+    bool regressionPassed = tutorialRegressionTest(x_n);
 
-    RCP<Thyra::VectorBase<double> > x_error = x_n->clone_v();
-    Thyra::V_VmV(x_error.ptr(), *x_n, *x_regress);
-    double x_L2norm_error   = Thyra::norm_2(*x_error  );
-    double x_L2norm_regress = Thyra::norm_2(*x_regress);
-
-    cout << "Relative L2 Norm of the error (regression) = "
-         << x_L2norm_error/x_L2norm_regress << endl;
-    if ( x_L2norm_error > 1.0e-08*x_L2norm_regress) {
-      passed = false;
-      cout << "FAILED regression constraint!" << endl;
-    }
-    if (passed) success = true;
+    if (passed && regressionPassed) success = true;
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 

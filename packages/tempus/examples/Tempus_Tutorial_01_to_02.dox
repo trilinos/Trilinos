@@ -4,8 +4,9 @@
  *
  *  The primary goal of \ref example-02 is to move the van der Pol problem
  *  definition into a \ref Thyra::ModelEvaluator while preserving the same
- *  \ref Thyra-based state representation and the same Forward Euler stepping
- *  logic used in \ref example-01.
+ *  \ref Thyra vector-based state representation, the same hand-written Forward Euler
+ *  stepping logic, the same simple tabular output, and the same regression
+ *  workflow used in \ref example-01.
  *
  *  New concepts introduced are:
  *
@@ -14,16 +15,16 @@
  *  - `getNominalValues()`
  *    - provides nominal initial conditions from the model
  *  - `Thyra::ModelEvaluatorBase::InArgs`
- *    - supplies the model inputs such as time and state
+ *    - supplies model inputs such as time and state
  *  - `Thyra::ModelEvaluatorBase::OutArgs`
- *    - receives the model outputs such as the right-hand side
+ *    - receives model outputs such as the right-hand side
  *  - `evalModel()`
  *    - evaluates the model using the supplied input and output arguments
  *
  *  This is the first step in separating the problem physics from the
- *  time integration algorithm.  Rather than evaluating the right-hand side
+ *  time integration algorithm. Rather than evaluating the right-hand side
  *  directly in the application, the code now requests that evaluation through
- *  a common model interface.  This is a key part of how \ref Tempus steppers
+ *  a common model interface. This is a key part of how \ref Tempus steppers
  *  and integrators interact with application models.
  *
  *  \section tempus_tutorial_transition_01_02_same What stays the same
@@ -31,6 +32,7 @@
  *  - The state is still stored in \ref Thyra vectors.
  *  - The timestepper is still Forward Euler.
  *  - The application still controls the time loop directly.
+ *  - The output table still reports the step index, time, \f$x_0\f$, and \f$x_1\f$.
  *  - The regression check follows the same pattern.
  *
  *  \section tempus_tutorial_transition_01_02_snippets Selected code excerpts
@@ -42,7 +44,7 @@
  *  <hr style="border:0; border-top:5px solid #ccc;">
  *  \subsection tempus_tutorial_transition_01_02_snippet1 Construct the model
  *
- *  <b>Construct a ModelEvaluator.</b>  The application now creates an object
+ *  <b>Construct a ModelEvaluator.</b> The application now creates an object
  *  that represents the problem model.
  *
  *  <b>Before</b>
@@ -64,7 +66,7 @@
  *  <hr style="border:0; border-top:5px solid #ccc;">
  *  \subsection tempus_tutorial_transition_01_02_snippet2 Get initial conditions
  *
- *  <b>Obtain nominal initial conditions from the model.</b>  The nominal
+ *  <b>Obtain nominal initial conditions from the model.</b> The nominal
  *  solution and its time derivative are no longer assembled manually.
  *
  *  <b>Before</b>
@@ -84,7 +86,7 @@
  *  <hr style="border:0; border-top:5px solid #ccc;">
  *  \subsection tempus_tutorial_transition_01_02_snippet3 Evaluate the model
  *
- *  <b>Evaluate the right-hand side through ModelEvaluator.</b>  The
+ *  <b>Evaluate the right-hand side through ModelEvaluator.</b> The
  *  application fills `InArgs` and `OutArgs` and then requests the model
  *  evaluation.
  *
@@ -127,8 +129,8 @@
  *
  *  @code{.sh}
  *  git diff --no-index \
- *    <(sed -n '59,129p' examples/01_Utilize_Thyra/01_Utilize_Thyra.cpp) \
- *    <(sed -n '66,130p' examples/02_Use_ModelEvaluator/02_Use_ModelEvaluator.cpp)
+ *    <(sed -n '70,164p' examples/01_Utilize_Thyra/01_Utilize_Thyra.cpp) \
+ *    <(sed -n '76,164p' examples/02_Use_ModelEvaluator/02_Use_ModelEvaluator.cpp)
  *  @endcode
  *
  *  This ignores leading header lines (e.g., `#include` statements and

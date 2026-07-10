@@ -13,6 +13,8 @@
 #include <math.h>
 #include "Teuchos_StandardCatchMacros.hpp"
 
+#include "../00_Basic_Problem/Tutorial_Regression_Tester.hpp"
+
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_DefaultSpmdVectorSpace.hpp"
 #include "Thyra_DetachedVectorView.hpp"
@@ -30,10 +32,11 @@ using Teuchos::RCP;
 /** \page example-03 Example 3: Introduce SolutionState
  *
  *  This example introduces \ref Tempus::SolutionState, which stores the
- *  solution and selected metadata at a particular time.  The model is still
+ *  solution and selected metadata at a particular time. The model is still
  *  provided through a \ref Thyra::ModelEvaluator, and the Forward Euler update
  *  is still written explicitly in the application code, but the evolving state
- *  of the integration is now organized using a core \ref Tempus data structure.
+ *  of the integration is now organized using a core \ref Tempus data
+ *  structure.
  *
  *  The main purpose of this step is to move from ad hoc scalar bookkeeping to
  *  a structured representation of the solution and its integration metadata.
@@ -46,16 +49,23 @@ using Teuchos::RCP;
  *  - the example begins to follow \ref Tempus conventions for managing
  *    solution state during time integration
  *
- *  The central idea behind \ref Tempus::SolutionState is that it should contain
- *  the information needed to represent a solution at a specific time in a form
- *  suitable for restart, checkpointing, diagnostics, and recovery from failed
- *  timesteps.
+ *  The central idea behind \ref Tempus::SolutionState is that it should
+ *  contain the information needed to represent a solution at a specific time
+ *  in a form suitable for restart, checkpointing, diagnostics, and recovery
+ *  from failed timesteps.
  *
  *  This example uses only part of the full \ref Tempus::SolutionState
  *  capability:
  *  - the solution vector \f$x(t)\f$
  *  - selected metadata from \ref Tempus::SolutionStateMetaData
- *  - For additional details, see \ref SolutionState_Description.
+ *
+ *  For additional details, see \ref SolutionState_Description.
+ *
+ *  The example continues to print the evolving solution in a simple table with
+ *  columns for step index, time, \f$x_0\f$, and \f$x_1\f$. In this example,
+ *  the local variable `passed` used at the end reflects whether the final
+ *  \ref Tempus::SolutionState status is `PASSED`. Overall tutorial success
+ *  additionally requires that the final solution satisfy the regression check.
  *
  *  <hr>
  *  \par Transition notes
@@ -94,6 +104,19 @@ int main(int argc, char *argv[])
     double finalTime = 2.0;
     int nTimeSteps = 2000;
     const double constDT = finalTime/nTimeSteps;
+
+    // Output
+    cout << std::fixed;
+    cout << std::setw(8)  << "index"
+         << std::setw(10) << "time"
+         << std::setw(12) << "x_0"
+         << std::setw(12) << "x_1" << endl;
+
+    cout << std::setw(8)  << solState->getIndex()
+         << std::setw(10) << std::setprecision(3) << solState->getTime()
+         << std::setw(12) << std::setprecision(4) << get_ele(*(solState->getX()), 0)
+         << std::setw(12) << std::setprecision(4) << get_ele(*(solState->getX()), 1)
+         << endl;
 
     // Advance the solution to the next timestep.
     while (solState->getSolutionStatus() == Tempus::Status::PASSED &&
@@ -138,33 +161,19 @@ int main(int argc, char *argv[])
       }
 
       // Output
-      if ( solState->getIndex()%100 == 0 )
-        cout << solState->getIndex() << "  " << time
-             << "  " << get_ele(*(x_n), 0)
-             << "  " << get_ele(*(x_n), 1) << endl;
+      if (solState->getIndex() % 100 == 0)
+        cout << std::setw(8)  << solState->getIndex()
+             << std::setw(10) << std::setprecision(3) << solState->getTime()
+             << std::setw(12) << std::setprecision(4) << get_ele(*(solState->getX()), 0)
+             << std::setw(12) << std::setprecision(4) << get_ele(*(solState->getX()), 1)
+             << endl;
     }
 
     // Test for regression.
-    RCP<Thyra::VectorBase<double> > x_n    = solState->getX();
-    RCP<Thyra::VectorBase<double> > x_regress = x_n->clone_v();
-    {
-      Thyra::DetachedVectorView<double> x_regress_view(*x_regress);
-      x_regress_view[0] = -1.59496108218721311;
-      x_regress_view[1] =  0.96359412806611255;
-    }
+    bool passed = (solState->getSolutionStatus() == Tempus::Status::PASSED);
+    bool regressionPassed = tutorialRegressionTest(solState);
 
-    RCP<Thyra::VectorBase<double> > x_error = x_n->clone_v();
-    Thyra::V_VmV(x_error.ptr(), *x_n, *x_regress);
-    double x_L2norm_error   = Thyra::norm_2(*x_error  );
-    double x_L2norm_regress = Thyra::norm_2(*x_regress);
-
-    cout << "Relative L2 Norm of the error (regression) = "
-         << x_L2norm_error/x_L2norm_regress << endl;
-    if ( x_L2norm_error > 1.0e-08*x_L2norm_regress) {
-      solState->setSolutionStatus(Tempus::Status::FAILED);
-      cout << "FAILED regression constraint!" << endl;
-    }
-    if (solState->getSolutionStatus() == Tempus::Status::PASSED) success = true;
+    if (passed && regressionPassed) success = true;
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 

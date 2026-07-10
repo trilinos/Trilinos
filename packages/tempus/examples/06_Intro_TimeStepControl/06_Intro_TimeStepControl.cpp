@@ -25,61 +25,66 @@
 #include "Tempus_SolutionHistory.hpp"
 #include "Tempus_Stepper.hpp"
 #include "Tempus_StepperForwardEuler.hpp"
-
+#include "Tempus_TimeStepControl.hpp"
 
 using namespace std;
 using Teuchos::RCP;
 
 /** @file */
 
-/** \page example-05 Example 5: Introduce Stepper
+/** \page example-06 Example 6: Introduce TimeStepControl
  *
- *  This example introduces \ref Tempus::Stepper through
- *  \ref Tempus::StepperForwardEuler. The van der Pol model is still provided
- *  through a \ref Thyra::ModelEvaluator, and the application still manages the
- *  overall time loop and \ref Tempus::SolutionHistory. However, the Forward
- *  Euler step itself is now delegated to a Tempus stepper object rather than
- *  being written explicitly in the application code.
+ *  This example introduces \ref Tempus::TimeStepControl, which manages
+ *  timestep-size selection independently of the stepper and application time
+ *  loop. The van der Pol model is still provided through a
+ *  \ref Thyra::ModelEvaluator, the Forward Euler step is still performed by
+ *  \ref Tempus::StepperForwardEuler, and the application still manages the
+ *  overall time loop and \ref Tempus::SolutionHistory. However, timestep-size
+ *  selection is now delegated to a \ref Tempus::TimeStepControl object rather
+ *  than being hardcoded directly in the application.
  *
- *  The main purpose of this step is to separate the stepping algorithm from
- *  the surrounding application logic.
+ *  The main purpose of this step is to separate timestep-selection policy from
+ *  both the stepping algorithm and the surrounding application logic.
+ *  It should be noted that a \ref Tempus::Stepper may suggest a future
+ *  timestep size, but the final timestep-size selection occurs in
+ *  \ref Tempus::TimeStepControl.
  *
- *  Relative to \ref example-04:
- *  - the Forward Euler update is performed by a \ref Tempus::Stepper
- *  - the specific stepper used is \ref Tempus::StepperForwardEuler
- *  - the application still manages the time loop and
- *    \ref Tempus::SolutionHistory
- *  - the stepper advances the working state using the model and timestep
- *    information already stored in the history
+ *  Relative to \ref example-05:
+ *  - timestep control is moved into \ref Tempus::TimeStepControl
+ *  - the application initializes a dedicated timestep-control object
+ *  - the time loop uses the control object to determine whether the current
+ *    time and step index remain in range
+ *  - timestep metadata for each new working state is assigned through the
+ *    control object rather than directly in the application
+ *  - the stepper and solution-history logic remain essentially unchanged
  *
- *  The central idea behind \ref Tempus::Stepper is that a time integration
- *  algorithm should be encapsulated in its own object. This allows the
- *  application to reuse the same surrounding logic while changing only the
- *  stepping algorithm.
+ *  The central idea behind \ref Tempus::TimeStepControl is that timestep size
+ *  should be managed by a dedicated object that can enforce integration
+ *  limits, policies, and strategies independently of the stepper itself.
  *
- *  This example uses only part of the full \ref Tempus::Stepper capability:
- *  - construction and initialization of a \ref Tempus::StepperForwardEuler
- *  - attaching a \ref Thyra::ModelEvaluator to the stepper
- *  - setting initial conditions for the stepper
- *  - advancing one step at a time through the stepper
- *  - continued use of \ref Tempus::SolutionHistory under application control
+ *  This example uses only part of the full \ref Tempus::TimeStepControl
+ *  capability:
+ *  - setting the final integration time
+ *  - setting the number of time steps for constant-timestep control
+ *  - using the control object to determine timestep metadata for each step
+ *  - using the control object to test whether time and step index remain in range
  *
  *  The example continues to print the evolving solution in a simple table with
- *  columns for step index, time, \f$x_0\f$, and \f$x_1\f$. Here, the local
- *  variable `passed` at the end reflects whether the final accepted
- *  \ref Tempus::SolutionState has status `PASSED`. Overall tutorial success
- *  additionally requires that the final solution satisfy the regression check.
+ *  columns for step index, time, \f$x_0\f$, and \f$x_1\f$. As in the previous
+ *  examples, overall tutorial success should require both a successful
+ *  integration status and a passing regression comparison of the final
+ *  solution.
  *
  *  <hr>
  *  \par Transition notes
- *  See \ref tempus_tutorial_transition_04_05 for a detailed explanation
- *  of what changed from \ref example-04.
+ *  See \ref tempus_tutorial_transition_05_06 for a detailed explanation
+ *  of what changed from \ref example-05.
  *
  *  \htmlonly
  *  <div style="text-align:center;">
- *    <a href="example-04.html">← Previous Example</a> |
+ *    <a href="example-05.html">← Previous Example</a> |
  *    <a href="tempus_tutorials_overview.html">Tutorial Overview</a> |
- *    <a href="example-06.html">Next Example →</a>
+ *    <a href="example-07.html">Next Example →</a>
  *  </div>
  *  \endhtmlonly
  */
@@ -109,10 +114,13 @@ int main(int argc, char *argv[])
     stepper->initialize();
     stepper->setInitialConditions(solHistory);
 
-    // Timestep size
-    double finalTime = 2.0;
-    int nTimeSteps = 2000;
-    const double constDT = finalTime/nTimeSteps;
+    // Create and initialize TimeStepControl
+    auto timeStepControl = Teuchos::rcp(new Tempus::TimeStepControl<double>());
+    timeStepControl->setFinalTime(2.0);
+    timeStepControl->setNumTimeSteps(2000);
+    timeStepControl->initialize();
+
+    Tempus::Status integratorStatus = Tempus::Status::WORKING;
 
     // Output
     cout << std::fixed;
@@ -130,19 +138,14 @@ int main(int argc, char *argv[])
 
     // Advance the solution to the next timestep.
     while (solHistory->getCurrentState()->getSolutionStatus() == Tempus::Status::PASSED &&
-           solHistory->getCurrentTime() < finalTime &&
-           solHistory->getCurrentIndex() < nTimeSteps  ) {
+           timeStepControl->timeInRange(solHistory->getCurrentTime()) &&
+           timeStepControl->indexInRange(solHistory->getCurrentIndex())) {
 
       // Initialize next time step using SolutionHistory
       solHistory->initWorkingState();
-      auto workingState = solHistory->getWorkingState();
 
-      // Set the timestep and time for the working solution, i.e., n+1.
-      int index = workingState->getIndex();  // Already incremented by initWorkingState()
-      double dt = constDT;
-      double time = index*dt;
-      workingState->setTime(time);
-      workingState->setTimeStep(dt);
+      // Let TimeStepControl determine the next time-step metadata.
+      timeStepControl->setNextTimeStep(solHistory, integratorStatus);
 
       // Take one Forward Euler step through Tempus::StepperForwardEuler
       stepper->takeStep(solHistory);
