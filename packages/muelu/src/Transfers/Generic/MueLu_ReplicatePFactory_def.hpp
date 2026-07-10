@@ -54,7 +54,7 @@ void ReplicatePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& 
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void ReplicatePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLevel,
+void ReplicatePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& /*fineLevel*/,
                                                                           Level& coarseLevel) const {
   FactoryMonitor m(*this, "Build", coarseLevel);
 

@@ -489,10 +489,10 @@ bool AdditiveSchwarzFilter<MatrixType>::isFillComplete() const {
 
 template <class MatrixType>
 void AdditiveSchwarzFilter<MatrixType>::
-    getGlobalRowCopy(global_ordinal_type globalRow,
-                     nonconst_global_inds_host_view_type& globalInd,
-                     nonconst_values_host_view_type& val,
-                     size_t& numEntries) const {
+    getGlobalRowCopy(global_ordinal_type /*globalRow*/,
+                     nonconst_global_inds_host_view_type& /*globalInd*/,
+                     nonconst_values_host_view_type& /*val*/,
+                     size_t& /*numEntries*/) const {
   throw std::runtime_error("Ifpack2::Details::AdditiveSchwarzFilter does not implement getGlobalRowCopy.");
 }
 

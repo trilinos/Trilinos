@@ -53,7 +53,7 @@ class StepperLeapfrogModifierXBase
    */
   void execute(
       Teuchos::RCP<SolutionHistory<Scalar> > sh,
-      Teuchos::RCP<StepperLeapfrog<Scalar> > stepper,
+      Teuchos::RCP<StepperLeapfrog<Scalar> > /*stepper*/,
       const typename StepperLeapfrogAppAction<Scalar>::ACTION_LOCATION actLoc)
   {
     using Teuchos::RCP;

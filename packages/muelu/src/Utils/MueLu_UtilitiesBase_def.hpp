@@ -33,11 +33,9 @@
 
 #include <Xpetra_Import.hpp>
 #include <Xpetra_ImportFactory.hpp>
-#include <Xpetra_MatrixMatrix.hpp>
 #include <Xpetra_CrsGraph.hpp>
 #include <Xpetra_CrsGraphFactory.hpp>
 #include <Xpetra_CrsMatrixWrap.hpp>
-#include <Xpetra_MatrixFactory.hpp>
 #include <Xpetra_StridedMap.hpp>
 
 #include "MueLu_Exceptions.hpp"
@@ -46,7 +44,6 @@
 
 #include <KokkosKernels_Handle.hpp>
 #include <KokkosGraph_RCM.hpp>
-#include "MueLu_Behavior.hpp"
 #include <MueLu_Level.hpp>
 #include <MueLu_FactoryManager.hpp>
 #include <MueLu_InverseApproximationFactory.hpp>

@@ -40,10 +40,8 @@ ELSE()
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tGraphLaplacian.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tBlockUpperTriInverseOp.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tDiagonalPreconditionerFactory.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/tStratimikosFactory.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tBlockJacobiPreconditionerFactory_tpetra.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/tDiagonalPreconditionerFactory_tpetra.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tExplicitOps_tpetra.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Tpetra/tTpetraOperatorWrapper.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Tpetra/tBlockedTpetraOperator.cpp
@@ -278,16 +276,17 @@ IF(TEKO_HAVE_EPETRA)
     NUM_MPI_PROCS 2
   )
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    StratimikosFactory
-    SOURCES
-    unit_tests/tStratimikosFactory.cpp
-    ${UNIT_TEST_DRIVER}
-    COMM serial mpi
-    ARGS ${SERIAL_ARGS_STRING}
-    NUM_MPI_PROCS 1
-  )
 ENDIF()
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  StratimikosFactory
+  SOURCES
+  unit_tests/tStratimikosFactory.cpp
+  ${UNIT_TEST_DRIVER}
+  COMM serial mpi
+  ARGS ${SERIAL_ARGS_STRING}
+  NUM_MPI_PROCS 1
+)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ALOperator

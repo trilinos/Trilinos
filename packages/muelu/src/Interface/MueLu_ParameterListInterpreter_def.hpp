@@ -108,6 +108,7 @@ namespace MueLu {
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ParameterListInterpreter(ParameterList& paramList, Teuchos::RCP<const Teuchos::Comm<int>> comm, Teuchos::RCP<FactoryFactory> factFact, Teuchos::RCP<FacadeClassFactory> facadeFact)
   : factFact_(factFact) {
+  SetMinvAProjectionVariables(paramList);
   RCP<Teuchos::TimeMonitor> tM = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer(std::string("MueLu: ParameterListInterpreter (ParameterList)"))));
   if (facadeFact == Teuchos::null)
     facadeFact_ = Teuchos::rcp(new FacadeClassFactory());
@@ -143,6 +144,7 @@ ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ParameterLi
 
   ParameterList paramList;
   Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<ParameterList>(&paramList), comm);
+  SetMinvAProjectionVariables(paramList);
   SetParameterList(paramList);
 }
 
@@ -173,6 +175,26 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetPar
     ExtractNonSerializableData(paramList, serialList, nonSerialList);
     Validate(serialList);
     SetEasyParameterList(paramList);
+  }
+  if (paramList.isParameter("aggregation: strength-of-connection: matrix") && (paramList.get<std::string>("aggregation: strength-of-connection: matrix") == "MinvA") && paramList.isSublist("user data")) {
+    //  check if Muelu option is inconsistent with user data provided. Here we
+    //  assume that data has not been stripped out of user list.
+    bool Minv_Supplied = false, M_Supplied = false, MinvA_Supplied = false;
+    const Teuchos::ParameterList& userList = paramList.sublist("user data");
+    if (userList.isParameter("M")) M_Supplied = true;
+    if (userList.isParameter("Minv")) Minv_Supplied = true;
+    if (userList.isParameter("MinvA")) MinvA_Supplied = true;
+
+    if (paramList.isSublist("project auxiliary matrices")) {
+      auto projectList = paramList.sublist("project auxiliary matrices");
+      TEUCHOS_TEST_FOR_EXCEPTION(projectList.isParameter("M") && !M_Supplied, Exceptions::Incompatible, "MueLu_CreateXpetraPreconditioner: Must supply M as it is listed in the project auxiliary matrices sublist");
+      TEUCHOS_TEST_FOR_EXCEPTION(projectList.isParameter("Minv") && (projectList.get("Minv", "") == "NoFactory") && !Minv_Supplied, Exceptions::Incompatible,
+                                 "MueLu_CreateXpetraPreconditioner: Must supply Minv  as NoFactory is listed as supplier of Minv  in the project auxiliary matrices sublist");
+      TEUCHOS_TEST_FOR_EXCEPTION(projectList.isParameter("MinvA") && (projectList.get("MinvA", "") == "NoFactory") && !MinvA_Supplied, Exceptions::Incompatible,
+                                 "MueLu_CreateXpetraPreconditioner: Must supply MinvA as NoFactory is listed as supplier of MinvA in the project auxiliary matrices sublist");
+    } else {  // default behavior if sublist("project auxiliary matrices") not user-supplied requires "M" to be user-supplied.
+      TEUCHOS_TEST_FOR_EXCEPTION(!M_Supplied, Exceptions::Incompatible, "MueLu_CreateXpetraPreconditioner: Must supply M when 'aggregation: strength-of-connection: matrix'= MinvA and sublist('project auxiliary matrices') not supplied.");
+    }
   }
 }
 
@@ -241,6 +263,32 @@ static inline bool test_param_2list(const Teuchos::ParameterList& paramList, con
   else                                                                \
     varName = rcp(new newFactory());
 
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    SetMinvAProjectionVariables(const ParameterList& constParamList) {
+  ParameterList paramList;
+  projectM_     = false;
+  projectMinv_  = false;
+  projectMinvA_ = true;
+  if (constParamList.isSublist("project auxiliary matrices")) {
+    auto projectList = constParamList.sublist("project auxiliary matrices");
+    if (projectList.isParameter("M")) {
+      projectM_     = true;
+      projectMinvA_ = false;
+    }
+    if (projectList.isParameter("Minv")) {
+      projectMinv_  = true;
+      projectMinvA_ = false;
+    }
+    if (projectList.isParameter("MinvA")) {
+      projectMinvA_ = true;
+    }
+  } else {  // default settings when "project auxiliary matrices" not specified by user
+    projectM_     = false;
+    projectMinv_  = false;
+    projectMinvA_ = true;
+  }
+}
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     SetEasyParameterList(const ParameterList& constParamList) {
@@ -721,7 +769,62 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   // === Auxiliary mass matrix for MinvA ===
   auto socMatrix = set_var_2list<std::string>(paramList, defaultList, "aggregation: strength-of-connection: matrix");
   if (socMatrix == "MinvA") {
-    UpdateFactoryManager_MatrixTransfer("M", paramList, defaultList, manager, levelID, keeps);
+    // we can either project MinvA or Minv or M to coarse levels. If we decide to project M, then
+    // it must be provided as "user data". If we decide to project Minv, then either Minv or M
+    // must be provided as "user data". In the later case, Minv will be created from M and then
+    // projected. Projecting MinvA is handled in a similar fashion to Minv. It can be provided
+    // as user data, or either M or Minv can be provided as user data.  In these later cases,
+    // MinvA will be computed in CaolesceDrop factory.
+
+    // Default: M is provided on finest level and that Minv and MinvA are computed by CoalesceDrop.
+    std::string MinvFactory  = "CoalesceDrop";
+    std::string MinvAFactory = "CoalesceDrop";
+    if (paramList.isSublist("project auxiliary matrices")) {
+      auto projectList = paramList.sublist("project auxiliary matrices");
+      if (projectList.isParameter("M")) {
+        TEUCHOS_TEST_FOR_EXCEPTION(projectList.get("M", "") != "NoFactory", Exceptions::InvalidArgument, "Must specify \"NoFactory\" when projecting M");
+      }
+      if (projectList.isParameter("Minv")) {
+        MinvFactory = projectList.get("Minv", "");
+        TEUCHOS_TEST_FOR_EXCEPTION((MinvFactory != "NoFactory") && (MinvFactory != "CoalesceDrop"), Exceptions::InvalidArgument, "Must specify \"NoFactory\" or \"CoalesceDrop\"");
+      }
+      if (projectList.isParameter("MinvA")) {
+        MinvAFactory = projectList.get("MinvA", "");
+        TEUCHOS_TEST_FOR_EXCEPTION((MinvAFactory != "NoFactory") && (MinvAFactory != "CoalesceDrop"), Exceptions::InvalidArgument, "Must specify \"NoFactory\" or \"CoalesceDrop\"");
+      }
+    }
+
+    // We don't really know what user data is supplied here. We know that if  M is a parameter of sublist("project auxiliary matrices"), then M must be user-supplied.
+    // If Minv is a parameter of sublist("project auxiliary matrices") and MinvFactory == NoFactory,  Minv must be user-supplied.  If MinvA is a parameter of
+    // sublist("project auxiliary matrices") and MinvAFactory == NoFactory,  MinvA must be user-supplied.  However, M might be supplied even though it is not
+    // a parameter of sublist("project auxiliary matrices"). The same is true for Minv and MinvA. Notice that if Minv is parameter of sublist("project auxiliary matrices")
+    // and MinvFactory == CoalesceDrop, then M should be suuplied so that Minv can be computed by CoalesceDrop factory. Thus, we should set M's level 0 factory manager
+    // to NoFactory. The tricky part is when MinvA is parameter of sublist("project auxiliary matrices") and MinvAFactory == CoalesceDrop. In this case, there are
+    // two possibilities for CoalesceDrop() to compute MinvA: a) get user M, invert it, and do mat-mat mult or b) get user Minv and do mat-mat mult. Since we
+    // don't know what the user has supplied, it is safest to set the level 0 manager for both M and Minv to NoFactory.
+
+    if (projectM_) UpdateFactoryManager_MatrixTransfer("M", paramList, defaultList, manager, levelID, keeps);
+    if (!projectM_ && projectMinv_ && (MinvFactory == "CoalesceDrop") && (levelID == 0)) manager.SetFactory("M", NoFactory::getRCP());  // need to get M to created Minv
+    if (!projectM_ && !projectMinv_ && (MinvAFactory == "CoalesceDrop") && projectMinvA_ && (levelID == 0)) {
+      manager.SetFactory("M", NoFactory::getRCP());     // might need M    to compute MinvA
+      manager.SetFactory("Minv", NoFactory::getRCP());  // might need Minv to compute MinvA
+    }
+    if (projectMinvA_) {
+      if ((levelID > 0) || (MinvAFactory == "NoFactory"))
+        UpdateFactoryManager_MatrixTransfer("MinvA", paramList, defaultList, manager, levelID, keeps);
+      else {
+        auto coalFact = rcp(new CoalesceDropFactory_kokkos());
+        manager.SetFactory("MinvA", coalFact);
+      }  // kokkos guard ?????
+    }
+    if (projectMinv_) {
+      if ((levelID > 0) || (MinvFactory == "NoFactory"))
+        UpdateFactoryManager_MatrixTransfer("Minv", paramList, defaultList, manager, levelID, keeps);
+      else {
+        auto coalFact = rcp(new CoalesceDropFactory_kokkos());
+        manager.SetFactory("Minv", coalFact);
+      }  // kokkos guard ?????
+    }
   }
 
   // === Lower precision transfers ===
@@ -1048,7 +1151,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     UpdateFactoryManager_Reitzinger(ParameterList& paramList, const ParameterList& defaultList,
-                                    FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const {
+                                    FactoryManager& manager, int levelID, std::vector<keep_pair>& /*keeps*/) const {
   ParameterList rParams;
   test_and_set_param_2list<bool>(paramList, defaultList, "repartition: enable", rParams);
   test_and_set_param_2list<bool>(paramList, defaultList, "repartition: use subcommunicators", rParams);
@@ -1079,7 +1182,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     UpdateFactoryManager_EminReitzinger(ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager,
-                                        int levelID, std::vector<keep_pair>& keeps) const {
+                                        int levelID, std::vector<keep_pair>& /*keeps*/) const {
   ParameterList rParams;
   test_and_set_param_2list<bool>(paramList, defaultList, "repartition: enable", rParams);
   test_and_set_param_2list<bool>(paramList, defaultList, "repartition: use subcommunicators", rParams);
@@ -1257,10 +1360,17 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
     if (useKokkos_ && (levelID > 0)) {
       if (dropParams.isParameter("aggregation: strength-of-connection: matrix") && dropParams.get<std::string>("aggregation: strength-of-connection: matrix") == "MinvA") {
-        dropFactory->SetFactory("M", this->GetFactoryManager(levelID - 1)->GetFactory("M"));
+        if (projectM_) dropFactory->SetFactory("M", this->GetFactoryManager(levelID - 1)->GetFactory("M"));
+        if (projectMinv_) dropFactory->SetFactory("Minv", this->GetFactoryManager(levelID - 1)->GetFactory("Minv"));
+        if (projectMinvA_) dropFactory->SetFactory("MinvA", this->GetFactoryManager(levelID - 1)->GetFactory("MinvA"));
       }
     }
 
+    auto socMatrix = set_var_2list<std::string>(paramList, defaultList, "aggregation: strength-of-connection: matrix");
+    if ((socMatrix == "MinvA") && (paramList.isSublist("project auxiliary matrices"))) {
+      auto projectList = paramList.sublist("project auxiliary matrices");
+      dropParams.set("project auxiliary matrices", projectList);
+    }
     dropFactory->SetParameterList(dropParams);
   }
   manager.SetFactory("Graph", dropFactory);
@@ -1427,7 +1537,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     UpdateFactoryManager_RAP(ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager,
-                             int levelID, std::vector<keep_pair>& keeps) const {
+                             int /*levelID*/, std::vector<keep_pair>& keeps) const {
   if (paramList.isParameter("A") && !paramList.get<RCP<Matrix>>("A").is_null()) {
     // We have user matrix A
     manager.SetFactory("A", NoFactory::getRCP());
@@ -1651,7 +1761,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 // =====================================================================================================
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    UpdateFactoryManager_LocalOrdinalTransfer(const std::string& VarName, const std::string& multigridAlgo, ParameterList& paramList, const ParameterList& /* defaultList */,
+    UpdateFactoryManager_LocalOrdinalTransfer(const std::string& VarName, const std::string& multigridAlgo, ParameterList& /*paramList*/, const ParameterList& /* defaultList */,
                                               FactoryManager& manager, int levelID, std::vector<keep_pair>& /* keeps */) const {
   // NOTE: You would think this would be levelID > 0, but you'd be wrong, since the FactoryManager is basically
   // offset by a level from the things which actually do the work.
@@ -1758,7 +1868,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     UpdateFactoryManager_BlockNumber(ParameterList& paramList, const ParameterList& defaultList,
-                                     FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const {
+                                     FactoryManager& manager, int /*levelID*/, std::vector<keep_pair>& /*keeps*/) const {
   if (useBlockNumber_) {
     ParameterList myParams;
     RCP<Factory> fact = rcp(new InitialBlockNumberFactory());
@@ -1774,7 +1884,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     UpdateFactoryManager_Restriction(ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager,
-                                     int levelID, std::vector<keep_pair>& /* keeps */) const {
+                                     int /*levelID*/, std::vector<keep_pair>& /* keeps */) const {
   auto multigridAlgo = set_var_2list<std::string>(paramList, defaultList, "multigrid algorithm");
   bool have_userR    = false;
   if (paramList.isParameter("R") && !paramList.get<RCP<Matrix>>("R").is_null())
@@ -2076,7 +2186,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     UpdateFactoryManager_LowPrecision(ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager,
-                                      int levelID, std::vector<keep_pair>& keeps) const {
+                                      int /*levelID*/, std::vector<keep_pair>& /*keeps*/) const {
   auto enableLowPrecision = set_var_2list<bool>(paramList, defaultList, "transfers: half precision");
 
   if (enableLowPrecision) {
@@ -2423,7 +2533,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 // =====================================================================================================
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    UpdateFactoryManager_Replicate(ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager, int /* levelID */, std::vector<keep_pair>& keeps) const {
+    UpdateFactoryManager_Replicate(ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager, int /* levelID */, std::vector<keep_pair>& /*keeps*/) const {
   auto P = rcp(new MueLu::ReplicatePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>());
 
   ParameterList Pparams;
@@ -2438,7 +2548,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 // =====================================================================================================
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    UpdateFactoryManager_Combine(ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager, int /* levelID */, std::vector<keep_pair>& keeps) const {
+    UpdateFactoryManager_Combine(ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager, int /* levelID */, std::vector<keep_pair>& /*keeps*/) const {
   auto P = rcp(new MueLu::CombinePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>());
 
   ParameterList Pparams;

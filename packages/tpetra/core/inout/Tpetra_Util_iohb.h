@@ -52,10 +52,11 @@
 
 #include<cstdio>
 #include<cstdlib>
+#include<string>
 
 namespace Tpetra::HB {
 
-int readHB_info(const char* filename, int* M, int* N, int* nz, char** Type, 
+int readHB_info(const char* filename, int* M, int* N, int* nz, std::string& Type, 
                                                       int* Nrhs);
 
 int readHB_header(std::FILE* in_file, char* Title, char* Key, char* Type, 

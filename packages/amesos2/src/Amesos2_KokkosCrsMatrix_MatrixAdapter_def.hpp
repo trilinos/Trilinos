@@ -13,8 +13,10 @@
 
 #include "Amesos2_KokkosCrsMatrix_MatrixAdapter_decl.hpp"
 #include "Amesos2_MatrixAdapter_def.hpp"
+
+#include "Teuchos_DefaultComm.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
-#include <Tpetra_Core.hpp>
+#include "Tpetra_Core.hpp"
 
 namespace Amesos2 {
 
@@ -43,7 +45,11 @@ namespace Amesos2 {
   const Teuchos::RCP<const Teuchos::Comm<int> >
   ConcreteMatrixAdapter<KokkosSparse::CrsMatrix<Scalar,LocalOrdinal,ExecutionSpace>>::getComm_impl() const
   {
-    return Teuchos::rcp(new Teuchos::SerialComm<int>());
+    #ifdef HAVE_MPI
+     return Teuchos::rcp(new Teuchos::MpiComm<int> (MPI_COMM_SELF));
+    #else
+     return Teuchos::rcp(new Teuchos::SerialComm<int>());
+    #endif
   }
 
   template <typename Scalar, typename LocalOrdinal, typename ExecutionSpace>

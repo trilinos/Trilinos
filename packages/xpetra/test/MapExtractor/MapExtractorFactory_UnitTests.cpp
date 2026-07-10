@@ -19,7 +19,6 @@
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_MapExtractor.hpp>
 #include <Xpetra_MapExtractorFactory.hpp>
-#include <Xpetra_MapFactory.hpp>
 // #include <Xpetra_Matrix.hpp>
 
 #include <Xpetra_TpetraCrsMatrix.hpp>

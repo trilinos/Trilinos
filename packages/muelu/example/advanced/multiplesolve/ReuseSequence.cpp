@@ -117,7 +117,7 @@ class Tensor {
   }
 
  private:
-  SC tensorDefault(char c, SC x, SC y, SC z) const {
+  SC tensorDefault(char /*c*/, SC /*x*/, SC /*y*/, SC /*z*/) const {
     // isotropic tensor
     return STS::one();
   }
@@ -333,12 +333,12 @@ Teuchos::RCP<Matrix> BuildMatrix(bool is3D, const Tensor<typename Teuchos::Scala
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void ConstructData(bool is3D, const Tensor<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& tensor, const std::string& matrixType, Teuchos::ParameterList& galeriList,
+void ConstructData(bool is3D, const Tensor<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& tensor, const std::string& /*matrixType*/, Teuchos::ParameterList& galeriList,
                    Xpetra::UnderlyingLib lib, Teuchos::RCP<const Teuchos::Comm<int>>& comm,
                    Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& A,
                    Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>& map,
                    Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LocalOrdinal, GlobalOrdinal, Node>>& coordinates,
-                   Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& nullspace) {
+                   Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& /*nullspace*/) {
 #include <MueLu_UseShortNames.hpp>
   using Teuchos::ArrayRCP;
   using Teuchos::RCP;

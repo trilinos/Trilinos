@@ -31,7 +31,6 @@
 #include "RTOpPack_TOpPairWiseMaxUpdate.hpp"
 #include "RTOpPack_TOpRandomize.hpp"
 #include "Teuchos_Assert.hpp"
-#include "Teuchos_Assert.hpp"
 
 
 //

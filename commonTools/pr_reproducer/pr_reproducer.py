@@ -18,7 +18,7 @@ from tools import (is_valid_pr_number,
                    convert_to_valid_source_dir,
                    get_github_upstream_of_local_branch,
                    get_pr_number,
-                   parse_AT2_workflows,
+                   parse_workflows,
                    generate_package_enables,
                    image_available,
                    pull_image,
@@ -110,7 +110,7 @@ if remote_url.find("trilinos/Trilinos") < 0:
 ##################################################
 # Available builds
 
-pr_builds = parse_AT2_workflows(trilinos_source)
+pr_builds = parse_workflows(trilinos_source)
 logger.debug("pr_builds = \n" + pformat(pr_builds))
 assert pr_builds is not None and len(pr_builds) > 0
 
@@ -147,9 +147,11 @@ logger.debug(f"pr_build = {pr_build}")
 image = pr_builds[pr_build]["image"]
 tag = pr_builds[pr_build]["tag"]
 genconfig_build_id = pr_builds[pr_build]["genconfig_build_id"]
+cmake_extra_args = pr_builds[pr_build]["cmake_extra_args"]
 logger.debug(f"image = {image}")
 logger.debug(f"tag = {tag}")
 logger.debug(f"genconfig_build_id = {genconfig_build_id}")
+logger.debug(f"cmake_extra_args = {cmake_extra_args}")
 
 ##################################################
 # Retrieve PR information from Github
@@ -191,11 +193,13 @@ subprocess.run(["git", "fetch", remote, f"refs/pull/{pr_number}/merge:{pr_number
 output = generate_package_enables(trilinos_source, packageEnablesFile, f"{pr_number}-target", f"{pr_number}-merge")
 if not packageEnablesFile.exists():
     logger.info("Output from script that generates CMake fragment with package enables:\n"+output)
-    assert False, "No package enables generated. Does the PR change any packages?"
-
-with open(packageEnablesFile, 'r') as f:
-    packageEnables = f.readlines()
-logger.debug(f"{packageEnablesFile}:" + ''.join(packageEnables))
+    continueWithoutPackageEnables = questionary.confirm(f"No package enables generated. The PR might not have changed any packages. Continue anyway?", default=False).ask()
+    if not continueWithoutPackageEnables:
+        exit(1)
+else:
+    with open(packageEnablesFile, 'r') as f:
+        packageEnables = f.readlines()
+    logger.debug(f"{packageEnablesFile}:" + ''.join(packageEnables))
 
 ##################################################
 # Summary
@@ -207,6 +211,7 @@ questionary.print(f"Base ref:           {pr_base_ref}")
 questionary.print(f"Build:              {pr_build}")
 questionary.print(f"Container image:    {image}:{tag}")
 questionary.print(f"Genconfig build ID: {genconfig_build_id}")
+questionary.print(f"CMake extra args:   {cmake_extra_args}")
 
 ##################################################
 # Pull image
@@ -219,4 +224,4 @@ if not image_avail:
 ##################################################
 # Launch container
 
-launch_container(trilinos_source, packageEnablesFile, image, tag, genconfig_build_id)
+launch_container(trilinos_source, packageEnablesFile, image, tag, genconfig_build_id, cmake_extra_args)

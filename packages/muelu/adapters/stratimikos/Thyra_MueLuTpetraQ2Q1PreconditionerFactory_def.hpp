@@ -106,7 +106,7 @@ MueLuTpetraQ2Q1PreconditionerFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>:
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void MueLuTpetraQ2Q1PreconditionerFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    initializePrec(const RCP<const LinearOpSourceBase<Scalar> >& fwdOpSrc, PreconditionerBase<Scalar>* prec, const ESupportSolveUse supportSolveUse) const {
+    initializePrec(const RCP<const LinearOpSourceBase<Scalar> >& fwdOpSrc, PreconditionerBase<Scalar>* prec, const ESupportSolveUse /*supportSolveUse*/) const {
   // Check precondition
   TEUCHOS_ASSERT(Teuchos::nonnull(fwdOpSrc));
   TEUCHOS_ASSERT(this->isCompatible(*fwdOpSrc));

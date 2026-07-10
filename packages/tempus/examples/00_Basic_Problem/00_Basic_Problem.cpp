@@ -13,6 +13,8 @@
 #include <math.h>
 #include "Teuchos_StandardCatchMacros.hpp"
 
+#include "Tutorial_Regression_Tester.hpp"
+
 using namespace std;
 
 /** @file */
@@ -25,7 +27,7 @@ using namespace std;
  *  the state or time integration algorithm.
  *
  *  The purpose of this example is to establish the baseline structure used
- *  throughout the progression tutorial.  Later examples introduce \ref Tempus
+ *  throughout the progression tutorial. Later examples introduce \ref Tempus
  *  and Trilinos capabilities one step at a time while preserving the same
  *  basic problem setup whenever possible.
  *
@@ -42,7 +44,7 @@ using namespace std;
  *    x_1(0) & = & 0.
  *  \f}
  *
- *  For the model definition and additional details, 
+ *  For the model definition and additional details,
  *  see \ref Tempus_Test::VanDerPolModel
  *  and \ref tempus_vanderpol_model "van der Pol Model".
  *
@@ -52,15 +54,25 @@ using namespace std;
  *  time integration loop:
  *  - declare the solution and its time derivative (stored in raw C++ arrays)
  *  - set the initial conditions
+ *  - choose a constant timestep size
  *  - advance the solution from the initial time to the final time
- *    - set hardcoded timestep size
  *    - evaluate the right-hand side of the governing equations
  *    - apply the Forward Euler update
  *    - check a simple pass/fail criterion
  *    - accept the step and promote the solution to the next time step
+ *  - compare the final solution against regression gold values
  *
- *  The regression check at the end of the run is secondary to the tutorial
- *  discussion and can be ignored on a first reading.
+ *  The example also prints the evolving solution in a simple table with the
+ *  columns:
+ *  - step index
+ *  - time
+ *  - solution component \f$x_0\f$
+ *  - solution component \f$x_1\f$
+ *
+ *  Here, `passed` indicates whether the hand-written stepping loop completed
+ *  without producing an invalid solution. The final tutorial success condition
+ *  additionally requires that the computed final solution match the regression
+ *  gold values through the shared helper \ref tutorialRegressionTest.
  *
  *  The next example replaces raw arrays with \ref Thyra vectors while
  *  preserving the same overall algorithmic structure.
@@ -72,7 +84,7 @@ using namespace std;
  *  </div>
  *  \endhtmlonly
  */
-int main(int argc, char *argv[])
+int main(int  /*argc*/, char * /*argv*/[])
 {
   bool verbose = true;
   bool success = false;
@@ -96,8 +108,19 @@ int main(int argc, char *argv[])
     int nTimeSteps = 2000;
     const double constDT = finalTime/nTimeSteps;
 
+    // Output
+    cout << std::fixed;
+    cout << std::setw(8)  << "index"
+         << std::setw(10) << "time"
+         << std::setw(12) << "x_0"
+         << std::setw(12) << "x_1" << endl;
+
+    cout << std::setw(8)  << n
+         << std::setw(10)  << std::setprecision(3) << time
+         << std::setw(12) << std::setprecision(4) << x_n[0]
+         << std::setw(12) << std::setprecision(4) << x_n[1] << endl;
+
     // Advance the solution to the next timestep.
-    cout << n << "  " << time << "  " << x_n[0] << "  " << x_n[1] << endl;
     while (passed && time < finalTime && n < nTimeSteps) {
 
       // Initialize next time step
@@ -128,31 +151,17 @@ int main(int argc, char *argv[])
       }
 
       // Output
-      if ( n%100 == 0 )
-        cout << n << "  " << time << "  " << x_n[0] << "  " << x_n[1] << endl;
-
+      if (n % 100 == 0)
+        cout << std::setw(8)  << n
+             << std::setw(10)  << std::setprecision(3) << time
+             << std::setw(12) << std::setprecision(4) << x_n[0]
+             << std::setw(12) << std::setprecision(4) << x_n[1] << endl;
     }
 
     // Test for regression.
-    double x_regress[2];      // Regression results for nTimeSteps = 2000
-    x_regress[0] = -1.59496108218721311;
-    x_regress[1] =  0.96359412806611255;
-    double x_L2norm_error = 0.0;
-    double x_L2norm_regress = 0.0;
-    for (int i=0; i < 2; i++) {
-      x_L2norm_error += (x_n[i]-x_regress[i])*(x_n[i]-x_regress[i]);
-      x_L2norm_regress += x_regress[1]*x_regress[1];
-    }
-    x_L2norm_error   = sqrt(x_L2norm_error  );
-    x_L2norm_regress = sqrt(x_L2norm_regress);
-    cout << "Relative L2 Norm of the error (regression) = "
-         << x_L2norm_error/x_L2norm_regress << endl;
-    if ( x_L2norm_error > 1.0e-08*x_L2norm_regress) {
-      passed = false;
-      cout << "FAILED regression constraint!" << endl;
-    }
+    bool regressionPassed = tutorialRegressionTest(x_n);
 
-    if (passed) success = true;
+    if (passed && regressionPassed) success = true;
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 

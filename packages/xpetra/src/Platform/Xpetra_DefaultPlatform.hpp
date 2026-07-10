@@ -17,8 +17,6 @@
 #include "Xpetra_MpiPlatform.hpp"
 #endif
 
-#include "Xpetra_ConfigDefs.hpp"
-
 namespace Xpetra {
 
 /** \brief Returns a default platform appropriate for the enviroment.

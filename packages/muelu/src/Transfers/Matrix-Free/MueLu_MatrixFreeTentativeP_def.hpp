@@ -78,7 +78,7 @@ void MatrixFreeTentativeP<Scalar, LocalOrdinal, GlobalOrdinal, Node>::apply(cons
 
 // I don't care
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void MatrixFreeTentativeP<Scalar, LocalOrdinal, GlobalOrdinal, Node>::residual(const MultiVector &X, const MultiVector &B, MultiVector &R) const {
+void MatrixFreeTentativeP<Scalar, LocalOrdinal, GlobalOrdinal, Node>::residual(const MultiVector & /*X*/, const MultiVector & /*B*/, MultiVector & /*R*/) const {
   TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MatrixFreeTentativeP residual would make no sense as the operator is not square!");
 }
 

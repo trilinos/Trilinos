@@ -57,9 +57,9 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     apply(const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& X,
           Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Y,
-          Teuchos::ETransp mode,
-          Scalar alpha,
-          Scalar beta) const {
+          Teuchos::ETransp /*mode*/,
+          Scalar /*alpha*/,
+          Scalar /*beta*/) const {
   const std::string timerName("Ifpack2::FastILU::apply");
   Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::lookupCounter(timerName);
   if (timer.is_null()) {

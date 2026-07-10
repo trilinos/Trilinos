@@ -21,7 +21,7 @@ UncoupledIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
     UncoupledIndexManager(const RCP<const Teuchos::Comm<int> > comm, const bool coupled,
                           const int NumDimensions, const int interpolationOrder,
                           const int MyRank, const int NumRanks,
-                          const Array<GO> GFineNodesPerDir, const Array<LO> LFineNodesPerDir,
+                          const Array<GO> /*GFineNodesPerDir*/, const Array<LO> LFineNodesPerDir,
                           const Array<LO> CoarseRate, const bool singleCoarsePoint)
   : IndexManager(comm, coupled, singleCoarsePoint, NumDimensions, interpolationOrder,
                  Array<GO>(3, -1), LFineNodesPerDir)

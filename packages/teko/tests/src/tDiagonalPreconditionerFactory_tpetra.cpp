@@ -9,44 +9,30 @@
 
 #include "tDiagonalPreconditionerFactory_tpetra.hpp"
 #include "Teko_DiagonalPreconditionerFactory.hpp"
-#include "Teko_DiagonalPreconditionerOp.hpp"
-#include "EpetraExt_PointToBlockDiagPermute.h"
 
 // Teuchos includes
 #include "Teuchos_RCP.hpp"
 
-// Epetra includes
-#include "Epetra_Map.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_Vector.h"
-
 // Thyra includes
-#include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_LinearOpBase.hpp"
-#include "Thyra_DefaultBlockedLinearOp.hpp"
-#include "Thyra_DefaultIdentityLinearOp.hpp"
-#include "Thyra_DefaultZeroLinearOp.hpp"
-#include "Thyra_DefaultLinearOpSource.hpp"
-#include "Thyra_DefaultPreconditioner.hpp"
 #include "Thyra_DefaultDiagonalLinearOp.hpp"
-#include "Thyra_EpetraThyraWrappers.hpp"
-#include "Thyra_DefaultMultipliedLinearOp.hpp"
-#include "Thyra_DefaultScaledAdjointLinearOp.hpp"
-#include "Thyra_DefaultLinearOpSource.hpp"
 #include "Thyra_LinearOpTester.hpp"
-#include "Thyra_get_Epetra_Operator.hpp"
+#include "Thyra_TpetraThyraWrappers.hpp"
 
-// TriUtils includes
-#include "Trilinos_Util_CrsMatrixGallery.h"
+// Tpetra includes
+#include "Tpetra_Vector.hpp"
+
+// Galeri / Xpetra
+#include "Galeri_XpetraMaps.hpp"
+#include "Galeri_XpetraProblemFactory.hpp"
+#include "Galeri_XpetraParameters.hpp"
 
 #include "Teko_Utilities.hpp"
 #include "Teko_TpetraHelpers.hpp"
 #include "Thyra_TpetraLinearOp.hpp"
-#include "Tpetra_CrsMatrix.hpp"
 
 #include <vector>
-
-#include <math.h>
+#include <cmath>
 
 namespace Teko {
 namespace Test {
@@ -54,58 +40,77 @@ namespace Test {
 using namespace Teuchos;
 using namespace Thyra;
 
+namespace {
+
+using ST = Teko::ST;
+using LO = Teko::LO;
+using GO = Teko::GO;
+using NT = Teko::NT;
+
+using map_t = Tpetra::Map<LO, GO, NT>;
+using crs_t = Tpetra::CrsMatrix<ST, LO, GO, NT>;
+using vec_t = Tpetra::Vector<ST, LO, GO, NT>;
+using mv_t  = Tpetra::MultiVector<ST, LO, GO, NT>;
+
+RCP<crs_t> buildLaplace2DMatrix(const RCP<const Teuchos::Comm<int> >& comm, GO nx, GO ny) {
+  Teuchos::ParameterList galeriList;
+  galeriList.set("nx", nx);
+  galeriList.set("ny", ny);
+  galeriList.set("mx", comm->getSize());
+  galeriList.set("my", 1);
+
+  auto tMap = Galeri::Xpetra::CreateMap<LO, GO, map_t>("Cartesian2D", comm, galeriList);
+
+  auto problem =
+      Galeri::Xpetra::BuildProblem<ST, LO, GO, map_t, crs_t, mv_t>("Laplace2D", tMap, galeriList);
+
+  return problem->BuildMatrix();
+}
+
+}  // namespace
+
 tDiagonalPreconditionerFactory_tpetra::~tDiagonalPreconditionerFactory_tpetra() {
   delete fact;
   delete pstate;
-  delete[] block_starts;
-  delete[] block_gids;
 }
 
 void tDiagonalPreconditionerFactory_tpetra::initializeTest() {
-  const Epetra_Comm &comm_epetra                   = *GetComm();
   const RCP<const Teuchos::Comm<int> > comm_tpetra = GetComm_tpetra();
 
   tolerance_ = 1.0e-14;
 
-  int nx = 39;  // essentially random values
-  int ny = 53;
+  GO nx = 39;
+  GO ny = 53;
 
-  // create some big blocks to play with
-  Trilinos_Util::CrsMatrixGallery FGallery("laplace_2d", comm_epetra, false);
-  FGallery.Set("nx", nx);
-  FGallery.Set("ny", ny);
-  RCP<Epetra_CrsMatrix> epetraF = rcp(new Epetra_CrsMatrix(*FGallery.GetMatrix()));
-  epetraF->FillComplete(true);
-  tpetraF = Teko::TpetraHelpers::epetraCrsMatrixToTpetra(epetraF, comm_tpetra);
-  F_      = Thyra::constTpetraLinearOp<ST, LO, GO, NT>(
+  auto tmpF = buildLaplace2DMatrix(comm_tpetra, nx, ny);
+  tpetraF   = tmpF;
+  F_        = Thyra::constTpetraLinearOp<ST, LO, GO, NT>(
       Thyra::tpetraVectorSpace<ST, LO, GO, NT>(tpetraF->getDomainMap()),
       Thyra::tpetraVectorSpace<ST, LO, GO, NT>(tpetraF->getRangeMap()), tpetraF);
 }
 
 void tDiagonalPreconditionerFactory_tpetra::buildParameterList(int blocksize) {
-  const Tpetra::CrsMatrix<ST, LO, GO, NT> *F = &*tpetraF;
+  const crs_t* F = &*tpetraF;
   TEUCHOS_ASSERT(F);
 
+  List_ = Teuchos::ParameterList();
+
   if (blocksize > 0) {
-    // Cleanup of last run
-    delete[] block_starts;
-    delete[] block_gids;
+    const LO Nr = F->getLocalNumRows();
+    const int Nb =
+        static_cast<int>(std::ceil(static_cast<double>(Nr) / static_cast<double>(blocksize)));
 
-    // Allocs
-    LO Nr        = F->getLocalNumRows();
-    int Nb       = (int)ceil(((double)Nr) / ((double)blocksize));
-    block_starts = new GO[Nb + 1];
-    block_gids   = new GO[Nr];
+    block_starts.resize(Nb + 1);
+    block_gids.resize(Nr);
 
-    // Fill out block data structures
     block_starts[0] = 0;
     for (int i = 0; i < Nb; i++) block_starts[i + 1] = block_starts[i] + blocksize;
     block_starts[Nb] = Nr;
 
-    for (int i = 0; i < Nr; i++) block_gids[i] = F->getRowMap()->getGlobalElement(i);
+    for (LO i = 0; i < Nr; i++) block_gids[i] = F->getRowMap()->getGlobalElement(i);
 
-    // Set the list
     Teuchos::ParameterList sublist;
+    List_.set("Diagonal Type", "BlkDiag");
     List_.set("number of local blocks", Nb);
     List_.set("block start index", block_starts);
     List_.set("block entry gids", block_gids);
@@ -116,65 +121,61 @@ void tDiagonalPreconditionerFactory_tpetra::buildParameterList(int blocksize) {
   }
 }
 
-int tDiagonalPreconditionerFactory_tpetra::runTest(int verbosity, std::ostream &stdstrm,
-                                                   std::ostream &failstrm, int &totalrun) {
+int tDiagonalPreconditionerFactory_tpetra::runTest(int verbosity, std::ostream& stdstrm,
+                                                   std::ostream& failstrm, int& totalrun) {
   bool allTests = true;
   bool status;
   int failcount = 0;
 
   failstrm << "tDiagonalPreconditionerFactory_tpetra";
 
-  status = test_createPrec(verbosity, failstrm, 0);
-  Teko_TEST_MSG(stdstrm, 1, "   \"createPrec\" ... PASSED", "   \"createPrec\" ... FAILED");
+  status = test_createPrec(verbosity, failstrm, 2);
+  Teko_TEST_MSG_tpetra(stdstrm, 1, "   \"createPrec\" ... PASSED", "   \"createPrec\" ... FAILED");
   allTests &= status;
   failcount += status ? 0 : 1;
   totalrun++;
 
   status = test_initializePrec(verbosity, failstrm);
-  Teko_TEST_MSG(stdstrm, 1, "   \"initializePrec\" ... PASSED", "   \"initializePrec\" ... FAILED");
+  Teko_TEST_MSG_tpetra(stdstrm, 1, "   \"initializePrec\" ... PASSED",
+                       "   \"initializePrec\" ... FAILED");
   allTests &= status;
   failcount += status ? 0 : 1;
   totalrun++;
 
   status = test_canApply(verbosity, failstrm);
-  Teko_TEST_MSG(stdstrm, 1, "   \"canApply\" ... PASSED", "   \"canApply\" ... FAILED");
+  Teko_TEST_MSG_tpetra(stdstrm, 1, "   \"canApply\" ... PASSED", "   \"canApply\" ... FAILED");
   allTests &= status;
   failcount += status ? 0 : 1;
   totalrun++;
 
   status = allTests;
   if (verbosity >= 10) {
-    Teko_TEST_MSG(failstrm, 0, "tDiagonalPreconditionedFactory...PASSED",
-                  "tDiagonalPreconditionedFactory...FAILED");
-  } else {  // Normal Operatoring Procedures (NOP)
-    Teko_TEST_MSG(failstrm, 0, "...PASSED", "tDiagonalPreconditionedFactory...FAILED");
+    Teko_TEST_MSG_tpetra(failstrm, 0, "tDiagonalPreconditionedFactory...PASSED",
+                         "tDiagonalPreconditionedFactory...FAILED");
+  } else {
+    Teko_TEST_MSG_tpetra(failstrm, 0, "...PASSED", "tDiagonalPreconditionedFactory...FAILED");
   }
 
   return failcount;
 }
 
-bool tDiagonalPreconditionerFactory_tpetra::test_initializePrec(int verbosity, std::ostream &os) {
+bool tDiagonalPreconditionerFactory_tpetra::test_initializePrec(int verbosity, std::ostream& os) {
   delete pstate;
 
   pstate = new DiagonalPrecondState();
   pop    = fact->buildPreconditionerOperator(F_, *pstate);
 
-  // Check that a diagonal linear op was produced
-  RCP<const Thyra::DiagonalLinearOpBase<ST> > dop =
-      rcp_dynamic_cast<const Thyra::DiagonalLinearOpBase<ST> >(pop);
-  if (dop.is_null()) return false;
+  // For blocksize==2 this should be an explicit sparse operator, not a diagonal op
+  if (rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST, LO, GO, NT> >(pop).is_null()) return false;
 
   return true;
 }
 
-bool tDiagonalPreconditionerFactory_tpetra::test_createPrec(int verbosity, std::ostream &os,
+bool tDiagonalPreconditionerFactory_tpetra::test_createPrec(int verbosity, std::ostream& os,
                                                             int blocksize) {
   buildParameterList(blocksize);
 
-  // Cleanup
   delete fact;
-
-  // New preconditioner
   fact = new DiagonalPreconditionerFactory();
   fact->initializeFromParameterList(List_);
   if (!fact) return false;
@@ -182,7 +183,7 @@ bool tDiagonalPreconditionerFactory_tpetra::test_createPrec(int verbosity, std::
   return true;
 }
 
-bool tDiagonalPreconditionerFactory_tpetra::test_canApply(int verbosity, std::ostream &os) {
+bool tDiagonalPreconditionerFactory_tpetra::test_canApply(int verbosity, std::ostream& os) {
   RCP<const Tpetra::Map<LO, GO, NT> > domain_ = tpetraF->getDomainMap();
   RCP<const Tpetra::Map<LO, GO, NT> > range_  = tpetraF->getRangeMap();
 

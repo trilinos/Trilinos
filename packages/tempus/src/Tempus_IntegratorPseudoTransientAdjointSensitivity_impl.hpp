@@ -530,7 +530,7 @@ Teuchos::RCP<AdjointSensitivityModelEvaluator<Scalar>>
 IntegratorPseudoTransientAdjointSensitivity<Scalar>::createSensitivityModel(
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar>>& model,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar>>& adjoint_residual_model,
-    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar>>& adjoint_solve_model,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar>>& /*adjoint_solve_model*/,
     const Teuchos::RCP<Teuchos::ParameterList>& inputPL)
 {
   using Teuchos::rcp;
