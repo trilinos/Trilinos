@@ -27,11 +27,6 @@
 #include "Galeri_XpetraProblemFactory.hpp"
 #include "Galeri_XpetraParameters.hpp"
 
-#include "Xpetra_Map.hpp"
-#include "Xpetra_Matrix.hpp"
-#include "Xpetra_TpetraMap.hpp"
-#include "Xpetra_TpetraCrsMatrix.hpp"
-
 #include "Teko_Utilities.hpp"
 #include "Teko_TpetraHelpers.hpp"
 #include "Thyra_TpetraLinearOp.hpp"
@@ -64,9 +59,7 @@ RCP<crs_t> buildLaplace2DMatrix(const RCP<const Teuchos::Comm<int> >& comm, GO n
   galeriList.set("mx", comm->getSize());
   galeriList.set("my", 1);
 
-  RCP<const Xpetra::Map<LO, GO, NT> > xMap =
-      Galeri::Xpetra::CreateMap<LO, GO, NT>(Xpetra::UseTpetra, "Cartesian2D", comm, galeriList);
-  RCP<const map_t> tMap = Xpetra::toTpetra(xMap);
+  auto tMap = Galeri::Xpetra::CreateMap<LO, GO, map_t>("Cartesian2D", comm, galeriList);
 
   auto problem =
       Galeri::Xpetra::BuildProblem<ST, LO, GO, map_t, crs_t, mv_t>("Laplace2D", tMap, galeriList);
