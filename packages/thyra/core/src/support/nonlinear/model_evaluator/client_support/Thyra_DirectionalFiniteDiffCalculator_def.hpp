@@ -52,8 +52,8 @@ public:
   ModelEvaluatorBase::OutArgs<Scalar> createOutArgs() const
     { TEUCHOS_TEST_FOR_EXCEPT(true); TEUCHOS_UNREACHABLE_RETURN(ModelEvaluatorBase::OutArgs<Scalar>()); }
   void evalModel(
-    const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
-    const ModelEvaluatorBase::OutArgs<Scalar> &outArgs
+    const ModelEvaluatorBase::InArgs<Scalar> & /*inArgs*/,
+    const ModelEvaluatorBase::OutArgs<Scalar> & /*outArgs*/
     ) const
     { TEUCHOS_TEST_FOR_EXCEPT(true); }
   // Static function that does the magic!
