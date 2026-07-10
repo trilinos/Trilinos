@@ -42,13 +42,13 @@ LinearOp DiagonalPreconditionerFactory::buildPreconditionerOperator(
           Teuchos::rcp_dynamic_cast<const Tpetra::CrsMatrix<ST, LO, GO, NT> >(top, true);
 
       RCP<Tpetra::Ext::PointToBlockDiagPermute<ST, LO, GO, NT> > BDP;
-      if (MyState.BDP_tpetra_ == Teuchos::null) {
+      if (MyState.BDP_ == Teuchos::null) {
         BDP = Teuchos::rcp(new Tpetra::Ext::PointToBlockDiagPermute<ST, LO, GO, NT>(*MAT));
         BDP->setParameters(List_);
         BDP->compute();
-        MyState.BDP_tpetra_ = BDP;
+        MyState.BDP_ = BDP;
       } else {
-        BDP = MyState.BDP_tpetra_;
+        BDP = MyState.BDP_;
       }
 
       RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > Hcrs = BDP->createCrsMatrix();
@@ -59,8 +59,7 @@ LinearOp DiagonalPreconditionerFactory::buildPreconditionerOperator(
 
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
                                "DiagonalPreconditionerFactory::buildPreconditionerOperator: "
-                               "BlkDiag requested, but operator is neither supported Tpetra nor "
-                               "supported Epetra.");
+                               "BlkDiag requested, but operator is not Tpetra-supported.");
   }
 
   return getInvDiagonalOp(lo, diagonalType_);

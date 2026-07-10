@@ -13,14 +13,19 @@
 
 #include "Teko_ImplicitLinearOp.hpp"
 
-class EpetraExt_PointToBlockDiagPermute;
+namespace Tpetra {
+namespace Ext {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class PointToBlockDiagPermute;
+}
+}  // namespace Tpetra
 
 namespace Teko {
 
 class DiagonalPreconditionerOp : public ImplicitLinearOp {
  public:
   /** @brief Constuctor */
-  DiagonalPreconditionerOp(Teuchos::RCP<EpetraExt_PointToBlockDiagPermute> BDP,
+  DiagonalPreconditionerOp(Teuchos::RCP<Tpetra::Ext::PointToBlockDiagPermute<ST, LO, GO, NT>> BDP,
                            const VectorSpace range, const VectorSpace domain);
 
   /** @brief Range space of this operator */
@@ -47,10 +52,12 @@ class DiagonalPreconditionerOp : public ImplicitLinearOp {
   virtual void describe(Teuchos::FancyOStream &out_arg,
                         const Teuchos::EVerbosityLevel verbLevel) const;
 
-  Teuchos::RCP<EpetraExt_PointToBlockDiagPermute> get_BDP() const { return BDP_; }
+  Teuchos::RCP<Tpetra::Ext::PointToBlockDiagPermute<ST, LO, GO, NT>> get_BDP() const {
+    return BDP_;
+  }
 
  private:
-  Teuchos::RCP<EpetraExt_PointToBlockDiagPermute> BDP_;
+  Teuchos::RCP<Tpetra::Ext::PointToBlockDiagPermute<ST, LO, GO, NT>> BDP_;
   const VectorSpace range_, domain_;
 };
 
