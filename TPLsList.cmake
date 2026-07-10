@@ -61,7 +61,6 @@ TRIBITS_REPOSITORY_DEFINE_TPLS(
   AMD             "cmake/TPLs/"    TS
   CSparse         "cmake/TPLs/"    EX
   HYPRE           "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"   EX
-  Umpire          "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"   EX
   PETSC           "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"   ST
   BLACS           "cmake/TPLs/"    ST
   SCALAPACK       "cmake/TPLs/"    ST
