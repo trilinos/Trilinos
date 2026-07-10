@@ -435,11 +435,12 @@ int main(int argc,char * argv[])
 
      // solve linear system
      /////////////////////////////////////////////////////////////
-
+     stackedTimer->start("Solve system");
      if(useTpetra)
         solveTpetraSystem(*container);
      else
         solveEpetraSystem(*container);
+     stackedTimer->stop("Solve system");
 
      // output data (optional)
      /////////////////////////////////////////////////////////////
@@ -569,9 +570,9 @@ void solveTpetraSystem(panzer::LinearObjContainer & container)
   typedef Tpetra::Operator<double,int,panzer::GlobalOrdinal> OP;
   typedef Belos::LinearProblem<double,MV, OP> ProblemType;
   Teuchos::RCP<ProblemType> problem(new ProblemType(tp_container.get_A(), tp_container.get_x(), tp_container.get_f()));
-  auto prec = Ifpack2::Factory::create<Tpetra::RowMatrix<double,int,panzer::GlobalOrdinal>>("RELAXATION",tp_container.get_A(),4);
+  auto prec = Ifpack2::Factory::create<Tpetra::RowMatrix<double,int,panzer::GlobalOrdinal>>("RELAXATION",tp_container.get_A());
   Teuchos::ParameterList precParams;
-  precParams.set("relaxation: type", "Gauss-Seidel");
+  precParams.set("relaxation: type", "Jacobi");
   prec->setParameters(precParams);
   prec->initialize();
   prec->compute();
