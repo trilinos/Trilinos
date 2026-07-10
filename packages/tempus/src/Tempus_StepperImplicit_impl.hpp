@@ -305,7 +305,7 @@ void StepperImplicit<Scalar>::evaluateImplicitODE(
 
 template <class Scalar>
 void StepperImplicit<Scalar>::describe(
-    Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel) const
+    Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel /*verbLevel*/) const
 {
   out.setOutputToRootOnly(0);
   out << "--- StepperImplicit ---\n";

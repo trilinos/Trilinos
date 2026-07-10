@@ -89,7 +89,7 @@ public:
 private:
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const { return outArgs_; }
   void evalModelImpl(
-    const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+    const Thyra::ModelEvaluatorBase::InArgs<Scalar> & /*inArgs*/,
     const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs
     ) const
   { if (nonnull(outArgs.get_W_op())) outArgs.get_W_op() = lop_; }

@@ -286,7 +286,7 @@ void ExampleTridiagSpmdLinearOp<Scalar>::applyImpl(
 
 template<class Scalar>
 void ExampleTridiagSpmdLinearOp<Scalar>::communicate(
-  const bool first, const bool last,
+  const bool  /*first*/, const bool  /*last*/,
   const Teuchos::ArrayView<const Scalar> &x,
     const Teuchos::Ptr<Scalar> &x_km1,
     const Teuchos::Ptr<Scalar> &x_kp1

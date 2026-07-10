@@ -24,11 +24,11 @@ namespace LOCA {
   namespace Tpetra {
 
     LowRankUpdateRowMatrix::
-    LowRankUpdateRowMatrix(const Teuchos::RCP<LOCA::GlobalData>& global_data,
+    LowRankUpdateRowMatrix(const Teuchos::RCP<LOCA::GlobalData>&  /*global_data*/,
                            const Teuchos::RCP<NOX::TRowMatrix>& jacRowMatrix,
                            const Teuchos::RCP<NOX::TMultiVector>& U_multiVec,
                            const Teuchos::RCP<NOX::TMultiVector>& V_multiVec,
-                           bool setup_for_solve,
+                           bool  /*setup_for_solve*/,
                            bool include_UV_terms) :
       J_rowMatrix(jacRowMatrix),
       nonconst_U(U_multiVec),
@@ -111,38 +111,38 @@ namespace LOCA {
     {return J_rowMatrix->supportsRowViews();}
 
     void
-    LowRankUpdateRowMatrix::getGlobalRowCopy(NOX::GlobalOrdinal GlobalRow,
-                                             NOX::TRowMatrix::nonconst_global_inds_host_view_type &Indices,
-                                             NOX::TRowMatrix::nonconst_values_host_view_type &Values,
-                                             size_t &NumEntries) const
+    LowRankUpdateRowMatrix::getGlobalRowCopy(NOX::GlobalOrdinal  /*GlobalRow*/,
+                                             NOX::TRowMatrix::nonconst_global_inds_host_view_type & /*Indices*/,
+                                             NOX::TRowMatrix::nonconst_values_host_view_type & /*Values*/,
+                                             size_t & /*NumEntries*/) const
     {
       TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
                                  "ERROR - LOCA::LowRankRowMatrix::getGlobalRowCopy() - NOT implemented yet!");
     }
 
     void
-    LowRankUpdateRowMatrix::getLocalRowCopy (NOX::LocalOrdinal LocalRow,
-                                             NOX::TRowMatrix::nonconst_local_inds_host_view_type &Indices,
-                                             NOX::TRowMatrix::nonconst_values_host_view_type &Values,
-                                             size_t &NumEntries) const
+    LowRankUpdateRowMatrix::getLocalRowCopy (NOX::LocalOrdinal  /*LocalRow*/,
+                                             NOX::TRowMatrix::nonconst_local_inds_host_view_type & /*Indices*/,
+                                             NOX::TRowMatrix::nonconst_values_host_view_type & /*Values*/,
+                                             size_t & /*NumEntries*/) const
     {
       TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
                                  "ERROR - LOCA::LowRankRowMatrix::getLocalRowCopy() - NOT implemented yet!");
     }
 
     void
-    LowRankUpdateRowMatrix::getGlobalRowView (NOX::GlobalOrdinal GlobalRow,
-                                              NOX::TRowMatrix::global_inds_host_view_type &indices,
-                                              NOX::TRowMatrix::values_host_view_type &values) const
+    LowRankUpdateRowMatrix::getGlobalRowView (NOX::GlobalOrdinal  /*GlobalRow*/,
+                                              NOX::TRowMatrix::global_inds_host_view_type & /*indices*/,
+                                              NOX::TRowMatrix::values_host_view_type & /*values*/) const
     {
       TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
                                  "ERROR - LOCA::LowRankRowMatrix::getGlobalRowView() - NOT implemented yet!");
     }
 
     void
-    LowRankUpdateRowMatrix::getLocalRowView(NOX::LocalOrdinal LocalRow,
-                                            NOX::TRowMatrix::local_inds_host_view_type &indices,
-                                            NOX::TRowMatrix::values_host_view_type &values) const
+    LowRankUpdateRowMatrix::getLocalRowView(NOX::LocalOrdinal  /*LocalRow*/,
+                                            NOX::TRowMatrix::local_inds_host_view_type & /*indices*/,
+                                            NOX::TRowMatrix::values_host_view_type & /*values*/) const
     {
       TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
                                  "ERROR - LOCA::LowRankRowMatrix::getLocalRowView() - NOT implemented yet!");
@@ -156,19 +156,19 @@ namespace LOCA {
     //                                            const NOX::Scalar*& vals) const
     // {}
 
-    void LowRankUpdateRowMatrix::getLocalDiagCopy(NOX::TVector& diag) const
+    void LowRankUpdateRowMatrix::getLocalDiagCopy(NOX::TVector&  /*diag*/) const
     {
       TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
                                  "ERROR - LOCA::LowRankRowMatrix::getLocalDiagCopy() - NOT implemented yet!");
     }
 
-    void LowRankUpdateRowMatrix::leftScale(const NOX::TVector& x)
+    void LowRankUpdateRowMatrix::leftScale(const NOX::TVector&  /*x*/)
     {
       TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
                                  "ERROR - LOCA::LowRankRowMatrix::leftScale() - NOT implemented yet!");
     }
 
-    void LowRankUpdateRowMatrix::rightScale(const NOX::TVector& x)
+    void LowRankUpdateRowMatrix::rightScale(const NOX::TVector&  /*x*/)
     {
       TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
                                  "ERROR - LOCA::LowRankRowMatrix::rightScale() - NOT implemented yet!");

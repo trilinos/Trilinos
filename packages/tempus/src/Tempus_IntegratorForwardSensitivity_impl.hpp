@@ -46,7 +46,7 @@ IntegratorForwardSensitivity<Scalar>::IntegratorForwardSensitivity()
 
 template <class Scalar>
 void IntegratorForwardSensitivity<Scalar>::setStepper(
-    Teuchos::RCP<Thyra::ModelEvaluator<Scalar>> model)
+    Teuchos::RCP<Thyra::ModelEvaluator<Scalar>> /*model*/)
 {
   if (use_combined_method_)
     integrator_->setModel(sens_model_);

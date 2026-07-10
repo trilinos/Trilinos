@@ -84,7 +84,7 @@ using namespace std;
  *  </div>
  *  \endhtmlonly
  */
-int main(int argc, char *argv[])
+int main(int  /*argc*/, char * /*argv*/[])
 {
   bool verbose = true;
   bool success = false;

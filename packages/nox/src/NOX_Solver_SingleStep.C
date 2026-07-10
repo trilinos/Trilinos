@@ -10,7 +10,6 @@
 #include "NOX_Solver_SingleStep.H"    // class definition
 #include "NOX_GlobalData.H"    // class definition
 #include "NOX_Abstract_Group.H"    // class definition
-#include "NOX_Abstract_Group.H"    // class definition
 #include "NOX_Solver_SolverUtils.H"
 #include "Teuchos_ParameterList.hpp"  // class data element
 #include "NOX_Observer.hpp"

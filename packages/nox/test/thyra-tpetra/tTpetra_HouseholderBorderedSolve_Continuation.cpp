@@ -143,7 +143,7 @@ public:
 
   ~WriteParametersObserver() { file_.close(); }
 
-  void runPreSolve(const NOX::Solver::Generic& solver)
+  void runPreSolve(const NOX::Solver::Generic&  /*solver*/)
   {
     if (first_ && on_print_rank_) {
       file_.open(file_name_,std::ios::trunc);

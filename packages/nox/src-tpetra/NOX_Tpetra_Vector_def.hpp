@@ -112,7 +112,7 @@ abs(const Abstract::Vector& source) {
 
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 Abstract::Vector& Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-random(bool useSeed, int seed)
+random(bool  /*useSeed*/, int  /*seed*/)
 {
     if (!tpetraVec->isDistributed())
     {
