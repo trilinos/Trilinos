@@ -102,7 +102,7 @@ int run(int argc, char *argv[])
   const int NumGlobalElements = B->getGlobalLength();
   int numIters1, numIters2, numIters3;
   int maxits = NumGlobalElements; // maximum number of iterations to run
-  int numBlocks = 100;
+  int numBlocks = 300;
   int numRecycledBlocks = 20;
   Teuchos::ParameterList belosList;
   belosList.set( "Maximum Iterations", maxits );         // Maximum number of iterations allowed
