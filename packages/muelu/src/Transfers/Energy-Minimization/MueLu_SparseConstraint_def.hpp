@@ -24,7 +24,6 @@
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_SparseConstraint_decl.hpp"
 #include "MueLu_Utilities.hpp"
-#include "Xpetra_MatrixFactory.hpp"
 #include "MueLu_Monitor.hpp"
 
 namespace MueLu {

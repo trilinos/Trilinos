@@ -216,7 +216,7 @@ void Jacobi_MKL_SPMM(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, N
 #include "TpetraExt_MatrixMatrix_ExtraKernels_def.hpp"
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void Jacobi_Wrapper(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> &A, const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> &B, Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> &C, const Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &D, typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega, std::string jacobi_algorithm_name, std::string spgemm_algorithm_name, int team_work_size) {
+void Jacobi_Wrapper(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> &A, const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & /*B*/, Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & /*C*/, const Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & /*D*/, typename Teuchos::ScalarTraits<Scalar>::magnitudeType /*omega*/, std::string jacobi_algorithm_name, std::string spgemm_algorithm_name, int /*team_work_size*/) {
 #include <MueLu_UseShortNames.hpp>
   using Teuchos::RCP;
   using Teuchos::rcp;

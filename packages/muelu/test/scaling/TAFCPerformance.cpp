@@ -171,7 +171,7 @@ void TestTransferAndFillComplete(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdina
 // =========================================================================
 // =========================================================================
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int argc, char *argv[]) {
+int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib & /*lib*/, int argc, char *argv[]) {
 #include <MueLu_UseShortNames.hpp>
   using Teuchos::ArrayRCP;
   using Teuchos::ParameterList;

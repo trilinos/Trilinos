@@ -1113,6 +1113,16 @@
     </parameter>
 
     <parameter>
+      <name>project auxiliary matrices</name>
+      <type>\parameterlist</type>
+      <description>Fine level matrices that will be projected down the hierarchy.
+      Currently, the list can contain any of the following parameter names
+      (``M'', ``Minv'', ``MinvA'') of type \texttt{string} and value
+      (``NoFactory'' or ``CoalesceDrop'') indicating factory which creates data.</description>
+      <comment-ML>not supported by ML</comment-ML>
+    </parameter>
+
+    <parameter>
       <name>keep data</name>
       <type>string</type>
       <default>"{}"</default>

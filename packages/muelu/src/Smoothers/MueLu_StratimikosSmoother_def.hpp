@@ -30,7 +30,6 @@
 
 #include <Stratimikos_DefaultLinearSolverBuilder.hpp>
 #include "Teuchos_AbstractFactoryStd.hpp"
-#include <Teuchos_ParameterList.hpp>
 #include <unordered_map>
 
 namespace MueLu {

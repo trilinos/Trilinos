@@ -343,10 +343,10 @@ bool OverlappingRowMatrix<MatrixType>::isFillComplete() const {
 
 template <class MatrixType>
 void OverlappingRowMatrix<MatrixType>::
-    getGlobalRowCopy(global_ordinal_type GlobalRow,
-                     nonconst_global_inds_host_view_type &Indices,
-                     nonconst_values_host_view_type &Values,
-                     size_t &NumEntries) const {
+    getGlobalRowCopy(global_ordinal_type /*GlobalRow*/,
+                     nonconst_global_inds_host_view_type & /*Indices*/,
+                     nonconst_values_host_view_type & /*Values*/,
+                     size_t & /*NumEntries*/) const {
   throw std::runtime_error("Ifpack2::OverlappingRowMatrix::getGlobalRowCopy() not supported.");
 }
 

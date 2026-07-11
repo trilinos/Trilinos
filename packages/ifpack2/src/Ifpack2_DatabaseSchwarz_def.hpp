@@ -243,7 +243,7 @@ template <class MatrixType>
 void DatabaseSchwarz<MatrixType>::
     apply(const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& X,
           Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& Y,
-          Teuchos::ETransp mode,
+          Teuchos::ETransp /*mode*/,
           scalar_type alpha,
           scalar_type beta) const {
   const std::string timerName("Ifpack2::DatabaseSchwarz::apply");

@@ -163,11 +163,11 @@ MatrixFreeJacobianOperator<Scalar>::opSupportedImpl (::Thyra::EOpTransp M_trans)
 
 template<typename Scalar>
 void
-MatrixFreeJacobianOperator<Scalar>::applyImpl(const ::Thyra::EOpTransp M_trans,
+MatrixFreeJacobianOperator<Scalar>::applyImpl(const ::Thyra::EOpTransp  /*M_trans*/,
                           const ::Thyra::MultiVectorBase< Scalar > &thyra_mv_y,
                           const Teuchos::Ptr< ::Thyra::MultiVectorBase< Scalar > > &thyra_mv_u,
-                          const Scalar alpha,
-                          const Scalar beta) const
+                          const Scalar  /*alpha*/,
+                          const Scalar  /*beta*/) const
 {
   TEUCHOS_ASSERT(setup_called_);
 

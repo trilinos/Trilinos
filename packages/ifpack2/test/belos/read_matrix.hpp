@@ -40,7 +40,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
 read_matrix_hb(const std::string& hb_file,
                const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-               const Teuchos::RCP<Node>& node = Teuchos::null) {
+               const Teuchos::RCP<Node>& /*node*/ = Teuchos::null) {
   using std::cout;
   using std::endl;
   using Teuchos::RCP;

@@ -26,7 +26,6 @@
 #endif
 
 #ifdef HAVE_MPI
-#include <mpi.h>
 #endif
 
 namespace MueLu {
@@ -544,7 +543,7 @@ void PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::launch_latency_make_
   for (int i = 0; i < KERNEL_REPEATS; i++) {
     start = clock::now();
     Kokkos::parallel_for(
-        "empty kernel", range_policy(0, 1), KOKKOS_LAMBDA(const size_t j) {
+        "empty kernel", range_policy(0, 1), KOKKOS_LAMBDA(const size_t /*j*/) {
           ;
         });
     exec_space().fence();

@@ -34,7 +34,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 AggregateQualityEstimateFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~AggregateQualityEstimateFactory() = default;
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void AggregateQualityEstimateFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
+void AggregateQualityEstimateFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& fineLevel, Level& /*coarseLevel*/) const {
   Input(fineLevel, "A");
   Input(fineLevel, "Aggregates");
   Input(fineLevel, "CoarseMap");
@@ -416,7 +416,7 @@ void AggregateQualityEstimateFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>:
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void AggregateQualityEstimateFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ComputeAggregateSizes(RCP<const Matrix> A, RCP<const Aggregates> aggs, RCP<LocalOrdinalVector> agg_sizes) const {
+void AggregateQualityEstimateFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ComputeAggregateSizes(RCP<const Matrix> /*A*/, RCP<const Aggregates> aggs, RCP<LocalOrdinalVector> agg_sizes) const {
   ArrayRCP<LO> aggSortedVertices, aggsToIndices, aggSizes;
   ConvertAggregatesData(aggs, aggSortedVertices, aggsToIndices, aggSizes);
 

@@ -476,7 +476,7 @@ void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     BuildFurtherAggregates(const Teuchos::ParameterList& params,
-                           const RCP<const Matrix>& A,
+                           const RCP<const Matrix>& /*A*/,
                            const Teuchos::ArrayView<const LO>& orderingVector,
                            const typename Matrix::local_matrix_device_type& coarseA,
                            const typename Teuchos::ScalarTraits<Scalar>::magnitudeType kappa,

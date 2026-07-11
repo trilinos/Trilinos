@@ -32,7 +32,7 @@
 
 #include <MueLu_Utilities.hpp>
 
-bool compare_to_gold_all_ranks(int myRank, const std::string& baseFile) {
+bool compare_to_gold_all_ranks(int /*myRank*/, const std::string& baseFile) {
   bool failed = false;
 
   // Create a copy of outputs

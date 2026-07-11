@@ -24,8 +24,8 @@ namespace NS {
       <Parameter name="Type" type="string" value="NS SIMPLE"/>
 
       <!-- Inverse operations to use -->
-      <Parameter name="Inverse Velocity Type" type="string" value="ML_GS-Velocity"/>
-      <Parameter name="Inverse Pressure Type" type="string" value="ML_GS-Pressure"/>
+      <Parameter name="Inverse Velocity Type" type="string" value="MueLu_GS-Velocity"/>
+      <Parameter name="Inverse Pressure Type" type="string" value="MueLu_GS-Pressure"/>
 
       <Parameter name="Explicit Velocity Inverse Type" type="string" value="AbsRowSum"/>
 

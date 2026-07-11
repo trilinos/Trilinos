@@ -103,7 +103,7 @@ void print_variable_info(const Kokkos::Tools::Experimental::VariableInfo* info, 
   std::cout << "[" << index << "] Baseline enums        = " << Kokkos_Tools_VariableInfo_ValueType::kokkos_value_double << "," << Kokkos_Tools_VariableInfo_StatisticalCategory::kokkos_value_categorical << "," << Kokkos_Tools_VariableInfo_CandidateValueType::kokkos_value_set << std::endl;
 }
 
-void declare_input_type(const char* name, const size_t id,
+void declare_input_type(const char* /*name*/, const size_t /*id*/,
                         Kokkos::Tools::Experimental::VariableInfo* info) {
   // We copy this data in and assume the default constructor works
   // std::cout<<"DEBUG: calling declare_input_type"<<std::endl;
@@ -111,7 +111,7 @@ void declare_input_type(const char* name, const size_t id,
   input_info.push_back(*info);
 }
 
-void declare_output_type(const char* name, const size_t id,
+void declare_output_type(const char* /*name*/, const size_t /*id*/,
                          Kokkos::Tools::Experimental::VariableInfo* info) {
   // We copy this data in and assume the default constructor works
   // std::cout<<"DEBUG: calling declare_output_type"<<std::endl;
@@ -119,8 +119,8 @@ void declare_output_type(const char* name, const size_t id,
   output_info.push_back(*info);
 }
 
-void request_output_values(const size_t context, const size_t num_inputs,
-                           const Kokkos::Tools::Experimental::VariableValue* inputs_in,
+void request_output_values(const size_t /*context*/, const size_t /*num_inputs*/,
+                           const Kokkos::Tools::Experimental::VariableValue* /*inputs_in*/,
                            const size_t num_outputs,
                            Kokkos::Tools::Experimental::VariableValue* outputs_in) {
   // This dummy callback will set the output value to one step more than the bottom guy in the range

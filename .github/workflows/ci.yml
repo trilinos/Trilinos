@@ -9,6 +9,10 @@ on:
       genconfig-string:
         required: true
         type: string
+      image:
+        description: 'Link to the registry image. Used for pr_reproducer script.'
+        required: true
+        type: string
       target-branch:
         required: false
         type: string
@@ -45,6 +49,10 @@ on:
         required: false
         type: boolean
         default: false
+      skip-run-tests:
+        required: false
+        type: boolean
+        default: false
       extra-pr-driver-args:
         description: 'Extra arguments to be used when calling PullRequestLinuxDriverTest.py'
         required: false
@@ -58,7 +66,7 @@ jobs:
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
           fetch-depth: 1
-          ref: ${{ github.event.pull_request && '' || inputs.target-branch }}
+          ref: ${{ github.event.pull_request && github.ref || inputs.target-branch }}
       - name: Print debug outputs
         shell: bash -l {0}
         env:
@@ -108,6 +116,9 @@ jobs:
           printf "\n\n\n"
 
           echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}"
+          if [ "${{ inputs.image }}" != "${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" ] ; then
+              exit 1
+          fi
           type python
 
           if [ "${{ inputs.num-concurrent-tests }}" != "-1" ]
@@ -138,6 +149,13 @@ jobs:
             skip_create_packageenabels=""
           fi
 
+          if [ "${{ inputs.skip-run-tests }}" == "true" ]
+          then
+            skip_run_tests="--skip-run-tests"
+          else
+            skip_run_tests=""
+          fi
+
           if [ -n "${{ inputs.extra-pr-driver-args }}" ]
           then
             extra_pr_driver_args="${{ inputs.extra-pr-driver-args }}"
@@ -166,6 +184,7 @@ jobs:
             ${max_cores_allowed} \
             ${slots_per_gpu} \
             ${skip_create_packageenables} \
+            ${skip_run_tests} \
             ${extra_pr_driver_args}
       - name: Filtered build error logs
         if: success() || failure()
@@ -191,7 +210,7 @@ jobs:
         env:
           NODE_USE_SYSTEM_CA: 1
         with:
-          name: ${{ inputs.dashboard-build-name }}-artifacts
+          name: ${{ inputs.genconfig-string }}-artifacts
           path: /home/runner/artifacts/*
           retention-days: 90
       - name: Write Summary

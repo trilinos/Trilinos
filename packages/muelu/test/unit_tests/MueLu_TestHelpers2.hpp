@@ -41,7 +41,6 @@
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_UncoupledAggregationFactory.hpp"
 #include "MueLu_CoarseMapFactory.hpp"
-#include "MueLu_SaPFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
 

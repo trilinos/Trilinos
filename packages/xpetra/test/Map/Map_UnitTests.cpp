@@ -520,7 +520,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Map, localMap, M, LO, GO, N) {
       GO globalElement;
       Kokkos::parallel_reduce(
           "read GO element", range_type(0, 1),
-          KOKKOS_LAMBDA(int dummy, GO& ge) {
+          KOKKOS_LAMBDA(int /*dummy*/, GO& ge) {
             ge = localMap.getGlobalElement(i);
           },
           globalElement);
@@ -548,7 +548,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Map, localMap, M, LO, GO, N) {
       GO globalElement;
       Kokkos::parallel_reduce(
           "read GO element", range_type(0, 1),
-          KOKKOS_LAMBDA(int dummy, GO& ge) {
+          KOKKOS_LAMBDA(int /*dummy*/, GO& ge) {
             ge = localMap.getGlobalElement(i);
           },
           globalElement);
@@ -576,7 +576,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Map, localMap, M, LO, GO, N) {
       GO globalElement;
       Kokkos::parallel_reduce(
           "read GO element", range_type(0, 1),
-          KOKKOS_LAMBDA(int dummy, GO& ge) {
+          KOKKOS_LAMBDA(int /*dummy*/, GO& ge) {
             ge = localMap.getGlobalElement(i);
           },
           globalElement);

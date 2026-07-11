@@ -132,13 +132,13 @@ bool Container<MatrixType>::isComputed() const {
 
 template <class MatrixType>
 void Container<MatrixType>::
-    applyMV(const mv_type& X, mv_type& Y) const {
+    applyMV(const mv_type& /*X*/, mv_type& /*Y*/) const {
   TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Not implemented.");
 }
 
 template <class MatrixType>
 void Container<MatrixType>::
-    weightedApplyMV(const mv_type& X, mv_type& Y, vector_type& W) const {
+    weightedApplyMV(const mv_type& /*X*/, mv_type& /*Y*/, vector_type& /*W*/) const {
   TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Not implemented.");
 }
 
@@ -149,8 +149,8 @@ std::string Container<MatrixType>::
 }
 
 template <class MatrixType>
-void Container<MatrixType>::DoGSBlock(ConstHostView X, HostView Y, HostView Y2, HostView Resid,
-                                      SC dampingFactor, LO i) const {
+void Container<MatrixType>::DoGSBlock(ConstHostView /*X*/, HostView /*Y*/, HostView /*Y2*/, HostView /*Resid*/,
+                                      SC /*dampingFactor*/, LO /*i*/) const {
   TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Not implemented.");
 }
 
@@ -230,7 +230,7 @@ void Container<MatrixType>::DoOverlappingJacobi(ConstHostView X, HostView Y, Con
 // This is used 3 times: once in DoGaussSeidel and twice in DoSGS
 template <class MatrixType, typename LocalScalarType>
 void ContainerImpl<MatrixType, LocalScalarType>::DoGSBlock(
-    ConstHostView X, HostView Y, HostView Y2, HostView Resid,
+    ConstHostView X, HostView /*Y*/, HostView Y2, HostView Resid,
     SC dampingFactor, LO i) const {
   using Teuchos::ArrayView;
   using STS      = Teuchos::ScalarTraits<ISC>;
@@ -446,7 +446,7 @@ void ContainerImpl<MatrixType, LocalScalarType>::
 template <class MatrixType, class LocalScalarType>
 void ContainerImpl<MatrixType, LocalScalarType>::
     applyInverseJacobi(const mv_type& /* X */, mv_type& /* Y */,
-                       SC dampingFactor,
+                       SC /*dampingFactor*/,
                        bool /* zeroStartingSolution = false */,
                        int /* numSweeps = 1 */) const {
   TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Not implemented.");
@@ -479,12 +479,12 @@ std::string ContainerImpl<MatrixType, LocalScalarType>::
 
 template <class MatrixType, class LocalScalarType>
 void ContainerImpl<MatrixType, LocalScalarType>::
-    solveBlock(ConstHostSubviewLocal X,
-               HostSubviewLocal Y,
-               int blockIndex,
-               Teuchos::ETransp mode,
-               const LSC alpha,
-               const LSC beta) const {
+    solveBlock(ConstHostSubviewLocal /*X*/,
+               HostSubviewLocal /*Y*/,
+               int /*blockIndex*/,
+               Teuchos::ETransp /*mode*/,
+               const LSC /*alpha*/,
+               const LSC /*beta*/) const {
   TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Not implemented.");
 }
 

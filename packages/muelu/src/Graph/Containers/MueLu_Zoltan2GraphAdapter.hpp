@@ -228,14 +228,14 @@ class MueLuGraphBaseAdapter : public Zoltan2::GraphAdapter<User, UserCoord> {
   }
 
   template <typename Adapter>
-  void applyPartitioningSolution(const User &in, User *&out,
-                                 const Zoltan2::PartitioningSolution<Adapter> &solution) const {
+  void applyPartitioningSolution(const User & /*in*/, User *& /*out*/,
+                                 const Zoltan2::PartitioningSolution<Adapter> & /*solution*/) const {
     TEUCHOS_TEST_FOR_EXCEPTION(1, std::invalid_argument, "applyPartitionlingSolution not implemeneted");
   }
 
   template <typename Adapter>
-  void applyPartitioningSolution(const User &in, RCP<User> &out,
-                                 const Zoltan2::PartitioningSolution<Adapter> &solution) const {
+  void applyPartitioningSolution(const User & /*in*/, RCP<User> & /*out*/,
+                                 const Zoltan2::PartitioningSolution<Adapter> & /*solution*/) const {
     TEUCHOS_TEST_FOR_EXCEPTION(1, std::invalid_argument, "applyPartitionlingSolution not implemeneted");
   }
 

@@ -35,10 +35,6 @@ IF(TEKO_HAVE_EPETRA)
    TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Epetra)
 ENDIF()
 
-IF (ML_ENABLE_TekoSmoothers)
-   TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/mlutils)
-ENDIF()
-
 APPEND_GLOB(HEADERS
   *.hpp
   NS/*.hpp
@@ -51,21 +47,9 @@ APPEND_GLOB(SOURCES
   Tpetra/*.cpp
   )
 
-IF(NOT TEKO_HAVE_EPETRA)
-  LIST(REMOVE_ITEM SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/Teko_DiagonalPreconditionerOp.cpp
-  )
-  LIST(REMOVE_ITEM HEADERS
-    ${CMAKE_CURRENT_SOURCE_DIR}/Teko_DiagonalPreconditionerOp.hpp
-  )
-ELSE()
+IF(TEKO_HAVE_EPETRA)
   APPEND_GLOB(HEADERS Epetra/*.hpp)
   APPEND_GLOB(SOURCES Epetra/*.cpp)
-ENDIF()
-
-IF (ML_ENABLE_TekoSmoothers)
-   APPEND_GLOB(HEADERS mlutils/*.hpp)
-   APPEND_GLOB(SOURCES mlutils/*.cpp)
 ENDIF()
 
 ######################################

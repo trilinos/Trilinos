@@ -144,7 +144,7 @@ private:
 };
 
 //! Main subroutine of Broyden.C
-int main(int argc, char *argv[])
+int main(int  /*argc*/, char * /*argv*/[])
 {
   // Basic declarations to clean up the code
   using Teuchos::RCP;
