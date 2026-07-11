@@ -322,6 +322,103 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView_DefaultCtorDtor) {
 }
 
 // ********************************
+// Demonstrates that the "inner view" of a ViewOfViews can be a user
+// defined class/struct containing Kokkos::Views instead of a plain
+// Kokkos::View, e.g. "View<MyObj*>" instead of
+// "View<View<double**>*>".  To support this, MyObj must be default
+// constructible and must supply an ADL discoverable overload of
+// phalanxVoVMakeCopyWithInnerRuntimeUnmanagedViews() that builds an
+// unmanaged copy of MyObj by delegating to
+// PHX::phalanxVoVMakeCopyWithInnerRuntimeUnmanagedViews() for each of
+// its Kokkos::View data members.
+// ********************************
+namespace PhalanxViewOfViewsStructOfViewsTest {
+
+  using InnerViewT = Kokkos::View<double***,mem_t>;
+
+  // A struct of views used as the "inner view" of a ViewOfViews.
+  struct StructOfViews {
+    InnerViewT a;
+    InnerViewT b;
+
+    KOKKOS_INLINE_FUNCTION
+    double sum(const int cell,const int pt,const int eq) const
+    { return a(cell,pt,eq) + b(cell,pt,eq); }
+  };
+
+  // Required customization point for PHX::ViewOfViews. Defined in the
+  // same namespace as StructOfViews so that it is found via ADL from
+  // within PHX::ViewOfViews::addView().
+  StructOfViews phalanxVoVMakeCopyWithInnerRuntimeUnmanagedViews(const StructOfViews& s)
+  {
+    StructOfViews tmp;
+    tmp.a = PHX::phalanxVoVMakeCopyWithInnerRuntimeUnmanagedViews(s.a);
+    tmp.b = PHX::phalanxVoVMakeCopyWithInnerRuntimeUnmanagedViews(s.b);
+    return tmp;
+  }
+
+}
+
+TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView_StructOfViews) {
+  using namespace PhalanxViewOfViewsStructOfViewsTest;
+
+  const int num_cells = 10;
+  const int num_pts = 8;
+  const int num_equations = 32;
+
+  InnerViewT a1("a1",num_cells,num_pts,num_equations);
+  InnerViewT b1("b1",num_cells,num_pts,num_equations);
+  InnerViewT a2("a2",num_cells,num_pts,num_equations);
+  InnerViewT b2("b2",num_cells,num_pts,num_equations);
+
+  Kokkos::deep_copy(a1,2.0);
+  Kokkos::deep_copy(b1,3.0);
+  Kokkos::deep_copy(a2,4.0);
+  Kokkos::deep_copy(b2,5.0);
+
+  Kokkos::View<double***,mem_t> results("results",num_cells,num_pts,num_equations);
+
+  {
+    constexpr int OuterViewRank = 1;
+    PHX::ViewOfViews<OuterViewRank,StructOfViews,mem_t> v_of_v("outer host",2);
+
+    TEST_ASSERT(v_of_v.isInitialized());
+
+    // Let the original struct-of-views instances go out of scope to
+    // prove that the ViewOfViews is what keeps the inner views alive.
+    {
+      StructOfViews s1{a1,b1};
+      StructOfViews s2{a2,b2};
+      v_of_v.addView(s1,0);
+      v_of_v.addView(s2,1);
+    }
+
+    TEST_ASSERT(!v_of_v.deviceViewIsSynced());
+    v_of_v.syncHostToDevice();
+    TEST_ASSERT(v_of_v.deviceViewIsSynced());
+
+    auto v_dev = v_of_v.getViewDevice();
+    auto policy = Kokkos::MDRangePolicy<Kokkos::Rank<3>>({0,0,0},{num_cells,num_pts,num_equations});
+    Kokkos::parallel_for("view of view struct-of-views test",policy,KOKKOS_LAMBDA (const int cell,const int pt, const int eq) {
+      results(cell,pt,eq) = v_dev(0).sum(cell,pt,eq) + v_dev(1).sum(cell,pt,eq);
+    });
+
+    // Test the const accessors also work with struct-of-views inner types.
+    const PHX::ViewOfViews<OuterViewRank,StructOfViews,mem_t>& const_v_of_v = v_of_v;
+    const_v_of_v.getViewHost();
+    const_v_of_v.getViewDevice();
+  }
+
+  auto results_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),results);
+  const auto tol = std::numeric_limits<double>::epsilon() * 100.0;
+  for (int cell=0; cell < num_cells; ++cell)
+    for (int pt=0; pt < num_pts; ++pt)
+      for (int eq=0; eq < num_equations; ++eq) {
+        TEST_FLOATING_EQUALITY(results_host(cell,pt,eq),14.0,tol); // 2+3+4+5
+      }
+}
+
+// ********************************
 // Demonstrates an alternative path for ViewOfViews that uses a user
 // defined wrapper and the assignment operator on device to disable
 // the reference tracking.
