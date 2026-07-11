@@ -603,7 +603,7 @@ MUELU_ADD_SERIAL_AND_MPI_TEST(
 MUELU_ADD_SERIAL_AND_MPI_TEST(
   Driver
   NAME "Elasticity3D"
-  ARGS "--linAlgebra=Tpetra --xml=elasticity3D.xml  --matrixType=Elasticity3D --nx=20 --ny=20 --nz=20 --its=23 --belosType=gmres --tol=1.0e-8"
+  ARGS "--linAlgebra=Tpetra --xml=elasticity3D.xml  --matrixType=Elasticity3D --nx=20 --ny=20 --nz=20 --its=24 --belosType=gmres --tol=1.0e-8"
   NUM_MPI_PROCS 4
   COMM serial mpi
   PASS_REGULAR_EXPRESSION "Belos converged"
