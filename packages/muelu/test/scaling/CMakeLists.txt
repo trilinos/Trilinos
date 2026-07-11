@@ -74,6 +74,7 @@ TRIBITS_ADD_TEST(
 TRIBITS_COPY_FILES_TO_BINARY_DIR(
   Driver_cp
   SOURCE_FILES
+    A_rankWithoutUnknowns.m
     amgx.json
     amgx.xml
     anisotropic.xml
@@ -92,6 +93,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(
     coords1.mat
     coords2.mat
     coords2.mm
+    coords_rankWithoutUnknowns.m
     elasticity2D.xml
     elasticity3D.xml
     emin_with_dl_elasticity3D.xml
@@ -103,6 +105,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(
     generalBlkSmoothing.xml
     iso_poisson.xml
     isorropia.xml
+    map_rankWithoutUnknowns.m
     material.mm
     material.xml
     MinvA.xml
@@ -116,6 +119,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(
     null2.mat
     oLapSchwarzEquivBlkSmoo.xml
     pairwise.xml
+    rankWithoutUnknowns.xml
     rap.xml
     recurMG.xml
     regularOverLap.dat
@@ -897,3 +901,12 @@ IF(${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT)
 
   ENDIF()
 ENDIF()
+
+TRIBITS_ADD_TEST(
+  Driver
+  NAME RankWithoutUnknowns
+  COMM mpi
+  NUM_MPI_PROCS 4
+  ARGS "--matrix=A_rankWithoutUnknowns.m --rowmap=map_rankWithoutUnknowns.m --coords=coords_rankWithoutUnknowns.m --xml=rankWithoutUnknowns.xml"
+  PASS_REGULAR_EXPRESSION "Belos converged"
+)
