@@ -572,11 +572,13 @@ void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::
   }
 
   const Scalar jacobiOmega = omega * Teuchos::ScalarTraits<Scalar>::one();
-  KokkosSparse::Experimental::spgemm_jacobi(&kh, AnumRows, BnumRows, BnumCols,
-                                            Arowptr, Acolind, Avals, false,
-                                            Browptr, Bcolind, Bvals, false,
-                                            row_mapC, entriesC, valuesC,
-                                            jacobiOmega, Dinv.getLocalViewDevice(Tpetra::Access::ReadOnly));
+  if (c_nnz_size) {
+    KokkosSparse::Experimental::spgemm_jacobi(&kh, AnumRows, BnumRows, BnumCols,
+                                              Arowptr, Acolind, Avals, false,
+                                              Browptr, Bcolind, Bvals, false,
+                                              row_mapC, entriesC, valuesC,
+                                              jacobiOmega, Dinv.getLocalViewDevice(Tpetra::Access::ReadOnly));
+  }
   kh.destroy_spgemm_handle();
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
