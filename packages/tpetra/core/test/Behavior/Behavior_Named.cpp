@@ -15,6 +15,7 @@
 #include <Tpetra_Details_Behavior.hpp>
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_CommHelpers.hpp>
+#include <Teuchos_EnvVariables.hpp>
 
 /*
  * Note: The tests for the Behavior class are scattered across several files,
@@ -28,8 +29,8 @@
 namespace {
 
 TEUCHOS_STATIC_SETUP() {
-  setenv("TPETRA_DEBUG", "Dbg1,Dbg2", 1);
-  setenv("TPETRA_VERBOSE", "Verb1,Verb2", 1);
+  Teuchos::setEnvironmentVariable("TPETRA_DEBUG", "Dbg1,Dbg2", 1);
+  Teuchos::setEnvironmentVariable("TPETRA_VERBOSE", "Verb1,Verb2", 1);
 }
 
 TEUCHOS_UNIT_TEST(Behavior, Named) {

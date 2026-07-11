@@ -353,6 +353,10 @@ TRIBITS_ADD_LIBRARY(
   ADDED_LIB_TARGET_NAME_OUT TPETRA_LIBNAME
   )
 
+if(BUILD_SHARED_LIBS)
+  target_compile_definitions(${TPETRA_LIBNAME} INTERFACE TPETRA_SHARED_BUILD)
+endif()
+
 # We need to set the linker language explicitly here for CUDA builds.
 SET_PROPERTY(
   TARGET ${TPETRA_LIBNAME}
