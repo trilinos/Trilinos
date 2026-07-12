@@ -147,7 +147,7 @@ namespace Belos {
      *   - "Restart Timers" = a \c bool specifying whether the timers should be restarted each time iterate() is called. Default: false
      *   - "Keep Hessenberg" = a \c bool specifying whether the upper Hessenberg should be stored separately from the least squares system. Default: false
      */
-    GCRODRIter( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem, 
+    GCRODRIter( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > &problem,
 		const Teuchos::RCP<OutputManager<ScalarType> > &printer,
 		const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &tester,
 		const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP,DM> > &ortho,
@@ -281,7 +281,7 @@ namespace Belos {
     //@{ 
     
     //! Get a constant reference to the linear problem.
-    const LinearProblem<ScalarType,MV,OP>& getProblem() const { return *lp_; }
+    const LinearProblem<ScalarType,MV,OP,DM>& getProblem() const { return *lp_; }
     
     //! Get the maximum number of blocks used by the iterative solver in solving this linear problem.
     int getNumBlocks() const { return numBlocks_; }
@@ -325,7 +325,7 @@ namespace Belos {
     //
     // Classes inputed through constructor that define the linear problem to be solved.
     //
-    const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >    lp_;
+    const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> >    lp_;
     const Teuchos::RCP<OutputManager<ScalarType> >          om_;
     const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> >       stest_;
     const Teuchos::RCP<OrthoManager<ScalarType,MV,DM> >        ortho_;
@@ -385,7 +385,7 @@ namespace Belos {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Constructor.
   template<class ScalarType, class MV, class OP, class DM>
-  GCRODRIter<ScalarType,MV,OP,DM>::GCRODRIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem, 
+  GCRODRIter<ScalarType,MV,OP,DM>::GCRODRIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > &problem,
 					   const Teuchos::RCP<OutputManager<ScalarType> > &printer,
 					   const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &tester,
 					   const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP,DM> > &ortho,

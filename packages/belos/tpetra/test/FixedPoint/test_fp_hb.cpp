@@ -176,7 +176,7 @@ int run(int argc, char *argv[]) {
     //
     // Construct an linear problem instance.
     //
-    Belos::LinearProblem<ST,MV,OP> problem( A, X, B );
+    Belos::LinearProblem<ST,MV,OP,DM> problem( A, X, B );
     // diagonal preconditioner
     if (precond) {
       VV diagonal(A->getRowMap());

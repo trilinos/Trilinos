@@ -129,7 +129,7 @@ int run(int argc, char *argv[]) {
       belosList.set( "Verbosity", Belos::Errors + Belos::Warnings );
 
     // Construct an unpreconditioned linear problem instance.
-    Belos::LinearProblem<ST,MV,OP> problem( A, X, B );
+    Belos::LinearProblem<ST,MV,OP,DM> problem( A, X, B );
     bool set = problem.setProblem();
     if (set == false) {
       if (procVerbose)
@@ -320,7 +320,7 @@ int run(int argc, char *argv[]) {
 
     RCP<MV> X2 = MVT::Clone(*X, numrhs);
     MVT::MvInit( *X2, 0.0 );
-    Belos::LinearProblem<ST,MV,OP> problem2( A, X2, B );
+    Belos::LinearProblem<ST,MV,OP,DM> problem2( A, X2, B );
     problem2.setLabel("Belos Resolve");
     set = problem2.setProblem();
     if (set == false) {

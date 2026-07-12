@@ -72,8 +72,6 @@ int run(int argc, char *argv[]) {
     using MVT = typename Belos::MultiVecTraits<ST,MV>;
     using OPT = typename Belos::OperatorTraits<ST,MV,OP>;
 
-    using IST = typename Tpetra::MultiVector<>::impl_scalar_type;
-
     using tcrsmatrix_t   = Tpetra::CrsMatrix<ST,LO,GO,NT>;
     using tmap_t         = Tpetra::Map<LO,GO,NT>;
     using tvector_t      = Tpetra::Vector<ST,LO,GO,NT>;
@@ -279,8 +277,8 @@ int run(int argc, char *argv[]) {
         //  Construct /*Preconditioned*/ Linear Problem  //
         ///////////////////////////////////////////////////
 
-        RCP<Belos::LinearProblem<ST,MV,OP> > problem
-            = rcp( new Belos::LinearProblem<ST,MV,OP>( A, LHS, RHS ) );
+        RCP<Belos::LinearProblem<ST,MV,OP,DM> > problem
+          = rcp( new Belos::LinearProblem<ST,MV,OP,DM>( A, LHS, RHS ) );
 
         // problem->setLeftPrec( Prec ); // for Preconditioned Problem
 

@@ -38,9 +38,10 @@ int main(int argc, char *argv[]) {
 
   typedef ScalarTraits<ST>                 SCT;
   typedef SCT::magnitudeType                MT;
-  typedef Belos::MultiVec<ST>               MV;
-  typedef Belos::Operator<ST>               OP;
-  typedef Belos::MultiVecTraits<ST,MV>     MVT;
+  using SDM = Teuchos::SerialDenseMatrix<int, ST>;
+  typedef Belos::MultiVec<ST, SDM>               MV;
+  typedef Belos::Operator<ST, SDM> OP;
+  typedef Belos::MultiVecTraits<ST,MV,SDM>     MVT;
   typedef Belos::OperatorTraits<ST,MV,OP>  OPT;
   ST one  = SCT::one();
   ST zero = SCT::zero();
@@ -102,8 +103,8 @@ int main(int argc, char *argv[]) {
       return -1;
     }
     // Build the problem matrix
-    RCP< MyBetterOperator<ST> > A
-      = rcp( new MyBetterOperator<ST>(dim,colptr,nnz,rowind,cvals) );
+    RCP< MyBetterOperator<ST, SDM> > A
+      = rcp( new MyBetterOperator<ST, SDM>(dim,colptr,nnz,rowind,cvals) );
     // for (int j=0; j<nnz; j++)
     //   std::cout << cvals[j] << std::endl;
     A->Print(std::cout);
@@ -136,16 +137,16 @@ int main(int argc, char *argv[]) {
     // NOTE:  The right-hand side will be constructed such that the solution is
     // a vectors of one.
     //
-    RCP<MyMultiVec<ST> > soln = rcp( new MyMultiVec<ST>(dim,numrhs) );
-    RCP<MyMultiVec<ST> > rhs = rcp( new MyMultiVec<ST>(dim,numrhs) );
+    RCP<MyMultiVec<ST, SDM> > soln = rcp( new MyMultiVec<ST,SDM>(dim,numrhs) );
+    RCP<MyMultiVec<ST, SDM> > rhs = rcp( new MyMultiVec<ST,SDM>(dim,numrhs) );
     MVT::MvRandom( *soln );
     OPT::Apply( *A, *soln, *rhs );
     MVT::MvInit( *soln, zero );
     //
     //  Construct an unpreconditioned linear problem instance.
     //
-    RCP<Belos::LinearProblem<ST,MV,OP> > problem =
-      rcp( new Belos::LinearProblem<ST,MV,OP>( A, soln, rhs ) );
+    RCP<Belos::LinearProblem<ST,MV,OP,SDM> > problem =
+      rcp( new Belos::LinearProblem<ST,MV,OP,SDM>( A, soln, rhs ) );
     bool set = problem->setProblem();
     if (set == false) {
       if (proc_verbose)
@@ -158,11 +159,11 @@ int main(int argc, char *argv[]) {
     // *************Start the block CG iteration***********************
     // *******************************************************************
     //
-    Teuchos::RCP< Belos::SolverManager<ST,MV,OP> > solver;
+    Teuchos::RCP< Belos::SolverManager<ST,MV,OP,SDM> > solver;
     if (pseudo)
-      solver = Teuchos::rcp( new Belos::PseudoBlockCGSolMgr<ST,MV,OP>( problem, Teuchos::rcp(&belosList,false) ) );
+      solver = Teuchos::rcp( new Belos::PseudoBlockCGSolMgr<ST,MV,OP,SDM>( problem, Teuchos::rcp(&belosList,false) ) );
     else
-      solver = Teuchos::rcp( new Belos::BlockCGSolMgr<ST,MV,OP>( problem, Teuchos::rcp(&belosList,false) ) );
+      solver = Teuchos::rcp( new Belos::BlockCGSolMgr<ST,MV,OP,SDM>( problem, Teuchos::rcp(&belosList,false) ) );
 
     //
     // **********Print out information about problem*******************
@@ -183,7 +184,7 @@ int main(int argc, char *argv[]) {
     //
     // Compute actual residuals.
     //
-    RCP<MyMultiVec<ST> > temp = rcp( new MyMultiVec<ST>(dim,numrhs) );
+    RCP<MyMultiVec<ST,SDM> > temp = rcp( new MyMultiVec<ST,SDM>(dim,numrhs) );
     OPT::Apply( *A, *soln, *temp );
     MVT::MvAddMv( one, *rhs, -one, *temp, *temp );
     std::vector<MT> norm_num(numrhs), norm_denom(numrhs);

@@ -49,8 +49,8 @@ namespace Belos {
    *
    * This struct is utilized by CGIteration::initialize() and CGIteration::getState().
    */
-  template <class ScalarType, class MV>
-  class CGIterationState : public CGIterationStateBase<ScalarType, MV> {
+  template <class ScalarType, class MV, class DM>
+  class CGIterationState : public CGIterationStateBase<ScalarType, MV, DM> {
 
   public:
     CGIterationState() = default;
@@ -62,7 +62,7 @@ namespace Belos {
     virtual ~CGIterationState() = default;
 
     void initialize(Teuchos::RCP<const MV> tmp, int _numVectors) {
-      using MVT = MultiVecTraits<ScalarType, MV>;
+      using MVT = MultiVecTraits<ScalarType, MV, DM>;
       TEUCHOS_ASSERT(_numVectors == 1);
 
       // S = (R, Z)
@@ -77,11 +77,11 @@ namespace Belos {
       this->P = MVT::Clone( *tmp, 1 );
       this->AP = MVT::Clone(*tmp, 1);
 
-      CGIterationStateBase<ScalarType, MV>::initialize(tmp, _numVectors);
+      CGIterationStateBase<ScalarType, MV, DM>::initialize(tmp, _numVectors);
     }
 
     bool matches(Teuchos::RCP<const MV> tmp, int _numVectors=1) const {
-      return (CGIterationStateBase<ScalarType, MV>::matches(tmp, _numVectors) &&
+      return (CGIterationStateBase<ScalarType, MV, DM>::matches(tmp, _numVectors) &&
               !S.is_null());
     }
 
@@ -111,7 +111,7 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP,DM> {
    * This constructor takes pointers required by the linear solver iteration, in addition
    * to a parameter list of options for the linear solver.
    */
-  CGIter( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+  CGIter( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > &problem,
 		  const Teuchos::RCP<OutputManager<ScalarType> > &printer,
 		  const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &tester,
                   const Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP,DM> > &convTester,
@@ -153,7 +153,7 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP,DM> {
    * \note For any pointer in \c newstate which directly points to the multivectors in
    * the solver, the data is not copied.
    */
-  void initializeCG(Teuchos::RCP<CGIterationStateBase<ScalarType,MV> > newstate, Teuchos::RCP<MV> R_0);
+  void initializeCG(Teuchos::RCP<CGIterationStateBase<ScalarType,MV, DM> > newstate, Teuchos::RCP<MV> R_0);
 
   /*! \brief Initialize the solver with the initial vectors from the linear problem
    *  or random data.
@@ -169,8 +169,8 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP,DM> {
    *
    * \returns A CGIterationState object containing const pointers to the current solver state.
    */
-  Teuchos::RCP<CGIterationStateBase<ScalarType,MV> > getState() const {
-    auto state = Teuchos::rcp(new CGIterationState<ScalarType,MV>());
+  Teuchos::RCP<CGIterationStateBase<ScalarType,MV, DM> > getState() const {
+    auto state = Teuchos::rcp(new CGIterationState<ScalarType,MV,DM>());
     state->R = R_;
     state->P = P_;
     state->AP = AP_;
@@ -179,8 +179,8 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP,DM> {
     return state;
   }
 
-  void setState(Teuchos::RCP<CGIterationStateBase<ScalarType,MV> > state) {
-    auto s = Teuchos::rcp_dynamic_cast<CGIterationState<ScalarType,MV> >(state, true);
+  void setState(Teuchos::RCP<CGIterationStateBase<ScalarType,MV, DM> > state) {
+    auto s = Teuchos::rcp_dynamic_cast<CGIterationState<ScalarType,MV,DM> >(state, true);
     R_ = s->R;
     Z_ = s->Z;
     P_ = s->P;
@@ -221,7 +221,7 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP,DM> {
   //@{
 
   //! Get a constant reference to the linear problem.
-  const LinearProblem<ScalarType,MV,OP>& getProblem() const { return *lp_; }
+  const LinearProblem<ScalarType,MV,OP,DM>& getProblem() const { return *lp_; }
 
   //! Get the blocksize to be used by the iterative solver in solving this linear problem.
   int getBlockSize() const { return 1; }
@@ -278,7 +278,7 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP,DM> {
   //
   // Classes inputed through constructor that define the linear problem to be solved.
   //
-  const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >    lp_;
+  const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> >    lp_;
   const Teuchos::RCP<OutputManager<ScalarType> >          om_;
   const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> >       stest_;
   const Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP,DM> >       convTest_;
@@ -332,7 +332,7 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP,DM> {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Constructor.
   template<class ScalarType, class MV, class OP, class DM>
-  CGIter<ScalarType,MV,OP,DM>::CGIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem, 
+  CGIter<ScalarType,MV,OP,DM>::CGIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > &problem,
 				      const Teuchos::RCP<OutputManager<ScalarType> > &printer,
 				      const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &tester,
                                       const Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP,DM> > &convTester,
@@ -354,14 +354,14 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP,DM> {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Initialize this iteration object
   template <class ScalarType, class MV, class OP, class DM>
-  void CGIter<ScalarType,MV,OP,DM>::initializeCG(Teuchos::RCP<CGIterationStateBase<ScalarType,MV> > newstate, Teuchos::RCP<MV> R_0)
+  void CGIter<ScalarType,MV,OP,DM>::initializeCG(Teuchos::RCP<CGIterationStateBase<ScalarType,MV, DM> > newstate, Teuchos::RCP<MV> R_0)
   {
     // Initialize the state storage if it isn't already.
     Teuchos::RCP<const MV> lhsMV = lp_->getLHS();
     Teuchos::RCP<const MV> rhsMV = lp_->getRHS();
     Teuchos::RCP<const MV> tmp = ( (rhsMV!=Teuchos::null)? rhsMV: lhsMV );
     TEUCHOS_ASSERT(!newstate.is_null());
-    if (!Teuchos::rcp_dynamic_cast<CGIterationState<ScalarType,MV> >(newstate, true)->matches(tmp, 1))
+    if (!Teuchos::rcp_dynamic_cast<CGIterationState<ScalarType,MV,DM> >(newstate, true)->matches(tmp, 1))
       newstate->initialize(tmp, 1);
     setState(newstate);
   

@@ -99,7 +99,7 @@ namespace Belos {
      *                          outputted.  Default: -1 (never)
      *   - "Timer Label" - a \c std::string to use as a prefix for the timer labels.  Default: "Belos"
      */
-    PseudoBlockTFQMRSolMgr( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+    PseudoBlockTFQMRSolMgr( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > &problem,
                  const Teuchos::RCP<Teuchos::ParameterList> &pl );
 
     //! Destructor.
@@ -114,7 +114,7 @@ namespace Belos {
     //! @name Accessor methods
     //@{ 
     
-    const LinearProblem<ScalarType,MV,OP>& getProblem() const override {
+    const LinearProblem<ScalarType,MV,OP,DM>& getProblem() const override {
       return *problem_;
     }
 
@@ -163,7 +163,7 @@ namespace Belos {
     //@{
     
     //! Set the linear problem that needs to be solved. 
-    void setProblem( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem ) override { problem_ = problem; }
+    void setProblem( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > &problem ) override { problem_ = problem; }
     
     //! Set the parameters the solver manager should use to solve the linear problem. 
     void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params ) override;
@@ -215,7 +215,7 @@ namespace Belos {
     bool checkStatusTest();
 
     // Linear problem.
-    Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > problem_;
+    Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > problem_;
 
     // Output manager.
     Teuchos::RCP<OutputManager<ScalarType> > printer_;
@@ -283,7 +283,7 @@ PseudoBlockTFQMRSolMgr<ScalarType,MV,OP,DM>::PseudoBlockTFQMRSolMgr() :
 // Basic Constructor
 template<class ScalarType, class MV, class OP, class DM>
 PseudoBlockTFQMRSolMgr<ScalarType,MV,OP,DM>::PseudoBlockTFQMRSolMgr(
-                                             const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+                                             const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > &problem,
                                              const Teuchos::RCP<Teuchos::ParameterList> &pl ) :
   problem_(problem),
   outputStream_(Teuchos::rcpFromRef(std::cout)),

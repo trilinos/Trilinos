@@ -61,7 +61,7 @@ class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP,DM> {
    * This constructor takes pointers required by the linear solver iteration, in addition
    * to a parameter list of options for the linear solver.
    */
-  LSQRIter( const Teuchos::RCP<Belos::LinearProblem<ScalarType,MV,OP> > &problem,
+  LSQRIter( const Teuchos::RCP<Belos::LinearProblem<ScalarType,MV,OP,DM> > &problem,
 	    const Teuchos::RCP<Belos::OutputManager<ScalarType> > &printer,
 	    const Teuchos::RCP<Belos::StatusTest<ScalarType,MV,OP,DM> > &tester,
 		  Teuchos::ParameterList &params );
@@ -159,7 +159,7 @@ class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP,DM> {
   //@{
 
   //! Get a constant reference to the linear problem.
-  const Belos::LinearProblem<ScalarType,MV,OP>& getProblem() const { return *lp_; }
+  const Belos::LinearProblem<ScalarType,MV,OP,DM>& getProblem() const { return *lp_; }
 
   //! Get the blocksize to be used by the iterative solver in solving this linear problem.
   int getBlockSize() const { return 1; }
@@ -188,7 +188,7 @@ class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP,DM> {
   //
   // Classes inputed through constructor that define the linear problem to be solved.
   //
-  const Teuchos::RCP<Belos::LinearProblem<ScalarType,MV,OP> >    lp_;
+  const Teuchos::RCP<Belos::LinearProblem<ScalarType,MV,OP,DM> >    lp_;
   const Teuchos::RCP<Belos::OutputManager<ScalarType> >          om_;
   const Teuchos::RCP<Belos::StatusTest<ScalarType,MV,OP,DM> >       stest_;
 //  const Teuchos::RCP<OrthoManager<ScalarType,MV> >        ortho_;
@@ -252,7 +252,7 @@ class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP,DM> {
 //                                     const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > &ortho,
 
   template<class ScalarType, class MV, class OP, class DM>
-  LSQRIter<ScalarType,MV,OP,DM>::LSQRIter(const Teuchos::RCP<Belos::LinearProblem<ScalarType,MV,OP> > &problem,
+  LSQRIter<ScalarType,MV,OP,DM>::LSQRIter(const Teuchos::RCP<Belos::LinearProblem<ScalarType,MV,OP,DM> > &problem,
 				       const Teuchos::RCP<Belos::OutputManager<ScalarType> > &printer,
 				       const Teuchos::RCP<Belos::StatusTest<ScalarType,MV,OP,DM> > &tester,
 						   Teuchos::ParameterList &params ):

@@ -10,10 +10,12 @@
 #include "BelosConfigDefs.hpp"
 
 #ifdef HAVE_BELOS_TPETRA
-#  include "BelosTpetraAdapter.hpp" // must go first
-#  include "Belos_Details_registerLinearSolverFactory.hpp"
-#  include "Belos_Details_LinearSolverFactory.hpp"
-#  include "TpetraCore_ETIHelperMacros.h"
+#include "BelosTpetraAdapter.hpp" // must go first
+#include "Belos_Details_LinearSolverFactory.hpp"
+#include "Belos_Details_registerLinearSolverFactory.hpp"
+#include "TpetraCore_ETIHelperMacros.h"
+#include "Teuchos_SerialDenseMatrix.hpp"
+#include "Kokkos_DualView.hpp"
 
 // Define Tpetra instantiation macros and typedefs that make the
 // macros work.  The fix for Bug 6380 makes this work whether or not
@@ -30,23 +32,28 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
 // call it LCL_CALL and not LCL_INST.  We are just using the macros to
 // invoke this class method over the set of enabled template
 // parameters.
-#define LCL_CALL( SC, LO, GO, NT ) \
-  ::Belos::Details::LinearSolverFactory< ::Tpetra::MultiVector<SC, LO, GO, NT>, \
-                                         ::Tpetra::Operator<SC, LO, GO, NT>, \
-                                         SC, \
-                                         typename ::Tpetra::MultiVector<SC, LO, GO, NT>::mag_type>::registerLinearSolverFactory ();
+#define LCL_CALL(SC, LO, GO, NT)                                               \
+  ::Belos::Details::LinearSolverFactory<                                       \
+      ::Tpetra::MultiVector<SC, LO, GO, NT>,                                   \
+      ::Tpetra::Operator<SC, LO, GO, NT>, SC,                                  \
+      typename ::Tpetra::MultiVector<SC, LO, GO, NT>::mag_type,                \
+      Teuchos::SerialDenseMatrix<int, SC>>::registerLinearSolverFactory();     \
+  ::Belos::Details::LinearSolverFactory<                                       \
+      ::Tpetra::MultiVector<SC, LO, GO, NT>,                                   \
+      ::Tpetra::Operator<SC, LO, GO, NT>, SC,                                  \
+      typename ::Tpetra::MultiVector<SC, LO, GO, NT>::mag_type,                \
+      Kokkos::DualView<typename KokkosKernels::ArithTraits<SC>::val_type **,   \
+                       Kokkos::LayoutLeft>>::registerLinearSolverFactory();
 
 namespace Belos {
 namespace Details {
 namespace Tpetra {
 
-void
-registerLinearSolverFactory ()
-{
+void registerLinearSolverFactory() {
   // Fill in the body of the function with all the type-specific
   // run-time registration functions, for registering Belos's
   // LinearSolverFactory with Tpetra objects.
-  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( LCL_CALL )
+  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(LCL_CALL)
 }
 
 } // namespace Tpetra
@@ -54,4 +61,3 @@ registerLinearSolverFactory ()
 } // namespace Belos
 
 #endif // HAVE_BELOS_TPETRA
-

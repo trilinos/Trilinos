@@ -25,7 +25,7 @@
 
 namespace Belos {
 
-template <class ScalarType, class MV, class OP>
+template <class ScalarType, class MV, class OP, class DM>
 class LinearProblem;
 
 template <class ScalarType>
@@ -96,7 +96,7 @@ class Iteration {
   //@{ 
 
   //! Get a constant reference to the linear problem.
-  virtual const LinearProblem<ScalarType,MV,OP>& getProblem() const = 0;
+  virtual const LinearProblem<ScalarType,MV,OP,DM>& getProblem() const = 0;
 
   //! Get the blocksize to be used by the iterative solver in solving this linear problem.
   virtual int getBlockSize() const = 0;

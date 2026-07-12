@@ -131,7 +131,7 @@ int run(int argc, char *argv[])
   belosList.set( "Verbosity", verbosity );
   
   // Construct an unpreconditioned linear problem instance.
-  Belos::LinearProblem<ST,MV,OP> problem( A, X, B );
+  Belos::LinearProblem<ST,MV,OP,DM> problem( A, X, B );
   bool set = problem.setProblem();
   if (set == false) {
     if (proc_verbose)

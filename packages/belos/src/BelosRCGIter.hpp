@@ -130,7 +130,7 @@ namespace Belos {
      *   - "Num Blocks" - an \c int specifying the maximum number of blocks allocated for the solver basis. Default: 25
      *   - "Restart Timers" = a \c bool specifying whether the timers should be restarted each time iterate() is called. Default: false
      */
-    RCGIter( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+    RCGIter( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > &problem,
 		const Teuchos::RCP<OutputManager<ScalarType> > &printer,
 		const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &tester,
 		Teuchos::ParameterList &params );
@@ -221,7 +221,7 @@ namespace Belos {
     //@{
 
     //! Get a constant reference to the linear problem.
-    const LinearProblem<ScalarType,MV,OP>& getProblem() const { return *lp_; }
+    const LinearProblem<ScalarType,MV,OP,DM>& getProblem() const { return *lp_; }
 
     //! Get the maximum number of blocks used by the iterative solver in solving this linear problem.
     int getNumBlocks() const { return numBlocks_; }
@@ -255,7 +255,7 @@ namespace Belos {
     //
     // Classes input through constructor that define the linear problem to be solved.
     //
-    const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >    lp_;
+    const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> >    lp_;
     const Teuchos::RCP<OutputManager<ScalarType> >          om_;
     const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> >    stest_;
 
@@ -321,7 +321,7 @@ namespace Belos {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Constructor.
   template<class ScalarType, class MV, class OP, class DM>
-  RCGIter<ScalarType,MV,OP,DM>::RCGIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+  RCGIter<ScalarType,MV,OP,DM>::RCGIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > &problem,
 				     const Teuchos::RCP<OutputManager<ScalarType> > &printer,
 				     const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &tester,
 					   Teuchos::ParameterList &params ):

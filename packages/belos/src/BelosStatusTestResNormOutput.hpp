@@ -117,7 +117,7 @@ class StatusTestResNormOutput : public StatusTestOutput<ScalarType,MV,OP,DM> {
     state_ = test_->checkStatus(solver);
 
     // Update some information for the header, if it has not printed or the linear system has changed.
-    LinearProblem<ScalarType,MV,OP> currProb = solver->getProblem();
+    LinearProblem<ScalarType,MV,OP,DM> currProb = solver->getProblem();
     //if (!headerPrinted_ || currLSNum_ != currProb.getLSNumber()) {
     if (currLSNum_ != currProb.getLSNumber()) {
       currLSNum_ = currProb.getLSNumber();

@@ -136,7 +136,7 @@ int run(int argc, char *argv[]) {
     MVT::MvRandom( *initX );
     OPT::Apply( *A, *initX, *initB );
     initX->putScalar( 0.0 );
-    Belos::LinearProblem<ST,MV,OP> initProblem( A, initX, initB );
+    Belos::LinearProblem<ST,MV,OP,DM> initProblem( A, initX, initB );
     initProblem.setLabel("Belos Init");
 
     bool set = initProblem.setProblem();
@@ -200,7 +200,7 @@ int run(int argc, char *argv[]) {
     tmpX->scale( 1.0, *augX );
     tmpB->scale( 1.0, *augB );
 
-    Belos::LinearProblem<ST,MV,OP> augProblem( A, augX, augB );
+    Belos::LinearProblem<ST,MV,OP,DM> augProblem( A, augX, augB );
     augProblem.setLabel("Belos Aug");
 
     set = augProblem.setProblem();
@@ -220,8 +220,8 @@ int run(int argc, char *argv[]) {
     belosList.set( "Timer Label", "Belos Aug" );          // Label used by the timers in this solver
     belosList.set( "Implicit Residual Scaling", "Norm of RHS" ); // Implicit residual scaling for convergence
     belosList.set( "Explicit Residual Scaling", "Norm of RHS" ); // Explicit residual scaling for convergence
-    RCP< Belos::SolverManager<ST,MV,OP> > augSolver
-      = rcp( new Belos::PseudoBlockGmresSolMgr<ST,MV,OP>( rcp(&augProblem,false), rcp(&belosList,false) ) );
+    RCP< Belos::SolverManager<ST,MV,OP,DM> > augSolver
+      = rcp( new Belos::PseudoBlockGmresSolMgr<ST,MV,OP,DM>( rcp(&augProblem,false), rcp(&belosList,false) ) );
 
     // Perform solve
     ret = augSolver->solve();

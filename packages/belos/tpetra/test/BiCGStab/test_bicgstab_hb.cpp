@@ -124,8 +124,8 @@ int run (int argc, char *argv[])
     //
     // Construct a preconditioned linear problem
     //
-    RCP<Belos::LinearProblem<ST,MV,OP> > problem
-      = rcp (new Belos::LinearProblem<ST,MV,OP> (A, X, B));
+    RCP<Belos::LinearProblem<ST,MV,OP,DM> > problem
+      = rcp (new Belos::LinearProblem<ST,MV,OP,DM> (A, X, B));
     bool set = problem->setProblem ();
     if (! set) {
       if (proc_verbose) {

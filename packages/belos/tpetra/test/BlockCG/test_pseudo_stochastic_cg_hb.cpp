@@ -38,7 +38,6 @@ int run (int argc, char *argv[])
   using std::endl;
   using std::cout;
   typedef ScalarType ST;
-  typedef typename Tpetra::MultiVector<ST>::impl_scalar_type IST;
   typedef Teuchos::ScalarTraits<ST>       STS;
   typedef typename STS::magnitudeType               MT;
   typedef Tpetra::Operator<ST>             OP;
@@ -144,7 +143,7 @@ int run (int argc, char *argv[])
     //
     // Construct an unpreconditioned linear problem instance.
     //
-    Belos::LinearProblem<ST,MV,OP> problem( A, X, B );
+    Belos::LinearProblem<ST,MV,OP,DM> problem( A, X, B );
     bool set = problem.setProblem ();
     if (! set) {
       if (proc_verbose) {

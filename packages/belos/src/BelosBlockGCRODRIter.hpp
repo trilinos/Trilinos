@@ -138,7 +138,7 @@ namespace Belos{
   	//
   	//Convenience typedefs
   	//
-  	typedef MultiVecTraits<ScalarType,MV> MVT;
+        typedef MultiVecTraits<ScalarType,MV, DM> MVT;
   	typedef OperatorTraits<ScalarType,MV,OP> OPT;
   	typedef Teuchos::ScalarTraits<ScalarType> SCT;
   	typedef typename SCT::magnitudeType MagnitudeType;
@@ -156,7 +156,7 @@ namespace Belos{
 	*   - "Restart Timers" = a \c bool specifying whether the timers should be restarted each time iterate() is called. Default: false
 	*/
 
-       BlockGCRODRIter( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+       BlockGCRODRIter( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > &problem,
                         const Teuchos::RCP<OutputManager<ScalarType> > &printer,
                         const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
                         const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > &ortho,
@@ -276,7 +276,7 @@ namespace Belos{
 
 
        //! Get a constant reference to the linear problem.
-       const LinearProblem<ScalarType,MV,OP>& getProblem() const { return *lp_; };
+       const LinearProblem<ScalarType,MV,OP,DM>& getProblem() const { return *lp_; };
 
        //! Get the maximum number of blocks used by the iterative solver in solving this linear problem.
        int getNumBlocks() const { return numBlocks_; }
@@ -331,7 +331,7 @@ namespace Belos{
 
       //Classes inputed through constructor that define the linear problem to be solved
       //
-      const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >    lp_;
+      const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> >    lp_;
       const Teuchos::RCP<OutputManager<ScalarType> >          om_;
       const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >       stest_;
       const Teuchos::RCP<OrthoManager<ScalarType,MV> >        ortho_;
@@ -421,7 +421,7 @@ namespace Belos{
    //////////////////////////////////////////////////////////////////////////////////////////////////
    //Constructor.
    template<class ScalarType, class MV, class OP, class DM>
-   BlockGCRODRIter<ScalarType,MV,OP,DM>::BlockGCRODRIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+   BlockGCRODRIter<ScalarType,MV,OP,DM>::BlockGCRODRIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > &problem,
                                             const Teuchos::RCP<OutputManager<ScalarType> > &printer,
                                             const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
                                             const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > &ortho,

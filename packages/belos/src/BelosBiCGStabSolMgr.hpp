@@ -95,7 +95,7 @@ namespace Belos {
      *   - "Output Style" - a OutputType specifying the style of output. Default: Belos::General
      *   - "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide convergence.
      */
-    BiCGStabSolMgr( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+    BiCGStabSolMgr( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > &problem,
                          const Teuchos::RCP<Teuchos::ParameterList> &pl );
 
     //! Destructor.
@@ -110,7 +110,7 @@ namespace Belos {
     //! @name Accessor methods
     //@{
 
-    const LinearProblem<ScalarType,MV,OP>& getProblem() const override {
+    const LinearProblem<ScalarType,MV,OP,DM>& getProblem() const override {
       return *problem_;
     }
 
@@ -162,7 +162,7 @@ namespace Belos {
     //@{
 
     //! Set the linear problem that needs to be solved.
-    void setProblem( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem ) override { problem_ = problem; }
+    void setProblem( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > &problem ) override { problem_ = problem; }
 
     //! Set the parameters the solver manager should use to solve the linear problem.
     void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params ) override;
@@ -212,7 +212,7 @@ namespace Belos {
   private:
 
     // Linear problem.
-    Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > problem_;
+    Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > problem_;
 
     // Output manager.
     Teuchos::RCP<OutputManager<ScalarType> > printer_;
@@ -279,7 +279,7 @@ BiCGStabSolMgr<ScalarType,MV,OP,DM>::BiCGStabSolMgr() :
 // Basic Constructor
 template<class ScalarType, class MV, class OP, class DM>
 BiCGStabSolMgr<ScalarType,MV,OP,DM>::
-BiCGStabSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+BiCGStabSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > &problem,
                      const Teuchos::RCP<Teuchos::ParameterList> &pl ) :
   problem_(problem),
   outputStream_(Teuchos::rcpFromRef(std::cout)),

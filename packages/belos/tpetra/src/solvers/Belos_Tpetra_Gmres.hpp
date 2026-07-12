@@ -258,14 +258,15 @@ protected:
   using vec_type = typename base_type::vec_type;
 
 private:
-  using MVT = Belos::MultiVecTraits<SC, MV>;
+  using DM = Teuchos::SerialDenseMatrix<int, SC>;
+  using MVT = Belos::MultiVecTraits<SC, MV, DM>;
   using LO = typename MV::local_ordinal_type;
   using STS = Teuchos::ScalarTraits<SC>;
   using real_type = typename STS::magnitudeType;
   using STM = Teuchos::ScalarTraits<real_type>;
   using device_type = typename MV::device_type;
 
-  using ortho_type = Belos::OrthoManager<SC, MV>;
+  using ortho_type = Belos::OrthoManager<SC, MV, DM>;
   using dense_matrix_type = Teuchos::SerialDenseMatrix<LO, SC>;
   using dense_vector_type = Teuchos::SerialDenseVector<LO, SC>;
   using real_vector_type = Teuchos::SerialDenseVector<LO, real_type>;
@@ -335,7 +336,7 @@ protected:
       // Since setOrthogonalizer only gets called on demand, we know
       // the preconditioner (if any) at this point.  Thus, we can use
       // Belos::OrthoManagerFactory here.
-      Belos::OrthoManagerFactory<SC, MV, OP> factory;
+      Belos::OrthoManagerFactory<SC, MV, OP, DM> factory;
       Teuchos::RCP<Belos::OutputManager<SC>> outMan; // can be null
       Teuchos::RCP<Teuchos::ParameterList> params;   // can be null
       if (this->input_.maxOrthoSteps > 0) {

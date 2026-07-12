@@ -93,13 +93,13 @@ template<class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int
 class BlockGCRODRSolMgr : public SolverManager<ScalarType, MV, OP, DM> {
 private:
 
-  typedef MultiVecTraits<ScalarType,MV> MVT;
+  typedef MultiVecTraits<ScalarType,MV, DM> MVT;
   typedef OperatorTraits<ScalarType,MV,OP> OPT;
   typedef Teuchos::ScalarTraits<ScalarType> SCT;
   typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
   typedef Teuchos::ScalarTraits<MagnitudeType> MT;
   typedef Teuchos::ScalarTraits<MagnitudeType> SMT;
-  typedef OrthoManagerFactory<ScalarType, MV, OP> ortho_factory_type;
+  typedef OrthoManagerFactory<ScalarType, MV, OP, DM> ortho_factory_type;
   typedef Teuchos::SerialDenseMatrix<int,ScalarType> SDM;
 
 public:
@@ -138,7 +138,7 @@ public:
    * - "Timer Label": the string to use as a prefix for the timer labels. Default: "Belos"
    * - "Orthogonalization Constant": a \c MagnitudeType corresponding to the "depTol" parameter of DGKS orthogonalization. Ignored unless DGKS orthogonalization is used. DGKS decides the default value.
    */
-  BlockGCRODRSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+  BlockGCRODRSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > &problem,
                      const Teuchos::RCP<Teuchos::ParameterList> &pl);
 
   //! Destructor.
@@ -163,7 +163,7 @@ public:
   //@{
 
   //! Get current linear problem being solved for in this object.
-  const LinearProblem<ScalarType,MV,OP>& getProblem() const {
+  const LinearProblem<ScalarType,MV,OP,DM>& getProblem() const {
     return *problem_;
   }
 
@@ -190,7 +190,7 @@ public:
   //@{
 
   /// \brief Set the linear problem to solve on the next call to \c solve().
-  void setProblem (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >& problem) {
+  void setProblem (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> >& problem) {
     TEUCHOS_TEST_FOR_EXCEPTION(problem.is_null(), std::invalid_argument,
       "Belos::BlockGCRODRSolMgr::setProblem: The input LinearProblem cannot be null.");
 
@@ -295,7 +295,7 @@ private:
   Teuchos::LAPACK<int,ScalarType> lapack;
 
   //! The current linear problem to solve.
-  Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > problem_;
+  Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > problem_;
 
   //Output Manager
   Teuchos::RCP<OutputManager<ScalarType> > printer_;
@@ -305,7 +305,7 @@ private:
   Teuchos::RCP<StatusTest<ScalarType,MV,OP> > sTest_;
   Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP> > maxIterTest_;
   Teuchos::RCP<StatusTest<ScalarType,MV,OP> > convTest_;
-  Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP> > expConvTest_, impConvTest_;
+  Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP,DM> > expConvTest_, impConvTest_;
   Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP> > outputTest_;
 
   //! Factory for creating MatOrthoManager subclass instances.
@@ -412,7 +412,7 @@ private:
   //Basic Constructor
   template<class ScalarType, class MV, class OP, class DM>
   BlockGCRODRSolMgr<ScalarType,MV,OP,DM>::
-  BlockGCRODRSolMgr(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+  BlockGCRODRSolMgr(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > &problem,
                     const Teuchos::RCP<Teuchos::ParameterList> &pl ) {
     // Initialize local pointers to null, and initialize local
     // variables to default values.
@@ -912,8 +912,8 @@ private:
      }
 
      // Convergence
-     typedef Belos::StatusTestCombo<ScalarType,MV,OP>  StatusTestCombo_t;
-     typedef Belos::StatusTestGenResNorm<ScalarType,MV,OP>  StatusTestResNorm_t;
+     typedef Belos::StatusTestCombo<ScalarType,MV,OP,DM>  StatusTestCombo_t;
+     typedef Belos::StatusTestGenResNorm<ScalarType,MV,OP,DM>  StatusTestResNorm_t;
 
      // Check for convergence tolerance
      convTol_ = params_->get<MagnitudeType> ("Convergence Tolerance");

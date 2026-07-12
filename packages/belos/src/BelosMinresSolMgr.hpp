@@ -149,7 +149,7 @@ namespace Belos {
     /// other Belos solvers, but ignore it, since it is not relevant
     /// to MINRES.  ("Num Blocks" specifies the restart length, but
     /// our MINRES implementation does not restart.)
-    MinresSolMgr (const Teuchos::RCP<LinearProblem< ScalarType, MV, OP> > &problem,
+    MinresSolMgr (const Teuchos::RCP<LinearProblem< ScalarType, MV, OP, DM> > &problem,
                   const Teuchos::RCP<Teuchos::ParameterList> &params);
 
     //! Destructor.
@@ -165,7 +165,7 @@ namespace Belos {
     //@{
 
     //! Return the linear problem to be solved.
-    const LinearProblem<ScalarType,MV,OP>& getProblem() const override {
+    const LinearProblem<ScalarType,MV,OP,DM>& getProblem() const override {
       return *problem_;
     }
 
@@ -222,7 +222,7 @@ namespace Belos {
     //@{
 
     void
-    setProblem (const Teuchos::RCP<LinearProblem<ScalarType, MV, OP> > &problem) override
+    setProblem (const Teuchos::RCP<LinearProblem<ScalarType, MV, OP, DM> > &problem) override
     {
       problem_ = problem;
     }
@@ -277,7 +277,7 @@ namespace Belos {
 
   private:
     //! Linear problem to solve
-    Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > problem_;
+    Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > problem_;
 
     //! Output manager.
     Teuchos::RCP<OutputManager<ScalarType> > printer_;
@@ -364,7 +364,7 @@ namespace Belos {
     /// informative message) if the problem is null or its essential
     /// components are null.
     static void
-    validateProblem (const Teuchos::RCP<LinearProblem<ScalarType, MV, OP> >& problem);
+    validateProblem (const Teuchos::RCP<LinearProblem<ScalarType, MV, OP, DM> >& problem);
   };
 
 
@@ -439,7 +439,7 @@ namespace Belos {
   //
   template<class ScalarType, class MV, class OP, class DM>
   MinresSolMgr<ScalarType, MV, OP, DM>::
-  MinresSolMgr (const Teuchos::RCP<LinearProblem<ScalarType, MV, OP> > &problem,
+  MinresSolMgr (const Teuchos::RCP<LinearProblem<ScalarType, MV, OP, DM> > &problem,
                 const Teuchos::RCP<Teuchos::ParameterList>& params) :
     problem_ (problem),
     numIters_ (0),
@@ -454,7 +454,7 @@ namespace Belos {
 
   template<class ScalarType, class MV, class OP, class DM>
   void MinresSolMgr<ScalarType, MV, OP, DM>::
-  validateProblem (const Teuchos::RCP<LinearProblem<ScalarType, MV, OP> >& problem)
+  validateProblem (const Teuchos::RCP<LinearProblem<ScalarType, MV, OP, DM> >& problem)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(problem.is_null(),
       MinresSolMgrLinearProblemFailure,

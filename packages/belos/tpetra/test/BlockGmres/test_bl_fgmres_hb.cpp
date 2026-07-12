@@ -157,21 +157,20 @@ int run(int argc, char *argv[]) {
     innerBelosList.set( "Timer Label", "Belos Preconditioner Solve" );// Choose a different label for the inner solve
 
     // *****Construct linear problem for the inner iteration using A *****
-    Belos::LinearProblem<ST,MV,OP> innerProblem;
+    Belos::LinearProblem<ST,MV,OP,DM> innerProblem;
     innerProblem.setOperator( A );
     innerProblem.setLabel( "Belos Preconditioner Solve" );
 
     //  
     // *****Create the inner block Gmres iteration********
     //  
-    RCP<Belos::TpetraOperator<ST>> innerSolver;
-    innerSolver = rcp( new Belos::TpetraOperator<ST>( rcpFromRef(innerProblem), rcpFromRef(innerBelosList), "Block Gmres", true ) );
+    auto innerSolver = rcp( new Belos::TpetraOperator<ST, typename MV::local_ordinal_type, typename MV::global_ordinal_type, typename MV::node_type, DM>( rcpFromRef(innerProblem), rcpFromRef(innerBelosList), "Block Gmres", true ) );
     //  
 
     //
     // Construct a linear problem instance with GMRES as preconditoner.
     //
-    Belos::LinearProblem<ST,MV,OP> problem( A, X, B );
+    Belos::LinearProblem<ST,MV,OP,DM> problem( A, X, B );
     problem.setInitResVec( B );
     problem.setRightPrec( innerSolver );
     problem.setLabel( "Belos Flexible Gmres Solve" );

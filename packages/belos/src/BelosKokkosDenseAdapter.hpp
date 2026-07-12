@@ -19,6 +19,7 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_BLAS.hpp"
 #include "Teuchos_LAPACK.hpp"
 #include "BelosDenseMatTraits.hpp"
 

@@ -35,12 +35,13 @@
 // Belos
 #include "BelosTpetraAdapter.hpp"
 #include "BelosSolverFactory.hpp"
+#include "BelosTpetraTestFramework.hpp"
 
 // ****************************************************************************
 // BEGIN RUN ROUTINE
 // ****************************************************************************
 
-template <typename ScalarType>
+template <class ScalarType, class DM>
 int run(int argc, char *argv[]) {
 
   // Belos solvers have the following template parameters:
@@ -114,7 +115,11 @@ int run(int argc, char *argv[]) {
     if (!verbose)
       frequency = -1;  // reset frequency if test is not verbose
 
-    std::string watchrProblemName = std::string("Belos ") + solverName + " " + std::to_string(comm->getSize()) + " ranks";
+    std::string watchrProblemName;
+    if (std::is_same_v<DM, Teuchos::SerialDenseMatrix<int, ScalarType>>)
+      watchrProblemName = std::string("Belos ") + solverName + " " + std::to_string(comm->getSize()) + " ranks";
+    else
+      watchrProblemName = std::string("Belos ") + solverName + " Kokkos " + std::to_string(comm->getSize()) + " ranks";
     procVerbose = ( verbose && (myPID==0) ); // Only print on the zero processor
 
     if (procVerbose) {
@@ -178,7 +183,7 @@ int run(int argc, char *argv[]) {
     belosList.set( "Verbosity", verbosity );
 
     // Construct an unpreconditioned linear problem instance.
-    Belos::LinearProblem<ST,MV,OP> problem( A, X, B );
+    Belos::LinearProblem<ST,MV,OP,DM> problem( A, X, B );
     bool set = problem.setProblem();
     if (set == false) {
       if (procVerbose)
@@ -192,10 +197,10 @@ int run(int argc, char *argv[]) {
     // *******************************************************************
     //
     // Create a solver factory
-    Belos::SolverFactory<double,MV,OP> factory;
+    Belos::SolverFactory<double,MV,OP,DM> factory;
 
     // Create an iterative solver manager
-    RCP< Belos::SolverManager<double,MV,OP> > newSolver = factory.create (solverName, rcp(&belosList,false));
+    RCP< Belos::SolverManager<double,MV,OP,DM> > newSolver = factory.create (solverName, rcp(&belosList,false));
 
     // Set the problem on the solver manager
     newSolver->setProblem( rcp(&problem,false) );
@@ -264,8 +269,4 @@ int run(int argc, char *argv[]) {
   return success ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
-int main(int argc, char *argv[]) {
-  // run with different ST
-  return run<double>(argc,argv);
-  // run<float>(argc,argv); // FAILS
-}
+BELOS_TPETRA_MAIN(run, typename Tpetra::MultiVector<>::scalar_type);

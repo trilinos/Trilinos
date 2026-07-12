@@ -36,7 +36,8 @@ public:
   /// \c CholQR.
   using FactorOutput = int;
   using STS = Teuchos::ScalarTraits<SC>;
-  using MVT = Belos::MultiVecTraits<SC, MV>;
+  using DM = Teuchos::SerialDenseMatrix<int, SC>;
+  using MVT = Belos::MultiVecTraits<SC, MV, DM>;
   using mag_type = typename STS::magnitudeType;
   using STM = Teuchos::ScalarTraits<mag_type>;
   using dense_matrix_type = Teuchos::SerialDenseMatrix<LO, SC>;
@@ -164,7 +165,8 @@ template<class SC = Tpetra::Operator<>::scalar_type,
 class GmresSstep : public Gmres<SC, MV, OP>  {
 private:
   using base_type = Gmres<SC, MV, OP>;
-  using MVT = Belos::MultiVecTraits<SC, MV>;
+  using DM = Teuchos::SerialDenseMatrix<int, SC>;
+  using MVT = Belos::MultiVecTraits<SC, MV, DM>;
   using LO = typename MV::local_ordinal_type;
   using STS = Teuchos::ScalarTraits<SC>;
   using mag_type = typename STS::magnitudeType;

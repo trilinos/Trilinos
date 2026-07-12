@@ -29,9 +29,9 @@ namespace Belos {
   ///
   /// This is useful with InnerSolver subclasses.
   ///
-  template<class Scalar, class MV, class OP>
-  Teuchos::RCP<LinearProblem<Scalar, MV, OP> >
-  problemWithNewRHS (const Teuchos::RCP<const LinearProblem<Scalar, MV, OP> >& problem,
+  template<class Scalar, class MV, class OP, class DM>
+  Teuchos::RCP<LinearProblem<Scalar, MV, OP, DM> >
+  problemWithNewRHS (const Teuchos::RCP<const LinearProblem<Scalar, MV, OP, DM> >& problem,
 		     const Teuchos::RCP<const MV>& B)
   {
     using Teuchos::is_null;
@@ -39,7 +39,7 @@ namespace Belos {
     using Teuchos::null;
     using Teuchos::RCP;
     using Teuchos::rcp;
-    typedef LinearProblem<Scalar, MV, OP> lp_type;
+    typedef LinearProblem<Scalar, MV, OP, DM> lp_type;
     typedef MultiVecTraits<Scalar, MV> MVT;
 
     RCP<const OP> A = problem->getOperator (); 

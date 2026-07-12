@@ -25,7 +25,6 @@ void register_Cg_tmpl (const bool verbose)
   using ::Belos::Impl::registerSolverSubclassForTypes;
   using MV = ::Tpetra::MultiVector<SC, LO, GO, NT>;
   using OP = ::Tpetra::Operator<SC, LO, GO, NT>;
-  using solver_type = CgSolverManager<SC, MV, OP>;
 
   if (verbose) {
     using Teuchos::TypeNameTraits;
@@ -36,7 +35,24 @@ void register_Cg_tmpl (const bool verbose)
 	      << TypeNameTraits<NT>::name () << ">" << std::endl;
   }
   const char solverName[] = "TPETRA CG";
-  registerSolverSubclassForTypes<solver_type, SC, MV, OP> (solverName);
+
+  {
+    using DM = ::Teuchos::SerialDenseMatrix<int, SC>;
+    using solver_type = CgSolverManager<SC, MV, OP>;
+    registerSolverSubclassForTypes<solver_type, SC, MV, OP, DM> (solverName);
+  }
+
+  // {
+  //   using DM = ::Teuchos::SerialDenseMatrix<int, SC>;
+  //   using solver_type = CgSolverManager<SC, MV, OP, DM>;
+  //   registerSolverSubclassForTypes<solver_type, SC, MV, OP, DM> (solverName);
+  // }
+
+  // {
+  //   using DM = ::Kokkos::DualView<typename KokkosKernels::ArithTraits<SC>::val_type **, Kokkos::LayoutLeft>;
+  //   using solver_type = CgSolverManager<SC, MV, OP, DM>;
+  //   registerSolverSubclassForTypes<solver_type, SC, MV, OP, DM> (solverName);
+  // }
 }
 
 void register_Cg (const bool verbose)

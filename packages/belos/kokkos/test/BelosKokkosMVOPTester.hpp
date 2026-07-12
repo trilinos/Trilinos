@@ -57,9 +57,10 @@ namespace Belos {
   TestKokkosMultiVecTraits (const Teuchos::RCP<OutputManager<ScalarType> > &om,
                       const Teuchos::RCP<const MV> &A)
   {
-    using Teuchos::SetScientific;
     using std::endl;
-    typedef MultiVecTraits<ScalarType, MV>    MVT;
+    using Teuchos::SetScientific;
+    using SDM = Teuchos::SerialDenseMatrix<int, ScalarType>;
+    typedef MultiVecTraits<ScalarType, MV, SDM>    MVT;
     typedef Teuchos::ScalarTraits<ScalarType> STS;
     typedef typename STS::magnitudeType       MagType;
 
@@ -1429,9 +1430,10 @@ namespace Belos {
                       const Teuchos::RCP<const MV> &A,
                       const Teuchos::RCP<const OP> &M)
   {
-    using Teuchos::SetScientific;
     using std::endl;
-    typedef MultiVecTraits<ScalarType, MV>    MVT;
+    using Teuchos::SetScientific;
+    using SDM = Teuchos::SerialDenseMatrix<int, ScalarType>;
+    typedef MultiVecTraits<ScalarType, MV, SDM> MVT;
     typedef Teuchos::ScalarTraits<ScalarType> STS;
     typedef typename STS::magnitudeType       MagType;
 
@@ -1451,7 +1453,7 @@ namespace Belos {
              Does not modify input arguments
     *********************************************************************/
 
-    typedef MultiVecTraits<ScalarType, MV>     MVT;
+    typedef MultiVecTraits<ScalarType, MV, SDM> MVT;
     typedef Teuchos::ScalarTraits<ScalarType>  STS;
     typedef OperatorTraits<ScalarType, MV, OP> OPT;
     typedef typename STS::magnitudeType        MagType;

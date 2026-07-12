@@ -94,7 +94,7 @@ int run(int argc, char *argv[]) {
   using SCT = typename Teuchos::ScalarTraits<ST>;
   using MT = typename SCT::magnitudeType;
 
-  using LinearProblem = typename Belos::LinearProblem<ST, MV, OP>;
+  using LinearProblem = typename Belos::LinearProblem<ST, MV, OP, DM>;
   using PCPGSolMgr = ::Belos::PCPGSolMgr<ST, MV, OP, DM>;
 
   Teuchos::GlobalMPISession session(&argc, &argv, NULL);

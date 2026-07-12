@@ -41,7 +41,7 @@ public:
 private:
   //! @name Abbreviations for method implementations
   //@{
-  typedef MultiVecTraits<ScalarType,MV> MVT;
+  typedef MultiVecTraits<ScalarType,MV,DM> MVT;
   //@}
 
  public:
@@ -153,7 +153,7 @@ private:
   StatusType StatusTestLogResNorm<ScalarType,MV,OP,DM>::checkStatus(Iteration<ScalarType,MV,OP,DM> *iSolver )
   {
     // Check that this solve is a single-vector, single-block.
-    const LinearProblem<ScalarType,MV,OP>& lp = iSolver->getProblem ();
+    const LinearProblem<ScalarType,MV,OP,DM>& lp = iSolver->getProblem ();
     int blkSize = lp.getLSIndex().size();
     int numRHS = MVT::GetNumberVecs( *(lp.getRHS()) );
 

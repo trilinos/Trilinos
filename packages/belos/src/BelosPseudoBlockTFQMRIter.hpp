@@ -93,7 +93,7 @@ namespace Belos {
     //@{ 
 
     //! %Belos::PseudoBlockTFQMRIter constructor.
-    PseudoBlockTFQMRIter( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem, 
+    PseudoBlockTFQMRIter( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > &problem,
 	       const Teuchos::RCP<OutputManager<ScalarType> > &printer,
 	       const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &tester,
 	       Teuchos::ParameterList &params );
@@ -207,7 +207,7 @@ namespace Belos {
     //@{ 
     
     //! Get a constant reference to the linear problem.
-    const LinearProblem<ScalarType,MV,OP>& getProblem() const { return *lp_; }
+    const LinearProblem<ScalarType,MV,OP,DM>& getProblem() const { return *lp_; }
     
     //! Get the blocksize to be used by the iterative solver in solving this linear problem.
     int getBlockSize() const { return 1; }
@@ -229,7 +229,7 @@ namespace Belos {
     //
     // Classes inputed through constructor that define the linear problem to be solved.
     //
-    const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >    lp_;
+    const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> >    lp_;
     const Teuchos::RCP<OutputManager<ScalarType> >          om_;
     const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> >       stest_;
     
@@ -275,7 +275,7 @@ namespace Belos {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Constructor.
   template<class ScalarType, class MV, class OP, class DM>
-  PseudoBlockTFQMRIter<ScalarType,MV,OP,DM>::PseudoBlockTFQMRIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+  PseudoBlockTFQMRIter<ScalarType,MV,OP,DM>::PseudoBlockTFQMRIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > &problem,
 					 const Teuchos::RCP<OutputManager<ScalarType> > &printer,
 					 const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &tester,
 					 Teuchos::ParameterList &/* params */ 

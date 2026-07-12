@@ -44,7 +44,7 @@ namespace Belos {
   /// A concrete implementation of this class is necessary.  Users may
   /// create their own implementation if the supplied implementations
   /// are not suitable for their needs.
-  template <class ScalarType>
+  template <class ScalarType, class DM = DefaultDenseMatrix<int, ScalarType>>
   class Operator {
   public:
     //! @name Constructor/Destructor
@@ -84,8 +84,8 @@ namespace Belos {
     /// applying the operator by throwing a subclass of
     /// std::exception.
     virtual void 
-    Apply (const MultiVec<ScalarType>& x, 
-	   MultiVec<ScalarType>& y, 
+    Apply (const MultiVec<ScalarType, DM>& x,
+	   MultiVec<ScalarType, DM>& y,
 	   ETrans trans=NOTRANS) const = 0;
 
     /// \brief Whether this operator implements applying the transpose.
@@ -126,15 +126,15 @@ namespace Belos {
   /// Belos::MultiVec abstract interfaces.  Any class that inherits
   /// from Belos::Operator will be accepted by the Belos templated
   /// solvers, due to this specialization of Belos::OperatorTraits.
-  template<class ScalarType> 
-  class OperatorTraits<ScalarType, MultiVec<ScalarType>, Operator<ScalarType> > 
+  template<class ScalarType, class DM>
+  class OperatorTraits<ScalarType, MultiVec<ScalarType, DM>, Operator<ScalarType, DM> >
   {
   public:
     //! Specialization of Apply() for Operator and MultiVec objects.
     static void 
-    Apply (const Operator<ScalarType>& Op, 
-	   const MultiVec<ScalarType>& x, 
-	   MultiVec<ScalarType>& y,
+    Apply (const Operator<ScalarType, DM>& Op,
+	   const MultiVec<ScalarType, DM>& x,
+	   MultiVec<ScalarType, DM>& y,
 	   ETrans trans=NOTRANS)
     { 
       Op.Apply (x, y, trans); 
@@ -142,7 +142,7 @@ namespace Belos {
 
     //! Specialization of HasApplyTranspose() for Operator objects.
     static bool
-    HasApplyTranspose (const Operator<ScalarType>& Op)
+    HasApplyTranspose (const Operator<ScalarType, DM>& Op)
     {
       return Op.HasApplyTranspose ();
     }
@@ -167,9 +167,9 @@ namespace Belos {
   class OperatorInnerSolver : public Operator<Scalar> {
   public:
     typedef Scalar scalar_type;
-    typedef MultiVec<Scalar> multivector_type;
-    typedef Operator<Scalar> operator_type;
-    typedef InnerSolver<scalar_type, multivector_type, operator_type> inner_solver_type;
+    typedef MultiVec<Scalar, DM> multivector_type;
+    typedef Operator<Scalar, DM> operator_type;
+    typedef InnerSolver<scalar_type, multivector_type, operator_type, DM> inner_solver_type;
 
     /// \brief Constructor.
     ///
@@ -259,9 +259,9 @@ namespace Belos {
   class InnerSolverTraits<Scalar, MultiVec<Scalar>, Operator<Scalar> > {
   public:
     typedef Scalar scalar_type;
-    typedef MultiVec<scalar_type> multivector_type;
-    typedef Operator<scalar_type> operator_type;
-    typedef InnerSolver<scalar_type, multivector_type, operator_type> inner_solver_type;
+    typedef MultiVec<scalar_type, DM> multivector_type;
+    typedef Operator<scalar_type, DM> operator_type;
+    typedef InnerSolver<scalar_type, multivector_type, operator_type, DM> inner_solver_type;
     typedef OperatorInnerSolver<scalar_type> wrapper_type;
 
     /// \brief Wrap the given inner solver in a wrapper_type.

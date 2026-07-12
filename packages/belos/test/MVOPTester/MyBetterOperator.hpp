@@ -30,8 +30,8 @@
  * \author Christopher Baker (FSU/SCS,SNL/CSRI)
  *
  */
-template <class ScalarType>
-class MyBetterOperator : public Belos::Operator<ScalarType>
+template <class ScalarType, class DM = Belos::DefaultDenseMatrix<int, ScalarType>>
+class MyBetterOperator : public Belos::Operator<ScalarType, DM>
 {
 
 public:
@@ -51,8 +51,8 @@ public:
   { }
 
   //! Applies the matrix to a multivector.
-  void Apply(const Belos::MultiVec<ScalarType>& X,
-             Belos::MultiVec<ScalarType>& Y,
+  void Apply(const Belos::MultiVec<ScalarType, DM>& X,
+             Belos::MultiVec<ScalarType, DM>& Y,
              Belos::ETrans trans = Belos::NOTRANS) const
   {
     const MyMultiVec<ScalarType>* MyX;

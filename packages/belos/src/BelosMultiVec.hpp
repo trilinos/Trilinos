@@ -286,7 +286,7 @@ namespace details {
 template<class ScalarType, class DM = DefaultDenseMatrix<int, ScalarType>>
 class MultiVecTsqrAdapter {
 public:
-  typedef MultiVec<ScalarType> MV;
+  typedef MultiVec<ScalarType, DM> MV;
   typedef ScalarType scalar_type; 
   typedef int ordinal_type; // This doesn't matter either
   typedef int node_type; // Nor does this

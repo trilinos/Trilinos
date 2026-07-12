@@ -177,7 +177,7 @@ int run(int argc, char *argv[]) {
     // One could pass another preconditioner such as ILU to the linear problem
     // to be used in combination with the polynomial preconditioner.
     //
-    Belos::LinearProblem<ST,MV,OP> problem( A, X, B );
+    Belos::LinearProblem<ST,MV,OP,DM> problem( A, X, B );
     problem.setInitResVec( B );
     bool set = problem.setProblem();
     if (set == false) {

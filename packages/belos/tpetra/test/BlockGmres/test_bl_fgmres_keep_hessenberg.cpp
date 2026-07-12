@@ -146,7 +146,7 @@ bool runCase(bool keepHessenberg, int numBlocks, bool verbose)
   }
   I->fillComplete();
 
-  auto problem = rcp(new Belos::LinearProblem<SC,MV,OP>(A, x, b));
+  auto problem = rcp(new Belos::LinearProblem<SC,MV,OP,SDM>(A, x, b));
   problem->setRightPrec(I);
   problem->setProblem();
 

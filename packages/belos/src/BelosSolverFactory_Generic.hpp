@@ -36,19 +36,19 @@ class GenericSolverFactory : public Impl::SolverFactoryParent<SC, MV, OP, DM>
 {
   public:
     GenericSolverFactory() {
-      Impl::registerSolverSubclassForTypes<BiCGStabSolMgr<SC,MV,OP>, SC, MV, OP, DM> ("BICGSTAB");
-      Impl::registerSolverSubclassForTypes<BlockCGSolMgr<SC,MV,OP>, SC, MV, OP, DM> ("BLOCK CG");
-      Impl::registerSolverSubclassForTypes<BlockGmresSolMgr<SC,MV,OP>, SC, MV, OP, DM> ("BLOCK GMRES");
-      Impl::registerSolverSubclassForTypes<FixedPointSolMgr<SC,MV,OP>, SC, MV, OP, DM> ("FIXED POINT");
-      Impl::registerSolverSubclassForTypes<GCRODRSolMgr<SC,MV,OP>, SC, MV, OP, DM> ("GCRODR");
-      Impl::registerSolverSubclassForTypes<LSQRSolMgr<SC,MV,OP>, SC, MV, OP, DM> ("LSQR");
-      Impl::registerSolverSubclassForTypes<MinresSolMgr<SC,MV,OP>, SC, MV, OP, DM> ("MINRES");
-      Impl::registerSolverSubclassForTypes<PCPGSolMgr<SC,MV,OP>, SC, MV, OP, DM> ("PCPG");
-      Impl::registerSolverSubclassForTypes<PseudoBlockCGSolMgr<SC,MV,OP>, SC, MV, OP, DM> ("PSEUDOBLOCK CG");
-      Impl::registerSolverSubclassForTypes<PseudoBlockGmresSolMgr<SC,MV,OP>, SC, MV, OP, DM> ("PSEUDOBLOCK GMRES");
-      Impl::registerSolverSubclassForTypes<PseudoBlockTFQMRSolMgr<SC,MV,OP>, SC, MV, OP, DM> ("PSEUDOBLOCK TFQMR");
-      Impl::registerSolverSubclassForTypes<RCGSolMgr<SC,MV,OP>, SC, MV, OP, DM> ("RCG");
-      Impl::registerSolverSubclassForTypes<TFQMRSolMgr<SC,MV,OP>, SC, MV, OP, DM> ("TFQMR");
+      Impl::registerSolverSubclassForTypes<BiCGStabSolMgr<SC,MV,OP,DM>, SC, MV, OP, DM> ("BICGSTAB");
+      Impl::registerSolverSubclassForTypes<BlockCGSolMgr<SC,MV,OP,DM>, SC, MV, OP, DM> ("BLOCK CG");
+      Impl::registerSolverSubclassForTypes<BlockGmresSolMgr<SC,MV,OP,DM>, SC, MV, OP, DM> ("BLOCK GMRES");
+      Impl::registerSolverSubclassForTypes<FixedPointSolMgr<SC,MV,OP,DM>, SC, MV, OP, DM> ("FIXED POINT");
+      Impl::registerSolverSubclassForTypes<GCRODRSolMgr<SC,MV,OP,DM>, SC, MV, OP, DM> ("GCRODR");
+      Impl::registerSolverSubclassForTypes<LSQRSolMgr<SC,MV,OP,DM>, SC, MV, OP, DM> ("LSQR");
+      Impl::registerSolverSubclassForTypes<MinresSolMgr<SC,MV,OP,DM>, SC, MV, OP, DM> ("MINRES");
+      Impl::registerSolverSubclassForTypes<PCPGSolMgr<SC,MV,OP,DM>, SC, MV, OP, DM> ("PCPG");
+      Impl::registerSolverSubclassForTypes<PseudoBlockCGSolMgr<SC,MV,OP,DM>, SC, MV, OP, DM> ("PSEUDOBLOCK CG");
+      Impl::registerSolverSubclassForTypes<PseudoBlockGmresSolMgr<SC,MV,OP,DM>, SC, MV, OP, DM> ("PSEUDOBLOCK GMRES");
+      Impl::registerSolverSubclassForTypes<PseudoBlockTFQMRSolMgr<SC,MV,OP,DM>, SC, MV, OP, DM> ("PSEUDOBLOCK TFQMR");
+      Impl::registerSolverSubclassForTypes<RCGSolMgr<SC,MV,OP,DM>, SC, MV, OP, DM> ("RCG");
+      Impl::registerSolverSubclassForTypes<TFQMRSolMgr<SC,MV,OP,DM>, SC, MV, OP, DM> ("TFQMR");
     };
 };
 

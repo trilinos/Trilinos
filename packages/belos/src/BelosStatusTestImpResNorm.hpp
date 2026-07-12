@@ -79,7 +79,7 @@ private:
   //@{
   typedef Teuchos::ScalarTraits<ScalarType> STS;
   typedef Teuchos::ScalarTraits<MagnitudeType> STM;
-  typedef MultiVecTraits<ScalarType,MV> MVT;
+  typedef MultiVecTraits<ScalarType,MV, DM> MVT;
   //@}
 
 public:
@@ -463,7 +463,7 @@ checkStatus (Iteration<ScalarType,MV,OP,DM>* iSolver)
   using Teuchos::RCP;
 
   const MagnitudeType zero = STM::zero ();
-  const LinearProblem<ScalarType,MV,OP>& lp = iSolver->getProblem ();
+  const LinearProblem<ScalarType,MV,OP,DM>& lp = iSolver->getProblem ();
 
   // Compute scaling term (done once for each block that's being solved)
   if (firstcallCheckStatus_) {
@@ -778,7 +778,7 @@ firstCallCheckStatusSetup (Iteration<ScalarType,MV,OP,DM>* iSolver)
   int i;
   const MagnitudeType zero = STM::zero ();
   const MagnitudeType one = STM::one ();
-  const LinearProblem<ScalarType,MV,OP>& lp = iSolver->getProblem();
+  const LinearProblem<ScalarType,MV,OP,DM>& lp = iSolver->getProblem();
   // Compute scaling term (done once for each block that's being solved)
   if (firstcallCheckStatus_) {
     //

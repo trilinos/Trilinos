@@ -293,10 +293,11 @@ int main(int argc, char *argv[]) {
 
   typedef Teuchos::ScalarTraits<ST> SCT;
   typedef typename SCT::magnitudeType MT;
+  using SDM = Teuchos::SerialDenseMatrix<int, ST>;
   typedef Xpetra::MultiVector<ST, LO, GO, Node> MV;
   typedef Belos::OperatorT<MV> OP;
   typedef Belos::OperatorTraits<ST, MV, OP> OPT;
-  typedef Belos::MultiVecTraits<ST, MV> MVT;
+  typedef Belos::MultiVecTraits<ST, MV, SDM> MVT;
 
   Tpetra::ScopeGuard tpetraScope(&argc, &argv);
 
@@ -428,7 +429,7 @@ int main(int argc, char *argv[]) {
     //
     // Construct a linear problem instance.
     //
-    Belos::LinearProblem<ST, MV, OP> problem(belosOp, X, B);
+    Belos::LinearProblem<ST, MV, OP, SDM> problem(belosOp, X, B);
     problem.setLabel("Belos Xpetra BlockedCrsMatrix Solve");
 
     bool set = problem.setProblem();
@@ -446,8 +447,8 @@ int main(int argc, char *argv[]) {
     // *************Start the block Gmres iteration***********************
     // *******************************************************************
     //
-    Belos::BlockGmresSolMgr<ST, MV, OP> solver(rcpFromRef(problem),
-                                               rcpFromRef(belosList));
+    Belos::BlockGmresSolMgr<ST, MV, OP, SDM> solver(rcpFromRef(problem),
+                                                    rcpFromRef(belosList));
 
     //
     // **********Print out information about problem*******************

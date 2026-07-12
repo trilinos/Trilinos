@@ -43,7 +43,7 @@ class StatusTestGenResSubNorm: public StatusTestResNorm<ScalarType,MV,OP,DM> {
   // Convenience typedefs
   typedef Teuchos::ScalarTraits<ScalarType> SCT;
   typedef typename SCT::magnitudeType MagnitudeType;
-  typedef MultiVecTraits<ScalarType,MV>  MVT;
+  typedef MultiVecTraits<ScalarType,MV, DM>  MVT;
 
   //! @name Constructors/destructors.
   //@{
@@ -367,7 +367,7 @@ class StatusTestGenResSubNorm<ScalarType,Thyra::MultiVectorBase<ScalarType>,Thyr
   */
   StatusType checkStatus(Iteration<ScalarType,MV,OP,DM>* iSolver) {
     MagnitudeType zero = Teuchos::ScalarTraits<MagnitudeType>::zero();
-    const LinearProblem<ScalarType,MV,OP>& lp = iSolver->getProblem();
+    const LinearProblem<ScalarType,MV,OP,DM>& lp = iSolver->getProblem();
     // Compute scaling term (done once for each block that's being solved)
     if (firstcallCheckStatus_) {
       StatusType status = firstCallCheckStatusSetup(iSolver);
@@ -599,7 +599,7 @@ class StatusTestGenResSubNorm<ScalarType,Thyra::MultiVectorBase<ScalarType>,Thyr
     int i;
     MagnitudeType zero = Teuchos::ScalarTraits<MagnitudeType>::zero();
     MagnitudeType one = Teuchos::ScalarTraits<MagnitudeType>::one();
-    const LinearProblem<ScalarType,MV,OP>& lp = iSolver->getProblem();
+    const LinearProblem<ScalarType,MV,OP,DM>& lp = iSolver->getProblem();
     // Compute scaling term (done once for each block that's being solved)
     if (firstcallCheckStatus_) {
       //
