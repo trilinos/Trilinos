@@ -38,14 +38,14 @@
 namespace Belos {
 
   /// \brief "Default" parameters for robustness and accuracy.
-  template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>>
+  template<class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int,ScalarType>>
   Teuchos::RCP<Teuchos::ParameterList> getDGKSDefaultParameters ();
 
   /// \brief "Fast" but possibly unsafe or less accurate parameters.
-  template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>>
+  template<class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int,ScalarType>>
   Teuchos::RCP<Teuchos::ParameterList> getDGKSFastParameters();
 
-  template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>>
+  template<class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int,ScalarType>>
   class DGKSOrthoManager :
     public MatOrthoManager<ScalarType,MV,OP,DM>
   {

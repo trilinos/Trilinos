@@ -68,7 +68,7 @@ namespace Belos {
     BlockCGSolMgrLinearProblemFailure(const std::string& what_arg) : BelosError(what_arg)
     {}};
 
-  template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int, ScalarType>,
+  template<class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int, ScalarType>,
            const bool lapackSupportsScalarType =
            Belos::Details::LapackSupportsScalar<ScalarType>::value>
   class BlockCGSolMgr :

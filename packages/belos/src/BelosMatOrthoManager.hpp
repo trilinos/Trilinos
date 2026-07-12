@@ -40,10 +40,11 @@
 #include "BelosMultiVecTraits.hpp"
 #include "BelosOperatorTraits.hpp"
 #include "BelosTeuchosDenseAdapter.hpp"
+#include "BelosKokkosDenseAdapter.hpp"
 
 namespace Belos {
 
-  template <class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>>
+  template <class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int,ScalarType>>
   class MatOrthoManager : public OrthoManager<ScalarType,MV,DM> { 
   protected:
     Teuchos::RCP<const OP> _Op;

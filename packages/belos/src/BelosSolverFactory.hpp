@@ -61,7 +61,7 @@ upperCase (const std::string& s);
 ///   Belos::SolverFactory (which see below).
 /// \tparam DM Same as template parameter 4 of
 ///   Belos::SolverFactory (which see below).
-template<class Scalar, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,Scalar>>
+template<class Scalar, class MV, class OP, class DM = DefaultDenseMatrix<int,Scalar>>
 class SolverFactoryParent :
     public Teuchos::Describable
 {
@@ -244,7 +244,7 @@ template<class Scalar, class MV, class OP, class DM>
 std::vector<Teuchos::RCP<typename SolverFactoryParent<Scalar, MV, OP, DM>::custom_solver_factory_type> >
 SolverFactoryParent<Scalar, MV, OP, DM>::factories_;
 
-template<class SolverClass, class Scalar, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,Scalar>>
+template<class SolverClass, class Scalar, class MV, class OP, class DM = DefaultDenseMatrix<int,Scalar>>
 void registerSolverSubclassForTypes (const std::string & solverName) {
   if(!SolverFactoryParent<Scalar, MV, OP, DM>::isSolverRegistered(solverName)) {
     Teuchos::RCP<SolverClass> solver (new SolverClass);
@@ -260,7 +260,7 @@ void registerSolverSubclassForTypes (const std::string & solverName) {
 //   BelosSolverFactory_Tpetra.hpp, BelosSolverFactory_Xpetra.hpp
 // These were setup to be automatically included through the corresponding
 // adapter includes so something may have gone wrong with that.
-template<class SC, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,SC>>
+template<class SC, class MV, class OP, class DM = DefaultDenseMatrix<int,SC>>
 class SolverFactorySelector {
   public:
     // TODO: This could be deleted except for the GenericSolverFactory which
@@ -279,7 +279,7 @@ class SolverFactorySelector {
 
 // Derived setups such as found in BelosSolverFactory_Tpetra.hpp will define
 // this specialization so that SolverFactory will be used as SolverFactoryTpetra.
-template<class SC, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,SC>>
+template<class SC, class MV, class OP, class DM = DefaultDenseMatrix<int,SC>>
 using SolverFactory = typename ::Belos::Impl::SolverFactorySelector<SC, MV, OP, DM>::type;
 
 namespace Impl {

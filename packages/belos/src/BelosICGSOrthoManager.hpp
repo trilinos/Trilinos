@@ -30,6 +30,7 @@
 #include "BelosDenseMatTraits.hpp"
 #include "BelosMatOrthoManager.hpp"
 #include "BelosTeuchosDenseAdapter.hpp"
+#include "BelosKokkosDenseAdapter.hpp"
 
 #include "Teuchos_as.hpp"
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
@@ -39,14 +40,14 @@
 namespace Belos {
 
   /// \brief "Default" parameters for robustness and accuracy.
-  template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>>
+  template<class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int,ScalarType>>
   Teuchos::RCP<Teuchos::ParameterList> getICGSDefaultParameters ();
 
   /// \brief "Fast" but possibly unsafe or less accurate parameters.
-  template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>>
+  template<class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int,ScalarType>>
   Teuchos::RCP<Teuchos::ParameterList> getICGSFastParameters();
 
-  template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>>
+  template<class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int,ScalarType>>
   class ICGSOrthoManager :
     public MatOrthoManager<ScalarType,MV,OP,DM>
   {

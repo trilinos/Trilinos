@@ -28,7 +28,7 @@
 
 // This is included for backwards compatibility
 // for all codes using the default template parameter
-// DM = Teuchos::SerialDenseMatrix<int,ScalarType>
+// DM = DefaultDenseMatrix<int,ScalarType>
 #include "BelosDenseMatTraits.hpp" 
 
 namespace Belos {
@@ -58,7 +58,7 @@ namespace Belos {
   ///
   /// \tparam ScalarType The type of the entries in the multivectors.
   /// \tparam MV The type of the multivectors themselves.
-  /// \tparam DM Type of Dense Matrix (default= Teuchos::SerialDenseMatrix)
+  /// \tparam DM Type of Dense Matrix (default= DefaultDenseMatrix)
   ///
   /// This traits class tells Belos' solvers how to perform
   /// multivector operations for the multivector type MV.  These
@@ -98,7 +98,7 @@ namespace Belos {
   ///   Epetra and Tpetra multivector types, and Stratimikos provides
   ///   a specialization for the Thyra type.  Just relax and enjoy
   ///   using the solvers!
-  template<class ScalarType, class MV, class DM = Teuchos::SerialDenseMatrix<int, ScalarType>>
+  template<class ScalarType, class MV, class DM = DefaultDenseMatrix<int, ScalarType>>
   class MultiVecTraits {
   public:
     //! @name Creation methods

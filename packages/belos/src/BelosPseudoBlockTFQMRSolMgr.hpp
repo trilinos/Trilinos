@@ -61,7 +61,7 @@ namespace Belos {
     PseudoBlockTFQMRSolMgrLinearProblemFailure(const std::string& what_arg) : BelosError(what_arg)
     {}};
 
-  template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int, ScalarType>>
+  template<class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int, ScalarType>>
   class PseudoBlockTFQMRSolMgr : public SolverManager<ScalarType,MV,OP,DM> {
 
   private:

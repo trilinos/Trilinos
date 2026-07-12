@@ -131,7 +131,7 @@ namespace Belos{
   	//@}
 
 
-    template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType> >
+    template<class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int,ScalarType> >
     class BlockGCRODRIter : virtual public Iteration<ScalarType,MV,OP,DM> {
     	public:
 

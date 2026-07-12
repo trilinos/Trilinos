@@ -33,7 +33,7 @@ namespace Belos {
     class needs to be used from the solver managers. It also hides the generation of new StatusTestOutput
     classes from the solver managers.
   */
-template <class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>>
+template <class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int,ScalarType>>
 class StatusTestOutputFactory {
 
  public:

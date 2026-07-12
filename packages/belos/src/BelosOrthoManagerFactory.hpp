@@ -46,7 +46,7 @@ namespace Belos {
   /// multivector), MV is the multivector type, and OP is the operator
   /// type.  For example: Scalar=double, MV=Epetra_MultiVector, and
   /// OP=Epetra_Operator.
-  template<class Scalar, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int, Scalar>>
+  template<class Scalar, class MV, class OP, class DM = DefaultDenseMatrix<int, Scalar>>
   class OrthoManagerFactory {
   private:
     //! List of valid OrthoManager names.

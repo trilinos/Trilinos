@@ -13,7 +13,6 @@
 #include <BelosConfigDefs.hpp>
 #include <Teuchos_ParameterListAcceptorDefaultBase.hpp>
 #include <Teuchos_ScalarTraits.hpp>
-#include <Teuchos_SerialDenseMatrix.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
 #include <stdexcept>
 
@@ -48,7 +47,7 @@ namespace details {
   /// TsqrOrthoManagerImpl to compile successfully for unsupported MV
   /// types.  This in turn allows OrthoManagerFactory to be templated
   /// on the MV type.
-  template<class MultiVectorType, class DM = Teuchos::SerialDenseMatrix<int,double>>
+  template<class MultiVectorType, class DM = DefaultDenseMatrix<int,double>>
   class StubTsqrAdapter : public Teuchos::ParameterListAcceptorDefaultBase {
   public:
     typedef MultiVectorType MV;

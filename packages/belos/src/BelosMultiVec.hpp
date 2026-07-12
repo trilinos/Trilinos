@@ -55,7 +55,7 @@ namespace Belos {
 /// MultiVec<ScalarType>, where ScalarType is the type of entries in
 /// the multivector.  For example, a multivector with entries of type
 /// double would inherit from MultiVec<double>.
-template <class ScalarType, class DM = Teuchos::SerialDenseMatrix<int, ScalarType>>
+template <class ScalarType, class DM = DefaultDenseMatrix<int, ScalarType>>
 class MultiVec {
 public:
   //! @name Constructor/Destructor
@@ -283,7 +283,7 @@ namespace details {
 ///
 /// This class is the TSQR adapter for MultiVec.  It merely calls 
 /// MultiVec's corresponding methods for TSQR functionality.
-template<class ScalarType, class DM = Teuchos::SerialDenseMatrix<int, ScalarType>>
+template<class ScalarType, class DM = DefaultDenseMatrix<int, ScalarType>>
 class MultiVecTsqrAdapter {
 public:
   typedef MultiVec<ScalarType> MV;

@@ -38,6 +38,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Array.hpp"
 #include "BelosTeuchosDenseAdapter.hpp"
+#include "BelosKokkosDenseAdapter.hpp"
 
 namespace Belos {
 
@@ -52,7 +53,7 @@ namespace Belos {
 
   //@}
 
-  template <class ScalarType, class MV, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>>
+  template <class ScalarType, class MV, class DM = DefaultDenseMatrix<int,ScalarType>>
   class OrthoManager : 
     public Teuchos::ParameterListAcceptorDefaultBase 
   {

@@ -70,7 +70,7 @@ namespace Belos {
 
   // Partial specialization for unsupported ScalarType types.
   // This contains a stub implementation.
-  template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>,
+  template<class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int,ScalarType>,
            const bool supportsScalarType =
              Details::LapackSupportsScalar<ScalarType>::value>
   class PseudoBlockCGSolMgr :

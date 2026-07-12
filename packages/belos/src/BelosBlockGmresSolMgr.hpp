@@ -21,6 +21,7 @@
 #include "BelosSolverManager.hpp"
 #include "BelosDenseMatTraits.hpp"
 #include "BelosTeuchosDenseAdapter.hpp"
+#include "BelosKokkosDenseAdapter.hpp"
 
 #include "BelosGmresIteration.hpp"
 #include "BelosBlockGmresIter.hpp"
@@ -94,7 +95,7 @@ class BlockGmresSolMgrOrthoFailure : public BelosError {public:
  * PseudoBlockGmresSolMgr.  If you want Flexible GMRES, use this class
  * with the "Flexible Gmres" parameter set to true.
  */
-template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int, ScalarType>>
+template<class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int, ScalarType>>
 class BlockGmresSolMgr : public SolverManager<ScalarType,MV,OP,DM> {
 
 private:

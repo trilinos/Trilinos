@@ -88,7 +88,7 @@ namespace Belos {
    * implemented by \c BlockGmresSolMgr) is a different algorithm with
    * different convergence characteristics than Pseudoblock GMRES.
    */
-  template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>>
+  template<class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int,ScalarType>>
   class PseudoBlockGmresSolMgr : public SolverManager<ScalarType,MV,OP,DM> {
 
   private:

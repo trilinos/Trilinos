@@ -19,6 +19,7 @@
 #include "BelosLinearProblem.hpp"
 #include "BelosSolverManager.hpp"
 #include "BelosTeuchosDenseAdapter.hpp"
+#include "BelosKokkosDenseAdapter.hpp"
 
 #include "BelosLSQRIteration.hpp"
 #include "BelosLSQRIter.hpp"
@@ -183,7 +184,7 @@ public:
 // Partial specialization for complex ScalarType.
 // This contains a trivial implementation.
 // See discussion in the class documentation above.
-template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>,
+template<class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int,ScalarType>,
          const bool scalarTypeIsComplex = Teuchos::ScalarTraits<ScalarType>::isComplex>
 class LSQRSolMgr :
     public Details::RealSolverManager<ScalarType, MV, OP, DM,

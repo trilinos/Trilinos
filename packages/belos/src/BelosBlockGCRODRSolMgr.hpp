@@ -89,7 +89,7 @@ namespace Belos{
 /// multiple right-hand sides at a time; thus, it can solve sequences of block systems.
 ///
 
-template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>>
+template<class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int,ScalarType>>
 class BlockGCRODRSolMgr : public SolverManager<ScalarType, MV, OP, DM> {
 private:
 

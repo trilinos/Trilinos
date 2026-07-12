@@ -354,7 +354,7 @@ public:
   //! Operator type with which this class was specialized
   typedef OP operator_type;
 
-  typedef Teuchos::SerialDenseMatrix<int, Scalar> mat_type;
+  typedef DefaultDenseMatrix<int, Scalar> mat_type;
   typedef Teuchos::RCP<mat_type>                  mat_ptr;
 
 private:

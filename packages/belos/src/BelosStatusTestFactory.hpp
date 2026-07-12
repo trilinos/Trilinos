@@ -22,7 +22,7 @@ namespace Belos {
   ///
   /// This factory takes a Teuchos::ParameterList and generates an entire set (a tree)
   /// of status tests for use in Belos.
-  template<class Scalar, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,Scalar>>
+  template<class Scalar, class MV, class OP, class DM = DefaultDenseMatrix<int,Scalar>>
   class StatusTestFactory {
   public:
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;

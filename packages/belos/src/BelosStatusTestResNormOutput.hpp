@@ -38,7 +38,7 @@ namespace Belos {
     The frequency and occasion of the printing can be dictated according to some parameters passed to 
     StatusTestResNormOutput::StatusTestResNormOutput().
   */
-template <class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>>
+template <class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int,ScalarType>>
 class StatusTestResNormOutput : public StatusTestOutput<ScalarType,MV,OP,DM> {
 
   typedef MultiVecTraits<ScalarType,MV,DM> MVT;

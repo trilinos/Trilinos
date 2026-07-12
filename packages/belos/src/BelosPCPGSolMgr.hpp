@@ -21,6 +21,7 @@
 
 #include "BelosPCPGIter.hpp"
 #include "BelosTeuchosDenseAdapter.hpp"
+#include "BelosKokkosDenseAdapter.hpp"
 #include "BelosDenseMatTraits.hpp"
 
 #include "BelosOrthoManagerFactory.hpp"
@@ -108,7 +109,7 @@ namespace Belos {
   //
   // FIXME (mfh 09 Sep 2015) This also is a stub for types other than
   // float or double.
-  template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>,
+  template<class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int,ScalarType>,
            const bool supportsScalarType =
              Belos::Details::LapackSupportsScalar<ScalarType>::value &&
              ! Teuchos::ScalarTraits<ScalarType>::isComplex>

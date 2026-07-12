@@ -31,7 +31,7 @@
 
 namespace Belos {
 
-template<class SC, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,SC>>
+template<class SC, class MV, class OP, class DM = DefaultDenseMatrix<int,SC>>
 class GenericSolverFactory : public Impl::SolverFactoryParent<SC, MV, OP, DM>
 {
   public:

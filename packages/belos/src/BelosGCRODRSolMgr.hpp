@@ -126,7 +126,7 @@ Spandan Maiti.  "Recycling Krylov Subspaces for Sequences of Linear
 Systems," SIAM Journal on Scientific Computing, 28(5), pp. 1651-1674,
 2006.*/
 
-  template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>,
+  template<class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int,ScalarType>,
            const bool lapackSupportsScalarType =
            Belos::Details::LapackSupportsScalar<ScalarType>::value>
   class GCRODRSolMgr :

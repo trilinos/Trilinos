@@ -35,7 +35,7 @@ template <class ScalarType, class MV, class OP, class DM>
 class StatusTest;
 
 
-template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>>
+template<class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int,ScalarType>>
 class SolverManager : virtual public Teuchos::Describable {
 
   public:
@@ -186,7 +186,7 @@ namespace Details {
   template<class ScalarType,
            class MV,
            class OP,
-           class DM = Teuchos::SerialDenseMatrix<int, ScalarType>,
+           class DM = DefaultDenseMatrix<int, ScalarType>,
            const bool isComplex = Teuchos::ScalarTraits<ScalarType>::isComplex>
   class RealSolverManager;
 
@@ -306,7 +306,7 @@ namespace Details {
   template<class ScalarType,
            class MV,
            class OP,
-           class DM = Teuchos::SerialDenseMatrix<int, ScalarType>,
+           class DM = DefaultDenseMatrix<int, ScalarType>,
            const bool lapackSupportsScalarType =
            Belos::Details::LapackSupportsScalar<ScalarType>::value>
   class SolverManagerRequiresLapack;
@@ -404,7 +404,7 @@ namespace Details {
   template<class ScalarType,
            class MV,
            class OP,
-           class DM = Teuchos::SerialDenseMatrix<int, ScalarType>,
+           class DM = DefaultDenseMatrix<int, ScalarType>,
            const bool supportsScalarType =
              Belos::Details::LapackSupportsScalar<ScalarType>::value &&
              ! Teuchos::ScalarTraits<ScalarType>::isComplex>

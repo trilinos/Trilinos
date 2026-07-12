@@ -26,6 +26,7 @@
 #include "BelosStatusTestOutputFactory.hpp"
 #include "BelosOutputManager.hpp"
 #include "BelosTeuchosDenseAdapter.hpp"
+#include "BelosKokkosDenseAdapter.hpp"
 
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
 #include "Teuchos_TimeMonitor.hpp"
@@ -79,7 +80,7 @@ namespace Belos {
   /// of linear equations."  SIAM J. Numer. Anal., vol. 12, pp. 617-629,
   /// 1975.
   ///
-  template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>>
+  template<class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int,ScalarType>>
   class MinresSolMgr : public SolverManager<ScalarType,MV,OP,DM> {
 
   private:

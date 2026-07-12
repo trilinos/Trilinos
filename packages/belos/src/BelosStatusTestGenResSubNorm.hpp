@@ -36,7 +36,7 @@
 
 namespace Belos {
 
-template <class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>>
+template <class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int,ScalarType>>
 class StatusTestGenResSubNorm: public StatusTestResNorm<ScalarType,MV,OP,DM> {
 
  public:
@@ -232,14 +232,14 @@ class StatusTestGenResSubNorm: public StatusTestResNorm<ScalarType,MV,OP,DM> {
 
 // specialization for Thyra
 template <class ScalarType>
-class StatusTestGenResSubNorm<ScalarType,Thyra::MultiVectorBase<ScalarType>,Thyra::LinearOpBase<ScalarType>,Teuchos::SerialDenseMatrix<int,ScalarType> >
-   : public StatusTestResNorm<ScalarType,Thyra::MultiVectorBase<ScalarType>,Thyra::LinearOpBase<ScalarType>,Teuchos::SerialDenseMatrix<int,ScalarType> > {
+class StatusTestGenResSubNorm<ScalarType,Thyra::MultiVectorBase<ScalarType>,Thyra::LinearOpBase<ScalarType>,DefaultDenseMatrix<int,ScalarType> >
+   : public StatusTestResNorm<ScalarType,Thyra::MultiVectorBase<ScalarType>,Thyra::LinearOpBase<ScalarType>,DefaultDenseMatrix<int,ScalarType> > {
 
  public:
   // Convenience typedefs
   typedef Thyra::MultiVectorBase<ScalarType> MV;
   typedef Thyra::LinearOpBase<ScalarType>    OP;
-  typedef Teuchos::SerialDenseMatrix<int,ScalarType> DM;
+  typedef DefaultDenseMatrix<int,ScalarType> DM;
 
   typedef Teuchos::ScalarTraits<ScalarType> SCT;
   typedef typename SCT::magnitudeType MagnitudeType;

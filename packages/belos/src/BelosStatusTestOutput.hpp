@@ -36,7 +36,7 @@ namespace Belos {
     of the printing can be dictated according to some parameters passed to 
     StatusTestOutput::StatusTestOutput().
   */
-template <class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>>
+template <class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int,ScalarType>>
 class StatusTestOutput : public virtual StatusTest<ScalarType,MV,OP,DM> {
 
  public:

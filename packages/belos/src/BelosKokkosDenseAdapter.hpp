@@ -22,6 +22,7 @@
 #include "Teuchos_LAPACK.hpp"
 #include "BelosDenseMatTraits.hpp"
 
+#include "Kokkos_DualView.hpp"
 #include "Kokkos_Random.hpp"
 #include "KokkosKernels_ArithTraits.hpp"
 //Kokkos BLAS files:

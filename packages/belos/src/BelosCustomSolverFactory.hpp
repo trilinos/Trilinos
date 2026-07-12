@@ -45,7 +45,7 @@ class SolverManager;
 ///
 /// For a test and example of how to do this (with a trivial solver),
 /// see <tt>Trilinos/packages/belos/tpetra/test/CustomSolverFactory.cpp</tt>.
-template<class Scalar, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,Scalar>>
+template<class Scalar, class MV, class OP, class DM = DefaultDenseMatrix<int,Scalar>>
 class CustomSolverFactory {
 public:
   /// \brief Return an instance of the specified solver, or
