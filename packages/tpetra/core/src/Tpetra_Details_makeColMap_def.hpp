@@ -345,7 +345,7 @@ struct AtomicMin {
   using value_type = typename ValueTypeView::non_const_value_type;
 
   KOKKOS_FUNCTION
-  void op(ValueTypeView values, ValuesIdxType values_idx,
+  void op(const ValueTypeView &values, ValuesIdxType values_idx,
           const value_type v) const {
     Kokkos::atomic_min(values.data() + values_idx, v);
   }
