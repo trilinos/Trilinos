@@ -23,12 +23,12 @@
 
 #include "Tpetra_CrsMatrix.hpp"
 #include "BelosTpetraAdapter.hpp"
-#include "solvers/Belos_Tpetra_Krylov_parameters.hpp"
-#include "solvers/Belos_Tpetra_Krylov.hpp"
-#include "solvers/Belos_Tpetra_Gmres.hpp"
-#include "solvers/Belos_Tpetra_GmresPipeline.hpp"
-#include "solvers/Belos_Tpetra_GmresSingleReduce.hpp"
-#include "solvers/Belos_Tpetra_GmresSstep.hpp"
+#include "Belos_Tpetra_Krylov_parameters.hpp"
+#include "Belos_Tpetra_Krylov.hpp"
+#include "Belos_Tpetra_Gmres.hpp"
+#include "Belos_Tpetra_GmresPipeline.hpp"
+#include "Belos_Tpetra_GmresSingleReduce.hpp"
+#include "Belos_Tpetra_GmresSstep.hpp"
 
 namespace Thyra {
 

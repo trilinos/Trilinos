@@ -112,21 +112,34 @@ INCLUDE(CMakeCuda.txt)
 # requirements are fulfilled.
 #
 
-SET(${PACKAGE_NAME}_ETI_SCALARS "")
+SET(${PACKAGE_NAME}_ETI_SCALARS "" CACHE STRING "")
 # Exclude all ordinal types (GlobalOrdinal and int)
-SET(${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "")
+SET(${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "" CACHE STRING "")
 # Kokkos versions of Scalar types.  For now, this just means replacing
 # std::complex<T> with Kokkos::complex<T>.
-SET(${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "")
+SET(${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "" CACHE STRING "")
 # Kokkos versions of Scalar types, excluding ordinal types.
-SET(${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS "")
+SET(${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS "" CACHE STRING "")
 # Kokkos versions of Scalar types, including ONLY ordinal types.
 # This relates to Github Issue #700.
-SET(${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_ORDS "")
 
-SET(${PACKAGE_NAME}_ETI_LORDS "")
-SET(${PACKAGE_NAME}_ETI_GORDS "")
-SET(${PACKAGE_NAME}_ETI_NODES "")
+SET(${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_ORDS "" CACHE STRING "")
+
+SET(${PACKAGE_NAME}_ETI_LORDS "" CACHE STRING "")
+SET(${PACKAGE_NAME}_ETI_GORDS "" CACHE STRING "")
+SET(${PACKAGE_NAME}_ETI_NODES "" CACHE STRING "")
+
+# Clear cached variables to avoid duplication in separate package builds
+# This is needed because Spack builds packages separately and CMake cache persists
+UNSET(${PACKAGE_NAME}_ETI_SCALARS CACHE)
+UNSET(${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS CACHE)
+UNSET(${PACKAGE_NAME}_ETI_SCALARS_KOKKOS CACHE)
+UNSET(${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS CACHE)
+UNSET(${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_ORDS CACHE)
+UNSET(${PACKAGE_NAME}_ETI_LORDS CACHE)
+UNSET(${PACKAGE_NAME}_ETI_GORDS CACHE)
+UNSET(${PACKAGE_NAME}_ETI_NODES CACHE)
+
 
 # ============================================================
 # Kokkos execution space types
@@ -1221,6 +1234,20 @@ ENDIF ()
 # Make sure that Tpetra enables at least one Scalar type.
 ASSERT_DEFINED(HAVE_TPETRA_SCALAR)
 
+# Now set the global variables with the correct values
+# Clear cached variables to avoid duplication in separate package builds
+# This is needed because Spack builds packages separately and CMake cache persists
+SET(${PACKAGE_NAME}_ETI_SCALARS "" CACHE STRING "" FORCE)
+SET(${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "" CACHE STRING "" FORCE)
+SET(${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "" CACHE STRING "" FORCE)
+SET(${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS "" CACHE STRING "" FORCE)
+SET(${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_ORDS "" CACHE STRING "" FORCE)
+SET(${PACKAGE_NAME}_ETI_LORDS "" CACHE STRING "" FORCE)
+SET(${PACKAGE_NAME}_ETI_GORDS "" CACHE STRING "" FORCE)
+SET(${PACKAGE_NAME}_ETI_DEVICES "" CACHE STRING "" FORCE)
+SET(${PACKAGE_NAME}_ETI_NODES "" CACHE STRING "" FORCE)
+
+# Now set the global variables with the correct values
 GLOBAL_SET(${PACKAGE_NAME}_ETI_SCALARS ${${PACKAGE_NAME}_ETI_SCALARS})
 GLOBAL_SET(${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS ${${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS})
 GLOBAL_SET(${PACKAGE_NAME}_ETI_SCALARS_KOKKOS ${${PACKAGE_NAME}_ETI_SCALARS_KOKKOS})
@@ -1269,6 +1296,19 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   HAVE_${PACKAGE_NAME_UC}_EXPERIMENTAL
   "Enable experimental code."
   NO)
+
+
+############################################################
+# Add variables to ${Package_NAME}Config.cmake
+############################################################
+tribits_pkg_export_cache_var(${PACKAGE_NAME}_ETI_SCALARS)
+tribits_pkg_export_cache_var(${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS)
+tribits_pkg_export_cache_var(${PACKAGE_NAME}_ETI_SCALARS_KOKKOS)
+tribits_pkg_export_cache_var(${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS)
+tribits_pkg_export_cache_var(${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_ORDS)
+tribits_pkg_export_cache_var(${PACKAGE_NAME}_ETI_LORDS)
+tribits_pkg_export_cache_var(${PACKAGE_NAME}_ETI_GORDS)
+tribits_pkg_export_cache_var(${PACKAGE_NAME}_ETI_NODES)
 
 
 ############################################################
