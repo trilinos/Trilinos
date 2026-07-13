@@ -5,14 +5,14 @@
   -->
 
   <!-- ===========  GENERAL ================ -->
-    <Parameter        name="verbosity"                            type="string"   value="high"/>
+    <Parameter        name="verbosity"                            type="string"   value="extreme"/>
 
-    <Parameter        name="coarse: max size"                     type="int"      value="1"/>
+    <Parameter        name="coarse: max size"                     type="int"      value="100"/>
 
     <Parameter        name="multigrid algorithm"                  type="string"   value="sa"/>
 
     <!-- reduces setup cost for symmetric problems -->
-    <Parameter        name="transpose: use implicit"              type="bool"     value="false"/>
+    <Parameter        name="transpose: use implicit"              type="bool"     value="true"/>
     <Parameter        name="transfers: half precision"            type="bool"     value="false"/>
 
     <!-- start of default values for general options (can be omitted) -->
@@ -38,10 +38,10 @@
     </ParameterList>
 
   <!-- ===========  REPARTITIONING  =========== -->
-    <Parameter        name="repartition: enable"                  type="bool"     value="false"/>
+    <Parameter        name="repartition: enable"                  type="bool"     value="true"/>
     <Parameter        name="repartition: partitioner"             type="string"   value="zoltan2"/>
-    <Parameter        name="repartition: start level"             type="int"      value="1"/>
-    <Parameter        name="repartition: min rows per proc"       type="int"      value="100"/>
+    <Parameter        name="repartition: start level"             type="int"      value="2"/>
+    <Parameter        name="repartition: min rows per proc"       type="int"      value="800"/>
     <Parameter        name="repartition: max imbalance"           type="double"   value="1.1"/>
     <Parameter        name="repartition: remap parts"             type="bool"     value="false"/>
     <!-- start of default values for repartitioning (can be omitted) -->
