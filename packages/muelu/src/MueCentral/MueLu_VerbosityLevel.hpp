@@ -55,12 +55,12 @@ enum MsgType {
   Statistics    = Statistics0 | Statistics1 | Statistics2,            //!< Print all statistics
   Timings       = Timings0 | Timings1 | TimingsByLevel,               //!< Print all timing information
   Test          = Test0 | Test1 | Runtime0,
-  InterfaceTest = Test0 | Runtime0,
+  InterfaceTest = Test0 | Runtime0 | Statistics1,
 
   //
   None   = 0,
   Low    = Errors | Warnings0 | Statistics0,
-  Medium = Errors | Warnings0 | Runtime0 | Parameters0 | Statistics0 | Statistics1 | Timings0,
+  Medium = Errors | Warnings0 | Runtime0 | Parameters0 | Statistics0 | Timings0,
   High   = Errors | Warnings | Runtime | Parameters | Statistics0 | Statistics1 | Timings,
 #ifdef HAVE_MUELU_DEBUG
   Extreme = Errors | Warnings | Runtime | Parameters | Statistics | Timings | External | Developer | Debug,

@@ -9,6 +9,8 @@ Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 algorithm = "classical" classical algorithm = "default": threshold = 0, blocksize = 1
+Detected 0 Dirichlet nodes
+Number of dropped entries in unamalgamated matrix graph: 0/29995 (0%)
 lightweight wrap = 1
 Filtered matrix is not being constructed as no filtering is being done
 Build (MueLu::TentativePFactory)
@@ -17,11 +19,33 @@ BuildAggregatesNonKokkos (Phase - (Dirichlet))
 BuildAggregatesNonKokkos (Phase 1 (main))
 BuildAggregatesNonKokkos (Phase 2a (secondary))
 BuildAggregatesNonKokkos (Phase 2b (expansion))
+Algo "Phase - (Dirichlet)"
+  aggregated : 0 (phase), 0/9999 [0.00%] (total)
+  remaining  : 9999
+  aggregates : 0 (phase), 0 (total)
+Algo "Phase 1 (main)"
+  aggregated : 9998 (phase), 9998/9999 [99.99%] (total)
+  remaining  : 1
+  aggregates : 3333 (phase), 3333 (total)
+Algo "Phase 2a (secondary)"
+  aggregated : 0 (phase), 9998/9999 [99.99%] (total)
+  remaining  : 1
+  aggregates : 0 (phase), 3333 (total)
+Algo "Phase 2b (expansion)"
+  aggregated : 1 (phase), 9999/9999 [100.00%] (total)
+  remaining  : 0
+  aggregates : 0 (phase), 3333 (total)
+Algo "Phase 3 (cleanup)" [skipped since no nodes are left to aggregate]
+  aggregated : 0 (phase), 9999/9999 [100.00%] (total)
+  remaining  : 0
+  aggregates : 0 (phase), 3333 (total)
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
+Calculating max eigenvalue estimate now (max iters = 10, use point diagonal)
+Prolongator damping factor = 0.682215 (|1.33 / 1.94953|)
 matrixmatrix: kernel params -> 
  [empty list]
 Transpose P (MueLu::TransPFactory)
@@ -38,6 +62,8 @@ Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 algorithm = "classical" classical algorithm = "default": threshold = 0, blocksize = 1
+Detected 0 Dirichlet nodes
+Number of dropped entries in unamalgamated matrix graph: 0/9997 (0%)
 lightweight wrap = 1
 Filtered matrix is not being constructed as no filtering is being done
 Build (MueLu::TentativePFactory)
@@ -46,11 +72,33 @@ BuildAggregatesNonKokkos (Phase - (Dirichlet))
 BuildAggregatesNonKokkos (Phase 1 (main))
 BuildAggregatesNonKokkos (Phase 2a (secondary))
 BuildAggregatesNonKokkos (Phase 2b (expansion))
+Algo "Phase - (Dirichlet)"
+  aggregated : 0 (phase), 0/3333 [0.00%] (total)
+  remaining  : 3333
+  aggregates : 0 (phase), 0 (total)
+Algo "Phase 1 (main)"
+  aggregated : 3332 (phase), 3332/3333 [99.97%] (total)
+  remaining  : 1
+  aggregates : 1111 (phase), 1111 (total)
+Algo "Phase 2a (secondary)"
+  aggregated : 0 (phase), 3332/3333 [99.97%] (total)
+  remaining  : 1
+  aggregates : 0 (phase), 1111 (total)
+Algo "Phase 2b (expansion)"
+  aggregated : 1 (phase), 3333/3333 [100.00%] (total)
+  remaining  : 0
+  aggregates : 0 (phase), 1111 (total)
+Algo "Phase 3 (cleanup)" [skipped since no nodes are left to aggregate]
+  aggregated : 0 (phase), 3333/3333 [100.00%] (total)
+  remaining  : 0
+  aggregates : 0 (phase), 1111 (total)
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
+Calculating max eigenvalue estimate now (max iters = 10, use point diagonal)
+Prolongator damping factor = 0.682371 (|1.33 / 1.94909|)
 matrixmatrix: kernel params -> 
  [empty list]
 Transpose P (MueLu::TransPFactory)
@@ -73,10 +121,10 @@ Operator complexity = 1.44
 Smoother complexity = <ignored>
 Cycle type          = V
 
-level  rows  nnz    nnz/row  c ratio  procs
-  0  9999  29995  3.00                  1  
-  1  3333  9997   3.00     3.00         1  
-  2  1111  3331   3.00     3.00         1  
+level  rows    nnz  nnz/row  c ratio  procs
+  0    9999  29995     3.00               1
+  1    3333   9997     3.00     3.00      1
+  2    1111   3331     3.00     3.00      1
 
 Smoother (level 0) pre  : no smoother
 Smoother (level 0) post : no smoother

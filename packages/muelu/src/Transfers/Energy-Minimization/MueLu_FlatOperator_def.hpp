@@ -11,6 +11,7 @@
 #define MUELU_FLATOPERATOR_DEF_HPP
 
 #include "MueLu_FlatOperator_decl.hpp"
+#include "MueLu_VerbosityLevel.hpp"
 #include "Xpetra_MapFactory.hpp"
 #include "Xpetra_MatrixFactory.hpp"
 #include "Xpetra_MatrixMatrix.hpp"

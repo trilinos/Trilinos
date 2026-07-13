@@ -29,6 +29,7 @@
 // Ifpack2::AdditiveSchwarz::setInnerPreconditioner.
 #include "Ifpack2_Details_LinearSolver.hpp"
 #include "Ifpack2_Details_getParamTryingTypes.hpp"
+#include "Ifpack2_Details_getCrsMatrix.hpp"
 
 #if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
 #include "Zoltan2_TpetraRowGraphAdapter.hpp"
@@ -967,6 +968,10 @@ void AdditiveSchwarz<MatrixType, LocalInverseType>::initialize() {
   using Teuchos::Time;
   using Teuchos::TimeMonitor;
   using Tpetra::global_size_t;
+  typedef Tpetra::CrsGraph<local_ordinal_type,
+                           global_ordinal_type,
+                           node_type>
+      crs_graph_type;
 
   const std::string timerName("Ifpack2::AdditiveSchwarz::initialize");
   RCP<Time> timer = TimeMonitor::lookupCounter(timerName);
@@ -997,6 +1002,10 @@ void AdditiveSchwarz<MatrixType, LocalInverseType>::initialize() {
     reduced_Y_.reset(nullptr);
     reordered_B_.reset(nullptr);
     reordered_Y_.reset(nullptr);
+
+    auto crsMat = Details::getCrsMatrix(Matrix_);
+    if (!crsMat.is_null())
+      Teuchos::rcp_const_cast<crs_graph_type>(crsMat->getCrsGraph())->computeGlobalConstants();
 
     RCP<const Teuchos::Comm<int>> comm = Matrix_->getComm();
     RCP<const map_type> rowMap         = Matrix_->getRowMap();
