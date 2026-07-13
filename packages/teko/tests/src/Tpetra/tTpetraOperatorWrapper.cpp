@@ -32,9 +32,13 @@
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 
-// TriUtils includes
-#include "Trilinos_Util_CrsMatrixGallery.h"
+// Galeri includes
+#include "Galeri_XpetraMaps.hpp"
+#include "Galeri_XpetraProblemFactory.hpp"
+#include "Galeri_XpetraParameters.hpp"
 
+// Teko-Package includes
+#include "Teko_ConfigDefs.hpp"
 #include "Teko_TpetraOperatorWrapper.hpp"
 #include "Teko_TpetraHelpers.hpp"
 
@@ -54,6 +58,65 @@ using Thyra::LinearOpTester;
 using Thyra::MultiVectorBase;
 using Thyra::VectorBase;
 
+namespace {
+
+using ST = Teko::ST;
+using LO = Teko::LO;
+using GO = Teko::GO;
+using NT = Teko::NT;
+
+using map_t = Tpetra::Map<LO, GO, NT>;
+using crs_t = Tpetra::CrsMatrix<ST, LO, GO, NT>;
+using vec_t = Tpetra::Vector<ST, LO, GO, NT>;
+
+RCP<crs_t> buildRecirc2DMatrix(const RCP<const Teuchos::Comm<int>>& comm, GO nx, GO ny) {
+  Teuchos::ParameterList galeriList;
+  galeriList.set("nx", nx);
+  galeriList.set("ny", ny);
+  galeriList.set("mx", comm->getSize());
+  galeriList.set("my", 1);
+
+  auto tMap = Galeri::Xpetra::CreateMap<LO, GO, map_t>("Cartesian2D", comm, galeriList);
+
+  auto problem =
+      Galeri::Xpetra::BuildProblem<ST, LO, GO, map_t, crs_t, Tpetra::MultiVector<ST, LO, GO, NT>>(
+          "Recirc2D", tMap, galeriList);
+
+  return problem->BuildMatrix();
+}
+
+RCP<crs_t> buildLaplace2DMatrix(const RCP<const Teuchos::Comm<int>>& comm, GO nx, GO ny) {
+  Teuchos::ParameterList galeriList;
+  galeriList.set("nx", nx);
+  galeriList.set("ny", ny);
+  galeriList.set("mx", comm->getSize());
+  galeriList.set("my", 1);
+
+  auto tMap = Galeri::Xpetra::CreateMap<LO, GO, map_t>("Cartesian2D", comm, galeriList);
+
+  auto problem =
+      Galeri::Xpetra::BuildProblem<ST, LO, GO, map_t, crs_t, Tpetra::MultiVector<ST, LO, GO, NT>>(
+          "Laplace2D", tMap, galeriList);
+
+  return problem->BuildMatrix();
+}
+
+RCP<crs_t> buildDiagMatrix(const RCP<const Teuchos::Comm<int>>& comm, GO size, double value) {
+  Teuchos::ParameterList galeriList;
+  galeriList.set("n", size);
+  galeriList.set("a", value);
+
+  auto tMap = Galeri::Xpetra::CreateMap<LO, GO, map_t>("Cartesian1D", comm, galeriList);
+
+  auto problem =
+      Galeri::Xpetra::BuildProblem<ST, LO, GO, map_t, crs_t, Tpetra::MultiVector<ST, LO, GO, NT>>(
+          "Identity", tMap, galeriList);
+
+  return problem->BuildMatrix();
+}
+
+}  // namespace
+
 void tTpetraOperatorWrapper::initializeTest() {}
 
 int tTpetraOperatorWrapper::runTest(int verbosity, std::ostream& stdstrm, std::ostream& failstrm,
@@ -65,17 +128,18 @@ int tTpetraOperatorWrapper::runTest(int verbosity, std::ostream& stdstrm, std::o
   failstrm << "tTpetraOperatorWrapper";
 
   status = test_functionality(verbosity, failstrm);
-  Teko_TEST_MSG(stdstrm, 1, "   \"functionality\" ... PASSED", "   \"functionality\" ... FAILED");
+  Teko_TEST_MSG_tpetra(stdstrm, 1, "   \"functionality\" ... PASSED",
+                       "   \"functionality\" ... FAILED");
   allTests &= status;
   failcount += status ? 0 : 1;
   totalrun++;
 
   status = allTests;
   if (verbosity >= 10) {
-    Teko_TEST_MSG(failstrm, 0, "tTpetraOperatorWrapper...PASSED",
-                  "tTpetraOperatorWrapper...FAILED");
+    Teko_TEST_MSG_tpetra(failstrm, 0, "tTpetraOperatorWrapper...PASSED",
+                         "tTpetraOperatorWrapper...FAILED");
   } else {  // Normal Operating Procedures (NOP)
-    Teko_TEST_MSG(failstrm, 0, "...PASSED", "tTpetraOperatorWrapper...FAILED");
+    Teko_TEST_MSG_tpetra(failstrm, 0, "...PASSED", "tTpetraOperatorWrapper...FAILED");
   }
 
   return failcount;
@@ -85,51 +149,28 @@ bool tTpetraOperatorWrapper::test_functionality(int verbosity, std::ostream& os)
   bool status    = false;
   bool allPassed = true;
 
-  const Epetra_Comm& comm_epetra             = *GetComm();
-  RCP<const Teuchos::Comm<int> > comm_tpetra = GetComm_tpetra();
+  RCP<const Teuchos::Comm<int>> comm_tpetra = GetComm_tpetra();
 
   TEST_MSG("\n   tTpetraOperatorWrapper::test_functionality: "
-           << "Running on " << comm_epetra.NumProc() << " processors");
+           << "Running on " << comm_tpetra->getSize() << " processors");
 
-  int nx = 39;  // essentially random values
-  int ny = 53;
+  GO nx = 39;  // essentially random values
+  GO ny = 53;
 
   TEST_MSG("   tTpetraOperatorWrapper::test_functionality: "
-           << "Using Trilinos_Util to create test matrices");
+           << "Using Galeri to create test matrices");
 
   // create some big blocks to play with
-  Trilinos_Util::CrsMatrixGallery FGallery("recirc_2d", comm_epetra, false);
-  FGallery.Set("nx", nx);
-  FGallery.Set("ny", ny);
-  Epetra_CrsMatrix& epetraF = FGallery.GetMatrixRef();
-  RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT> > tpetraF =
-      Teko::TpetraHelpers::epetraCrsMatrixToTpetra(rcpFromRef(epetraF), comm_tpetra);
-
-  Trilinos_Util::CrsMatrixGallery CGallery("laplace_2d", comm_epetra, false);
-  CGallery.Set("nx", nx);
-  CGallery.Set("ny", ny);
-  Epetra_CrsMatrix& epetraC = CGallery.GetMatrixRef();
-  RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT> > tpetraC =
-      Teko::TpetraHelpers::epetraCrsMatrixToTpetra(rcpFromRef(epetraC), comm_tpetra);
-
-  Trilinos_Util::CrsMatrixGallery BGallery("diag", comm_epetra, false);
-  BGallery.Set("nx", nx * ny);
-  BGallery.Set("a", 5.0);
-  Epetra_CrsMatrix& epetraB = BGallery.GetMatrixRef();
-  RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT> > tpetraB =
-      Teko::TpetraHelpers::epetraCrsMatrixToTpetra(rcpFromRef(epetraB), comm_tpetra);
-
-  Trilinos_Util::CrsMatrixGallery BtGallery("diag", comm_epetra, false);
-  BtGallery.Set("nx", nx * ny);
-  BtGallery.Set("a", 3.0);
-  Epetra_CrsMatrix& epetraBt = BtGallery.GetMatrixRef();
-  RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT> > tpetraBt =
-      Teko::TpetraHelpers::epetraCrsMatrixToTpetra(rcpFromRef(epetraBt), comm_tpetra);
+  RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT>> tpetraF = buildRecirc2DMatrix(comm_tpetra, nx, ny);
+  RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT>> tpetraC = buildLaplace2DMatrix(comm_tpetra, nx, ny);
+  RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT>> tpetraB = buildDiagMatrix(comm_tpetra, nx * ny, 5.0);
+  RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT>> tpetraBt =
+      buildDiagMatrix(comm_tpetra, nx * ny, 3.0);
 
   // load'em up in a thyra operator
   TEST_MSG("   tTpetraOperatorWrapper::test_functionality: "
            << " Building block2x2 Thyra matrix ... wrapping in TpetraOperatorWrapper");
-  const RCP<const LinearOpBase<double> > A = Thyra::block2x2<double>(
+  const RCP<const LinearOpBase<double>> A = Thyra::block2x2<double>(
       Thyra::constTpetraLinearOp<ST, LO, GO, NT>(
           Thyra::tpetraVectorSpace<ST, LO, GO, NT>(tpetraF->getDomainMap()),
           Thyra::tpetraVectorSpace<ST, LO, GO, NT>(tpetraF->getRangeMap()), tpetraF),
@@ -149,8 +190,8 @@ bool tTpetraOperatorWrapper::test_functionality(int verbosity, std::ostream& os)
       rcp(new Teko::TpetraHelpers::TpetraOperatorWrapper(A));
 
   // begin the tests!
-  const RCP<const Tpetra::Map<LO, GO, NT> >& rangeMap  = tpetra_A->getRangeMap();
-  const RCP<const Tpetra::Map<LO, GO, NT> >& domainMap = tpetra_A->getDomainMap();
+  const RCP<const Tpetra::Map<LO, GO, NT>>& rangeMap  = tpetra_A->getRangeMap();
+  const RCP<const Tpetra::Map<LO, GO, NT>>& domainMap = tpetra_A->getDomainMap();
 
   // check to see that the number of global elements is correct
   TEST_EQUALITY(rangeMap->getGlobalNumElements(), (Tpetra::global_size_t)2 * nx * ny,
@@ -189,15 +230,15 @@ bool tTpetraOperatorWrapper::test_functionality(int verbosity, std::ostream& os)
   // create a vector to test: copyThyraIntoTpetra
   //////////////////////////////////////////////////////////////
   {
-    const RCP<MultiVectorBase<ST> > tv = Thyra::createMembers(A->domain(), 1);
+    const RCP<MultiVectorBase<ST>> tv = Thyra::createMembers(A->domain(), 1);
     Thyra::randomize(-100.0, 100.0, tv.ptr());
     // const Thyra::ConstVector<double> handle_tv(tv);
-    const RCP<const MultiVectorBase<ST> > tv_0 =
-        Teuchos::rcp_dynamic_cast<const Thyra::ProductMultiVectorBase<ST> >(tv)
-            ->getMultiVectorBlock(0);
-    const RCP<const MultiVectorBase<ST> > tv_1 =
-        Teuchos::rcp_dynamic_cast<const Thyra::ProductMultiVectorBase<ST> >(tv)
-            ->getMultiVectorBlock(1);
+    const RCP<const MultiVectorBase<ST>> tv_0 =
+        Teuchos::rcp_dynamic_cast<const Thyra::ProductMultiVectorBase<ST>>(tv)->getMultiVectorBlock(
+            0);
+    const RCP<const MultiVectorBase<ST>> tv_1 =
+        Teuchos::rcp_dynamic_cast<const Thyra::ProductMultiVectorBase<ST>>(tv)->getMultiVectorBlock(
+            1);
     const Thyra::ConstDetachedSpmdVectorView<ST> vv_0(tv_0->col(0));
     const Thyra::ConstDetachedSpmdVectorView<ST> vv_1(tv_1->col(0));
 
@@ -205,7 +246,7 @@ bool tTpetraOperatorWrapper::test_functionality(int verbosity, std::ostream& os)
     LO off_1 = vv_1.globalOffset();
 
     // create its Tpetra counter part
-    const RCP<Tpetra::Vector<ST, LO, GO, NT> > ev =
+    const RCP<Tpetra::Vector<ST, LO, GO, NT>> ev =
         rcp(new Tpetra::Vector<ST, LO, GO, NT>(tpetra_A->getDomainMap()));
     ms->copyThyraIntoTpetra(tv, *ev);
 
@@ -238,25 +279,23 @@ bool tTpetraOperatorWrapper::test_functionality(int verbosity, std::ostream& os)
   //////////////////////////////////////////////////////////////
   {
     // create an Tpetra vector
-    const RCP<Tpetra::Vector<ST, LO, GO, NT> > ev =
+    const RCP<Tpetra::Vector<ST, LO, GO, NT>> ev =
         rcp(new Tpetra::Vector<ST, LO, GO, NT>(tpetra_A->getDomainMap()));
     ev->randomize();
 
     // create its thyra counterpart
-    const RCP<MultiVectorBase<ST> > tv = Thyra::createMembers(A->domain(), 1);
-    const RCP<const MultiVectorBase<ST> > tv_0 =
-        Teuchos::rcp_dynamic_cast<const Thyra::ProductMultiVectorBase<ST> >(tv)
-            ->getMultiVectorBlock(0);
-    const RCP<const MultiVectorBase<ST> > tv_1 =
-        Teuchos::rcp_dynamic_cast<const Thyra::ProductMultiVectorBase<ST> >(tv)
-            ->getMultiVectorBlock(1);
+    const RCP<MultiVectorBase<ST>> tv = Thyra::createMembers(A->domain(), 1);
+    const RCP<const MultiVectorBase<ST>> tv_0 =
+        Teuchos::rcp_dynamic_cast<const Thyra::ProductMultiVectorBase<ST>>(tv)->getMultiVectorBlock(
+            0);
+    const RCP<const MultiVectorBase<ST>> tv_1 =
+        Teuchos::rcp_dynamic_cast<const Thyra::ProductMultiVectorBase<ST>>(tv)->getMultiVectorBlock(
+            1);
     const Thyra::ConstDetachedSpmdVectorView<ST> vv_0(tv_0->col(0));
     const Thyra::ConstDetachedSpmdVectorView<ST> vv_1(tv_1->col(0));
 
-    LO off_0 =
-        rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<ST> >(tv_0->range())->localOffset();
-    LO off_1 =
-        rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<ST> >(tv_1->range())->localOffset();
+    LO off_0 = rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<ST>>(tv_0->range())->localOffset();
+    LO off_1 = rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<ST>>(tv_1->range())->localOffset();
 
     ms->copyTpetraIntoThyra(*ev, tv.ptr());
 

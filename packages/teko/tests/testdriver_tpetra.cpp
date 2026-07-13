@@ -42,9 +42,9 @@
 #include "src/tDiagonalPreconditionerFactory_tpetra.hpp"
 #include "src/tExplicitOps_tpetra.hpp"
 #include "src/tBlockJacobiPreconditionerFactory_tpetra.hpp"
+#include "src/Tpetra/tTpetraOperatorWrapper.hpp"
 
 #ifdef TEKO_HAVE_EPETRA
-#include "src/Tpetra/tTpetraOperatorWrapper.hpp"
 #include "src/Tpetra/tStridedTpetraOperator.hpp"
 #include "src/Tpetra/tBlockedTpetraOperator.hpp"
 #ifdef HAVE_MPI
@@ -125,10 +125,10 @@ int main(int argc, char* argv[]) {
     Teko_ADD_UNIT_TEST(Teko::Test::tExplicitOps_tpetra, tExplicitOps_tpetra);
     Teko_ADD_UNIT_TEST(Teko::Test::tBlockJacobiPreconditionerFactory_tpetra,
                        BlockJacobiPreconditionerFactory_tpetra);
+    Teko_ADD_UNIT_TEST(Teko::Test::tTpetraOperatorWrapper, tTpetraOperatorWrapper);
 #ifdef TEKO_HAVE_EPETRA
     Teko_ADD_UNIT_TEST(Teko::Test::tDiagonalPreconditionerFactory_tpetra,
                        DiagonalPreconditionerFactory_tpetra);
-    Teko_ADD_UNIT_TEST(Teko::Test::tTpetraOperatorWrapper, tTpetraOperatorWrapper);
 #endif
     Teko_ADD_UNIT_TEST(Teko::Test::tLU2x2PreconditionerFactory_tpetra,
                        LU2x2PreconditionerFactory_tpetra);
