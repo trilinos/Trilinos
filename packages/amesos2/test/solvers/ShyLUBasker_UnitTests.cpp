@@ -361,7 +361,7 @@ namespace {
 
     for (int test = 0; test < 2; test++) {
       // test-0 with default-comm, matrix will be gather to mpi-0 and only mpi-0 computes Schur complement
-      // test-1 with serial-comm, all processes calls pardiso and computes schur complement independently
+      // test-1 with serial-comm, all processes calls ShyLU-Basker and computes schur complement independently
       RCP<const Comm<int> > comm = (test == 0 ? Tpetra::getDefaultComm() :
                                                 Teuchos::rcp_dynamic_cast<const Comm<int>>(Teuchos::rcp(new Teuchos::SerialComm<int>())));
       const size_t myRank = comm->getRank();
@@ -468,7 +468,7 @@ namespace {
 
     for (int test = 0; test < 2; test++) {
       // test-0 with default-comm, matrix will be gather to mpi-0 and only mpi-0 computes Schur complement
-      // test-1 with serial-comm, all processes calls pardiso and computes schur complement independently
+      // test-1 with serial-comm, all processes calls ShyLU-Basker and computes schur complement independently
       RCP<const Comm<int> > comm = (test == 0 ? Tpetra::getDefaultComm() :
                                                 Teuchos::rcp_dynamic_cast<const Comm<int>>(Teuchos::rcp(new Teuchos::SerialComm<int>())));
       const size_t myRank = comm->getRank();
