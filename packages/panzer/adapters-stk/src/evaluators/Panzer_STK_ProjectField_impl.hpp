@@ -96,8 +96,8 @@ evaluateFields(typename Traits::EvalData workset)
   Kokkos::deep_copy(sub_local_orts,orts_host);
 
   // TODO BWR Revisit this... maybe we don't need pure basis upstream?
-  Teuchos::RCP<Intrepid2::Basis<PHX::exec_space,double,double> > dstBasis = dstBasis_->getIntrepid2Basis();
-  Teuchos::RCP<Intrepid2::Basis<PHX::exec_space,double,double> > srcBasis = srcBasis_->getIntrepid2Basis();
+  Teuchos::RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> > dstBasis = dstBasis_->getIntrepid2Basis();
+  Teuchos::RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> > srcBasis = srcBasis_->getIntrepid2Basis();
 
   // Same here, need subviews
   auto sub_result = Kokkos::subview(result_.get_view(),cell_range,Kokkos::ALL());

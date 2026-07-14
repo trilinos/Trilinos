@@ -121,7 +121,7 @@ BlockedDOFManagerFactory::buildGlobalIndexer(const Teuchos::RCP<const Teuchos::O
          // determine if orientations are required
          orientationsRequired |= fieldItr->second->requiresOrientations();
 
-         Teuchos::RCP< Intrepid2::Basis<PHX::Device::execution_space,double,double> > intrepidBasis 
+         Teuchos::RCP< Intrepid2::Basis<PHX::Device::device_type,double,double> > intrepidBasis
                = fieldItr->second->getIntrepid2Basis();
          Teuchos::RCP<Intrepid2FieldPattern> fp = Teuchos::rcp(new Intrepid2FieldPattern(intrepidBasis));
          dofManager->addField(pb->elementBlockID(),fieldItr->first,fp);

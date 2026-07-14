@@ -51,7 +51,7 @@ template <typename Intrepid2Type>
 Teuchos::RCP<const panzer::FieldPattern> buildFieldPattern()
 {
    // build a geometric pattern from a single basis
-  Teuchos::RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = rcp(new Intrepid2Type);
+  Teuchos::RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> > basis = rcp(new Intrepid2Type);
    Teuchos::RCP<const panzer::FieldPattern> pattern = rcp(new panzer::Intrepid2FieldPattern(basis));
    return pattern;
 }
@@ -85,7 +85,7 @@ TEUCHOS_UNIT_TEST(tEpetra_LOF_FilteredUGI,epetra_lof)
    dofManager->setConnManager(connManager,MPI_COMM_WORLD);
 
    RCP<const panzer::FieldPattern> patternC1 
-     = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
+     = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::Device::device_type,double,double> >();
 
    dofManager->addField("T",patternC1); // add it to all three blocks
    dofManager->addField("block_0","Ux",patternC1);

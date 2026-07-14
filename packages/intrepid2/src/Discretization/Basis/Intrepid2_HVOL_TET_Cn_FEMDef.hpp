@@ -215,7 +215,7 @@ namespace Intrepid2 {
       work("HVOL::Tet::Cn::work", lwork),
       ipiv("HVOL::Tet::Cn::ipiv", card);
 
-    Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>(typename Kokkos::HostSpace::execution_space{},
+    Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::device_type,Parameters::MaxNumPtsPerBasisEval>(typename Kokkos::HostSpace::execution_space{},
                                                                                                                        vmat,
                                                                                                                        dofCoords,
                                                                                                                        order,
@@ -342,4 +342,11 @@ namespace Intrepid2 {
   }
 
 } // namespace Intrepid2
+
+#define HVOL_TET_Cn_FEM_INSTANT(DEVICE, OUTPUT_TYPE, POINT_TYPE, EXTERN)       \
+  EXTERN template class Intrepid2::Basis_HVOL_TET_Cn_FEM<DEVICE, OUTPUT_TYPE,  \
+                                                         POINT_TYPE>;
+
+INTREPID2_ETI_DEVICE_DEF(HVOL_TET_Cn_FEM_INSTANT);
+
 #endif

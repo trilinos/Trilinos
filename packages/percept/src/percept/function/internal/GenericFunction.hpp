@@ -41,7 +41,7 @@
         std::vector<size_t> dimensions(3, KOKKOS_INVALID_INDEX);
         for(size_t i=0; i< m_domain_dimensions.size(); ++i) 
           dimensions[i]=m_domain_dimensions[i];
-        return Kokkos::DynRankView<double, Kokkos::HostSpace>("GF:NewDomain", dimensions[0], dimensions[1], dimensions[2]);   
+        return Kokkos::DynRankView<double, typename Kokkos::HostSpace::device_type>("GF:NewDomain", dimensions[0], dimensions[1], dimensions[2]);
       }
 
       MDArray getNewCodomain() const
@@ -49,7 +49,7 @@
         std::vector<size_t> dimensions(3, KOKKOS_INVALID_INDEX);
         for(size_t i=0; i< m_codomain_dimensions.size(); ++i) 
           dimensions[i]=m_codomain_dimensions[i];
-        return Kokkos::DynRankView<double, Kokkos::HostSpace>("GF:NewCodomain", dimensions[0], dimensions[1], dimensions[2]); 
+        return Kokkos::DynRankView<double, typename Kokkos::HostSpace::device_type>("GF:NewCodomain", dimensions[0], dimensions[1], dimensions[2]);
       }
 
       static MDArray getNewMDArray(const Dimensions dims)
@@ -57,7 +57,7 @@
         std::vector<size_t> dimensions(3, KOKKOS_INVALID_INDEX);
         for(size_t i=0; i< dims.size(); ++i) 
           dimensions[i]=dims[i];
-        return Kokkos::DynRankView<double, Kokkos::HostSpace>("GF:NewMDArray", dimensions[0], dimensions[1], dimensions[2]); 
+        return Kokkos::DynRankView<double, typename Kokkos::HostSpace::device_type>("GF:NewMDArray", dimensions[0], dimensions[1], dimensions[2]);
       }
     protected:
       Dimensions m_domain_dimensions;  // size() gives rank, each entry gives dimension, e.g. {3,3} for a rank-2 3D tensor

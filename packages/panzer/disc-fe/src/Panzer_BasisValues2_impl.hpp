@@ -430,7 +430,7 @@ setupArrays(const Teuchos::RCP<const panzer::BasisIRLayout>& layout,
   panzer::PureBasis::EElementSpace elmtspace = basisDesc->getElementSpace();
   cell_topology_ = basisDesc->getCellTopology();
 
-  intrepid_basis = basisDesc->getIntrepid2Basis<PHX::Device::execution_space,Scalar,Scalar>();
+  intrepid_basis = basisDesc->getIntrepid2Basis<PHX::Device::device_type,Scalar,Scalar>();
 
   // allocate field containers
   // field sizes defined by http://trilinos.sandia.gov/packages/docs/dev/packages/intrepid/doc/html/basis_page.html#basis_md_array_sec
@@ -583,7 +583,7 @@ setup(const Teuchos::RCP<const panzer::BasisIRLayout> & basis,
       const int                                         num_evaluated_cells)
 {
   basis_layout = basis;
-  intrepid_basis = basis->getBasis()->getIntrepid2Basis<PHX::Device::execution_space,Scalar,Scalar>();
+  intrepid_basis = basis->getBasis()->getIntrepid2Basis<PHX::Device::device_type,Scalar,Scalar>();
   cell_topology_ = basis->getCellTopologyInfo()->getCellTopology();
   num_cells_ = basis_layout->numCells();
   num_evaluate_cells_ = num_evaluated_cells >= 0 ? num_evaluated_cells : num_cells_;
@@ -610,7 +610,7 @@ setupUniform(const Teuchos::RCP<const panzer::BasisIRLayout> &  basis,
              const int                                          num_evaluated_cells)
 {
   basis_layout = basis;
-  intrepid_basis = basis->getBasis()->getIntrepid2Basis<PHX::Device::execution_space,Scalar,Scalar>();
+  intrepid_basis = basis->getBasis()->getIntrepid2Basis<PHX::Device::device_type,Scalar,Scalar>();
   cell_topology_ = basis->getCellTopologyInfo()->getCellTopology();
   num_cells_ = basis_layout->numCells();
   num_evaluate_cells_ = num_evaluated_cells >= 0 ? num_evaluated_cells : num_cells_;
@@ -1019,7 +1019,7 @@ getBasisCoordinates(const bool cache,
   auto const_bcr = getBasisCoordinatesRef(false);
   auto bcr = PHX::getNonConstDynRankViewFromConstMDField(const_bcr);
 
-  Intrepid2::CellTools<PHX::Device::execution_space> cell_tools;
+  Intrepid2::CellTools<PHX::Device::device_type> cell_tools;
   cell_tools.mapToPhysicalFrame(s_aux, bcr, s_node_coordinates, *cell_topology_);
   PHX::Device().fence();
 

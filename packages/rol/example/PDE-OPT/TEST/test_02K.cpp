@@ -30,7 +30,7 @@
 #include "../TOOLS/dofmanagerK.hpp"
 
 using RealT = double;
-using DeviceT = Kokkos::HostSpace;
+using DeviceT = typename Kokkos::HostSpace::device_type;
 
 using scalar_view = typename MeshManager<RealT, DeviceT>::scalar_view;
 using int_view = typename MeshManager<RealT, DeviceT>::int_view;

@@ -1020,7 +1020,11 @@ namespace Intrepid2
   };
 } // end namespace Intrepid2
 
-// do ETI with default (double) type
-extern template class Intrepid2::IntegratedLegendreBasis_HGRAD_PYR<Kokkos::DefaultExecutionSpace::device_type,double,double>;
+
+#define INTEGRATEDLEGENDREBASIS_HGRAD_PYR_INSTANT(DEVICE, OUTPUT_TYPE, POINT_TYPE, EXTERN) \
+  EXTERN template class Intrepid2::IntegratedLegendreBasis_HGRAD_PYR<DEVICE, OUTPUT_TYPE,  \
+                                                         POINT_TYPE>;
+
+INTREPID2_ETI_DEVICE_DEF(INTEGRATEDLEGENDREBASIS_HGRAD_PYR_INSTANT);
 
 #endif /* Intrepid2_IntegratedLegendreBasis_HGRAD_PYR_h */

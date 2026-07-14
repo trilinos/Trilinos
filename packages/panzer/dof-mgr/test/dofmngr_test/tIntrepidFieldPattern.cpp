@@ -55,9 +55,9 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test2d_tri_c1)
 
    out << note << std::endl;
 
-   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis;
+   RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> > basis;
 
-   basis = rcp(new Intrepid2::Basis_HGRAD_TRI_C1_FEM<PHX::exec_space,double,double>);
+   basis = rcp(new Intrepid2::Basis_HGRAD_TRI_C1_FEM<PHX::Device::device_type,double,double>);
 
    Teuchos::RCP<FieldPattern> pattern = rcp(new Intrepid2FieldPattern(basis));
   
@@ -129,9 +129,9 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test2d_tri_c2)
 
    out << note << std::endl;
 
-   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis;
+   RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> > basis;
 
-   basis = rcp(new Intrepid2::Basis_HGRAD_TRI_C2_FEM<PHX::exec_space,double,double>);
+   basis = rcp(new Intrepid2::Basis_HGRAD_TRI_C2_FEM<PHX::Device::device_type,double,double>);
 
    Teuchos::RCP<FieldPattern> pattern = rcp(new Intrepid2FieldPattern(basis));
 
@@ -211,8 +211,8 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test2d_quad_c1)
 
    out << note << std::endl;
 
-   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis;
-   basis = rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double>);
+   RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> > basis;
+   basis = rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::Device::device_type,double,double>);
 
    Teuchos::RCP<FieldPattern> pattern = rcp(new Intrepid2FieldPattern(basis));
 
@@ -293,8 +293,8 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test2d_quad_c2)
 
    out << note << std::endl;
 
-   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis;
-   basis = rcp(new Intrepid2::Basis_HGRAD_QUAD_C2_FEM<PHX::exec_space,double,double>);
+   RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> > basis;
+   basis = rcp(new Intrepid2::Basis_HGRAD_QUAD_C2_FEM<PHX::Device::device_type,double,double>);
 
    Teuchos::RCP<FieldPattern> pattern = rcp(new Intrepid2FieldPattern(basis));
 
@@ -406,8 +406,8 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test3d_hex_c1)
 
    out << note << std::endl;
 
-   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis;
-   basis = rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::exec_space,double,double>);
+   RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> > basis;
+   basis = rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::Device::device_type,double,double>);
 
    Teuchos::RCP<FieldPattern> pattern = rcp(new Intrepid2FieldPattern(basis));
 
@@ -497,8 +497,8 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test3d_hex_c2)
 
    out << note << std::endl;
 
-   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis;
-   basis = rcp(new Intrepid2::Basis_HGRAD_HEX_C2_FEM<PHX::exec_space,double,double>);
+   RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> > basis;
+   basis = rcp(new Intrepid2::Basis_HGRAD_HEX_C2_FEM<PHX::Device::device_type,double,double>);
 
    Teuchos::RCP<FieldPattern> pattern = rcp(new Intrepid2FieldPattern(basis));
 
@@ -659,7 +659,7 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test2d_tri_hdivi1)
 
    out << note << std::endl;
 
-   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = rcp(new Intrepid2::Basis_HDIV_TRI_I1_FEM<PHX::exec_space,double,double>);
+   RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> > basis = rcp(new Intrepid2::Basis_HDIV_TRI_I1_FEM<PHX::Device::device_type,double,double>);
    RCP<FieldPattern> pattern = rcp(new Intrepid2FieldPattern(basis));
 
    pattern->print(out);
@@ -683,7 +683,7 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, constant_basis)
    shards::CellTopology quad(shards::getCellTopologyData<shards::Quadrilateral<4> >()); // i'm irritated there are 4 letters in quad!
 
    {
-     RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = rcp(new Intrepid2::Basis_HVOL_C0_FEM<PHX::exec_space,double,double>(tet));
+     RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> > basis = rcp(new Intrepid2::Basis_HVOL_C0_FEM<PHX::Device::device_type,double,double>(tet));
      RCP<FieldPattern> pattern = rcp(new Intrepid2FieldPattern(basis));
 
      pattern->print(out);
@@ -719,7 +719,7 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, constant_basis)
    }
 
    {
-     RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = rcp(new Intrepid2::Basis_HVOL_C0_FEM<PHX::exec_space,double,double>(hex));
+     RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> > basis = rcp(new Intrepid2::Basis_HVOL_C0_FEM<PHX::Device::device_type,double,double>(hex));
      RCP<FieldPattern> pattern = rcp(new Intrepid2FieldPattern(basis));
 
      pattern->print(out);
@@ -767,7 +767,7 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, constant_basis)
    }
 
    {
-     RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = rcp(new Intrepid2::Basis_HVOL_C0_FEM<PHX::exec_space,double,double>(tri));
+     RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> > basis = rcp(new Intrepid2::Basis_HVOL_C0_FEM<PHX::Device::device_type,double,double>(tri));
      RCP<FieldPattern> pattern = rcp(new Intrepid2FieldPattern(basis));
 
      pattern->print(out);
@@ -793,7 +793,7 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, constant_basis)
    }
 
    {
-     RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = rcp(new Intrepid2::Basis_HVOL_C0_FEM<PHX::exec_space,double,double>(quad));
+     RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> > basis = rcp(new Intrepid2::Basis_HVOL_C0_FEM<PHX::Device::device_type,double,double>(quad));
      RCP<FieldPattern> pattern = rcp(new Intrepid2FieldPattern(basis));
 
      pattern->print(out);

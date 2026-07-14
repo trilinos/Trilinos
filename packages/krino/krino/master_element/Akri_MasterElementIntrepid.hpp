@@ -20,11 +20,11 @@ namespace krino {
 class MasterElementIntrepid
 {
 public:
-  using ExecutionSpace = Kokkos::DefaultHostExecutionSpace;
+  using Device = typename Kokkos::DefaultHostExecutionSpace::device_type;
   using OutputType = double;
   using PointType = double;
-  using IntrepidBasis = Intrepid2::Basis<ExecutionSpace, OutputType, PointType>;
-  using IntrepidCubature = Intrepid2::Cubature<ExecutionSpace, OutputType, PointType>;
+  using IntrepidBasis = Intrepid2::Basis<Device, OutputType, PointType>;
+  using IntrepidCubature = Intrepid2::Cubature<Device, OutputType, PointType>;
 
   MasterElementIntrepid(stk::topology topology);
 

@@ -313,4 +313,11 @@ namespace Intrepid2 {
   }
   
 }// namespace Intrepid2
+
+#define HGRAD_TRI_C2_FEM_INSTANT(DEVICE, OUTPUT_TYPE, POINT_TYPE, EXTERN)      \
+  EXTERN template class Intrepid2::Basis_HGRAD_TRI_C2_FEM<DEVICE, OUTPUT_TYPE, \
+                                                          POINT_TYPE>;
+
+INTREPID2_ETI_DEVICE_DEF(HGRAD_TRI_C2_FEM_INSTANT);
+
 #endif
