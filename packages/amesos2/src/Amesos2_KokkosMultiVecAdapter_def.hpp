@@ -140,8 +140,20 @@ namespace Amesos2 {
   {
     size_t m = mv_->extent(0);
     size_t n = mv_->extent(1);
+    os << "Amesos2 adapter wrapping: ";
     os << " Kokkos::View(" << std::to_string(m) << " x " << std::to_string(n) << ")";
     os << " of type " << std::string(typeid(Scalar).name()) << std::endl;
+    if (verbLevel == Teuchos::VERB_EXTREME) {
+      auto mv_h = Kokkos::create_mirror_view(*mv_);
+      Kokkos::deep_copy(mv_h, *mv_);
+      os << "[" << std::endl;
+      for (size_t i = 0; i < mv_h.extent(0); i++) {
+        os << i << " ";
+        for (size_t j = 0; j < mv_h.extent(1); j++) os << mv_h(i,j) << " ";
+        os << std::endl;
+      }
+      os << "];" << std::endl;
+    }
   }
 
 } // end namespace Amesos2
