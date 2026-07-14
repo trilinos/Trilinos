@@ -1,5 +1,3 @@
-
-
 #
 # A) Define the package
 #
@@ -10,38 +8,41 @@ TRIBITS_PACKAGE(Teko)
 # B) Set up package-specific options
 #
 
-COMBINED_OPTION( TEKO_HAVE_EPETRA
-  DEP_OPTIONS_NAMES Teko_ENABLE_Epetra
-                    Teko_ENABLE_ThyraEpetraAdapters
-                    Teko_ENABLE_ThyraEpetraExtAdapters
-                    Teko_ENABLE_AztecOO
-                    Teko_ENABLE_Ifpack
-                    Teko_ENABLE_Amesos
-                    Teko_ENABLE_ML
-  DOCSTR "Enabled support for Epetra stack in Teko."
-         " Defaults to ON if Epetra, EpetraExt, ThyraEpetraAdapters, ThyraEpetraExtAdapters,"
-         " AztecOO, Ifpack, Amesos and ML are enabled, otherwise defaults to OFF."
-  )
+COMBINED_OPTION(
+  TEKO_HAVE_EPETRA
+  DEP_OPTIONS_NAMES
+  Teko_ENABLE_Epetra
+  Teko_ENABLE_ThyraEpetraAdapters
+  Teko_ENABLE_ThyraEpetraExtAdapters
+  Teko_ENABLE_AztecOO
+  Teko_ENABLE_Ifpack
+  Teko_ENABLE_Amesos
+  Teko_ENABLE_ML
+  DOCSTR
+  "Enabled support for Epetra stack in Teko."
+  " Defaults to ON if Epetra, EpetraExt, ThyraEpetraAdapters, ThyraEpetraExtAdapters,"
+  " AztecOO, Ifpack, Amesos and ML are enabled, otherwise defaults to OFF."
+)
 MESSAGE(STATUS "TEKO_HAVE_EPETRA = ${TEKO_HAVE_EPETRA}")
 
 IF(${PACKAGE_NAME}_ENABLE_MueLu)
-   GLOBAL_SET(HAVE_MUELU ON)
+  GLOBAL_SET(HAVE_MUELU ON)
 ELSE()
-   GLOBAL_SET(HAVE_MUELU OFF)
+  GLOBAL_SET(HAVE_MUELU OFF)
 ENDIF()
 
 # enable development mode
 IF(${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE)
-   SET(Teko_ENABLE_DEV_MODE ON)
+  SET(Teko_ENABLE_DEV_MODE ON)
 ELSE()
-   SET(Teko_ENABLE_DEV_MODE OFF)
+  SET(Teko_ENABLE_DEV_MODE OFF)
 ENDIF()
 
 # enable development mode
 IF(${PROJECT_NAME}_ENABLE_DEBUG_MSGS)
-   SET(Teko_DEBUG_OFF OFF)
+  SET(Teko_DEBUG_OFF OFF)
 ELSE()
-   SET(Teko_DEBUG_OFF ON)
+  SET(Teko_DEBUG_OFF ON)
 ENDIF()
 
 #
@@ -53,10 +54,7 @@ ADD_SUBDIRECTORY(src)
 TRIBITS_ADD_TEST_DIRECTORIES(tests)
 TRIBITS_ADD_EXAMPLE_DIRECTORIES(examples)
 
-TRIBITS_EXCLUDE_FILES(
-  tests/data/nsjac.mm
-  tests/data/nsjac_1.mm
-  )
+TRIBITS_EXCLUDE_FILES(tests/data/nsjac.mm tests/data/nsjac_1.mm)
 
 #
 # D) Do standard postprocessing
