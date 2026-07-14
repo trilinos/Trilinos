@@ -152,7 +152,7 @@ int run(int argc, char *argv[])
     
     // Perform solve
     Belos::ReturnType ret = solver.solve();
-  
+
     // Compute actual residuals.
     const ST one = SCT::one();
     bool badRes = false;

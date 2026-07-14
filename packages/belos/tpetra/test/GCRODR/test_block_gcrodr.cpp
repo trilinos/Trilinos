@@ -140,9 +140,10 @@ int run (int argc, char *argv[])
 
   *verbOut << "Solving linear system" << std::endl;
   Belos::ReturnType result = solver.solve ();
+  success = (result == Belos::Converged && (uncovergedCause == Belos::SolverConverged));
 
-  *verbOut << "Result of solve: "
-           << Belos::convertReturnTypeToString (result)
+  *verbOut << "Result of solve"
+           << ": rc = " << Belos::convertReturnTypeToString (result)
            << std::endl;
 
   // Make sure that all the processes finished.
