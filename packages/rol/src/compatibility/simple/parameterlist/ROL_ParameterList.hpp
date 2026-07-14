@@ -197,9 +197,17 @@ public:
     }
   }
 
-  ParameterList& sublist( key_type key,
-                          bool     mustAlreadyExist=false );
+  //ParameterList& sublist( key_type key,
+  //                        bool     mustAlreadyExist=false );
 
+  ParameterList& sublist( std::string key, 
+                          bool                    mustAlreadyExist=false ) {
+    if( !mustAlreadyExist ) 
+      if( !sublists_.count(key) ) 
+        sublists_[key] = std::make_unique<ParameterList>(1+get_level());
+    
+    return *(sublists_.at(key));
+  }
 //  template<typename value_type>
 //  inline value_type get( key_type key ) {
 //    static_assert( is_valid_type_v<value_type>, "" );
@@ -378,7 +386,6 @@ void writeParameterListToXmlFile(const ParameterList& params, const std::string&
 
 } // namespace ROL
 
-#include "ROL_ParameterList.cpp"
 #include "ROL_XMLReader.hpp"
 
 namespace ROL{

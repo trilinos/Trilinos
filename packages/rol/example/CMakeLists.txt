@@ -24,6 +24,11 @@ ADD_SUBDIRECTORY(oed)
 ADD_SUBDIRECTORY(lincon-test)
 ADD_SUBDIRECTORY(user-defined-status-test)
 
+# Standalone PinT validation target, only when real MPI is enabled.
+IF(STANDALONE_ROL AND ENABLE_MPI)
+  ADD_SUBDIRECTORY(PinT-standalone)
+ENDIF()
+
 IF(NOT STANDALONE_ROL)
 
 IF(${PACKAGE_NAME}_ENABLE_Sacado)

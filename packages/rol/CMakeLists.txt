@@ -7,7 +7,6 @@ else()
 endif()
 
 if( STANDALONE_ROL )
-
   cmake_minimum_required(VERSION 3.23)
 
   set(CMAKE_POSITION_INDEPENDENT_CODE ON)
@@ -23,6 +22,17 @@ if( STANDALONE_ROL )
 
   find_package(BLAS REQUIRED)
   find_package(LAPACK REQUIRED)
+
+  # ---- Optional real MPI for the PinT validation target (OFF => serial, unchanged) ----
+  option(ENABLE_MPI "Enable real MPI (native Teuchos-free ROL::GlobalMPISession + PinT)" OFF)
+  if(ENABLE_MPI)
+    find_package(MPI REQUIRED COMPONENTS CXX)
+    message(STATUS "ROL: MPI enabled (CXX compiler: ${MPI_CXX_COMPILER})")
+    # adapters/mpi is header-only; expose its include dirs for the example target.
+    set(ROL_MPI_ADAPTER_INCLUDES
+        ${PROJECT_SOURCE_DIR}/adapters/mpi/src/vector
+        ${PROJECT_SOURCE_DIR}/adapters/mpi/src/function)
+  endif()
 
   if(NOT CMAKE_BUILD_TYPE)
       set(CMAKE_BUILD_TYPE RELEASE CACHE STRING "Build type" FORCE)
@@ -60,11 +70,18 @@ if( STANDALONE_ROL )
 
   set(SRC ${PROJECT_SOURCE_DIR}/src)
 
-  # Set up compatibility includes (specific directories to avoid conflicts)
+  # Set up compatibility includes (specific directories to avoid conflicts).
+  # real/mpi and simple/mpi BOTH define guard ROL_GlobalMPISession_HPP, so exactly ONE
+  # of them may be on the include path. ENABLE_MPI selects which.
+  if(ENABLE_MPI)
+    set(ROL_MPI_COMPAT_DIR ${SRC}/compatibility/real/mpi)
+  else()
+    set(ROL_MPI_COMPAT_DIR ${SRC}/compatibility/simple/mpi)
+  endif()
   set(ROL_COMPATIBILITY_INCLUDES ${SRC}/compatibility/teuchos/blas
                                  ${SRC}/compatibility/teuchos/la
                                  ${SRC}/compatibility/simple/lapack
-                                 ${SRC}/compatibility/simple/mpi
+                                 ${ROL_MPI_COMPAT_DIR}
                                  ${SRC}/compatibility/simple/parameterlist
                                  ${SRC}/compatibility/std/shared_ptr
                                  ${SRC}/compatibility/teuchos/stacktrace
@@ -119,7 +136,60 @@ if( STANDALONE_ROL )
   if(ENABLE_EXAMPLES)
     add_subdirectory(example)
   endif()
+  
+  # Collect headers recursively from all roots
+  # If something doesn't show up, provide a change here
+  set(PROJECT_HEADERS)
+  foreach(dir IN LISTS ROL_CORE_DIRS)
+      file(GLOB_RECURSE headers_in_dir
+          CONFIGURE_DEPENDS
+          "${dir}/*.h"
+          "${dir}/*.hpp"
+          "${dir}/*.hh"
+          "${dir}/*.hxx"
+      )
+      list(APPEND PROJECT_HEADERS ${headers_in_dir})
+  endforeach()
+  foreach(dir IN LISTS ROL_COMPATIBILITY_INCLUDES)
+      file(GLOB_RECURSE headers_in_dir
+          CONFIGURE_DEPENDS
+          "${dir}/*.h"
+          "${dir}/*.hpp"
+          "${dir}/*.hh"
+          "${dir}/*.hxx"
+      )
+      list(APPEND PROJECT_HEADERS ${headers_in_dir})
+  endforeach()
 
+  # Remove duplicates in case patterns overlap
+  list(REMOVE_DUPLICATES PROJECT_HEADERS)
+  
+  # Check for basename collisions when flattening
+  set(_seen_names)
+  set(_duplicate_names)
+
+  foreach(hdr IN LISTS PROJECT_HEADERS)
+      get_filename_component(hdr_name "${hdr}" NAME)
+      list(FIND _seen_names "${hdr_name}" _idx)
+      if(_idx GREATER -1)
+          list(APPEND _duplicate_names "${hdr_name}")
+      else()
+          list(APPEND _seen_names "${hdr_name}")
+      endif()
+  endforeach()
+  
+  install(
+		TARGETS rol   
+		#TARGETS Teuchos_TestForException  
+    LIBRARY DESTINATION lib 
+    #ARCHIVE DESTINATION lib 
+  )
+
+  # Install all headers into one flat include directory
+  foreach(hdr IN LISTS PROJECT_HEADERS)
+      install(FILES "${hdr}" DESTINATION include)
+  endforeach()
+  install(FILES "${CMAKE_CURRENT_BINARY_DIR}/ROL_config.h" DESTINATION include)
 else() # Build with Trilinos
   include(cmake/TrilinosROL.cmake)
 endif()
