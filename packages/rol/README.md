@@ -41,6 +41,7 @@ cmake -D CMAKE_BUILD_TYPE:STRING=RELEASE \
       -D ENABLE_EXAMPLES:BOOL=ON \
       -D ENABLE_TESTS:BOOL=ON \
       -B build \
+      -D CMAKE_INSTALL_PREFIX=build/install \
       .
 ```
 
@@ -50,6 +51,63 @@ to the build directory and running `make`
 cd build
 make
 ```
+
+One can then install it 
+```
+make install
+```
+
+## Building against ROL
+Assuming we have a directory called 'roltest' which contains files we would like to run using ROL. 
+In /dir/to/roltest, create a CMakeLists.txt with
+the following: 
+
+```
+cmake_minimum_required(VERSION 3.10)  
+project(test)
+set(CMAKE_CXX_STANDARD 17) 
+
+enable_language(C)
+enable_language(CXX)
+
+message(STATUS "ROL directory is: ${ROL_DIR}/include")
+include_directories("${ROL_DIR}/include") #one down for all files
+find_library(ROL_LIB NAMES rol librol PATHS ${ROL_DIR}/lib NO_DEFAULT_PATH)
+if(ROL_LIB)
+  message(STATUS "We found ROL!")
+else()
+  message(FATAL_ERROR "ROL library not found!")
+endif()
+
+add_library(rol::rol UNKNOWN IMPORTED)
+set_target_properties(rol::rol PROPERTIES IMPORTED_LOCATION "${ROL_LIB}")
+add_executable(ROLtest mytest.cpp)
+target_link_libraries(ROLtest PRIVATE rol::rol) 
+
+add_executable(ROLtest mytest.cpp)
+```
+The file in mytest then simply tests that it can find a 
+basic ROL type:  
+```
+#include "ROL_StdVector.hpp"
+typedef double RealT;
+
+int main() {
+  int dim = 100; 
+
+  ROL::StdVector<RealT> x(dim);
+  x.randomize(-1.0, 1.0);
+  std::cout << "What's the norm of x? " << x.norm() << std::endl;
+}
+```
+Compiling and executing should then be a matter of: 
+```
+$ cmake . -DROL_DIR=/Users/../path/to/rol/build/install
+$ make
+$ ./ROLtest
+What's the norm of x? "some random number"
+```
+
 
 ## Python Interface
 The python pip package rol-python is the official python interface to ROL.

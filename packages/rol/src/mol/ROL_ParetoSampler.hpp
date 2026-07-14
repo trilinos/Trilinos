@@ -4,6 +4,7 @@
 
 #include <ctime>
 #include <random>
+#include <numeric>
 #include <algorithm>
 
 #include "ROL_StatusTest.hpp"

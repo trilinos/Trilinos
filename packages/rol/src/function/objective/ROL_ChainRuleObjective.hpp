@@ -37,7 +37,7 @@ public:
       @param[in]         obj    is the objective function that performs the mapping \f$f:\mathcal{Y}\to\mathbb{R}\f$
       @param[in]         con    is the constraint function that performs the mapping \f$g:\mathcal{X}\to\mathbb{Y}\f$
       @param[in]         x      is an optimization space vector (\f$x\in\mathcal{X}\f$) provided for allocating memory for intermediate computations
-      @param[in]               is a constraint space dual vector (\f$l\in\mathcal{Y}^\ast\f$) provided for allocating memory for intermediate computations
+      @param[in]         l      is a constraint space dual vector (\f$l\in\mathcal{Y}^\ast\f$) provided for allocating memory for intermediate computations
   */
   ChainRuleObjective( const Ptr<Objective<Real>>&  obj,
                       const Ptr<Constraint<Real>>& con,
@@ -110,10 +110,10 @@ public:
   virtual void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
     con_->value(*y_,x,tol);
     obj_->gradient(*g_,*y_,tol);
+    con_->applyAdjointHessian(hv,*g_,v,x,tol);
     con_->applyJacobian(*Jv_,v,x,tol);
     obj_->hessVec(*HJv_,*Jv_,*y_,tol);
     con_->applyAdjointJacobian(*JtHJv_,*HJv_,x,tol);
-    con_->applyAdjointHessian(hv,*g_,v,x,tol);
     hv.plus(*JtHJv_);
   }
 
