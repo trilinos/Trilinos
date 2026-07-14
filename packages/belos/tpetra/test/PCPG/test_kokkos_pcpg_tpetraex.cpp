@@ -8,8 +8,8 @@
 // @HEADER
 
 // Purpose
-// The example tests the successive right-hand sides capabilities of MueLu
-// and Belos on a heat flow u_t = u_xx problem.
+// The example tests the successive right-hand sides capabilities of Belos 
+// on a heat flow u_t = u_xx problem.
 //
 // A sequence of linear systems with the same coefficient matrix and
 // different right-hand sides is solved.  A seed space is generated dynamically,
@@ -32,8 +32,6 @@
 
 // Adapted from test_pcpg_epetraex.cpp by David M. Day (with original comments)
 
-// All preconditioning has been commented out
-
 // Belos
 #include <BelosPCPGSolMgr.hpp>
 #include <BelosLinearProblem.hpp>
@@ -46,10 +44,6 @@
 #include <Tpetra_Vector_fwd.hpp>
 #include <Tpetra_CrsMatrix_fwd.hpp>
 #include <TpetraExt_MatrixMatrix.hpp>
-
-// MueLu
-// #include <MueLu_TpetraOperator.hpp>
-// #include <MueLu_CreateTpetraPreconditioner.hpp>
 
 // Teuchos
 #include <Teuchos_RCP.hpp>
@@ -85,9 +79,6 @@ int run(int argc, char *argv[]) {
     using tmap_t         = Tpetra::Map<LO,GO,NT>;
     using tvector_t      = Tpetra::Vector<ST,LO,GO,NT>;
     using tmultivector_t = Tpetra::MultiVector<ST,LO,GO,NT>;
-
-    using toperator_t  = Tpetra::Operator<ST,LO,GO,NT>;
-    // using mtoperator_t = MueLu::TpetraOperator<ST,LO,GO,NT>;
 
     using starray_t = Teuchos::Array<ST>;
     using goarray_t = Teuchos::Array<GO>;
@@ -255,23 +246,6 @@ int run(int argc, char *argv[]) {
 
         LHS = Teuchos::rcp_implicit_cast<tmultivector_t>(vecLHS);
         RHS = Teuchos::rcp_implicit_cast<tmultivector_t>(vecRHS);
-
-        ////////////////////////////////////////////////////
-        //            Construct Preconditioner            //
-        ////////////////////////////////////////////////////
-
-//         ParameterList MueLuList; // Set MueLuList for Smoothed Aggregation
-
-//         MueLuList.set("smoother: type", "CHEBYSHEV");
-//         MueLuList.set("smoother: pre or post", "both"); // both pre- and post-smoothing
-
-// #ifdef HAVE_MUELU_AMESOS2
-//         MueLuList.set("coarse: type", "KLU2");
-// #else
-//         MueLuList.set("coarse: type", "none")
-// #endif
-//         RCP<toperator_t> A_op = A;
-//         RCP<mtoperator_t> Prec = MueLu::CreateTpetraPreconditioner(A_op, MueLuList);
 
         ///////////////////////////////////////////////////
         //             Create Parameter List             //
