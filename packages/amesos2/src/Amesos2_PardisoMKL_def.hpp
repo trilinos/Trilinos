@@ -663,8 +663,13 @@ PardisoMKL<Matrix,Vector>::getValidParameters_impl() const
 
     pl->set("IPARM(10)", as<int>(iparm_temp[9]) , "Pivoting perturbation",
             anyNumberParameterEntryValidator(preferred_int, accept_int));
+    pl->set("IPARM(11)", as<int>(iparm_temp[10]) , "Scaling vectors",
+            anyNumberParameterEntryValidator(preferred_int, accept_int));
 
     pl->set("IPARM(18)", as<int>(iparm_temp[17]), "Report the number of non-zero elements in the factors",
+            anyNumberParameterEntryValidator(preferred_int, accept_int));
+
+    pl->set("IPARM(27)", as<int>(iparm_temp[26]) , "Check input matrix",
             anyNumberParameterEntryValidator(preferred_int, accept_int));
 
     scalar_type *dummy_scalar_ptr;
@@ -750,11 +755,13 @@ PardisoMKL<Matrix,Vector>::describe_impl(Teuchos::FancyOStream &out,
   out << "  > IPARM(4)  = " << iparm_[3]  << std::endl;
   out << "  > IPARM(8)  = " << iparm_[7]  << std::endl;
   out << "  > IPARM(10) = " << iparm_[9]  << std::endl;
+  out << "  > IPARM(11) = " << iparm_[10] << std::endl;
   out << "  > IPARM(12) = " << iparm_[11] << std::endl;
   out << "  > IPARM(13) = " << iparm_[12] << std::endl;
   out << "  > IPARM(18) = " << iparm_[17] << std::endl;
   out << "  > IPARM(24) = " << iparm_[23] << std::endl;
   out << "  > IPARM(25) = " << iparm_[24] << std::endl;
+  out << "  > IPARM(27) = " << iparm_[26] << std::endl;
   out << "  > IPARM(60) = " << iparm_[59] << std::endl;
   out << "  > PartialFacto = " << partial_facto_;
   if (partial_facto_ == 0)
