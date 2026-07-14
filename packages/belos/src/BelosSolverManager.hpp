@@ -161,7 +161,6 @@ class SolverManager : virtual public Teuchos::Describable {
   ///     specification desired by the solver manager.
   virtual ReturnType solve() = 0;
   //@}
-
 };
 
 

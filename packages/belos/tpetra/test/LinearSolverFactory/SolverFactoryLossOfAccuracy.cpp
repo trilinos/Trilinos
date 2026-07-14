@@ -18,30 +18,147 @@
 #include <vector>
 #include <string>
 
-// mfh 12 Oct 2017: Test that the Tpetra specialization of
-// Belos::SolverFactory builds and runs without throwing.
-// See e.g., Trilinos GitHub issue #754.
-
 namespace { // (anonymous)
 
-// Create a very simple square test matrix.  We use the identity
-// matrix here.  The point of this test is NOT to exercise the solver;
-// it's just to check that Belos' LinearSolverFactory can create
-// working solvers.  Belos has more rigorous tests for its solvers.
-template<class SC, class LO, class GO, class NT>
-Teuchos::RCP<Tpetra::CrsMatrix<SC, LO, GO, NT> >
-createTestMatrix (Teuchos::FancyOStream& out,
-                  const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                  const Tpetra::global_size_t gblNumRows)
+//************************************************************************************************
+
+template<class MV>
+class Vector_Operator
 {
-  using Teuchos::Comm;
+  public:
+
+    Vector_Operator(int m_in, int n_in) : m(m_in), n(n_in) {};
+
+    virtual ~Vector_Operator() {};
+
+    virtual void operator () (const MV &x, MV &y) = 0;
+
+    int size (int dim) const { return (dim == 1) ? m : n; };
+
+  protected:
+
+    int m, n;        // an (m x n) operator
+
+  private:
+
+    // Not allowing copy construction.
+    Vector_Operator( const Vector_Operator& ) = delete;
+    Vector_Operator* operator=( const Vector_Operator& ) = delete;
+
+};
+
+//************************************************************************************************
+
+template<class ST, class MV>
+class Diagonal_Operator : public Vector_Operator<MV>
+{
+  public:
+
+    Diagonal_Operator(int n_in, ST v_in) : Vector_Operator<MV>(n_in, n_in), v(v_in) { };
+
+    ~Diagonal_Operator() { };
+
+    void operator () (const MV &x, MV &y)
+    {
+      ST rand_num = Teuchos::ScalarTraits<ST>::random();
+      y.scale( (v+rand_num), x );
+    };
+
+  private:
+
+    ST v;
+};
+
+//************************************************************************************************
+
+template<class ST, class MV>
+class Diagonal_Operator_2 : public Vector_Operator<MV>
+{
+  public:
+
+    Diagonal_Operator_2(int n_in, ST v_in)
+    : Vector_Operator<MV>(n_in, n_in), v(v_in) {}
+
+    ~Diagonal_Operator_2() { };
+
+    void operator () (const MV &x, MV &y)
+    {
+      auto yLocalData = y.getLocalViewHost(Tpetra::Access::ReadWrite);
+      auto xLocalData = x.getLocalViewHost(Tpetra::Access::ReadOnly);
+
+      for (size_t j = 0; j < x.getNumVectors(); ++j) {
+        for (size_t i = 0; i < x.getLocalLength(); ++i) {
+            ST rand_num = Teuchos::ScalarTraits<ST>::random();
+            yLocalData(i, j) = (v + rand_num) * xLocalData(i, j);
+        }
+      }
+    }
+
+  private:
+
+    ST v;
+};
+
+//************************************************************************************************
+
+
+template<class OP, class ST, class MP, class MV>
+class Operator_Interface : public OP
+{
+  public:
+
+    Operator_Interface(const Teuchos::RCP<Vector_Operator<MV>> pA_in,
+        const Teuchos::RCP<const Teuchos::Comm<int>> pComm_in,
+        const Teuchos::RCP<const MP> pMap_in)
+      : pA (pA_in),
+      pComm (pComm_in),
+      pMap (pMap_in),
+      use_transpose (false)
+  {}
+
+    void apply (const MV &X,
+                MV &Y,
+                Teuchos::ETransp mode = Teuchos::NO_TRANS,
+                ST alpha = Teuchos::ScalarTraits<ST>::one(),
+                ST beta = Teuchos::ScalarTraits<ST>::zero()) const override;
+
+    virtual ~Operator_Interface() {};
+
+    bool hasTransposeApply() const override {return(use_transpose);};      // always set to false (in fact the default)
+
+    Teuchos::RCP<const MP> getDomainMap() const override {return pMap; }
+    Teuchos::RCP<const MP> getRangeMap() const override {return pMap; }
+
+  private:
+
+    Teuchos::RCP<Vector_Operator<MV>> pA;
+    Teuchos::RCP<const Teuchos::Comm<int>> pComm;
+    Teuchos::RCP<const MP> pMap;
+
+    bool use_transpose;
+};
+
+template<class OP, class ST, class MP, class MV>
+void Operator_Interface<OP, ST, MP, MV>::apply (const MV &X,
+            MV &Y,
+            Teuchos::ETransp mode,
+            ST alpha,
+            ST beta) const {
+    (*pA)(X,Y);
+}
+
+template<class SC, class LO, class GO, class NT>
+Teuchos::RCP<Tpetra::Operator<SC, LO, GO, NT> >
+createTestOperator (Teuchos::FancyOStream& out,
+                    const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+                    const Tpetra::global_size_t gblNumRows)
+{
   using Teuchos::RCP;
   using Teuchos::rcp;
   using std::endl;
-  typedef Tpetra::CrsMatrix<SC,LO,GO,NT> MAT;
+  typedef Tpetra::Operator<SC,LO,GO,NT> OP;
+  typedef Tpetra::MultiVector<SC,LO,GO,NT> MV;
   typedef Tpetra::Map<LO,GO,NT> map_type;
-  typedef Teuchos::ScalarTraits<SC> STS;
-  typedef Teuchos::ScalarTraits<typename STS::magnitudeType> MTS;
 
   Teuchos::OSTab tab0 (out);
   out << "Create test matrix with " << gblNumRows << " row(s)" << endl;
@@ -52,27 +169,11 @@ createTestMatrix (Teuchos::FancyOStream& out,
 
   const GO indexBase = 0;
   RCP<const map_type> rowMap (new map_type (gblNumRows, indexBase, comm));
-  // For this particular row matrix, the row Map and the column Map
-  // are the same.  Giving a column Map to CrsMatrix's constructor
-  // lets us use local indices.
-  RCP<const map_type> colMap = rowMap;
-  const size_t maxNumEntPerRow = 1;
-  RCP<MAT> A (new MAT (rowMap, colMap, maxNumEntPerRow));
 
-  if (rowMap->getLocalNumElements () != 0) {
-    Teuchos::Array<SC> vals (1);
-    Teuchos::Array<LO> inds (1);
-    for (LO lclRow = rowMap->getMinLocalIndex ();
-         lclRow <= rowMap->getMaxLocalIndex (); ++lclRow) {
-      inds[0] = lclRow;
-      vals[0] = MTS::zero () / MTS::zero (); // Fill matrix with NaNs
-      A->insertLocalValues (lclRow, inds (), vals ());
-    }
-  }
+  // Diagonal operator that is a constant with a random perturbation
+  RCP<Diagonal_Operator_2<SC,MV>> D = rcp(new Diagonal_Operator_2<SC,MV>(rowMap->getGlobalNumElements(), 4.0));
+  RCP<OP> A = rcp( new Operator_Interface<OP,SC,map_type,MV>(D, comm, rowMap) );
 
-  RCP<const map_type> domMap = rowMap;
-  RCP<const map_type> ranMap = rowMap;
-  A->fillComplete (domMap, ranMap);
   return A;
 }
 
@@ -86,7 +187,7 @@ template<class SC, class LO, class GO, class NT>
 void
 createTestProblem (Teuchos::FancyOStream& out,
                    Teuchos::RCP<Tpetra::MultiVector<SC, LO, GO, NT> >& X,
-                   Teuchos::RCP<Tpetra::CrsMatrix<SC, LO, GO, NT> >& A,
+                   Teuchos::RCP<Tpetra::Operator<SC, LO, GO, NT> >& A,
                    Teuchos::RCP<Tpetra::MultiVector<SC, LO, GO, NT> >& B,
                    const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                    const Tpetra::global_size_t gblNumRows,
@@ -99,7 +200,7 @@ createTestProblem (Teuchos::FancyOStream& out,
   typedef Tpetra::MultiVector<SC,LO,GO,NT> MV;
   typedef Teuchos::ScalarTraits<SC> STS;
 
-  A = createTestMatrix<SC, LO, GO, NT> (out, comm, gblNumRows);
+  A = createTestOperator<SC, LO, GO, NT> (out, comm, gblNumRows);
   X = rcp (new MV (A->getDomainMap (), numVecs));
   B = rcp (new MV (A->getRangeMap (), numVecs));
 
@@ -112,7 +213,7 @@ void
 testSolver (Teuchos::FancyOStream& out,
             bool& success,
             const Teuchos::RCP<Tpetra::MultiVector<SC, LO, GO, NT> >& X,
-            const Teuchos::RCP<const Tpetra::CrsMatrix<SC, LO, GO, NT> >& A,
+            const Teuchos::RCP<const Tpetra::Operator<SC, LO, GO, NT> >& A,
             const Teuchos::RCP<const Tpetra::MultiVector<SC, LO, GO, NT> >& B,
             Tpetra::MultiVector<SC, LO, GO, NT>& /* X_exact */,
             const std::string& solverName)
@@ -124,7 +225,7 @@ testSolver (Teuchos::FancyOStream& out,
   typedef Tpetra::Operator<SC,LO,GO,NT> OP;
   typedef Tpetra::MultiVector<SC,LO,GO,NT> MV;
   typedef Teuchos::ScalarTraits<SC> STS;
-  typedef Teuchos::ScalarTraits<typename STS::magnitudeType> MTS;
+  typedef typename STS::magnitudeType MT;
 
   Teuchos::OSTab tab0 (out);
   out << "Test solver \"" << solverName << "\" from Belos package" << endl;
@@ -134,8 +235,15 @@ testSolver (Teuchos::FancyOStream& out,
   Belos::SolverFactory<SC, MV, OP> factory;
 
   // Set up Belos solver parameters.
-  Teuchos::RCP<Teuchos::ParameterList> belosList = Teuchos::parameterList (solverName);
-  belosList->set ("Verbosity", Belos::Errors + Belos::Warnings);
+  int max_iter = 100;
+  const MT tol = 1.0e-10;
+  int verbosity = Belos::Errors + Belos::Warnings
+                  + Belos::TimingDetails + Belos::StatusTestDetails;
+
+  Teuchos::RCP<Teuchos::ParameterList> belosList = Teuchos::rcp( new Teuchos::ParameterList );
+  belosList->set( "Maximum Iterations", max_iter );
+  belosList->set( "Convergence Tolerance", tol );
+  belosList->set( "Verbosity", verbosity );
 
   try {
     solver = factory.create (solverName, belosList);
@@ -162,8 +270,7 @@ testSolver (Teuchos::FancyOStream& out,
   out << "Set up the solver" << endl;
   solver->setProblem (problem);
 
-  out << "Apply solver to \"solve\" AX=B for X.  Belos already has solver tests;"
-    " the point is to check that solve() doesn't throw if it encounters a NaN." << endl;
+  out << "Apply solver to \"solve\" AX=B for X, and check if it fails to converge with 'LossOfAccuracyDetected'." << endl;
   Belos::ReturnType ret;
 
   try {
@@ -175,94 +282,16 @@ testSolver (Teuchos::FancyOStream& out,
     return;
   }
   out << "ret = " << convertReturnTypeToString(ret)
+      << ", solver->isLOADetected() = " << solver->isLOADetected()
       << endl;
 
-  // Check that the solution vector is zeros, the achieved tolerance is 1, and the solver return Unconverged.
-  bool nonZeroX = false;
-  std::vector<typename STS::magnitudeType> normX( X->getNumVectors () );
-  Teuchos::ArrayView<typename STS::magnitudeType> normAV( normX );
-  X->norm2 ( normAV( 0, X->getNumVectors ()) );
-  for ( int i=0; i<(int)(X->getNumVectors ()); ++i )
-  {
-    if ( normX[i] != MTS::zero() )
-      nonZeroX = true;
-  } 
-  if ( nonZeroX || (ret != Belos::NaNDetected) || ( solver->achievedTol() != MTS::one() ) ) {
+  // Check that solver returned properly.
+  if ( (ret != Belos::LossOfAccuracyDetected) || (solver->isLOADetected() != true) ) {
     success = false;
     return;
   }
 
   success = true;
-}
-
-template<class SC, class LO, class GO, class NT>
-void
-testCreatingSolver (Teuchos::FancyOStream& out,
-                    bool& success,
-                    const std::string& solverName)
-{
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  using Teuchos::TypeNameTraits;
-  using std::endl;
-  using MV = Tpetra::MultiVector<SC, LO, GO, NT>;
-  using OP = Tpetra::Operator<SC, LO, GO, NT>;
-
-  Teuchos::OSTab tab0 (out);
-  out << "Test Belos solver \"" << solverName
-      << "\" for Tpetra <SC=" << TypeNameTraits<SC>::name ()
-      << ", LO=" << TypeNameTraits<LO>::name ()
-      << ", GO=" << TypeNameTraits<GO>::name ()
-      << ", NT=" << TypeNameTraits<NT>::name ()
-      << ">" << endl;
-  Teuchos::OSTab tab1 (out);
-
-  Belos::SolverFactory<SC, MV, OP> factory;
-  RCP<Belos::SolverManager<SC, MV, OP> > solver;
-  TEST_NOTHROW( solver = factory.create (solverName, Teuchos::null) );
-  TEST_ASSERT( ! solver.is_null () );
-}
-
-//
-// The actual unit tests start here.
-//
-
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( SolverFactory, CreateSolvers, SC, LO, GO, NT )
-{
-  using std::endl;
-
-  out << "Test Belos::SolverFactory with Tpetra for all solvers" << endl;
-  Teuchos::OSTab tab1 (out);
-  const std::vector<std::string> solverNames {{
-    "BICGSTAB",
-    "BLOCK CG",
-    "BLOCK GMRES",
-    "TPETRA CG PIPELINE",
-    "TPETRA CG SINGLE REDUCE",
-    "FIXED POINT",
-    "GCRODR",
-    "TPETRA GMRES PIPELINE",
-    "HYBRID BLOCK GMRES", // GmresPoly
-    "TPETRA GMRES SINGLE REDUCE",
-    "LSQR",
-    "MINRES",
-    "PCPG",
-    "PSEUDOBLOCK CG",
-    "PSEUDOBLOCK GMRES",
-    "PSEUDOBLOCK TFQMR",
-    "TFQMR"
-  }};
-
-  for (const std::string& solverName : solverNames) {
-    const bool isComplex = Teuchos::ScalarTraits<SC>::isComplex;
-    if (isComplex && (solverName == "LSQR" || solverName == "PCPG")) {
-      continue; // solver not implemented for complex Scalar types
-    }
-    testCreatingSolver<SC, LO, GO, NT> (out, success, solverName);
-    if (! success) {
-      return;
-    }
-  }
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( SolverFactory, CreateAndSolve, SC, LO, GO, NT )
@@ -272,45 +301,30 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( SolverFactory, CreateAndSolve, SC, LO, GO, NT
   using Teuchos::rcp;
   using Teuchos::TypeNameTraits;
   using std::endl;
-  typedef Tpetra::CrsMatrix<SC,LO,GO,NT> MAT;
   typedef Tpetra::MultiVector<SC,LO,GO,NT> MV;
   typedef Tpetra::Operator<SC,LO,GO,NT> OP;
 
   RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
-  const Tpetra::global_size_t gblNumRows = comm->getSize () * 10;
-  const size_t numVecs = 3;
+  const Tpetra::global_size_t gblNumRows = comm->getSize () * 50;
+  const size_t numVecs = 1;
 
   out << "Create test problem" << endl;
   RCP<MV> X_exact, B;
-  RCP<MAT> A;
+  RCP<OP> A;
   createTestProblem (out, X_exact, A, B, comm, gblNumRows, numVecs);
 
   RCP<MV> X = rcp (new MV (X_exact->getMap (), numVecs));
 
   Belos::SolverFactory<SC, MV, OP> factory;
-  // FIXME (mfh 23 Aug 2015) Not all Belos solvers can handle solves
-  // with the identity matrix.  BiCGSTAB might need a bit of work, for
-  // example.  I'm not so worried about that for now but we should go
-  // back and revisit this at some point.
-  //
-  // Teuchos::Array<std::string> solverNames = factory.supportedSolverNames ();
-  // const int numSolvers = static_cast<int> (solverNames.size ());
-  const char* solverNames[10] = {
-    "BICGSTAB",
-    "BLOCK CG",
+  const int numSolvers = 2;
+  const char* solverNames[numSolvers] = {
     "BLOCK GMRES",
-    "FIXED POINT",
-    "GCRODR",
-    "MINRES",
-    "PSEUDOBLOCK CG",
-    "PSEUDOBLOCK GMRES",
-    "PSEUDOBLOCK TFQMR",
-    "TFQMR"};
-  const int numSolvers = 10;
+    "PSEUDOBLOCK GMRES"};
 
   int numSolversTested = 0;
   for (int k = 0; k < numSolvers; ++k) {
     const std::string solverName (solverNames[k]);
+    out << "Testing k = " << k << ", solverName = " << solverName << std::endl;
 
     // Use Belos' factory to tell us whether the factory supports the
     // given combination of template parameters.  If create() throws,
@@ -345,7 +359,6 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
 
 // Macro that instantiates the unit test
 #define LCLINST( SC, LO, GO, NT ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( SolverFactory, CreateSolvers, SC, LO, GO, NT ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( SolverFactory, CreateAndSolve, SC, LO, GO, NT )
 
 // Tpetra's ETI will instantiate the unit test for all enabled type

@@ -181,14 +181,14 @@ int main(int argc, char *argv[]) {
     delete [] rowind;
     delete [] cvals;
     // Test for failures
-    if ( ret!=Belos::Converged || norm_failure || numIters1 < numIters2 || numIters2 < numIters3 ) {
-      success = false;
-      if (proc_verbose)
-        std::cout << "End Result: TEST FAILED" << std::endl;
-    } else {
+    if ( ret==Belos::Converged && !norm_failure && numIters1 >= numIters2 && numIters2 >= numIters3 ) {
       success = true;
       if (proc_verbose)
         std::cout << "End Result: TEST PASSED" << std::endl;
+    } else {
+      success = false;
+      if (proc_verbose)
+        std::cout << "End Result: TEST FAILED" << std::endl;
     }
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);

@@ -143,7 +143,10 @@ int run(int argc, char *argv[])
     
     // Perform solve
     Belos::ReturnType ret = solver->solve();
-    if (ret!=Belos::Converged) {
+    if (ret==Belos::Converged) {
+      // Ok
+    }
+    else {
       if (proc_verbose)
         std::cout << "End Result: TEST FAILED" << std::endl;
       return -1;
@@ -180,7 +183,10 @@ int run(int argc, char *argv[])
     numIters = solver->getNumIters();
     if (proc_verbose)
       std::cout << "Number of iterations performed for this solve (manager reset): " << numIters << std::endl;
-    if (ret!=Belos::Converged) {
+    if (ret==Belos::Converged) {
+      // Ok
+    }
+    else {
       if (proc_verbose)
         std::cout << "End Result: TEST FAILED" << std::endl;
       return -1;
@@ -222,7 +228,10 @@ int run(int argc, char *argv[])
     numIters = solver->getNumIters();
     if (proc_verbose)
       std::cout << "Number of iterations performed for this solve (label reset): " << numIters << std::endl;
-    if (ret!=Belos::Converged) {
+    if (ret==Belos::Converged) {
+      // Ok
+    }
+    else {
       if (proc_verbose)
         std::cout << "End Result: TEST FAILED" << std::endl;
       return -1;
