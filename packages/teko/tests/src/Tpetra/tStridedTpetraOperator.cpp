@@ -62,7 +62,7 @@ using NT = Teko::NT;
 using map_t = Tpetra::Map<LO, GO, NT>;
 using crs_t = Tpetra::CrsMatrix<ST, LO, GO, NT>;
 using vec_t = Tpetra::Vector<ST, LO, GO, NT>;
-using mv_t = Tpetra::MultiVector<ST, LO, GO, NT>;
+using mv_t  = Tpetra::MultiVector<ST, LO, GO, NT>;
 
 RCP<crs_t> buildRecirc2DMatrix(const RCP<const Teuchos::Comm<int>>& comm, GO nx, GO ny) {
   Teuchos::ParameterList galeriList;
@@ -74,8 +74,7 @@ RCP<crs_t> buildRecirc2DMatrix(const RCP<const Teuchos::Comm<int>>& comm, GO nx,
   auto tMap = Galeri::Xpetra::CreateMap<LO, GO, map_t>("Cartesian2D", comm, galeriList);
 
   auto problem =
-      Galeri::Xpetra::BuildProblem<ST, LO, GO, map_t, crs_t, mv_t>(
-          "Recirc2D", tMap, galeriList);
+      Galeri::Xpetra::BuildProblem<ST, LO, GO, map_t, crs_t, mv_t>("Recirc2D", tMap, galeriList);
 
   return problem->BuildMatrix();
 }
@@ -93,34 +92,36 @@ int tStridedTpetraOperator::runTest(int verbosity, std::ostream& stdstrm, std::o
   failstrm << "tStridedTpetraOperator";
 
   status = test_numvars_constr(verbosity, failstrm);
-  Teko_TEST_MSG_tpetra(stdstrm, 1, "   \"numvars_constr\" ... PASSED", "   \"numvars_constr\" ... FAILED");
+  Teko_TEST_MSG_tpetra(stdstrm, 1, "   \"numvars_constr\" ... PASSED",
+                       "   \"numvars_constr\" ... FAILED");
   allTests &= status;
   failcount += status ? 0 : 1;
   totalrun++;
 
   status = test_vector_constr(verbosity, failstrm);
-  Teko_TEST_MSG_tpetra(stdstrm, 1, "   \"vector_constr\" ... PASSED", "   \"vector_constr\" ... FAILED");
+  Teko_TEST_MSG_tpetra(stdstrm, 1, "   \"vector_constr\" ... PASSED",
+                       "   \"vector_constr\" ... FAILED");
   allTests &= status;
   failcount += status ? 0 : 1;
   totalrun++;
 
   status = test_reorder(verbosity, failstrm, 0);
   Teko_TEST_MSG_tpetra(stdstrm, 1, "   \"reorder(flat reorder)\" ... PASSED",
-                "   \"reorder(flat reorder)\" ... FAILED");
+                       "   \"reorder(flat reorder)\" ... FAILED");
   allTests &= status;
   failcount += status ? 0 : 1;
   totalrun++;
 
   status = test_reorder(verbosity, failstrm, 1);
   Teko_TEST_MSG_tpetra(stdstrm, 1, "   \"reorder(composite reorder = " << 1 << ")\" ... PASSED",
-                "   \"reorder(composite reorder)\" ... FAILED");
+                       "   \"reorder(composite reorder)\" ... FAILED");
   allTests &= status;
   failcount += status ? 0 : 1;
   totalrun++;
 
   status = test_reorder(verbosity, failstrm, 2);
   Teko_TEST_MSG_tpetra(stdstrm, 1, "   \"reorder(composite reorder = " << 2 << ")\" ... PASSED",
-                "   \"reorder(composite reorder)\" ... FAILED");
+                       "   \"reorder(composite reorder)\" ... FAILED");
   allTests &= status;
   failcount += status ? 0 : 1;
   totalrun++;
@@ -128,7 +129,7 @@ int tStridedTpetraOperator::runTest(int verbosity, std::ostream& stdstrm, std::o
   status = allTests;
   if (verbosity >= 10) {
     Teko_TEST_MSG_tpetra(failstrm, 0, "tStridedTpetraOperator...PASSED",
-                  "tStridedTpetraOperator...FAILED");
+                         "tStridedTpetraOperator...FAILED");
   } else {  // Normal Operating Procedures (NOP)
     Teko_TEST_MSG_tpetra(failstrm, 0, "...PASSED", "tStridedTpetraOperator...FAILED");
   }
@@ -140,7 +141,7 @@ bool tStridedTpetraOperator::test_numvars_constr(int verbosity, std::ostream& os
   bool status    = false;
   bool allPassed = true;
 
-  RCP<const Teuchos::Comm<int> > comm_tpetra = GetComm_tpetra();
+  RCP<const Teuchos::Comm<int>> comm_tpetra = GetComm_tpetra();
 
   TEST_MSG("\n   tStridedTpetraOperator::test_numvars: "
            << "Running on " << comm_tpetra->getSize() << " processors");
@@ -153,7 +154,7 @@ bool tStridedTpetraOperator::test_numvars_constr(int verbosity, std::ostream& os
   // note: this matrix is not really strided
   //       however, I just need a nontrivial
   //       matrix to play with
-  auto A = buildRecirc2DMatrix(comm_tpetra, nx, ny);
+  auto A        = buildRecirc2DMatrix(comm_tpetra, nx, ny);
   ST beforeNorm = A->getFrobeniusNorm();
 
   int vars  = 3;
@@ -242,7 +243,7 @@ bool tStridedTpetraOperator::test_vector_constr(int verbosity, std::ostream& os)
   bool status    = false;
   bool allPassed = true;
 
-  RCP<const Teuchos::Comm<int> > comm_tpetra = GetComm_tpetra();
+  RCP<const Teuchos::Comm<int>> comm_tpetra = GetComm_tpetra();
 
   TEST_MSG("\n   tStridedTpetraOperator::test_vector_constr: "
            << "Running on " << comm_tpetra->getSize() << " processors");
@@ -255,7 +256,7 @@ bool tStridedTpetraOperator::test_vector_constr(int verbosity, std::ostream& os)
   // note: this matrix is not really strided
   //       however, I just need a nontrivial
   //       matrix to play with
-  auto A = buildRecirc2DMatrix(comm_tpetra, nx, ny);
+  auto A        = buildRecirc2DMatrix(comm_tpetra, nx, ny);
   ST beforeNorm = A->getFrobeniusNorm();
 
   int width = 3;
@@ -347,7 +348,7 @@ bool tStridedTpetraOperator::test_reorder(int verbosity, std::ostream& os, int t
   bool status    = false;
   bool allPassed = true;
 
-  RCP<const Teuchos::Comm<int> > comm_tpetra = GetComm_tpetra();
+  RCP<const Teuchos::Comm<int>> comm_tpetra = GetComm_tpetra();
 
   std::string tstr = total ? "(composite reorder)" : "(flat reorder)";
 
