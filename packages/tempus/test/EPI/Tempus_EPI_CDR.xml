@@ -81,9 +81,12 @@
             <ParameterList name="Newton">
               <Parameter name="Forcing Term Method" type="string" value="Constant"/>
               <Parameter name="Rescue Bad Newton Solve" type="bool" value="1"/>
+              <!--
+              Not part of the default Tempus SolverPL, thus does not validate for ExponentialStepper
               <ParameterList name="Linear Solver">
                 <Parameter name="Tolerance" type="double" value="1.0e-12"/>
               </ParameterList>
+              -->
             </ParameterList>
           </ParameterList>
           <ParameterList name="Line Search">
@@ -124,10 +127,9 @@
               <Parameter name="Maximum Iterations" type="int" value="100"/>
             </ParameterList>
           </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
     </ParameterList>
-
   </ParameterList>
-
-</ParameterList>
-</ParameterList>
 </ParameterList>
