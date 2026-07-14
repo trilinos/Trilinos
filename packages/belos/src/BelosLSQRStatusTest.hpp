@@ -29,15 +29,15 @@
 namespace Belos {
 
 
-template <class ScalarType, class MV, class OP>
-class LSQRStatusTest: public Belos::StatusTest<ScalarType,MV,OP> {
+template <class ScalarType, class MV, class OP, class DM>
+class LSQRStatusTest: public Belos::StatusTest<ScalarType,MV,OP,DM> {
 
 public:
 
   // Convenience typedefs
   typedef Teuchos::ScalarTraits<ScalarType> SCT;
   typedef typename SCT::magnitudeType MagnitudeType;
-  typedef Belos::MultiVecTraits<ScalarType,MV>  MVT;
+  typedef Belos::MultiVecTraits<ScalarType,MV,DM>  MVT;
 
   //! @name Constructor/Destructor.
   //@{
@@ -63,7 +63,7 @@ public:
   //! Check convergence status of the iterative solver: Unconverged, Converged, Failed.
   /*! This method checks if the convergence criteria are met using the current information from the iterative solver.
    */
-  Belos::StatusType checkStatus(Belos::Iteration<ScalarType,MV,OP> *iSolver );
+  Belos::StatusType checkStatus(Belos::Iteration<ScalarType,MV,OP,DM> *iSolver );
 
   //! Return the result of the most recent CheckStatus call.
   Belos::StatusType getStatus() const {return(status_);}
@@ -146,7 +146,7 @@ public:
 
   /// \brief Called in checkStatus exactly once, on the first call to checkStatus.
   ///
-  Belos::StatusType firstCallCheckStatusSetup(Belos::Iteration<ScalarType,MV,OP>* iSolver);
+  Belos::StatusType firstCallCheckStatusSetup(Belos::Iteration<ScalarType,MV,OP,DM>* iSolver);
   //@}
 
   /** \name Overridden from Teuchos::Describable */
@@ -204,8 +204,8 @@ private:
 
 };
 
-template <class ScalarType, class MV, class OP>
-LSQRStatusTest<ScalarType,MV,OP>::
+template <class ScalarType, class MV, class OP, class DM>
+LSQRStatusTest<ScalarType,MV,OP,DM>::
 LSQRStatusTest (MagnitudeType condMax /* = 0 */,
                 int term_iter_max /* = 1 */,
                 MagnitudeType rel_rhs_err /* = 0 */,
@@ -223,18 +223,18 @@ LSQRStatusTest (MagnitudeType condMax /* = 0 */,
     matResNorm_ ( Teuchos::ScalarTraits<MagnitudeType>::zero() )
 {}
 
-template <class ScalarType, class MV, class OP>
-LSQRStatusTest<ScalarType,MV,OP>::~LSQRStatusTest()
+template <class ScalarType, class MV, class OP, class DM>
+LSQRStatusTest<ScalarType,MV,OP,DM>::~LSQRStatusTest()
 {}
 
-template <class ScalarType, class MV, class OP>
-void LSQRStatusTest<ScalarType,MV,OP>::reset()
+template <class ScalarType, class MV, class OP, class DM>
+void LSQRStatusTest<ScalarType,MV,OP,DM>::reset()
 {
   status_ = Belos::Undefined;
 }
 
-template <class ScalarType, class MV, class OP>
-Belos::StatusType LSQRStatusTest<ScalarType,MV,OP>::checkStatus( Belos::Iteration<ScalarType,MV,OP>* iSolver)
+template <class ScalarType, class MV, class OP, class DM>
+Belos::StatusType LSQRStatusTest<ScalarType,MV,OP,DM>::checkStatus( Belos::Iteration<ScalarType,MV,OP,DM>* iSolver)
 {
   const MagnitudeType MTzero = Teuchos::ScalarTraits<MagnitudeType>::zero();
   const MagnitudeType MTone = Teuchos::ScalarTraits<MagnitudeType>::one();
@@ -248,7 +248,7 @@ Belos::StatusType LSQRStatusTest<ScalarType,MV,OP>::checkStatus( Belos::Iteratio
     }
 
   bool termIterFlag = false;
-  LSQRIter<ScalarType,MV,OP>* solver = dynamic_cast< LSQRIter<ScalarType,MV,OP>* > (iSolver);
+  LSQRIter<ScalarType,MV,OP,DM>* solver = dynamic_cast< LSQRIter<ScalarType,MV,OP,DM>* > (iSolver);
   TEUCHOS_ASSERT(solver != NULL);
   LSQRIterationState< ScalarType, MV > state = solver->getState();
   //
@@ -359,8 +359,8 @@ Belos::StatusType LSQRStatusTest<ScalarType,MV,OP>::checkStatus( Belos::Iteratio
   return status_;
 }
 
-template <class ScalarType, class MV, class OP>
-void LSQRStatusTest<ScalarType,MV,OP>::print(std::ostream& os, int indent) const
+template <class ScalarType, class MV, class OP, class DM>
+void LSQRStatusTest<ScalarType,MV,OP,DM>::print(std::ostream& os, int indent) const
 {
   for (int j = 0; j < indent; j++)
     os << ' ';
@@ -369,8 +369,8 @@ void LSQRStatusTest<ScalarType,MV,OP>::print(std::ostream& os, int indent) const
   os << "limit of condition number = " << condMax_ << std::endl;
 }
 
-template <class ScalarType, class MV, class OP>
-void LSQRStatusTest<ScalarType,MV,OP>::printStatus(std::ostream&os, Belos::StatusType type) const
+template <class ScalarType, class MV, class OP, class DM>
+void LSQRStatusTest<ScalarType,MV,OP,DM>::printStatus(std::ostream&os, Belos::StatusType type) const
 {
   os << std::left << std::setw(13) << std::setfill('.');
   switch (type) {

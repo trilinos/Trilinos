@@ -18,6 +18,15 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Tpetra_KokkosDense_OrthoManager_test
+  SOURCES belos_orthomanager_kokkosdense_tpetra.cpp
+  ARGS "--ortho=ICGS --verbose"
+  ARGS "--ortho=IMGS --verbose"
+  ARGS "--ortho=DGKS --verbose"
+  COMM serial mpi
+  )
+
 IF (${PACKAGE_NAME}_ENABLE_TSQR)
   TRIBITS_ADD_TEST(
     Tpetra_OrthoManager_test

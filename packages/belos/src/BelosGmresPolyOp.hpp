@@ -29,7 +29,6 @@
 
 #include "BelosStatusTestMaxIters.hpp"
 #include "BelosStatusTestGenResNorm.hpp"
-#include "BelosStatusTestImpResNorm.hpp"
 #include "BelosStatusTestCombo.hpp"
 #include "BelosStatusTestOutputFactory.hpp"
 
@@ -62,9 +61,11 @@ namespace Belos {
 
   // Create a shell class for the MV, inherited off MultiVec<> that will operate with the GmresPolyOp.
   template <class ScalarType, class MV>
-  class GmresPolyMv : public MultiVec< ScalarType > 
+  class GmresPolyMv : public MultiVec< ScalarType, Teuchos::SerialDenseMatrix<int,ScalarType> > 
   {
     public:
+
+     typedef Teuchos::SerialDenseMatrix<int,ScalarType> DM;
 
      GmresPolyMv ( const Teuchos::RCP<MV>& mv_in )
        : mv_(mv_in)
@@ -105,7 +106,7 @@ namespace Belos {
      int GetNumberVecs () const { return MVT::GetNumberVecs( *mv_ ); }
      void MvTimesMatAddMv (const ScalarType alpha,
                            const MultiVec<ScalarType>& A,
-                           const Teuchos::SerialDenseMatrix<int,ScalarType>& B, const ScalarType beta) 
+                           const DM& B, const ScalarType beta) 
      {  
        const GmresPolyMv<ScalarType,MV>& A_in = dynamic_cast<const GmresPolyMv<ScalarType,MV>&>(A);
        MVT::MvTimesMatAddMv( alpha, *(A_in.getConstMV()), B, beta, *mv_ );
@@ -118,7 +119,7 @@ namespace Belos {
      }
      void MvScale ( const ScalarType alpha ) { MVT::MvScale( *mv_, alpha ); }
      void MvScale ( const std::vector<ScalarType>& alpha ) { MVT::MvScale( *mv_, alpha ); }
-     void MvTransMv ( const ScalarType alpha, const MultiVec<ScalarType>& A, Teuchos::SerialDenseMatrix<int,ScalarType>& B) const 
+     void MvTransMv ( const ScalarType alpha, const MultiVec<ScalarType>& A, DM& B) const 
      {
        const GmresPolyMv<ScalarType,MV>& A_in = dynamic_cast<const GmresPolyMv<ScalarType,MV>&>(A);
        MVT::MvTransMv( alpha, *(A_in.getConstMV()), *mv_, B );
@@ -143,7 +144,7 @@ namespace Belos {
 
     private:
 
-      typedef MultiVecTraits<ScalarType,MV> MVT;
+      typedef MultiVecTraits<ScalarType,MV,DM> MVT;
 
       Teuchos::RCP<MV> mv_;
 
@@ -262,6 +263,7 @@ namespace Belos {
     typedef Teuchos::ScalarTraits<ScalarType> SCT ;
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
     typedef Teuchos::ScalarTraits<MagnitudeType> MCT ;
+    typedef Teuchos::SerialDenseMatrix<int,ScalarType> DM;
 
     // Default polynomial parameters
     static constexpr int maxDegree_default_ = 25;
@@ -283,7 +285,7 @@ namespace Belos {
     Teuchos::RCP<std::ostream> outputStream_ = Teuchos::rcpFromRef(std::cout);
  
     // Orthogonalization manager.
-    Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > ortho_;
+    Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP,DM> > ortho_;
 
     // Current polynomial parameters
     MagnitudeType polyTol_ = DefaultSolverParameters::polyTol;
@@ -520,28 +522,28 @@ namespace Belos {
     // Create orthogonalization manager if we need to.  
     if (ortho_.is_null()) {
       params_->set("Orthogonalization", orthoType_);
-      Belos::OrthoManagerFactory<ScalarType, MV, OP> factory;
+      Belos::OrthoManagerFactory<ScalarType, MV, OP, DM> factory;
       Teuchos::RCP<Teuchos::ParameterList> paramsOrtho;   // can be null
 
       ortho_ = factory.makeMatOrthoManager (orthoType_, Teuchos::null, printer_, polyLabel, paramsOrtho);
     }
 
     // Create a simple status test that either reaches the relative residual tolerance or maximum polynomial size.
-    Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP> > maxItrTst =
-      Teuchos::rcp( new StatusTestMaxIters<ScalarType,MV,OP>( maxDegree_ ) );
+    Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP,DM> > maxItrTst =
+      Teuchos::rcp( new StatusTestMaxIters<ScalarType,MV,OP,DM>( maxDegree_ ) );
   
     // Implicit residual test, using the native residual to determine if convergence was achieved.
-    Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP> > convTst =
-      Teuchos::rcp( new StatusTestGenResNorm<ScalarType,MV,OP>( polyTol_ ) );
+    Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP,DM> > convTst =
+      Teuchos::rcp( new StatusTestGenResNorm<ScalarType,MV,OP,DM>( polyTol_ ) );
     convTst->defineScaleForm( convertStringToScaleType("Norm of RHS"), Belos::TwoNorm );
   
     // Convergence test that stops the iteration when either are satisfied.
-    Teuchos::RCP<StatusTestCombo<ScalarType,MV,OP> > polyTest =
-      Teuchos::rcp( new StatusTestCombo<ScalarType,MV,OP>( StatusTestCombo<ScalarType,MV,OP>::OR, maxItrTst, convTst ) );
+    Teuchos::RCP<StatusTestCombo<ScalarType,MV,OP,DM> > polyTest =
+      Teuchos::rcp( new StatusTestCombo<ScalarType,MV,OP,DM>( StatusTestCombo<ScalarType,MV,OP,DM>::OR, maxItrTst, convTst ) );
   
     // Create Gmres iteration object to perform one cycle of Gmres.
-    Teuchos::RCP<BlockGmresIter<ScalarType,MV,OP> > gmres_iter;
-    gmres_iter = Teuchos::rcp( new BlockGmresIter<ScalarType,MV,OP>(newProblem,printer_,polyTest,ortho_,polyList) );
+    Teuchos::RCP<BlockGmresIter<ScalarType,MV,OP,DM> > gmres_iter;
+    gmres_iter = Teuchos::rcp( new BlockGmresIter<ScalarType,MV,OP,DM>(newProblem,printer_,polyTest,ortho_,polyList) );
  
     // Create the first block in the current Krylov basis (residual).
     Teuchos::RCP<MV> V_0 = MVT::CloneCopy( *newB );
@@ -562,7 +564,7 @@ namespace Belos {
       "Belos::GmresPolyOp::generateArnoldiPoly(): Failed to compute initial block of orthonormal vectors for polynomial generation.");
   
     // Set the new state and initialize the solver.
-    GmresIterationState<ScalarType,MV> newstate;
+    GmresIterationState<ScalarType,MV,DM> newstate;
     newstate.V = V_0;
     newstate.z = Teuchos::rcpFromRef( r0_);
     newstate.curDim = 0;
@@ -587,7 +589,7 @@ namespace Belos {
     Teuchos::RCP<MV> currX = gmres_iter->getCurrentUpdate();
   
     // Record polynomial info, get current GMRES state
-    GmresIterationState<ScalarType,MV> gmresState = gmres_iter->getState();
+    GmresIterationState<ScalarType,MV,DM> gmresState = gmres_iter->getState();
   
     // If the polynomial has no dimension, the tolerance is too low, return false
     dim_ = gmresState.curDim;

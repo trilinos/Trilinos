@@ -25,8 +25,6 @@
 #include "BelosOperatorTraits.hpp"
 #include "BelosMultiVecTraits.hpp"
 
-#include "Teuchos_SerialDenseMatrix.hpp"
-#include "Teuchos_SerialDenseVector.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
@@ -77,15 +75,15 @@ namespace Belos {
     }
   };
 
-  template<class ScalarType, class MV, class OP>
-  class BiCGStabIter : virtual public Iteration<ScalarType,MV,OP> {
+  template<class ScalarType, class MV, class OP, class DM>
+  class BiCGStabIter : virtual public Iteration<ScalarType,MV,OP,DM> {
 
   public:
 
     //
     // Convenience typedefs
     //
-    typedef MultiVecTraits<ScalarType,MV> MVT;
+    typedef MultiVecTraits<ScalarType,MV,DM> MVT;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename SCT::magnitudeType MagnitudeType;
@@ -101,7 +99,7 @@ namespace Belos {
      */
     BiCGStabIter( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
                           const Teuchos::RCP<OutputManager<ScalarType> > &printer,
-                          const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
+                          const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &tester,
                           Teuchos::ParameterList &params );
 
     //! Destructor.
@@ -235,7 +233,7 @@ namespace Belos {
     //
     const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >    lp_;
     const Teuchos::RCP<OutputManager<ScalarType> >          om_;
-    const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >       stest_;
+    const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> >       stest_;
 
     //
     // Algorithmic parameters
@@ -277,10 +275,10 @@ namespace Belos {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Constructor.
-  template<class ScalarType, class MV, class OP>
-  BiCGStabIter<ScalarType,MV,OP>::BiCGStabIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+  template<class ScalarType, class MV, class OP, class DM>
+  BiCGStabIter<ScalarType,MV,OP,DM>::BiCGStabIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
                                                                const Teuchos::RCP<OutputManager<ScalarType> > &printer,
-                                                               const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
+                                                               const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &tester,
                                                                Teuchos::ParameterList &/* params */ ):
     lp_(problem),
     om_(printer),
@@ -295,8 +293,8 @@ namespace Belos {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Initialize this iteration object
-  template <class ScalarType, class MV, class OP>
-  void BiCGStabIter<ScalarType,MV,OP>::initializeBiCGStab(BiCGStabIterationState<ScalarType,MV>& newstate)
+  template<class ScalarType, class MV, class OP, class DM>
+  void BiCGStabIter<ScalarType,MV,OP,DM>::initializeBiCGStab(BiCGStabIterationState<ScalarType,MV>& newstate)
   {
     // Check if there is any multivector to clone from.
     Teuchos::RCP<const MV> lhsMV = lp_->getCurrLHSVec();
@@ -425,8 +423,8 @@ namespace Belos {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Iterate until the status test informs us we should stop.
-  template <class ScalarType, class MV, class OP>
-  void BiCGStabIter<ScalarType,MV,OP>::iterate()
+  template<class ScalarType, class MV, class OP, class DM>
+  void BiCGStabIter<ScalarType,MV,OP,DM>::iterate()
   {
     using Teuchos::RCP;
 
@@ -588,8 +586,8 @@ namespace Belos {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Iterate until the status test informs us we should stop.
-  template <class ScalarType, class MV, class OP>
-  void BiCGStabIter<ScalarType,MV,OP>::axpy(const ScalarType alpha, const MV & A,
+  template<class ScalarType, class MV, class OP, class DM>
+  void BiCGStabIter<ScalarType,MV,OP,DM>::axpy(const ScalarType alpha, const MV & A,
                                             const std::vector<ScalarType> beta, const MV& B, MV& mv, bool minus)
   {
     Teuchos::RCP<const MV> A1, B1;

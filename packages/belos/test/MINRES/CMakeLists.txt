@@ -14,7 +14,7 @@ IF(Teuchos_ENABLE_COMPLEX)
         "--verbose --filename=mhd1280b.cua"
       )
 
-    TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestBlockCGComplexFiles
+    TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestMinresComplexFiles
       SOURCE_DIR ${Belos_SOURCE_DIR}/testmatrices
       SOURCE_FILES mhd1280b.cua 
       EXEDEPS minres_complex_hb
