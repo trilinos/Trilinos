@@ -44,7 +44,6 @@ using Teuchos::ParameterList;
 template <class ScalarType, class DM>
 int run(int argc, char *argv[]) {
   typedef typename Tpetra::MultiVector<ScalarType>::scalar_type ST;
-  typedef typename Tpetra::MultiVector<ScalarType>::impl_scalar_type IST;
   typedef Teuchos::ScalarTraits<ST>       SCT;
   typedef typename SCT::magnitudeType               MT;
   typedef Tpetra::Operator<ST>             OP;

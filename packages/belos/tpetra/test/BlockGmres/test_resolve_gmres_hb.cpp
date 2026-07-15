@@ -42,8 +42,6 @@ int run(int argc, char *argv[]) {
   using SCT = typename Teuchos::ScalarTraits<ST>;
   using MT  = typename SCT::magnitudeType;
 
-  using IST = typename Tpetra::MultiVector<ScalarType>::impl_scalar_type;
-
   using tmap_t       = Tpetra::Map<LO,GO,NT>;
   using tcrsmatrix_t = Tpetra::CrsMatrix<ST,LO,GO,NT>;
 

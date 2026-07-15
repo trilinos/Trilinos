@@ -241,8 +241,6 @@ bool runTest (const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
   typedef GlobalOrdinalType global_ordinal_type;
   typedef NodeType node_type;
 
-  typedef typename Tpetra::MultiVector<ScalarType>::impl_scalar_type IST;
-
   typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> MV;
   typedef Tpetra::Operator<scalar_type, local_ordinal_type, global_ordinal_type, node_type> OP;
   typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;

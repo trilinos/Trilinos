@@ -39,8 +39,6 @@ int run(int argc, char *argv[])
   using SCT = typename Teuchos::ScalarTraits<ST>;
   using MT = typename SCT::magnitudeType;
 
-  using IST = typename Tpetra::MultiVector<ScalarType>::impl_scalar_type;
-
   using OP = typename Tpetra::Operator<ST>;
   using MV = typename Tpetra::MultiVector<ST>;
   using OPT = typename Belos::OperatorTraits<ST,MV,OP>;

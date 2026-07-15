@@ -37,7 +37,6 @@ int run (int argc, char *argv[])
   using std::endl;
 
   typedef ScalarType ST;
-  typedef typename Tpetra::MultiVector<ScalarType>::impl_scalar_type IST;
   typedef Teuchos::ScalarTraits<ST>       SCT;
   typedef typename SCT::magnitudeType               MT;
   typedef Tpetra::Operator<ST>             OP;

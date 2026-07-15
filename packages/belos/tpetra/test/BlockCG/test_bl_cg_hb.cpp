@@ -41,7 +41,6 @@ template <class ScalarType, class DM>
 int run (int argc, char *argv[]) {
   typedef ScalarType ST;
   typedef ScalarTraits<ST>                SCT;
-  typedef typename Tpetra::MultiVector<ST>::impl_scalar_type IST;
   typedef typename SCT::magnitudeType               MT;
   typedef Tpetra::Operator<ST>             OP;
   typedef Tpetra::MultiVector<ST>          MV;

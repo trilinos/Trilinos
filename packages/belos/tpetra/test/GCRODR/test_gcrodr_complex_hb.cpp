@@ -36,13 +36,10 @@ int run(int argc, char *argv[])
   using Teuchos::rcpFromRef;
   using Teuchos::tuple;  
   
-  using BST = typename Tpetra::MultiVector<ScalarType>::scalar_type;
   using ST = ScalarType;
 
   using SCT = typename Teuchos::ScalarTraits<ST>;
   using MT = typename SCT::magnitudeType;
-
-  using IST = typename Tpetra::MultiVector<ST>::impl_scalar_type;
 
   using OP = typename Tpetra::Operator<ST>;
   using MV = typename Tpetra::MultiVector<ST>;

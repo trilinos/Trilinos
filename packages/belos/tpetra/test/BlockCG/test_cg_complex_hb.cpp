@@ -31,9 +31,7 @@
 template <class ScalarType, class DM>
 int run (int argc, char *argv[]) {
   using ST = std::complex<ScalarType>;
-  using IST = typename Tpetra::MultiVector<ST>::impl_scalar_type;
-  using DM = typename Kokkos::DualView<IST**,Kokkos::LayoutLeft>;
-  
+
   using OP = typename Tpetra::Operator<ST>;
   using MV = typename Tpetra::MultiVector<ST>;
   using tcrsmatrix_t = Tpetra::CrsMatrix<ST>;
