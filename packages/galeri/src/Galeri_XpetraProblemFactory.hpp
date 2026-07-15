@@ -31,7 +31,7 @@ template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typena
 RCP<Problem<Map, Matrix, MultiVector> > BuildProblem(const std::string& MatrixType, const RCP<const Map>& map, Teuchos::ParameterList& list) {
   RCP<Problem<Map, Matrix, MultiVector> > P;
 
-  if (MatrixType == "Laplace1D")
+  if (MatrixType == "Laplace1D" || MatrixType == "Elasticity1D")
     P.reset(new Laplace1DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, MultiVector>(list, map));
   else if (MatrixType == "Laplace2D")
     P.reset(new Laplace2DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, MultiVector>(list, map));
