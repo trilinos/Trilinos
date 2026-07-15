@@ -44,7 +44,7 @@ TpetraStridedMappingStrategy::TpetraStridedMappingStrategy(
 }
 
 // Virtual function defined in MappingStrategy.  This copies
-// A Tpetra::MultiVector<ST,LO,GO,NT> into a Thyra::MultiVectorBase with
+// a Tpetra::MultiVector<ST,LO,GO,NT> into a Thyra::MultiVectorBase with
 // blocking handled by the strides defined in the constructor.
 //
 //   arguments:
@@ -77,7 +77,7 @@ void TpetraStridedMappingStrategy::copyTpetraIntoThyra(
 }
 
 // Virtual function defined in MappingStrategy.  This copies
-// A Tpetra::MultiVector<ST,LO,GO,NT> into a Thyra::MultiVectorBase with
+// a Tpetra::MultiVector<ST,LO,GO,NT> into a Thyra::MultiVectorBase with
 // blocking handled by the strides defined in the constructor.
 //
 //   arguments:

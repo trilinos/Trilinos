@@ -45,10 +45,10 @@ void TpetraBlockPreconditioner::initPreconditioner(bool clearOld) {
   preconObj_ = preconFactory_->createPrec();
 }
 
-/** \brief Build this preconditioner from A Tpetra::Operator
+/** \brief Build this preconditioner from a Tpetra::Operator
  * passed in to this object. It is assume that this Tpetra::Operator
  *
- * Build this preconditioner from A Tpetra::Operator
+ * Build this preconditioner from a Tpetra::Operator
  * passed in to this object. It is assume that this Tpetra::Operator
  * will be a TpetraOperatorWrapper object, so the block Thyra components
  * can be easily extracted.
@@ -88,10 +88,10 @@ void TpetraBlockPreconditioner::buildPreconditioner(
   TEUCHOS_ASSERT(firstBuildComplete_ == true);
 }
 
-/** \brief Build this preconditioner from A Tpetra::Operator
+/** \brief Build this preconditioner from a Tpetra::Operator
  * passed in to this object. It is assume that this Tpetra::Operator
  *
- * Build this preconditioner from A Tpetra::Operator
+ * Build this preconditioner from a Tpetra::Operator
  * passed in to this object. It is assume that this Tpetra::Operator
  * will be a TpetraOperatorWrapper object, so the block Thyra components
  * can be easily extracted.
@@ -137,10 +137,10 @@ void TpetraBlockPreconditioner::buildPreconditioner(
   TEUCHOS_ASSERT(firstBuildComplete_ == true);
 }
 
-/** \brief Rebuild this preconditioner from A Tpetra::Operator passed
+/** \brief Rebuild this preconditioner from a Tpetra::Operator passed
  * in this to object.
  *
- * Rebuild this preconditioner from A Tpetra::Operator passed
+ * Rebuild this preconditioner from a Tpetra::Operator passed
  * in this to object.  If <code>buildPreconditioner</code> has not been called
  * the preconditioner will be built instead. Otherwise efforts are taken
  * to only rebuild what is neccessary. Also, it is assumed that this Tpetra::Operator
@@ -185,10 +185,10 @@ void TpetraBlockPreconditioner::rebuildPreconditioner(
   TEUCHOS_ASSERT(firstBuildComplete_ == true);
 }
 
-/** \brief Rebuild this preconditioner from A Tpetra::Operator passed
+/** \brief Rebuild this preconditioner from a Tpetra::Operator passed
  * in this to object.
  *
- * Rebuild this preconditioner from A Tpetra::Operator passed
+ * Rebuild this preconditioner from a Tpetra::Operator passed
  * in this to object.  If <code>buildPreconditioner</code> has not been called
  * the preconditioner will be built instead. Otherwise efforts are taken
  * to only rebuild what is neccessary. Also, it is assumed that this Tpetra::Operator

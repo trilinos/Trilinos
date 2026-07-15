@@ -29,9 +29,9 @@ class MappingStrategy {
  public:
   virtual ~MappingStrategy() {}
 
-  /** \brief Copy A Tpetra::MultiVector into a Thyra::MultiVectorBase
+  /** \brief Copy a Tpetra::MultiVector into a Thyra::MultiVectorBase
    *
-   * Copy A Tpetra::MultiVector into a Thyra::MultiVectorBase. The exact
+   * Copy a Tpetra::MultiVector into a Thyra::MultiVectorBase. The exact
    * method for copying is specified by the concrete implementations.
    *
    * \param[in]     TpetraX Vector to be copied into the Thyra object
@@ -44,7 +44,7 @@ class MappingStrategy {
 
   /** \brief Copy an Thyra::MultiVectorBase into a Tpetra::MultiVector
    *
-   * Copy an Thyra::MultiVectorBase into A Tpetra::MultiVector. The exact
+   * Copy an Thyra::MultiVectorBase into a Tpetra::MultiVector. The exact
    * method for copying is specified by the concrete implementations.
    *
    * \param[in]     thyraX  Source Thyra object
@@ -121,9 +121,9 @@ class DefaultMappingStrategy : public MappingStrategy {
 
   virtual ~DefaultMappingStrategy() {}
 
-  /** \brief Copy A Tpetra::MultiVector into a Thyra::MultiVectorBase
+  /** \brief Copy a Tpetra::MultiVector into a Thyra::MultiVectorBase
    *
-   * Copy A Tpetra::MultiVector into a Thyra::MultiVectorBase. The exact
+   * Copy a Tpetra::MultiVector into a Thyra::MultiVectorBase. The exact
    * method for copying is specified by the concrete implementations.
    *
    * \param[in]     TpetraX Vector to be copied into the Thyra object
@@ -135,7 +135,7 @@ class DefaultMappingStrategy : public MappingStrategy {
 
   /** \brief Copy an Thyra::MultiVectorBase into a Tpetra::MultiVector
    *
-   * Copy an Thyra::MultiVectorBase into A Tpetra::MultiVector. The exact
+   * Copy an Thyra::MultiVectorBase into a Tpetra::MultiVector. The exact
    * method for copying is specified by the concrete implementations.
    *
    * \param[in]     thyraX  Source Thyra object

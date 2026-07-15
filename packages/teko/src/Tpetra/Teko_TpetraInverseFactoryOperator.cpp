@@ -50,10 +50,10 @@ void InverseFactoryOperator::initInverse(bool clearOld) {
   invOperator_ = Teuchos::null;
 }
 
-/** \brief Build this inverse operator from A Tpetra::Operator<ST,LO,GO,NT>
+/** \brief Build this inverse operator from a Tpetra::Operator<ST,LO,GO,NT>
  * passed in to this object.
  *
- * Build this inverse opeerator from A Tpetra::Operator<ST,LO,GO,NT>
+ * Build this inverse operator from a Tpetra::Operator<ST,LO,GO,NT>
  * passed in to this object. If this Tpetra::Operator<ST,LO,GO,NT>
  * is an TpetraOperatorWrapper object then the block Thyra components
  * are extracted.
@@ -103,10 +103,10 @@ void InverseFactoryOperator::buildInverseOperator(
   TEUCHOS_ASSERT(setConstFwdOp_ == true);
 }
 
-/** \brief Rebuild this inverse from A Tpetra::Operator<ST,LO,GO,NT>  passed
+/** \brief Rebuild this inverse from a Tpetra::Operator<ST,LO,GO,NT>  passed
  * in this to object.
  *
- * Rebuild this inverse from A Tpetra::Operator<ST,LO,GO,NT>  passed
+ * Rebuild this inverse from a Tpetra::Operator<ST,LO,GO,NT>  passed
  * in this to object.  If <code>buildInverseOperator</code> has not been called
  * the inverse operator will be built instead. Otherwise efforts are taken
  * to only rebuild what is neccessary. Also, that this Tpetra::Operator<ST,LO,GO,NT>

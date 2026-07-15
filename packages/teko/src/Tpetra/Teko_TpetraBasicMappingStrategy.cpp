@@ -38,7 +38,7 @@ BasicMappingStrategy::BasicMappingStrategy(const Teuchos::RCP<const Tpetra::Map<
 }
 
 // Virtual function defined in MappingStrategy.  This copies
-// A Tpetra::MultiVector into a Thyra::MultiVectorBase with
+// a Tpetra::MultiVector into a Thyra::MultiVectorBase with
 // blocking handled by the strides defined in the constructor.
 //
 //   arguments:
@@ -59,7 +59,7 @@ void BasicMappingStrategy::copyTpetraIntoThyra(
 }
 
 // Virtual function defined in MappingStrategy.  This copies
-// A Tpetra::MultiVector into a Thyra::MultiVectorBase with
+// a Tpetra::MultiVector into a Thyra::MultiVectorBase with
 // blocking handled by the strides defined in the constructor.
 //
 //   arguments:

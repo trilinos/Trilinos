@@ -23,7 +23,7 @@ namespace TpetraHelpers {
  *        from an inverse operator.
  *
  * This class uses the Teko inverse factories to
- * build A Tpetra::Operator that behaves like the inverse operatotr.
+ * build a Tpetra::Operator that behaves like the inverse operatotr.
  * This is done by using the InverseFactory, and letting
  * it build whatever operator is neccessary. Thus the Tpetra
  * "layer" is just a single class that handles any generic
@@ -53,10 +53,10 @@ class InverseFactoryOperator : public TpetraInverseOpWrapper {
    */
   virtual void initInverse(bool clearOld = false);
 
-  /** \brief Build this inverse operator from A Tpetra::Operator
+  /** \brief Build this inverse operator from a Tpetra::Operator
    * passed in to this object.
    *
-   * Build this inverse opeerator from A Tpetra::Operator
+   * Build this inverse operator from a Tpetra::Operator
    * passed in to this object. If this Tpetra::Operator
    * is an TpetraOperatorWrapper object then the block Thyra components
    * are extracted.
@@ -68,10 +68,10 @@ class InverseFactoryOperator : public TpetraInverseOpWrapper {
   virtual void buildInverseOperator(const Teuchos::RCP<const Tpetra::Operator<ST, LO, GO, NT> > &A,
                                     bool clear = true);
 
-  /** \brief Build this inverse operator from A Tpetra::Operator
+  /** \brief Build this inverse operator from a Tpetra::Operator
    * passed in to this object.
    *
-   * Build this inverse opeerator from A Tpetra::Operator
+   * Build this inverse operator from a Tpetra::Operator
    * passed in to this object. If this Tpetra::Operator
    * is an TpetraOperatorWrapper object then the block Thyra components
    * are extracted.
@@ -83,10 +83,10 @@ class InverseFactoryOperator : public TpetraInverseOpWrapper {
   virtual void buildInverseOperator(const Teuchos::RCP<Tpetra::Operator<ST, LO, GO, NT> > &A,
                                     bool clear = true);
 
-  /** \brief Rebuild this inverse from A Tpetra::Operator passed
+  /** \brief Rebuild this inverse from a Tpetra::Operator passed
    * in this to object.
    *
-   * Rebuild this inverse from A Tpetra::Operator passed
+   * Rebuild this inverse from a Tpetra::Operator passed
    * in this to object.  If <code>buildInverseOperator</code> has not been called
    * the inverse operator will be built instead. Otherwise efforts are taken
    * to only rebuild what is neccessary. Also, that this Tpetra::Operator
@@ -98,10 +98,10 @@ class InverseFactoryOperator : public TpetraInverseOpWrapper {
   virtual void rebuildInverseOperator(
       const Teuchos::RCP<const Tpetra::Operator<ST, LO, GO, NT> > &A);
 
-  /** \brief Rebuild this inverse from A Tpetra::Operator passed
+  /** \brief Rebuild this inverse from a Tpetra::Operator passed
    * in this to object.
    *
-   * Rebuild this inverse from A Tpetra::Operator passed
+   * Rebuild this inverse from a Tpetra::Operator passed
    * in this to object.  If <code>buildInverseOperator</code> has not been called
    * the inverse operator will be built instead. Otherwise efforts are taken
    * to only rebuild what is neccessary. Also, that this Tpetra::Operator

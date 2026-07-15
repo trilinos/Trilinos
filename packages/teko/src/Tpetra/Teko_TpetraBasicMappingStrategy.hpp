@@ -54,7 +54,7 @@ class BasicMappingStrategy : public MappingStrategy {
   //@{
 
   /** Virtual function defined in MappingStrategy.  This copies
-   * A Tpetra::MultiVector into a Thyra::MultiVectorBase with
+   * a Tpetra::MultiVector into a Thyra::MultiVectorBase with
    * blocking handled by the strides defined in the constructor.
    *
    * \param[in]     Tpetra::X  source Tpetra::MultiVector
@@ -66,7 +66,7 @@ class BasicMappingStrategy : public MappingStrategy {
   // const Teko::Tpetra::TpetraOperatorWrapper & eow) const;
 
   /** Virtual function defined in MappingStrategy.  This copies
-   * A Tpetra::MultiVector into a Thyra::MultiVectorBase with
+   * a Tpetra::MultiVector into a Thyra::MultiVectorBase with
    * blocking handled by the strides defined in the constructor.
    *
    * \param[in]     thyra_Y  source Thyra::MultiVectorBase
@@ -78,7 +78,7 @@ class BasicMappingStrategy : public MappingStrategy {
   // const Teko::Tpetra::TpetraOperatorWrapper & eow) const;
 
   /** Returns the domain and range maps used by this class.
-   * This faciliates building A Tpetra::Operator around this
+   * This faciliates building a Tpetra::Operator around this
    * class with its core functionality being a Thyra::LinearOpBase
    * operator
    *
@@ -89,7 +89,7 @@ class BasicMappingStrategy : public MappingStrategy {
   }
 
   /** Returns the domain and range maps used by this class.
-   * This faciliates building A Tpetra::Operator around this
+   * This faciliates building a Tpetra::Operator around this
    * class with its core functionality being a Thyra::LinearOpBase
    * operator
    *
