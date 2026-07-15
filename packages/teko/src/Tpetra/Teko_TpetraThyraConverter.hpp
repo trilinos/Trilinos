@@ -44,7 +44,7 @@ namespace TpetraHelpers {
   * block structure is then dictated by the vector space. The resulting Thyra::MultiVectorBase
   * object will be in the vectors space, with the contents of the Tpetra::MultiVector copied to it.
   *
-  * \param[in]     TpetraX  Source Tpetra::MultiVector object to be converted. See assumptions in
+  * \param[in]     tpetraX  Source Tpetra::MultiVector object to be converted. See assumptions in
   Preconditions section.
   * \param[in,out] thyraX   Destination Thyra::MultiVectorBase. See assumptions in Preconditions
   section
@@ -52,13 +52,13 @@ namespace TpetraHelpers {
   * <b>Preconditions</b><ul>
   * <li> [mv.Map()==thyraVSToTpetraMap(thyraX->space())] This method assumes that the map used to
   create
-  *      <code>TpetraX</code> was created using the thyraVSToTpetraMap function using the vector
+  *      <code>tpetraX</code> was created using the thyraVSToTpetraMap function using the vector
   space defining <code>thyraX</code>
   * <li> All subvectors are of type Thyra::SpmdMultiVectorBase or Thyra::ProductMultiVectorBase
   * </ul>
   *
   * <b>Postconditions</b><ul>
-  * <li> [<code>thryaX==TpetraX</code>] Contents of <code>TpetraX</code> are copied into
+  * <li> [<code>thryaX==tpetraX</code>] Contents of <code>tpetraX</code> are copied into
   <code>thyraX</code>
   * </ul>
   *
@@ -96,18 +96,18 @@ void blockTpetraToThyra(const Tpetra::MultiVector<ST, LO, GO, NT>& tpetraX,
   *
   * \param[in]     thyraX  Source Thyra::MultiVectorBase object to be converted. See assumptions in
   Preconditions section.
-  * \param[in,out] TpetraX Destination Tpetra::MultiVector. See assumptions in Preconditions section
+  * \param[in,out] tpetraX Destination Tpetra::MultiVector. See assumptions in Preconditions section
   *
   * <b>Preconditions</b><ul>
-  * <li> [<code>TpetraX.Map()==thyraVSToTpetraMap(thyraX->space())</code>] This method assumes that
+  * <li> [<code>tpetraX.Map()==thyraVSToTpetraMap(thyraX->space())</code>] This method assumes that
   the map used to create
-  *      <code>TpetraX</code> was created using the thyraVSToTpetraMap function using the vector
+  *      <code>tpetraX</code> was created using the thyraVSToTpetraMap function using the vector
   space defining <code>thyraX</code>
   * <li> All subvectors are of type Thyra::SpmdMultiVectorBase or Thyra::ProductMultiVectorBase
   * </ul>
   *
   * <b>Postconditions</b><ul>
-  * <li> [<code>thryaX==TpetraX</code>] Contents of <code>TpetraX</code> are copied into
+  * <li> [<code>thryaX==tpetraX</code>] Contents of <code>tpetraX</code> are copied into
   <code>thyraX</code>
   * </ul>
   *

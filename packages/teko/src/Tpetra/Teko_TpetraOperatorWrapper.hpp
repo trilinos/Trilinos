@@ -34,7 +34,7 @@ class MappingStrategy {
    * Copy a Tpetra::MultiVector into a Thyra::MultiVectorBase. The exact
    * method for copying is specified by the concrete implementations.
    *
-   * \param[in]     TpetraX Vector to be copied into the Thyra object
+   * \param[in]     tpetraX Vector to be copied into the Thyra object
    * \param[in,out] thyraX  Destination Thyra object
    */
   virtual void copyTpetraIntoThyra(
@@ -48,7 +48,7 @@ class MappingStrategy {
    * method for copying is specified by the concrete implementations.
    *
    * \param[in]     thyraX  Source Thyra object
-   * \param[in,out] TpetraX Destination Tpetra object
+   * \param[in,out] tpetraX Destination Tpetra object
    */
   virtual void copyThyraIntoTpetra(const RCP<const Thyra::MultiVectorBase<ST> >& thyraX,
                                    Tpetra::MultiVector<ST, LO, GO, NT>& tpetraX) const = 0;
@@ -126,7 +126,7 @@ class DefaultMappingStrategy : public MappingStrategy {
    * Copy a Tpetra::MultiVector into a Thyra::MultiVectorBase. The exact
    * method for copying is specified by the concrete implementations.
    *
-   * \param[in]     TpetraX Vector to be copied into the Thyra object
+   * \param[in]     tpetraX Vector to be copied into the Thyra object
    * \param[in,out] thyraX  Destination Thyra object
    */
   virtual void copyTpetraIntoThyra(const Tpetra::MultiVector<ST, LO, GO, NT>& tpetraX,
@@ -139,7 +139,7 @@ class DefaultMappingStrategy : public MappingStrategy {
    * method for copying is specified by the concrete implementations.
    *
    * \param[in]     thyraX  Source Thyra object
-   * \param[in,out] TpetraX Destination Tpetra object
+   * \param[in,out] tpetraX Destination Tpetra object
    */
   virtual void copyThyraIntoTpetra(const RCP<const Thyra::MultiVectorBase<ST> >& thyraX,
                                    Tpetra::MultiVector<ST, LO, GO, NT>& tpetraX) const;
