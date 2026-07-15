@@ -89,6 +89,68 @@ IF(${PACKAGE_NAME}_ENABLE_Belos)
     NUM_MPI_PROCS 4
   )
 
+  TRIBITS_ADD_TEST(
+    Structured
+    NAME "StructuredRAPFactory_Constant_Laplace2D_Tpetra"
+    ARGS "--linAlgebra=Tpetra --xml=structuredrapfactory_laplace_const.xml --matrixType=Laplace2D --nx=10 --ny=10 --mx=1 --my=1 --op=setup --check-rap-against-symbolic"
+    COMM serial
+    PASS_REGULAR_EXPRESSION "RAP matrix comparison passed: global nnz = 64, graph comparison = exact"
+  )
+
+  TRIBITS_ADD_TEST(
+    Structured
+    NAME "StructuredRAPFactory_Constant_Laplace2D_XYSplit_Tpetra"
+    ARGS "--linAlgebra=Tpetra --xml=structuredrapfactory_laplace_const.xml --matrixType=Laplace2D --nx=10 --ny=10 --mx=2 --my=2 --op=setup --check-rap-against-symbolic"
+    COMM mpi
+    NUM_MPI_PROCS 4
+    PASS_REGULAR_EXPRESSION "RAP matrix comparison passed: global nnz = 156, graph comparison = exact"
+  )
+
+  TRIBITS_ADD_TEST(
+    Structured
+    NAME "StructuredRAPFactory_Constant_Laplace3D_ZSplit_Tpetra"
+    ARGS "--linAlgebra=Tpetra --xml=structuredrapfactory_laplace_const.xml --matrixType=Laplace3D --nx=10 --ny=10 --nz=20 --mx=1 --my=1 --mz=2 --op=setup --check-rap-against-symbolic"
+    COMM mpi
+    NUM_MPI_PROCS 2
+    PASS_REGULAR_EXPRESSION "RAP matrix comparison passed: global nnz = 736, graph comparison = exact"
+  )
+
+  TRIBITS_ADD_TEST(
+    Structured
+    NAME "StructuredRAPFactory_Linear_Laplace3D_ZSplit_Tpetra"
+    ARGS "--linAlgebra=Tpetra --xml=structuredrapfactory_laplace_lin.xml --matrixType=Laplace3D --nx=10 --ny=10 --nz=20 --mx=1 --my=1 --mz=2 --op=setup --check-rap-against-symbolic --rap-graph-comparison=prebuilt-superset"
+    COMM mpi
+    NUM_MPI_PROCS 2
+    PASS_REGULAR_EXPRESSION "RAP matrix comparison passed: global nnz = 8704, graph comparison = prebuilt superset, symbolic global nnz = 8232, extra prebuilt entries = 472"
+  )
+
+  TRIBITS_ADD_TEST(
+    Structured
+    NAME "StructuredRAPFactory_Constant_Elasticity2D_XYSplit_Tpetra"
+    ARGS "--linAlgebra=Tpetra --xml=structuredrapfactory_elasticity2d_const.xml --matrixType=Elasticity2D --nx=20 --ny=20 --mx=2 --my=2 --op=setup --check-rap-against-symbolic"
+    COMM mpi
+    NUM_MPI_PROCS 4
+    PASS_REGULAR_EXPRESSION "RAP matrix comparison passed: global nnz = 1936, graph comparison = exact"
+  )
+
+  TRIBITS_ADD_TEST(
+    Structured
+    NAME "StructuredRAPFactory_Constant_Elasticity3D_XYSplit_Tpetra"
+    ARGS "--linAlgebra=Tpetra --xml=structuredrapfactory_elasticity3d_const.xml --matrixType=Elasticity3D --nx=20 --ny=20 --nz=10 --mx=2 --my=2 --mz=1 --op=setup --check-rap-against-symbolic"
+    COMM mpi
+    NUM_MPI_PROCS 4
+    PASS_REGULAR_EXPRESSION "RAP matrix comparison passed: global nnz = 43560, graph comparison = exact"
+  )
+
+  TRIBITS_ADD_TEST(
+    Structured
+    NAME "StructuredRAPFactory_Linear_Elasticity3D_XYSplit_Tpetra"
+    ARGS "--linAlgebra=Tpetra --xml=structuredrapfactory_elasticity3d_lin.xml --matrixType=Elasticity3D --nx=16 --ny=16 --nz=16 --mx=2 --my=2 --mz=1 --op=setup --check-rap-against-symbolic"
+    COMM mpi
+    NUM_MPI_PROCS 4
+    PASS_REGULAR_EXPRESSION "RAP matrix comparison passed: global nnz = 29952, graph comparison = exact"
+  )
+
   TRIBITS_COPY_FILES_TO_BINARY_DIR(
     Structured_cp
     SOURCE_FILES
@@ -102,6 +164,11 @@ IF(${PACKAGE_NAME}_ENABLE_Belos)
       structured_scp_1dof.xml
       structured_sparc_1dof.xml
       structured_tentative_kokkos.xml
+      structuredrapfactory_elasticity2d_const.xml
+      structuredrapfactory_elasticity3d_const.xml
+      structuredrapfactory_elasticity3d_lin.xml
+      structuredrapfactory_laplace_const.xml
+      structuredrapfactory_laplace_lin.xml
   )
 
 ENDIF()

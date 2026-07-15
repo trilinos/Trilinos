@@ -7,11 +7,15 @@
 // *****************************************************************************
 // @HEADER
 
+#include <algorithm>
 #include <cstdio>
 #include <iomanip>
 #include <iostream>
+#include <sstream>
 #include <unistd.h>
+#include <vector>
 
+#include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_XMLParameterListHelpers.hpp>
 #include <Teuchos_YamlParameterListHelpers.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
@@ -21,6 +25,7 @@
 #include <Xpetra_ImportFactory.hpp>
 #include <Xpetra_Operator.hpp>
 #include <Xpetra_Map.hpp>
+#include <Xpetra_MatrixMatrix.hpp>
 #include <Xpetra_MultiVector.hpp>
 #include <Xpetra_IO.hpp>
 
@@ -114,6 +119,12 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   clp.setOption("solve-preconditioned", "no-solve-preconditioned", &solvePreconditioned, "use MueLu preconditioner in solve");
   std::string operation = "solve";
   clp.setOption("op", &operation, "operation to perform: (matvec | setup | solver)");
+  bool checkRapAgainstSymbolic = false;
+  clp.setOption("check-rap-against-symbolic", "no-check-rap-against-symbolic", &checkRapAgainstSymbolic,
+                "compare the final prebuilt RAP matrix against symbolic RAP");
+  std::string rapGraphComparison = "exact";
+  clp.setOption("rap-graph-comparison", &rapGraphComparison,
+                "RAP graph comparison policy: exact or prebuilt-superset");
   std::string belosType = "cg";
   clp.setOption("belosType", &belosType, "belos solver type: (Pseudoblock CG | Block CG | Pseudoblock GMRES | Block GMRES | ...) see BelosSolverFactory.hpp for exhaustive list of solvers");
   std::string equilibrate = "no";
@@ -137,6 +148,14 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
 
   TEUCHOS_TEST_FOR_EXCEPTION(xmlFileName != "" && yamlFileName != "", std::runtime_error,
                              "Cannot provide both xml and yaml input files");
+
+  const bool requireExactRapGraph  = rapGraphComparison == "exact";
+  const bool allowRapGraphSuperset = rapGraphComparison == "prebuilt-superset";
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      !requireExactRapGraph && !allowRapGraphSuperset,
+      std::runtime_error,
+      "Invalid RAP graph comparison policy '" << rapGraphComparison
+                                              << "'. Valid values are 'exact' and 'prebuilt-superset'.");
 
   // Instead of checking each time for rank, create a rank 0 stream
   RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
@@ -195,13 +214,23 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   // size. For example, np=14 will give a 7-by-2 distribution.
   // If you don't want Galeri to do this, specify mx or my on the galeriList.
   std::string matrixType = galeriParameters.GetMatrixType();
-  int numDimensions      = 0;
+
+  Teuchos::ParameterList& rapList =
+      paramList.sublist("Factories").sublist("myRAPFact");
+
+  const std::string rapFactory = rapList.get<std::string>("factory", "");
+  const bool isStructuredRAPFactory =
+      rapFactory == "StructuredRAPFactory";
+  if (isStructuredRAPFactory)
+    rapList.set("rap: matrix type", matrixType);
+
+  int numDimensions = 0;
   Teuchos::Array<LO> lNodesPerDim(3);
 
   // Create map and coordinates
   // In the future, we hope to be able to first create a Galeri problem, and then request map and coordinates from it
   // At the moment, however, things are fragile as we hope that the Problem uses same map and coordinates inside
-  if (matrixType == "Laplace1D") {
+  if (matrixType == "Laplace1D" || matrixType == "Elasticity1D") {
     numDimensions = 1;
     map           = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian1D", comm, galeriList);
     coordinates   = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double, LO, GO, Map, RealValuedMultiVector>("1D", map, galeriList);
@@ -230,6 +259,11 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
     lNodesPerDim[0] = galeriList.get<LO>("lnx");
     lNodesPerDim[1] = galeriList.get<LO>("lny");
     lNodesPerDim[2] = galeriList.get<LO>("lnz");
+  }
+  if (isStructuredRAPFactory) {
+    rapList.set("rap: processor grid x", Teuchos::as<int>(galeriList.get<GO>("mx")));
+    rapList.set("rap: processor grid y", Teuchos::as<int>(galeriList.get<GO>("my")));
+    rapList.set("rap: processor grid z", Teuchos::as<int>(galeriList.get<GO>("mz")));
   }
 
   // Expand map to do multiple DOF per node for block problems
@@ -302,8 +336,184 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
     userParamList.set<double>("double cfl", 1.0);
     userParamList.set<double>("double deltaT", 1.0);
     userParamList.set("Mdiag", Mdiag);
+    userParamList.set<std::string>("string matrixType", matrixType);
 
     H = MueLu::CreateXpetraPreconditioner(A, paramList);
+
+    if (checkRapAgainstSymbolic) {
+      ParameterList referenceParamList(paramList);
+      referenceParamList.sublist("Factories")
+          .sublist("myRAPFact")
+          .set<bool>("rap: prebuild coarse graph", false);
+
+      A->SetMaxEigenvalueEstimate(-one);
+      RCP<Hierarchy> referenceH =
+          MueLu::CreateXpetraPreconditioner(A, referenceParamList);
+
+      RCP<Matrix> structuredAc;
+      RCP<Matrix> referenceAc;
+      H->GetLevel(H->GetNumLevels() - 1)->Get("A", structuredAc);
+      referenceH->GetLevel(referenceH->GetNumLevels() - 1)->Get("A", referenceAc);
+
+      TEUCHOS_TEST_FOR_EXCEPTION(
+          structuredAc.is_null() || referenceAc.is_null(),
+          std::runtime_error,
+          "Cannot compare RAP matrices because at least one matrix is null.");
+
+      TEUCHOS_TEST_FOR_EXCEPTION(
+          !structuredAc->isFillComplete() || !referenceAc->isFillComplete(),
+          std::runtime_error,
+          "Both RAP matrices must be fill complete before comparison.");
+
+      TEUCHOS_TEST_FOR_EXCEPTION(
+          !structuredAc->getRowMap()->isSameAs(*referenceAc->getRowMap()),
+          std::runtime_error,
+          "RAP matrices have different row maps.");
+
+      TEUCHOS_TEST_FOR_EXCEPTION(
+          !structuredAc->getDomainMap()->isSameAs(*referenceAc->getDomainMap()),
+          std::runtime_error,
+          "RAP matrices have different domain maps.");
+
+      TEUCHOS_TEST_FOR_EXCEPTION(
+          !structuredAc->getRangeMap()->isSameAs(*referenceAc->getRangeMap()),
+          std::runtime_error,
+          "RAP matrices have different range maps.");
+
+      if (requireExactRapGraph) {
+        TEUCHOS_TEST_FOR_EXCEPTION(
+            structuredAc->getGlobalNumEntries() != referenceAc->getGlobalNumEntries(),
+            std::runtime_error,
+            "RAP matrices have different global entry counts: "
+                << structuredAc->getGlobalNumEntries() << " versus "
+                << referenceAc->getGlobalNumEntries());
+      } else {
+        TEUCHOS_TEST_FOR_EXCEPTION(
+            structuredAc->getGlobalNumEntries() < referenceAc->getGlobalNumEntries(),
+            std::runtime_error,
+            "Prebuilt RAP graph has fewer global entries than the symbolic RAP graph: "
+                << structuredAc->getGlobalNumEntries() << " versus "
+                << referenceAc->getGlobalNumEntries());
+      }
+
+      // Local column indices cannot be compared directly because equivalent
+      // column maps may assign different local indices to the same global
+      // column. Compare the sorted global column IDs in every owned row,
+      // requiring equality or symbolic-graph inclusion according to the
+      // selected policy.
+      const RCP<const Map> structuredRowMap = structuredAc->getRowMap();
+      const RCP<const Map> structuredColMap = structuredAc->getColMap();
+      const RCP<const Map> referenceColMap  = referenceAc->getColMap();
+
+      int localGraphMismatch = 0;
+      std::string localMismatchReason;
+
+      const size_t localNumRows = structuredRowMap->getLocalNumElements();
+      for (size_t row = 0; row < localNumRows; ++row) {
+        const LO rowLid = Teuchos::as<LO>(row);
+        const GO rowGid = structuredRowMap->getGlobalElement(rowLid);
+
+        Teuchos::ArrayView<const LO> structuredIndices;
+        Teuchos::ArrayView<const SC> structuredValues;
+        Teuchos::ArrayView<const LO> referenceIndices;
+        Teuchos::ArrayView<const SC> referenceValues;
+        structuredAc->getLocalRowView(rowLid, structuredIndices, structuredValues);
+        referenceAc->getLocalRowView(rowLid, referenceIndices, referenceValues);
+
+        std::vector<GO> structuredGids(structuredIndices.size());
+        std::vector<GO> referenceGids(referenceIndices.size());
+        for (int entry = 0; entry < structuredIndices.size(); ++entry)
+          structuredGids[entry] = structuredColMap->getGlobalElement(structuredIndices[entry]);
+        for (int entry = 0; entry < referenceIndices.size(); ++entry)
+          referenceGids[entry] = referenceColMap->getGlobalElement(referenceIndices[entry]);
+
+        std::sort(structuredGids.begin(), structuredGids.end());
+        std::sort(referenceGids.begin(), referenceGids.end());
+
+        const bool structuredHasDuplicates =
+            std::adjacent_find(structuredGids.begin(), structuredGids.end()) != structuredGids.end();
+        const bool referenceHasDuplicates =
+            std::adjacent_find(referenceGids.begin(), referenceGids.end()) != referenceGids.end();
+
+        const bool graphMatches =
+            requireExactRapGraph
+                ? structuredGids == referenceGids
+                : std::includes(structuredGids.begin(), structuredGids.end(),
+                                referenceGids.begin(), referenceGids.end());
+
+        if (structuredHasDuplicates || referenceHasDuplicates || !graphMatches) {
+          localGraphMismatch = 1;
+          std::ostringstream reason;
+          reason << "rank " << comm->getRank() << ", row GID " << rowGid
+                 << ": prebuilt columns = {";
+          for (size_t entry = 0; entry < structuredGids.size(); ++entry)
+            reason << (entry == 0 ? "" : ", ") << structuredGids[entry];
+          reason << "}, symbolic columns = {";
+          for (size_t entry = 0; entry < referenceGids.size(); ++entry)
+            reason << (entry == 0 ? "" : ", ") << referenceGids[entry];
+          reason << "}";
+          if (structuredHasDuplicates)
+            reason << "; prebuilt row contains duplicate columns";
+          if (referenceHasDuplicates)
+            reason << "; symbolic row contains duplicate columns";
+          localMismatchReason = reason.str();
+          break;
+        }
+      }
+
+      // Make the decision collectively before any rank throws. Otherwise a
+      // rank with a graph mismatch could throw while other ranks enter the
+      // collective matrix operations below and hang.
+      int globalGraphMismatch = 0;
+      Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, 1,
+                         &localGraphMismatch, &globalGraphMismatch);
+      const std::string graphMismatchMessage =
+          requireExactRapGraph
+              ? "Prebuilt and symbolic RAP graphs differ"
+              : "Prebuilt RAP graph does not contain symbolic RAP graph";
+      TEUCHOS_TEST_FOR_EXCEPTION(
+          globalGraphMismatch != 0,
+          std::runtime_error,
+          localGraphMismatch
+              ? graphMismatchMessage + ": " + localMismatchReason
+              : graphMismatchMessage + " on another MPI rank.");
+
+      RCP<Matrix> difference;
+      // Compute difference matrix = structuredAc - referenceAc
+      Xpetra::MatrixMatrix<SC, LO, GO, NO>::TwoMatrixAdd(
+          *structuredAc, false, one,
+          *referenceAc, false, -one,
+          difference, out);
+
+      if (!difference->isFillComplete())
+        difference->fillComplete(structuredAc->getDomainMap(), structuredAc->getRangeMap());
+
+      // Compute Frobenius norm of difference matrix and reference matrix, then compute relative error
+      const real_type differenceNorm = difference->getFrobeniusNorm();
+      const real_type referenceNorm  = referenceAc->getFrobeniusNorm();
+      const real_type scale =
+          std::max(referenceNorm, Teuchos::ScalarTraits<real_type>::one());
+      const real_type relativeError = differenceNorm / scale;
+      const real_type comparisonTolerance =
+          1000.0 * Teuchos::ScalarTraits<real_type>::eps();
+
+      TEUCHOS_TEST_FOR_EXCEPTION(
+          !(relativeError <= comparisonTolerance),
+          std::runtime_error,
+          "Final RAP matrices differ: relative Frobenius error = "
+              << relativeError << ", tolerance = " << comparisonTolerance);
+
+      out << "RAP matrix comparison passed: global nnz = "
+          << structuredAc->getGlobalNumEntries()
+          << ", graph comparison = "
+          << (requireExactRapGraph ? "exact" : "prebuilt superset");
+      if (allowRapGraphSuperset) {
+        out << ", symbolic global nnz = " << referenceAc->getGlobalNumEntries()
+            << ", extra prebuilt entries = "
+            << structuredAc->getGlobalNumEntries() - referenceAc->getGlobalNumEntries();
+      }
+      out << ", relative Frobenius error = " << relativeError << std::endl;
+    }
 
     comm->barrier();
     tm = Teuchos::null;
