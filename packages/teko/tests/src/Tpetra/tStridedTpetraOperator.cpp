@@ -32,11 +32,16 @@
 
 #include "tStridedTpetraOperator.hpp"
 
-#include "Trilinos_Util_CrsMatrixGallery.h"
+#include "Galeri_XpetraMaps.hpp"
+#include "Galeri_XpetraProblemFactory.hpp"
+#include "Galeri_XpetraParameters.hpp"
 
 #include "Teko_StridedTpetraOperator.hpp"
 #include "Teko_TpetraHelpers.hpp"
 #include "Teko_ConfigDefs.hpp"
+
+#include <string>
+#include <vector>
 
 namespace Teko {
 namespace Test {
@@ -50,6 +55,48 @@ using Thyra::LinearOpBase;
 using Thyra::LinearOpTester;
 using Thyra::VectorBase;
 
+namespace {
+
+using ST = Teko::ST;
+using LO = Teko::LO;
+using GO = Teko::GO;
+using NT = Teko::NT;
+
+using map_t = Tpetra::Map<LO, GO, NT>;
+using crs_t = Tpetra::CrsMatrix<ST, LO, GO, NT>;
+using vec_t = Tpetra::Vector<ST, LO, GO, NT>;
+using mv_t  = Tpetra::MultiVector<ST, LO, GO, NT>;
+
+RCP<crs_t> buildRecirc2DMatrix(const RCP<const Teuchos::Comm<int>>& comm, GO nx, GO ny) {
+  Teuchos::ParameterList galeriList;
+  galeriList.set("nx", nx);
+  galeriList.set("ny", ny);
+
+  // Important for the strided-operator tests:
+  //
+  // These tests assume that the local map ordering is compatible with a simple
+  // interleaved striding pattern.  With the usual Galeri Cartesian2D numbering,
+  // decomposing in the x-direction can give each rank locally noncontiguous GID
+  // sequences such as:
+  //
+  //   9, 10, 11, 21, 22, 23, ...
+  //
+  // That layout can break the local striding assumptions in parallel.  A
+  // y-direction decomposition gives each rank a contiguous slab of rows, which
+  // keeps the local GID ordering compatible with the intended striding pattern.
+  galeriList.set("mx", 1);
+  galeriList.set("my", comm->getSize());
+
+  auto tMap = Galeri::Xpetra::CreateMap<LO, GO, map_t>("Cartesian2D", comm, galeriList);
+
+  auto problem =
+      Galeri::Xpetra::BuildProblem<ST, LO, GO, map_t, crs_t, mv_t>("Recirc2D", tMap, galeriList);
+
+  return problem->BuildMatrix();
+}
+
+}  // namespace
+
 void tStridedTpetraOperator::initializeTest() { tolerance_ = 1e-14; }
 
 int tStridedTpetraOperator::runTest(int verbosity, std::ostream& stdstrm, std::ostream& failstrm,
@@ -61,44 +108,46 @@ int tStridedTpetraOperator::runTest(int verbosity, std::ostream& stdstrm, std::o
   failstrm << "tStridedTpetraOperator";
 
   status = test_numvars_constr(verbosity, failstrm);
-  Teko_TEST_MSG(stdstrm, 1, "   \"numvars_constr\" ... PASSED", "   \"numvars_constr\" ... FAILED");
+  Teko_TEST_MSG_tpetra(stdstrm, 1, "   \"numvars_constr\" ... PASSED",
+                       "   \"numvars_constr\" ... FAILED");
   allTests &= status;
   failcount += status ? 0 : 1;
   totalrun++;
 
   status = test_vector_constr(verbosity, failstrm);
-  Teko_TEST_MSG(stdstrm, 1, "   \"vector_constr\" ... PASSED", "   \"vector_constr\" ... FAILED");
+  Teko_TEST_MSG_tpetra(stdstrm, 1, "   \"vector_constr\" ... PASSED",
+                       "   \"vector_constr\" ... FAILED");
   allTests &= status;
   failcount += status ? 0 : 1;
   totalrun++;
 
   status = test_reorder(verbosity, failstrm, 0);
-  Teko_TEST_MSG(stdstrm, 1, "   \"reorder(flat reorder)\" ... PASSED",
-                "   \"reorder(flat reorder)\" ... FAILED");
+  Teko_TEST_MSG_tpetra(stdstrm, 1, "   \"reorder(flat reorder)\" ... PASSED",
+                       "   \"reorder(flat reorder)\" ... FAILED");
   allTests &= status;
   failcount += status ? 0 : 1;
   totalrun++;
 
   status = test_reorder(verbosity, failstrm, 1);
-  Teko_TEST_MSG(stdstrm, 1, "   \"reorder(composite reorder = " << 1 << ")\" ... PASSED",
-                "   \"reorder(composite reorder)\" ... FAILED");
+  Teko_TEST_MSG_tpetra(stdstrm, 1, "   \"reorder(composite reorder = " << 1 << ")\" ... PASSED",
+                       "   \"reorder(composite reorder)\" ... FAILED");
   allTests &= status;
   failcount += status ? 0 : 1;
   totalrun++;
 
   status = test_reorder(verbosity, failstrm, 2);
-  Teko_TEST_MSG(stdstrm, 1, "   \"reorder(composite reorder = " << 2 << ")\" ... PASSED",
-                "   \"reorder(composite reorder)\" ... FAILED");
+  Teko_TEST_MSG_tpetra(stdstrm, 1, "   \"reorder(composite reorder = " << 2 << ")\" ... PASSED",
+                       "   \"reorder(composite reorder)\" ... FAILED");
   allTests &= status;
   failcount += status ? 0 : 1;
   totalrun++;
 
   status = allTests;
   if (verbosity >= 10) {
-    Teko_TEST_MSG(failstrm, 0, "tStridedTpetraOperator...PASSED",
-                  "tStridedTpetraOperator...FAILED");
+    Teko_TEST_MSG_tpetra(failstrm, 0, "tStridedTpetraOperator...PASSED",
+                         "tStridedTpetraOperator...FAILED");
   } else {  // Normal Operating Procedures (NOP)
-    Teko_TEST_MSG(failstrm, 0, "...PASSED", "tStridedTpetraOperator...FAILED");
+    Teko_TEST_MSG_tpetra(failstrm, 0, "...PASSED", "tStridedTpetraOperator...FAILED");
   }
 
   return failcount;
@@ -108,26 +157,20 @@ bool tStridedTpetraOperator::test_numvars_constr(int verbosity, std::ostream& os
   bool status    = false;
   bool allPassed = true;
 
-  const Epetra_Comm& comm_epetra             = *GetComm();
-  RCP<const Teuchos::Comm<int> > comm_tpetra = GetComm_tpetra();
+  RCP<const Teuchos::Comm<int>> comm_tpetra = GetComm_tpetra();
 
   TEST_MSG("\n   tStridedTpetraOperator::test_numvars: "
-           << "Running on " << comm_epetra.NumProc() << " processors");
+           << "Running on " << comm_tpetra->getSize() << " processors");
 
   // pick
-  int nx = 3 * comm_epetra.NumProc();  // 3 * 25 * comm_epetra.NumProc();
-  int ny = 3 * comm_epetra.NumProc();  // 3 * 50 * comm_epetra.NumProc();
+  GO nx = 3 * comm_tpetra->getSize();  // 3 * 25 * comm_epetra.NumProc();
+  GO ny = 3 * comm_tpetra->getSize();  // 3 * 50 * comm_epetra.NumProc();
 
   // create a big matrix to play with
   // note: this matrix is not really strided
   //       however, I just need a nontrivial
   //       matrix to play with
-  Trilinos_Util::CrsMatrixGallery FGallery("recirc_2d", comm_epetra, false);
-  FGallery.Set("nx", nx);
-  FGallery.Set("ny", ny);
-  RCP<Epetra_CrsMatrix> epetraA = rcp(FGallery.GetMatrix(), false);
-  RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > A =
-      Teko::TpetraHelpers::nonConstEpetraCrsMatrixToTpetra(epetraA, comm_tpetra);
+  auto A        = buildRecirc2DMatrix(comm_tpetra, nx, ny);
   ST beforeNorm = A->getFrobeniusNorm();
 
   int vars  = 3;
@@ -216,26 +259,20 @@ bool tStridedTpetraOperator::test_vector_constr(int verbosity, std::ostream& os)
   bool status    = false;
   bool allPassed = true;
 
-  const Epetra_Comm& comm_epetra             = *GetComm();
-  RCP<const Teuchos::Comm<int> > comm_tpetra = GetComm_tpetra();
+  RCP<const Teuchos::Comm<int>> comm_tpetra = GetComm_tpetra();
 
   TEST_MSG("\n   tStridedTpetraOperator::test_vector_constr: "
-           << "Running on " << comm_epetra.NumProc() << " processors");
+           << "Running on " << comm_tpetra->getSize() << " processors");
 
   // pick
-  int nx = 3 * comm_epetra.NumProc();  // 3 * 25 * comm_epetra.NumProc();
-  int ny = 3 * comm_epetra.NumProc();  // 3 * 50 * comm_epetra.NumProc();
+  GO nx = 3 * comm_tpetra->getSize();  // 3 * 25 * comm_epetra.NumProc();
+  GO ny = 3 * comm_tpetra->getSize();  // 3 * 50 * comm_epetra.NumProc();
 
   // create a big matrix to play with
   // note: this matrix is not really strided
   //       however, I just need a nontrivial
   //       matrix to play with
-  Trilinos_Util::CrsMatrixGallery FGallery("recirc_2d", comm_epetra, false);
-  FGallery.Set("nx", nx);
-  FGallery.Set("ny", ny);
-  RCP<Epetra_CrsMatrix> epetraA = rcp(FGallery.GetMatrix(), false);
-  RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > A =
-      Teko::TpetraHelpers::nonConstEpetraCrsMatrixToTpetra(epetraA, comm_tpetra);
+  auto A        = buildRecirc2DMatrix(comm_tpetra, nx, ny);
   ST beforeNorm = A->getFrobeniusNorm();
 
   int width = 3;
@@ -289,7 +326,6 @@ bool tStridedTpetraOperator::test_vector_constr(int verbosity, std::ostream& os)
   shell.RebuildOps();
 
   // test the operator against a lot of random vectors
-
   numtests = 10;
   max      = 0.0;
   min      = 1.0;
@@ -301,7 +337,10 @@ bool tStridedTpetraOperator::test_vector_constr(int verbosity, std::ostream& os)
     shell.apply(x, y);
     A->apply(x, ys);
 
-    Tpetra::MultiVector<ST, LO, GO, NT> e(y);
+    // This must be a deep copy of y before subtracting ys.  The single-arg
+    // MultiVector constructor can alias/copy-view behavior depending on the
+    // overload, which is not what this error-vector computation wants.
+    Tpetra::MultiVector<ST, LO, GO, NT> e(y, Teuchos::Copy);
     e.update(-1.0, ys, 1.0);
     e.norm2(Teuchos::ArrayView<ST>(norm));
 
@@ -327,29 +366,23 @@ bool tStridedTpetraOperator::test_reorder(int verbosity, std::ostream& os, int t
   bool status    = false;
   bool allPassed = true;
 
-  const Epetra_Comm& comm_epetra             = *GetComm();
-  RCP<const Teuchos::Comm<int> > comm_tpetra = GetComm_tpetra();
+  RCP<const Teuchos::Comm<int>> comm_tpetra = GetComm_tpetra();
 
   std::string tstr = total ? "(composite reorder)" : "(flat reorder)";
 
   TEST_MSG("\n   tStridedTpetraOperator::test_reorder" << tstr << ": "
-                                                       << "Running on " << comm_epetra.NumProc()
+                                                       << "Running on " << comm_tpetra->getSize()
                                                        << " processors");
 
   // pick
-  int nx = 3 * comm_epetra.NumProc();  // 3 * 25 * comm_epetra.NumProc();
-  int ny = 3 * comm_epetra.NumProc();  // 3 * 50 * comm_epetra.NumProc();
+  GO nx = 3 * comm_tpetra->getSize();  // 3 * 25 * comm_epetra.NumProc();
+  GO ny = 3 * comm_tpetra->getSize();  // 3 * 50 * comm_epetra.NumProc();
 
   // create a big matrix to play with
   // note: this matrix is not really strided
   //       however, I just need a nontrivial
   //       matrix to play with
-  Trilinos_Util::CrsMatrixGallery FGallery("recirc_2d", comm_epetra, false);
-  FGallery.Set("nx", nx);
-  FGallery.Set("ny", ny);
-  RCP<Epetra_CrsMatrix> epetraA = rcp(FGallery.GetMatrix(), false);
-  RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > A =
-      Teko::TpetraHelpers::nonConstEpetraCrsMatrixToTpetra(epetraA, comm_tpetra);
+  auto A = buildRecirc2DMatrix(comm_tpetra, nx, ny);
 
   int width = 3;
   Tpetra::MultiVector<ST, LO, GO, NT> x(A->getDomainMap(), width);

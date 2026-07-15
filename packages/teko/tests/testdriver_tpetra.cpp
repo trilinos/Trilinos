@@ -40,13 +40,13 @@
 #include "src/tPCDStrategy_tpetra.hpp"
 
 #include "src/tDiagonalPreconditionerFactory_tpetra.hpp"
+#include "src/Tpetra/tStridedTpetraOperator.hpp"
+#include "src/Tpetra/tBlockedTpetraOperator.hpp"
 
 #ifdef TEKO_HAVE_EPETRA
 #include "src/tBlockJacobiPreconditionerFactory_tpetra.hpp"
 #include "src/tExplicitOps_tpetra.hpp"
 #include "src/Tpetra/tTpetraOperatorWrapper.hpp"
-#include "src/Tpetra/tStridedTpetraOperator.hpp"
-#include "src/Tpetra/tBlockedTpetraOperator.hpp"
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
 #else
@@ -152,10 +152,8 @@ int main(int argc, char* argv[]) {
     Teko_ADD_UNIT_TEST(Teko::Test::tPCDStrategy_tpetra, PCDStrategy_tpetra);
     if (not isfast) {
       Teko_ADD_UNIT_TEST(Teko::Test::tLSCIntegrationTest_tpetra, LSCIntegrationTest_tpetra);
-#ifdef TEKO_HAVE_EPETRA
       Teko_ADD_UNIT_TEST(Teko::Test::tStridedTpetraOperator, tStridedTpetraOperator);
       Teko_ADD_UNIT_TEST(Teko::Test::tBlockedTpetraOperator, tBlockedTpetraOperator);
-#endif
     }
 
     status = Teko::Test::UnitTest::RunTests_tpetra(verbosity, *termout, *failout);
