@@ -1222,6 +1222,15 @@
       <visible>true</visible>
     </parameter>
 
+    <parameter>
+      <name>rap: prebuild coarse graph</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Prebuild the coarse graph and pass it to the triple matrix product kernel.</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>true</visible>
+    </parameter>
+
   </misc>
 
   <multigrid>
