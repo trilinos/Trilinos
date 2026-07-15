@@ -27,8 +27,8 @@ namespace TpetraHelpers {
 //
 //    arguments:
 //       vars - Number of different variables
-//       map  - original Epetra_Map to be broken up
-//       comm - Epetra_Comm object related to the map
+//       map  - original Tpetra::Map to be broken up
+//       comm - Teuchos::RCP<const Teuchos::Comm<Thyra::Ordinal>> object related to the map
 //
 BasicMappingStrategy::BasicMappingStrategy(const Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& rMap,
                                            const Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& dMap,
@@ -38,11 +38,11 @@ BasicMappingStrategy::BasicMappingStrategy(const Teuchos::RCP<const Tpetra::Map<
 }
 
 // Virtual function defined in MappingStrategy.  This copies
-// an Epetra_MultiVector into a Thyra::MultiVectorBase with
+// a Tpetra::MultiVector into a Thyra::MultiVectorBase with
 // blocking handled by the strides defined in the constructor.
 //
 //   arguments:
-//      X       - source Epetra_MultiVector
+//      X       - source Tpetra::MultiVector
 //      thyra_X - destination Thyra::MultiVectorBase
 //
 void BasicMappingStrategy::copyTpetraIntoThyra(
@@ -59,12 +59,12 @@ void BasicMappingStrategy::copyTpetraIntoThyra(
 }
 
 // Virtual function defined in MappingStrategy.  This copies
-// an Epetra_MultiVector into a Thyra::MultiVectorBase with
+// a Tpetra::MultiVector into a Thyra::MultiVectorBase with
 // blocking handled by the strides defined in the constructor.
 //
 //   arguments:
 //      thyra_Y - source Thyra::MultiVectorBase
-//      Y       - destination Epetra_MultiVector
+//      Y       - destination Tpetra::MultiVector
 //
 void BasicMappingStrategy::copyThyraIntoTpetra(
     const RCP<const Thyra::MultiVectorBase<ST> >& thyra_Y,

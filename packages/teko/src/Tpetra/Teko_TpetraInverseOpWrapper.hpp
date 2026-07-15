@@ -40,10 +40,10 @@ class TpetraInverseOpWrapper : public TpetraOperatorWrapper {
                             ST beta               = Teuchos::ScalarTraits<ST>::zero()) const;
 
   //    /** */
-  //    virtual const Epetra_Map& OperatorDomainMap() const;
+  //    virtual const Tpetra::Map& OperatorDomainMap() const;
   //
   //    /** */
-  //    virtual const Epetra_Map& OperatorRangeMap() const;
+  //    virtual const Tpetra::Map& OperatorRangeMap() const;
  protected:
   TpetraInverseOpWrapper() {}
 };
