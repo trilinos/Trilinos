@@ -50,35 +50,17 @@ using map_t = Tpetra::Map<LO, GO, NT>;
 using crs_t = Tpetra::CrsMatrix<ST, LO, GO, NT>;
 using vec_t = Tpetra::Vector<ST, LO, GO, NT>;
 
-RCP<crs_t> buildLaplace2DMatrix(const RCP<const Teuchos::Comm<int>>& comm, GO nx, GO ny) {
+RCP<crs_t> build2DMatrix(const std::string& problemName, const RCP<const Teuchos::Comm<int>>& comm,
+                         GO nx, GO ny) {
   Teuchos::ParameterList galeriList;
   galeriList.set("nx", nx);
   galeriList.set("ny", ny);
   galeriList.set("mx", comm->getSize());
   galeriList.set("my", 1);
-
   auto tMap = Galeri::Xpetra::CreateMap<LO, GO, map_t>("Cartesian2D", comm, galeriList);
-
   auto problem =
       Galeri::Xpetra::BuildProblem<ST, LO, GO, map_t, crs_t, Tpetra::MultiVector<ST, LO, GO, NT>>(
-          "Laplace2D", tMap, galeriList);
-
-  return problem->BuildMatrix();
-}
-
-RCP<crs_t> buildRecirc2DMatrix(const RCP<const Teuchos::Comm<int>>& comm, GO nx, GO ny) {
-  Teuchos::ParameterList galeriList;
-  galeriList.set("nx", nx);
-  galeriList.set("ny", ny);
-  galeriList.set("mx", comm->getSize());
-  galeriList.set("my", 1);
-
-  auto tMap = Galeri::Xpetra::CreateMap<LO, GO, map_t>("Cartesian2D", comm, galeriList);
-
-  auto problem =
-      Galeri::Xpetra::BuildProblem<ST, LO, GO, map_t, crs_t, Tpetra::MultiVector<ST, LO, GO, NT>>(
-          "Recirc2D", tMap, galeriList);
-
+          problemName, tMap, galeriList);
   return problem->BuildMatrix();
 }
 
@@ -106,28 +88,28 @@ void tExplicitOps_tpetra::initializeTest() {
   GO ny = 53;
 
   // create some big blocks to play with
-  auto tpetraF = buildRecirc2DMatrix(comm_tpetra, nx, ny);
+  auto tpetraF = build2DMatrix("Recirc2D", comm_tpetra, nx, ny);
   F_           = Thyra::tpetraLinearOp<ST, LO, GO, NT>(
-      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(tpetraF->getDomainMap()),
-      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(tpetraF->getRangeMap()), tpetraF);
+      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(tpetraF->getRangeMap()),
+      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(tpetraF->getDomainMap()), tpetraF);
 
   // create some big blocks to play with
-  auto tpetraG = buildLaplace2DMatrix(comm_tpetra, nx, ny);
+  auto tpetraG = build2DMatrix("Laplace2D", comm_tpetra, nx, ny);
   G_           = Thyra::tpetraLinearOp<ST, LO, GO, NT>(
-      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(tpetraG->getDomainMap()),
-      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(tpetraG->getRangeMap()), tpetraG);
+      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(tpetraG->getRangeMap()),
+      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(tpetraG->getDomainMap()), tpetraG);
 
   // create some big blocks to play with
   auto tpetraH = buildEyeMatrix(comm_tpetra, nx * ny);
   H_           = Thyra::tpetraLinearOp<ST, LO, GO, NT>(
-      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(tpetraH->getDomainMap()),
-      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(tpetraH->getRangeMap()), tpetraH);
+      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(tpetraH->getRangeMap()),
+      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(tpetraH->getDomainMap()), tpetraH);
 
   RCP<Tpetra::Vector<ST, LO, GO, NT>> v =
       rcp(new Tpetra::Vector<ST, LO, GO, NT>(tpetraF->getRangeMap()));
   v->randomize();
-  RCP<Thyra::VectorBase<ST>> tV = Thyra::createVector<ST, LO, GO, NT>(
-      v, Thyra::createVectorSpace<ST, LO, GO, NT>(tpetraF->getRowMap()));
+  RCP<Thyra::VectorBase<ST>> tV =
+      Thyra::createVector<ST, LO, GO, NT>(v, Thyra::createVectorSpace<ST, LO, GO, NT>(v->getMap()));
   D_ = Thyra::diagonal(tV);
 }
 
