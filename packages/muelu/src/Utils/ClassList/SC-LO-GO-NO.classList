@@ -114,6 +114,7 @@ SmooVecCoalesceDropFactory
 SparseConstraint
 StratimikosSmoother - #if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
 StructuredAggregationFactory
+StructuredRAPFactory
 StructuredLineDetectionFactory
 SubBlockAFactory
 TekoSmoother - #ifdef HAVE_MUELU_TEKO
