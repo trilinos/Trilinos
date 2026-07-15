@@ -18,6 +18,7 @@
 
 // Teuchos includes
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_Array.hpp"
 
 // Thyra includes
 #include "Thyra_LinearOpBase.hpp"
@@ -82,17 +83,25 @@ RCP<crs_t> buildLaplace2DMatrix(const RCP<const Teuchos::Comm<int> >& comm, GO n
   return problem->BuildMatrix();
 }
 
-RCP<crs_t> buildDiagMatrix(const RCP<const Teuchos::Comm<int> >& comm, GO nx, ST a) {
-  Teuchos::ParameterList galeriList;
-  galeriList.set("nx", nx);
-  galeriList.set("a", a);
+RCP<crs_t> buildDiagMatrix(const RCP<const map_t>& rangeMap, const RCP<const map_t>& domainMap,
+                           ST a) {
+  RCP<crs_t> A = rcp(new crs_t(rangeMap, 1));
 
-  auto tMap = Galeri::Xpetra::CreateMap<LO, GO, map_t>("Cartesian1D", comm, galeriList);
+  Teuchos::Array<GO> cols(1);
+  Teuchos::Array<ST> vals(1);
+  vals[0] = a;
 
-  auto problem =
-      Galeri::Xpetra::BuildProblem<ST, LO, GO, map_t, crs_t, mv_t>("Identity", tMap, galeriList);
+  const size_t localNumRows = rangeMap->getLocalNumElements();
 
-  return problem->BuildMatrix();
+  for (size_t localRow = 0; localRow < localNumRows; ++localRow) {
+    const GO gid = rangeMap->getGlobalElement(static_cast<LO>(localRow));
+    cols[0]      = gid;
+    A->insertGlobalValues(gid, cols(), vals());
+  }
+
+  A->fillComplete(domainMap, rangeMap);
+
+  return A;
 }
 
 }  // namespace
@@ -116,12 +125,12 @@ void tBlockJacobiPreconditionerFactory_tpetra::initializeTest() {
       Thyra::tpetraVectorSpace<ST, LO, GO, NT>(tpetraC->getDomainMap()),
       Thyra::tpetraVectorSpace<ST, LO, GO, NT>(tpetraC->getRangeMap()), tpetraC);
 
-  auto tpetraB = buildDiagMatrix(comm_tpetra, nx * ny, 5.0);
+  auto tpetraB = buildDiagMatrix(tpetraC->getRangeMap(), tpetraF->getDomainMap(), 5.0);
   B_           = Thyra::constTpetraLinearOp<ST, LO, GO, NT>(
       Thyra::tpetraVectorSpace<ST, LO, GO, NT>(tpetraB->getDomainMap()),
       Thyra::tpetraVectorSpace<ST, LO, GO, NT>(tpetraB->getRangeMap()), tpetraB);
 
-  auto tpetraBt = buildDiagMatrix(comm_tpetra, nx * ny, 3.0);
+  auto tpetraBt = buildDiagMatrix(tpetraF->getRangeMap(), tpetraC->getDomainMap(), 3.0);
   Bt_           = Thyra::constTpetraLinearOp<ST, LO, GO, NT>(
       Thyra::tpetraVectorSpace<ST, LO, GO, NT>(tpetraBt->getDomainMap()),
       Thyra::tpetraVectorSpace<ST, LO, GO, NT>(tpetraBt->getRangeMap()), tpetraBt);
@@ -230,7 +239,7 @@ bool tBlockJacobiPreconditionerFactory_tpetra::test_initializePrec(int verbosity
   std::string constrType[3] = {std::string("Static"), std::string("2x2 Static Strategy"),
                                std::string("3x3 Static Strategy")};
 
-  // three by three bloock diagonal
+  // three by three block diagonal
   std::vector<RCP<const Thyra::LinearOpBase<ST> > > invD;
   invD.push_back(invF_);
   invD.push_back(invC_);
