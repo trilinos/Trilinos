@@ -176,7 +176,7 @@ void associateSubVectors(
                             Teuchos::POST_DESTROY, false);
 }
 
-// build a single subblock Epetra_CrsMatrix
+// build a single subblock Tpetra::CrsMatrix
 RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > buildSubBlock(
     int i, int j, const RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT> >& A,
     const std::vector<std::pair<int, RCP<Tpetra::Map<LO, GO, NT> > > >& subMaps) {
@@ -316,7 +316,7 @@ RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > buildSubBlock(
   return mat;
 }
 
-// rebuild a single subblock Epetra_CrsMatrix
+// rebuild a single subblock Tpetra::CrsMatrix
 void rebuildSubBlock(int i, int j, const RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT> >& A,
                      const std::vector<std::pair<int, RCP<Tpetra::Map<LO, GO, NT> > > >& subMaps,
                      Tpetra::CrsMatrix<ST, LO, GO, NT>& mat) {
@@ -424,7 +424,7 @@ void rebuildSubBlock(int i, int j, const RCP<const Tpetra::CrsMatrix<ST, LO, GO,
 void many2one(Tpetra::MultiVector<ST, LO, GO, NT>& one,
               const std::vector<RCP<const Tpetra::MultiVector<ST, LO, GO, NT> > >& many,
               const std::vector<RCP<Tpetra::Export<LO, GO, NT> > >& subExport) {
-  // std::vector<RCP<const Epetra_Vector> >::const_iterator vecItr;
+  // std::vector<RCP<const Tpetra::Vector> >::const_iterator vecItr;
   std::vector<RCP<const Tpetra::MultiVector<ST, LO, GO, NT> > >::const_iterator vecItr;
   std::vector<RCP<Tpetra::Export<LO, GO, NT> > >::const_iterator expItr;
 
@@ -456,7 +456,7 @@ void many2one(Tpetra::MultiVector<ST, LO, GO, NT>& one,
 void one2many(std::vector<RCP<Tpetra::MultiVector<ST, LO, GO, NT> > >& many,
               const Tpetra::MultiVector<ST, LO, GO, NT>& single,
               const std::vector<RCP<Tpetra::Import<LO, GO, NT> > >& subImport) {
-  // std::vector<RCP<Epetra_Vector> >::const_iterator vecItr;
+  // std::vector<RCP<Tpetra::Vector> >::const_iterator vecItr;
   std::vector<RCP<Tpetra::MultiVector<ST, LO, GO, NT> > >::const_iterator vecItr;
   std::vector<RCP<Tpetra::Import<LO, GO, NT> > >::const_iterator impItr;
 
