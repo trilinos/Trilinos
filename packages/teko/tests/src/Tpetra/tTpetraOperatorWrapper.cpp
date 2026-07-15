@@ -103,8 +103,6 @@ RCP<crs_t> buildLaplace2DMatrix(const RCP<const Teuchos::Comm<int>>& comm, GO nx
 
 RCP<crs_t> buildDiagMatrix(const RCP<const Tpetra::Map<LO, GO, NT>>& rangeMap,
                            const RCP<const Tpetra::Map<LO, GO, NT>>& domainMap, double value) {
-  using crs_t = Tpetra::CrsMatrix<ST, LO, GO, NT>;
-
   auto A = Teuchos::rcp(new crs_t(rangeMap, 1));
 
   Teuchos::Array<GO> cols(1);
