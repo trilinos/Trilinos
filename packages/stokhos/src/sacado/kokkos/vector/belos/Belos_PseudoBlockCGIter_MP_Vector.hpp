@@ -112,7 +112,7 @@ namespace Belos {
      * \note For any pointer in \c newstate which directly points to the multivectors in
      * the solver, the data is not copied.
      */
-    void initializeCG(Teuchos::RCP<CGIterationStateBase<ScalarType,MV> > newstate, Teuchos::RCP<MV> R_0);
+    void initializeCG(Teuchos::RCP<CGIterationStateBase<ScalarType,MV, DM> > newstate, Teuchos::RCP<MV> R_0);
 
     /*! \brief Initialize the solver with the initial vectors from the linear problem
      *  or random data.
@@ -129,8 +129,8 @@ namespace Belos {
      * \returns A CGIterationState object containing const pointers to the current
      * solver state.
      */
-    Teuchos::RCP<CGIterationStateBase<ScalarType,MV> > getState() const {
-      auto state = Teuchos::rcp(new PseudoBlockCGIterationState<ScalarType,MV>());
+    Teuchos::RCP<CGIterationStateBase<ScalarType,MV, DM> > getState() const {
+      auto state = Teuchos::rcp(new PseudoBlockCGIterationState<ScalarType,MV,DM>());
       state->R = R_;
       state->P = P_;
       state->AP = AP_;
@@ -138,8 +138,8 @@ namespace Belos {
       return state;
     }
 
-    void setState(Teuchos::RCP<CGIterationStateBase<ScalarType,MV> > state) {
-      auto s = Teuchos::rcp_dynamic_cast<PseudoBlockCGIterationState<ScalarType,MV> >(state, true);
+    void setState(Teuchos::RCP<CGIterationStateBase<ScalarType,MV, DM> > state) {
+      auto s = Teuchos::rcp_dynamic_cast<PseudoBlockCGIterationState<ScalarType,MV,DM> >(state, true);
       R_ = s->R;
       Z_ = s->Z;
       P_ = s->P;
@@ -299,7 +299,7 @@ namespace Belos {
   // Initialize this iteration object
   template <class StorageType, class MV, class OP, class DM>
   void PseudoBlockCGIter<Sacado::MP::Vector<StorageType>,MV,OP,DM>::
-  initializeCG(Teuchos::RCP<CGIterationStateBase<ScalarType,MV> >  newstate, Teuchos::RCP<MV> R_0) {
+  initializeCG(Teuchos::RCP<CGIterationStateBase<ScalarType,MV,DM> >  newstate, Teuchos::RCP<MV> R_0) {
 
     // Check if there is any mltivector to clone from.
     Teuchos::RCP<const MV> lhsMV = lp_->getCurrLHSVec();
@@ -315,7 +315,7 @@ namespace Belos {
     numRHS_ = numRHS;
 
     // Initialize the state storage if it isn't already.
-    if (!Teuchos::rcp_dynamic_cast<PseudoBlockCGIterationState<ScalarType,MV> >(newstate, true)->matches(tmp, numRHS_))
+    if (!Teuchos::rcp_dynamic_cast<PseudoBlockCGIterationState<ScalarType,MV,DM> >(newstate, true)->matches(tmp, numRHS_))
       newstate->initialize(tmp, numRHS_);
     setState(newstate);
 
