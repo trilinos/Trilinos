@@ -101,18 +101,29 @@ RCP<crs_t> buildLaplace2DMatrix(const RCP<const Teuchos::Comm<int>>& comm, GO nx
   return problem->BuildMatrix();
 }
 
-RCP<crs_t> buildDiagMatrix(const RCP<const Teuchos::Comm<int>>& comm, GO size, double value) {
-  Teuchos::ParameterList galeriList;
-  galeriList.set("n", size);
-  galeriList.set("a", value);
+RCP<crs_t> buildDiagMatrix(const RCP<const Tpetra::Map<LO, GO, NT>>& rangeMap,
+                           const RCP<const Tpetra::Map<LO, GO, NT>>& domainMap, double value) {
+  using crs_t = Tpetra::CrsMatrix<ST, LO, GO, NT>;
 
-  auto tMap = Galeri::Xpetra::CreateMap<LO, GO, map_t>("Cartesian1D", comm, galeriList);
+  auto A = Teuchos::rcp(new crs_t(rangeMap, 1));
 
-  auto problem =
-      Galeri::Xpetra::BuildProblem<ST, LO, GO, map_t, crs_t, Tpetra::MultiVector<ST, LO, GO, NT>>(
-          "Identity", tMap, galeriList);
+  Teuchos::Array<GO> cols(1);
+  Teuchos::Array<ST> vals(1);
+  vals[0] = value;
 
-  return problem->BuildMatrix();
+  const size_t localNumRows = rangeMap->getLocalNumElements();
+
+  for (size_t localRow = 0; localRow < localNumRows; ++localRow) {
+    const GO gid = rangeMap->getGlobalElement(static_cast<LO>(localRow));
+
+    cols[0] = gid;
+
+    A->insertGlobalValues(gid, cols(), vals());
+  }
+
+  A->fillComplete(domainMap, rangeMap);
+
+  return A;
 }
 
 }  // namespace
@@ -163,9 +174,12 @@ bool tTpetraOperatorWrapper::test_functionality(int verbosity, std::ostream& os)
   // create some big blocks to play with
   RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT>> tpetraF = buildRecirc2DMatrix(comm_tpetra, nx, ny);
   RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT>> tpetraC = buildLaplace2DMatrix(comm_tpetra, nx, ny);
-  RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT>> tpetraB = buildDiagMatrix(comm_tpetra, nx * ny, 5.0);
+
+  RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT>> tpetraB =
+      buildDiagMatrix(tpetraC->getRangeMap(), tpetraF->getDomainMap(), 5.0);
+
   RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT>> tpetraBt =
-      buildDiagMatrix(comm_tpetra, nx * ny, 3.0);
+      buildDiagMatrix(tpetraF->getRangeMap(), tpetraC->getDomainMap(), 3.0);
 
   // load'em up in a thyra operator
   TEST_MSG("   tTpetraOperatorWrapper::test_functionality: "
