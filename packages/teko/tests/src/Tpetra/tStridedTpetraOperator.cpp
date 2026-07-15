@@ -40,6 +40,9 @@
 #include "Teko_TpetraHelpers.hpp"
 #include "Teko_ConfigDefs.hpp"
 
+#include <string>
+#include <vector>
+
 namespace Teko {
 namespace Test {
 
@@ -68,8 +71,21 @@ RCP<crs_t> buildRecirc2DMatrix(const RCP<const Teuchos::Comm<int>>& comm, GO nx,
   Teuchos::ParameterList galeriList;
   galeriList.set("nx", nx);
   galeriList.set("ny", ny);
-  galeriList.set("mx", comm->getSize());
-  galeriList.set("my", 1);
+
+  // Important for the strided-operator tests:
+  //
+  // These tests assume that the local map ordering is compatible with a simple
+  // interleaved striding pattern.  With the usual Galeri Cartesian2D numbering,
+  // decomposing in the x-direction can give each rank locally noncontiguous GID
+  // sequences such as:
+  //
+  //   9, 10, 11, 21, 22, 23, ...
+  //
+  // That layout can break the local striding assumptions in parallel.  A
+  // y-direction decomposition gives each rank a contiguous slab of rows, which
+  // keeps the local GID ordering compatible with the intended striding pattern.
+  galeriList.set("mx", 1);
+  galeriList.set("my", comm->getSize());
 
   auto tMap = Galeri::Xpetra::CreateMap<LO, GO, map_t>("Cartesian2D", comm, galeriList);
 
@@ -310,7 +326,6 @@ bool tStridedTpetraOperator::test_vector_constr(int verbosity, std::ostream& os)
   shell.RebuildOps();
 
   // test the operator against a lot of random vectors
-
   numtests = 10;
   max      = 0.0;
   min      = 1.0;
@@ -322,7 +337,10 @@ bool tStridedTpetraOperator::test_vector_constr(int verbosity, std::ostream& os)
     shell.apply(x, y);
     A->apply(x, ys);
 
-    Tpetra::MultiVector<ST, LO, GO, NT> e(y);
+    // This must be a deep copy of y before subtracting ys.  The single-arg
+    // MultiVector constructor can alias/copy-view behavior depending on the
+    // overload, which is not what this error-vector computation wants.
+    Tpetra::MultiVector<ST, LO, GO, NT> e(y, Teuchos::Copy);
     e.update(-1.0, ys, 1.0);
     e.norm2(Teuchos::ArrayView<ST>(norm));
 
