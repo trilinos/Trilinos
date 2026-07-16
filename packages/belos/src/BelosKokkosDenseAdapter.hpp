@@ -342,6 +342,7 @@ namespace Belos {
     static Scalar* GetRawHostPtr(Kokkos::DualView<IST**,Kokkos::LayoutLeft> & dm ) { 
     //LAPACK could use the host ptr to modify entries, so mark as modified.
     //TODO: Is there a better way to handle this?
+        dm.sync_host();
         dm.modify_host();
         return reinterpret_cast<Scalar*>(dm.view_host().data());
     //TODO: Is there any way that the user could hold on to this pointer...
@@ -451,15 +452,18 @@ namespace Belos {
 
     //! \brief Access a reference to the (i,j) entry of \c dm, \c e_i^T dm e_j.
     static Scalar & Value( Kokkos::DualView<IST**,Kokkos::LayoutLeft>& dm, const int i, const int j )
-    { 
-    //Mark as modified on host, since we don't know if it will be. 
+    {
+      // Mark as modified on host, since we don't know if it will be.
+      dm.sync_host();
       dm.modify_host();
       return reinterpret_cast<Scalar&>((dm.view_host())(i,j));
       // TODO Will this result in extra syncs? Is always marking modified the best way?
     }
 
     //! \brief Access a const reference to the (i,j) entry of \c dm, \c e_i^T dm e_j.
-    static const Scalar & ValueConst( const Kokkos::DualView<IST**,Kokkos::LayoutLeft>& dm, const int i, const int j ) { 
+    static const Scalar & ValueConst( const Kokkos::DualView<IST**,Kokkos::LayoutLeft>& dm, const int i, const int j ) {
+      if (dm.need_sync_host())
+        const_cast<Kokkos::DualView<IST**,Kokkos::LayoutLeft>*>(&dm)->sync_host();
       return reinterpret_cast<Scalar const &>((dm.view_host())(i,j));
       //TODO check const semantics here?
     }
@@ -507,18 +511,21 @@ namespace Belos {
     
     //!  \brief Adds sourceDM to thisDM and returns answer in thisDM.
     static void Add( Kokkos::DualView<IST**,Kokkos::LayoutLeft>& thisDM, const Kokkos::DualView<IST**,Kokkos::LayoutLeft>& sourceDM) {
+      thisDM.sync_device();
       KokkosBlas::axpy(1.0,sourceDM.view_device(), thisDM.view_device()); //axpy(alpha,x,y), y = y + alpha*x
       thisDM.modify_device();
     }
 
     //!  \brief Fill all entries with \c value. Value is zero if not specified.
     static void PutScalar( Kokkos::DualView<IST**,Kokkos::LayoutLeft>& dm, Scalar value = Teuchos::ScalarTraits<Scalar>::zero()){ 
+      dm.clear_sync_state();
       Kokkos::deep_copy( dm.view_device(), value);
       dm.modify_device();
     }
 
     //!  \brief Multiply all entries by a scalar. DM = value.*DM
     static void Scale( Kokkos::DualView<IST**,Kokkos::LayoutLeft>& dm, Scalar value) { 
+      dm.sync_device();
       KokkosBlas::scal( dm.view_device(), value, dm.view_device());
       dm.modify_device();
     }
@@ -528,6 +535,7 @@ namespace Belos {
     static void Randomize( Kokkos::DualView<IST**,Kokkos::LayoutLeft>& dm) { 
       int rand_seed = std::rand();
       Kokkos::Random_XorShift64_Pool<> pool(rand_seed); 
+      dm.clear_sync_state();
       Kokkos::fill_random(dm.view_device(), pool, -1,1);
       dm.modify_device();
     }

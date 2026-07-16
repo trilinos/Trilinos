@@ -435,6 +435,7 @@ namespace Belos {
       DM lhstemp = *DMT::SubviewCopy(AVtransAV, dim_, dim_);
       lapack.POTRF( 'U', dim_, DMT::GetRawHostPtr(lhstemp), DMT::GetStride(lhstemp), &infoInt);
       
+      DMT::SyncHostToDevice(lhstemp);
       if(autoDeg == false)
       { 
         status = false;
@@ -477,6 +478,7 @@ namespace Belos {
       MVT::MvTransMv( SCT::one(), *AVsub, *V0, pCoeff_);
       lapack.POTRS( 'U', dim_, 1, DMT::GetRawHostPtr(lhs), DMT::GetStride(lhs), DMT::GetRawHostPtr(pCoeff_), DMT::GetStride(pCoeff_), &infoInt);
       if(infoInt != 0) 
+      DMT::SyncHostToDevice(pCoeff_);
       {
         std::cout << "BelosGmresPolyOp.hpp: LAPACK POTRS was not successful!!" << std::endl;
         std::cout << "Error code: " << infoInt << std::endl; 
@@ -564,6 +566,7 @@ namespace Belos {
     TEUCHOS_TEST_FOR_EXCEPTION(rank != 1,GmresPolyOpOrthoFailure,
       "Belos::GmresPolyOp::generateArnoldiPoly(): Failed to compute initial block of orthonormal vectors for polynomial generation.");
   
+    DMT::SyncDeviceToHost(r0_);
     // Set the new state and initialize the solver.
     GmresIterationState<ScalarType,MV,DM> newstate;
     newstate.V = V_0;
@@ -626,6 +629,7 @@ namespace Belos {
       }
     }
     //Extra copy of H because equilibrate changes the matrix: 
+    DMT::SyncHostToDevice(H_);
     DM Htemp = *DMT::CreateCopy(H_);
 
     //View the m+1,m element and last col of H:
