@@ -30,7 +30,7 @@ namespace Test {
 class tDiagonalPreconditionerFactory_tpetra : public UnitTest {
  public:
   tDiagonalPreconditionerFactory_tpetra() : fact(nullptr), pstate(nullptr) {}
-  virtual ~tDiagonalPreconditionerFactory_tpetra();
+  virtual ~tDiagonalPreconditionerFactory_tpetra() = default;
 
   virtual void initializeTest();
   virtual int runTest(int verbosity, std::ostream& stdstrm, std::ostream& failstrm, int& totalrun);
@@ -41,12 +41,13 @@ class tDiagonalPreconditionerFactory_tpetra : public UnitTest {
   bool test_createPrec(int verbosity, std::ostream& os, int blocksize);
   bool test_initializePrec(int verbosity, std::ostream& os);
   bool test_canApply(int verbosity, std::ostream& os);
+  bool test_blkdiag_exact_2x2_blocks(int verbosity, std::ostream& os);
 
  protected:
   double tolerance_;
   Teuchos::ParameterList List_;
-  DiagonalPreconditionerFactory* fact;
-  DiagonalPrecondState* pstate;
+  Teuchos::RCP<DiagonalPreconditionerFactory> fact;
+  Teuchos::RCP<DiagonalPrecondState> pstate;
   LinearOp pop;
   Teuchos::RCP<const Thyra::LinearOpBase<ST> > F_;
   Teuchos::RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT> > tpetraF;

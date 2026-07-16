@@ -118,10 +118,8 @@ int main(int argc, char* argv[]) {
     Teko_ADD_UNIT_TEST(Teko::Test::tBlockJacobiPreconditionerFactory_tpetra,
                        BlockJacobiPreconditionerFactory_tpetra);
     Teko_ADD_UNIT_TEST(Teko::Test::tTpetraOperatorWrapper, tTpetraOperatorWrapper);
-#ifdef TEKO_HAVE_EPETRA
     Teko_ADD_UNIT_TEST(Teko::Test::tDiagonalPreconditionerFactory_tpetra,
                        DiagonalPreconditionerFactory_tpetra);
-#endif
     Teko_ADD_UNIT_TEST(Teko::Test::tLU2x2PreconditionerFactory_tpetra,
                        LU2x2PreconditionerFactory_tpetra);
     Teko_ADD_UNIT_TEST(Teko::Test::tLSCStablePreconditionerFactory_tpetra,
