@@ -30,7 +30,7 @@
 
 template <class ScalarType, class DM>
 int run (int argc, char *argv[]) {
-  using ST = std::complex<ScalarType>;
+  using ST = ScalarType;
 
   using OP = typename Tpetra::Operator<ST>;
   using MV = typename Tpetra::MultiVector<ST>;
@@ -130,7 +130,7 @@ int run (int argc, char *argv[]) {
   }
   
   // Construct an unpreconditioned linear problem instance.
-  Belos::LinearProblem<ST,MV,OP> problem( A, X, B );
+  Belos::LinearProblem<ST,MV,OP,DM> problem( A, X, B );
   bool set = problem.setProblem();
   if (set == false) {
     if (proc_verbose)

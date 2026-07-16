@@ -82,8 +82,6 @@ int run(int argc, char *argv[]) {
   using GO = typename Tpetra::Vector<>::global_ordinal_type;
   using NT = typename Tpetra::Vector<>::node_type;
 
-  using IST = Tpetra::MultiVector<ScalarType>::impl_scalar_type;
-
   using V = typename Tpetra::Vector<ST, LO, GO, NT>;
   using MV = typename Tpetra::MultiVector<ST, LO, GO, NT>;
   using OP = typename Tpetra::Operator<ST, LO, GO, NT>;
