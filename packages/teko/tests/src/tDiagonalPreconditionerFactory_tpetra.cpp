@@ -130,6 +130,8 @@ double relativeDifference(const RCP<const vec_t>& a, const RCP<const vec_t>& b) 
 
 }  // namespace
 
+tDiagonalPreconditionerFactory_tpetra::tDiagonalPreconditionerFactory_tpetra() {}
+
 void tDiagonalPreconditionerFactory_tpetra::initializeTest() {
   const RCP<const Teuchos::Comm<int>> comm_tpetra = GetComm_tpetra();
 
