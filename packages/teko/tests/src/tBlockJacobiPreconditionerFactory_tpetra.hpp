@@ -12,16 +12,18 @@
 
 // Thyra includes
 #include "Thyra_LinearOpBase.hpp"
-
-#include "Epetra_SerialComm.h"
+#include "Teko_PreconditionerFactory.hpp"
 
 #include <string>
 
 #include "Test_Utils.hpp"
 
+#include "Tpetra_CrsMatrix.hpp"
 #include "Teko_Utilities.hpp"
+#include "Teko_ConfigDefs.hpp"
 
 namespace Teko {
+class JacobiPreconditionerFactory;
 namespace Test {
 
 class tBlockJacobiPreconditionerFactory_tpetra : public UnitTest {
@@ -35,7 +37,6 @@ class tBlockJacobiPreconditionerFactory_tpetra : public UnitTest {
   bool test_createPrec(int verbosity, std::ostream& os);
   bool test_initializePrec(int verbosity, std::ostream& os);
   bool test_uninitializePrec(int verbosity, std::ostream& os);
-  bool test_isCompatible(int verbosity, std::ostream& os);
   bool test_iterativeSolves(int verbosity, std::ostream& os);
 
  protected:
