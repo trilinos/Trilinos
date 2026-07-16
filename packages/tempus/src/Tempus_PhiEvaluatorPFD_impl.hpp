@@ -33,9 +33,8 @@ PhiEvaluatorPFD<Scalar>::getValidParameters() const
 
   pl->set(
       "PFD Method", "CN",
-      "'PDF Method' determines the partial fraction decomposition used to approximate the exponential.  "
-      "'IE' - uses an implicit Euler approximation (order 1).  "
-      "'CN' - uses a Crank-Nicolson approximation (order 2).");
+      "Only 'CN' is implemented. Other values issue a warning and use the "
+      "Crank-Nicolson solve.");
 
   //pl->set("?", *member_->getNonconstParameterList());
 

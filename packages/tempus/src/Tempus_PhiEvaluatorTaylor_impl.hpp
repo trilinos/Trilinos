@@ -34,7 +34,7 @@ PhiEvaluatorTaylor<Scalar>::getValidParameters() const
 
   pl->set<int>(
       "Expansion Order", 10,
-      "Maximal Taylor expansion used.\n"
+      "Taylor degree N in sum_{j=0}^N L^j v/(j+p)!.\n"
       "\n"
       "The default is 10.");
 
