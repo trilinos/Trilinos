@@ -15,200 +15,57 @@
 #include "Tempus_Stepper.hpp"
 #include "Tempus_PhiEvaluator.hpp"
 
+/**
+ * @brief Per-evaluation metadata passed from an exponential stepper to its model.
+ *
+ * The `Scalar` timeStepSize_ is forwarded as the Thyra step size, and the
+ * `int` stageNumber_ is forwarded when the model supports a stage number.
+ */
 template <class Scalar>
 class ExponentialODEParameters {
  public:
-  /// Constructor
+  /** @brief Construct metadata with a zero `Scalar` time step and stage zero. */
   ExponentialODEParameters() : timeStepSize_(Scalar(0.0)), stageNumber_(0) {}
 
-  /// Constructor
+  /**
+   * @brief Construct metadata for one step or internal stage.
+   *
+   * @param timeStepSize `Scalar` step size supplied to the model.
+   * @param stageNumber `int` internal-stage index supplied to supporting models;
+   *   defaults to zero.
+   */
   ExponentialODEParameters(Scalar timeStepSize, int stageNumber = 0)
     : timeStepSize_(timeStepSize), stageNumber_(stageNumber)
   {
   }
 
+  /// `Scalar` time-step size supplied through Thyra InArgs.
   Scalar timeStepSize_;
+  /// `int` internal-stage index supplied through Thyra InArgs when supported.
   int stageNumber_;
 };
 
 
 namespace Tempus {
 
-/** \brief Thyra Base interface for exponential time steppers.
+/** \brief Base class for exponential steppers using an implicit Thyra model.
  *
- * TODO: rest of the documentation is from StepperImplicit:
- *  For first-order ODEs, we can write the implicit ODE as
+ * The application model supplies the first-order implicit residual
  *  \f[
- *    \mathcal{F}(\dot{x}_n,x_n,t_n) = 0
+ *    \mathcal{F}_{\mathrm{impl}}(\dot{x},x,t) = 0,
  *  \f]
- *  where \f$x_n\f$ is the solution vector, \f$\dot{x}\f$ is the
- *  time derivative, \f$t_n\f$ is the time and \f$n\f$ indicates
- *  the \f$n^{th}\f$ time level.  Note that \f$\dot{x}_n\f$ is
- *  different for each time stepper and is a function of other
- *  solution states, e.g., for Backward Euler,
- *  \f[
- *    \dot{x}_n(x_n) = \frac{x_n - x_{n-1}}{\Delta t}
- *  \f]
+ * where \f$M = \partial\mathcal{F}_{\mathrm{impl}}/\partial\dot{x}\f$.
+ * Exponential methods operate on the explicit tendency
+ * \f$\mathcal{F}(x,t)=-M^{-1}\mathcal{F}_{\mathrm{impl}}(0,x,t)\f$ and
+ * its Jacobian.  The PhiEvaluator performs the required mass operations
+ * without explicitly forming \f$M^{-1}\f$.
  *
- *  <b> Defining the Iteration Matrix</b>
- *
- *  Often we use Newton's method or one of its variations to solve
- *  for \f$x_n\f$, such as
- *  \f[
- *    \left[
- *    \frac{\partial}{\partial x_n}
- *    \left(
- *      \mathcal{F}(\dot{x}_n,x_n,t_n)
- *    \right)
- *    \right] \Delta x_n^\nu = - \mathcal{F}(\dot{x}_n^\nu,x_n^\nu,t_n)
- *  \f]
- *  where \f$\Delta x_n^\nu = x_n^{\nu+1} - x_n^\nu\f$ and \f$\nu\f$
- *  is the iteration index.  Using the chain rule for a function
- *  with multiple variables, we can write
- *  \f[
- *    \left[
- *    \frac{\partial \dot{x}_n(x_n) }{\partial x_n}
- *    \frac{\partial}{\partial \dot{x}_n}
- *    \left(
- *      \mathcal{F}(\dot{x}_n,x_n,t_n)
- *    \right)
- *    +
- *    \frac{\partial x_n}{\partial x_n}
- *    \frac{\partial}{\partial x_n}
- *    \left(
- *      \mathcal{F}(\dot{x}_n,x_n,t_n)
- *    \right)
- *    \right] \Delta x_n^\nu = - \mathcal{F}(\dot{x}_n^\nu,x_n^\nu,t_n)
- *  \f]
- *  Defining the iteration matrix, \f$W\f$, we have
- *  \f[
- *    W \Delta x_n^\nu = - \mathcal{F}(\dot{x}_n^\nu,x_n^\nu,t_n)
- *  \f]
- *  using \f$\mathcal{F}_n = \mathcal{F}(\dot{x}_n,x_n,t_n)\f$, where
- *  \f[
- *    W = \alpha \frac{\partial \mathcal{F}_n}{\partial \dot{x}_n}
- *      + \beta  \frac{\partial \mathcal{F}_n}{\partial x_n}
- *  \f]
- *  and
- *  \f[
- *    W = \alpha M + \beta J
- *  \f]
- *  where
- *  \f[
- *    \alpha \equiv \frac{\partial \dot{x}_n(x_n) }{\partial x_n},
- *    \quad \quad
- *    \beta \equiv \frac{\partial x_n}{\partial x_n} = 1,
- *    \quad \quad
- *    M = \frac{\partial \mathcal{F}_n}{\partial \dot{x}_n},
- *    \quad \quad
- *    J = \frac{\partial \mathcal{F}_n}{\partial x_n}
- *  \f]
- *  and \f$M\f$ is the mass matrix and \f$J\f$ is the Jacobian.
- *
- *  Note that sometimes it is helpful to set \f$\alpha=0\f$ and
- *  \f$\beta = 1\f$ to obtain the Jacobian, \f$J\f$, from the
- *  iteration matrix (i.e., ModelEvaluator), or set \f$\alpha=1\f$
- *  and \f$\beta = 0\f$ to obtain the mass matrix, \f$M\f$, from
- *  the iteration matrix (i.e., the ModelEvaluator).
- *
- *  As a concrete example, the time derivative for Backward Euler is
- *  \f[
- *    \dot{x}_n(x_n) = \frac{x_n - x_{n-1}}{\Delta t}
- *  \f]
- *  thus
- *  \f[
- *    \alpha \equiv \frac{\partial \dot{x}_n(x_n) }{\partial x_n}
- *           = \frac{1}{\Delta t}
- *    \quad \quad
- *    \beta \equiv \frac{\partial x_n}{\partial x_n} = 1
- *  \f]
- *  and the iteration matrix for Backward Euler is
- *  \f[
- *    W = \frac{1}{\Delta t} \frac{\partial \mathcal{F}_n}{\partial \dot{x}_n}
- *      + \frac{\partial \mathcal{F}_n}{\partial x_n}
- *  \f]
- *
- *  <b> Dangers of multiplying through by \f$\Delta t\f$. </b>
- *  In some time-integration schemes, the application might want
- *  to multiply the governing equations by the time-step size,
- *  \f$\Delta t\f$, for scaling or other reasons.  Here we illustrate
- *  what that means and the complications that follow from it.
- *
- *  Starting with a simple implicit ODE and multiplying through by
- *  \f$\Delta t\f$, we have
- *  \f[
- *    \mathcal{F}_n = \Delta t \dot{x}_n - \Delta t \bar{f}(x_n,t_n) = 0
- *  \f]
- *  For the Backward Euler stepper, we recall from above that
- *  \f[
- *    \dot{x}_n(x_n) = \frac{x_n - x_{n-1}}{\Delta t}
- *    \quad\quad
- *    \alpha \equiv \frac{\partial \dot{x}_n(x_n) }{\partial x_n}
- *           = \frac{1}{\Delta t}
- *    \quad \quad
- *    \beta \equiv \frac{\partial x_n}{\partial x_n} = 1
- *  \f]
- *  and we can find for our simple implicit ODE, \f$\mathcal{F}_n\f$,
- *  \f[
- *    M = \frac{\partial \mathcal{F}_n}{\partial \dot{x}_n} = \Delta t,
- *    \quad \quad
- *    J = \frac{\partial \mathcal{F}_n}{\partial x_n}
- *      = -\Delta t \frac{\partial \bar{f}_n}{\partial x_n}
- *  \f]
- *  Thus this iteration matrix, \f$W^\ast\f$, is
- *  \f[
- *    W^\ast = \alpha \frac{\partial \mathcal{F}_n}{\partial \dot{x}_n}
- *           + \beta  \frac{\partial \mathcal{F}_n}{\partial x_n}
- *           = \frac{1}{\Delta t} \Delta t
- *           + (1) \left( - \Delta t \frac{\partial \bar{f}_n}{\partial x_n}
- *                 \right)
- *  \f]
- *  or simply
- *  \f[
- *    W^\ast = 1 - \Delta t \frac{\partial \bar{f}_n}{\partial x_n}
- *  \f]
- *  Note that \f$W^\ast\f$ is not the same as \f$W\f$ from above
- *  (i.e., \f$W = \frac{1}{\Delta t} - \frac{\partial \bar{f}_n}{\partial
- *  x_n}\f$).  But we should <b>not</b> infer from this is that
- *  \f$\alpha = 1\f$ or \f$\beta = -\Delta t\f$, as those definitions
- *  are unchanged (i.e., \f$\alpha \equiv \frac{\partial \dot{x}_n(x_n)}
- *  {\partial x_n} = \frac{1}{\Delta t}\f$ and \f$\beta \equiv
- *  \frac{\partial x_n}{\partial x_n} = 1 \f$).  However, the mass
- *  matrix, \f$M\f$, the Jacobian, \f$J\f$ and the residual,
- *  \f$-\mathcal{F}_n\f$, all need to include \f$\Delta t\f$ in
- *  their evaluations (i.e., be included in the ModelEvaluator
- *  return values for these terms).
- *
- *  <b> Dangers of explicitly including time-derivative definition.</b>
- *  If we explicitly include the time-derivative defintion for
- *  Backward Euler, we find for our simple implicit ODE,
- *  \f[
- *    \mathcal{F}_n = \frac{x_n - x_{n-1}}{\Delta t} - \bar{f}(x_n,t_n) = 0
- *  \f]
- *  that the iteration matrix is
- *  \f[
- *    W^{\ast\ast} =
- *             \alpha \frac{\partial \mathcal{F}_n}{\partial \dot{x}_n}
- *           + \beta  \frac{\partial \mathcal{F}_n}{\partial x_n}
- *           = \frac{1}{\Delta t} (0)
- *           + (1) \left(\frac{1}{\Delta t}
- *                       - \frac{\partial \bar{f}_n}{\partial x_n}
- *                 \right)
- *  \f]
- *  or simply
- *  \f[
- *    W^{\ast\ast} =
- *      \frac{1}{\Delta t} - \frac{\partial \bar{f}_n}{\partial x_n}
- *  \f]
- *  which is the same as \f$W\f$ from above for Backward Euler, but
- *  again we should <b>not</b> infer that \f$\alpha = \frac{1}{\Delta
- *  t}\f$ or \f$\beta = -1\f$.  However the major drawback is the
- *  mass matrix, \f$M\f$, the Jacobian, \f$J\f$, and the residual,
- *  \f$-\mathcal{F}_n\f$ (i.e., the ModelEvaluator) are explicitly
- *  written only for Backward Euler.  The application would need
- *  to write separate ModelEvaluators for each stepper, thus
- *  destroying the ability to re-use the ModelEvaluator with any
- *  stepper.
+ * Parameter lists include the inherited stepper settings, a `PhiEvaluator`
+ * sublist used to construct the evaluator, `Epsilon for RHS finite difference`
+ * for the nonautonomous RHS time-derivative finite difference (positive values
+ * enable it), and `Adapt PhiEvaluator Interval`.  A positive interval requests
+ * evaluator adaptation on the first step and then at matching step indices;
+ * a nonpositive value disables adaptation.
  *
  */
 template <class Scalar>
@@ -217,50 +74,115 @@ class StepperExponential : virtual public Tempus::Stepper<Scalar> {
   /// \name Basic exponential stepper methods
   //@{
 
-  /** \brief Default constructor.
+  /**
+   * @brief Construct an unconfigured exponential-stepper base.
    *
-   *  Requires subsequent setPhiEvaluator(), setModel(), and initialize()
-  */
+   * Set a PhiEvaluator and application model, then initialize the derived
+   * stepper before taking steps.
+   */
   StepperExponential();
 
-  /// Set the PhiEvaluator
+  /**
+   * @brief Set the evaluator for phi-function products and mass operations.
+   *
+   * When a model is already set, the `Teuchos::RCP<PhiEvaluator<Scalar>>` is
+   * given that model and initialized.  This invalidates the stepper setup.
+   *
+   * @param phiEvaluator Evaluator to associate with this stepper.
+   */
   virtual void setPhiEvaluator(
     const Teuchos::RCP<Tempus::PhiEvaluator<Scalar> >& phiEvaluator);
-  /// Construct and set a default PhiEvaluator
+  /** @brief Construct, set, and invalidate setup for the factory-default PhiEvaluator. */
   virtual void setDefaultPhiEvaluator();
+  /** @brief Return the configured `Teuchos::RCP<PhiEvaluator<Scalar>>`, or null if unset. */
   virtual Teuchos::RCP<Tempus::PhiEvaluator<Scalar> > getPhiEvaluator() const;
 
-  /// Set the model
+  /**
+   * @brief Set the implicit application model used for residual evaluations.
+   *
+   * The `Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>>` is validated as an
+   * implicit ODE/DAE model.  If a PhiEvaluator is present, it receives and
+   * initializes with this model; setup is then invalidated.
+   *
+   * @param appModel Application ModelEvaluator defining the implicit residual.
+   */
   virtual void setModel(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
       override;
+  /** @brief Return the configured implicit application ModelEvaluator. */
   virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel()
       const override;
 
-  /// Set the initial conditions and make them consistent.
+  /**
+   * @brief Set initial state data and apply the configured consistency policy.
+   *
+   * A null state vector is copied from the model nominal values.  For
+   * `ICConsistency = "Consistent"`, the history must store xDot and this method
+   * computes it from \f$M\dot{x}=-\mathcal{F}_{\mathrm{impl}}(0,x,t)\f$.
+   * Other inherited policies select no synchronization, a zero derivative, or
+   * the model nominal derivative.  The optional consistency check
+   * reports, but does not reject, a residual mismatch.
+   *
+   * @param solutionHistory History containing at least one initial SolutionState.
+   */
   virtual void setInitialConditions(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) override;
 
-  /// create InArgs from state and parameters
+  /**
+   * @brief Build model input arguments for an exponential residual evaluation.
+   *
+   * The result carries caller-supplied `x`, `xDot`, and `time`, plus
+   * ExponentialODEParameters metadata where supported by the model.  It
+   * sets \f$\alpha=0\f$ and \f$\beta=1\f$ so model linearizations represent
+   * the residual Jacobian with respect to \f$x\f$.
+   *
+   * @param x `Teuchos::RCP<Thyra::VectorBase<Scalar>>` state vector.
+   * @param xDot `Teuchos::RCP<Thyra::VectorBase<Scalar>>` derivative vector.
+   * @param time `Scalar` evaluation time.
+   * @param p Metadata containing the step size and stage number.
+   * @return Thyra InArgs configured for the application ModelEvaluator.
+   */
   Thyra::ModelEvaluatorBase::InArgs<Scalar>
   virtual createInArgsExponentialODE(
       const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x,
       const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xDot, const Scalar time,
       const Teuchos::RCP<ExponentialODEParameters<Scalar> >& p);
 
-  /// evaluate an ODE residual for an exponential integrator
+  /**
+   * @brief Evaluate the implicit residual used to obtain the exponential RHS.
+   *
+   * Sets `xDot` to zero and evaluates
+   * \f$f=\mathcal{F}_{\mathrm{impl}}(0,x,t)=-M\mathcal{F}(x,t)\f$.  The
+   * PhiEvaluator converts this mass-weighted residual to the explicit tendency
+   * or applies phi functions without forming the inverse mass matrix.
+   *
+   * @param f Output `Teuchos::RCP<Thyra::VectorBase<Scalar>>` residual vector.
+   * @param x State vector passed to the application model.
+   * @param xDot Derivative workspace, overwritten with zeros before evaluation.
+   * @param time `Scalar` evaluation time.
+   * @param p Metadata containing the step size and stage number.
+   */
   virtual void evaluateExponentialODE(
       Teuchos::RCP<Thyra::VectorBase<Scalar> >& f,
       const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x,
       const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xDot, const Scalar time,
       const Teuchos::RCP<ExponentialODEParameters<Scalar> >& p);
 
-  /// Pass initial guess to Newton solver (only relevant for implicit solvers)
+  /**
+   * @brief Accept an implicit-solver initial guess without using it.
+   *
+   * Exponential steppers do not perform Newton solves.
+   *
+   * @param initialGuess Unused `Teuchos::RCP<const Thyra::VectorBase<Scalar>>`.
+   */
   virtual void setInitialGuess(
       Teuchos::RCP<const Thyra::VectorBase<Scalar> > initialGuess) override
   {
   }
 
+  /**
+   * @brief Return a large `Scalar` initial-step estimate.
+   */
   virtual Scalar getInitTimeStep(
       const Teuchos::RCP<SolutionHistory<Scalar> >& /* solutionHistory */)
       const override
@@ -269,42 +191,95 @@ class StepperExponential : virtual public Tempus::Stepper<Scalar> {
     return Scalar(Teuchos::ScalarTraits<Scalar>::rmax() / 1e2);
   }
 
-  /// Get a default (initial) StepperState
+  /** @brief Create a `StepperState<Scalar>` initialized with this stepper type. */
   virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getDefaultStepperState() override;
+  /**
+   * @brief Set First-Same-As-Last use and invalidate setup.
+   *
+   *  The FSAL principle does generally not apply to exponential integrators.
+   *  If it is set to true here, we will treat the method as if it was FSAL, by evaluating and
+   *  storing the first stage evaluation of the future next step at the end of takeStep.
+   *
+   * @param a `bool` value stored as the inherited FSAL setting.
+   */
   virtual void setUseFSAL(bool a) override
   {
     this->useFSAL_       = a;
     this->isInitialized_ = false;
   }
 
+  /** @brief Return false because the stepper is backed by an implicit model. */
   virtual bool isExplicit() const override {return false;}
-  /// Get the implicit/explicit type: we return true, since we rely on the implicit ModelEvaluator
+  /** @brief Return true because residual and linearization data come from an implicit model. */
   virtual bool isImplicit() const override {return true;}
+  /** @brief Return false because this is not an explicit-implicit stepper. */
   virtual bool isExplicitImplicit() const override
     {return isExplicit() && isImplicit();}
+  /** @brief Return FIRST_ORDER_ODE for the supported model equation order. */
   virtual OrderODE getOrderODE() const override {return FIRST_ORDER_ODE;}
 
+  /**
+   * @brief Check base setup and require both a model and PhiEvaluator.
+   *
+   * @param out Stream receiving diagnostics for missing dependencies.
+   * @return True only when the base setup is valid and both dependencies are set.
+   */
   virtual bool isValidSetup(Teuchos::FancyOStream& out) const override;
 
+  /**
+   * @brief Return valid parameters for the exponential-stepper base.
+   *
+   * Includes inherited basic settings, the `PhiEvaluator` sublist, and the
+   * exponential finite-difference and adaptation settings.
+   *
+   * @return Valid `Teuchos::ParameterList` with current defaults.
+   */
   virtual Teuchos::RCP<const Teuchos::ParameterList> getValidParameters()
       const override;
   //@}
 
+  /**
+   * @brief Build the nonconst list of valid and default parameters shared by exponential steppers.
+   *
+   * `Epsilon for RHS finite difference` is a `double` finite-difference scale
+   * for nonautonomous RHS corrections for Rosenbrock type integrators;
+   * values at or below zero disable them.
+   * `Adapt PhiEvaluator Interval` is an `int` adaptation interval; only positive
+   * values enable adaptation.  The `PhiEvaluator` sublist selects and configures
+   * the evaluator.  Some compatibility implicit solver and predictor entries are also accepted.
+   *
+   * @return Mutable valid `Teuchos::ParameterList` with current defaults.
+   */
   Teuchos::RCP<Teuchos::ParameterList> getValidParametersBasicExponential() const;
 
   /// \name Overridden from Teuchos::Describable
   //@{
+  /**
+   * @brief Write base-stepper and PhiEvaluator descriptions to an output stream.
+   *
+   * @param out `Teuchos::FancyOStream` receiving the description.
+   * @param verbLevel Requested Teuchos verbosity level, forwarded to dependencies.
+   */
   virtual void describe(
       Teuchos::FancyOStream& out,
       const Teuchos::EVerbosityLevel verbLevel) const override;
   //@}
 
-  /// Set StepperExponential member data from the ParameterList.
+  /**
+   * @brief Validate and apply exponential-stepper parameter settings.
+   *
+   * If `PhiEvaluator` is present, its sublist is used to construct a new
+   * evaluator before validation.  The method then applies inherited settings,
+   * the `double` finite-difference epsilon, and the `int` adaptation interval.
+   *
+   * @param pl Parameter list to validate and apply; a null RCP leaves settings unchanged.
+   */
   void setStepperExponentialValues(Teuchos::RCP<Teuchos::ParameterList> pl);
 
  protected:
-  /// Compute the temporal finite difference dt_Mf_deriv
-  ///   d/dt (-M * F(x,t))
+  /// @brief Compute the temporal finite difference dt_Mf_deriv
+  /// 
+  /// dt_Mf_deriv = -dt * M * [d/dt F(x,t)]
   void computeTemporalFD(
     Teuchos::RCP<Thyra::VectorBase<Scalar>>& dt_Mf_deriv,
     const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& x,
@@ -313,20 +288,22 @@ class StepperExponential : virtual public Tempus::Stepper<Scalar> {
     const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& Mf
   );
 
-  // Check if temporal derivative is desired
+  /// Check if temporal derivative correction is desired for Rosenbrock integrators
   bool getTemporalDerivative()
   {
     return (temporal_finite_difference_eps_ > 0);
   }
 
-  /// Compute the nonlinear remainder:
-  ///   remf = -M * (F(xr,tr) - F(x0,t0) - J_{x0} * (xr-x0) - F'(t0) * (tr-t0))
+  /// @brief Compute the nonlinear remainder R
+  /// 
+  ///   R = -M * (F(xr,tr) - F(x0,t0) - J_{x0} * (xr-x0) - F'(t0) * (tr-t0))
   /// including multiple of negative mass matrix (-M).
   ///
-  /// dt is the current time-step, not necessarily (tr-t0)
-  /// Mf contains already evaluated -M*F(x0,t0)
-  /// dt_Mf_deriv contains already evaluated dt*M*F'(t0)
-  /// Mfr can optionally contain -M*F(xr,tr), if already pre-evaluated
+  /// @param remf is storage for the remainder R
+  /// @param dt is the current time-step, not necessarily (tr-t0)
+  /// @param Mf contains already evaluated -M*F(x0,t0)
+  /// @param dt_Mf_deriv contains already evaluated dt*M*F'(t0)
+  /// @param Mfr can optionally contain -M*F(xr,tr), if already pre-evaluated
   void computeRemf(
     Teuchos::RCP<Thyra::VectorBase<Scalar>>& remf,
     const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& xr,
@@ -339,7 +316,7 @@ class StepperExponential : virtual public Tempus::Stepper<Scalar> {
     const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& Mfr = Teuchos::null
   );
 
-  // Check if PhiEvaluator adaptivity is desired and return positive interval number
+  /// Check if PhiEvaluator adaptivity is desired and return positive interval number
   int getAdaptPhiEvaluator()
   {
     return adapt_phi_evaluator_interval_;
