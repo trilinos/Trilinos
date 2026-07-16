@@ -43,17 +43,19 @@ Teuchos::RCP<PhiEvaluator<Scalar> > PhiEvaluatorFactory<Scalar>::createPhiEvalua
 
 template <class Scalar>
 Teuchos::RCP<PhiEvaluator<Scalar> > PhiEvaluatorFactory<Scalar>::createPhiEvaluator(
-    std::string phiEvaluatorType, Teuchos::RCP<Teuchos::ParameterList> phiEvaluatorPL,
+    std::string phiEvaluatorType,
+    Teuchos::RCP<Teuchos::ParameterList> phiEvaluatorPL,
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model)
 {
+  Teuchos::RCP<PhiEvaluator<Scalar>> phi;
   if (phiEvaluatorType == "PFD") {
-    return createPhiEvaluatorPFD<Scalar>(phiEvaluatorPL);
+    phi = createPhiEvaluatorPFD<Scalar>(phiEvaluatorPL);
   }
   else if (phiEvaluatorType == "Leja") {
-    return createPhiEvaluatorLeja<Scalar>(phiEvaluatorPL);
+    phi = createPhiEvaluatorLeja<Scalar>(phiEvaluatorPL);
   }
   else if (phiEvaluatorType == "Taylor") {
-    return createPhiEvaluatorTaylor<Scalar>(phiEvaluatorPL);
+    phi = createPhiEvaluatorTaylor<Scalar>(phiEvaluatorPL);
   }
   else {
     Teuchos::RCP<Teuchos::FancyOStream> out =
@@ -65,6 +67,12 @@ Teuchos::RCP<PhiEvaluator<Scalar> > PhiEvaluatorFactory<Scalar>::createPhiEvalua
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
                                "Unknown 'PhiEvaluator Type' = " << phiEvaluatorType);
   }
+  if (model != Teuchos::null)
+  {
+    phi->setModel(model);
+    phi->initialize();
+  }
+  return phi;
 }
 
 }  // namespace Tempus

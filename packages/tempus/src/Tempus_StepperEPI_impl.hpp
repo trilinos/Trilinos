@@ -181,7 +181,7 @@ void StepperEPI<Scalar>::takeStep(
     }
 
     // First RHS evaluation
-    // 
+    //
     // compute the right hand side Mf at x (which is still equal to xOld)
     // and potentially set the correct Dirichlet BC to x
     RCP<Thyra::VectorBase<Scalar>> Mf = Thyra::createMember(x->space());
