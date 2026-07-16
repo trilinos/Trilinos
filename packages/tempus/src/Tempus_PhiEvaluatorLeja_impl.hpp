@@ -44,13 +44,14 @@ PhiEvaluatorLeja<Scalar>::getValidParameters() const
 
   pl->set<int>(
       "Expansion Order", 300,
-      "Order of the Leja polynomial used.\n"
+      "Polynomial degree used for the Leja interpolation.\n"
       "\n"
       "The default is 300.");
 
   pl->set<int>(
       "Leja DD Method", 1,
-      "DD Method to use. 0 for Recurrence. 1 for Taylor Series. 2 for DD_phi. 3 for Taylor Real.");
+      "Divided-difference method: 0 recurrence, 1 complex Taylor, 2 dd_phi, "
+      "or 3 real Taylor.");
 
   pl->set<double>(
       "leja_tol", 1.0e-18,
@@ -58,19 +59,19 @@ PhiEvaluatorLeja<Scalar>::getValidParameters() const
 
   pl->set<double>(
       "leja_a", -1.0,
-      "Minimum real bound of ellipse bounding system spectrum. The default is -1.0.");
+      "Real-axis minimum parameter a for the Leja interpolation ellipse. The default is -1.0.");
 
   pl->set<double>(
       "leja_b", 0.0,
-      "Maximum real bound of ellipse bounding system spectrum. The default is 0.0.");
+      "Real-axis maximum parameter b for the Leja interpolation ellipse. The default is 0.0.");
 
   pl->set<double>(
       "leja_c", 0.5,
-      "Maximum complex bound of the  ellipse bounding system spectrum. The default is 0.5.");
+      "Imaginary semi-axis parameter c for the Leja interpolation ellipse. The default is 0.5.");
 
   pl->set<double>(
       "Leja Ellipse Safety Factor", 1.0,
-      "Safety scaling factor applied to the adapted Leja ellipse size. The default is 1.0.");
+      "Safety factor applied to adapted a and c bounds; b is unchanged. The default is 1.0.");
 
   return pl;
 }

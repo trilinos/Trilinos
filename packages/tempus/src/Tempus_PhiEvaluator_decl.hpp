@@ -32,164 +32,302 @@
 
 namespace Tempus {
 
+/**
+ * @brief Selects which cached operators a linearization update must provide.
+ *
+ * `ONLY_MASS` prepares the mass operator \f$M\f$ and its inverse action;
+ * `JACOBIAN_AND_MASS` additionally prepares the implicit residual Jacobian
+ * \f$J_{\mathrm{impl}}\f$.  Operations involving the exponential operator
+ * require the latter mode, while mass application and mass solves require
+ * only the former.
+ */
 enum class PhiInitialization {
-    ONLY_MASS,
-    JACOBIAN_AND_MASS,
+    ONLY_MASS,          ///< Assemble or require only \f$M\f$ and \f$M^{-1}\f$.
+    JACOBIAN_AND_MASS,  ///< Also assemble \f$J_{\mathrm{impl}}\f$.
 };
 
-/** \brief PhiLinearSolver
- * Uses the ModelEvaluator to compute and hold the Mass matrix and Jacobian
+/**
+ * @brief Owns the mass and implicit-Jacobian operators used by a PhiEvaluator.
+ *
+ * The supplied `Thyra::ModelEvaluator<Scalar>` is queried at a caller-selected
+ * linearization point to assemble \f$M\f$ and \f$J_{\mathrm{impl}}\f$.  The
+ * exponential operator constructed by this class is
+ * \f$L=-\Delta t M^{-1}J_{\mathrm{impl}}\f$.  `Scalar` is the scalar type of
+ * the Thyra vector and operator spaces.  A requested lumped mass matrix is a
+ * row-sum diagonal approximation; otherwise inverse mass actions are supplied
+ * by the `LinearOpWithSolveFactory` of the model.
  */
 template <class Scalar>
 class PhiLinearSolver {
  public:
+  /**
+   * @brief Associates this solver with an application model.
+   *
+   * @param appModel Const `Teuchos::RCP` to the model that creates and fills
+   *   the mass and Jacobian operators; it must remain valid while this solver
+   *   is used.
+   * @param lumpMass When `true`, request the row-sum diagonal mass
+   *   approximation on the next mass assembly.
+   */
   PhiLinearSolver(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>> appModel, bool lumpMass=false)
     : appModel_(appModel), lumpMass_(lumpMass) {
   }
 
   ~PhiLinearSolver() {}
 
+  /** @brief Selects full or row-sum-lumped mass actions and invalidates cached mass operators when the selection changes.
+   * @param lump Boolean selecting row-sum lumping when `true`.
+   */
   void setLumpMassMatrix(const bool lump);
+
+  /** @brief Returns `true` when both the cached `Thyra::LinearOpBase<Scalar>` mass operator and its inverse action are available. */
   bool massInitialized() const;
+
+  /** @brief Releases cached mass, inverse-mass, and Jacobian operators; a subsequent operation must reassemble the operators it needs. */
   void clearMemory();
 
-  /** \brief Set the eigensolver parameter list used by computeJacobianSpectrumBounds.
+  /**
+   * @brief Stores settings for `computeJacobianSpectrumBounds`.
    *
-   *  The ParameterList should contain the entries defined in
-   *  PhiEvaluator::getValidParametersBasic() under the "Eigensolver" sublist.
-   *  When null, all eigensolver parameters fall back to compiled-in defaults.
+   * The `Teuchos::ParameterList` uses the "Eigensolver" entries from
+   * `PhiEvaluator::getValidParametersBasic()`, including iterative-solver
+   * controls and the dense fallback dimension.
+   * @param pl Nonnull nonconst `Teuchos::RCP` to the eigensolver settings; set
+   *   this before requesting spectrum bounds.
    */
   void setEigensolverParams(Teuchos::RCP<Teuchos::ParameterList> pl);
 
-  /** \brief Initialize PhiSolver
+  /**
+   * @brief Verifies that the model and the operators required by `mode` are cached.
    *
-   *  This function will check if mass matrix and Jacobian have been computed.
-   *  This function does not make member data consistent, but just checks it.
-   *  This ensures it is inexpensive.
+   * This inexpensive check does not assemble or repair any operator.
+   * @param mode `PhiInitialization` level required by the pending operation.
+   * @throws std::logic_error if the model, mass operators, or requested
+   *   Jacobian operator is unavailable.
    */
-  /// Return if PhiSolver is initialized.
   void checkInitialized(const PhiInitialization& mode) const;
 
+  /** @brief Assembles \f$M\f$ at `inArgs` and caches its `Thyra::LinearOpBase<Scalar>` representation and inverse action. */
   void computeMassMatrix(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs);
+
+  /** @brief Computes \f$Mf\f$ using the cached full or lumped mass operator.
+   * @param Mf Writable `Thyra::VectorBase<Scalar>` in the mass range.
+   * @param f Const `Thyra::VectorBase<Scalar>` in the mass domain.
+   */
   void applyMass(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> Mf,
-                 const Teuchos::RCP<const Thyra::VectorBase<Scalar>> f) const;
+                  const Teuchos::RCP<const Thyra::VectorBase<Scalar>> f) const;
+
+  /** @brief Computes the cached inverse-mass action \f$f=M^{-1}Mf\f$.
+   * @param f Writable `Thyra::VectorBase<Scalar>` in the mass domain.
+   * @param Mf Const mass-weighted `Thyra::VectorBase<Scalar>` in the mass range.
+   */
   void solveMass(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> f,
-                 const Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mf) const;
+                  const Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mf) const;
 
+  /** @brief Assembles and caches \f$J_{\mathrm{impl}}\f$ at `inArgs`; a mass operator must already be available. */
   void computeJacobian(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs);
-  void applyJacobian(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> Jf,
-                     const Teuchos::RCP<const Thyra::VectorBase<Scalar>> f) const;
 
-  // build and return a dt-scaled LinOp
+  /** @brief Computes \f$J_{\mathrm{impl}}f\f$ using the cached implicit residual Jacobian.
+   * @param Jf Writable `Thyra::VectorBase<Scalar>` in the Jacobian range.
+   * @param f Const `Thyra::VectorBase<Scalar>` in the Jacobian domain.
+   */
+  void applyJacobian(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> Jf,
+                      const Teuchos::RCP<const Thyra::VectorBase<Scalar>> f) const;
+
+  /**
+   * @brief Builds the linear operator \f$L=-dt M^{-1}J_{\mathrm{impl}}\f$.
+   * @param dt Scalar time increment used to scale the operator.
+   * @return Const `Teuchos::RCP` to the composed Thyra operator.
+   * @pre Mass and Jacobian operators have been assembled at the intended
+   *   linearization point.
+   */
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> buildL(const Scalar dt) const;
 
-  // TODO: make that one public function
-  // build and return extended LinOp
+  /**
+   * @brief Builds the block extension used to evaluate a linear combination of phi functions.
+   *
+   * For `p = rhs_B.size() - 1`, returns
+   * \f$\widetilde A=[L\ B;0\ K]\f$, where \f$L=-dt M^{-1}J_{\mathrm{impl}}\f$,
+   * \f$K\in\mathbb{R}^{p\times p}\f$ has ones on its superdiagonal, and
+   * \f$B\in V^{N\times p}\f$ contains `rhs_B[p]` through `rhs_B[1]` in
+   * reverse column order.  Null right-hand-side RCPs produce zero columns.
+   * @param dt Scalar time increment.
+   * @param rhs_B Array view with `p + 1` mass-solved vectors; `p` must be at
+   *   least one.
+   * @return Const `Teuchos::RCP` to the two-block Thyra operator on
+   *   \f$V^N\times\mathbb{R}^p\f$.
+   */
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> buildATilde(
       const Scalar dt,
       const Teuchos::ArrayView<const Teuchos::RCP<const Thyra::VectorBase<Scalar>>> &rhs_B) const;
 
-  // build and return the right hand side for the extended LinOp
+  /**
+   * @brief Builds the extended initial vector \f$[x_0;e_p]\f$ for `buildATilde`.
+   *
+   * The first product block receives `x0` (or zeros for a null RCP); the
+   * auxiliary block has dimension `p` and is zero except for its final entry,
+   * which is one.
+   * @param space Product `Thyra::VectorSpaceBase<Scalar>` returned by the
+   *   extended operator domain.
+   * @param x0 Const state-space `Thyra::VectorBase<Scalar>` for the first
+   *   block, or null for a zero block.
+   * @return Writable two-block `Thyra::ProductVectorBase<Scalar>`.
+   */
   Teuchos::RCP<Thyra::ProductVectorBase<Scalar>> buildv(
       const Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar>> space,
       const Teuchos::RCP<const Thyra::VectorBase<Scalar>> x0) const;
 
-  /** \brief Compute the extrema of the the scaled system Jacobian.
-  *
-  *   Computes the minimum real, maximum real and maximum imaginary components
-  *   of the Jacobian spectrum using Anasazi block Krylov-Schur.
-  *   These values maybe used to set hyperparameters of the PhiEvaluators.
-  *
-   @param a    The minimum real spectrum bound
-   @param b    The maximum real spectrum bound
-   @param c    The maximum imaginary spectrum bound
-  */
+  /**
+   * @brief Estimates zero-inclusive bounds of the spectrum of \f$-M^{-1}J_{\mathrm{impl}}\f$.
+   *
+   * For systems at or below the configured dense fallback dimension, the
+   * method forms a replicated dense operator and computes all eigenvalues with
+   * LAPACK.  Larger systems use Anasazi block Krylov-Schur Ritz values, which
+   * may be unconverged and need not bound the full spectrum.  The results are
+   * unscaled by `dt` and are intended for evaluator tuning such as a Leja
+   * ellipse, not as certified spectral bounds.
+   * @param a Output `double` set to the lesser of zero and the smallest
+   *   observed real part.
+   * @param b Output `double` set to the greater of zero and the largest
+   *   observed real part.
+   * @param c Output `double` set to the largest observed absolute imaginary
+   *   part.
+   */
   void computeJacobianSpectrumBounds(double& a, double& b, double& c);
 
-  // Solve Mass plus Jacobian, for given inArgs (recompute matrices from from ModelEvaluator)
+  /** @brief Assembles \f$alpha M + beta J_{\mathrm{impl}}\f$ at `inArgs` and solves the resulting linear system.
+   * @param inArgs Model-evaluation inputs used for the assembly.
+   * @param x Writable `Thyra::VectorBase<Scalar>` receiving the solution.
+   * @param Mf Const right-hand-side `Thyra::VectorBase<Scalar>`.
+   * @param alpha Scalar multiplying the mass operator.
+   * @param beta Scalar multiplying the Jacobian operator.
+   * @return Thyra status reported by the linear solve.
+   * @note This code path does not support mass lumping and is currently unused.
+   */
   Thyra::SolveStatus<Scalar> assembleAndsolveMpJ(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
                                                  const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
                                                  const Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mf,
                                                  Scalar alpha = 1., Scalar beta = 0.) const;
 
-  // Solve Mass plus Jacobian, for precomputed Mass and Jacobian
+  /** @brief Solves \f$(alpha M + beta J_{\mathrm{impl}})x=Mf\f$ with cached operators.
+   * @param x Writable `Thyra::VectorBase<Scalar>` receiving the solution.
+   * @param Mf Const right-hand-side `Thyra::VectorBase<Scalar>`.
+   * @param alpha Scalar multiplying the cached mass operator.
+   * @param beta Scalar multiplying the cached Jacobian operator.
+   * @return Thyra status reported by the linear solve.
+   * @pre Mass and Jacobian operators have been assembled.
+   * @note This code path does not currently support pre-conditioning and uses a default iterative solver.
+   */
   Thyra::SolveStatus<Scalar> solveMpJ(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
                                       const Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mf,
                                       Scalar alpha=1., Scalar beta=0.) const;
 
  private:
+  /// Const `Teuchos::RCP` to the application model that assembles operators.
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > appModel_;
+  /// `bool` selecting row-sum lumping for future mass assemblies.
   bool lumpMass_;
-  bool isInitialized_;
 
-  // massMatrix_ and inverseMassMatrix_ are either lumped, or not, depending on bool lumpMass_
+  /// Cached full or row-sum-lumped `Thyra::LinearOpBase<Scalar>` mass operator.
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> massMatrix_;
+  /// Cached `Thyra::LinearOpBase<Scalar>` implementing the corresponding (full or lumped) inverse-mass action.
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> inverseMassMatrix_;
 
+  /// Cached implicit residual `Thyra::LinearOpBase<Scalar>` Jacobian at the latest requested linearization point.
   Teuchos::RCP<Thyra::LinearOpBase<Scalar>> jacobianMatrix_;
 
-  // internal variables for extended matrix strategy
-  Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> Atilde_;
-  Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> KMatrix_;
-  Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> bMatrix_;
-
-  // internal storage for eigenvectors of the M^{-1}*J LinOp
+  /// Previous Krylov-Schur eigenvectors for warm-starting spectrum estimates of \f$-M^{-1}J_{\mathrm{impl}}\f$.
   Teuchos::RCP<Thyra::MultiVectorBase<Scalar>> evecsMinvJ_;
 
-  // eigensolver parameters forwarded from the owning PhiEvaluator
+  /// Eigensolver settings forwarded from the owning `PhiEvaluator`.
   Teuchos::RCP<Teuchos::ParameterList> eigensolverPL_;
-  // internal methods for the ATilde LinOp
+  /** @brief Builds the `p` by `p` superdiagonal shift operator used by the block extension. */
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> buildK(const Thyra::Ordinal max_phi_order) const;
+  /** @brief Builds the `N` by `p` extension block from mass-solved phi right-hand sides. */
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> buildB(
       const Teuchos::ArrayView<const Teuchos::RCP<const Thyra::VectorBase<Scalar>>> &rhs_B) const;
 };
 
 
-/** \brief PhiEvaluator evaluates
+/**
+ * @brief Abstract mass-aware interface for actions of phi functions in exponential integrators.
  *
- *  \f$[x = \varphi_k(J) b]\f$, where
+ * At a selected model linearization point, the base implementation uses
+ * \f$L=-dtM^{-1}J_{\mathrm{impl}}\f$.  Positive-order right-hand sides use
+ * the mass-aware interface from the exponential-integrator formulation:
+ * callers provide `Mrhs_b = M b` and the evaluator obtains `b` internally.
+ * Derived classes can implement `computeLinOpPhi` for their approximation method.
  *
- *   - b is a right hand side vector
- *   - J is a linear operator
+ * @tparam Scalar Scalar type used by the model, Thyra spaces, and operators.
  */
 template <class Scalar>
 class PhiEvaluator
   : virtual public Teuchos::Describable,
     virtual public Teuchos::VerboseObject<PhiEvaluator<Scalar> > {
  public:
+  /** @brief Constructs an unconfigured evaluator named "Phi Evaluator". */
   PhiEvaluator();
 
-  PhiEvaluator(
-      std::string name);
+  /** @brief Constructs an unconfigured evaluator with a caller-supplied name.
+   * @param name Descriptive `std::string` used in diagnostics and parameters.
+   */
+  PhiEvaluator(std::string name);
 
   ~PhiEvaluator() {}
 
   /// \name Basic PhiEvaluator Methods
   //@{
-
-  /// Make a shallow copy of PhiEvaluator (i.e., only RCPs).
-  void copy(Teuchos::RCP<const PhiEvaluator<Scalar> > sh);
-  //@}
-
-  /// \name Accessor methods
-  //@{
-  /// Get this PhiEvaluator's name
+  /// @brief Returns this evaluator's descriptive `std::string` name.
   std::string getName() const { return name_; }
 
-  /// Set this PhiEvaluator's name
+  /** @brief Replaces this evaluator's descriptive name.
+   * @param name `std::string` used in descriptions and parameter-list names.
+   */
   void setName(std::string name) { name_ = name; }
 
-  /// Return a valid ParameterList with current settings.
+  /** @brief Returns the valid `Teuchos::ParameterList` schema for this evaluator, including derived-class settings. */
   virtual Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
-  /// Return a valid ParameterList with basic settings.
+  /**
+   * @brief Returns the base evaluator parameter schema.
+   *
+   * "Lump Mass Matrix" selects the row-sum diagonal mass approximation.
+   * "Constant Mass Matrix" permits reuse of the cached mass operator across
+   * linearization updates; callers must set it consistently with the model.
+   * The "Eigensolver" sublist controls spectrum estimates used by evaluators
+   * that adapt to the current Jacobian.
+   */
   Teuchos::RCP<Teuchos::ParameterList> getValidParametersBasic() const;
 
-  /// Return a valid non-const ParameterList with current settings.
+  /** @brief Returns a non-const `Teuchos::ParameterList` view of the valid parameter schema. */
   Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList();
 
-  /// Set the parameters from a ParameterList
+  /**
+   * @brief Validates and applies base evaluator settings from `pl`.
+   *
+   * The mass-lumping and mass-caching entries control subsequent
+   * `setLinearizationPoint` calls.  The "Eigensolver" sublist is copied and
+   * forwarded to the `PhiLinearSolver` when one is available.
+   * @param pl Nonnull `Teuchos::ParameterList` containing this evaluator's
+   *   supported settings.
+   */
   virtual void setPhiEvaluatorValues(Teuchos::RCP<Teuchos::ParameterList> pl);
+
+  /**
+   * @brief Marks the evaluator ready after verifying that a model and linear solver exist.
+   *
+   * This inexpensive operation only checks that model and internal phiSolver have been initialized
+   * but does not assemble \f$M\f$ or \f$J_{\mathrm{impl}}\f$;
+   * call `setLinearizationPoint` before an operation that requires them.
+   */
+  void initialize();
+
+  /// @brief Returns whether `initialize()` has completed successfully.
+  bool isInitialized() const { return isInitialized_; }
+
+  /** @brief Throws `std::logic_error` unless `initialize()` has completed. */
+  void checkInitialized() const;
+  //@}
 
   /// \name Overridden from Teuchos::Describable
   //@{
@@ -198,97 +336,155 @@ class PhiEvaluator
                         const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
 
-  /** \brief Initialize PhiEvaluator
-   *
-   *  This function will check if all member data is initialized
-   *  and is consistent.  This function does not make member data
-   *  consistent, but just checks it.  This ensures it is inexpensive.
+  /** @brief Selects row-sum mass lumping for subsequent mass assemblies.
+   * @param lumpMassMatrix Boolean selecting the lumped approximation.
    */
-  void initialize();
-
-  /// Return if PhiEvaluator is initialized.
-  bool isInitialized() const { return isInitialized_; }
-
-  void checkInitialized() const;
-
   void setLumpMassMatrix(bool lumpMassMatrix);
+  /** @brief Selects whether a cached mass operator may be reused across linearization updates.
+   * @param constantMassMatrix Boolean indicating that \f$M\f$ is constant in inArgs
+   * and only depends on the model (i.e. does not need to be rebuilt if already present).
+   * @note Switching from `true` to `false` clears cached mass and Jacobian
+   *   operators; no model property is independently verified.
+   */
   void setConstantMassMatrix(bool constantMassMatrix);
 
-  /// set the ModelEvaluator
+  /**
+   * @brief Associates an application model and creates its `PhiLinearSolver`.
+   * @param appModel Const `Teuchos::RCP` to the `Thyra::ModelEvaluator<Scalar>`
+   *   from which \f$M\f$ and \f$J_{\mathrm{impl}}\f$ are assembled.
+   * @note Call `initialize()` after setting the model.
+   */
   void setModel(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > appModel);
 
-  /** \brief   Set the linearization point for the Jacobian calculation
+  /**
+   * @brief Updates cached operators for a model linearization point.
    *
-   *  The linearization point x and time t are taken from inArgs.
-   *  This computes the Mass and Jacobian matrix for future use.
+   * The state, time, and other model inputs are copied from `inArgs`.  The
+   * mass operator is assembled unless it is cached under the caller-declared
+   * constant-mass setting.  `JACOBIAN_AND_MASS` also reassembles
+   * \f$J_{\mathrm{impl}}\f$; use it before `computePhi`, `computePhis`, or
+   * spectrum adaptation.  `ONLY_MASS` is sufficient for mass application or
+   * inverse-mass actions.
+   * @param inArgs `Thyra::ModelEvaluatorBase::InArgs<Scalar>` defining the
+   *   intended linearization point.
+   * @param mode Requested `PhiInitialization` level; the default assembles
+   *   both mass and Jacobian.
    */
   void setLinearizationPoint(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
                              const PhiInitialization& mode = PhiInitialization::JACOBIAN_AND_MASS);
 
-  /** \brief   Adapt internal PhiEvaluator hyperparameters to the current Jacobian.
+  /** @brief Adapts method-specific settings to the currently cached Jacobian.
    *
-   *  Called after setLinearizationPoint.  Default implementation is a null-op.
-   *  This method should be overridden by inheriting PhiEvaluator implementations when
-   *  there are hyperparameters of the method that require analysis of the Jacobian.
+   * Call after `setLinearizationPoint` with `JACOBIAN_AND_MASS`.  The base
+   * implementation is a no-op; derived evaluators may estimate the spectrum
+   * or adjust approximation parameters.
    */
   virtual void adaptEvaluator() { this->isInitialized(); };
 
-  /** \brief  Compute the Phi_k function of cdt*Jacobian for right hand side Mrhs_b
+  /**
+   * @brief Computes one mass-aware phi-function action at the cached linearization point.
    *
-   *  phi_order is the index of the phi-function Phi_k.
-   *  For an implicit model, the right hand side contains the mass matrix M,
-   *  which is solved as part of this method.
+   * With \f$L=-c \Delta t M^{-1}J_{\mathrm{impl}}\f$, the base implementation applies
+   * the cached inverse mass action to `Mrhs_b` before evaluating
+   * \f$\varphi_k(L)b\f$.
+   * @param x Writable `Thyra::VectorBase<Scalar>` receiving the result.
+   * @param phi_order Nonnegative `int` phi-function index `k`.
+   * @param cdt Scalar multiplier  \f$ c \Delta t\f$ for the cached mass-inverted Jacobian.
+   * @param Mrhs_b Const state-space `Thyra::VectorBase<Scalar>` holding the
+   *   mass-containing right-hand side \f$M b\f$; the base implementation applies the
+   *   inverse mass action for every order.
+   * @return `Thyra::SolveStatus<Scalar>` returned by the selected evaluator.
+   * @pre The evaluator is initialized and mass and Jacobian operators have
+   *   been assembled for the intended linearization point.
    */
   virtual Thyra::SolveStatus<Scalar> computePhi(
       const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
       const int phi_order, const Scalar cdt,
       const Teuchos::RCP<const Thyra::VectorBase<Scalar>> &Mrhs_b);
 
-  /** \brief  Compute the Phi function of cdt times Jacobian for a linear combination of vectors Mrhs_B
+  /**
+   * @brief Computes a linear combination of mass-aware phi-function actions.
    *
-   *  The vectors in Mrhs_B are at the index of the vector corresponding to the phi_order of the
-   *  respective Phi function, Mrhs_b[0] is the rhs for the matrix exponential, Mrhs_b[1] is the
-   *  right-hand side for the phi_1 function. A Teuchos::null RCP is interpreted as a zero vector.
-   *  For an implicit model, the right hand side contains a multiplication with the mass matrix M,
-   *  which is solved as part of this method.
+   * For `p = Mrhs_B.size() - 1`, computes
+   * \f$\sum_{s=0}^{p}\varphi_s(-c \Delta t M^{-1}J_{\mathrm{impl}})b_s\f$.
+   * Each positive entry `Mrhs_B[s]` represents \f$M b_s\f$.
+   * The array has one entry per order from zero through `p`; a null RCP
+   * denotes a zero vector.
+   * @param x Writable `Thyra::VectorBase<Scalar>` receiving the sum.
+   * @param cdt Scalar multiplier  \f$ c \Delta t\f$ for the cached mass-inverted Jacobian.
+   * @param Mrhs_B Nonempty `Teuchos::ArrayView` of const vector RCPs, indexed
+   *   by phi order represents \f$M b_s\f$.
+   * @return `Thyra::SolveStatus<Scalar>` returned by the extended evaluation.
+   * @pre The evaluator is initialized and mass and Jacobian operators have
+   *   been assembled for the intended linearization point.
    */
   virtual Thyra::SolveStatus<Scalar> computePhis(
       const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
       const Scalar cdt,
       const Teuchos::ArrayView<const Teuchos::RCP<const Thyra::VectorBase<Scalar>>> &Mrhs_B);
 
-  // Multiply the mass matrix (lumped or not) with right hand side f
+  /** @brief Applies the cached full or lumped mass operator.
+   * @param Mf Writable `Thyra::VectorBase<Scalar>` receiving \f$Mf\f$.
+   * @param f Const state-space `Thyra::VectorBase<Scalar>`.
+   * @pre A mass operator has been assembled.
+   */
   void applyMass(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> Mf,
                  const Teuchos::RCP<const Thyra::VectorBase<Scalar>> f) const;
 
-  // Invert the mass matrix (lumped or not) with right hand side Mf
+  /** @brief Applies the cached inverse-mass action.
+   * @param f Writable `Thyra::VectorBase<Scalar>` receiving \f$M^{-1}Mf\f$.
+   * @param Mf Const mass-containing `Thyra::VectorBase<Scalar>`.
+   * @pre A mass operator has been assembled.
+   */
   void solveMass(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> f,
                  const Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mf) const;
 
-  // Multiply the MassJacobian matrix with right hand side Mf
+  /** @brief Applies the cached implicit residual Jacobian.
+   * @param MJf Writable `Thyra::VectorBase<Scalar>` receiving
+   *   \f$J_{\mathrm{impl}}f\f$.
+   * @param f Const state-space `Thyra::VectorBase<Scalar>`.
+   * @pre Mass and Jacobian operators have been assembled.
+   */
   void applyJacobian(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> MJf,
                      const Teuchos::RCP<const Thyra::VectorBase<Scalar>> f) const;
 
  protected:
+  /// Descriptive `std::string` used by parameter lists and diagnostics.
   std::string name_;
+  /// `bool` selecting row-sum mass lumping for the managed linear solver.
   bool lumpMassMatrix_;
+  /// Caller-declared `bool` permitting reuse of a cached mass operator.
   bool constantMassMatrix_;
+  /// `bool` selecting the block extension for positive-order single-RHS calls.
   bool useAtildeForSingleRHS_;
 
   bool isInitialized_;  ///< Bool if PhiEvaluator is initialized.
 
+  /// Const `Teuchos::RCP` to the model used to define the cached operators.
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>> appModel_;
+  /// `Teuchos::RCP` to the mass/Jacobian cache and operator builder.
   Teuchos::RCP<Tempus::PhiLinearSolver<Scalar>> phiLinSolv_;
 
-  /// Eigenvalue solver settings
+  /// `Teuchos::ParameterList` forwarded to spectrum estimation when configured.
   Teuchos::RCP<Teuchos::ParameterList> eigensolverPL_;
 
-  //mutable
+  /// Owned `InArgs` copy describing the most recently requested linearization point.
   Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs_lin_;
 
-  /** \brief  Internal method for a LinOp, used for default impl. of computePhi/computePhis
+  /**
+   * @brief Evaluates a method-specific phi action in place.
    *
-   *  Computes v := phi_{phi_order}(L)v in place (overwriting the rhs with the result)
+   * The base implementations of `computePhi` and `computePhis` construct an
+   * ordinary or extended operator and use this hook to overwrite `v` with
+   * \f$\varphi_{\mathrm{phi\_order}}(L)v\f$.  The extended route always
+   * requests order zero because it evaluates a matrix exponential.
+   * @param phi_order Nonnegative `int` phi index required by the method.
+   * @param L Const `Teuchos::RCP` to the already scaled Thyra operator.
+   * @param v Writable `Thyra::VectorBase<Scalar>` input/output vector in the
+   *   operator domain/range.
+   * @param cdt Scalar timestep factor retained for methods that need it for
+   *   approximation scaling; `L` already contains this factor in the base path.
+   * @return Method-specific `Thyra::SolveStatus<Scalar>`.
    */
   virtual Thyra::SolveStatus<Scalar> computeLinOpPhi(
       const int phi_order,
@@ -298,8 +494,19 @@ class PhiEvaluator
     ) = 0;
 };
 
-/// Nonmember helper to convert a Thyra LinearOp to a SerialDenseMatrix
-// ------------------------------------------------------------------------
+/**
+ * @brief Materializes a Thyra linear operator as a replicated serial dense matrix.
+ *
+ * The returned `Teuchos::SerialDenseMatrix<int, Scalar>` has
+ * `lop->range()->dim()` rows and `lop->domain()->dim()` columns.  Every rank
+ * applies `lop` to the distributed identity and participates in a sum
+ * reduction, so each rank receives the complete dense matrix.  This helper is
+ * therefore intended only for small operators, such as the spectrum-estimation
+ * dense fallback.
+ * @param lop Const `Teuchos::RCP` to an operator with SPMD domain and range
+ *   spaces.
+ * @return Dense global matrix in column-major logical indexing.
+ */
 template <class Scalar>
 Teuchos::SerialDenseMatrix<int, Scalar>
 operatorToDense(Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> lop)
@@ -330,8 +537,8 @@ operatorToDense(Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> lop)
 
   Thyra::assign(Id.ptr(), Scalar(0));
 
-  // Build distributed identity. Each rank sets only the identity entries
-  // whose domain rows it owns.
+  // Build the distributed identity: each rank writes only its owned domain
+  // entries, then the operator application obtains all global columns.
   for (int jLocal = 0; jLocal < colLocalDim; ++jLocal) {
     const int jGlobal = colOffset + jLocal;
 
@@ -344,8 +551,8 @@ operatorToDense(Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> lop)
 
   Thyra::apply(*lop, Thyra::NOTRANS, *Id, Y.ptr(), Scalar(1), Scalar(0));
 
-  // Local contribution to the dense matrix.
-  // Column-major indexing: i + j*numRows.
+  // Store locally owned output rows in global, column-major positions
+  // (i + j * numRows) before the collective reconstruction.
   std::vector<Scalar> localDense(numRows * numCols, Scalar(0));
   std::vector<Scalar> globalDense(numRows * numCols, Scalar(0));
 
@@ -364,9 +571,8 @@ operatorToDense(Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> lop)
     }
   }
 
-  // Combine local pieces. Since each row is owned by one rank,
-  // sum-reduction reconstructs the full dense matrix on every rank.
-  // Ignore the logic if comm is null.
+  // Because each row has one owner, this collective sum reconstructs the full
+  // dense matrix on every rank.  A null communicator needs no reduction.
   if (comm.is_null()) {
     globalDense = localDense;
   }
@@ -390,8 +596,17 @@ operatorToDense(Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> lop)
   return globalDenseMat;
 }
 
-/// Nonmember helper to compute eigenvalues of a SerialDenseMatrix
-// ------------------------------------------------------------------------
+/**
+ * @brief Computes eigenvalues of a square dense matrix using LAPACK GEEV.
+ * @tparam OrdinalType Ordinal type used by the dense matrix and LAPACK.
+ * @tparam Scalar Scalar type of matrix entries and eigenvalue components.
+ * @param A Square `Teuchos::SerialDenseMatrix` copied before LAPACK overwrites it.
+ * @param eigs_re Output `Teuchos::Array<Scalar>` with one real component per
+ *   matrix row.
+ * @param eigs_im Output `Teuchos::Array<Scalar>` with one imaginary component
+ *   per matrix row.
+ * @return LAPACK `info` status from GEEV.
+ */
 template<typename OrdinalType, typename Scalar>
 int denseEigenvalues(const Teuchos::SerialDenseMatrix<OrdinalType, Scalar>& A,
                            Teuchos::Array<Scalar>& eigs_re,
