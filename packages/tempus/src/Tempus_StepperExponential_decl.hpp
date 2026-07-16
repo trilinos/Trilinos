@@ -13,6 +13,7 @@
 // Tempus
 #include "Tempus_config.hpp"
 #include "Tempus_Stepper.hpp"
+#include "Tempus_StepperState.hpp"
 #include "Tempus_PhiEvaluator.hpp"
 
 /**
@@ -45,8 +46,38 @@ class ExponentialODEParameters {
   int stageNumber_;
 };
 
-
 namespace Tempus {
+
+/** \brief StepperStateExponential is derived from StepperState to store additional information relevant
+ * to exponential Steppers.
+ *
+ * <b>Additional State</b>
+ *   - lastLinearizationPoint_: the index of the state in the SolutionHistory, where the linearization point was set last.
+ *     A negative number (default -1) means that the linearization point was never set, or the linear operator / Jacobian 
+ *     needs to be computed in every step (Rosenbrock method).
+ */
+template <class Scalar>
+class StepperStateExponential : public Tempus::StepperState<Scalar>
+{
+ public:
+  /// Constructor (inherit all)
+  using StepperState<Scalar>::StepperState;
+
+  /// Clone copy constructor
+  virtual Teuchos::RCP<Tempus::StepperState<Scalar>> clone() const;
+
+  /// This is a deep copy
+  virtual void copy(const Teuchos::RCP<const StepperState<Scalar> >& ss);
+
+  /// \name Overridden from Teuchos::Describable
+  //@{
+  virtual void describe(Teuchos::FancyOStream& out,
+                        const Teuchos::EVerbosityLevel verbLevel) const;
+  //@}
+
+  /// the index of the state in the SolutionHistory, where the last linearization was performed
+  int lastLinearizationPoint_ = -1;
+};
 
 /** \brief Base class for exponential steppers using an implicit Thyra model.
  *
@@ -291,7 +322,7 @@ class StepperExponential : virtual public Tempus::Stepper<Scalar> {
   /// Check if temporal derivative correction is desired for Rosenbrock integrators
   bool getTemporalDerivative()
   {
-    return (temporal_finite_difference_eps_ > 0);
+    return (temporalFiniteDifferenceEps_ > 0);
   }
 
   /// @brief Compute the nonlinear remainder R
@@ -316,10 +347,21 @@ class StepperExponential : virtual public Tempus::Stepper<Scalar> {
     const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& Mfr = Teuchos::null
   );
 
+  /// Return positive interval number for setLinearization point (default is 0)
+  int getOperatorLinearizationInterval()
+  {
+    return operatorLinearizationInterval_;
+  }
+
+  /// Check if a new linear operator (Jacobian) needs to be assembled, and update the
+  /// index of the last linearization in the workingState
+  bool needsOperatorLinearization(const Teuchos::RCP<const Tempus::SolutionState<Scalar>>& currentState,
+                                  const Teuchos::RCP<Tempus::SolutionState<Scalar>>& workingState);
+
   /// Check if PhiEvaluator adaptivity is desired and return positive interval number
   int getAdaptPhiEvaluator()
   {
-    return adapt_phi_evaluator_interval_;
+    return adaptPhiEvaluatorInterval_;
   }
 
  private:
@@ -331,10 +373,13 @@ class StepperExponential : virtual public Tempus::Stepper<Scalar> {
 
   /// Finite difference step size used for RHS time derivative estimation
   /// needed for nonautonomous correction.
-  double temporal_finite_difference_eps_;
+  double temporalFiniteDifferenceEps_;
+
+  /// Number of time steps to wait between setLinearizationPoint (Jacobian/LinOp assembly) calls
+  int operatorLinearizationInterval_;
 
   /// Number of time steps to wait between adapt PhiEvaluator calls
-  int adapt_phi_evaluator_interval_;
+  int adaptPhiEvaluatorInterval_;
 
 };
 
