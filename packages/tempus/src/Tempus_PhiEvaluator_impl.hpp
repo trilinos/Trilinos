@@ -228,6 +228,21 @@ void PhiEvaluator<Scalar>::setConstantMassMatrix(bool constantMassMatrix)
 }
 
 template <class Scalar>
+bool PhiEvaluator<Scalar>::checkLinearizationPoint(const PhiInitialization& mode)
+{
+  // ensure that model and phiLinSolv are available
+  checkInitialized();
+
+  // check the availability of all required matrices at current linearization point
+  if (mode == PhiInitialization::JACOBIAN_AND_MASS) {
+    return this->phiLinSolv_->massInitialized() && this->phiLinSolv_->jacobianInitialized();
+  }
+  else {
+    return this->phiLinSolv_->massInitialized();
+  }
+}
+
+template <class Scalar>
 void PhiEvaluator<Scalar>::setLinearizationPoint(const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs,
                                                  const PhiInitialization& mode)
 {
@@ -403,6 +418,13 @@ bool PhiLinearSolver<Scalar>::massInitialized() const
 }
 
 template <class Scalar>
+bool PhiLinearSolver<Scalar>::jacobianInitialized() const
+{
+  // check if the jacobian matrix is initialized
+  return jacobianMatrix_ != Teuchos::null;
+}
+
+template <class Scalar>
 void PhiLinearSolver<Scalar>::clearMemory()
 {
   // this method can be used to clear all RCPs associated to big matrix allocations
@@ -423,7 +445,7 @@ void PhiLinearSolver<Scalar>::checkInitialized(const PhiInitialization& mode) co
 
   if (mode == PhiInitialization::JACOBIAN_AND_MASS) {
     TEUCHOS_TEST_FOR_EXCEPTION(
-        jacobianMatrix_ == Teuchos::null, std::logic_error,
+        !jacobianInitialized(), std::logic_error,
         "Error - PhiLinearSolver::initialize() Jacobian matrix not computed!\n");
   }
 }

@@ -20,8 +20,9 @@ template <class Scalar>
 StepperExponential<Scalar>::StepperExponential():
   appModel_(),
   phiEvaluator_(),
-  temporal_finite_difference_eps_{1.0e-5},
-  adapt_phi_evaluator_interval_{-1}
+  temporalFiniteDifferenceEps_{1.0e-5},
+  operatorLinearizationInterval_{-1},
+  adaptPhiEvaluatorInterval_{-1}
 {
   this->setStepperType("Exponential");
   this->setUseFSAL(false);
@@ -33,10 +34,24 @@ template <class Scalar>
 void StepperExponential<Scalar>::describe(
     Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel) const
 {
-  out.setOutputToRootOnly(0);
   Stepper<Scalar>::describe(out, verbLevel);
-  out << "--- StepperExponential ---\n";
-  out << "  addModel_     = " << appModel_ << std::endl;
+
+  auto l_out = Teuchos::fancyOStream(out.getOStream());
+  Teuchos::OSTab ostab(*l_out, 2, this->description());
+  l_out->setOutputToRootOnly(0);
+
+  //*l_out << "\n--- " << this->description() << " ---" << std::endl;
+
+  if ((Teuchos::as<int>(verbLevel) ==
+       Teuchos::as<int>(Teuchos::VERB_DEFAULT)) ||
+      (Teuchos::as<int>(verbLevel) >= Teuchos::as<int>(Teuchos::VERB_LOW))) {
+    *l_out << "--- StepperExponential ---\n";
+    *l_out << "  addModel_     = " << appModel_ << std::endl;
+    *l_out << "  Epsilon for RHS finite difference = " << temporalFiniteDifferenceEps_ << std::endl;
+    *l_out << "  Operator Linearization Interval   = " << operatorLinearizationInterval_ << std::endl;
+    *l_out << "  Adapt PhiEvaluator Interval       = " << adaptPhiEvaluatorInterval_ << std::endl;
+  }
+
   if (phiEvaluator_ != Teuchos::null)
     phiEvaluator_->describe(out, verbLevel);
 }
@@ -77,8 +92,9 @@ StepperExponential<Scalar>::getValidParametersBasicExponential() const
 
   // default values and docstrings for parameters are provided here:
   // TODO: document and potentially rename these options.
-  pl->template set<double>("Epsilon for RHS finite difference", temporal_finite_difference_eps_);
-  pl->template set<int>("Adapt PhiEvaluator Interval", adapt_phi_evaluator_interval_);
+  pl->template set<double>("Epsilon for RHS finite difference", temporalFiniteDifferenceEps_);
+  pl->template set<int>("Operator Linearization Interval", operatorLinearizationInterval_);
+  pl->template set<int>("Adapt PhiEvaluator Interval", adaptPhiEvaluatorInterval_);
 
   // add the PhiEvaluator sublist
   auto phiPL = Teuchos::parameterList("PhiEvaluator");
@@ -124,13 +140,14 @@ void StepperExponential<Scalar>::setStepperExponentialValues(
       this->setPhiEvaluator(phiEvaluator);
     }
 
-    // validate that the paramters from the user are valid, and ste defaults for missing values
+    // validate that the parameters from the user are valid, and set defaults for missing values
     pl->validateParametersAndSetDefaults(*this->getValidParameters());
 
     // set the validated values, or their defaults
     this->setStepperValues(pl);
-    temporal_finite_difference_eps_ = pl->get<double>("Epsilon for RHS finite difference");
-    adapt_phi_evaluator_interval_ = pl->get<int>("Adapt PhiEvaluator Interval");
+    temporalFiniteDifferenceEps_ = pl->get<double>("Epsilon for RHS finite difference");
+    operatorLinearizationInterval_ = pl->get<int>("Operator Linearization Interval");
+    adaptPhiEvaluatorInterval_ = pl->get<int>("Adapt PhiEvaluator Interval");
   }
 
 }
@@ -139,8 +156,8 @@ template<class Scalar>
 Teuchos::RCP<Tempus::StepperState<Scalar> >
 StepperExponential<Scalar>::getDefaultStepperState()
 {
-  Teuchos::RCP<Tempus::StepperState<Scalar> > stepperState =
-    rcp(new StepperState<Scalar>(this->getStepperType()));
+  Teuchos::RCP<Tempus::StepperStateExponential<Scalar> > stepperState =
+    rcp(new StepperStateExponential<Scalar>(this->getStepperType()));
   return stepperState;
 }
 
@@ -234,6 +251,22 @@ void StepperExponential<Scalar>::setInitialConditions(
     initialState->setX(x);
   }
 
+  // Reset the lastLinearizationPoint flag to ensure that a fresh Jacobian will be computed in the first step
+  RCP<const StepperStateExponential<Scalar>> ss_exp =
+    Teuchos::rcp_dynamic_cast<const StepperStateExponential<Scalar>>(initialState.getConst()->getStepperState());
+  RCP<StepperState<Scalar>> ss_nc;
+  if (ss_exp == Teuchos::null) {
+    ss_nc = this->getDefaultStepperState();
+  }
+  else {
+    // ensure that the stepper state is not constant, by resetting to a nonconst copy
+    ss_nc = ss_exp->clone();
+  }
+  initialState->setStepperState(ss_nc);
+  RCP<StepperStateExponential<Scalar>> ss_exp_nc =
+    Teuchos::rcp_dynamic_cast<StepperStateExponential<Scalar>>(initialState->getStepperState());
+  ss_exp_nc->lastLinearizationPoint_ = -1;
+
   // check and remember if the solutionHistory stores xdot
   bool xDotHistoryStored = !(xDot == Teuchos::null);
 
@@ -242,7 +275,7 @@ void StepperExponential<Scalar>::setInitialConditions(
     xDot = Thyra::createMember(x->space());
     Thyra::assign(xDot.ptr(), ST::zero());
     this->setStepperXDot(xDot);
-    }
+  }
   else
     this->setStepperXDot(xDot);
 
@@ -257,8 +290,8 @@ void StepperExponential<Scalar>::setInitialConditions(
     // assign zero to xDot, even if something was provided in currentState
     Thyra::assign(xDot.ptr(), ST::zero());
 
-    // TODO: Mark xDot as not synced or synced?
-    //initialState->setIsSynced(false);
+    // Mark xDot as not synced
+    initialState->setIsSynced(false);
   }
   else if (icConsistency == "App") {
     auto x_dot = inArgs.get_x_dot();
@@ -268,8 +301,8 @@ void StepperExponential<Scalar>::setInitialConditions(
         "        but 'App' returned a null pointer for xDot!\n");
     Thyra::assign(xDot.ptr(), *x_dot);
 
-    // TODO: Mark xDot as not synced or synced?
-    //initialState->setIsSynced(false);
+    // Mark xDot as not synced
+    initialState->setIsSynced(false);
   }
   else if (icConsistency == "Consistent") {
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -446,13 +479,13 @@ void StepperExponential<Scalar>::computeTemporalFD(
   Teuchos::RCP<Thyra::VectorBase<Scalar>> x_BC = x->clone_v();
   Teuchos::RCP<Thyra::VectorBase<Scalar>> xDot = this->getStepperXDot();
   this->evaluateExponentialODE(
-      dt_Mf_deriv, x_BC, xDot, t0 + dt * this->temporal_finite_difference_eps_, p);
+      dt_Mf_deriv, x_BC, xDot, t0 + dt * this->temporalFiniteDifferenceEps_, p);
   // this sets the Dirichlet BC in x_BC to the value at t0 + dt * eps
   // thus we need to use a temporary x_BC instead of x here
 
   // compute dt times the temporal finite difference of Mf:
   // dt_Mf_deriv = (Mf(t + eps*dt) - Mf(t)) / eps
-  Scalar one_over_eps = Scalar(1. / this->temporal_finite_difference_eps_);
+  Scalar one_over_eps = Scalar(1. / this->temporalFiniteDifferenceEps_);
   Thyra::linear_combination<Scalar>(Teuchos::tuple(-one_over_eps),
                                     Teuchos::tuple(Mf.getConst().ptr()),
                                     one_over_eps, dt_Mf_deriv.ptr());
@@ -530,6 +563,82 @@ void StepperExponential<Scalar>::computeRemf(
   if (dt_Mf_deriv != Teuchos::null) {
     Thyra::Vp_StV(remf.ptr(), Scalar((tr - t0) / dt), *dt_Mf_deriv);
   }
+}
+
+
+template <class Scalar>
+bool StepperExponential<Scalar>::needsOperatorLinearization(
+    const Teuchos::RCP<const Tempus::SolutionState<Scalar>>& currentState,
+    const Teuchos::RCP<Tempus::SolutionState<Scalar>>& workingState
+  )
+{
+  // get a const StepperStateExponential, if possible (nonconst version triggers assertion if not present)
+  auto ss_exp =
+    Teuchos::rcp_dynamic_cast<const StepperStateExponential<Scalar>>(workingState.getConst()->getStepperState());
+
+  bool needsOpLin =
+    !this->getPhiEvaluator()->checkLinearizationPoint(PhiInitialization::JACOBIAN_AND_MASS)
+    || (ss_exp == Teuchos::null)
+    || ss_exp->lastLinearizationPoint_ < 0
+    || (currentState->getIndex() - ss_exp->lastLinearizationPoint_ >= getOperatorLinearizationInterval());
+
+  //auto out = this->getOStream();
+  //workingState->getStepperState()->describe(*out, Teuchos::VERB_EXTREME);
+  //*out << "index: " << currentState->getIndex() << std::endl;
+
+  if (needsOpLin)
+  {
+    Teuchos::RCP<StepperState<Scalar>> ss_nc;
+    if (ss_exp == Teuchos::null) {
+      ss_nc = this->getDefaultStepperState();
+    }
+    else {
+      // ensure that the stepper state is not constant, by resetting to a nonconst copy
+      ss_nc = ss_exp->clone();
+    }
+    workingState->setStepperState(ss_nc);
+    auto ss_exp_nc =
+      Teuchos::rcp_dynamic_cast<StepperStateExponential<Scalar>>(workingState->getStepperState());
+    ss_exp_nc->lastLinearizationPoint_ = currentState->getIndex();
+  }
+  //workingState->getStepperState()->describe(*out, Teuchos::VERB_EXTREME);
+
+  return needsOpLin;
+}
+
+
+template <class Scalar>
+Teuchos::RCP<Tempus::StepperState<Scalar>> StepperStateExponential<Scalar>::clone() const
+{
+  Teuchos::RCP<StepperStateExponential<Scalar>> ss_out =
+    Teuchos::rcp(new StepperStateExponential<Scalar>(this->stepperName_));
+  ss_out->lastLinearizationPoint_ = this->lastLinearizationPoint_;
+  return ss_out;
+}
+
+template <class Scalar>
+void StepperStateExponential<Scalar>::copy(const Teuchos::RCP<const StepperState<Scalar> >& ss)
+{
+  this->stepperName_ = ss->stepperName_;
+  auto ss_exp = Teuchos::rcp_dynamic_cast<const StepperStateExponential<Scalar>>(ss);
+  if (ss_exp != Teuchos::null)
+  {
+    this->lastLinearizationPoint_ = ss_exp->lastLinearizationPoint_;
+  }
+}
+
+template <class Scalar>
+void StepperStateExponential<Scalar>::describe(
+    Teuchos::FancyOStream& out,
+    const Teuchos::EVerbosityLevel verbLevel) const
+{
+  Tempus::StepperState<Scalar>::describe(out, verbLevel);
+
+  auto l_out = Teuchos::fancyOStream(out.getOStream());
+  Teuchos::OSTab ostab(*l_out, 2, this->description());
+  l_out->setOutputToRootOnly(0);
+
+  *l_out << "last linearization point: " << lastLinearizationPoint_ << std::endl;
 }
 
 }  // namespace Tempus

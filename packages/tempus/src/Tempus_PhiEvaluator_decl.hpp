@@ -83,6 +83,9 @@ class PhiLinearSolver {
   /** @brief Returns `true` when both the cached `Thyra::LinearOpBase<Scalar>` mass operator and its inverse action are available. */
   bool massInitialized() const;
 
+  /** @brief Returns `true` the cached `Thyra::LinearOpBase<Scalar>` Jacobian operator is available. */
+  bool jacobianInitialized() const;
+
   /** @brief Releases cached mass, inverse-mass, and Jacobian operators; a subsequent operation must reassemble the operators it needs. */
   void clearMemory();
 
@@ -372,6 +375,9 @@ class PhiEvaluator
    */
   void setLinearizationPoint(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
                              const PhiInitialization& mode = PhiInitialization::JACOBIAN_AND_MASS);
+
+  /// Check the availability of linearization point matrices.
+  bool checkLinearizationPoint(const PhiInitialization& mode = PhiInitialization::JACOBIAN_AND_MASS);
 
   /** @brief Adapts method-specific settings to the currently cached Jacobian.
    *
