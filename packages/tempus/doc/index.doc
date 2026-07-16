@@ -148,6 +148,10 @@
   - Steppers with subSteppers:
     - \ref Tempus::StepperOperatorSplit "Operator Split"
     - \ref Tempus::StepperSubcycling "Subcycling"
+  - \ref Tempus::StepperExponential "Exponential Integration Methods"
+    - \ref Tempus::StepperExponentialEuler "Exponential Euler"
+    - \ref Tempus::StepperExponential_EPI2 "EPI2 Exponential Propagation Iterative 2nd order"
+    - \ref Tempus::StepperExponential_EPI3 "EPI3 Exponential Propagation Iterative 3rd order"
 
   \subsection solutions Solution State and Solution History
 
