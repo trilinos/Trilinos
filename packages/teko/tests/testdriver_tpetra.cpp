@@ -122,9 +122,9 @@ int main(int argc, char* argv[]) {
     // gdbIn();
     Teko_ADD_UNIT_TEST(Teko::Test::tSIMPLEPreconditionerFactory_tpetra,
                        SIMPLEPreconditionerFactory_tpetra);
-#ifdef TEKO_HAVE_EPETRA
     Teko_ADD_UNIT_TEST(Teko::Test::tDiagonalPreconditionerFactory_tpetra,
                        DiagonalPreconditionerFactory_tpetra);
+#ifdef TEKO_HAVE_EPETRA
     Teko_ADD_UNIT_TEST(Teko::Test::tBlockJacobiPreconditionerFactory_tpetra,
                        BlockJacobiPreconditionerFactory_tpetra);
     Teko_ADD_UNIT_TEST(Teko::Test::tExplicitOps_tpetra, tExplicitOps_tpetra);
