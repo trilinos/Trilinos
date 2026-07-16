@@ -29,7 +29,7 @@ namespace Test {
 
 class tDiagonalPreconditionerFactory_tpetra : public UnitTest {
  public:
-  tDiagonalPreconditionerFactory_tpetra() : fact(nullptr), pstate(nullptr) {}
+  tDiagonalPreconditionerFactory_tpetra();
   virtual ~tDiagonalPreconditionerFactory_tpetra() = default;
 
   virtual void initializeTest();
