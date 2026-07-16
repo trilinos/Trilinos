@@ -322,8 +322,8 @@ void CDR_Model_Tpetra<SC, LO, GO, Node>::evalModelImpl(
 
     RCP<tpetra_matrix> J;
     if (nonnull(W_out)) {
-      auto W_epetra = tpetra_extract::getTpetraOperator(W_out);
-      J             = rcp_dynamic_cast<tpetra_matrix>(W_epetra);
+      auto W_tpetra = tpetra_extract::getTpetraOperator(W_out);
+      J             = rcp_dynamic_cast<tpetra_matrix>(W_tpetra);
       TEUCHOS_ASSERT(nonnull(J));
     }
 

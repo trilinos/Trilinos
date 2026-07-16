@@ -10,22 +10,26 @@
 #ifndef ROL_OED_DOUBLE_WELL_PENALTY_DEF_HPP
 #define ROL_OED_DOUBLE_WELL_PENALTY_DEF_HPP
 
+#include "ROL_OED_DesignVector.hpp"
+
 namespace ROL {
 namespace OED {
 
 template<typename Real>
 DoubleWellPenalty<Real>::DoubleWellPenalty(unsigned type)
   : ProfiledClass<Real,std::string>("OED::DoubleWellPenalty"),
-    type_(type) {}
+    type_(type), bdalg_(false) {}
 
 template<typename Real>
 std::vector<Real>& DoubleWellPenalty<Real>::getData(Vector<Real> &x) const {
-  return *dynamic_cast<StdVector<Real>&>(x).getVector();
+  if (bdalg_) return *(dynamicPtrCast<StdVector<Real>>(dynamic_cast<DesignVector<Real>&>(x).getVector())->getVector());
+  else        return *dynamic_cast<StdVector<Real>&>(x).getVector();
 }
 
 template<typename Real>
 const std::vector<Real>& DoubleWellPenalty<Real>::getConstData(const Vector<Real> &x) const {
-  return *dynamic_cast<const StdVector<Real>&>(x).getVector();
+  if (bdalg_) return *(dynamicPtrCast<const StdVector<Real>>(dynamic_cast<const DesignVector<Real>&>(x).getVector())->getVector());
+  else        return *dynamic_cast<const StdVector<Real>&>(x).getVector();
 }
 
 template<typename Real>

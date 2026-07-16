@@ -604,7 +604,7 @@ ReturnType GmresPolySolMgr<ScalarType,MV,OP>::solve ()
   using Teuchos::rcp_const_cast;
 
   // Assume convergence is achieved if user does not require strict convergence.
-  ReturnType ret = Belos::Converged;
+  ReturnType retType = Converged;
 
   // Set the current parameters if they were not set before.  NOTE:
   // This may occur if the user generated the solver manager with the
@@ -672,7 +672,7 @@ ReturnType GmresPolySolMgr<ScalarType,MV,OP>::solve ()
 
     solver->setProblem( newProblem );
     
-    ret = solver->solve();
+    retType = solver->solve();
     numIters_ = solver->getNumIters();
     loaDetected_ = solver->isLOADetected();
     achievedTol_ = solver->achievedTol();
@@ -688,7 +688,7 @@ ReturnType GmresPolySolMgr<ScalarType,MV,OP>::solve ()
 
     solver->setProblem( problem_ );
     
-    ret = solver->solve();
+    retType = solver->solve();
     numIters_ = solver->getNumIters();
     loaDetected_ = solver->isLOADetected();
     achievedTol_ = solver->achievedTol();
@@ -699,10 +699,10 @@ ReturnType GmresPolySolMgr<ScalarType,MV,OP>::solve ()
     // Apply the polynomial to the current linear system
     poly_Op_->ApplyPoly( *problem_->getRHS(), *problem_->getLHS() );
     achievedTol_ = MTS::one();
-
+    
   }
 
-  return ret;
+  return retType;
 }
 
 

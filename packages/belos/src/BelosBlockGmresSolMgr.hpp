@@ -875,6 +875,7 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setDebugStatusTest(
 // solve()
 template<class ScalarType, class MV, class OP>
 ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
+  ReturnType retType = Undetermined;
 
   // Set the current parameters if they were not set before.
   // NOTE:  This may occur if the user generated the solver manager with the default constructor and
@@ -1039,6 +1040,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
           if ( convTest_->getStatus() == Passed ) {
             if ( expConvTest_->getLOADetected() ) {
               // we don't have convergence
+              retType = LossOfAccuracyDetected;
               loaDetected_ = true;
               printer_->stream(Warnings) <<
                 "Belos::BlockGmresSolMgr::solve(): Warning! Solver has experienced a loss of accuracy!" << std::endl;
@@ -1053,6 +1055,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
           ////////////////////////////////////////////////////////////////////////////////////
           else if ( maxIterTest_->getStatus() == Passed ) {
             // we don't have convergence
+            retType = MaxItersReached;
             isConverged = false;
             break;  // break from while(1){block_gmres_iter->iterate()}
           }
@@ -1064,6 +1067,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
           else if ( block_gmres_iter->getCurSubspaceDim() == block_gmres_iter->getMaxSubspaceDim() ) {
 
             if ( numRestarts >= maxRestarts_ ) {
+              retType = MaxRestartsReached;
               isConverged = false;
               break; // break from while(1){block_gmres_iter->iterate()}
             }
@@ -1116,6 +1120,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
           ////////////////////////////////////////////////////////////////////////////////////
 
           else {
+            retType = InconsistentState;
             TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
               "Belos::BlockGmresSolMgr::solve(): Invalid return from BlockGmresIter::iterate().");
           }
@@ -1126,8 +1131,10 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
             printer_->stream(Errors) << "Error! Caught std::exception in BlockGmresIter::iterate() at iteration "
                                      << block_gmres_iter->getNumIters() << std::endl
                                      << e.what() << std::endl;
-            if (convTest_->getStatus() != Passed)
+            if (convTest_->getStatus() != Passed) {
+              retType = OrthonormFailure;
               isConverged = false;
+            }
             break;
           }
           else {
@@ -1136,21 +1143,25 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 
             // Check to see if the most recent least-squares solution yielded convergence.
             sTest_->checkStatus( &*block_gmres_iter );
-            if (convTest_->getStatus() != Passed)
+            if (convTest_->getStatus() != Passed) {
+              retType = OrthonormFailure;
               isConverged = false;
+            }
             break;
           }
         }
         catch (const StatusTestNaNError& e) {
           // A NaN was detected in the solver.  Set the solution to zero and return unconverged.
+          retType = NaNDetected;
           achievedTol_ = MT::one();
           Teuchos::RCP<MV> X = problem_->getLHS();
           MVT::MvInit( *X, SCT::zero() );
           printer_->stream(Warnings) << "Belos::BlockGmresSolMgr::solve(): Warning! NaN has been detected!" 
                                      << std::endl;
-          return Unconverged;
+          return retType;
         }
         catch (const std::exception &e) {
+          retType = NonspecificException;
           printer_->stream(Errors) << "Error! Caught std::exception in BlockGmresIter::iterate() at iteration "
                                    << block_gmres_iter->getNumIters() << std::endl
                                    << e.what() << std::endl;
@@ -1268,7 +1279,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
   }
 
   if (!isConverged || loaDetected_) {
-    return Unconverged; // return from BlockGmresSolMgr::solve()
+    return retType; // return from BlockGmresSolMgr::solve()
   }
   return Converged; // return from BlockGmresSolMgr::solve()
 }

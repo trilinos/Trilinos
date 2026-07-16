@@ -240,7 +240,7 @@ testSolver (Teuchos::FancyOStream& out,
 
   myOut << "Belos solver wrapper result: "
 	<< (belosResult == Belos::Converged ? "Converged" : "Unconverged")
-	<< endl
+        << endl
 	<< "Number of iterations: " << solver->getNumIters ()
 	<< endl;
 

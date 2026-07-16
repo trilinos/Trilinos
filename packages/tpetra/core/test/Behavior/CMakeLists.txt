@@ -7,33 +7,25 @@
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Behavior_Default
-  SOURCES
-    Behavior_Default.cpp
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  SOURCES Behavior_Default.cpp ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   STANDARD_PASS_OUTPUT
-  )
+)
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Behavior_Named
-  SOURCES
-    Behavior_Named.cpp
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  SOURCES Behavior_Named.cpp ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   STANDARD_PASS_OUTPUT
-  )
+)
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Behavior_Off
-  SOURCES
-    Behavior_Off.cpp
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  SOURCES Behavior_Off.cpp ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   STANDARD_PASS_OUTPUT
-  )
+)
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Behavior_On
-  SOURCES
-    Behavior_On.cpp
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  SOURCES Behavior_On.cpp ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   STANDARD_PASS_OUTPUT
-  )
+)

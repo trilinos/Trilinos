@@ -239,14 +239,14 @@ int run(int argc, char *argv[])
       }
     }
 
-    if (ret!=Belos::Converged || badRes) {
-      success = false;
-      if (proc_verbose)
-        std::cout << std::endl << "End Result: TEST FAILED" << std::endl;
-    } else {
+    if (ret==Belos::Converged && !badRes) {
       success = true;
       if (proc_verbose)
         std::cout << std::endl << "End Result: TEST PASSED" << std::endl;
+    } else {
+      success = false;
+      if (proc_verbose)
+        std::cout << std::endl << "End Result: TEST FAILED" << std::endl;
     }
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);

@@ -69,6 +69,8 @@ namespace Amesos2 {
     global_size_t getGlobalNumCols_impl() const;
     global_size_t getGlobalNNZ_impl() const;
 
+    size_t getLocalNNZ_impl() const;
+
     template<class KV>
     void getSparseRowPtr_kokkos_view(KV & view) const {
       deep_copy_or_assign_view(view, this->mat_->graph.row_map);

@@ -167,7 +167,10 @@ int main (int argc, char *argv[])
       if (actRes > tol) badRes = true;
     }
 
-    if ( ret!=Belos::Converged || badRes) {
+    if ( ret==Belos::Converged && !badRes) {
+      // Ok
+    }
+    else {
       if (proc_verbose) {
         std::cout << "\nEnd Result: TEST FAILED" << std::endl;
       }

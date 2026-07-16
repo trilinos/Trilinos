@@ -603,10 +603,10 @@ CssMKL<Matrix,Vector>::check_css_mkl_error(EPhase phase,
   int error_i = error;
   Teuchos::broadcast(*(this->getComm()), 0, &error_i); // We only care about root's value
 
-  if( error == 0 ) return;      // No error
+  if( error_i == 0 ) return;      // No error
 
   std::string errmsg = "Other error";
-  switch( error ){
+  switch( error_i ){
   case -1:
     errmsg = "CssMKL reported error: 'Input inconsistent'";
     break;

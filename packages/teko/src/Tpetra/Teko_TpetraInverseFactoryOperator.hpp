@@ -19,13 +19,13 @@
 namespace Teko {
 namespace TpetraHelpers {
 
-/** \brief A single Epetra wrapper for all operators constructed
+/** \brief A single Tpetra wrapper for all operators constructed
  *        from an inverse operator.
  *
  * This class uses the Teko inverse factories to
- * build an Epetra_Operator that behaves like the inverse operatotr.
+ * build a Tpetra::Operator that behaves like the inverse operatotr.
  * This is done by using the InverseFactory, and letting
- * it build whatever operator is neccessary. Thus the Epetra
+ * it build whatever operator is neccessary. Thus the Tpetra
  * "layer" is just a single class that handles any generic
  * InverseFactory.
  */
@@ -53,62 +53,62 @@ class InverseFactoryOperator : public TpetraInverseOpWrapper {
    */
   virtual void initInverse(bool clearOld = false);
 
-  /** \brief Build this inverse operator from an Epetra_Operator
+  /** \brief Build this inverse operator from a Tpetra::Operator
    * passed in to this object.
    *
-   * Build this inverse opeerator from an Epetra_Operator
-   * passed in to this object. If this Epetra_Operator
-   * is an EpetraOperatorWrapper object then the block Thyra components
+   * Build this inverse operator from a Tpetra::Operator
+   * passed in to this object. If this Tpetra::Operator
+   * is an TpetraOperatorWrapper object then the block Thyra components
    * are extracted.
    *
-   * \param[in] A The Epetra source operator.
+   * \param[in] A The Tpetra source operator.
    * \param[in] clear If true, than any previous state saved by the operator
    *                  is discarded.
    */
   virtual void buildInverseOperator(const Teuchos::RCP<const Tpetra::Operator<ST, LO, GO, NT> > &A,
                                     bool clear = true);
 
-  /** \brief Build this inverse operator from an Epetra_Operator
+  /** \brief Build this inverse operator from a Tpetra::Operator
    * passed in to this object.
    *
-   * Build this inverse opeerator from an Epetra_Operator
-   * passed in to this object. If this Epetra_Operator
-   * is an EpetraOperatorWrapper object then the block Thyra components
+   * Build this inverse operator from a Tpetra::Operator
+   * passed in to this object. If this Tpetra::Operator
+   * is an TpetraOperatorWrapper object then the block Thyra components
    * are extracted.
    *
-   * \param[in] A The Epetra source operator.
+   * \param[in] A The Tpetra source operator.
    * \param[in] clear If true, than any previous state saved by the operator
    *                  is discarded.
    */
   virtual void buildInverseOperator(const Teuchos::RCP<Tpetra::Operator<ST, LO, GO, NT> > &A,
                                     bool clear = true);
 
-  /** \brief Rebuild this inverse from an Epetra_Operator passed
+  /** \brief Rebuild this inverse from a Tpetra::Operator passed
    * in this to object.
    *
-   * Rebuild this inverse from an Epetra_Operator passed
+   * Rebuild this inverse from a Tpetra::Operator passed
    * in this to object.  If <code>buildInverseOperator</code> has not been called
    * the inverse operator will be built instead. Otherwise efforts are taken
-   * to only rebuild what is neccessary. Also, that this Epetra_Operator
-   * may be an EpetraOperatorWrapper object, so the block Thyra components
+   * to only rebuild what is neccessary. Also, that this Tpetra::Operator
+   * may be an TpetraOperatorWrapper object, so the block Thyra components
    * can be extracted.
    *
-   * \param[in] A The Epetra source operator. (Should be a EpetraOperatorWrapper!)
+   * \param[in] A The Tpetra source operator. (Should be a TpetraOperatorWrapper!)
    */
   virtual void rebuildInverseOperator(
       const Teuchos::RCP<const Tpetra::Operator<ST, LO, GO, NT> > &A);
 
-  /** \brief Rebuild this inverse from an Epetra_Operator passed
+  /** \brief Rebuild this inverse from a Tpetra::Operator passed
    * in this to object.
    *
-   * Rebuild this inverse from an Epetra_Operator passed
+   * Rebuild this inverse from a Tpetra::Operator passed
    * in this to object.  If <code>buildInverseOperator</code> has not been called
    * the inverse operator will be built instead. Otherwise efforts are taken
-   * to only rebuild what is neccessary. Also, that this Epetra_Operator
-   * may be an EpetraOperatorWrapper object, so the block Thyra components
+   * to only rebuild what is neccessary. Also, that this Tpetra::Operator
+   * may be an TpetraOperatorWrapper object, so the block Thyra components
    * can be extracted.
    *
-   * \param[in] A The Epetra source operator. (Should be a EpetraOperatorWrapper!)
+   * \param[in] A The Tpetra source operator. (Should be a TpetraOperatorWrapper!)
    */
   virtual void rebuildInverseOperator(const Teuchos::RCP<Tpetra::Operator<ST, LO, GO, NT> > &A);
 

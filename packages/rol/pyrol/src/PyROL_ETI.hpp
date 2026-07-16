@@ -87,9 +87,9 @@ namespace details {
   BINDER_ROL_UTILS(double)
 }
 
-namespace OED {
-  BINDER_ROL_OED(double)
-}
+//namespace OED {
+//  BINDER_ROL_OED(double)
+//}
 
 }
 

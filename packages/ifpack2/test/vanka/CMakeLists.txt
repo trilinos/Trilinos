@@ -1,10 +1,8 @@
-
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-     TomVankaTest
-     SOURCES TomVankaTest.cpp
-     COMM serial mpi
+  TomVankaTest
+  SOURCES TomVankaTest.cpp
+  COMM serial mpi
 )
-
