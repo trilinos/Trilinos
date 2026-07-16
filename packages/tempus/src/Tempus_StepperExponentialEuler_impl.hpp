@@ -135,11 +135,17 @@ void StepperExponentialEuler<Scalar>::takeStep(
     stepperEEAppAction_->execute(solutionHistory, thisStepper,
       StepperExponentialEulerAppAction<Scalar>::ACTION_LOCATION::BEFORE_EXP);
 
-    // setup system Jacobian (and mass) at the current time t0
+    // if requested, update any hyperpameters of the phiEvaluator
     Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs = this->createInArgsExponentialODE(x, xDot, t0, p);
-    this->getPhiEvaluator()->setLinearizationPoint(inArgs, PhiInitialization::JACOBIAN_AND_MASS);
+    if (this->needsOperatorLinearization(currentState, workingState))
+    {
+      // setup system Jacobian (and mass) at the current time t0
+      this->getPhiEvaluator()->setLinearizationPoint(inArgs, PhiInitialization::JACOBIAN_AND_MASS);
+    }
+    // if this->needsOperatorLinearization returns false, it needs to ensure that Jacobian and mass are available
 
     // if requested, update any hyperpameters of the phiEvaluator
+    // TODO: move into previus loop? if no Jacobian was built, adaptation is not needed.
     const int adaptInterval = this->getAdaptPhiEvaluator();
     if ((adaptInterval > 0)
         && (workingState->getIndex() < 2 || workingState->getIndex() % adaptInterval == 0))
