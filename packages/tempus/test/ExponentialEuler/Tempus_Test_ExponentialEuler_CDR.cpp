@@ -108,6 +108,9 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
         .sublist("Time Step Control")
         .set("Initial Time Step", dt);
 
+    // Only build the Jacobian (which is constant for this test), every 50 steps
+    pl->sublist("Demo Stepper").set("Operator Linearization Interval", 50);
+
     // Update the PhiEvaluator parameters based on the PhiEvaluator type
     auto& phiList = pl->sublist("Demo Stepper").sublist("PhiEvaluator");
     if (caseName == "Leja") {
