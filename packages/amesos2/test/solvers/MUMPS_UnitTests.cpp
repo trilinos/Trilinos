@@ -583,6 +583,104 @@ namespace {
     TEST_COMPARE_FLOATING_ARRAYS( xhatnorms, xnorms, 0.005 );
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MUMPS, Partial, SCALAR, LO, GO )
+  {
+    typedef ScalarTraits<SCALAR> ST;
+
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
+    const size_t myRank = comm->getRank();
+    if (myRank==0) {
+      std::cout << std::endl
+                << " >> UnitTest for MUMPS::PartialFacto with Scalar = "
+                << ST::name() << " <<" << std::endl << std::endl;
+    }
+    typedef CrsMatrix<SCALAR,LO,GO,Node> MAT;
+    typedef MultiVector<SCALAR,LO,GO,Node> MV;
+    const size_t numRanks = comm->getSize();
+    const size_t numVecs = 1;
+
+    // Construct matrix
+    const SCALAR one  = ST::one();
+    const SCALAR mone = -one;
+    const SCALAR two  = one + one;
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    const size_t numLocal = 10;
+    const size_t numGlobal = numLocal*numRanks;
+    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm) );
+    RCP<MAT> A = rcp( new MAT(map, 3) );
+    GO base = numLocal*myRank;
+    for( size_t i = 0; i < numLocal; ++i ){
+      if (base+i > 0) {
+        A->insertGlobalValues(base+i,tuple<GO>(base+i-1),tuple<SCALAR>(mone));
+      }
+      A->insertGlobalValues(base+i,tuple<GO>(base+i),tuple<SCALAR>(two));
+      if (base+i < numGlobal-1) {
+        A->insertGlobalValues(base+i,tuple<GO>(base+i+1),tuple<SCALAR>(mone));
+      }
+    }
+    A->fillComplete();
+
+    {
+      // Create MUMPS solver
+      RCP<Amesos2::Solver<MAT,MV> > solver
+        = Amesos2::create<MAT,MV>("MUMPS", A );
+
+      // Parameters
+      Teuchos::ParameterList amesos2_paramlist;
+      amesos2_paramlist.setName("Amesos2");
+      Teuchos::ParameterList & shylubasker_paramlist = amesos2_paramlist.sublist("MUMPS");
+      shylubasker_paramlist.set("PartialFacto", 2, "Partial Factorization");
+      // Schur part has odd row IDs
+      Teuchos::Array<LO> schurPart(numGlobal);
+      for( size_t i = 0; i < numGlobal; i++) {
+        if (i%2 == 0) schurPart[i] = 0;
+        if (i%2 == 1) schurPart[i] = 1;
+      }
+      const size_t numSchur = numGlobal/2;
+      Teuchos::Array<SCALAR> schurOut(numSchur*numSchur);
+      shylubasker_paramlist.set("SchurPart", (const LO*)schurPart.getRawPtr());
+      shylubasker_paramlist.set("SchurOut", (SCALAR*)schurOut.getRawPtr());
+      shylubasker_paramlist.set("verbose", true);
+      solver->setParameters(Teuchos::rcpFromRef(amesos2_paramlist));
+
+      // Perform Partial Facto to form Schur complement
+      solver->symbolicFactorization();
+      solver->numericFactorization();
+
+      // Check Schur complement
+      const SCALAR zero = ST::zero();
+      const SCALAR half  = one / two;
+      Teuchos::Array<SCALAR> schur(numSchur*numSchur, zero);
+      if (myRank == 0) {
+        for( size_t i = 0; i < numSchur; ++i ){
+          if (i > 0) {
+            schur[i-1 + i*numSchur] = -half;
+          }
+          if (i == numSchur-1) {
+            schur[i + i*numSchur] = one+half;
+          } else {
+            schur[i + i*numSchur] = one;
+          }
+          if (base+i < numSchur-1) {
+            schur[i+1 + i*numSchur] = -half;
+          }
+        }
+        printf("[\n");
+        for( size_t i = 0; i < numSchur; ++i ){
+          for( size_t j = 0; j < numSchur; ++j ) printf("%e ",schurOut[i+j*numSchur]);
+          printf("\n");
+        }
+        printf("];\n");
+        printf("[\n");
+        for( size_t i = 0; i < numSchur; ++i ){
+          for( size_t j = 0; j < numSchur; ++j ) printf("%e ",schur[i+j*numSchur]);
+          printf("\n");
+        }
+        printf("];\n");
+      }
+      TEST_COMPARE_FLOATING_ARRAYS( schurOut, schur, 0.005 );
+    }
+  }
 
   /*
    * Instantiations
@@ -638,7 +736,8 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MUMPS, SymbolicFactorization, SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MUMPS, NumericFactorization, SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MUMPS, Solve, SCALAR, LO, GO ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MUMPS, SolveTwice, SCALAR, LO, GO )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MUMPS, SolveTwice, SCALAR, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MUMPS, Partial, SCALAR, LO, GO )
 
 
 #define UNIT_TEST_GROUP_ORDINAL( ORDINAL )              \
