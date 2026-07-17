@@ -482,7 +482,7 @@ int main_(int argc, char *argv[]) {
   stk::mesh::Selector locallyOwnedSelector = metaData.locally_owned_part();
   int numLocalNodes = stk::mesh::count_entities(bulkData, NODE_RANK, locallyOwnedSelector);
 
-  stk::mesh::for_each_entity_run(bulkData, NODE_RANK, locallyOwnedSelector,
+  stk::mesh::for_each_entity_run_no_threads(bulkData, NODE_RANK, locallyOwnedSelector,
     [&](const stk::mesh::BulkData& mesh, stk::mesh::Entity node)
     {
         ownedGIDs.push_back(mesh.identifier(node)-1);
