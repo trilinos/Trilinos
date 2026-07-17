@@ -141,6 +141,8 @@ void StepperExponential<Scalar>::setStepperExponentialValues(
     }
 
     // validate that the parameters from the user are valid, and set defaults for missing values
+    pl->remove("Default Solver",false);
+    pl->remove("Demo Solver",false);
     pl->validateParametersAndSetDefaults(*this->getValidParameters());
 
     // set the validated values, or their defaults
