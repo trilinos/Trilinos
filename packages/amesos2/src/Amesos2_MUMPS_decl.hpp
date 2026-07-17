@@ -183,10 +183,19 @@ private:
 
   void MUMPS_ERROR() const;
 
+
 #ifdef HAVE_MPI
   MPI_Comm MUMPSComm;
 #endif
 
+  // For partial factorizations
+  size_t schur_size;
+  host_ordinal_type_view schur_part;
+  host_value_type_view   schur_out;
+  scalar_type* schur_out_ptr;
+  bool only_forward_solve;
+  bool only_backward_solve;
+  mutable host_value_type_view schur_rhs;
 
   bool MUMPS_MATRIX_LOAD;
   bool MUMPS_STRUCT;
