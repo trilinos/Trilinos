@@ -174,6 +174,8 @@ testSolver (Teuchos::FancyOStream& out,
     success = false;
     return;
   }
+  out << "ret = " << convertReturnTypeToString(ret)
+      << endl;
 
   // Check that the solution vector is zeros, the achieved tolerance is 1, and the solver return Unconverged.
   bool nonZeroX = false;
@@ -185,7 +187,7 @@ testSolver (Teuchos::FancyOStream& out,
     if ( normX[i] != MTS::zero() )
       nonZeroX = true;
   } 
-  if ( nonZeroX || (ret != Belos::Unconverged) || ( solver->achievedTol() != MTS::one() ) ) {
+  if ( nonZeroX || (ret != Belos::NaNDetected) || ( solver->achievedTol() != MTS::one() ) ) {
     success = false;
     return;
   }

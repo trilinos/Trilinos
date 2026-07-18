@@ -168,6 +168,7 @@ private:
 
   // Members
   int num_threads;
+  // Partial factorization
   size_t schur_size;
   host_ordinal_type_array schur_part;
   host_value_type_array   schur_out;

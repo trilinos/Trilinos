@@ -22,7 +22,7 @@ TRIBITS_ADD_LIBRARY(
   kokkostsqr
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  )
+)
 
 #
 # Make a trivial change to this comment if you add / remove a file either to

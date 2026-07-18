@@ -43,7 +43,7 @@ jobs:
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@54f647b7e1bb85c95cddabcd46b0c578ec92bc1a
+      uses: github/codeql-action/init@99df26d4f13ea111d4ec1a7dddef6063f76b97e9
       env:
         NODE_USE_SYSTEM_CA: 1
       with:
@@ -74,12 +74,12 @@ jobs:
     - if: matrix.build-mode == 'manual'
       name: Generate CMake fragments
       run: |
-          git fetch origin ${GITHUB_BASE_REF}
+          git fetch origin ${GITHUB_BASE_REF:-${GITHUB_REF}}
 
           mkdir -p trilinos_build && cd trilinos_build
 
           source ${GITHUB_WORKSPACE}/packages/framework/GenConfig/gen-config.sh --force --cmake-fragment genconfig_fragment.cmake rhel8_gcc-openmpi_debug_shared_no-kokkos-arch_no-asan_complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables
-          ${GITHUB_WORKSPACE}/commonTools/framework/get-changed-trilinos-packages.sh origin/${GITHUB_BASE_REF} HEAD package_enables.cmake package_subprojects.cmake
+          ${GITHUB_WORKSPACE}/commonTools/framework/get-changed-trilinos-packages.sh origin/${GITHUB_BASE_REF:-${GITHUB_REF}} HEAD package_enables.cmake package_subprojects.cmake
 
     - if: matrix.build-mode == 'manual'
       name: Configure and build Trilinos
@@ -89,25 +89,11 @@ jobs:
             -DTrilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES=OFF \
             -DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES=OFF \
             -DTrilinos_ENABLE_SECONDARY_TESTED_CODE=OFF \
-            -DTrilinos_ENABLE_Amesos=OFF \
-            -DTrilinos_ENABLE_AztecOO=OFF \
-            -DTrilinos_ENABLE_Epetra=OFF \
-            -DTrilinos_ENABLE_EpetraExt=OFF \
-            -DTrilinos_ENABLE_Ifpack=OFF \
-            -DTrilinos_ENABLE_Intrepid=OFF \
-            -DTrilinos_ENABLE_Isorropia=OFF \
-            -DTrilinos_ENABLE_ML=OFF \
-            -DTrilinos_ENABLE_NewPackage=OFF \
-            -DTrilinos_ENABLE_Pliris=OFF \
-            -DTrilinos_ENABLE_PyTrilinos=OFF \
-            -DTrilinos_ENABLE_ShyLU_DDCore=OFF \
-            -DTrilinos_ENABLE_ThyraEpetraAdapters=OFF \
-            -DTrilinos_ENABLE_ThyraEpetraExtAdapters=OFF \
-            -DTrilinos_ENABLE_Triutils=OFF ..
+            ..
 
           ninja -j 16
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@54f647b7e1bb85c95cddabcd46b0c578ec92bc1a # v3.29.5
+      uses: github/codeql-action/analyze@99df26d4f13ea111d4ec1a7dddef6063f76b97e9 # v3.29.5
       with:
         category: "/language:${{matrix.language}}"

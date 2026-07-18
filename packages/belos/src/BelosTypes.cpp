@@ -168,6 +168,24 @@ namespace Belos {
       return "Converged";
     } else if (result == Belos::Unconverged) {
       return "Unconverged";
+    } else if (result == Belos::MaxItersReached) {
+      return "MaxItersReached";
+    } else if (result == Belos::MaxRestartsReached) {
+      return "MaxRestartsReached";
+    } else if (result == Belos::OrthonormFailure) {
+      return "OrthonormFailure";
+    } else if (result == Belos::NaNDetected) {
+      return "NaNDetected";
+    } else if (result == Belos::BreakdownDetected) {
+      return "BreakdownDetected";
+    } else if (result == Belos::LossOfAccuracyDetected) {
+      return "LossOfAccuracyDetected";
+    } else if (result == Belos::NonspecificException) {
+      return "NonspecificException";
+    } else if (result == Belos::InconsistentState) {
+      return "InconsistentState";
+    } else if (result == Belos::Undetermined) {
+      return "Undetermined";
     } else {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
         "Belos::convertReturnTypeToString: Invalid ReturnType enum value "

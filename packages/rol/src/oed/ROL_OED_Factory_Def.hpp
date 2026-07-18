@@ -15,6 +15,7 @@
 #include "ROL_OED_RobustConstraint.hpp"
 #include "ROL_OED_AugmentedObjective.hpp"
 #include "ROL_OED_AugmentedConstraint.hpp"
+#include "ROL_OED_BinaryPenaltyTransformation.hpp"
 
 namespace ROL {
 namespace OED {
@@ -31,6 +32,7 @@ Factory<Real>::Factory(const Ptr<Objective<Real>>           &model,
     useScale_(list.sublist("OED").get("Use Scaling",true)),
     useL1_(list.sublist("OED").get("Use L1 Penalty",false)),
     useDWP_(list.sublist("OED").get("Use Double-Well Penalty",false)),
+    useBPT_(list.sublist("OED").get("Use Binary Penalty Transformation",false)),
     L1penParam_(list.sublist("OED").get("L1 Penalty Parameter",1.0)),
     DWPparam_(list.sublist("OED").get("Double-Well Penalty Parameter",1.0)),
     DWPtype_(list.sublist("OED").get("Double-Well Penalty Type",1)),
@@ -57,6 +59,7 @@ Factory<Real>::Factory(const Ptr<Constraint<Real>>          &model,
     useScale_(list.sublist("OED").get("Use Scaling",true)),
     useL1_(list.sublist("OED").get("Use L1 Penalty",false)),
     useDWP_(list.sublist("OED").get("Use Double-Well Penalty",false)),
+    useBPT_(list.sublist("OED").get("Use Binary Penalty Transformation",false)),
     L1penParam_(list.sublist("OED").get("L1 Penalty Parameter",1.0)),
     DWPparam_(list.sublist("OED").get("Double-Well Penalty Parameter",1.0)),
     DWPtype_(list.sublist("OED").get("Double-Well Penalty Type",1)),
@@ -100,36 +103,7 @@ Ptr<Problem<Real>> Factory<Real>::get(const std::vector<Ptr<Vector<Real>>> &thet
   buildBoundConstraint(useMinMax);
   buildEqualityConstraint(useMinMax);
   buildInequalityConstraint(useMinMax);
-
-  // Build objective function
-  std::vector<Ptr<Objective<Real>>> ovec;
-  std::vector<Real> wvec;
-  if (useL1_ || useDWP_) {
-    if (useL1_) {
-      ovec.push_back(makePtr<L1Penalty<Real>>());
-      wvec.push_back(L1penParam_);
-    }
-    if (useDWP_) {
-      ovec.push_back(makePtr<DoubleWellPenalty<Real>>(DWPtype_));
-      wvec.push_back(DWPparam_);
-    }
-  }
-  if (useMinMax) {
-    if (useL1_ || useDWP_)
-      obj_ = makePtr<AugmentedObjective<Real>>(ovec,wvec);
-    else
-      obj_ = makePtr<RobustObjective<Real>>();
-  }
-  else {
-    //throw Exception::NotImplemented(">>> OED::Factory : Mean value robust OED not implemented!");
-    auto obj0 = makePtr<MeanValueObjective<Real>>(objArray_);
-    obj_ = obj0;
-    if (useL1_ || useDWP_) {
-      ovec.push_back(obj0);
-      wvec.push_back(static_cast<Real>(1));
-      obj_ = makePtr<LinearCombinationObjective<Real>>(wvec,ovec);
-    }
-  }
+  buildRobustObjective(list,useMinMax);
 
   // Build optimization problem
   Ptr<Problem<Real>> problem = makePtr<Problem<Real>>(obj_, vec_);
@@ -173,32 +147,32 @@ Ptr<Problem<Real>> Factory<Real>::get(const Ptr<Vector<Real>> &c) {
   buildEqualityConstraint();
   buildInequalityConstraint();
 
-  Ptr<Objective<Real>> obj0, obj;
+  Ptr<Objective<Real>> obj0, obj1, obj;
   obj0 = objArray_->getObjective(0u);
   computeObjectiveScaling(obj0);
-  if (useScale_) obj = makePtr<ScaledObjective<Real>>(obj0,objScale_);
-  else           obj = obj0;
-
-  Ptr<Problem<Real>> problem;
-  if (useL1_ || useDWP_) {
-    std::vector<Ptr<Objective<Real>>> ovec;
-    std::vector<Real> wvec;
-    ovec.push_back(obj);
-    wvec.push_back(static_cast<Real>(1));
-    if (useL1_) {
-      ovec.push_back(makePtr<L1Penalty<Real>>());
-      wvec.push_back(L1penParam_);
-    }
-    if (useDWP_) {
-      ovec.push_back(makePtr<DoubleWellPenalty<Real>>(DWPtype_));
-      wvec.push_back(DWPparam_);
-    }
-    Ptr<Objective<Real>> penObj = makePtr<LinearCombinationObjective<Real>>(wvec,ovec);
-    problem = makePtr<Problem<Real>>(penObj,vec_);
+  if (useScale_) obj1 = makePtr<ScaledObjective<Real>>(obj0,objScale_);
+  else           obj1 = obj0;
+  obj = obj1;
+  if (useBPT_ && useBudget_) {
+    ParameterList list;
+    auto bpt = makePtr<BinaryPenaltyTransformation<Real>>(list);
+    obj = makePtr<ChainRuleObjective<Real>>(obj1,bpt,*p_,*p_);
   }
-  else {
+
+  std::vector<Ptr<Objective<Real>>> ovec;
+  std::vector<Real> wvec;
+  buildPenalties(ovec,wvec);
+  Ptr<Problem<Real>> problem;
+  if (ovec.empty()) {
     problem = makePtr<Problem<Real>>(obj,vec_);
   }
+  else {
+    ovec.push_back(obj);
+    wvec.push_back(static_cast<Real>(1));
+    auto penObj = makePtr<LinearCombinationObjective<Real>>(wvec,ovec);
+    problem = makePtr<Problem<Real>>(penObj,vec_);
+  }
+
   problem->addBoundConstraint(bnd_);
   if (icon_!=nullPtr && imul_!=nullPtr && ibnd_!=nullPtr)
     problem->addLinearConstraint("Budget",icon_,imul_,ibnd_);
@@ -226,39 +200,10 @@ Ptr<Problem<Real>> Factory<Real>::get(const std::vector<Ptr<Vector<Real>>> &thet
   buildBoundConstraint(useMinMax);
   buildEqualityConstraint(useMinMax);
   buildInequalityConstraint(useMinMax);
-
-  // Build objective function
-  std::vector<Ptr<Objective<Real>>> ovec;
-  std::vector<Real> wvec;
-  if (useL1_ || useDWP_) {
-    if (useL1_) {
-      ovec.push_back(makePtr<L1Penalty<Real>>());
-      wvec.push_back(L1penParam_);
-    }
-    if (useDWP_) {
-      ovec.push_back(makePtr<DoubleWellPenalty<Real>>(DWPtype_));
-      wvec.push_back(DWPparam_);
-    }
-  }
-  if (useMinMax) {
-    if (useL1_ || useDWP_)
-      obj_ = makePtr<AugmentedObjective<Real>>(ovec,wvec);
-    else
-      obj_ = makePtr<RobustObjective<Real>>();
-  }
-  else {
-    //throw Exception::NotImplemented(">>> OED::Factory : Mean value robust OED not implemented!");
-    auto obj0 = makePtr<MeanValueObjective<Real>>(objArray_);
-    obj_ = obj0;
-    if (useL1_ || useDWP_) {
-      ovec.push_back(obj0);
-      wvec.push_back(static_cast<Real>(1));
-      obj_ = makePtr<LinearCombinationObjective<Real>>(wvec,ovec);
-    }
-  }
+  buildRobustObjective(list,useMinMax);
 
   // Build optimization problem
-  Ptr<StochasticProblem<Real>> problem = makePtr<StochasticProblem<Real>>(obj_, vec_);
+  auto problem = makePtr<StochasticProblem<Real>>(obj_, vec_);
 
   // Add usual OED constraints
   problem->addBoundConstraint(bnd_);
@@ -354,32 +299,31 @@ Ptr<Problem<Real>> Factory<Real>::get(ParameterList &list,
   buildEqualityConstraint();
   buildInequalityConstraint();
 
-  Ptr<Objective<Real>> obj0, obj;
+  Ptr<Objective<Real>> obj0, obj1, obj;
   obj0 = objArray_->getObjective(0u);
   computeObjectiveScaling(obj0);
-  if (useScale_) obj = makePtr<ScaledObjective<Real>>(obj0,objScale_);
-  else           obj = obj0;
+  if (useScale_) obj1 = makePtr<ScaledObjective<Real>>(obj0,objScale_);
+  else           obj1 = obj0;
+  obj = obj1;
+  if (useBPT_ && useBudget_) {
+    auto bpt = makePtr<BinaryPenaltyTransformation<Real>>(list);
+    obj = makePtr<ChainRuleObjective<Real>>(obj1,bpt,*p_,*p_);
+  }
 
+  std::vector<Ptr<Objective<Real>>> ovec;
+  std::vector<Real> wvec;
+  buildPenalties(ovec,wvec);
   Ptr<StochasticProblem<Real>> problem;
-  if (useL1_ || useDWP_) {
-    std::vector<Ptr<Objective<Real>>> ovec;
-    std::vector<Real> wvec;
-    ovec.push_back(objArray_->getObjective(0u));
-    wvec.push_back(static_cast<Real>(1));
-    if (useL1_) {
-      ovec.push_back(makePtr<L1Penalty<Real>>());
-      wvec.push_back(L1penParam_);
-    }
-    if (useDWP_) {
-      ovec.push_back(makePtr<DoubleWellPenalty<Real>>(DWPtype_));
-      wvec.push_back(DWPparam_);
-    }
-    Ptr<Objective<Real>> penObj = makePtr<LinearCombinationObjective<Real>>(wvec,ovec);
-    problem = makePtr<StochasticProblem<Real>>(penObj,vec_);
+  if (ovec.empty()) {
+    problem = makePtr<StochasticProblem<Real>>(obj,vec_);
   }
   else {
-    problem = makePtr<StochasticProblem<Real>>(objArray_->getObjective(0u),vec_);
+    ovec.push_back(obj);
+    wvec.push_back(static_cast<Real>(1));
+    auto penObj = makePtr<LinearCombinationObjective<Real>>(wvec,ovec);
+    problem = makePtr<StochasticProblem<Real>>(penObj,vec_);
   }
+
   problem->addBoundConstraint(bnd_);
   if (icon_!=nullPtr && imul_!=nullPtr && ibnd_!=nullPtr)
     problem->addLinearConstraint("Budget",icon_,imul_,ibnd_);
@@ -658,7 +602,7 @@ void Factory<Real>::buildBoundConstraint(bool useMinMax) {
     lbnd = zeros;
     ubnd = ones;
   }
-  if (useUpperBound_)
+  if (useUpperBound_ || useBPT_)
     bnd_ = makePtr<ROL::Bounds<Real>>(lbnd,ubnd);
   else
     bnd_ = makePtr<ROL::Bounds<Real>>(*lbnd,true);
@@ -709,7 +653,7 @@ void Factory<Real>::buildEqualityConstraint(bool useMinMax) {
 
 template<typename Real>
 void Factory<Real>::buildInequalityConstraint(bool useMinMax) {
-  if (!useBudget_ || equality_) {
+  if (!useBudget_ || (useBudget_ && equality_)) {
     icon_ = nullPtr;
     imul_ = nullPtr;
     ibnd_ = nullPtr;
@@ -730,6 +674,49 @@ void Factory<Real>::buildInequalityConstraint(bool useMinMax) {
       icon_ = makePtr<ScalarLinearConstraint<Real>>(cost_,budget_);
       imul_ = makePtr<SingletonVector<Real>>();
       ibnd_ = makePtr<Bounds<Real>>(*lbnd,false);
+    }
+  }
+}
+
+template<typename Real>
+void Factory<Real>::buildPenalties(std::vector<Ptr<Objective<Real>>>& ovec, std::vector<Real>& wvec) {
+  // Build penalty terms for objective function
+  if (useL1_ || (useDWP_ && useBudget_)) {
+    if (useL1_) {
+      ovec.push_back(makePtr<L1Penalty<Real>>());
+      wvec.push_back(L1penParam_);
+    }
+    if (useDWP_ && useBudget_) {
+      ovec.push_back(makePtr<DoubleWellPenalty<Real>>(DWPtype_));
+      wvec.push_back(DWPparam_);
+    }
+  }
+}
+
+template<typename Real>
+void Factory<Real>::buildRobustObjective(ParameterList& list, bool useMinMax) {
+  std::vector<Ptr<Objective<Real>>> ovec;
+  std::vector<Real> wvec;
+  buildPenalties(ovec,wvec);
+  if (useMinMax) {
+    if (useL1_ || (useDWP_ && useBudget_))
+      obj_ = makePtr<AugmentedObjective<Real>>(ovec,wvec);
+    else
+      obj_ = makePtr<RobustObjective<Real>>();
+  }
+  else {
+    //throw Exception::NotImplemented(">>> OED::Factory : Mean value robust OED not implemented!");
+    auto obj0 = makePtr<MeanValueObjective<Real>>(objArray_);
+    Ptr<Objective<Real>> obj1 = obj0;
+    if (useBPT_ && useBudget_) {
+      auto bpt = makePtr<BinaryPenaltyTransformation<Real>>(list);
+      obj1 = makePtr<ChainRuleObjective<Real>>(obj0,bpt,*p_,*p_);
+    }
+    obj_ = obj1;
+    if (useL1_ || (useDWP_ && useBudget_)) {
+      ovec.push_back(obj1);
+      wvec.push_back(static_cast<Real>(1));
+      obj_ = makePtr<LinearCombinationObjective<Real>>(wvec,ovec);
     }
   }
 }

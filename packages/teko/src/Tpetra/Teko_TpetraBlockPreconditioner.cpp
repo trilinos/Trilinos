@@ -45,15 +45,15 @@ void TpetraBlockPreconditioner::initPreconditioner(bool clearOld) {
   preconObj_ = preconFactory_->createPrec();
 }
 
-/** \brief Build this preconditioner from an Epetra_Operator
- * passed in to this object. It is assume that this Epetra_Operator
+/** \brief Build this preconditioner from a Tpetra::Operator
+ * passed in to this object. It is assume that this Tpetra::Operator
  *
- * Build this preconditioner from an Epetra_Operator
- * passed in to this object. It is assume that this Epetra_Operator
- * will be a EpetraOperatorWrapper object, so the block Thyra components
+ * Build this preconditioner from a Tpetra::Operator
+ * passed in to this object. It is assume that this Tpetra::Operator
+ * will be a TpetraOperatorWrapper object, so the block Thyra components
  * can be easily extracted.
  *
- * \param[in] A The Epetra source operator. (Should be a EpetraOperatorWrapper!)
+ * \param[in] A The Tpetra source operator. (Should be a TpetraOperatorWrapper!)
  *
  * \note This will clear any internal state stored by the state object
  */
@@ -61,7 +61,7 @@ void TpetraBlockPreconditioner::buildPreconditioner(
     const Teuchos::RCP<const Tpetra::Operator<ST, LO, GO, NT> >& A, bool clear) {
   Teko_DEBUG_SCOPE("TBP::buildPreconditioner", 10);
 
-  // extract EpetraOperatorWrapper (throw on failure) and corresponding thyra operator
+  // extract TpetraOperatorWrapper (throw on failure) and corresponding thyra operator
   RCP<const Thyra::LinearOpBase<ST> > thyraA = extractLinearOp(A);
 
   // set the mapping strategy
@@ -88,15 +88,15 @@ void TpetraBlockPreconditioner::buildPreconditioner(
   TEUCHOS_ASSERT(firstBuildComplete_ == true);
 }
 
-/** \brief Build this preconditioner from an Epetra_Operator
- * passed in to this object. It is assume that this Epetra_Operator
+/** \brief Build this preconditioner from a Tpetra::Operator
+ * passed in to this object. It is assume that this Tpetra::Operator
  *
- * Build this preconditioner from an Epetra_Operator
- * passed in to this object. It is assume that this Epetra_Operator
- * will be a EpetraOperatorWrapper object, so the block Thyra components
+ * Build this preconditioner from a Tpetra::Operator
+ * passed in to this object. It is assume that this Tpetra::Operator
+ * will be a TpetraOperatorWrapper object, so the block Thyra components
  * can be easily extracted.
  *
- * \param[in] A The Epetra source operator. (Should be a EpetraOperatorWrapper!)
+ * \param[in] A The Tpetra source operator. (Should be a TpetraOperatorWrapper!)
  * \param[in] src A vector that was used to build the source operator.
  *
  * \note This will clear any internal state stored by the state object
@@ -106,7 +106,7 @@ void TpetraBlockPreconditioner::buildPreconditioner(
     const Tpetra::MultiVector<ST, LO, GO, NT>& tpetra_mv, bool clear) {
   Teko_DEBUG_SCOPE("TBP::buildPreconditioner - with solution", 10);
 
-  // extract EpetraOperatorWrapper (throw on failure) and corresponding thyra operator
+  // extract TpetraOperatorWrapper (throw on failure) and corresponding thyra operator
   RCP<const Thyra::LinearOpBase<ST> > thyraA = extractLinearOp(A);
 
   // set the mapping strategy
@@ -137,17 +137,17 @@ void TpetraBlockPreconditioner::buildPreconditioner(
   TEUCHOS_ASSERT(firstBuildComplete_ == true);
 }
 
-/** \brief Rebuild this preconditioner from an Epetra_Operator passed
+/** \brief Rebuild this preconditioner from a Tpetra::Operator passed
  * in this to object.
  *
- * Rebuild this preconditioner from an Epetra_Operator passed
+ * Rebuild this preconditioner from a Tpetra::Operator passed
  * in this to object.  If <code>buildPreconditioner</code> has not been called
  * the preconditioner will be built instead. Otherwise efforts are taken
- * to only rebuild what is neccessary. Also, it is assumed that this Epetra_Operator
- * will be an EpetraOperatorWrapper object, so the block Thyra components
+ * to only rebuild what is neccessary. Also, it is assumed that this Tpetra::Operator
+ * will be an TpetraOperatorWrapper object, so the block Thyra components
  * can be easily extracted.
  *
- * \param[in] A The Epetra source operator. (Should be a EpetraOperatorWrapper!)
+ * \param[in] A The Tpetra source operator. (Should be a TpetraOperatorWrapper!)
  * \param[in] mv A vector that was used to build the source operator.
  */
 void TpetraBlockPreconditioner::rebuildPreconditioner(
@@ -161,7 +161,7 @@ void TpetraBlockPreconditioner::rebuildPreconditioner(
   }
   Teko_DEBUG_EXPR(Teuchos::Time timer(""));
 
-  // extract EpetraOperatorWrapper (throw on failure) and corresponding thyra operator
+  // extract TpetraOperatorWrapper (throw on failure) and corresponding thyra operator
   Teko_DEBUG_EXPR(timer.start(true));
   RCP<const Thyra::LinearOpBase<ST> > thyraA = extractLinearOp(A);
   Teko_DEBUG_EXPR(timer.stop());
@@ -185,17 +185,17 @@ void TpetraBlockPreconditioner::rebuildPreconditioner(
   TEUCHOS_ASSERT(firstBuildComplete_ == true);
 }
 
-/** \brief Rebuild this preconditioner from an Epetra_Operator passed
+/** \brief Rebuild this preconditioner from a Tpetra::Operator passed
  * in this to object.
  *
- * Rebuild this preconditioner from an Epetra_Operator passed
+ * Rebuild this preconditioner from a Tpetra::Operator passed
  * in this to object.  If <code>buildPreconditioner</code> has not been called
  * the preconditioner will be built instead. Otherwise efforts are taken
- * to only rebuild what is neccessary. Also, it is assumed that this Epetra_Operator
- * will be an EpetraOperatorWrapper object, so the block Thyra components
+ * to only rebuild what is neccessary. Also, it is assumed that this Tpetra::Operator
+ * will be an TpetraOperatorWrapper object, so the block Thyra components
  * can be easily extracted.
  *
- * \param[in] A The Epetra source operator. (Should be a EpetraOperatorWrapper!)
+ * \param[in] A The Tpetra source operator. (Should be a TpetraOperatorWrapper!)
  * \param[in] mv A vector that was used to build the source operator.
  */
 void TpetraBlockPreconditioner::rebuildPreconditioner(
@@ -210,7 +210,7 @@ void TpetraBlockPreconditioner::rebuildPreconditioner(
   }
   Teko_DEBUG_EXPR(Teuchos::Time timer(""));
 
-  // extract EpetraOperatorWrapper (throw on failure) and corresponding thyra operator
+  // extract TpetraOperatorWrapper (throw on failure) and corresponding thyra operator
   Teko_DEBUG_EXPR(timer.start(true));
   RCP<const Thyra::LinearOpBase<ST> > thyraA = extractLinearOp(A);
   Teko_DEBUG_EXPR(timer.stop());
@@ -278,10 +278,10 @@ Teuchos::RCP<const PreconditionerState> TpetraBlockPreconditioner::getPreconditi
 
 Teuchos::RCP<const Thyra::LinearOpBase<ST> > TpetraBlockPreconditioner::extractLinearOp(
     const Teuchos::RCP<const Tpetra::Operator<ST, LO, GO, NT> >& A) const {
-  // extract EpetraOperatorWrapper (throw on failure) and corresponding thyra operator
+  // extract TpetraOperatorWrapper (throw on failure) and corresponding thyra operator
   const RCP<const TpetraOperatorWrapper>& tow = rcp_dynamic_cast<const TpetraOperatorWrapper>(A);
 
-  // if it is an EpetraOperatorWrapper, then get the Thyra operator
+  // if it is an TpetraOperatorWrapper, then get the Thyra operator
   if (tow != Teuchos::null) return tow->getThyraOp();
 
   // otherwise wrap it up as a thyra operator
@@ -292,10 +292,10 @@ Teuchos::RCP<const Thyra::LinearOpBase<ST> > TpetraBlockPreconditioner::extractL
 
 Teuchos::RCP<const MappingStrategy> TpetraBlockPreconditioner::extractMappingStrategy(
     const Teuchos::RCP<const Tpetra::Operator<ST, LO, GO, NT> >& A) const {
-  // extract EpetraOperatorWrapper (throw on failure) and corresponding thyra operator
+  // extract TpetraOperatorWrapper (throw on failure) and corresponding thyra operator
   const RCP<const TpetraOperatorWrapper>& tow = rcp_dynamic_cast<const TpetraOperatorWrapper>(A);
 
-  // if it is an EpetraOperatorWrapper, then get the Thyra operator
+  // if it is an TpetraOperatorWrapper, then get the Thyra operator
   if (tow != Teuchos::null) return tow->getMapStrategy();
 
   // otherwise wrap it up as a thyra operator

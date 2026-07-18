@@ -352,6 +352,16 @@ ENDIF()
 ##### PARDISO_MKL Tests #####
 
 IF (${PACKAGE_NAME}_ENABLE_PARDISO_MKL)
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    PardisoMKL_UnitTests
+    SOURCES
+      PardisoMKL_UnitTests.cpp
+      ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    STANDARD_PASS_OUTPUT
+    )
+
   TRIBITS_COPY_FILES_TO_BINARY_DIR(SolverTestCopyPardisoMKLFiles
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
     SOURCE_FILES pardiso_mkl_test.xml

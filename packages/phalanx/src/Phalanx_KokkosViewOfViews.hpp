@@ -14,6 +14,7 @@
 #include "Sacado.hpp" // for IsADType
 #include <utility> // for declval
 #include <memory> // for shared_ptr
+#include <type_traits> // for void_t
 
 namespace PHX {
 
@@ -31,13 +32,81 @@ namespace PHX {
     { using type = Data; };
   }
 
+  // ****************************
+  // Customization point used to build the "runtime unmanaged" copy of
+  // an inner object that is stored in a ViewOfViews. This is the copy
+  // that is deep_copied into the outer device view so that the inner
+  // objects are not reference counted/double deleted on device (see
+  // the ViewOfViews class documentation below for details).
+  //
+  // The default implementation below handles the common case where
+  // the inner object is a plain Kokkos::View. To support an inner
+  // object that is a struct containing one or more Kokkos::Views
+  // (e.g. "View<MyObj*>" instead of "View<View<double**>*>"), users
+  // must provide their own overload of phalanxVoVMakeCopyWithInnerRuntimeUnmanagedViews(...)
+  // for MyObj, discoverable via ADL (i.e. defined in the same
+  // namespace as MyObj), that returns a copy of MyObj where each
+  // Kokkos::View data member has been replaced with the corresponding
+  // runtime unmanaged view (typically by calling this same function
+  // recursively on each view data member). MyObj must also be default
+  // constructible so that the outer ViewOfViews deleter can reset
+  // entries to an "empty" state on host.
+  //
+  // NOTE: This is declared directly in namespace PHX (NOT in the
+  // nested v_of_v_utils namespace) and always called unqualified so
+  // that ordinary unqualified lookup finds the Kokkos::View overload
+  // below and argument-dependent lookup (ADL) finds any user supplied
+  // overload for a struct-of-views type living in the user's own
+  // namespace.
+  // ****************************
+
+  /// Default implementation of the ViewOfViews inner-object
+  /// customization point for plain Kokkos::View inner types.
+  template<typename D,typename... P>
+  Kokkos::View<D,P...> phalanxVoVMakeCopyWithInnerRuntimeUnmanagedViews(const Kokkos::View<D,P...>& v)
+  {
+    using ViewType = Kokkos::View<D,P...>;
+    if (Sacado::IsADType<typename ViewType::value_type>::value) {
+      // For FAD types, we need to adjust the layout to account for
+      // the derivative array. The layout() method returns the
+      // non-fad adjusted layout.
+      #ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
+      auto layout = v.layout();
+      layout.dimension[ViewType::rank] = Kokkos::dimension_scalar(v);
+      return ViewType(v.data(),layout);
+      #else
+      return ViewType(v.data(),v.mapping(),v.accessor());
+      #endif
+    }
+    else {
+      return ViewType(v.data(),v.layout());
+    }
+  }
+
+  namespace v_of_v_utils {
+
+    /// Trait to detect whether phalanxVoVMakeCopyWithInnerRuntimeUnmanagedViews(...) is
+    /// defined for type T, either via the default Kokkos::View
+    /// overload above or a user supplied ADL overload for a
+    /// struct-of-views type.
+    template<typename T,typename Enable = void>
+    struct has_create_runtime_unmanaged_view : std::false_type {};
+
+    template<typename T>
+    struct has_create_runtime_unmanaged_view<T,std::void_t<decltype(phalanxVoVMakeCopyWithInnerRuntimeUnmanagedViews(std::declval<const T&>()))>>
+      : std::true_type {};
+
+    template<typename T>
+    inline constexpr bool has_create_runtime_unmanaged_view_v = has_create_runtime_unmanaged_view<T>::value;
+  }
+
   namespace details {
     struct ViewOfViewsDeleter {
       bool do_safety_check_ = false;
 
       template <class D, class... P>
       std::enable_if_t<
-          Kokkos::is_view_v<typename Kokkos::View<D, P...>::value_type>>
+          v_of_v_utils::has_create_runtime_unmanaged_view_v<typename Kokkos::View<D, P...>::value_type>>
       operator()(Kokkos::View<D, P...>* vov) const {
         Kokkos::fence("PHX:ViewOfViewsDeleter: fence before host cleanup of View of Views");
         if (do_safety_check_) {
@@ -85,7 +154,8 @@ namespace PHX {
     };
     template <class D, class... P>
     struct ViewOfViewsMaker<Kokkos::View<D, P...>> {
-      static_assert(Kokkos::is_view_v<typename Kokkos::View<D, P...>::value_type>);
+      static_assert(v_of_v_utils::has_create_runtime_unmanaged_view_v<typename Kokkos::View<D, P...>::value_type>,
+                    "\n\n********\n Error - PHX::ViewOfViews - the inner object type does not support phalanxVoVMakeCopyWithInnerRuntimeUnmanagedViews(...)! \n If the inner object is a struct of Kokkos::Views (not a plain Kokkos::View), you must provide an overload of phalanxVoVMakeCopyWithInnerRuntimeUnmanagedViews(const YourStruct&) in the same namespace as YourStruct so it is discoverable via ADL. \n********\n\n");
       template <class... Args>
       static auto make_shared(Args&&... args) {
         return std::shared_ptr<Kokkos::View<D, P...>>(
@@ -122,6 +192,21 @@ namespace PHX {
       can generate an unmanged view without the template parameter by
       constructing the view with a raw pointer. This thrid
       implementation does that here.
+
+      4. InnerViewType is normally a plain Kokkos::View, e.g. for
+      "View<View<double**>*>" InnerViewType is "View<double**>".
+      However InnerViewType may instead be a user defined struct
+      containing one or more Kokkos::View data members, e.g. for
+      "View<MyObj*>" InnerViewType is "MyObj". In that case, MyObj
+      must be default constructible and the user must provide an ADL
+      discoverable overload of
+      phalanxVoVMakeCopyWithInnerRuntimeUnmanagedViews(const MyObj&),
+      defined in the same namespace as MyObj, that returns a copy of
+      MyObj with each Kokkos::View data member replaced by its runtime
+      unmanaged counterpart (see
+      PHX::phalanxVoVMakeCopyWithInnerRuntimeUnmanagedViews() for the
+      Kokkos::View case above, which can be called/reused for each
+      individual view data member).
   */
   template<int OuterViewRank,typename InnerViewType,typename... OuterViewProps>
   class ViewOfViews {
@@ -267,25 +352,24 @@ namespace PHX {
 
       TEUCHOS_ASSERT(is_initialized_);
 
-      // Store the managed version so inner views don't get deleted.
+      // Store the managed version so inner objects don't get deleted.
       (*view_host_)(i...) = v;
 
-      // Store a runtime unmanaged view for deep_copy to
-      // device. Unmanaged is required to prevent double deletion on
-      // device. For FAD types, we need to adjust the layout to
-      // account for the derivative array. The layout() method reutrns
-      // the non-fad adjusted layout.
-      if (Sacado::IsADType<typename InnerViewType::value_type>::value) {
-        #ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
-        auto layout = v.layout();
-        layout.dimension[InnerViewType::rank] = Kokkos::dimension_scalar(v);
-        (*view_host_unmanaged_)(i...) = InnerViewType(v.data(),layout);
-        #else
-        (*view_host_unmanaged_)(i...) = InnerViewType(v.data(),v.mapping(),v.accessor());
-        #endif
-      }
-      else
-        (*view_host_unmanaged_)(i...) = InnerViewType(v.data(),v.layout());
+      // Store a runtime unmanaged copy for deep_copy to device.
+      // Unmanaged views are required to prevent double deletion on
+      // device. If InnerViewType is a plain Kokkos::View, this is
+      // handled by the default
+      // phalanxVoVMakeCopyWithInnerRuntimeUnmanagedViews()
+      // overload. If InnerViewType is instead a struct containing
+      // Kokkos::View data members, the struct must provide its own
+      // ADL discoverable overload of
+      // phalanxVoVMakeCopyWithInnerRuntimeUnmanagedViews().  NOTE:
+      // called unqualified (not
+      // PHX::phalanxVoVMakeCopyWithInnerRuntimeUnmanagedViews or
+      // v_of_v_utils::phalanxVoVMakeCopyWithInnerRuntimeUnmanagedViews)
+      // so that ADL can find a user supplied overload for
+      // struct-of-views types.
+      (*view_host_unmanaged_)(i...) = phalanxVoVMakeCopyWithInnerRuntimeUnmanagedViews(v);
 
       device_view_is_synced_ = false;
     }

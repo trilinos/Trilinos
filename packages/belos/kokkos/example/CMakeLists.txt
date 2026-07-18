@@ -6,6 +6,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ARGS "--verbose"
        "--verbose --num-rhs=4"
   COMM serial mpi
+  NUM_MPI_PROCS 1
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -14,6 +15,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ARGS "--verbose"
        "--verbose --num-rhs=4"
   COMM serial mpi
+  NUM_MPI_PROCS 1
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -21,6 +23,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SOURCES GCRODRKokkosExFile.cpp
   ARGS "--verbose"
   COMM serial mpi
+  NUM_MPI_PROCS 1
   )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyExampleMtxFiles
@@ -36,6 +39,7 @@ IF(Teuchos_ENABLE_COMPLEX)
     SOURCES GCRODRComplexKokkosExFile.cpp
     ARGS "--verbose"
     COMM serial mpi
+    NUM_MPI_PROCS 1
     )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyExampleComplexMtxFiles
