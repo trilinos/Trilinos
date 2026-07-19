@@ -1,0 +1,980 @@
+#!/usr/bin/env python3
+
+"""
+This script generates stub files for new kernel functions with all necessary
+ETI (Explicit Template Instantiation) infrastructure. It is meant for
+developers adding new kernels to KokkosKernels.
+
+NOTE: be sure to consider which arguments can be inferred from View dimensions.
+Lapack expects all these dims/sizes to be passed in, but the Kokkos interface
+does not need to pass these since they can be inferred from the view objects.
+"""
+import sys, argparse, re
+from pathlib import Path
+
+# Template content for new ETI files
+SPDX_HEADER = """// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
+
+"""
+
+###############################################################################
+class Param:
+###############################################################################
+    """Represents a parsed function parameter."""
+
+    def __init__(self, dim, ptype, mutability, name, cpp_type, template_param):
+        self._dim = dim
+        self._type = ptype
+        self._mutability = mutability
+        self._name = name
+        self._cpp_type = cpp_type
+        self._template_param = template_param
+
+    @property
+    def dim(self):
+        """Dimensionality: 0=scalar, 1=vector, 2=matrix, 3+=tensor."""
+        return self._dim
+
+    @property
+    def type(self):
+        """Type code: 's'=scalar, 'i'=integer, 'c'=char."""
+        return self._type
+
+    @property
+    def mutability(self):
+        """Mutability: 'i'=input/const, 'o'=output, 'io'=input-output."""
+        return self._mutability
+
+    @property
+    def name(self):
+        """Parameter name."""
+        return self._name
+
+    @property
+    def cpp_type(self):
+        """Generated C++ type string."""
+        return self._cpp_type
+
+    @property
+    def template_param(self):
+        """Template parameter name (None for scalars/chars)."""
+        return self._template_param
+
+    @property
+    def is_const(self):
+        """True if parameter is const (input-only)."""
+        return self._mutability == 'i'
+
+    @property
+    def is_scalar(self):
+        """True if parameter is a scalar (0D but not char)."""
+        return self._dim == 0 and self._type != 'c'
+
+    @property
+    def is_char(self):
+        """True if parameter is a char."""
+        return self._type == 'c'
+
+###############################################################################
+def _to_camel_case(name):
+###############################################################################
+    """Convert snake_case or any name to CamelCase."""
+    parts = name.split('_')
+    return ''.join(word.capitalize() for word in parts)
+
+###############################################################################
+def parse_signature(signature_str):
+###############################################################################
+    """
+    Parse signature specification like '0dsi_alpha,1dsi_x,0dsi_beta,1dsio_y' into structured data.
+
+    Format: {dim}d{type}{mutability}_{name} (name is REQUIRED)
+    - dim: 0 (scalar), 1 (vector/1D view), 2 (matrix/2D view), 3+ (higher-dim)
+    - type: s (scalar/real/complex), i (integer), c (char)
+    - mutability: i (input/const), o (output/non-const), io (input-output/non-const)
+    - name: parameter name (REQUIRED)
+
+    Returns: List of Param instances
+    """
+    params = []
+
+    for spec in signature_str.split(','):
+        spec = spec.strip()
+        if not spec:
+            continue
+
+        # Parse: {spec}_{name} format - name is REQUIRED
+        name = None
+
+        # Try to parse ci_name or c_name format first (for char parameters)
+        if spec.startswith('ci_'):
+            spec_part = 'ci'
+            name = spec[3:]  # Everything after 'ci_'
+            dim, dtype, mut = 0, 'c', 'i'
+            dim_str = 'c'
+        elif spec.startswith('c_'):
+            spec_part = 'c'
+            name = spec[2:]  # Everything after 'c_'
+            dim, dtype, mut = 0, 'c', 'i'
+            dim_str = 'c'
+        else:
+            # Try to match {digit}d{type}{mut}_{name}
+            match = re.match(r'(\d+d[sic](?:io|i|o))_(.+)$', spec)
+            if not match:
+                raise ValueError(f"Invalid signature spec: '{spec}'. Expected format like '1dsi_x' or 'ci_trans' (name is REQUIRED after underscore)")
+            spec_part, name = match.groups()
+
+            # Now parse the spec part
+            spec_match = re.match(r'(\d+)d([sic])(io|i|o)', spec_part)
+            dim_str, dtype, mut = spec_match.groups()
+            dim = int(dim_str)
+
+        if not name:
+            raise ValueError(f"Parameter name is required for '{spec}'. Use format like '1dsi_x' or 'ci_trans'")
+
+        # Now generate C++ types based on type and name
+        if dtype == 'c':
+            cpp_type = "const char[]"
+            template_param = None
+        elif dim == 0:
+            # Scalar parameter (real/complex or integer)
+            if dtype == 'i':
+                cpp_type = "int"
+            else:
+                cpp_type = "ScalarType"
+            template_param = None  # Will use view's value_type
+        else:
+            # View - convert to CamelCase
+            base_name = _to_camel_case(name)
+            cpp_type = f"{base_name}ViewType"
+            template_param = cpp_type
+
+        params.append(Param(
+            dim=dim,
+            ptype=dtype,
+            mutability=mut,
+            name=name,
+            cpp_type=cpp_type,
+            template_param=template_param
+        ))
+
+    return params
+
+###############################################################################
+def build_template_params_list(params):
+###############################################################################
+    """Build C++ template parameter list from parsed params."""
+    template_params = [p for p in params if p.template_param is not None]
+    if template_params:
+        return ', '.join([f"class {p.template_param}" for p in template_params])
+    else:
+        return "class ScalarType"  # For functions with no view parameters
+
+###############################################################################
+def build_function_params_list(params):
+###############################################################################
+    """Build C++ function parameter list from parsed params."""
+    # Find first view parameter to use for scalar value_type
+    first_view = next((p for p in params if not p.is_scalar and not p.is_char), None)
+
+    param_list_parts = []
+    for p in params:
+        const_qual = "const " if p.is_const else ""
+        if p.is_char:
+            param_list_parts.append(f"const char {p.name}[]")
+        elif p.is_scalar:
+            # Use cpp_type directly for int scalars, otherwise use view's value_type
+            if p.cpp_type == "int":
+                param_list_parts.append(f"{const_qual}{p.cpp_type}& {p.name}")
+            elif first_view:
+                param_list_parts.append(f"{const_qual}typename {first_view.cpp_type}::value_type& {p.name}")
+            else:
+                # Fallback if no views (should be rare), ScalarType will need to be adjusted by user
+                param_list_parts.append(f"{const_qual}ScalarType& {p.name}")
+        else:
+            param_list_parts.append(f"{const_qual}{p.cpp_type}& {p.name}")
+
+    return ', '.join(param_list_parts)
+
+###############################################################################
+def build_function_call_params_list(params):
+###############################################################################
+    """Build function call parameter list (just names) from parsed params."""
+    return ', '.join([p.name for p in params])
+
+###############################################################################
+def build_api_param_list(params, include_exec_space=True):
+###############################################################################
+    """Build API function parameter list (potentially with execution_space)."""
+    param_parts = []
+    if include_exec_space:
+        param_parts.append("const execution_space& space")
+
+    for p in params:
+        if p.is_char:
+            param_parts.append(f"const char {p.name}[]")
+        elif p.is_scalar:
+            # For API, scalars need to reference a view's value_type
+            # We'll use the first view parameter if available
+            view_params = [x for x in params if not x.is_scalar and not x.is_char]
+            if p.cpp_type == "int":
+                param_parts.append(f"const int& {p.name}")
+            elif view_params:
+                param_parts.append(f"const typename {view_params[0].cpp_type}::value_type& {p.name}")
+            else:
+                # Fallback for scalar-only functions
+                param_parts.append(f"const double& {p.name}")
+        else:
+            const_qual = "const " if p.is_const else ""
+            param_parts.append(f"{const_qual}{p.cpp_type}& {p.name}")
+
+    return ',\n                '.join(param_parts)
+
+###############################################################################
+def build_view_conversions(params):
+###############################################################################
+    """Generate code to convert views to unmanaged versions."""
+    conversions = []
+    view_params = [p for p in params if not p.is_scalar and not p.is_char]
+
+    for p in view_params:
+        # Determine constness based on mutability
+        data_type = f"typename {p.cpp_type}::const_data_type" if p.is_const else f"typename {p.cpp_type}::data_type"
+        internal_type_name = f"{p.name.capitalize()}ViewInternalType"
+
+        conversions.append(f"""  using {internal_type_name} = Kokkos::View<{data_type}, typename {p.cpp_type}::array_layout,
+                                         typename {p.cpp_type}::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;""")
+
+    # Add blank line if we have conversions
+    if conversions:
+        conversions.append("")
+
+    # Add conversion calls
+    for p in view_params:
+        internal_type_name = f"{p.name.capitalize()}ViewInternalType"
+        conversions.append(f"  {internal_type_name} u{p.name.capitalize()}({p.name});")
+
+    return '\n'.join(conversions)
+
+###############################################################################
+def build_eti_macro_view_specs(view_params):
+###############################################################################
+    """Build view specifications for ETI macros.
+
+    For each view parameter, generates the Kokkos::View<...> specification
+    using SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE from the macro.
+    """
+    view_specs = []
+    for p in view_params:
+        # Determine rank specification based on dimensionality
+        typename = "SCALAR" if p.type == 's' else "int"
+        rank_spec = f"{typename}{'*' * p.dim}"
+
+        # Add const if it's an input-only parameter
+        if p.is_const:
+            rank_spec = f"const {rank_spec}"
+
+        view_spec = f"""Kokkos::View<{rank_spec}, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \\
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>"""
+        view_specs.append(view_spec)
+
+    return view_specs
+
+###############################################################################
+def build_test_setup_code(params):
+###############################################################################
+    """Generate test setup code (view creation, scalar init) based on signature."""
+    setup_lines = []
+    view_params = [p for p in params if not p.is_scalar and not p.is_char]
+    scalar_params = [p for p in params if p.is_scalar]
+    char_params = [p for p in params if p.is_char]
+
+    # If we have views, use the first one to determine scalar type
+    if view_params:
+        setup_lines.append(f"  using ScalarType = typename {view_params[0].cpp_type}::value_type;")
+        setup_lines.append("  using AT = KokkosKernels::ArithTraits<ScalarType>;")
+        setup_lines.append("  using MagnitudeType = typename AT::mag_type;")
+        setup_lines.append("")
+        setup_lines.append("  const MagnitudeType eps = AT::epsilon() * 1000;")
+        setup_lines.append("  const MagnitudeType max_val = 10.0;")
+        setup_lines.append("")
+
+    # Create views
+    for p in view_params:
+        if p.dim == 1:
+            setup_lines.append(f'  view_stride_adapter<{p.cpp_type}> {p.name}("{p.name.upper()}", N);')
+        elif p.dim == 2:
+            setup_lines.append(f'  view_stride_adapter<{p.cpp_type}> {p.name}("{p.name.upper()}", N, N); // TODO: Adjust dimensions')
+
+    # Initialize char parameters
+    for p in char_params:
+        setup_lines.append(f'  const char {p.name}[] = "N"; // TODO: Set appropriate value')
+
+    # Initialize scalars
+    for p in scalar_params:
+        if p.cpp_type == "int":
+            setup_lines.append(f"  int {p.name} = 0; // TODO: Set appropriate value")
+        else:
+            setup_lines.append(f"  ScalarType {p.name} = AT::one(); // TODO: Set appropriate value")
+
+    return '\n'.join(setup_lines)
+
+###############################################################################
+def build_test_call(package, function, params):
+###############################################################################
+    """Generate the function call in the test."""
+    call_parts = []
+    for p in params:
+        if p.is_scalar or p.is_char:
+            call_parts.append(p.name)
+        else:
+            # Use d_view for device view
+            call_parts.append(f"{p.name}.d_view")
+
+    param_str = ', '.join(call_parts)
+    return f"  Kokkos{package.capitalize()}::{function}({param_str});"
+
+###############################################################################
+def build_impl_call_params(params):
+###############################################################################
+    """Build parameter list for calling Impl function (using unmanaged views)."""
+    call_parts = []
+    for p in params:
+        if p.is_scalar or p.is_char:
+            call_parts.append(p.name)
+        else:
+            call_parts.append(f"u{p.name.capitalize()}")
+    return ', '.join(call_parts)
+
+###############################################################################
+def build_test_view_typedefs(view_params, layout):
+###############################################################################
+    """Build view type definitions for unit test based on view parameters.
+
+    Args:
+        view_params: List of Param instances that are views (not scalars/chars)
+        layout: Either 'LayoutLeft' or 'LayoutRight'
+
+    Returns:
+        String with typedef lines for each view parameter
+    """
+    typedefs = []
+    for p in view_params:
+        # Build the View type string based on dimension
+        stars = '*' * p.dim
+        typename = "Scalar" if p.type == 's' else "int"
+        view_spec = f"{typename}{stars}"
+
+        # Add const for input-only views
+        if p.is_const:
+            view_spec = f"const {view_spec}"
+
+        typedefs.append(f"    using {p.cpp_type} = Kokkos::View<{view_spec}, Kokkos::{layout}, Device>;")
+
+    return '\n'.join(typedefs)
+
+###############################################################################
+def build_test_template_args(view_params):
+###############################################################################
+    """Build template argument list for calling impl_test function.
+
+    Args:
+        view_params: List of Param instances that are views
+
+    Returns:
+        String with template arguments like "AViewType, XViewType, YViewType, Device"
+    """
+    if not view_params:
+        return "Device"
+
+    view_types = [p.cpp_type for p in view_params]
+    view_types.append("Device")
+    return ', '.join(view_types)
+
+###############################################################################
+def generate_eti(package, function, directory, overwrite, signature, create_dirs=False, quiet=False):
+###############################################################################
+    """Generate stub ETI files for a new kernel function."""
+    topdir = directory
+
+    # Parse signature specification
+    params                   = parse_signature(signature)
+    template_list            = build_template_params_list(params)
+    param_list               = build_function_params_list(params)
+    call_params              = build_function_call_params_list(params)
+    api_param_list_with_exec = build_api_param_list(params, include_exec_space=True)
+    api_param_list_no_exec   = build_api_param_list(params, include_exec_space=False)
+    view_conversions         = build_view_conversions(params)
+    impl_call_params         = build_impl_call_params(params)
+    test_setup               = build_test_setup_code(params)
+    test_call                = build_test_call(package, function, params)
+
+    # Get view parameters for assertions and template parameters
+    view_params = [p for p in params if not p.is_scalar and not p.is_char]
+    view_template_list = ', '.join([f"class {p.cpp_type}" for p in view_params])
+
+    # Build ETI macro view specifications
+    eti_view_specs = build_eti_macro_view_specs(view_params)
+    eti_macro_template_params = ', \\\n      '.join(eti_view_specs)
+
+    # Build view type list for unification layer template
+    view_type_list = ', '.join([p.cpp_type for p in view_params])
+
+    # Build static asserts for view parameters in spec
+    view_spec_asserts = '\n    '.join([
+        f'static_assert(Kokkos::is_view<{p.cpp_type}>::value, "{p.cpp_type} must be a Kokkos::View.");'
+        for p in view_params
+    ])
+
+    # Determine package details
+    package_lower  = package.lower()
+    package_upper  = package.upper()
+    function_lower = function.lower()
+    function_upper = function.upper()
+
+    # Determine BLAS level (simple heuristic)
+    # You can make this more sophisticated or let users specify
+    if package == "blas":
+        blas_level = "1"  # Default to BLAS level 1
+    else:
+        blas_level = ""
+
+    # Create directory structure
+    package_root = topdir / package_lower
+    if not package_root.exists():
+        if not quiet:
+            print(f"Error: Package directory {package_root} does not exist")
+        return False
+
+    impl_dir      = package_root / "impl"
+    src_dir       = package_root / "src"
+    tpls_dir      = package_root / "tpls"
+    unit_test_dir = package_root / "unit_test"
+    eti_cpp_dir   = package_root / "eti" / "generated_specializations_cpp" / function_lower
+    eti_hpp_dir   = package_root / "eti" / "generated_specializations_hpp"
+
+    # We always allow for creation the eti_cpp_dir, since we don't expect that to exist yet
+    eti_cpp_dir.mkdir(parents=True, exist_ok=True)
+
+    # For dirs we do expect to already exist...
+    dirs = [impl_dir, src_dir, tpls_dir, unit_test_dir, eti_hpp_dir]
+    if create_dirs:
+        # Create all directories if they don't exist
+        for dirobj in dirs:
+            dirobj.mkdir(parents=True, exist_ok=True)
+    else:
+        for dirobj in dirs:
+            assert dirobj.is_dir(), f"Expected dir {dirobj} to exist. Use -c if you want the tool to create these for you"
+
+    # Generate file names
+    prefix        = f"Kokkos{package.capitalize()}{blas_level}"
+    impl_spec_hpp = impl_dir / f"{prefix}_{function_lower}_spec.hpp"
+    impl_hpp      = impl_dir / f"{prefix}_{function_lower}_impl.hpp"
+    api_hpp       = src_dir / f"{prefix}_{function_lower}.hpp"
+    unit_test_hpp = unit_test_dir / f"Test_{package.capitalize()}{blas_level}_{function_lower}.hpp"
+
+    # ETI files
+    eti_inst_cpp  = eti_cpp_dir / f"{prefix}_{function_lower}_eti_spec_inst.cpp.in"
+    eti_decl_hpp  = eti_hpp_dir / f"{prefix}_{function_lower}_eti_spec_decl.hpp.in"
+    eti_avail_hpp = eti_hpp_dir / f"{prefix}_{function_lower}_eti_spec_avail.hpp.in"
+
+    # TPL files
+    tpl_decl_hpp  = tpls_dir / f"{prefix}_{function_lower}_tpl_spec_decl.hpp"
+    tpl_avail_hpp = tpls_dir / f"{prefix}_{function_lower}_tpl_spec_avail.hpp"
+
+    # Generate impl spec header content with unification layer and TPL support
+    spec_content = f"""{SPDX_HEADER}#ifndef KOKKOS{package_upper}{blas_level}_{function_upper}_SPEC_HPP_
+#define KOKKOS{package_upper}{blas_level}_{function_upper}_SPEC_HPP_
+
+#include "KokkosKernels_config.h"
+#include "Kokkos_Core.hpp"
+
+#if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
+#include <{prefix}_{function_lower}_impl.hpp>
+#endif
+
+namespace Kokkos{package.capitalize()} {{
+namespace Impl {{
+// Specialization struct which defines whether an ETI specialization exists
+template <{template_list}>
+struct {function_lower}_eti_spec_avail {{
+  enum : bool {{ value = false }};
+}};
+}}  // namespace Impl
+}}  // namespace Kokkos{package.capitalize()}
+
+//
+// Macro for declaration of full specialization availability
+// Kokkos{package.capitalize()}::Impl::{function.capitalize()}.  This is NOT for users!!!
+//
+#define KOKKOS{package_upper}{blas_level}_{function_upper}_ETI_SPEC_AVAIL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \\
+  template <> \\
+  struct {function_lower}_eti_spec_avail< \\
+      {eti_macro_template_params}> {{ \\
+    enum : bool {{ value = true }}; \\
+  }};
+
+// Include the actual specialization declarations
+#include <{prefix}_{function_lower}_tpl_spec_avail.hpp>
+#include <generated_specializations_hpp/{prefix}_{function_lower}_eti_spec_avail.hpp>
+
+namespace Kokkos{package.capitalize()} {{
+namespace Impl {{
+
+//
+// {function_lower}
+//
+
+// Unification layer
+template <{template_list},
+          bool tpl_spec_avail = {function_lower}_tpl_spec_avail<{view_type_list}>::value,
+          bool eti_spec_avail = {function_lower}_eti_spec_avail<{view_type_list}>::value>
+struct {function.capitalize()} {{
+  static void {function_lower}({param_list});
+}};
+
+#if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
+// Default implementation when no TPL is available
+template <{template_list}>
+struct {function.capitalize()}<{view_type_list}, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {{
+  static void {function_lower}({param_list}) {{
+    {view_spec_asserts}
+
+    Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
+                                    ? "Kokkos{package.capitalize()}::{function_lower}[ETI]"
+                                    : "Kokkos{package.capitalize()}::{function_lower}[noETI]");
+
+    {function.capitalize()}Impl<{view_type_list}>::{function_lower}({call_params});
+
+    Kokkos::Profiling::popRegion();
+  }}
+}};
+#endif  // !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
+
+}}  // namespace Impl
+}}  // namespace Kokkos{package.capitalize()}
+
+//
+// Macro for declaration of full specialization of
+// Kokkos{package.capitalize()}::Impl::{function.capitalize()}.  This is NOT for users!!!
+//
+#define KOKKOS{package_upper}{blas_level}_{function_upper}_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \\
+  extern template struct {function.capitalize()}< \\
+      {eti_macro_template_params}, \\
+      false, true>;
+
+//
+// Macro for definition of full specialization of
+// Kokkos{package.capitalize()}::Impl::{function.capitalize()}.  This is NOT for users!!!
+//
+#define KOKKOS{package_upper}{blas_level}_{function_upper}_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \\
+  template struct {function.capitalize()}< \\
+      {eti_macro_template_params}, \\
+      false, true>;
+
+#include <{prefix}_{function_lower}_tpl_spec_decl.hpp>
+#include <generated_specializations_hpp/{prefix}_{function_lower}_eti_spec_decl.hpp>
+
+#endif  // KOKKOS{package_upper}{blas_level}_{function_upper}_SPEC_HPP_
+"""
+
+    # Generate impl header content
+    impl_content = f"""{SPDX_HEADER}#ifndef KOKKOS{package_upper}{blas_level}_{function_upper}_IMPL_HPP_
+#define KOKKOS{package_upper}{blas_level}_{function_upper}_IMPL_HPP_
+
+#include "KokkosKernels_config.h"
+#include "Kokkos_Core.hpp"
+
+namespace Kokkos{package.capitalize()} {{
+namespace Impl {{
+
+// Implementation struct for {function_lower}
+template <{template_list}>
+struct {function.capitalize()}Impl {{
+  // TODO: Add your implementation here
+  static void {function_lower}({param_list}) {{
+    // TODO: Implement your kernel here
+    Kokkos::abort("Kokkos{package.capitalize()}::{function_lower}: Not yet implemented");
+  }}
+}};
+
+}}  // namespace Impl
+}}  // namespace Kokkos{package.capitalize()}
+
+#endif  // KOKKOS{package_upper}{blas_level}_{function_upper}_IMPL_HPP_
+"""
+
+    # Generate API header content
+    # Generate static_assert checks for view parameters
+    view_asserts = '\n'.join([
+        f"""  static_assert(Kokkos::is_view<{p.cpp_type}>::value,
+                "Kokkos{package.capitalize()}::{function_lower}: {p.cpp_type} must be a Kokkos::View");"""
+        for p in view_params
+    ])
+
+    # Generate template parameter documentation
+    template_param_docs = '\n'.join([f'/// \\tparam {p.cpp_type} TODO: describe this parameter' for p in view_params])
+
+    api_content = f"""{SPDX_HEADER}#ifndef KOKKOS{package_upper}{blas_level}_{function_upper}_HPP_
+#define KOKKOS{package_upper}{blas_level}_{function_upper}_HPP_
+
+#include "KokkosKernels_config.h"
+#include "Kokkos_Core.hpp"
+#include "{prefix}_{function_lower}_spec.hpp"
+
+namespace Kokkos{package.capitalize()} {{
+
+/// \\brief TODO: Add brief description
+///
+/// TODO: Add detailed description of the function
+///
+{template_param_docs}
+///
+template <class execution_space, {view_template_list}>
+void {function_lower}({api_param_list_with_exec}) {{
+  static_assert(Kokkos::is_execution_space<execution_space>::value,
+                "Kokkos{package.capitalize()}::{function_lower}: execution_space must be a valid Kokkos execution space");
+{view_asserts}
+
+  // Convert views to unmanaged
+{view_conversions}
+
+  Impl::{function.capitalize()}<{', '.join([f"{p.name.capitalize()}ViewInternalType" for p in view_params])}>::{function_lower}({impl_call_params});
+}}
+
+// Overload without execution space (uses default)
+template <{view_template_list}>
+void {function_lower}({api_param_list_no_exec}) {{
+  {function_lower}(typename {view_params[0].cpp_type if view_params else 'Kokkos::DefaultExecutionSpace'}::execution_space{{}}, {call_params});
+}}
+
+}}  // namespace Kokkos{package.capitalize()}
+
+#endif  // KOKKOS{package_upper}{blas_level}_{function_upper}_HPP_
+"""
+
+    # Generate ETI instantiation cpp.in
+    eti_inst_content = f"""{SPDX_HEADER}
+#define KOKKOSKERNELS_IMPL_COMPILE_LIBRARY true
+#include "KokkosKernels_config.h"
+#include "{prefix}_{function_lower}_spec.hpp"
+
+namespace Kokkos{package.capitalize()} {{
+namespace Impl {{
+@{package_upper}{blas_level}_{function_upper}_ETI_INST_BLOCK@
+}} // namespace Impl
+}} // namespace Kokkos{package.capitalize()}
+"""
+
+    # Generate ETI declaration hpp.in
+    eti_decl_content = f"""{SPDX_HEADER}#ifndef KOKKOS{package_upper}{blas_level}_{function_upper}_ETI_SPEC_DECL_HPP_
+#define KOKKOS{package_upper}{blas_level}_{function_upper}_ETI_SPEC_DECL_HPP_
+namespace Kokkos{package.capitalize()} {{
+namespace Impl {{
+@{package_upper}{blas_level}_{function_upper}_ETI_DECL_BLOCK@
+}} // namespace Impl
+}} // namespace Kokkos{package.capitalize()}
+#endif
+"""
+
+    # Generate ETI availability hpp.in
+    eti_avail_content = f"""{SPDX_HEADER}#ifndef KOKKOS{package_upper}{blas_level}_{function_upper}_ETI_SPEC_AVAIL_HPP_
+#define KOKKOS{package_upper}{blas_level}_{function_upper}_ETI_SPEC_AVAIL_HPP_
+namespace Kokkos{package.capitalize()} {{
+namespace Impl {{
+@{package_upper}{blas_level}_{function_upper}_ETI_AVAIL_BLOCK@
+}} // namespace Impl
+}} // namespace Kokkos{package.capitalize()}
+#endif
+"""
+
+    # Generate TPL availability header
+    # Build example TPL macro view specs
+    tpl_example_views = ', \\\n//       '.join(eti_view_specs)
+
+    tpl_avail_content = f"""{SPDX_HEADER}#ifndef KOKKOS{package_upper}{blas_level}_{function_upper}_TPL_SPEC_AVAIL_HPP_
+#define KOKKOS{package_upper}{blas_level}_{function_upper}_TPL_SPEC_AVAIL_HPP_
+
+namespace Kokkos{package.capitalize()} {{
+namespace Impl {{
+
+// Specialization struct which defines whether a TPL specialization exists
+template <{template_list}>
+struct {function_lower}_tpl_spec_avail {{
+  enum : bool {{ value = false }};
+}};
+
+// TODO: Define TPL availability macros for your supported TPLs
+// Example for LAPACK/BLAS:
+// #ifdef KOKKOSKERNELS_ENABLE_TPL_LAPACK
+// #define KOKKOS{package_upper}{blas_level}_{function_upper}_TPL_SPEC_AVAIL_LAPACK(SCALAR, LAYOUT, MEMSPACE) \\
+//   template <class ExecSpace> \\
+//   struct {function_lower}_tpl_spec_avail< \\
+//       {tpl_example_views}> {{ \\
+//     enum : bool {{ value = true }}; \\
+//   }};
+// #else
+// #define KOKKOS{package_upper}{blas_level}_{function_upper}_TPL_SPEC_AVAIL_LAPACK(SCALAR, LAYOUT, MEMSPACE)
+// #endif
+
+}}  // namespace Impl
+}}  // namespace Kokkos{package.capitalize()}
+
+#endif  // KOKKOS{package_upper}{blas_level}_{function_upper}_TPL_SPEC_AVAIL_HPP_
+"""
+
+    # Generate TPL declaration header
+    tpl_decl_content = f"""{SPDX_HEADER}#ifndef KOKKOS{package_upper}{blas_level}_{function_upper}_TPL_SPEC_DECL_HPP_
+#define KOKKOS{package_upper}{blas_level}_{function_upper}_TPL_SPEC_DECL_HPP_
+
+// TODO: Include TPL headers as needed
+// Example:
+// #ifdef KOKKOSKERNELS_ENABLE_TPL_LAPACK
+// #include "Kokkos{package.capitalize()}_Host_tpl.hpp"
+// #endif
+
+namespace Kokkos{package.capitalize()} {{
+namespace Impl {{
+
+// TODO: Define TPL specializations for your supported TPLs
+// Example for LAPACK:
+// #ifdef KOKKOSKERNELS_ENABLE_TPL_LAPACK
+// #define KOKKOS{package_upper}{blas_level}_{function_upper}_TPL_LAPACK(SCALAR, LAYOUT, MEMSPACE, ETI_SPEC_AVAIL) \\
+//   template <class ExecSpace> \\
+//   struct {function.capitalize()}<{tpl_example_views}, \\
+//                          true, ETI_SPEC_AVAIL> {{ \\
+//     static void {function_lower}({param_list}) {{ \\
+//       // TODO: Call TPL library here \\
+//     }} \\
+//   }};
+// #else
+// #define KOKKOS{package_upper}{blas_level}_{function_upper}_TPL_LAPACK(SCALAR, LAYOUT, MEMSPACE, ETI_SPEC_AVAIL)
+// #endif
+
+}}  // namespace Impl
+}}  // namespace Kokkos{package.capitalize()}
+
+#endif  // KOKKOS{package_upper}{blas_level}_{function_upper}_TPL_SPEC_DECL_HPP_
+"""
+
+    # Generate unit test header
+    # Build template parameter list for test function (just view types, not all types)
+    test_template_params = ', '.join([f"class {p.cpp_type}" for p in view_params]) if view_params else "class DummyType"
+
+    # Build view typedefs and template arguments for test function
+    test_view_typedefs_left = build_test_view_typedefs(view_params, "LayoutLeft")
+    test_view_typedefs_right = build_test_view_typedefs(view_params, "LayoutRight")
+    test_template_args = build_test_template_args(view_params)
+
+    unit_test_content = f"""{SPDX_HEADER}#include <gtest/gtest.h>
+#include <Kokkos_Core.hpp>
+#include <Kokkos_Random.hpp>
+#include <{prefix}_{function_lower}.hpp>
+#include <KokkosKernels_TestUtils.hpp>
+
+namespace Test {{
+
+template <{test_template_params}, class Device>
+void impl_test_{function_lower}(int N) {{
+{test_setup}
+
+  Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
+
+  // TODO: Initialize input views with random data
+  // Example:
+  // {{
+  //   ScalarType randStart, randEnd;
+  //   Test::getRandomBounds(max_val, randStart, randEnd);
+  //   Kokkos::fill_random(x.d_view, rand_pool, randStart, randEnd);
+  // }}
+
+  // TODO: Copy input data to host for verification
+  // Example: Kokkos::deep_copy(x.h_base, x.d_base);
+
+  // Call your function
+{test_call}
+
+  // TODO: Copy results back to host
+  // Example: Kokkos::deep_copy(y.h_base, y.d_base);
+
+  // TODO: Add your verification logic here
+  // Example:
+  // for (int i = 0; i < N; i++) {{
+  //   EXPECT_NEAR_KK(/* expected value */, y.h_view(i), eps);
+  // }}
+}}
+
+// TODO: You may also need to add a multivector test
+
+}}  // namespace Test
+
+template <class Scalar, class Device>
+void test_{function_lower}(int N)
+{{
+#if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \\
+  (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+  {{
+{test_view_typedefs_left}
+
+    Test::impl_test_{function_lower}<{test_template_args}>(N);
+  }}
+#endif
+
+#if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || \\
+  (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+  {{
+{test_view_typedefs_right}
+
+    Test::impl_test_{function_lower}<{test_template_args}>(N);
+  }}
+#endif
+}}
+
+#if defined(KOKKOSKERNELS_INST_FLOAT) || \\
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+TEST_F(TestCategory, {function_lower}_float) {{
+  Kokkos::Profiling::pushRegion("Kokkos{package.capitalize()}::Test::{function_lower}_float");
+  test_{function_lower}<float, TestDevice>(1024);
+  Kokkos::Profiling::popRegion();
+}}
+#endif
+
+#if defined(KOKKOSKERNELS_INST_DOUBLE) || \\
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+TEST_F(TestCategory, {function_lower}_double) {{
+  Kokkos::Profiling::pushRegion("Kokkos{package.capitalize()}::Test::{function_lower}_double");
+  test_{function_lower}<double, TestDevice>(1024);
+  Kokkos::Profiling::popRegion();
+}}
+#endif
+
+#if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || \\
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+TEST_F(TestCategory, {function_lower}_complex_double) {{
+  Kokkos::Profiling::pushRegion("Kokkos{package.capitalize()}::Test::{function_lower}_complex_double");
+  test_{function_lower}<Kokkos::complex<double>, TestDevice>(1024);
+  Kokkos::Profiling::popRegion();
+}}
+#endif
+
+#if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT) || \\
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+TEST_F(TestCategory, {function_lower}_complex_float) {{
+  Kokkos::Profiling::pushRegion("Kokkos{package.capitalize()}::Test::{function_lower}_complex_float");
+  test_{function_lower}<Kokkos::complex<float>, TestDevice>(1024);
+  Kokkos::Profiling::popRegion();
+}}
+#endif
+"""
+
+    # Write all files
+    files_to_create = [
+        (impl_spec_hpp, spec_content, "Spec header"),
+        (impl_hpp, impl_content, "Implementation header"),
+        (api_hpp, api_content, "API header"),
+        (eti_inst_cpp, eti_inst_content, "ETI instantiation template"),
+        (eti_decl_hpp, eti_decl_content, "ETI declaration template"),
+        (eti_avail_hpp, eti_avail_content, "ETI availability template"),
+        (tpl_avail_hpp, tpl_avail_content, "TPL availability header"),
+        (tpl_decl_hpp, tpl_decl_content, "TPL declaration header"),
+        (unit_test_hpp, unit_test_content, "Unit test header"),
+    ]
+
+    created_files = []
+    for filepath, content, description in files_to_create:
+        if filepath.exists() and not overwrite:
+            if not quiet:
+                print(f"WARNING: Skipping {description}: {filepath} (already exists)")
+        else:
+            filepath.write_text(content)
+            created_files.append(filepath)
+            if not quiet:
+                print(f"SUCCESS: Created {description}: {filepath}")
+
+    if created_files:
+        if not quiet:
+            print(f"\nSUCCESSFULLY generated {len(created_files)} stub files for {package}::{function}!")
+            print("\nNext steps:")
+            print("1. Edit the implementation in:", impl_hpp)
+            print("2. Update the API documentation in:", api_hpp)
+            print("3. Customize the ETI macros in:", impl_spec_hpp)
+            print("4. Customize the TPL macros in:", tpl_avail_hpp, "and", tpl_decl_hpp)
+            print("5. Implement unit tests in:", unit_test_hpp)
+            print("6. You will need to include the unit test header above in the common unit test header")
+            print("7. Add kokkoskernels_generate_eti for this function in:", f"{topdir}/{package}/CMakeLists.txt")
+        return True
+    else:
+        if not quiet:
+            print("\nWARNING: All files already exist. No new files created.")
+        return False
+
+###############################################################################
+def parse_command_line(args, description):
+###############################################################################
+    parser = argparse.ArgumentParser(
+        description=description,
+        epilog="""
+\033[1mEXAMPLES:\033[0m
+   \033[1;32m# Create stub files for a new BLAS function\033[0m
+  > ./scripts/%(prog)s blas axpby 0dsi_alpha,1dsi_x,0dsi_beta,1dsio_y
+
+   \033[1;32m# Create stub files for a new sparse function in different KK repo\033[0m
+  > %(prog)s sparse spmv 1dsi_x,1dso_y -d /path/to/kokkos-kernels
+        """,
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+
+    parser.add_argument(
+        "package",
+        help="Package name (e.g., 'blas', 'sparse', 'graph')"
+    )
+    parser.add_argument(
+        "function",
+        help="Function name (e.g., 'axpby', 'gemm', 'spmv')"
+    )
+    parser.add_argument(
+        "signature",
+        help="""Function signature specification (REQUIRED).
+Format: {dim}d{type}{mutability}_{name} where:
+  dim: 0=scalar, 1=vector, 2=matrix, 3+=tensor
+  type: s=scalar(real/complex), i=integer, c=char
+  mutability: i=input/const, o=output, io=input-output
+  name: parameter name (REQUIRED)
+Examples: '0dsi_alpha,1dsi_x,0dsi_beta,1dsio_y' (axpby), 'ci_trans,0dsi_alpha,2dsi_A,1dsi_x,0dsi_beta,1dsio_y' (gemv)"""
+    )
+
+    parser.add_argument(
+        "-d", "--directory",
+        default=".",
+        help="Kokkos Kernels root directory (default: current directory)"
+    )
+    parser.add_argument(
+        "-o", "--overwrite",
+        action="store_true",
+        help="Overwrite any existing files."
+    )
+    parser.add_argument(
+        "-c", "--create-dirs",
+        action="store_true",
+        help="Create missing directories if needed. Useful for testing."
+    )
+    parser.add_argument(
+        "-q", "--quiet",
+        action="store_true",
+        help="Suppress all output messages."
+    )
+
+    parsed_args = parser.parse_args(args[1:])
+    parsed_args.directory = Path(parsed_args.directory).resolve()
+
+    return parsed_args
+
+###############################################################################
+def main(description):
+###############################################################################
+    return generate_eti(**vars(parse_command_line(sys.argv, description)))
+
+###############################################################################
+if __name__ == "__main__":
+    sys.exit(0 if main(__doc__) else 1)

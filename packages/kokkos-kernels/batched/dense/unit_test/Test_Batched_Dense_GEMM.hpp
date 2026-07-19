@@ -15,7 +15,6 @@
 #include "Test_Batched_TeamGemm_Complex.hpp"
 
 // TeamVector Kernels
-#include "Test_Batched_TeamVectorGemm.hpp"
 #include "Test_Batched_TeamVectorGemm_Real.hpp"
 #include "Test_Batched_TeamVectorGemm_Complex.hpp"
 

@@ -43,15 +43,29 @@ inline void kk_get_histogram(typename in_lno_view_t::size_type in_elements, in_l
 /**
  * \brief Prints the given 1D view.
  * \param os: Stream to print to. To print to stdout use std::cout, stderr,
- * std::cerr, or a file use an ofstream object. \param view: input view to
- * print. \param print_all: whether to print all elements or not. If it is
- * false, print print_size/2 first and last elements. \param sep: Element
- * separator. Default is a single space: " " \param print_size: Total elements
- * to print if print_all is false print_size/2 first and last elements are
- * pritned. This parameter is not used if print_all is set to true.
+ * std::cerr, or a file use an ofstream object.
+ * \param view: input view to print.
+ * \param print_all: whether to print all elements or not. If it is
+ * false, print print_size/2 first and last elements.
+ * \param sep: Element separator. Default is a single space: " "
+ * \param print_size: Total elements to print if print_all is false print_size/2
+ * first and last elements are printed. This parameter is not used if print_all is set to true.
  */
 template <typename idx_array_type>
-inline std::enable_if_t<idx_array_type::rank <= 1> kk_print_1Dview(std::ostream& os, idx_array_type view,
+inline std::enable_if_t<idx_array_type::rank == 0> kk_print_1Dview(std::ostream& os, idx_array_type view,
+                                                                   bool print_all = false, const char* sep = " ",
+                                                                   size_t print_size = 1) {
+  typedef typename idx_array_type::host_mirror_type host_type;
+  host_type host_view = Kokkos::create_mirror_view(view);
+  Kokkos::deep_copy(host_view, view);
+  if (print_all || print_size > 0) {
+    os << host_view() << sep;
+  }
+  os << std::endl;
+}
+
+template <typename idx_array_type>
+inline std::enable_if_t<idx_array_type::rank == 1> kk_print_1Dview(std::ostream& os, idx_array_type view,
                                                                    bool print_all = false, const char* sep = " ",
                                                                    size_t print_size = 40) {
   typedef typename idx_array_type::host_mirror_type host_type;

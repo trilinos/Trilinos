@@ -96,8 +96,8 @@ KOKKOS_INLINE_FUNCTION int SerialLU_Internal<Algo::LU::Blocked>::invoke(
         const int m_abr = ib - p - mb, n_abr = jb - p - mb;
 
         // trsm update
-        trsm_llu.serial_invoke(Ap, pb, n_abr, Ap + mb * as1);
-        trsm_run.serial_invoke(Ap, pb, m_abr, Ap + mb * as0);
+        trsm_llu.serial_invoke(KokkosBlas::Impl::OpID(), Ap, pb, n_abr, Ap + mb * as1);
+        trsm_run.serial_invoke(KokkosBlas::Impl::OpID(), Ap, pb, m_abr, Ap + mb * as0);
 
         // gemm update
         Impl::SerialGemmInternal<Algo::Gemm::Blocked>::invoke(

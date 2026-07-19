@@ -190,9 +190,9 @@ struct SPMV_MV_BSRMATRIX<ExecutionSpace, Handle, AMatrix, XVector, YVector, fals
 
 #if defined(KOKKOS_ENABLE_CUDA) && defined(KOKKOS_ARCH_AMPERE)
     {
-      typedef Kokkos::Experimental::half_t Half;
-      typedef typename AMatrix::non_const_value_type AScalar;
-      typedef typename XVector::non_const_value_type XScalar;
+      using kokkos_half_t = Kokkos::Experimental::half_t;
+      using AScalar       = typename AMatrix::non_const_value_type;
+      using XScalar       = typename XVector::non_const_value_type;
 
       /* Ampere has double += double * double and float += half * half
 
@@ -204,6 +204,7 @@ struct SPMV_MV_BSRMATRIX<ExecutionSpace, Handle, AMatrix, XVector, YVector, fals
         auto precision = handle->bsr_tc_precision;
         switch (precision) {
           case KokkosSparse::Experimental::Bsr_TC_Precision::Mixed: {
+            // Note here the "half" type is that defined by CUDA
             BsrMatrixSpMVTensorCoreDispatcher<ExecutionSpace, AMatrix, half, XVector, half, YVector, float, 16, 16,
                                               16>::dispatch(space, alpha, A, X, beta, Y);
             Kokkos::Profiling::popRegion();
@@ -217,10 +218,11 @@ struct SPMV_MV_BSRMATRIX<ExecutionSpace, Handle, AMatrix, XVector, YVector, fals
           }
           case KokkosSparse::Experimental::Bsr_TC_Precision::Automatic:
           default: {
-            constexpr bool operandsHalfHalfFloat = std::is_same<AScalar, Half>::value &&
-                                                   std::is_same<XScalar, Half>::value &&
+            constexpr bool operandsHalfHalfFloat = std::is_same<AScalar, kokkos_half_t>::value &&
+                                                   std::is_same<XScalar, kokkos_half_t>::value &&
                                                    std::is_same<YScalar, float>::value;
             if (operandsHalfHalfFloat) {
+              // Note here the "half" type is that defined by CUDA
               BsrMatrixSpMVTensorCoreDispatcher<ExecutionSpace, AMatrix, half, XVector, half, YVector, float, 16, 16,
                                                 16>::dispatch(space, alpha, A, X, beta, Y);
               Kokkos::Profiling::popRegion();
@@ -237,10 +239,12 @@ struct SPMV_MV_BSRMATRIX<ExecutionSpace, Handle, AMatrix, XVector, YVector, fals
     }
 #elif defined(KOKKOS_ENABLE_CUDA) && defined(KOKKOS_ARCH_VOLTA)
     {
+      using kokkos_half_t = Kokkos::Experimental::half_t;
       /* Volta has float += half * half
          use it for all matrices
       */
       if (Method::TensorCores == method) {
+        // Note here the "half" type is that defined by CUDA
         BsrMatrixSpMVTensorCoreDispatcher<ExecutionSpace, AMatrix, half, XVector, half, YVector, float, 16, 16,
                                           16>::dispatch(space, alpha, A, X, beta, Y);
         Kokkos::Profiling::popRegion();

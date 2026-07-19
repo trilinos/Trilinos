@@ -47,6 +47,8 @@ class PAR_ILUTHandle {
 
   using nnz_value_view_t = typename Kokkos::View<nnz_scalar_t *, HandlePersistentMemorySpace>;
 
+  using nnz_float_view_t = typename Kokkos::View<float_t *, HandlePersistentMemorySpace>;
+
   using signed_integral_t = typename std::make_signed<typename nnz_row_view_t::non_const_value_type>::type;
 
   using signed_nnz_lno_view_t =
