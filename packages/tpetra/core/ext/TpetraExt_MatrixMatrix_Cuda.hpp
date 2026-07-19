@@ -16,6 +16,26 @@
 namespace Tpetra {
 namespace MMdetails {
 
+template <>
+struct KokkosKernelsSPGEMMBackend<Tpetra::KokkosCompat::KokkosCudaWrapperNode> {
+  static std::string parameter_prefix() { return "cuda"; }
+  static std::string algorithm_label() { return "Cuda"; }
+
+  template <class MatrixType>
+  static void pre_spgemm(MatrixType& Bmerged) {
+#if defined(KOKKOS_ENABLE_CUDA) && defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && ((CUDA_VERSION < 11000) || (CUDA_VERSION >= 11040))
+    using device_t = typename MatrixType::device_type;
+    if constexpr (std::is_same_v<typename device_t::execution_space, Kokkos::Cuda>) {
+      if (!KokkosSparse::isCrsGraphSorted(Bmerged.graph.row_map, Bmerged.graph.entries)) {
+        Import_Util::sortCrsMatrix(Bmerged);
+      }
+    }
+#else
+    (void)Bmerged;
+#endif
+  }
+};
+
 /*********************************************************************************************************/
 // MMM KernelWrappers for Partial Specialization to CUDA
 template <class Scalar,
@@ -107,162 +127,8 @@ void KernelWrappers<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::K
                                                                                                                                                                Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosCudaWrapperNode> > Cimport,
                                                                                                                                                                const std::string& label,
                                                                                                                                                                const Teuchos::RCP<Teuchos::ParameterList>& params) {
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  RCP<Tpetra::Details::ProfilingRegion> MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: MMM: Newmatrix CudaWrapper"));
-
-  // Node-specific code
-  typedef Tpetra::KokkosCompat::KokkosCudaWrapperNode Node;
-  std::string nodename("Cuda");
-
-  // Lots and lots of typedefs
-  typedef typename Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_device_type KCRS;
-  typedef typename KCRS::device_type device_t;
-  typedef typename KCRS::StaticCrsGraphType graph_t;
-  typedef typename graph_t::row_map_type::non_const_type lno_view_t;
-  using int_view_t = Kokkos::View<int*, typename lno_view_t::array_layout, typename lno_view_t::memory_space, typename lno_view_t::memory_traits>;
-  typedef typename graph_t::row_map_type::const_type c_lno_view_t;
-  typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
-  typedef typename KCRS::values_type::non_const_type scalar_view_t;
-  // typedef typename graph_t::row_map_type::const_type lno_view_t_const;
-
-  // Options
-  int team_work_size = 16;  // Defaults to 16 as per Deveci 12/7/16 - csiefer
-  std::string myalg("SPGEMM_DEFAULT");
-  if (!params.is_null()) {
-    if (params->isParameter("cuda: algorithm"))
-      myalg = params->get("cuda: algorithm", myalg);
-    if (params->isParameter("cuda: team work size"))
-      team_work_size = params->get("cuda: team work size", team_work_size);
-  }
-
-  // KokkosKernelsHandle
-  typedef KokkosKernels::Experimental::KokkosKernelsHandle<
-      typename lno_view_t::const_value_type, typename lno_nnz_view_t::const_value_type, typename scalar_view_t::const_value_type,
-      typename device_t::execution_space, typename device_t::memory_space, typename device_t::memory_space>
-      KernelHandle;
-  using IntKernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<
-      typename int_view_t::const_value_type, typename lno_nnz_view_t::const_value_type, typename scalar_view_t::const_value_type,
-      typename device_t::execution_space, typename device_t::memory_space, typename device_t::memory_space>;
-
-  // Grab the  Kokkos::SparseCrsMatrices
-  const KCRS Amat = Aview.origMatrix->getLocalMatrixDevice();
-  const KCRS Bmat = Bview.origMatrix->getLocalMatrixDevice();
-
-  c_lno_view_t Arowptr         = Amat.graph.row_map,
-               Browptr         = Bmat.graph.row_map;
-  const lno_nnz_view_t Acolind = Amat.graph.entries,
-                       Bcolind = Bmat.graph.entries;
-  const scalar_view_t Avals    = Amat.values,
-                      Bvals    = Bmat.values;
-
-  // Get the algorithm mode
-  std::string alg = nodename + std::string(" algorithm");
-  //  printf("DEBUG: Using kernel: %s\n",myalg.c_str());
-  if (!params.is_null() && params->isParameter(alg)) myalg = params->get(alg, myalg);
-  KokkosSparse::SPGEMMAlgorithm alg_enum = KokkosSparse::StringToSPGEMMAlgorithm(myalg);
-
-  // Merge the B and Bimport matrices
-  KCRS Bmerged = Tpetra::MMdetails::merge_matrices(Aview, Bview, Acol2Brow, Acol2Irow, Bcol2Ccol, Icol2Ccol, C.getColMap()->getLocalNumElements());
-
-  // if Kokkos Kernels is going to use the cuSparse TPL for SpGEMM, this matrix
-  // needs to be sorted
-  // Try to mirror the Kokkos Kernels internal SpGEMM TPL use logic
-  // inspired by https://github.com/trilinos/Trilinos/pull/11709
-  // and https://github.com/kokkos/kokkos-kernels/pull/2008
-#if defined(KOKKOS_ENABLE_CUDA) && defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && ((CUDA_VERSION < 11000) || (CUDA_VERSION >= 11040))
-  if constexpr (std::is_same_v<typename device_t::execution_space, Kokkos::Cuda>) {
-    if (!KokkosSparse::isCrsGraphSorted(Bmerged.graph.row_map, Bmerged.graph.entries)) {
-      Import_Util::sortCrsMatrix(Bmerged);
-    }
-  }
-#endif
-
-  MM = Teuchos::null;
-  MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: MMM: Newmatrix CudaCore"));
-
-  // Do the multiply on whatever we've got
-  typename KernelHandle::nnz_lno_t AnumRows = Amat.numRows();
-  typename KernelHandle::nnz_lno_t BnumRows = Bmerged.numRows();
-  typename KernelHandle::nnz_lno_t BnumCols = Bmerged.numCols();
-
-  // regardless of whether integer row ptrs are used, need to ultimately produce the row pointer, entries, and values of the expected types
-  lno_view_t row_mapC(Kokkos::ViewAllocateWithoutInitializing("non_const_lno_row"), AnumRows + 1);
-  lno_nnz_view_t entriesC;
-  scalar_view_t valuesC;
-
-  Tpetra::Details::IntRowPtrHelper<decltype(Bmerged)> irph(Bmerged.nnz(), Bmerged.graph.row_map);
-  const bool useIntRowptrs =
-      irph.shouldUseIntRowptrs() &&
-      Aview.origMatrix->getApplyHelper()->shouldUseIntRowptrs();
-
-  if (useIntRowptrs) {
-    IntKernelHandle kh;
-    kh.create_spgemm_handle(alg_enum);
-    kh.set_team_work_size(team_work_size);
-
-    int_view_t int_row_mapC(Kokkos::ViewAllocateWithoutInitializing("non_const_int_row"), AnumRows + 1);
-
-    auto Aint = Aview.origMatrix->getApplyHelper()->getIntRowptrMatrix(Amat);
-    auto Bint = irph.getIntRowptrMatrix(Bmerged);
-
-    {
-      Tpetra::Details::ProfilingRegion MM2("TpetraExt: MMM: Newmatrix KokkosKernels symbolic int");
-      KokkosSparse::spgemm_symbolic(&kh, AnumRows, BnumRows, BnumCols, Aint.graph.row_map, Aint.graph.entries, false, Bint.graph.row_map, Bint.graph.entries, false, int_row_mapC);
-    }
-
-    Tpetra::Details::ProfilingRegion MM2("TpetraExt: MMM: Newmatrix KokkosKernels numeric int");
-
-    size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
-    if (c_nnz_size) {
-      entriesC = lno_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
-      valuesC  = scalar_view_t(Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
-    }
-    KokkosSparse::spgemm_numeric(&kh, AnumRows, BnumRows, BnumCols, Aint.graph.row_map, Aint.graph.entries, Aint.values, false, Bint.graph.row_map, Bint.graph.entries, Bint.values, false, int_row_mapC, entriesC, valuesC);
-    // transfer the integer rowptrs back to the correct rowptr type
-    Kokkos::parallel_for(
-        int_row_mapC.size(), KOKKOS_LAMBDA(int i) { row_mapC(i) = int_row_mapC(i); });
-    kh.destroy_spgemm_handle();
-
-  } else {
-    KernelHandle kh;
-    kh.create_spgemm_handle(alg_enum);
-    kh.set_team_work_size(team_work_size);
-
-    {
-      Tpetra::Details::ProfilingRegion MM2("TpetraExt: Jacobi: Newmatrix KokkosKernels symbolic non-int");
-      KokkosSparse::spgemm_symbolic(&kh, AnumRows, BnumRows, BnumCols, Amat.graph.row_map, Amat.graph.entries, false, Bmerged.graph.row_map, Bmerged.graph.entries, false, row_mapC);
-    }
-
-    Tpetra::Details::ProfilingRegion MM2("TpetraExt: Jacobi: Newmatrix KokkosKernels numeric non-int");
-    size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
-    if (c_nnz_size) {
-      entriesC = lno_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
-      valuesC  = scalar_view_t(Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
-    }
-
-    KokkosSparse::spgemm_numeric(&kh, AnumRows, BnumRows, BnumCols, Amat.graph.row_map, Amat.graph.entries, Amat.values, false, Bmerged.graph.row_map, Bmerged.graph.entries, Bmerged.values, false, row_mapC, entriesC, valuesC);
-
-    kh.destroy_spgemm_handle();
-  }
-
-  MM = Teuchos::null;
-  MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: MMM: Newmatrix CudaSort"));
-
-  // Sort & set values
-  if (params.is_null() || params->get("sort entries", true))
-    Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC);
-  C.setAllValues(row_mapC, entriesC, valuesC);
-
-  MM = Teuchos::null;
-  MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: MMM: Newmatrix CudaESFC"));
-
-  // Final Fillcomplete
-  RCP<Teuchos::ParameterList> labelList = rcp(new Teuchos::ParameterList);
-  labelList->set("Timer Label", label);
-  if (!params.is_null()) labelList->set("compute global constants", params->get("compute global constants", true));
-  RCP<const Export<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosCudaWrapperNode> > dummyExport;
-  C.expertStaticFillComplete(Bview.origMatrix->getDomainMap(), Aview.origMatrix->getRangeMap(), Cimport, dummyExport, labelList);
+  Tpetra::MMdetails::kokkos_kernels_mult_A_B_newmatrix(
+      Aview, Bview, Acol2Brow, Acol2Irow, Bcol2Ccol, Icol2Ccol, C, Cimport, label, params);
 }
 
 /*********************************************************************************************************/
@@ -398,7 +264,7 @@ void KernelWrappers<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::K
           LO Bkj = Bcolind[j];
           LO Cij = Bcol2Ccol[Bkj];
 
-          const bool badInsert = (Cij == LO_INVALID) || (c_status[Cij] < OLD_ip) || (c_status[Cij] >= CSR_ip);
+          const bool badInsert = c_status[Cij] < OLD_ip || c_status[Cij] >= CSR_ip;
           if (!badInsert)
             Cvals[c_status[Cij]] += Aval * Bvals[j];
           else if (throwOnInsert)
@@ -414,7 +280,7 @@ void KernelWrappers<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::K
           LO Ikj = Icolind[j];
           LO Cij = Icol2Ccol[Ikj];
 
-          const bool badInsert = (Cij == LO_INVALID) || (c_status[Cij] < OLD_ip) || (c_status[Cij] >= CSR_ip);
+          const bool badInsert = c_status[Cij] < OLD_ip || c_status[Cij] >= CSR_ip;
           if (!badInsert)
             Cvals[c_status[Cij]] += Aval * Ivals[j];
           else if (throwOnInsert)
@@ -730,7 +596,7 @@ void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::
 
   // Options
   int team_work_size = 16;
-  std::string myalg("SPGEMM_DEFAULT");
+  std::string myalg("SPGEMM_KK_MEMORY");
   if (!params.is_null()) {
     if (params->isParameter("cuda: algorithm"))
       myalg = params->get("cuda: algorithm", myalg);
