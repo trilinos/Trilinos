@@ -88,7 +88,10 @@ template <> struct Scale_BlockInverseDiagonals<Side::Left, Algo::OnDevice> {
   inline static int invoke(MemberType &exec_instance, const ViewTypeD &D, const ViewTypeA &A) {
     typedef typename ViewTypeA::non_const_value_type value_type;
 
+    using value_type = typename ViewTypeA::non_const_value_type;
     const ordinal_type m = A.extent(0), n = A.extent(1);
+    const value_type zero(0);
+
     if (A.extent(0) == D.extent(0)) {
       if (A.span() > 0) {
         using exec_space = MemberType;
@@ -97,7 +100,7 @@ template <> struct Scale_BlockInverseDiagonals<Side::Left, Algo::OnDevice> {
           Kokkos::RangePolicy<exec_space> policy(exec_instance, 0, m);
           Kokkos::parallel_for(policy, KOKKOS_LAMBDA(const ordinal_type &i) {
               const value_type dii = D(i, i);
-              A(i, 0) /= dii;
+              if (dii != zero) A(i, 0) /= dii;
           });
         } else {
           using policy_type = Kokkos::TeamPolicy<exec_space>;
@@ -106,8 +109,10 @@ template <> struct Scale_BlockInverseDiagonals<Side::Left, Algo::OnDevice> {
             policy, KOKKOS_LAMBDA(const typename policy_type::member_type &member) {
               const ordinal_type i = member.league_rank();
               const value_type dii = D(i, i);
-              Kokkos::parallel_for(Kokkos::TeamVectorRange(member, n),
-                                   [=](const ordinal_type &j) { A(i, j) /= dii; });
+              if (dii != zero) {
+                Kokkos::parallel_for(Kokkos::TeamVectorRange(member, n),
+                                     [=](const ordinal_type &j) { A(i, j) /= dii; });
+              }
           });
         }
       }

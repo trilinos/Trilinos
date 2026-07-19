@@ -45,6 +45,7 @@ template <> struct LDL<Uplo::Lower, Algo::Serial> {
       }
     } else {
       TACHO_TEST_FOR_ABORT(true, ">> This function is only allowed in host space.");
+      return -1;
     }
     return r_val;
   }
@@ -55,13 +56,14 @@ template <> struct LDL<Uplo::Lower, Algo::Serial> {
 
     static constexpr bool runOnHost = run_tacho_on_host_v<typename ViewTypeA::execution_space>;
 
+    int r_val = 0;
     if constexpr(runOnHost) {
-      int r_val = 0;
       r_val = invoke(A, P, W);
-      return r_val;
     } else {
       TACHO_TEST_FOR_ABORT(true, ">> This function is only allowed in host space.");
+      return -1;
     }
+    return r_val;
   }
 
   template <typename ViewTypeA, typename ViewTypeP, typename ViewTypeD>
@@ -148,6 +150,7 @@ template <> struct LDL<Uplo::Lower, Algo::Serial> {
       }
     } else {
       TACHO_TEST_FOR_ABORT(true, ">> This function is only allowed in host space.");
+      return -1;
     }
     return r_val;
   }
@@ -164,12 +167,13 @@ template <> struct LDL<Uplo::Lower, Algo::Serial> {
       return r_val;
     } else {
       TACHO_TEST_FOR_ABORT(true, ">> This function is only allowed in host space.");
+      return -1;
     }
   }
 };
 
 template <typename ArgUplo> struct LDL_nopiv<ArgUplo, Algo::Serial> {
-  template <typename ViewTypeA> inline static int invoke(const ViewTypeA &A, const bool conjugate) {
+  template <typename ViewTypeA> inline static int invoke(const double tol, const ViewTypeA &A, const bool conjugate) {
 
     static constexpr bool runOnHost = run_tacho_on_host_v<typename ViewTypeA::execution_space>;
 
@@ -180,8 +184,7 @@ template <typename ArgUplo> struct LDL_nopiv<ArgUplo, Algo::Serial> {
       int r_val = 0;
       const ordinal_type m = A.extent(0);
       if (m > 0) {
-        LapackSerial<value_type>::sytrf_nopiv(ArgUplo::param, conjugate, m, A.data(), A.stride(1), &r_val);
-        TACHO_TEST_FOR_EXCEPTION(r_val, std::runtime_error, "LapackSerial (ldl-nopiv) returns non-zero error code.");
+        LapackSerial<value_type>::sytrf_nopiv(ArgUplo::param, conjugate, m, tol, A.data(), A.stride(1), &r_val);
       }
       return r_val;
     } else {
@@ -191,19 +194,18 @@ template <typename ArgUplo> struct LDL_nopiv<ArgUplo, Algo::Serial> {
   }
 
   template <typename MemberType, typename ViewTypeA>
-  KOKKOS_INLINE_FUNCTION static int invoke(MemberType &member, const ViewTypeA &A, const bool conjugate) {
+  KOKKOS_INLINE_FUNCTION static int invoke(MemberType &member, const double tol, const ViewTypeA &A, const bool conjugate) {
 
     static constexpr bool runOnHost = run_tacho_on_host_v<typename ViewTypeA::execution_space>;
 
+    int r_val = 0;
     if constexpr(runOnHost) {
-      int r_val = 0;
-      r_val = invoke(A, conjugate);
-      //TACHO_TEST_FOR_EXCEPTION(r_val, std::runtime_error, "LapackSerial (ldl-nopiv) returns non-zero error code.");
-      return r_val;
+      r_val = invoke(tol, A, conjugate);
     } else {
       TACHO_TEST_FOR_ABORT(true, ">> This function is only allowed in host space.");
-      return 0;
+      return -1;
     }
+    return r_val;
   }
 };
 

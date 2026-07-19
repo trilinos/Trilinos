@@ -474,6 +474,97 @@ template <typename T> struct BlasSerial {
       }
     }
   }
+
+  // TRSM with zero pivot
+  inline static void trsm_defs(const char side, const char uplo, const char transa, const char diag,
+                               int m, int n, const T alpha, const T *A, int lda,
+                                                            /* */ T *B, int ldb) {
+    typedef ArithTraits<T> arith_traits;
+    const T one(1.0), zero(0.0);
+    
+    if (alpha == zero) {
+      for (int j = 0; j < n; j++) {
+        for (int i = 0; i < m; i++) {
+          B[i + j*ldb] = zero;
+        }
+      }
+      return;
+    } else if (alpha != one) {
+      for (int j = 0; j < n; j++) {
+        for (int i = 0; i < m; i++) {
+          B[i + j*ldb] *= alpha;
+        }
+      }
+    }
+
+    ///
+    /// side left
+    ///
+    if (side == 'L' || side == 'l') {
+      if (uplo == 'U' || uplo == 'u') {
+        if (transa == 'T' || transa == 't') {
+          // Transpose-solve with Upper-triangular matrix from Left, U^{-T} * B
+          for (int i = 0; i < m; i++) {
+            if (A[i + i*lda] == zero) {
+              // zero-out off-diagonal
+              for (int j = 0; j < n; j++) {
+                B[i + j*ldb] = zero;
+              }
+            } else {
+              for (int j = 0; j < n; j++) {
+                // scale
+                if (diag != 'U' && diag != 'u') {
+                  B[i + j*ldb] /= A[i + i*lda];
+                }
+                // update
+                for (int l = i+1; l < m; l++) {
+                  B[l + j*ldb] -= A[i + l*lda] * B[i + j*ldb];
+                }
+              }
+            }
+          }
+        } else if (transa == 'C' || transa == 'c') {
+          // Conjugate-solve with Upper-triangular matrix from Left, U^{-T} * B
+          for (int i = 0; i < m; i++) {
+            if (A[i + i*lda] == zero) {
+              // zero-out off-diagonal
+              for (int j = 0; j < n; j++) {
+                B[i + j*ldb] = zero;
+              }
+            } else {
+              for (int j = 0; j < n; j++) {
+                // scale
+                if (diag != 'U' && diag != 'u') {
+                  B[i + j*ldb] /= arith_traits::conj(A[i + i*lda]);
+                }
+                // update
+                for (int l = i+1; l < m; l++) {
+                  B[l + j*ldb] -= arith_traits::conj(A[i + l*lda]) * B[i + j*ldb];
+                }
+              }
+            }
+          }
+        } else {
+          Kokkos::abort("trsm_def(NoTrans): is not valid");
+        }
+      } else {
+        Kokkos::abort("trsm_def(Lower): is not valid");
+      }
+    }
+    ///
+    /// side right
+    ///
+    else if (side == 'R' || side == 'r') {
+      Kokkos::abort("trsm_def(Right): is not valid");
+    }
+  }
+
+  inline static void reset_zero_diags(int m, T *A, int lda) {
+    const T one(1.0), zero(0.0);
+    for (int i = 0; i < m; i++) {
+      if (A[i + i*lda] == zero) A[i + i*lda] = one;
+    }
+  }
 };
 
 } // namespace Tacho

@@ -360,7 +360,7 @@ template <typename ValueType> struct MatrixMarket {
       file >> m >> n;
       if ( m != ordinal_type(B.extent(0))) {
         std::cout << std::endl
-                  << "ERROR: expected the RHS of length(m = " << B.extent(0) << ")" 
+                  << "ERROR: expected the RHS of length (m = " << B.extent(0) << " vs " << m << ")" 
                   << std::endl << std::endl;
         return -1;
       }
