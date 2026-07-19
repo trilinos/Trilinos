@@ -23,49 +23,6 @@
 
 namespace Tacho {
 
-// Trsm with deficient-diagonals
-template <typename ArgSide, typename ArgUplo, typename ArgTransA>
-struct Trsm_defs<ArgSide, ArgUplo, ArgTransA, Algo::OnDevice> {
-  template <typename MemberType, typename DiagType, typename ScalarType, typename ViewTypeA, typename ViewTypeB>
-  inline static int invoke(MemberType &member, const DiagType diagA, const ScalarType alpha, const ViewTypeA &A,
-                           const ViewTypeB &B) {
-#if 1
-    using exec_space = MemberType;
-    using policy_type = Kokkos::RangePolicy<exec_space>;
-    using value_type = typename ViewTypeA::non_const_value_type;
-    const auto &exec_instance = member;
-    const value_type zero (0);
-    const value_type one (1);
-
-    const ordinal_type m = B.extent(0);
-    const ordinal_type n = B.extent(1);
-    // Side::Left, Uplo::Upper, Trans::Transpose
-    if (ArgSide::param != 'L' || ArgUplo::param != 'U' || ArgTransA::param != 'T') 
-      printf( " Trsm_defs(%c,%c,%c) not implemented\n",ArgSide::param,ArgUplo::param,ArgTransA::param );
-    const auto policy_scale = policy_type(exec_instance, 0, m);
-    for (ordinal_type i = 0; i < m; i++) {
-      Kokkos::parallel_for(policy_scale, KOKKOS_LAMBDA(const ordinal_type &j) {
-        if (A(i, i) == zero ) {
-          // if tiny pivot, zero out off-diagonal
-          B(i, j) = zero;
-        } else {
-          if (diagA.param != 'U') {
-            // scale
-            B(i, j) /= A(i, i);
-          }
-          // update
-          for (ordinal_type k=j+1; k<m; k++) B(k, j) -= A(k, i) * B(i, j);
-        }
-      });
-      // reset zero-pivot with one
-      // TODO: move it out, reset after TRSM with off-diagonal blocks
-      //if (A(i, i) == zero ) A(i, i) = one;
-    }
-#endif
-    return 0;
-  }
-};
-
 // LDL without pivoting 
 template <typename ArgUplo> struct LDL_nopiv<ArgUplo, Algo::OnDevice> {
 
