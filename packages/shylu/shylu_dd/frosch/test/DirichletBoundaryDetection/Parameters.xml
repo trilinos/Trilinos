@@ -1,0 +1,68 @@
+<ParameterList name="Dirichlet Boundary Detection">
+    <Parameter name="Linear Solver Type" type="string" value="Belos"/>
+    <ParameterList name="Linear Solver Types">
+        <ParameterList name="Belos">
+            <Parameter name="Solver Type" type="string" value="Block GMRES"/>
+            <ParameterList name="VerboseObject">
+                <Parameter name="Verbosity Level" type="string" value="low"/>
+            </ParameterList>
+            <ParameterList name="Solver Types">
+                <ParameterList name="Block GMRES">
+                    <Parameter name="Block Size" type="int" value="1"/>
+                    <Parameter name="Num Blocks" type="int" value="50"/>
+                    <Parameter name="Convergence Tolerance" type="double" value="1e-8"/>
+                    <Parameter name="Maximum Iterations" type="int" value="50"/>
+                    <!-- Warnings (1), iteration details (2), timing (16), and status tests (32). -->
+                    <Parameter name="Verbosity" type="int" value="51"/>
+                    <Parameter name="Output Frequency" type="int" value="1"/>
+                </ParameterList>
+            </ParameterList>
+        </ParameterList>
+    </ParameterList>
+    <Parameter name="Preconditioner Type" type="string" value="FROSch"/>
+    <ParameterList name="Preconditioner Types">
+        <ParameterList name="FROSch">
+            <Parameter name="Dimension" type="int" value="2"/>
+            <Parameter name="Overlap" type="int" value="0"/>
+            <ParameterList name="AlgebraicOverlappingOperator">
+                <ParameterList name="Solver">
+                    <Parameter name="SolverType" type="string" value="Amesos2"/>
+                    <Parameter name="Solver" type="string" value="Klu2"/>
+                </ParameterList>
+            </ParameterList>
+            <ParameterList name="GDSWCoarseOperator">
+                <ParameterList name="Dirichlet boundary rows in global matrix">  <!-- Detect them by counting number of non-zeros. -->
+                    <!-- The test sets "Find Dirichlet boundary rows". Source and tolerance use FROSch defaults. -->
+                    <!--
+                    <Parameter name="Find Dirichlet boundary rows"              type="bool"     value="true"/>
+                    <Parameter name="Source"                                    type="string"   value="matrix"/>  {"matrix","graph"} All values that are stored explicitly (also zeros) are counted using "graph" as a source.
+                    <Parameter name="Tolerance for values in matrix"            type="double"   value="0.0"/>  If abs(value) > tol, it is considered a nonzero value.
+                    -->
+                </ParameterList>
+                <ParameterList name="Blocks">
+                    <ParameterList name="1">
+                        <Parameter name="Use For Coarse Space" type="bool" value="true"/>
+                        <Parameter name="Rotations" type="bool" value="false"/>
+                    </ParameterList>
+                    <ParameterList name="2">
+                        <Parameter name="Use For Coarse Space" type="bool" value="true"/>
+                        <Parameter name="Rotations" type="bool" value="false"/>
+                    </ParameterList>
+                </ParameterList>
+                <ParameterList name="ExtensionSolver">
+                    <Parameter name="SolverType" type="string" value="Amesos2"/>
+                    <Parameter name="Solver" type="string" value="Klu2"/>
+                </ParameterList>
+                <ParameterList name="Distribution">
+                    <Parameter name="Type" type="string" value="linear"/>
+                    <Parameter name="NumProcs" type="int" value="1"/>
+                    <Parameter name="GatheringSteps" type="int" value="1"/>
+                </ParameterList>
+                <ParameterList name="CoarseSolver">
+                    <Parameter name="SolverType" type="string" value="Amesos2"/>
+                    <Parameter name="Solver" type="string" value="Klu2"/>
+                </ParameterList>
+            </ParameterList>
+        </ParameterList>
+    </ParameterList>
+</ParameterList>

@@ -102,6 +102,47 @@ namespace FROSch {
 
         CoarseOperatorPtr CoarseOperator_;
 
+    private:
+
+        /**
+         * @brief Construct merged, repeated DoF map for each block.
+         *
+         * For block i, repeatedMapVec[i] contains all DoFs on this rank's overlapping
+         * subdomain. It combines the component maps dofsMapsVec[i][j] for
+         * j = 0, ..., dofsPerNodeVec[i]-1 (e.g., displacement components x, y, z).
+         * These maps are repeated: the same global DoF may occur on multiple ranks.
+         * AssembleSubdomainMap merges the components by node.
+         *
+         * The component maps use the global IDs of the full system.
+         * The output maps instead use per-block numbering: the cumulative offset of
+         * preceding blocks is subtracted after assembly.
+         *
+         * If neither repeatedMapVec nor dofsMapsVec is available, for a single-block system,
+         * repeatedMapVec is constructed from the graph and row map of K_.
+         * - Building a repeated map from a unique map, is not a bijevtive operation, meaning
+         *   that different repeated maps can be built from a unique maps and vice versa.
+         *   This process involves communication between subdomains.
+         * If only dofsMapsVec is available, repeatedMapVec is built from that.
+         * - This is a bijective operation, so no information is lost.
+         *   This operation's communication is local to the subdomains.
+         * If repeatedMapVec is available, no modification is done.
+         *
+         * @param[in,out] repeatedMapVec One repeated DoF map per block. Existing maps
+         *     are preserved.
+         * @param[in] dofsMapsVec Component DoF maps indexed by [block][component].
+         *     Required for each missing output map in a system with multiple blocks.
+         * @param[in] dofsPerNodeVec Number of DoFs per node in each block;
+         *     its length specifies the number of blocks.
+         */
+        void buildRepeatedDoFMapPerBlock(ConstXMapPtrVecPtr& repeatedMapVec,
+                                         const ConstXMapPtrVecPtr2D& dofsMapsVec,
+                                         const UNVecPtr& dofsPerNodeVec);
+
+        void determineDirichletBoundaryDofs(GOVecPtr2D& dirichletBoundaryDofsVec,
+                                            ConstXMapPtrVecPtr repeatedMapVec,
+                                            ConstXMapPtr repeatedMap,
+                                            ConstXMapPtrVecPtr2D dofsMapsVec);
+
     };
 
 }
