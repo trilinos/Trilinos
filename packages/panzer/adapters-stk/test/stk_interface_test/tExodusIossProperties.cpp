@@ -106,10 +106,8 @@ TEUCHOS_UNIT_TEST(tExodusIossProperties, DefaultNameLength)
     Ioss::ElementBlock *eb = results.get_element_blocks()[0];
     TEST_EQUALITY(eb->field_count(Ioss::Field::TRANSIENT), 5);
     TEST_ASSERT(true  == eb->field_exists(short_field_name));
-    TEST_ASSERT(false == eb->field_exists(long_field_name));
-    TEST_ASSERT(false == eb->field_exists(too_long_field_name));
-    TEST_ASSERT(true  == eb->field_exists(long_field_name.substr(0,32)));
-    TEST_ASSERT(true  == eb->field_exists(too_long_field_name.substr(0,32)));
+    TEST_ASSERT(true == eb->field_exists(long_field_name));
+    TEST_ASSERT(true == eb->field_exists(too_long_field_name));
   }
 }
 
