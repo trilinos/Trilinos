@@ -69,7 +69,8 @@ public:
   virtual void reorder_and_resize_buckets(EntityRank rank, const FieldVector& fields,
                                           const std::vector<SizeAndCapacity>& newBucketSizes,
                                           const std::vector<BucketShift>& bucketShifts) = 0;
-  virtual void swap_field_data(Ordinal fieldOrdinal1, Ordinal fieldOrdinal2) = 0;
+  virtual void swap_host_cache_all_meta_data_pointers(Ordinal fieldOrdinal1, Ordinal fieldOrdinal2) = 0;
+  virtual void swap_host_cache_device_meta_data_pointers(Ordinal fieldOrdinal1, Ordinal fieldOrdinal2) = 0;
   virtual void clear_bucket_is_modified(Ordinal fieldOrdinal) = 0;
   virtual std::any get_device_bucket_is_modified(Ordinal fieldOrdinal, int& fieldRankedOrdinal) = 0;
   virtual size_t get_num_bytes_allocated_on_field(const FieldBase& field) const = 0;

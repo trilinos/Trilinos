@@ -97,44 +97,95 @@ void activate_entities(stk::io::StkMeshIoBroker &fixture,
 
 }
 
-TEST( StkMeshIoBroker, iofixture_externalFile )
+TEST( StkMeshIoBroker, ioBroker_externalFile )
 {
   // A simple test for reading and writing an exodus file using the StkMeshIoBroker
 
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  stk::ParallelMachine comm = stk::parallel_machine_world();
 
-  stk::io::StkMeshIoBroker fixture(pm);
+  stk::io::StkMeshIoBroker ioBroker(comm);
 
   std::string input_base_filename = "unit_test.g";
 
   bool ok = false;
   try {
     // Initialize meta data from exodus file
-    fixture.add_mesh_database(input_base_filename, stk::io::READ_MESH);
-    fixture.create_input_mesh();
+    ioBroker.add_mesh_database(input_base_filename, stk::io::READ_MESH);
+    ioBroker.create_input_mesh();
     ok = true;
 
-    stk::mesh::MetaData & meta_data = fixture.meta_data();
+    stk::mesh::MetaData & meta_data = ioBroker.meta_data();
 
     // Commit meta_data
     meta_data.commit();
 
     // bulk_data initialize (from exodus file)
-    fixture.populate_bulk_data();
+    ioBroker.populate_bulk_data();
 
     // exodus file creation
     std::string output_base_filename = "unit_test_output.e";
-    size_t output_index = fixture.create_output_mesh(output_base_filename, stk::io::WRITE_RESULTS);
+    size_t output_index = ioBroker.create_output_mesh(output_base_filename, stk::io::WRITE_RESULTS);
 
     // process output
     const double time_step = 0;
-    fixture.process_output_request(output_index, time_step);
+    ioBroker.process_output_request(output_index, time_step);
   }
   catch(...) {
     ASSERT_TRUE(ok);
   }
   // Since correctness can only be established by running SEACAS tools, correctness
   // checking is left to the test XML.
+}
+
+TEST( StkMeshIoBroker, ioBroker_iossRegion )
+{
+  // reading and writing an exodus file using StkMeshIoBroker with Ioss::Region
+  // that was obtained from a separate StkMeshIoBroker.
+
+  stk::ParallelMachine comm = stk::parallel_machine_world();
+
+  stk::io::StkMeshIoBroker otherIoBroker(comm);
+
+  std::string input_base_filename = "unit_test.g";
+  std::string output_base_filename = "unit_test_output.e";
+
+  size_t numElems = 0;
+  size_t numNodes = 0;
+
+  bool ok = false;
+  try {
+    // Initialize meta data from exodus file
+    otherIoBroker.add_mesh_database(input_base_filename, stk::io::READ_MESH);
+    otherIoBroker.create_input_mesh();
+    ok = true;
+
+    stk::io::StkMeshIoBroker ioBroker(comm);
+    ioBroker.add_mesh_database(otherIoBroker.get_input_ioss_region());
+    ioBroker.create_input_mesh();
+
+    ioBroker.populate_bulk_data();
+
+    numElems = stk::mesh::count_entities(ioBroker.bulk_data(), stk::topology::ELEM_RANK, ioBroker.meta_data().universal_part());
+    numNodes = stk::mesh::count_entities(ioBroker.bulk_data(), stk::topology::NODE_RANK, ioBroker.meta_data().universal_part());
+
+    // exodus file creation
+    size_t output_index = ioBroker.create_output_mesh(output_base_filename, stk::io::WRITE_RESULTS);
+
+    // process output
+    const double time_step = 0;
+    ioBroker.process_output_request(output_index, time_step);
+  }
+  catch(...) {
+    ASSERT_TRUE(ok);
+  }
+
+  {//now read from the output mesh and make sure it has the same number of
+   //nodes and elements as the original input mesh.
+    std::shared_ptr<stk::mesh::BulkData> meshPtr = stk::mesh::MeshBuilder(comm).create();
+    stk::io::fill_mesh(output_base_filename, *meshPtr);
+    EXPECT_EQ(numElems, stk::mesh::count_entities(*meshPtr, stk::topology::ELEM_RANK, meshPtr->mesh_meta_data().universal_part()));
+    EXPECT_EQ(numNodes, stk::mesh::count_entities(*meshPtr, stk::topology::NODE_RANK, meshPtr->mesh_meta_data().universal_part()));
+  }
 }
 
 TEST( StkMeshIoBroker, testModifyTopology )

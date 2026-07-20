@@ -415,12 +415,6 @@ void communicate_field_data(const BulkData& mesh, const std::vector<const FieldB
   }
 }
 
-//----------------------------------------------------------------------
-
-/** Sum (assemble) field-data for the specified fields on shared entities such that each shared entity
- * will have the same field values on each sharing proc.
- */
-
 namespace {
 
 template <typename T, Operation OP>
@@ -447,155 +441,17 @@ struct DoOp<T, Operation::MAX>
   { return lhs > rhs ? lhs : rhs; }
 };
 
-template <typename T, Operation OP>
-void parallel_op_impl(const BulkData& mesh, std::vector<const FieldBase*> fields, bool deterministic = false, bool includeGhosts = false)
-{
-  if (fields.empty()) {
-    return;
-  }
-  mesh.confirm_host_mesh_is_synchronized_from_device();
-
-  std::vector<EntityRank> fieldRanks;
-  fieldRanks.reserve(fields.size());
-  for(const FieldBase* field : fields) {
-    fieldRanks.push_back(field->entity_rank());
-  }
-  stk::util::sort_and_unique(fieldRanks);
-
-  std::vector<int> commProcs;
-  for (int proc = 0; proc < mesh.parallel_size(); ++proc) {
-    for (EntityRank fieldRank : fieldRanks) {
-      auto sharedCommMap = mesh.template volatile_fast_shared_comm_map<typename stk::ngp::DeviceSpace::mem_space>(fieldRank, proc, includeGhosts);
-      if (sharedCommMap.extent(0) > 0) {
-        commProcs.push_back(proc);
-      }
-    }
-  }
-  stk::util::sort_and_unique(commProcs);
-
-  auto msgPacker = [&fields, &mesh, includeGhosts](int proc, std::vector<T>& sendBuffer)
-  {
-    sendBuffer.clear();
-    size_t totalSize = 0;
-    for (size_t j = 0; j < fields.size(); ++j) {
-      const FieldBase& f = *fields[j];
-      STK_ThrowRequireMsg(f.type_is<T>(), "Cannot mix Fields with different datatypes.  Field '" << f.name() <<
-                          "' is of type " << f.data_traits().type_info.name() << " when the entire set of Fields " <<
-                          "must be of type " << fields[0]->data_traits().type_info.name());
-
-      auto hostCommMapIndices = mesh.template volatile_fast_shared_comm_map<typename stk::ngp::DeviceSpace::mem_space>(f.entity_rank(), proc, includeGhosts);
-      for (size_t i = 0; i < hostCommMapIndices.extent(0); ++i) {
-        const unsigned bucketId = hostCommMapIndices(i).bucket_id;
-        const unsigned scalarsPerEntity = field_bytes_per_entity(f, bucketId) / sizeof(T);
-        totalSize += scalarsPerEntity;
-      }
-    }
-    sendBuffer.reserve(totalSize);
-
-    for (size_t j = 0; j < fields.size(); ++j) {
-      const FieldBase& f = *fields[j];
-      auto hostCommMapIndices = mesh.template volatile_fast_shared_comm_map<typename stk::ngp::DeviceSpace::mem_space>(f.entity_rank(), proc, includeGhosts);
-
-      if (f.host_data_layout() == Layout::Right) {
-        auto fieldData = f.data<T, ReadOnly, stk::ngp::HostSpace, Layout::Right>();
-        for (size_t i = 0; i < hostCommMapIndices.extent(0); ++i) {
-          const unsigned bucketId = hostCommMapIndices(i).bucket_id;
-          const unsigned bucketOrd = hostCommMapIndices(i).bucket_ord;
-          auto entityValues = fieldData.entity_values(FastMeshIndex{bucketId, bucketOrd});
-          for (ScalarIdx scalar : entityValues.scalars()) {
-            sendBuffer.push_back(entityValues(scalar));
-          }
-        }
-      }
-      else if (f.host_data_layout() == Layout::Left) {
-        auto fieldData = f.data<T, ReadOnly, stk::ngp::HostSpace, Layout::Left>();
-        for (size_t i = 0; i < hostCommMapIndices.extent(0); ++i) {
-          const unsigned bucketId = hostCommMapIndices(i).bucket_id;
-          const unsigned bucketOrd = hostCommMapIndices(i).bucket_ord;
-          auto entityValues = fieldData.entity_values(FastMeshIndex{bucketId, bucketOrd});
-          for (ScalarIdx scalar : entityValues.scalars()) {
-            sendBuffer.push_back(entityValues(scalar));
-          }
-        }
-      }
-      else {
-        STK_ThrowErrorMsg("Unsupported host Field data layout: " << f.host_data_layout());
-      }
-    }
-  };
-
-  auto msgUnpacker = [&fields, &mesh, includeGhosts](int proc, std::vector<T>& recvBuffer)
-  {
-    DoOp<T, OP> doOp;
-
-    unsigned recvOffset = 0;
-    for (size_t j = 0; j < fields.size(); ++j) {
-      const FieldBase& f = *fields[j] ;
-      auto hostCommMapIndices = mesh.template volatile_fast_shared_comm_map<typename stk::ngp::DeviceSpace::mem_space>(f.entity_rank(), proc, includeGhosts);
-
-      if (f.host_data_layout() == Layout::Right) {
-        auto fieldData = f.data<T, ReadWrite, stk::ngp::HostSpace, Layout::Right>();
-        for (size_t i = 0; i < hostCommMapIndices.extent(0); ++i) {
-          const unsigned bucketId = hostCommMapIndices(i).bucket_id;
-          const unsigned bucketOrd = hostCommMapIndices(i).bucket_ord;
-          auto entityValues = fieldData.entity_values(FastMeshIndex{bucketId, bucketOrd});
-          for (ScalarIdx scalar : entityValues.scalars()) {
-            entityValues(scalar) = doOp(entityValues(scalar), recvBuffer[recvOffset++]);
-          }
-        }
-      }
-      else if (f.host_data_layout() == Layout::Left) {
-        auto fieldData = f.data<T, ReadWrite, stk::ngp::HostSpace, Layout::Left>();
-        for (size_t i = 0; i < hostCommMapIndices.extent(0); ++i) {
-          const unsigned bucketId = hostCommMapIndices(i).bucket_id;
-          const unsigned bucketOrd = hostCommMapIndices(i).bucket_ord;
-          auto entityValues = fieldData.entity_values(FastMeshIndex{bucketId, bucketOrd});
-          for (ScalarIdx scalar : entityValues.scalars()) {
-            entityValues(scalar) = doOp(entityValues(scalar), recvBuffer[recvOffset++]);
-          }
-        }
-      }
-      else {
-        STK_ThrowErrorMsg("Unsupported host Field data layout: " << f.host_data_layout());
-      }
-    }
-  };
-
-  MPI_Comm comm = mesh.parallel();
-  stk::parallel_data_exchange_sym_pack_unpack<T>(comm, commProcs, msgPacker, msgUnpacker, deterministic);
 }
 
-template <Operation OP>
-inline
-void parallel_op(const BulkData& mesh, const std::vector<const FieldBase*>& fields, bool deterministic)
-{
-  if (mesh.parallel_size() == 1 || fields.empty()) return;
+//----------------------------------------------------------------------
 
-  if (fields[0]->type_is<double>()) {
-    parallel_op_impl<double, OP>(mesh, fields, deterministic);
-  }
-  else if (fields[0]->type_is<int>()) {
-    parallel_op_impl<int, OP>(mesh, fields, deterministic);
-  }
-  else if (fields[0]->type_is<float>()) {
-    parallel_op_impl<float, OP>(mesh, fields, deterministic);
-  }
-  else if (fields[0]->type_is<long double>()) {
-    parallel_op_impl<long double, OP>(mesh, fields, deterministic);
-  }
-  else if (fields[0]->type_is<unsigned long>()) {
-    parallel_op_impl<unsigned long, OP>(mesh, fields, deterministic);
-  }
-  else {
-    STK_ThrowErrorMsg("Field is of unsupported type: " << fields[0]->data_traits().type_info.name());
-  }
-}
-
-}
-
+/** Sum (assemble) field-data for the specified fields on shared entities such that
+ * each shared entity will have the same field values on each sharing proc.
+ */
 void parallel_sum(const BulkData& mesh, const std::vector<const FieldBase*>& fields, bool deterministic)
 {
-  parallel_op<Operation::SUM>(mesh, fields, deterministic);
+  constexpr bool includeGhosts = false;
+  impl::ngp_parallel_op<stk::ngp::HostSpace, Operation::SUM, includeGhosts>(mesh, fields, deterministic);
 }
 
 //----------------------------------------------------------------------
@@ -606,7 +462,8 @@ void parallel_sum(const BulkData& mesh, const std::vector<const FieldBase*>& fie
  */
 void parallel_max(const BulkData& mesh, const std::vector<const FieldBase*>& fields)
 {
-  parallel_op<Operation::MAX>(mesh, fields, false);
+  constexpr bool includeGhosts = false;
+  impl::ngp_parallel_op<stk::ngp::HostSpace, Operation::MAX, includeGhosts>(mesh, fields, false);
 }
 
 /** Communicate and take the minimum value of field-data for the specified fields
@@ -615,49 +472,27 @@ void parallel_max(const BulkData& mesh, const std::vector<const FieldBase*>& fie
  */
 void parallel_min(const BulkData& mesh, const std::vector<const FieldBase*>& fields)
 {
-  parallel_op<Operation::MIN>(mesh, fields, false);
-}
-
-template <Operation OP>
-void parallel_op_including_ghosts_impl(const BulkData & mesh, const std::vector<const FieldBase *> & fields, bool deterministic)
-{
-  if (mesh.parallel_size() == 1 || fields.empty() ) { return; }
-  mesh.confirm_host_mesh_is_synchronized_from_device();
-
-  if (fields[0]->type_is<double>()) {
-    parallel_op_impl<double, OP>(mesh, fields, deterministic, true);
-  }
-  else if (fields[0]->type_is<int>()) {
-    parallel_op_impl<int, OP>(mesh, fields, deterministic, true);
-  }
-  else if (fields[0]->type_is<float>()) {
-    parallel_op_impl<float, OP>(mesh, fields, deterministic, true);
-  }
-  else if (fields[0]->type_is<long double>()) {
-    parallel_op_impl<long double, OP>(mesh, fields, deterministic, true);
-  }
-  else if (fields[0]->type_is<unsigned long>()) {
-    parallel_op_impl<unsigned long, OP>(mesh, fields, deterministic, true);
-  }
-  else {
-    STK_ThrowErrorMsg("Field is of unsupported type: " << fields[0]->data_traits().type_info.name());
-  }
+  constexpr bool includeGhosts = false;
+  impl::ngp_parallel_op<stk::ngp::HostSpace, Operation::MIN, includeGhosts>(mesh, fields, false);
 }
 
 void parallel_sum_including_ghosts(const BulkData & mesh, const std::vector<const FieldBase *> & fields, bool deterministic)
 {
-  parallel_op_including_ghosts_impl<Operation::SUM>(mesh, fields, deterministic);
+  constexpr bool includeGhosts = true;
+  impl::ngp_parallel_op<stk::ngp::HostSpace, Operation::SUM, includeGhosts>(mesh, fields, deterministic);
 }
 
 void parallel_max_including_ghosts(const BulkData & mesh, const std::vector<const FieldBase *> & fields, bool deterministic)
 {
-  parallel_op_including_ghosts_impl<Operation::MAX>(mesh, fields, deterministic);
+  constexpr bool includeGhosts = true;
+  impl::ngp_parallel_op<stk::ngp::HostSpace, Operation::MAX, includeGhosts>(mesh, fields, deterministic);
 }
 
 void parallel_min_including_ghosts(const BulkData & mesh, const std::vector<const FieldBase *> & fields, bool deterministic)
 {
-  parallel_op_including_ghosts_impl<Operation::MIN>(mesh, fields, deterministic);
+  constexpr bool includeGhosts = true;
+  impl::ngp_parallel_op<stk::ngp::HostSpace, Operation::MIN, includeGhosts>(mesh, fields, deterministic);
 }
 
-
 } // namespace stk::mesh
+

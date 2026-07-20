@@ -35,15 +35,18 @@
 #ifndef stk_util_environment_FormatMemorySize_hpp
 #define stk_util_environment_FormatMemorySize_hpp
 
+#include <stk_util/stk_config.h>
 #include <cstddef>  // for size_t
 #include <string>   // for string
 
 namespace stk {
 
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after May 2026
 typedef size_t MemorySize;
 
-std::string format_memory_size(double time);
-std::string format_memory_size(MemorySize time);
+STK_DEPRECATED std::string format_memory_size(double time);
+STK_DEPRECATED std::string format_memory_size(MemorySize time);
+#endif
 
 } // namespace stk
 

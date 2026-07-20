@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,7 +30,7 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
 #include "stk_util/util/string_utils.hpp"
 #include <cstddef>  // for size_t
@@ -38,6 +38,7 @@
 #include <cctype>
 #include <algorithm>
 #include <sstream>
+#include "stk_util/util/ReportHandler.hpp"
 
 namespace stk {
 
@@ -178,6 +179,46 @@ std::vector<std::string> split_string(const std::string & input, const char sepa
 std::vector<std::string> split_csv_string(const std::string & input)
 {
   return split_string(input, ',');
+}
+
+double stod(const std::string& s)
+{
+  std::string s_trimmed = trim_string(s);
+  size_t pos = 0;
+  double val = std::stod(s_trimmed, &pos);
+  STK_ThrowRequireMsg(pos == s_trimmed.size(), "extraneous characters found when converting " + s_trimmed + " to double");
+
+  return val;
+}
+
+int stoi(const std::string& s, int base)
+{
+  std::string s_trimmed = trim_string(s);
+  size_t pos = 0;
+  int val = std::stoi(s_trimmed, &pos, base);
+  STK_ThrowRequireMsg(pos == s_trimmed.size(), "extraneous characters found when converting " + s_trimmed + " to int");
+
+  return val;
+}
+
+long stol(const std::string& s, int base)
+{
+  std::string s_trimmed = trim_string(s);
+  size_t pos = 0;
+  long val = std::stol(s_trimmed, &pos, base);
+  STK_ThrowRequireMsg(pos == s_trimmed.size(), "extraneous characters found when converting " + s_trimmed + " to long");
+
+  return val;
+}
+
+long long stoll(const std::string& s, int base)
+{
+  std::string s_trimmed = trim_string(s);
+  size_t pos = 0;
+  long long val = std::stoll(s_trimmed, &pos, base);
+  STK_ThrowRequireMsg(pos == s_trimmed.size(), "extraneous characters found when converting " + s_trimmed + " to long long");
+
+  return val;
 }
 
 } // namespace stk

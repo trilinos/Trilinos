@@ -1,0 +1,2424 @@
+<html>
+<head>
+<title>Valgrind Results</title>
+</head>
+
+
+<a name="duplication-steps">Duplication Steps:</a>
+<ul>
+  <li>eg switch 5.23.4-486-gcabf350d  # Optional</li>
+  <li>bake -e release-symbols valgrind=on</li>
+  <li>assign -p stk_coupling_rtest/unit_test/unit_test.test -a id=np8</li>
+  <li>mpigrind testrun -e release-symbols --save-all-results --time-limit=21600 --memory-limit=4GB</li>
+</ul>
+
+Test Information:
+<ul>
+  <li>Name: stk_coupling_rtest/unit_test/unit_test.test|np8</li>
+  <li>Time: 11.30</li>
+  <li>Status (as reported by testrun): pass</li>
+</ul>
+<pre>==1682965== Memcheck, a memory error detector
+==1682965== Copyright (C) 2002-2022, and GNU GPL'd, by Julian Seward et al.
+==1682965== Using Valgrind-3.22.0-bd4db67b1d-20231031 and LibVEX; rerun with -h for copyright info
+==1682965== Command: /ceeGPFS/fgs/jccrean/code/results/2025_03_17_17_01_51/stk_coupling_rtest_unit_test_unit_test.test/np8/bin/stk_coupling_utest
+==1682965== Parent PID: 1682960
+==1682965== 
+</pre>
+
+<pre>--1682965-- 
+--1682965-- Valgrind options:
+--1682965--    -v
+--1682965--    --tool=memcheck
+--1682965--    --log-file=/ceeGPFS/fgs/jccrean/code/results/2025_03_17_17_01_51/stk_coupling_rtest_unit_test_unit_test.test/np8/valgrind_%p.output
+--1682965--    --suppressions=/sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress
+--1682965--    --num-callers=50
+--1682965--    --track-origins=yes
+--1682965--    --trace-children=yes
+--1682965--    --leak-check=yes
+--1682965--    --leak-resolution=med
+--1682965--    --max-stackframe=3500000
+--1682965-- Contents of /proc/version:
+--1682965--   Linux version 4.18.0-553.37.1.el8_10.x86_64 (mockbuild@x86-64-05.build.eng.rdu2.redhat.com) (gcc version 8.5.0 20210514 (Red Hat 8.5.0-22) (GCC)) #1 SMP Fri Jan 17 08:51:54 EST 2025
+--1682965-- 
+--1682965-- Arch and hwcaps: AMD64, LittleEndian, amd64-cx16-lzcnt-rdtscp-sse3-ssse3-avx-avx2-bmi-f16c-rdrand-rdseed
+--1682965-- Page sizes: currently 4096, max supported 4096
+--1682965-- Valgrind library directory: /usr/libexec/valgrind
+--1682965-- Reading syms from /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest
+--1682965-- Reading syms from /usr/lib64/ld-2.28.so
+--1682965-- Warning: cross-CU LIMITATION: some inlined fn names
+--1682965-- might be shown as UnknownInlinedFun
+--1682965-- Reading syms from /usr/libexec/valgrind/memcheck-amd64-linux
+--1682965--    object doesn't have a dynamic symbol table
+--1682965-- Scheduler: using generic scheduler lock implementation.
+--1682965-- Reading suppressions file: /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress
+--1682965-- Reading suppressions file: /usr/libexec/valgrind/default.supp
+</pre>
+
+<pre>==1682965== embedded gdbserver: reading from /tmp/vgdb-pipe-from-vgdb-to-1682965-by-jccrean-on-cee-build032
+==1682965== embedded gdbserver: writing to   /tmp/vgdb-pipe-to-vgdb-from-1682965-by-jccrean-on-cee-build032
+==1682965== embedded gdbserver: shared mem   /tmp/vgdb-pipe-shared-mem-vgdb-1682965-by-jccrean-on-cee-build032
+==1682965== 
+</pre>
+
+<pre>==1682965== TO CONTROL THIS PROCESS USING vgdb (which you probably
+==1682965== don't want to do, unless you know exactly what you're doing,
+==1682965== or are doing some strange experiment):
+==1682965==   /usr/libexec/valgrind/../../bin/vgdb --pid=1682965 ...command...
+==1682965== 
+</pre>
+
+<pre>==1682965== TO DEBUG THIS PROCESS USING GDB: start GDB like this
+==1682965==   /path/to/gdb /ceeGPFS/fgs/jccrean/code/results/2025_03_17_17_01_51/stk_coupling_rtest_unit_test_unit_test.test/np8/bin/stk_coupling_utest
+==1682965== and then give GDB the following command
+==1682965==   target remote | /usr/libexec/valgrind/../../bin/vgdb --pid=1682965
+==1682965== --pid is optional if only one valgrind process is running
+==1682965== 
+</pre>
+
+<pre>--1682965-- REDIR: 0x4004400 (ld-linux-x86-64.so.2:strlen) redirected to 0x580d2e42 (???)
+--1682965-- REDIR: 0x4002d80 (ld-linux-x86-64.so.2:index) redirected to 0x580d2e5c (???)
+--1682965-- Reading syms from /usr/libexec/valgrind/vgpreload_core-amd64-linux.so
+--1682965-- Reading syms from /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so
+</pre>
+
+<pre>==1682965== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682965--     old: 0x04004400 (strlen              ) R-> (0000.0) 0x580d2e42 ???
+--1682965--     new: 0x04004400 (strlen              ) R-> (2007.0) 0x04c42300 strlen
+--1682965-- REDIR: 0x4002fb0 (ld-linux-x86-64.so.2:strcmp) redirected to 0x4c434c0 (strcmp)
+--1682965-- REDIR: 0x40045a0 (ld-linux-x86-64.so.2:strncmp) redirected to 0x4c42bc0 (strncmp)
+--1682965-- REDIR: 0x4002760 (ld-linux-x86-64.so.2:mempcpy) redirected to 0x4c46ff0 (mempcpy)
+--1682965-- REDIR: 0x4002c90 (ld-linux-x86-64.so.2:stpcpy) redirected to 0x4c45c50 (stpcpy)
+--1682965-- Reading syms from /usr/lib64/liboneagentproc.so
+--1682965-- Reading syms from /usr/lib64/libdl-2.28.so
+--1682965-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/818788d6/gcc-10.3.0/install/linux-rhel8-x86_64/gcc-8.5.0/gcc-10.3.0-6ljscis/lib64/libgfortran.so.5.0.0
+--1682965-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi.so.40.30.6
+--1682965-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi_usempif08.so.40.30.0
+--1682965-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi_usempi_ignore_tkr.so.40.30.0
+--1682965-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi_mpifh.so.40.30.0
+--1682965-- Reading syms from /usr/lib64/libpthread-2.28.so
+--1682965-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/818788d6/gcc-10.3.0/install/linux-rhel8-x86_64/gcc-8.5.0/gcc-10.3.0-6ljscis/lib64/libstdc++.so.6.0.28
+--1682965-- Reading syms from /usr/lib64/libm-2.28.so
+--1682965-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/818788d6/gcc-10.3.0/install/linux-rhel8-x86_64/gcc-8.5.0/gcc-10.3.0-6ljscis/lib64/libgcc_s.so.1
+--1682965-- Reading syms from /usr/lib64/libc-2.28.so
+</pre>
+
+<pre>==1682965== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682965--     old: 0x06040f50 (memalign            ) R-> (1011.0) 0x04c40d9e memalign
+--1682965--     new: 0x06040f50 (memalign            ) R-> (1017.0) 0x04c41527 aligned_alloc
+</pre>
+
+<pre>==1682965== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682965--     old: 0x06040f50 (memalign            ) R-> (1011.0) 0x04c40d9e memalign
+--1682965--     new: 0x06040f50 (memalign            ) R-> (1017.0) 0x04c413bd aligned_alloc
+</pre>
+
+<pre>==1682965== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682965--     old: 0x06040f50 (memalign            ) R-> (1011.0) 0x04c40d9e memalign
+--1682965--     new: 0x06040f50 (memalign            ) R-> (1017.0) 0x04c41527 aligned_alloc
+</pre>
+
+<pre>==1682965== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682965--     old: 0x06040f50 (memalign            ) R-> (1011.0) 0x04c40d9e memalign
+--1682965--     new: 0x06040f50 (memalign            ) R-> (1017.0) 0x04c413bd aligned_alloc
+</pre>
+
+<pre>==1682965== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682965--     old: 0x06040f50 (memalign            ) R-> (1011.0) 0x04c40d9e memalign
+--1682965--     new: 0x06040f50 (memalign            ) R-> (1017.0) 0x04c41527 aligned_alloc
+</pre>
+
+<pre>==1682965== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682965--     old: 0x06040f50 (memalign            ) R-> (1011.0) 0x04c40d9e memalign
+--1682965--     new: 0x06040f50 (memalign            ) R-> (1017.0) 0x04c413bd aligned_alloc
+--1682965-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/818788d6/gcc-10.3.0/install/linux-rhel8-x86_64/gcc-8.5.0/gcc-10.3.0-6ljscis/lib64/libquadmath.so.0.0.0
+--1682965-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libopen-rte.so.40.30.3
+--1682965-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libopen-pal.so.40.30.3
+--1682965-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/pmix-4.1.2-k2sy222/lib/libpmix.so.2.5.2
+--1682965-- Reading syms from /usr/lib64/libnl-3.so.200.26.0
+--1682965-- Reading syms from /usr/lib64/libnl-route-3.so.200.26.0
+--1682965-- Reading syms from /usr/lib64/librt-2.28.so
+--1682965-- Reading syms from /usr/lib64/libutil-2.28.so
+--1682965-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/zlib-ng-2.1.4-2doi7gn/lib/libz.so.1.3.0.zlib-ng
+--1682965-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/hwloc-2.9.1-p5xbfhp/lib/libhwloc.so.15.6.2
+--1682965-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/libevent-2.1.12-ytr5fzy/lib/libevent_core-2.1.so.7.0.1
+--1682965-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/libevent-2.1.12-ytr5fzy/lib/libevent_pthreads-2.1.so.7.0.1
+--1682965-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/libpciaccess-0.17-4ycon7f/lib/libpciaccess.so.0.11.1
+--1682965-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/libxml2-2.10.3-66temxb/lib/libxml2.so.2.10.3
+--1682965-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/xz-5.4.1-r2q7nx7/lib/liblzma.so.5.4.1
+--1682965-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/libiconv-1.17-fz2467k/lib/libiconv.so.2.6.1
+--1682965-- REDIR: 0x6045460 (libc.so.6:memmove) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+</pre>
+
+<pre>==1682965== Preferring higher priority redirection:
+</pre>
+
+<pre>--1682965--     old: 0x0604c800 (__memcpy_avx_unalign) R-> (2018.0) 0x04c44700 __memcpy_avx_unaligned_erms
+--1682965--     new: 0x0604c800 (__memcpy_avx_unalign) R-> (2018.1) 0x04c46030 memmove
+--1682965-- REDIR: 0x6044680 (libc.so.6:strncpy) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682965-- REDIR: 0x6045a40 (libc.so.6:strcasecmp) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682965-- REDIR: 0x6043df0 (libc.so.6:strcat) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682965-- REDIR: 0x6044710 (libc.so.6:rindex) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682965-- REDIR: 0x6047210 (libc.so.6:rawmemchr) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682965-- REDIR: 0x608b420 (libc.so.6:wmemchr) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682965-- REDIR: 0x608ad40 (libc.so.6:wcscmp) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682965-- REDIR: 0x6045690 (libc.so.6:mempcpy) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682965-- REDIR: 0x60453c0 (libc.so.6:bcmp) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682965-- REDIR: 0x60445e0 (libc.so.6:strncmp) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682965-- REDIR: 0x6043f00 (libc.so.6:strcmp) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682965-- REDIR: 0x6045590 (libc.so.6:memset) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682965-- REDIR: 0x608acc0 (libc.so.6:wcschr) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682965-- REDIR: 0x60444d0 (libc.so.6:strnlen) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682965-- REDIR: 0x6044040 (libc.so.6:strcspn) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682965-- REDIR: 0x6045ae0 (libc.so.6:strncasecmp) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682965-- REDIR: 0x6043fb0 (libc.so.6:strcpy) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682965-- REDIR: 0x6045d20 (libc.so.6:memcpy@@GLIBC_2.14) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682965-- REDIR: 0x608c7c0 (libc.so.6:wcsnlen) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682965-- REDIR: 0x6044790 (libc.so.6:strpbrk) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682965-- REDIR: 0x6043e80 (libc.so.6:index) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682965-- REDIR: 0x6044450 (libc.so.6:strlen) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682965-- REDIR: 0x604bd80 (libc.so.6:memrchr) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682965-- REDIR: 0x6045b80 (libc.so.6:strcasecmp_l) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682965-- REDIR: 0x6045330 (libc.so.6:memchr) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682965-- REDIR: 0x608ae90 (libc.so.6:wcslen) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682965-- REDIR: 0x6044a50 (libc.so.6:strspn) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682965-- REDIR: 0x60459b0 (libc.so.6:stpncpy) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682965-- REDIR: 0x6045920 (libc.so.6:stpcpy) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682965-- REDIR: 0x60472a0 (libc.so.6:strchrnul) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682965-- REDIR: 0x6045c20 (libc.so.6:strncasecmp_l) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682965-- REDIR: 0x6044550 (libc.so.6:strncat) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682965-- REDIR: 0x60f0cb0 (libc.so.6:__memcpy_chk) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682965-- REDIR: 0x6045250 (libc.so.6:strstr) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682965-- REDIR: 0x6052a30 (libc.so.6:__strrchr_avx2) redirected to 0x4c41c90 (rindex)
+--1682965-- REDIR: 0x60500e0 (libc.so.6:__strlen_avx2) redirected to 0x4c421e0 (strlen)
+--1682965-- REDIR: 0x604f7f0 (libc.so.6:__strcmp_avx2) redirected to 0x4c43380 (strcmp)
+--1682965-- REDIR: 0x60401e0 (libc.so.6:malloc) redirected to 0x4c3910f (malloc)
+--1682965-- REDIR: 0x604f600 (libc.so.6:__strchrnul_avx2) redirected to 0x4c46b20 (strchrnul)
+--1682965-- REDIR: 0x604c800 (libc.so.6:__memcpy_avx_unaligned_erms) redirected to 0x4c46030 (memmove)
+--1682965-- REDIR: 0x6040870 (libc.so.6:free) redirected to 0x4c3c459 (free)
+--1682965-- REDIR: 0x6044f60 (libc.so.6:__GI_strstr) redirected to 0x4c471d0 (__strstr_sse2)
+--1682965-- REDIR: 0x604c080 (libc.so.6:__memchr_avx2) redirected to 0x4c43560 (memchr)
+--1682965-- REDIR: 0x6089970 (libc.so.6:__strspn_sse42) redirected to 0x4c473e0 (strspn)
+--1682965-- REDIR: 0x6089480 (libc.so.6:__strcspn_sse42) redirected to 0x4c47320 (strcspn)
+--1682965-- REDIR: 0x604e330 (libc.so.6:__strcasecmp_avx2) redirected to 0x4c42c30 (strcasecmp)
+--1682965-- REDIR: 0x6041010 (libc.so.6:calloc) redirected to 0x4c408d9 (calloc)
+--1682965-- REDIR: 0x604c360 (libc.so.6:__memcmp_avx2_movbe) redirected to 0x4c45700 (bcmp)
+--1682965-- REDIR: 0x5afbef0 (libstdc++.so.6:operator new(unsigned long)) redirected to 0x4c398a1 (operator new(unsigned long))
+--1682965-- REDIR: 0x5afa2e0 (libstdc++.so.6:operator delete(void*)) redirected to 0x4c3ccf3 (operator delete(void*))
+--1682965-- REDIR: 0x5afbf40 (libstdc++.so.6:operator new[](unsigned long)) redirected to 0x4c3b041 (operator new[](unsigned long))
+--1682965-- REDIR: 0x604d340 (libc.so.6:__memset_avx2_unaligned_erms) redirected to 0x4c45f20 (memset)
+--1682965-- REDIR: 0x5afa310 (libstdc++.so.6:operator delete[](void*)) redirected to 0x4c3ed6f (operator delete[](void*))
+--1682965-- REDIR: 0x604f3c0 (libc.so.6:__strchr_avx2) redirected to 0x4c41e70 (index)
+--1682965-- REDIR: 0x5afa2f0 (libstdc++.so.6:operator delete(void*, unsigned long)) redirected to 0x4c3d1f3 (operator delete(void*, unsigned long))
+--1682965-- REDIR: 0x60517b0 (libc.so.6:__strncmp_avx2) redirected to 0x4c42990 (strncmp)
+--1682965-- REDIR: 0x6040af0 (libc.so.6:realloc) redirected to 0x4c40af3 (realloc)
+--1682965-- REDIR: 0x5fdb7e0 (libc.so.6:__strstr_sse2_unaligned) redirected to 0x4c47160 (strstr)
+--1682965-- REDIR: 0x604c7e0 (libc.so.6:__mempcpy_avx_unaligned_erms) redirected to 0x4c46c30 (mempcpy)
+--1682965-- REDIR: 0x6051e00 (libc.so.6:__strncpy_avx2) redirected to 0x4c424d0 (strncpy)
+--1682965-- REDIR: 0x6050da0 (libc.so.6:__strncat_avx2) redirected to 0x4c42060 (strncat)
+--1682965-- REDIR: 0x604d480 (libc.so.6:__rawmemchr_avx2) redirected to 0x4c46b50 (rawmemchr)
+--1682965-- REDIR: 0x6050260 (libc.so.6:__strncasecmp_avx2) redirected to 0x4c42d10 (strncasecmp)
+--1682965-- REDIR: 0x5ff5900 (libc.so.6:setenv) redirected to 0x4c47b60 (setenv)
+--1682965-- REDIR: 0x604ed40 (libc.so.6:__strcat_avx2) redirected to 0x4c41ea0 (strcat)
+--1682965-- REDIR: 0x604fd50 (libc.so.6:__strcpy_avx2) redirected to 0x4c42330 (strcpy)
+--1682965-- REDIR: 0x6041cd0 (libc.so.6:posix_memalign) redirected to 0x4c4123b (posix_memalign)
+--1682965-- REDIR: 0x5afbfd0 (libstdc++.so.6:operator new(unsigned long, std::align_val_t, std::nothrow_t const&)) redirected to 0x4c3a9c7 (operator new(unsigned long, std::align_val_t, std::nothrow_t const&))
+--1682965-- REDIR: 0x5afc030 (libstdc++.so.6:operator delete(void*, std::align_val_t, std::nothrow_t const&)) redirected to 0x4c3e60b (operator delete(void*, std::align_val_t, std::nothrow_t const&))
+==1682965== 
+</pre>
+
+<pre>==1682965== HEAP SUMMARY:
+==1682965==     in use at exit: 825,309 bytes in 10,909 blocks
+==1682965==   total heap usage: 141,482 allocs, 130,573 frees, 1,594,187,988 bytes allocated
+==1682965== 
+</pre>
+
+<pre>==1682965== Searching for pointers to 10,909 not-freed blocks
+==1682965== Checked 3,914,192 bytes
+==1682965== 
+</pre>
+
+<a name="error1"><h2>7,448 (504 direct, 6,944 indirect) bytes in 7 blocks are definitely lost</h2></a>
+<font size=small><a href="#duplication-steps">(Show me how to reproduce this <b>error</b>)</a></font>
+<pre>==1682965== 7,448 (504 direct, 6,944 indirect) bytes in 7 blocks are definitely lost in loss record 53 of 57
+==1682965==    at 0x4C39185: malloc (vg_replace_malloc.c:442)
+==1682965==    by 0x558CAA7: set_value (in /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi.so.40.30.6)
+==1682965==    by 0x558D181: ompi_attr_set_c (in /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi.so.40.30.6)
+==1682965==    by 0x55CCF06: PMPI_Comm_set_attr (in /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi.so.40.30.6)
+==1682965==    by 0x4A67A9: stk::impl::MPIKeyManager::get_key(ompi_communicator_t*) (MPICommKey.cpp:67)
+==1682965==    by 0x4A75A8: stk::impl::MPIKeyManager::register_callback(ompi_communicator_t*, unsigned long long, std::function<void (ompi_communicator_t*)>) (MPICommKey.cpp:104)
+==1682965==    by 0x4A2057: stk::MPITagManager::get_tag(ompi_communicator_t*, int) (MPITagManager.cpp:46)
+==1682965==    by 0x430C1E: stk::DataExchangeUnknownPatternNonBlocking::DataExchangeUnknownPatternNonBlocking(ompi_communicator_t*, int) (DataExchangeUnknownPatternNonBlocking.hpp:71)
+==1682965==    by 0x4315F9: DataExchangeUnknownPatternNonBlockingCommBuffer (DataExchangeUnknownPatternNonBlockingBuffer.hpp:104)
+==1682965==    by 0x4315F9: construct<stk::DataExchangeUnknownPatternNonBlockingCommBuffer, ompi_communicator_t*&> (new_allocator.h:150)
+==1682965==    by 0x4315F9: construct<stk::DataExchangeUnknownPatternNonBlockingCommBuffer, ompi_communicator_t*&> (alloc_traits.h:512)
+==1682965==    by 0x4315F9: _Sp_counted_ptr_inplace<ompi_communicator_t*&> (shared_ptr_base.h:551)
+==1682965==    by 0x4315F9: __shared_count<stk::DataExchangeUnknownPatternNonBlockingCommBuffer, std::allocator<stk::DataExchangeUnknownPatternNonBlockingCommBuffer>, ompi_communicator_t*&> (shared_ptr_base.h:682)
+==1682965==    by 0x4315F9: __shared_ptr<std::allocator<stk::DataExchangeUnknownPatternNonBlockingCommBuffer>, ompi_communicator_t*&> (shared_ptr_base.h:1371)
+==1682965==    by 0x4315F9: shared_ptr<std::allocator<stk::DataExchangeUnknownPatternNonBlockingCommBuffer>, ompi_communicator_t*&> (shared_ptr.h:408)
+==1682965==    by 0x4315F9: allocate_shared<stk::DataExchangeUnknownPatternNonBlockingCommBuffer, std::allocator<stk::DataExchangeUnknownPatternNonBlockingCommBuffer>, ompi_communicator_t*&> (shared_ptr.h:860)
+==1682965==    by 0x4315F9: make_shared<stk::DataExchangeUnknownPatternNonBlockingCommBuffer, ompi_communicator_t*&> (shared_ptr.h:876)
+==1682965==    by 0x4315F9: stk::CommSparse::CommSparse(ompi_communicator_t*) (CommSparse.hpp:189)
+==1682965==    by 0x47E8D3: stk::coupling::SyncInfo::exchange(stk::coupling::SplitComms const&, int) const (SyncInfo.cpp:56)
+==1682965==    by 0x47F568: stk::coupling::SyncInfo::exchange(stk::coupling::SplitComms const&) const (SyncInfo.cpp:93)
+==1682965==    by 0x444865: (anonymous namespace)::TestSyncInfo_exchange_multi_way_Test::TestBody() (UnitTestSyncInfo.cpp:353)
+==1682965==    by 0x473BDC: void testing::internal::HandleExceptionsInMethodIfSupported<testing::Test, void>(testing::Test*, void (testing::Test::*)(), char const*) (in /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest)
+==1682965==    by 0x468D6F: testing::Test::Run() [clone .part.0] (in /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest)
+==1682965==    by 0x4691A1: testing::TestInfo::Run() [clone .part.0] (in /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest)
+==1682965==    by 0x469381: testing::TestSuite::Run() [clone .part.0] (in /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest)
+==1682965==    by 0x46A3D7: testing::internal::UnitTestImpl::RunAllTests() (in /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest)
+==1682965==    by 0x46A6DA: testing::UnitTest::Run() (in /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest)
+==1682965==    by 0x41DA24: RUN_ALL_TESTS (gtest.h:2473)
+==1682965==    by 0x41DA24: run_all_tests (ngp_test.hpp:139)
+==1682965==    by 0x41DA24: main (UnitTestMain.cpp:82)
+==1682965== 
+</pre>
+
+<pre>==1682965== LEAK SUMMARY:
+==1682965==    definitely lost: 504 bytes in 7 blocks
+==1682965==    indirectly lost: 0 bytes in 0 blocks
+==1682965==      possibly lost: 0 bytes in 0 blocks
+==1682965==    still reachable: 176 bytes in 1 blocks
+==1682965==         suppressed: 824,629 bytes in 10,901 blocks
+==1682965== Reachable blocks (those to which a pointer was found) are not shown.
+==1682965== To see them, rerun with: --leak-check=full --show-leak-kinds=all
+==1682965== 
+</pre>
+
+<pre>==1682965== ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 28 from 28)
+</pre>
+
+<pre>--1682965-- 
+--1682965-- used_suppression:      3 OMPI_Leaks-init-realloc /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:47 suppressed: 431,132 bytes in 7 blocks
+--1682965-- used_suppression:     36 OMPI_Leaks-init-malloc2 /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:31 suppressed: 372,595 bytes in 10,817 blocks
+--1682965-- used_suppression:      9 OMPI_Leaks-init-calloc /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:38 suppressed: 11,976 bytes in 35 blocks
+--1682965-- used_suppression:      1 MPI-HashTable /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:372 suppressed: 6,944 bytes in 7 blocks
+--1682965-- used_suppression:      2 OMPI_Leaks-Keyval_create-malloc_gcc_8 /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:299 suppressed: 1,984 bytes in 31 blocks
+--1682965-- used_suppression:      4 <MPI-4 Errors 3> /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:783 suppressed: 77 bytes in 4 blocks
+--1682965-- used_suppression:      1 <nkc_09_09_2024> /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:536
+--1682965-- used_suppression:      1 <MpiInitGCC10.3SetSockOpt> /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:948
+--1682965-- used_suppression:      1 <MpiInitGCC10.3GetSockOptB> /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:939
+--1682965-- used_suppression:      1 <MpiInitGCC10.3GetSockOptA> /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:930
+==1682965== 
+</pre>
+
+<pre>==1682965== ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 28 from 28)
+</pre>
+
+<pre>==1682961== Memcheck, a memory error detector
+==1682961== Copyright (C) 2002-2022, and GNU GPL'd, by Julian Seward et al.
+==1682961== Using Valgrind-3.22.0-bd4db67b1d-20231031 and LibVEX; rerun with -h for copyright info
+==1682961== Command: /ceeGPFS/fgs/jccrean/code/results/2025_03_17_17_01_51/stk_coupling_rtest_unit_test_unit_test.test/np8/bin/stk_coupling_utest
+==1682961== Parent PID: 1682956
+==1682961== 
+</pre>
+
+<pre>--1682961-- 
+--1682961-- Valgrind options:
+--1682961--    -v
+--1682961--    --tool=memcheck
+--1682961--    --log-file=/ceeGPFS/fgs/jccrean/code/results/2025_03_17_17_01_51/stk_coupling_rtest_unit_test_unit_test.test/np8/valgrind_%p.output
+--1682961--    --suppressions=/sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress
+--1682961--    --num-callers=50
+--1682961--    --track-origins=yes
+--1682961--    --trace-children=yes
+--1682961--    --leak-check=yes
+--1682961--    --leak-resolution=med
+--1682961--    --max-stackframe=3500000
+--1682961-- Contents of /proc/version:
+--1682961--   Linux version 4.18.0-553.37.1.el8_10.x86_64 (mockbuild@x86-64-05.build.eng.rdu2.redhat.com) (gcc version 8.5.0 20210514 (Red Hat 8.5.0-22) (GCC)) #1 SMP Fri Jan 17 08:51:54 EST 2025
+--1682961-- 
+--1682961-- Arch and hwcaps: AMD64, LittleEndian, amd64-cx16-lzcnt-rdtscp-sse3-ssse3-avx-avx2-bmi-f16c-rdrand-rdseed
+--1682961-- Page sizes: currently 4096, max supported 4096
+--1682961-- Valgrind library directory: /usr/libexec/valgrind
+--1682961-- Reading syms from /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest
+--1682961-- Reading syms from /usr/lib64/ld-2.28.so
+--1682961-- Warning: cross-CU LIMITATION: some inlined fn names
+--1682961-- might be shown as UnknownInlinedFun
+--1682961-- Reading syms from /usr/libexec/valgrind/memcheck-amd64-linux
+--1682961--    object doesn't have a dynamic symbol table
+--1682961-- Scheduler: using generic scheduler lock implementation.
+--1682961-- Reading suppressions file: /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress
+--1682961-- Reading suppressions file: /usr/libexec/valgrind/default.supp
+</pre>
+
+<pre>==1682961== embedded gdbserver: reading from /tmp/vgdb-pipe-from-vgdb-to-1682961-by-jccrean-on-cee-build032
+==1682961== embedded gdbserver: writing to   /tmp/vgdb-pipe-to-vgdb-from-1682961-by-jccrean-on-cee-build032
+==1682961== embedded gdbserver: shared mem   /tmp/vgdb-pipe-shared-mem-vgdb-1682961-by-jccrean-on-cee-build032
+==1682961== 
+</pre>
+
+<pre>==1682961== TO CONTROL THIS PROCESS USING vgdb (which you probably
+==1682961== don't want to do, unless you know exactly what you're doing,
+==1682961== or are doing some strange experiment):
+==1682961==   /usr/libexec/valgrind/../../bin/vgdb --pid=1682961 ...command...
+==1682961== 
+</pre>
+
+<pre>==1682961== TO DEBUG THIS PROCESS USING GDB: start GDB like this
+==1682961==   /path/to/gdb /ceeGPFS/fgs/jccrean/code/results/2025_03_17_17_01_51/stk_coupling_rtest_unit_test_unit_test.test/np8/bin/stk_coupling_utest
+==1682961== and then give GDB the following command
+==1682961==   target remote | /usr/libexec/valgrind/../../bin/vgdb --pid=1682961
+==1682961== --pid is optional if only one valgrind process is running
+==1682961== 
+</pre>
+
+<pre>--1682961-- REDIR: 0x4004400 (ld-linux-x86-64.so.2:strlen) redirected to 0x580d2e42 (???)
+--1682961-- REDIR: 0x4002d80 (ld-linux-x86-64.so.2:index) redirected to 0x580d2e5c (???)
+--1682961-- Reading syms from /usr/libexec/valgrind/vgpreload_core-amd64-linux.so
+--1682961-- Reading syms from /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so
+</pre>
+
+<pre>==1682961== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682961--     old: 0x04004400 (strlen              ) R-> (0000.0) 0x580d2e42 ???
+--1682961--     new: 0x04004400 (strlen              ) R-> (2007.0) 0x04c42300 strlen
+--1682961-- REDIR: 0x4002fb0 (ld-linux-x86-64.so.2:strcmp) redirected to 0x4c434c0 (strcmp)
+--1682961-- REDIR: 0x40045a0 (ld-linux-x86-64.so.2:strncmp) redirected to 0x4c42bc0 (strncmp)
+--1682961-- REDIR: 0x4002760 (ld-linux-x86-64.so.2:mempcpy) redirected to 0x4c46ff0 (mempcpy)
+--1682961-- REDIR: 0x4002c90 (ld-linux-x86-64.so.2:stpcpy) redirected to 0x4c45c50 (stpcpy)
+--1682961-- Reading syms from /usr/lib64/liboneagentproc.so
+--1682961-- Reading syms from /usr/lib64/libdl-2.28.so
+--1682961-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/818788d6/gcc-10.3.0/install/linux-rhel8-x86_64/gcc-8.5.0/gcc-10.3.0-6ljscis/lib64/libgfortran.so.5.0.0
+--1682961-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi.so.40.30.6
+--1682961-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi_usempif08.so.40.30.0
+--1682961-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi_usempi_ignore_tkr.so.40.30.0
+--1682961-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi_mpifh.so.40.30.0
+--1682961-- Reading syms from /usr/lib64/libpthread-2.28.so
+--1682961-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/818788d6/gcc-10.3.0/install/linux-rhel8-x86_64/gcc-8.5.0/gcc-10.3.0-6ljscis/lib64/libstdc++.so.6.0.28
+--1682961-- Reading syms from /usr/lib64/libm-2.28.so
+--1682961-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/818788d6/gcc-10.3.0/install/linux-rhel8-x86_64/gcc-8.5.0/gcc-10.3.0-6ljscis/lib64/libgcc_s.so.1
+--1682961-- Reading syms from /usr/lib64/libc-2.28.so
+</pre>
+
+<pre>==1682961== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682961--     old: 0x06040f50 (memalign            ) R-> (1011.0) 0x04c40d9e memalign
+--1682961--     new: 0x06040f50 (memalign            ) R-> (1017.0) 0x04c41527 aligned_alloc
+</pre>
+
+<pre>==1682961== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682961--     old: 0x06040f50 (memalign            ) R-> (1011.0) 0x04c40d9e memalign
+--1682961--     new: 0x06040f50 (memalign            ) R-> (1017.0) 0x04c413bd aligned_alloc
+</pre>
+
+<pre>==1682961== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682961--     old: 0x06040f50 (memalign            ) R-> (1011.0) 0x04c40d9e memalign
+--1682961--     new: 0x06040f50 (memalign            ) R-> (1017.0) 0x04c41527 aligned_alloc
+</pre>
+
+<pre>==1682961== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682961--     old: 0x06040f50 (memalign            ) R-> (1011.0) 0x04c40d9e memalign
+--1682961--     new: 0x06040f50 (memalign            ) R-> (1017.0) 0x04c413bd aligned_alloc
+</pre>
+
+<pre>==1682961== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682961--     old: 0x06040f50 (memalign            ) R-> (1011.0) 0x04c40d9e memalign
+--1682961--     new: 0x06040f50 (memalign            ) R-> (1017.0) 0x04c41527 aligned_alloc
+</pre>
+
+<pre>==1682961== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682961--     old: 0x06040f50 (memalign            ) R-> (1011.0) 0x04c40d9e memalign
+--1682961--     new: 0x06040f50 (memalign            ) R-> (1017.0) 0x04c413bd aligned_alloc
+--1682961-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/818788d6/gcc-10.3.0/install/linux-rhel8-x86_64/gcc-8.5.0/gcc-10.3.0-6ljscis/lib64/libquadmath.so.0.0.0
+--1682961-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libopen-rte.so.40.30.3
+--1682961-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libopen-pal.so.40.30.3
+--1682961-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/pmix-4.1.2-k2sy222/lib/libpmix.so.2.5.2
+--1682961-- Reading syms from /usr/lib64/libnl-3.so.200.26.0
+--1682961-- Reading syms from /usr/lib64/libnl-route-3.so.200.26.0
+--1682961-- Reading syms from /usr/lib64/librt-2.28.so
+--1682961-- Reading syms from /usr/lib64/libutil-2.28.so
+--1682961-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/zlib-ng-2.1.4-2doi7gn/lib/libz.so.1.3.0.zlib-ng
+--1682961-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/hwloc-2.9.1-p5xbfhp/lib/libhwloc.so.15.6.2
+--1682961-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/libevent-2.1.12-ytr5fzy/lib/libevent_core-2.1.so.7.0.1
+--1682961-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/libevent-2.1.12-ytr5fzy/lib/libevent_pthreads-2.1.so.7.0.1
+--1682961-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/libpciaccess-0.17-4ycon7f/lib/libpciaccess.so.0.11.1
+--1682961-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/libxml2-2.10.3-66temxb/lib/libxml2.so.2.10.3
+--1682961-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/xz-5.4.1-r2q7nx7/lib/liblzma.so.5.4.1
+--1682961-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/libiconv-1.17-fz2467k/lib/libiconv.so.2.6.1
+--1682961-- REDIR: 0x6045460 (libc.so.6:memmove) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+</pre>
+
+<pre>==1682961== Preferring higher priority redirection:
+</pre>
+
+<pre>--1682961--     old: 0x0604c800 (__memcpy_avx_unalign) R-> (2018.0) 0x04c44700 __memcpy_avx_unaligned_erms
+--1682961--     new: 0x0604c800 (__memcpy_avx_unalign) R-> (2018.1) 0x04c46030 memmove
+--1682961-- REDIR: 0x6044680 (libc.so.6:strncpy) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682961-- REDIR: 0x6045a40 (libc.so.6:strcasecmp) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682961-- REDIR: 0x6043df0 (libc.so.6:strcat) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682961-- REDIR: 0x6044710 (libc.so.6:rindex) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682961-- REDIR: 0x6047210 (libc.so.6:rawmemchr) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682961-- REDIR: 0x608b420 (libc.so.6:wmemchr) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682961-- REDIR: 0x608ad40 (libc.so.6:wcscmp) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682961-- REDIR: 0x6045690 (libc.so.6:mempcpy) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682961-- REDIR: 0x60453c0 (libc.so.6:bcmp) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682961-- REDIR: 0x60445e0 (libc.so.6:strncmp) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682961-- REDIR: 0x6043f00 (libc.so.6:strcmp) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682961-- REDIR: 0x6045590 (libc.so.6:memset) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682961-- REDIR: 0x608acc0 (libc.so.6:wcschr) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682961-- REDIR: 0x60444d0 (libc.so.6:strnlen) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682961-- REDIR: 0x6044040 (libc.so.6:strcspn) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682961-- REDIR: 0x6045ae0 (libc.so.6:strncasecmp) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682961-- REDIR: 0x6043fb0 (libc.so.6:strcpy) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682961-- REDIR: 0x6045d20 (libc.so.6:memcpy@@GLIBC_2.14) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682961-- REDIR: 0x608c7c0 (libc.so.6:wcsnlen) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682961-- REDIR: 0x6044790 (libc.so.6:strpbrk) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682961-- REDIR: 0x6043e80 (libc.so.6:index) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682961-- REDIR: 0x6044450 (libc.so.6:strlen) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682961-- REDIR: 0x604bd80 (libc.so.6:memrchr) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682961-- REDIR: 0x6045b80 (libc.so.6:strcasecmp_l) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682961-- REDIR: 0x6045330 (libc.so.6:memchr) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682961-- REDIR: 0x608ae90 (libc.so.6:wcslen) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682961-- REDIR: 0x6044a50 (libc.so.6:strspn) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682961-- REDIR: 0x60459b0 (libc.so.6:stpncpy) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682961-- REDIR: 0x6045920 (libc.so.6:stpcpy) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682961-- REDIR: 0x60472a0 (libc.so.6:strchrnul) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682961-- REDIR: 0x6045c20 (libc.so.6:strncasecmp_l) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682961-- REDIR: 0x6044550 (libc.so.6:strncat) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682961-- REDIR: 0x60f0cb0 (libc.so.6:__memcpy_chk) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682961-- REDIR: 0x6045250 (libc.so.6:strstr) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682961-- REDIR: 0x6052a30 (libc.so.6:__strrchr_avx2) redirected to 0x4c41c90 (rindex)
+--1682961-- REDIR: 0x60500e0 (libc.so.6:__strlen_avx2) redirected to 0x4c421e0 (strlen)
+--1682961-- REDIR: 0x604f7f0 (libc.so.6:__strcmp_avx2) redirected to 0x4c43380 (strcmp)
+--1682961-- REDIR: 0x60401e0 (libc.so.6:malloc) redirected to 0x4c3910f (malloc)
+--1682961-- REDIR: 0x604f600 (libc.so.6:__strchrnul_avx2) redirected to 0x4c46b20 (strchrnul)
+--1682961-- REDIR: 0x604c800 (libc.so.6:__memcpy_avx_unaligned_erms) redirected to 0x4c46030 (memmove)
+--1682961-- REDIR: 0x6040870 (libc.so.6:free) redirected to 0x4c3c459 (free)
+--1682961-- REDIR: 0x6044f60 (libc.so.6:__GI_strstr) redirected to 0x4c471d0 (__strstr_sse2)
+--1682961-- REDIR: 0x604c080 (libc.so.6:__memchr_avx2) redirected to 0x4c43560 (memchr)
+--1682961-- REDIR: 0x6089970 (libc.so.6:__strspn_sse42) redirected to 0x4c473e0 (strspn)
+--1682961-- REDIR: 0x6089480 (libc.so.6:__strcspn_sse42) redirected to 0x4c47320 (strcspn)
+--1682961-- REDIR: 0x604e330 (libc.so.6:__strcasecmp_avx2) redirected to 0x4c42c30 (strcasecmp)
+--1682961-- REDIR: 0x6041010 (libc.so.6:calloc) redirected to 0x4c408d9 (calloc)
+--1682961-- REDIR: 0x604c360 (libc.so.6:__memcmp_avx2_movbe) redirected to 0x4c45700 (bcmp)
+--1682961-- REDIR: 0x5afbef0 (libstdc++.so.6:operator new(unsigned long)) redirected to 0x4c398a1 (operator new(unsigned long))
+--1682961-- REDIR: 0x5afa2e0 (libstdc++.so.6:operator delete(void*)) redirected to 0x4c3ccf3 (operator delete(void*))
+--1682961-- REDIR: 0x5afbf40 (libstdc++.so.6:operator new[](unsigned long)) redirected to 0x4c3b041 (operator new[](unsigned long))
+--1682961-- REDIR: 0x604d340 (libc.so.6:__memset_avx2_unaligned_erms) redirected to 0x4c45f20 (memset)
+--1682961-- REDIR: 0x5afa310 (libstdc++.so.6:operator delete[](void*)) redirected to 0x4c3ed6f (operator delete[](void*))
+--1682961-- REDIR: 0x604f3c0 (libc.so.6:__strchr_avx2) redirected to 0x4c41e70 (index)
+--1682961-- REDIR: 0x5afa2f0 (libstdc++.so.6:operator delete(void*, unsigned long)) redirected to 0x4c3d1f3 (operator delete(void*, unsigned long))
+--1682961-- REDIR: 0x60517b0 (libc.so.6:__strncmp_avx2) redirected to 0x4c42990 (strncmp)
+--1682961-- REDIR: 0x6040af0 (libc.so.6:realloc) redirected to 0x4c40af3 (realloc)
+--1682961-- REDIR: 0x5fdb7e0 (libc.so.6:__strstr_sse2_unaligned) redirected to 0x4c47160 (strstr)
+--1682961-- REDIR: 0x604c7e0 (libc.so.6:__mempcpy_avx_unaligned_erms) redirected to 0x4c46c30 (mempcpy)
+--1682961-- REDIR: 0x6051e00 (libc.so.6:__strncpy_avx2) redirected to 0x4c424d0 (strncpy)
+--1682961-- REDIR: 0x6050da0 (libc.so.6:__strncat_avx2) redirected to 0x4c42060 (strncat)
+--1682961-- REDIR: 0x604d480 (libc.so.6:__rawmemchr_avx2) redirected to 0x4c46b50 (rawmemchr)
+--1682961-- REDIR: 0x6050260 (libc.so.6:__strncasecmp_avx2) redirected to 0x4c42d10 (strncasecmp)
+--1682961-- REDIR: 0x5ff5900 (libc.so.6:setenv) redirected to 0x4c47b60 (setenv)
+--1682961-- REDIR: 0x604ed40 (libc.so.6:__strcat_avx2) redirected to 0x4c41ea0 (strcat)
+--1682961-- REDIR: 0x604fd50 (libc.so.6:__strcpy_avx2) redirected to 0x4c42330 (strcpy)
+--1682961-- REDIR: 0x6041cd0 (libc.so.6:posix_memalign) redirected to 0x4c4123b (posix_memalign)
+--1682961-- REDIR: 0x5afbfd0 (libstdc++.so.6:operator new(unsigned long, std::align_val_t, std::nothrow_t const&)) redirected to 0x4c3a9c7 (operator new(unsigned long, std::align_val_t, std::nothrow_t const&))
+--1682961-- REDIR: 0x5afc030 (libstdc++.so.6:operator delete(void*, std::align_val_t, std::nothrow_t const&)) redirected to 0x4c3e60b (operator delete(void*, std::align_val_t, std::nothrow_t const&))
+==1682961== 
+</pre>
+
+<pre>==1682961== HEAP SUMMARY:
+==1682961==     in use at exit: 825,309 bytes in 10,909 blocks
+==1682961==   total heap usage: 139,177 allocs, 128,268 frees, 1,592,852,342 bytes allocated
+==1682961== 
+</pre>
+
+<pre>==1682961== Searching for pointers to 10,909 not-freed blocks
+==1682961== Checked 3,914,192 bytes
+==1682961== 
+</pre>
+
+<a name="error1"><h2>7,448 (504 direct, 6,944 indirect) bytes in 7 blocks are definitely lost</h2></a>
+<font size=small><a href="#duplication-steps">(Show me how to reproduce this <b>error</b>)</a></font>
+<pre>==1682961== 7,448 (504 direct, 6,944 indirect) bytes in 7 blocks are definitely lost in loss record 53 of 57
+==1682961==    at 0x4C39185: malloc (vg_replace_malloc.c:442)
+==1682961==    by 0x558CAA7: set_value (in /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi.so.40.30.6)
+==1682961==    by 0x558D181: ompi_attr_set_c (in /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi.so.40.30.6)
+==1682961==    by 0x55CCF06: PMPI_Comm_set_attr (in /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi.so.40.30.6)
+==1682961==    by 0x4A67A9: stk::impl::MPIKeyManager::get_key(ompi_communicator_t*) (MPICommKey.cpp:67)
+==1682961==    by 0x4A75A8: stk::impl::MPIKeyManager::register_callback(ompi_communicator_t*, unsigned long long, std::function<void (ompi_communicator_t*)>) (MPICommKey.cpp:104)
+==1682961==    by 0x4A2057: stk::MPITagManager::get_tag(ompi_communicator_t*, int) (MPITagManager.cpp:46)
+==1682961==    by 0x430C1E: stk::DataExchangeUnknownPatternNonBlocking::DataExchangeUnknownPatternNonBlocking(ompi_communicator_t*, int) (DataExchangeUnknownPatternNonBlocking.hpp:71)
+==1682961==    by 0x4315F9: DataExchangeUnknownPatternNonBlockingCommBuffer (DataExchangeUnknownPatternNonBlockingBuffer.hpp:104)
+==1682961==    by 0x4315F9: construct<stk::DataExchangeUnknownPatternNonBlockingCommBuffer, ompi_communicator_t*&> (new_allocator.h:150)
+==1682961==    by 0x4315F9: construct<stk::DataExchangeUnknownPatternNonBlockingCommBuffer, ompi_communicator_t*&> (alloc_traits.h:512)
+==1682961==    by 0x4315F9: _Sp_counted_ptr_inplace<ompi_communicator_t*&> (shared_ptr_base.h:551)
+==1682961==    by 0x4315F9: __shared_count<stk::DataExchangeUnknownPatternNonBlockingCommBuffer, std::allocator<stk::DataExchangeUnknownPatternNonBlockingCommBuffer>, ompi_communicator_t*&> (shared_ptr_base.h:682)
+==1682961==    by 0x4315F9: __shared_ptr<std::allocator<stk::DataExchangeUnknownPatternNonBlockingCommBuffer>, ompi_communicator_t*&> (shared_ptr_base.h:1371)
+==1682961==    by 0x4315F9: shared_ptr<std::allocator<stk::DataExchangeUnknownPatternNonBlockingCommBuffer>, ompi_communicator_t*&> (shared_ptr.h:408)
+==1682961==    by 0x4315F9: allocate_shared<stk::DataExchangeUnknownPatternNonBlockingCommBuffer, std::allocator<stk::DataExchangeUnknownPatternNonBlockingCommBuffer>, ompi_communicator_t*&> (shared_ptr.h:860)
+==1682961==    by 0x4315F9: make_shared<stk::DataExchangeUnknownPatternNonBlockingCommBuffer, ompi_communicator_t*&> (shared_ptr.h:876)
+==1682961==    by 0x4315F9: stk::CommSparse::CommSparse(ompi_communicator_t*) (CommSparse.hpp:189)
+==1682961==    by 0x47E8D3: stk::coupling::SyncInfo::exchange(stk::coupling::SplitComms const&, int) const (SyncInfo.cpp:56)
+==1682961==    by 0x47F568: stk::coupling::SyncInfo::exchange(stk::coupling::SplitComms const&) const (SyncInfo.cpp:93)
+==1682961==    by 0x444865: (anonymous namespace)::TestSyncInfo_exchange_multi_way_Test::TestBody() (UnitTestSyncInfo.cpp:353)
+==1682961==    by 0x473BDC: void testing::internal::HandleExceptionsInMethodIfSupported<testing::Test, void>(testing::Test*, void (testing::Test::*)(), char const*) (in /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest)
+==1682961==    by 0x468D6F: testing::Test::Run() [clone .part.0] (in /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest)
+==1682961==    by 0x4691A1: testing::TestInfo::Run() [clone .part.0] (in /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest)
+==1682961==    by 0x469381: testing::TestSuite::Run() [clone .part.0] (in /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest)
+==1682961==    by 0x46A3D7: testing::internal::UnitTestImpl::RunAllTests() (in /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest)
+==1682961==    by 0x46A6DA: testing::UnitTest::Run() (in /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest)
+==1682961==    by 0x41DA24: RUN_ALL_TESTS (gtest.h:2473)
+==1682961==    by 0x41DA24: run_all_tests (ngp_test.hpp:139)
+==1682961==    by 0x41DA24: main (UnitTestMain.cpp:82)
+==1682961== 
+</pre>
+
+<pre>==1682961== LEAK SUMMARY:
+==1682961==    definitely lost: 504 bytes in 7 blocks
+==1682961==    indirectly lost: 0 bytes in 0 blocks
+==1682961==      possibly lost: 0 bytes in 0 blocks
+==1682961==    still reachable: 176 bytes in 1 blocks
+==1682961==         suppressed: 824,629 bytes in 10,901 blocks
+==1682961== Reachable blocks (those to which a pointer was found) are not shown.
+==1682961== To see them, rerun with: --leak-check=full --show-leak-kinds=all
+==1682961== 
+</pre>
+
+<pre>==1682961== ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 27 from 27)
+</pre>
+
+<pre>--1682961-- 
+--1682961-- used_suppression:      3 OMPI_Leaks-init-realloc /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:47 suppressed: 431,132 bytes in 7 blocks
+--1682961-- used_suppression:     36 OMPI_Leaks-init-malloc2 /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:31 suppressed: 372,595 bytes in 10,817 blocks
+--1682961-- used_suppression:     10 OMPI_Leaks-init-calloc /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:38 suppressed: 11,976 bytes in 35 blocks
+--1682961-- used_suppression:      1 MPI-HashTable /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:372 suppressed: 6,944 bytes in 7 blocks
+--1682961-- used_suppression:      1 OMPI_Leaks-Keyval_create-malloc_gcc_8 /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:299 suppressed: 1,984 bytes in 31 blocks
+--1682961-- used_suppression:      4 <MPI-4 Errors 3> /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:783 suppressed: 77 bytes in 4 blocks
+--1682961-- used_suppression:      1 <nkc_09_09_2024> /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:536
+--1682961-- used_suppression:      1 <MpiInitGCC10.3SetSockOpt> /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:948
+--1682961-- used_suppression:      1 <MpiInitGCC10.3GetSockOptB> /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:939
+--1682961-- used_suppression:      1 <MpiInitGCC10.3GetSockOptA> /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:930
+==1682961== 
+</pre>
+
+<pre>==1682961== ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 27 from 27)
+</pre>
+
+<pre>==1682967== Memcheck, a memory error detector
+==1682967== Copyright (C) 2002-2022, and GNU GPL'd, by Julian Seward et al.
+==1682967== Using Valgrind-3.22.0-bd4db67b1d-20231031 and LibVEX; rerun with -h for copyright info
+==1682967== Command: /ceeGPFS/fgs/jccrean/code/results/2025_03_17_17_01_51/stk_coupling_rtest_unit_test_unit_test.test/np8/bin/stk_coupling_utest
+==1682967== Parent PID: 1682962
+==1682967== 
+</pre>
+
+<pre>--1682967-- 
+--1682967-- Valgrind options:
+--1682967--    -v
+--1682967--    --tool=memcheck
+--1682967--    --log-file=/ceeGPFS/fgs/jccrean/code/results/2025_03_17_17_01_51/stk_coupling_rtest_unit_test_unit_test.test/np8/valgrind_%p.output
+--1682967--    --suppressions=/sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress
+--1682967--    --num-callers=50
+--1682967--    --track-origins=yes
+--1682967--    --trace-children=yes
+--1682967--    --leak-check=yes
+--1682967--    --leak-resolution=med
+--1682967--    --max-stackframe=3500000
+--1682967-- Contents of /proc/version:
+--1682967--   Linux version 4.18.0-553.37.1.el8_10.x86_64 (mockbuild@x86-64-05.build.eng.rdu2.redhat.com) (gcc version 8.5.0 20210514 (Red Hat 8.5.0-22) (GCC)) #1 SMP Fri Jan 17 08:51:54 EST 2025
+--1682967-- 
+--1682967-- Arch and hwcaps: AMD64, LittleEndian, amd64-cx16-lzcnt-rdtscp-sse3-ssse3-avx-avx2-bmi-f16c-rdrand-rdseed
+--1682967-- Page sizes: currently 4096, max supported 4096
+--1682967-- Valgrind library directory: /usr/libexec/valgrind
+--1682967-- Reading syms from /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest
+--1682967-- Reading syms from /usr/lib64/ld-2.28.so
+--1682967-- Warning: cross-CU LIMITATION: some inlined fn names
+--1682967-- might be shown as UnknownInlinedFun
+--1682967-- Reading syms from /usr/libexec/valgrind/memcheck-amd64-linux
+--1682967--    object doesn't have a dynamic symbol table
+--1682967-- Scheduler: using generic scheduler lock implementation.
+--1682967-- Reading suppressions file: /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress
+--1682967-- Reading suppressions file: /usr/libexec/valgrind/default.supp
+</pre>
+
+<pre>==1682967== embedded gdbserver: reading from /tmp/vgdb-pipe-from-vgdb-to-1682967-by-jccrean-on-cee-build032
+==1682967== embedded gdbserver: writing to   /tmp/vgdb-pipe-to-vgdb-from-1682967-by-jccrean-on-cee-build032
+==1682967== embedded gdbserver: shared mem   /tmp/vgdb-pipe-shared-mem-vgdb-1682967-by-jccrean-on-cee-build032
+==1682967== 
+</pre>
+
+<pre>==1682967== TO CONTROL THIS PROCESS USING vgdb (which you probably
+==1682967== don't want to do, unless you know exactly what you're doing,
+==1682967== or are doing some strange experiment):
+==1682967==   /usr/libexec/valgrind/../../bin/vgdb --pid=1682967 ...command...
+==1682967== 
+</pre>
+
+<pre>==1682967== TO DEBUG THIS PROCESS USING GDB: start GDB like this
+==1682967==   /path/to/gdb /ceeGPFS/fgs/jccrean/code/results/2025_03_17_17_01_51/stk_coupling_rtest_unit_test_unit_test.test/np8/bin/stk_coupling_utest
+==1682967== and then give GDB the following command
+==1682967==   target remote | /usr/libexec/valgrind/../../bin/vgdb --pid=1682967
+==1682967== --pid is optional if only one valgrind process is running
+==1682967== 
+</pre>
+
+<pre>--1682967-- REDIR: 0x4004400 (ld-linux-x86-64.so.2:strlen) redirected to 0x580d2e42 (???)
+--1682967-- REDIR: 0x4002d80 (ld-linux-x86-64.so.2:index) redirected to 0x580d2e5c (???)
+--1682967-- Reading syms from /usr/libexec/valgrind/vgpreload_core-amd64-linux.so
+--1682967-- Reading syms from /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so
+</pre>
+
+<pre>==1682967== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682967--     old: 0x04004400 (strlen              ) R-> (0000.0) 0x580d2e42 ???
+--1682967--     new: 0x04004400 (strlen              ) R-> (2007.0) 0x04c42300 strlen
+--1682967-- REDIR: 0x4002fb0 (ld-linux-x86-64.so.2:strcmp) redirected to 0x4c434c0 (strcmp)
+--1682967-- REDIR: 0x40045a0 (ld-linux-x86-64.so.2:strncmp) redirected to 0x4c42bc0 (strncmp)
+--1682967-- REDIR: 0x4002760 (ld-linux-x86-64.so.2:mempcpy) redirected to 0x4c46ff0 (mempcpy)
+--1682967-- REDIR: 0x4002c90 (ld-linux-x86-64.so.2:stpcpy) redirected to 0x4c45c50 (stpcpy)
+--1682967-- Reading syms from /usr/lib64/liboneagentproc.so
+--1682967-- Reading syms from /usr/lib64/libdl-2.28.so
+--1682967-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/818788d6/gcc-10.3.0/install/linux-rhel8-x86_64/gcc-8.5.0/gcc-10.3.0-6ljscis/lib64/libgfortran.so.5.0.0
+--1682967-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi.so.40.30.6
+--1682967-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi_usempif08.so.40.30.0
+--1682967-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi_usempi_ignore_tkr.so.40.30.0
+--1682967-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi_mpifh.so.40.30.0
+--1682967-- Reading syms from /usr/lib64/libpthread-2.28.so
+--1682967-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/818788d6/gcc-10.3.0/install/linux-rhel8-x86_64/gcc-8.5.0/gcc-10.3.0-6ljscis/lib64/libstdc++.so.6.0.28
+--1682967-- Reading syms from /usr/lib64/libm-2.28.so
+--1682967-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/818788d6/gcc-10.3.0/install/linux-rhel8-x86_64/gcc-8.5.0/gcc-10.3.0-6ljscis/lib64/libgcc_s.so.1
+--1682967-- Reading syms from /usr/lib64/libc-2.28.so
+</pre>
+
+<pre>==1682967== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682967--     old: 0x06040f50 (memalign            ) R-> (1011.0) 0x04c40d9e memalign
+--1682967--     new: 0x06040f50 (memalign            ) R-> (1017.0) 0x04c41527 aligned_alloc
+</pre>
+
+<pre>==1682967== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682967--     old: 0x06040f50 (memalign            ) R-> (1011.0) 0x04c40d9e memalign
+--1682967--     new: 0x06040f50 (memalign            ) R-> (1017.0) 0x04c413bd aligned_alloc
+</pre>
+
+<pre>==1682967== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682967--     old: 0x06040f50 (memalign            ) R-> (1011.0) 0x04c40d9e memalign
+--1682967--     new: 0x06040f50 (memalign            ) R-> (1017.0) 0x04c41527 aligned_alloc
+</pre>
+
+<pre>==1682967== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682967--     old: 0x06040f50 (memalign            ) R-> (1011.0) 0x04c40d9e memalign
+--1682967--     new: 0x06040f50 (memalign            ) R-> (1017.0) 0x04c413bd aligned_alloc
+</pre>
+
+<pre>==1682967== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682967--     old: 0x06040f50 (memalign            ) R-> (1011.0) 0x04c40d9e memalign
+--1682967--     new: 0x06040f50 (memalign            ) R-> (1017.0) 0x04c41527 aligned_alloc
+</pre>
+
+<pre>==1682967== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682967--     old: 0x06040f50 (memalign            ) R-> (1011.0) 0x04c40d9e memalign
+--1682967--     new: 0x06040f50 (memalign            ) R-> (1017.0) 0x04c413bd aligned_alloc
+--1682967-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/818788d6/gcc-10.3.0/install/linux-rhel8-x86_64/gcc-8.5.0/gcc-10.3.0-6ljscis/lib64/libquadmath.so.0.0.0
+--1682967-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libopen-rte.so.40.30.3
+--1682967-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libopen-pal.so.40.30.3
+--1682967-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/pmix-4.1.2-k2sy222/lib/libpmix.so.2.5.2
+--1682967-- Reading syms from /usr/lib64/libnl-3.so.200.26.0
+--1682967-- Reading syms from /usr/lib64/libnl-route-3.so.200.26.0
+--1682967-- Reading syms from /usr/lib64/librt-2.28.so
+--1682967-- Reading syms from /usr/lib64/libutil-2.28.so
+--1682967-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/zlib-ng-2.1.4-2doi7gn/lib/libz.so.1.3.0.zlib-ng
+--1682967-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/hwloc-2.9.1-p5xbfhp/lib/libhwloc.so.15.6.2
+--1682967-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/libevent-2.1.12-ytr5fzy/lib/libevent_core-2.1.so.7.0.1
+--1682967-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/libevent-2.1.12-ytr5fzy/lib/libevent_pthreads-2.1.so.7.0.1
+--1682967-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/libpciaccess-0.17-4ycon7f/lib/libpciaccess.so.0.11.1
+--1682967-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/libxml2-2.10.3-66temxb/lib/libxml2.so.2.10.3
+--1682967-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/xz-5.4.1-r2q7nx7/lib/liblzma.so.5.4.1
+--1682967-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/libiconv-1.17-fz2467k/lib/libiconv.so.2.6.1
+--1682967-- REDIR: 0x6045460 (libc.so.6:memmove) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+</pre>
+
+<pre>==1682967== Preferring higher priority redirection:
+</pre>
+
+<pre>--1682967--     old: 0x0604c800 (__memcpy_avx_unalign) R-> (2018.0) 0x04c44700 __memcpy_avx_unaligned_erms
+--1682967--     new: 0x0604c800 (__memcpy_avx_unalign) R-> (2018.1) 0x04c46030 memmove
+--1682967-- REDIR: 0x6044680 (libc.so.6:strncpy) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682967-- REDIR: 0x6045a40 (libc.so.6:strcasecmp) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682967-- REDIR: 0x6043df0 (libc.so.6:strcat) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682967-- REDIR: 0x6044710 (libc.so.6:rindex) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682967-- REDIR: 0x6047210 (libc.so.6:rawmemchr) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682967-- REDIR: 0x608b420 (libc.so.6:wmemchr) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682967-- REDIR: 0x608ad40 (libc.so.6:wcscmp) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682967-- REDIR: 0x6045690 (libc.so.6:mempcpy) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682967-- REDIR: 0x60453c0 (libc.so.6:bcmp) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682967-- REDIR: 0x60445e0 (libc.so.6:strncmp) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682967-- REDIR: 0x6043f00 (libc.so.6:strcmp) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682967-- REDIR: 0x6045590 (libc.so.6:memset) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682967-- REDIR: 0x608acc0 (libc.so.6:wcschr) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682967-- REDIR: 0x60444d0 (libc.so.6:strnlen) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682967-- REDIR: 0x6044040 (libc.so.6:strcspn) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682967-- REDIR: 0x6045ae0 (libc.so.6:strncasecmp) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682967-- REDIR: 0x6043fb0 (libc.so.6:strcpy) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682967-- REDIR: 0x6045d20 (libc.so.6:memcpy@@GLIBC_2.14) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682967-- REDIR: 0x608c7c0 (libc.so.6:wcsnlen) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682967-- REDIR: 0x6044790 (libc.so.6:strpbrk) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682967-- REDIR: 0x6043e80 (libc.so.6:index) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682967-- REDIR: 0x6044450 (libc.so.6:strlen) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682967-- REDIR: 0x604bd80 (libc.so.6:memrchr) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682967-- REDIR: 0x6045b80 (libc.so.6:strcasecmp_l) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682967-- REDIR: 0x6045330 (libc.so.6:memchr) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682967-- REDIR: 0x608ae90 (libc.so.6:wcslen) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682967-- REDIR: 0x6044a50 (libc.so.6:strspn) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682967-- REDIR: 0x60459b0 (libc.so.6:stpncpy) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682967-- REDIR: 0x6045920 (libc.so.6:stpcpy) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682967-- REDIR: 0x60472a0 (libc.so.6:strchrnul) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682967-- REDIR: 0x6045c20 (libc.so.6:strncasecmp_l) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682967-- REDIR: 0x6044550 (libc.so.6:strncat) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682967-- REDIR: 0x60f0cb0 (libc.so.6:__memcpy_chk) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682967-- REDIR: 0x6045250 (libc.so.6:strstr) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682967-- REDIR: 0x6052a30 (libc.so.6:__strrchr_avx2) redirected to 0x4c41c90 (rindex)
+--1682967-- REDIR: 0x60500e0 (libc.so.6:__strlen_avx2) redirected to 0x4c421e0 (strlen)
+--1682967-- REDIR: 0x604f7f0 (libc.so.6:__strcmp_avx2) redirected to 0x4c43380 (strcmp)
+--1682967-- REDIR: 0x60401e0 (libc.so.6:malloc) redirected to 0x4c3910f (malloc)
+--1682967-- REDIR: 0x604f600 (libc.so.6:__strchrnul_avx2) redirected to 0x4c46b20 (strchrnul)
+--1682967-- REDIR: 0x604c800 (libc.so.6:__memcpy_avx_unaligned_erms) redirected to 0x4c46030 (memmove)
+--1682967-- REDIR: 0x6040870 (libc.so.6:free) redirected to 0x4c3c459 (free)
+--1682967-- REDIR: 0x6044f60 (libc.so.6:__GI_strstr) redirected to 0x4c471d0 (__strstr_sse2)
+--1682967-- REDIR: 0x604c080 (libc.so.6:__memchr_avx2) redirected to 0x4c43560 (memchr)
+--1682967-- REDIR: 0x6089970 (libc.so.6:__strspn_sse42) redirected to 0x4c473e0 (strspn)
+--1682967-- REDIR: 0x6089480 (libc.so.6:__strcspn_sse42) redirected to 0x4c47320 (strcspn)
+--1682967-- REDIR: 0x604e330 (libc.so.6:__strcasecmp_avx2) redirected to 0x4c42c30 (strcasecmp)
+--1682967-- REDIR: 0x6041010 (libc.so.6:calloc) redirected to 0x4c408d9 (calloc)
+--1682967-- REDIR: 0x604c360 (libc.so.6:__memcmp_avx2_movbe) redirected to 0x4c45700 (bcmp)
+--1682967-- REDIR: 0x5afbef0 (libstdc++.so.6:operator new(unsigned long)) redirected to 0x4c398a1 (operator new(unsigned long))
+--1682967-- REDIR: 0x5afa2e0 (libstdc++.so.6:operator delete(void*)) redirected to 0x4c3ccf3 (operator delete(void*))
+--1682967-- REDIR: 0x5afbf40 (libstdc++.so.6:operator new[](unsigned long)) redirected to 0x4c3b041 (operator new[](unsigned long))
+--1682967-- REDIR: 0x604d340 (libc.so.6:__memset_avx2_unaligned_erms) redirected to 0x4c45f20 (memset)
+--1682967-- REDIR: 0x5afa310 (libstdc++.so.6:operator delete[](void*)) redirected to 0x4c3ed6f (operator delete[](void*))
+--1682967-- REDIR: 0x604f3c0 (libc.so.6:__strchr_avx2) redirected to 0x4c41e70 (index)
+--1682967-- REDIR: 0x5afa2f0 (libstdc++.so.6:operator delete(void*, unsigned long)) redirected to 0x4c3d1f3 (operator delete(void*, unsigned long))
+--1682967-- REDIR: 0x60517b0 (libc.so.6:__strncmp_avx2) redirected to 0x4c42990 (strncmp)
+--1682967-- REDIR: 0x6040af0 (libc.so.6:realloc) redirected to 0x4c40af3 (realloc)
+--1682967-- REDIR: 0x5fdb7e0 (libc.so.6:__strstr_sse2_unaligned) redirected to 0x4c47160 (strstr)
+--1682967-- REDIR: 0x604c7e0 (libc.so.6:__mempcpy_avx_unaligned_erms) redirected to 0x4c46c30 (mempcpy)
+--1682967-- REDIR: 0x6051e00 (libc.so.6:__strncpy_avx2) redirected to 0x4c424d0 (strncpy)
+--1682967-- REDIR: 0x6050da0 (libc.so.6:__strncat_avx2) redirected to 0x4c42060 (strncat)
+--1682967-- REDIR: 0x604d480 (libc.so.6:__rawmemchr_avx2) redirected to 0x4c46b50 (rawmemchr)
+--1682967-- REDIR: 0x6050260 (libc.so.6:__strncasecmp_avx2) redirected to 0x4c42d10 (strncasecmp)
+--1682967-- REDIR: 0x5ff5900 (libc.so.6:setenv) redirected to 0x4c47b60 (setenv)
+--1682967-- REDIR: 0x604fd50 (libc.so.6:__strcpy_avx2) redirected to 0x4c42330 (strcpy)
+--1682967-- REDIR: 0x6041cd0 (libc.so.6:posix_memalign) redirected to 0x4c4123b (posix_memalign)
+--1682967-- REDIR: 0x5afbfd0 (libstdc++.so.6:operator new(unsigned long, std::align_val_t, std::nothrow_t const&)) redirected to 0x4c3a9c7 (operator new(unsigned long, std::align_val_t, std::nothrow_t const&))
+--1682967-- REDIR: 0x5afc030 (libstdc++.so.6:operator delete(void*, std::align_val_t, std::nothrow_t const&)) redirected to 0x4c3e60b (operator delete(void*, std::align_val_t, std::nothrow_t const&))
+==1682967== 
+</pre>
+
+<pre>==1682967== HEAP SUMMARY:
+==1682967==     in use at exit: 825,309 bytes in 10,909 blocks
+==1682967==   total heap usage: 126,541 allocs, 115,632 frees, 1,590,504,897 bytes allocated
+==1682967== 
+</pre>
+
+<pre>==1682967== Searching for pointers to 10,909 not-freed blocks
+==1682967== Checked 3,914,192 bytes
+==1682967== 
+</pre>
+
+<a name="error1"><h2>7,448 (504 direct, 6,944 indirect) bytes in 7 blocks are definitely lost</h2></a>
+<font size=small><a href="#duplication-steps">(Show me how to reproduce this <b>error</b>)</a></font>
+<pre>==1682967== 7,448 (504 direct, 6,944 indirect) bytes in 7 blocks are definitely lost in loss record 54 of 58
+==1682967==    at 0x4C39185: malloc (vg_replace_malloc.c:442)
+==1682967==    by 0x558CAA7: set_value (in /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi.so.40.30.6)
+==1682967==    by 0x558D181: ompi_attr_set_c (in /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi.so.40.30.6)
+==1682967==    by 0x55CCF06: PMPI_Comm_set_attr (in /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi.so.40.30.6)
+==1682967==    by 0x4A67A9: stk::impl::MPIKeyManager::get_key(ompi_communicator_t*) (MPICommKey.cpp:67)
+==1682967==    by 0x4A75A8: stk::impl::MPIKeyManager::register_callback(ompi_communicator_t*, unsigned long long, std::function<void (ompi_communicator_t*)>) (MPICommKey.cpp:104)
+==1682967==    by 0x4A2057: stk::MPITagManager::get_tag(ompi_communicator_t*, int) (MPITagManager.cpp:46)
+==1682967==    by 0x430C1E: stk::DataExchangeUnknownPatternNonBlocking::DataExchangeUnknownPatternNonBlocking(ompi_communicator_t*, int) (DataExchangeUnknownPatternNonBlocking.hpp:71)
+==1682967==    by 0x4315F9: DataExchangeUnknownPatternNonBlockingCommBuffer (DataExchangeUnknownPatternNonBlockingBuffer.hpp:104)
+==1682967==    by 0x4315F9: construct<stk::DataExchangeUnknownPatternNonBlockingCommBuffer, ompi_communicator_t*&> (new_allocator.h:150)
+==1682967==    by 0x4315F9: construct<stk::DataExchangeUnknownPatternNonBlockingCommBuffer, ompi_communicator_t*&> (alloc_traits.h:512)
+==1682967==    by 0x4315F9: _Sp_counted_ptr_inplace<ompi_communicator_t*&> (shared_ptr_base.h:551)
+==1682967==    by 0x4315F9: __shared_count<stk::DataExchangeUnknownPatternNonBlockingCommBuffer, std::allocator<stk::DataExchangeUnknownPatternNonBlockingCommBuffer>, ompi_communicator_t*&> (shared_ptr_base.h:682)
+==1682967==    by 0x4315F9: __shared_ptr<std::allocator<stk::DataExchangeUnknownPatternNonBlockingCommBuffer>, ompi_communicator_t*&> (shared_ptr_base.h:1371)
+==1682967==    by 0x4315F9: shared_ptr<std::allocator<stk::DataExchangeUnknownPatternNonBlockingCommBuffer>, ompi_communicator_t*&> (shared_ptr.h:408)
+==1682967==    by 0x4315F9: allocate_shared<stk::DataExchangeUnknownPatternNonBlockingCommBuffer, std::allocator<stk::DataExchangeUnknownPatternNonBlockingCommBuffer>, ompi_communicator_t*&> (shared_ptr.h:860)
+==1682967==    by 0x4315F9: make_shared<stk::DataExchangeUnknownPatternNonBlockingCommBuffer, ompi_communicator_t*&> (shared_ptr.h:876)
+==1682967==    by 0x4315F9: stk::CommSparse::CommSparse(ompi_communicator_t*) (CommSparse.hpp:189)
+==1682967==    by 0x47E8D3: stk::coupling::SyncInfo::exchange(stk::coupling::SplitComms const&, int) const (SyncInfo.cpp:56)
+==1682967==    by 0x47F568: stk::coupling::SyncInfo::exchange(stk::coupling::SplitComms const&) const (SyncInfo.cpp:93)
+==1682967==    by 0x444865: (anonymous namespace)::TestSyncInfo_exchange_multi_way_Test::TestBody() (UnitTestSyncInfo.cpp:353)
+==1682967==    by 0x473BDC: void testing::internal::HandleExceptionsInMethodIfSupported<testing::Test, void>(testing::Test*, void (testing::Test::*)(), char const*) (in /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest)
+==1682967==    by 0x468D6F: testing::Test::Run() [clone .part.0] (in /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest)
+==1682967==    by 0x4691A1: testing::TestInfo::Run() [clone .part.0] (in /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest)
+==1682967==    by 0x469381: testing::TestSuite::Run() [clone .part.0] (in /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest)
+==1682967==    by 0x46A3D7: testing::internal::UnitTestImpl::RunAllTests() (in /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest)
+==1682967==    by 0x46A6DA: testing::UnitTest::Run() (in /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest)
+==1682967==    by 0x41DA24: RUN_ALL_TESTS (gtest.h:2473)
+==1682967==    by 0x41DA24: run_all_tests (ngp_test.hpp:139)
+==1682967==    by 0x41DA24: main (UnitTestMain.cpp:82)
+==1682967== 
+</pre>
+
+<pre>==1682967== LEAK SUMMARY:
+==1682967==    definitely lost: 504 bytes in 7 blocks
+==1682967==    indirectly lost: 0 bytes in 0 blocks
+==1682967==      possibly lost: 0 bytes in 0 blocks
+==1682967==    still reachable: 176 bytes in 1 blocks
+==1682967==         suppressed: 824,629 bytes in 10,901 blocks
+==1682967== Reachable blocks (those to which a pointer was found) are not shown.
+==1682967== To see them, rerun with: --leak-check=full --show-leak-kinds=all
+==1682967== 
+</pre>
+
+<pre>==1682967== ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 28 from 28)
+</pre>
+
+<pre>--1682967-- 
+--1682967-- used_suppression:      3 OMPI_Leaks-init-realloc /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:47 suppressed: 431,132 bytes in 7 blocks
+--1682967-- used_suppression:     37 OMPI_Leaks-init-malloc2 /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:31 suppressed: 372,595 bytes in 10,817 blocks
+--1682967-- used_suppression:      9 OMPI_Leaks-init-calloc /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:38 suppressed: 11,976 bytes in 35 blocks
+--1682967-- used_suppression:      1 MPI-HashTable /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:372 suppressed: 6,944 bytes in 7 blocks
+--1682967-- used_suppression:      2 OMPI_Leaks-Keyval_create-malloc_gcc_8 /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:299 suppressed: 1,984 bytes in 31 blocks
+--1682967-- used_suppression:      4 <MPI-4 Errors 3> /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:783 suppressed: 77 bytes in 4 blocks
+--1682967-- used_suppression:      1 <nkc_09_09_2024> /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:536
+--1682967-- used_suppression:      1 <MpiInitGCC10.3SetSockOpt> /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:948
+--1682967-- used_suppression:      1 <MpiInitGCC10.3GetSockOptB> /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:939
+--1682967-- used_suppression:      1 <MpiInitGCC10.3GetSockOptA> /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:930
+==1682967== 
+</pre>
+
+<pre>==1682967== ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 28 from 28)
+</pre>
+
+<pre>==1682959== Memcheck, a memory error detector
+==1682959== Copyright (C) 2002-2022, and GNU GPL'd, by Julian Seward et al.
+==1682959== Using Valgrind-3.22.0-bd4db67b1d-20231031 and LibVEX; rerun with -h for copyright info
+==1682959== Command: /ceeGPFS/fgs/jccrean/code/results/2025_03_17_17_01_51/stk_coupling_rtest_unit_test_unit_test.test/np8/bin/stk_coupling_utest
+==1682959== Parent PID: 1682955
+==1682959== 
+</pre>
+
+<pre>--1682959-- 
+--1682959-- Valgrind options:
+--1682959--    -v
+--1682959--    --tool=memcheck
+--1682959--    --log-file=/ceeGPFS/fgs/jccrean/code/results/2025_03_17_17_01_51/stk_coupling_rtest_unit_test_unit_test.test/np8/valgrind_%p.output
+--1682959--    --suppressions=/sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress
+--1682959--    --num-callers=50
+--1682959--    --track-origins=yes
+--1682959--    --trace-children=yes
+--1682959--    --leak-check=yes
+--1682959--    --leak-resolution=med
+--1682959--    --max-stackframe=3500000
+--1682959-- Contents of /proc/version:
+--1682959--   Linux version 4.18.0-553.37.1.el8_10.x86_64 (mockbuild@x86-64-05.build.eng.rdu2.redhat.com) (gcc version 8.5.0 20210514 (Red Hat 8.5.0-22) (GCC)) #1 SMP Fri Jan 17 08:51:54 EST 2025
+--1682959-- 
+--1682959-- Arch and hwcaps: AMD64, LittleEndian, amd64-cx16-lzcnt-rdtscp-sse3-ssse3-avx-avx2-bmi-f16c-rdrand-rdseed
+--1682959-- Page sizes: currently 4096, max supported 4096
+--1682959-- Valgrind library directory: /usr/libexec/valgrind
+--1682959-- Reading syms from /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest
+--1682959-- Reading syms from /usr/lib64/ld-2.28.so
+--1682959-- Warning: cross-CU LIMITATION: some inlined fn names
+--1682959-- might be shown as UnknownInlinedFun
+--1682959-- Reading syms from /usr/libexec/valgrind/memcheck-amd64-linux
+--1682959--    object doesn't have a dynamic symbol table
+--1682959-- Scheduler: using generic scheduler lock implementation.
+--1682959-- Reading suppressions file: /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress
+--1682959-- Reading suppressions file: /usr/libexec/valgrind/default.supp
+</pre>
+
+<pre>==1682959== embedded gdbserver: reading from /tmp/vgdb-pipe-from-vgdb-to-1682959-by-jccrean-on-cee-build032
+==1682959== embedded gdbserver: writing to   /tmp/vgdb-pipe-to-vgdb-from-1682959-by-jccrean-on-cee-build032
+==1682959== embedded gdbserver: shared mem   /tmp/vgdb-pipe-shared-mem-vgdb-1682959-by-jccrean-on-cee-build032
+==1682959== 
+</pre>
+
+<pre>==1682959== TO CONTROL THIS PROCESS USING vgdb (which you probably
+==1682959== don't want to do, unless you know exactly what you're doing,
+==1682959== or are doing some strange experiment):
+==1682959==   /usr/libexec/valgrind/../../bin/vgdb --pid=1682959 ...command...
+==1682959== 
+</pre>
+
+<pre>==1682959== TO DEBUG THIS PROCESS USING GDB: start GDB like this
+==1682959==   /path/to/gdb /ceeGPFS/fgs/jccrean/code/results/2025_03_17_17_01_51/stk_coupling_rtest_unit_test_unit_test.test/np8/bin/stk_coupling_utest
+==1682959== and then give GDB the following command
+==1682959==   target remote | /usr/libexec/valgrind/../../bin/vgdb --pid=1682959
+==1682959== --pid is optional if only one valgrind process is running
+==1682959== 
+</pre>
+
+<pre>--1682959-- REDIR: 0x4004400 (ld-linux-x86-64.so.2:strlen) redirected to 0x580d2e42 (???)
+--1682959-- REDIR: 0x4002d80 (ld-linux-x86-64.so.2:index) redirected to 0x580d2e5c (???)
+--1682959-- Reading syms from /usr/libexec/valgrind/vgpreload_core-amd64-linux.so
+--1682959-- Reading syms from /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so
+</pre>
+
+<pre>==1682959== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682959--     old: 0x04004400 (strlen              ) R-> (0000.0) 0x580d2e42 ???
+--1682959--     new: 0x04004400 (strlen              ) R-> (2007.0) 0x04c42300 strlen
+--1682959-- REDIR: 0x4002fb0 (ld-linux-x86-64.so.2:strcmp) redirected to 0x4c434c0 (strcmp)
+--1682959-- REDIR: 0x40045a0 (ld-linux-x86-64.so.2:strncmp) redirected to 0x4c42bc0 (strncmp)
+--1682959-- REDIR: 0x4002760 (ld-linux-x86-64.so.2:mempcpy) redirected to 0x4c46ff0 (mempcpy)
+--1682959-- REDIR: 0x4002c90 (ld-linux-x86-64.so.2:stpcpy) redirected to 0x4c45c50 (stpcpy)
+--1682959-- Reading syms from /usr/lib64/liboneagentproc.so
+--1682959-- Reading syms from /usr/lib64/libdl-2.28.so
+--1682959-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/818788d6/gcc-10.3.0/install/linux-rhel8-x86_64/gcc-8.5.0/gcc-10.3.0-6ljscis/lib64/libgfortran.so.5.0.0
+--1682959-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi.so.40.30.6
+--1682959-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi_usempif08.so.40.30.0
+--1682959-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi_usempi_ignore_tkr.so.40.30.0
+--1682959-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi_mpifh.so.40.30.0
+--1682959-- Reading syms from /usr/lib64/libpthread-2.28.so
+--1682959-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/818788d6/gcc-10.3.0/install/linux-rhel8-x86_64/gcc-8.5.0/gcc-10.3.0-6ljscis/lib64/libstdc++.so.6.0.28
+--1682959-- Reading syms from /usr/lib64/libm-2.28.so
+--1682959-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/818788d6/gcc-10.3.0/install/linux-rhel8-x86_64/gcc-8.5.0/gcc-10.3.0-6ljscis/lib64/libgcc_s.so.1
+--1682959-- Reading syms from /usr/lib64/libc-2.28.so
+</pre>
+
+<pre>==1682959== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682959--     old: 0x06040f50 (memalign            ) R-> (1011.0) 0x04c40d9e memalign
+--1682959--     new: 0x06040f50 (memalign            ) R-> (1017.0) 0x04c41527 aligned_alloc
+</pre>
+
+<pre>==1682959== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682959--     old: 0x06040f50 (memalign            ) R-> (1011.0) 0x04c40d9e memalign
+--1682959--     new: 0x06040f50 (memalign            ) R-> (1017.0) 0x04c413bd aligned_alloc
+</pre>
+
+<pre>==1682959== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682959--     old: 0x06040f50 (memalign            ) R-> (1011.0) 0x04c40d9e memalign
+--1682959--     new: 0x06040f50 (memalign            ) R-> (1017.0) 0x04c41527 aligned_alloc
+</pre>
+
+<pre>==1682959== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682959--     old: 0x06040f50 (memalign            ) R-> (1011.0) 0x04c40d9e memalign
+--1682959--     new: 0x06040f50 (memalign            ) R-> (1017.0) 0x04c413bd aligned_alloc
+</pre>
+
+<pre>==1682959== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682959--     old: 0x06040f50 (memalign            ) R-> (1011.0) 0x04c40d9e memalign
+--1682959--     new: 0x06040f50 (memalign            ) R-> (1017.0) 0x04c41527 aligned_alloc
+</pre>
+
+<pre>==1682959== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682959--     old: 0x06040f50 (memalign            ) R-> (1011.0) 0x04c40d9e memalign
+--1682959--     new: 0x06040f50 (memalign            ) R-> (1017.0) 0x04c413bd aligned_alloc
+--1682959-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/818788d6/gcc-10.3.0/install/linux-rhel8-x86_64/gcc-8.5.0/gcc-10.3.0-6ljscis/lib64/libquadmath.so.0.0.0
+--1682959-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libopen-rte.so.40.30.3
+--1682959-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libopen-pal.so.40.30.3
+--1682959-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/pmix-4.1.2-k2sy222/lib/libpmix.so.2.5.2
+--1682959-- Reading syms from /usr/lib64/libnl-3.so.200.26.0
+--1682959-- Reading syms from /usr/lib64/libnl-route-3.so.200.26.0
+--1682959-- Reading syms from /usr/lib64/librt-2.28.so
+--1682959-- Reading syms from /usr/lib64/libutil-2.28.so
+--1682959-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/zlib-ng-2.1.4-2doi7gn/lib/libz.so.1.3.0.zlib-ng
+--1682959-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/hwloc-2.9.1-p5xbfhp/lib/libhwloc.so.15.6.2
+--1682959-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/libevent-2.1.12-ytr5fzy/lib/libevent_core-2.1.so.7.0.1
+--1682959-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/libevent-2.1.12-ytr5fzy/lib/libevent_pthreads-2.1.so.7.0.1
+--1682959-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/libpciaccess-0.17-4ycon7f/lib/libpciaccess.so.0.11.1
+--1682959-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/libxml2-2.10.3-66temxb/lib/libxml2.so.2.10.3
+--1682959-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/xz-5.4.1-r2q7nx7/lib/liblzma.so.5.4.1
+--1682959-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/libiconv-1.17-fz2467k/lib/libiconv.so.2.6.1
+--1682959-- REDIR: 0x6045460 (libc.so.6:memmove) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+</pre>
+
+<pre>==1682959== Preferring higher priority redirection:
+</pre>
+
+<pre>--1682959--     old: 0x0604c800 (__memcpy_avx_unalign) R-> (2018.0) 0x04c44700 __memcpy_avx_unaligned_erms
+--1682959--     new: 0x0604c800 (__memcpy_avx_unalign) R-> (2018.1) 0x04c46030 memmove
+--1682959-- REDIR: 0x6044680 (libc.so.6:strncpy) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682959-- REDIR: 0x6045a40 (libc.so.6:strcasecmp) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682959-- REDIR: 0x6043df0 (libc.so.6:strcat) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682959-- REDIR: 0x6044710 (libc.so.6:rindex) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682959-- REDIR: 0x6047210 (libc.so.6:rawmemchr) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682959-- REDIR: 0x608b420 (libc.so.6:wmemchr) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682959-- REDIR: 0x608ad40 (libc.so.6:wcscmp) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682959-- REDIR: 0x6045690 (libc.so.6:mempcpy) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682959-- REDIR: 0x60453c0 (libc.so.6:bcmp) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682959-- REDIR: 0x60445e0 (libc.so.6:strncmp) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682959-- REDIR: 0x6043f00 (libc.so.6:strcmp) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682959-- REDIR: 0x6045590 (libc.so.6:memset) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682959-- REDIR: 0x608acc0 (libc.so.6:wcschr) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682959-- REDIR: 0x60444d0 (libc.so.6:strnlen) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682959-- REDIR: 0x6044040 (libc.so.6:strcspn) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682959-- REDIR: 0x6045ae0 (libc.so.6:strncasecmp) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682959-- REDIR: 0x6043fb0 (libc.so.6:strcpy) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682959-- REDIR: 0x6045d20 (libc.so.6:memcpy@@GLIBC_2.14) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682959-- REDIR: 0x608c7c0 (libc.so.6:wcsnlen) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682959-- REDIR: 0x6044790 (libc.so.6:strpbrk) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682959-- REDIR: 0x6043e80 (libc.so.6:index) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682959-- REDIR: 0x6044450 (libc.so.6:strlen) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682959-- REDIR: 0x604bd80 (libc.so.6:memrchr) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682959-- REDIR: 0x6045b80 (libc.so.6:strcasecmp_l) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682959-- REDIR: 0x6045330 (libc.so.6:memchr) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682959-- REDIR: 0x608ae90 (libc.so.6:wcslen) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682959-- REDIR: 0x6044a50 (libc.so.6:strspn) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682959-- REDIR: 0x60459b0 (libc.so.6:stpncpy) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682959-- REDIR: 0x6045920 (libc.so.6:stpcpy) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682959-- REDIR: 0x60472a0 (libc.so.6:strchrnul) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682959-- REDIR: 0x6045c20 (libc.so.6:strncasecmp_l) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682959-- REDIR: 0x6044550 (libc.so.6:strncat) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682959-- REDIR: 0x60f0cb0 (libc.so.6:__memcpy_chk) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682959-- REDIR: 0x6045250 (libc.so.6:strstr) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682959-- REDIR: 0x6052a30 (libc.so.6:__strrchr_avx2) redirected to 0x4c41c90 (rindex)
+--1682959-- REDIR: 0x60500e0 (libc.so.6:__strlen_avx2) redirected to 0x4c421e0 (strlen)
+--1682959-- REDIR: 0x604f7f0 (libc.so.6:__strcmp_avx2) redirected to 0x4c43380 (strcmp)
+--1682959-- REDIR: 0x60401e0 (libc.so.6:malloc) redirected to 0x4c3910f (malloc)
+--1682959-- REDIR: 0x604f600 (libc.so.6:__strchrnul_avx2) redirected to 0x4c46b20 (strchrnul)
+--1682959-- REDIR: 0x604c800 (libc.so.6:__memcpy_avx_unaligned_erms) redirected to 0x4c46030 (memmove)
+--1682959-- REDIR: 0x6040870 (libc.so.6:free) redirected to 0x4c3c459 (free)
+--1682959-- REDIR: 0x6044f60 (libc.so.6:__GI_strstr) redirected to 0x4c471d0 (__strstr_sse2)
+--1682959-- REDIR: 0x604c080 (libc.so.6:__memchr_avx2) redirected to 0x4c43560 (memchr)
+--1682959-- REDIR: 0x6089970 (libc.so.6:__strspn_sse42) redirected to 0x4c473e0 (strspn)
+--1682959-- REDIR: 0x6089480 (libc.so.6:__strcspn_sse42) redirected to 0x4c47320 (strcspn)
+--1682959-- REDIR: 0x604e330 (libc.so.6:__strcasecmp_avx2) redirected to 0x4c42c30 (strcasecmp)
+--1682959-- REDIR: 0x6041010 (libc.so.6:calloc) redirected to 0x4c408d9 (calloc)
+--1682959-- REDIR: 0x604c360 (libc.so.6:__memcmp_avx2_movbe) redirected to 0x4c45700 (bcmp)
+--1682959-- REDIR: 0x5afbef0 (libstdc++.so.6:operator new(unsigned long)) redirected to 0x4c398a1 (operator new(unsigned long))
+--1682959-- REDIR: 0x5afa2e0 (libstdc++.so.6:operator delete(void*)) redirected to 0x4c3ccf3 (operator delete(void*))
+--1682959-- REDIR: 0x5afbf40 (libstdc++.so.6:operator new[](unsigned long)) redirected to 0x4c3b041 (operator new[](unsigned long))
+--1682959-- REDIR: 0x604d340 (libc.so.6:__memset_avx2_unaligned_erms) redirected to 0x4c45f20 (memset)
+--1682959-- REDIR: 0x5afa310 (libstdc++.so.6:operator delete[](void*)) redirected to 0x4c3ed6f (operator delete[](void*))
+--1682959-- REDIR: 0x604f3c0 (libc.so.6:__strchr_avx2) redirected to 0x4c41e70 (index)
+--1682959-- REDIR: 0x5afa2f0 (libstdc++.so.6:operator delete(void*, unsigned long)) redirected to 0x4c3d1f3 (operator delete(void*, unsigned long))
+--1682959-- REDIR: 0x60517b0 (libc.so.6:__strncmp_avx2) redirected to 0x4c42990 (strncmp)
+--1682959-- REDIR: 0x6040af0 (libc.so.6:realloc) redirected to 0x4c40af3 (realloc)
+--1682959-- REDIR: 0x5fdb7e0 (libc.so.6:__strstr_sse2_unaligned) redirected to 0x4c47160 (strstr)
+--1682959-- REDIR: 0x604c7e0 (libc.so.6:__mempcpy_avx_unaligned_erms) redirected to 0x4c46c30 (mempcpy)
+--1682959-- REDIR: 0x6051e00 (libc.so.6:__strncpy_avx2) redirected to 0x4c424d0 (strncpy)
+--1682959-- REDIR: 0x6050da0 (libc.so.6:__strncat_avx2) redirected to 0x4c42060 (strncat)
+--1682959-- REDIR: 0x604d480 (libc.so.6:__rawmemchr_avx2) redirected to 0x4c46b50 (rawmemchr)
+--1682959-- REDIR: 0x6050260 (libc.so.6:__strncasecmp_avx2) redirected to 0x4c42d10 (strncasecmp)
+--1682959-- REDIR: 0x5ff5900 (libc.so.6:setenv) redirected to 0x4c47b60 (setenv)
+--1682959-- REDIR: 0x604ed40 (libc.so.6:__strcat_avx2) redirected to 0x4c41ea0 (strcat)
+--1682959-- REDIR: 0x604fd50 (libc.so.6:__strcpy_avx2) redirected to 0x4c42330 (strcpy)
+--1682959-- REDIR: 0x6041cd0 (libc.so.6:posix_memalign) redirected to 0x4c4123b (posix_memalign)
+--1682959-- REDIR: 0x5afbfd0 (libstdc++.so.6:operator new(unsigned long, std::align_val_t, std::nothrow_t const&)) redirected to 0x4c3a9c7 (operator new(unsigned long, std::align_val_t, std::nothrow_t const&))
+--1682959-- REDIR: 0x5afc030 (libstdc++.so.6:operator delete(void*, std::align_val_t, std::nothrow_t const&)) redirected to 0x4c3e60b (operator delete(void*, std::align_val_t, std::nothrow_t const&))
+==1682959== 
+</pre>
+
+<pre>==1682959== HEAP SUMMARY:
+==1682959==     in use at exit: 825,309 bytes in 10,909 blocks
+==1682959==   total heap usage: 136,741 allocs, 125,832 frees, 1,591,688,720 bytes allocated
+==1682959== 
+</pre>
+
+<pre>==1682959== Searching for pointers to 10,909 not-freed blocks
+==1682959== Checked 3,914,192 bytes
+==1682959== 
+</pre>
+
+<a name="error1"><h2>7,448 (504 direct, 6,944 indirect) bytes in 7 blocks are definitely lost</h2></a>
+<font size=small><a href="#duplication-steps">(Show me how to reproduce this <b>error</b>)</a></font>
+<pre>==1682959== 7,448 (504 direct, 6,944 indirect) bytes in 7 blocks are definitely lost in loss record 54 of 58
+==1682959==    at 0x4C39185: malloc (vg_replace_malloc.c:442)
+==1682959==    by 0x558CAA7: set_value (in /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi.so.40.30.6)
+==1682959==    by 0x558D181: ompi_attr_set_c (in /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi.so.40.30.6)
+==1682959==    by 0x55CCF06: PMPI_Comm_set_attr (in /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi.so.40.30.6)
+==1682959==    by 0x4A67A9: stk::impl::MPIKeyManager::get_key(ompi_communicator_t*) (MPICommKey.cpp:67)
+==1682959==    by 0x4A75A8: stk::impl::MPIKeyManager::register_callback(ompi_communicator_t*, unsigned long long, std::function<void (ompi_communicator_t*)>) (MPICommKey.cpp:104)
+==1682959==    by 0x4A2057: stk::MPITagManager::get_tag(ompi_communicator_t*, int) (MPITagManager.cpp:46)
+==1682959==    by 0x430C1E: stk::DataExchangeUnknownPatternNonBlocking::DataExchangeUnknownPatternNonBlocking(ompi_communicator_t*, int) (DataExchangeUnknownPatternNonBlocking.hpp:71)
+==1682959==    by 0x4315F9: DataExchangeUnknownPatternNonBlockingCommBuffer (DataExchangeUnknownPatternNonBlockingBuffer.hpp:104)
+==1682959==    by 0x4315F9: construct<stk::DataExchangeUnknownPatternNonBlockingCommBuffer, ompi_communicator_t*&> (new_allocator.h:150)
+==1682959==    by 0x4315F9: construct<stk::DataExchangeUnknownPatternNonBlockingCommBuffer, ompi_communicator_t*&> (alloc_traits.h:512)
+==1682959==    by 0x4315F9: _Sp_counted_ptr_inplace<ompi_communicator_t*&> (shared_ptr_base.h:551)
+==1682959==    by 0x4315F9: __shared_count<stk::DataExchangeUnknownPatternNonBlockingCommBuffer, std::allocator<stk::DataExchangeUnknownPatternNonBlockingCommBuffer>, ompi_communicator_t*&> (shared_ptr_base.h:682)
+==1682959==    by 0x4315F9: __shared_ptr<std::allocator<stk::DataExchangeUnknownPatternNonBlockingCommBuffer>, ompi_communicator_t*&> (shared_ptr_base.h:1371)
+==1682959==    by 0x4315F9: shared_ptr<std::allocator<stk::DataExchangeUnknownPatternNonBlockingCommBuffer>, ompi_communicator_t*&> (shared_ptr.h:408)
+==1682959==    by 0x4315F9: allocate_shared<stk::DataExchangeUnknownPatternNonBlockingCommBuffer, std::allocator<stk::DataExchangeUnknownPatternNonBlockingCommBuffer>, ompi_communicator_t*&> (shared_ptr.h:860)
+==1682959==    by 0x4315F9: make_shared<stk::DataExchangeUnknownPatternNonBlockingCommBuffer, ompi_communicator_t*&> (shared_ptr.h:876)
+==1682959==    by 0x4315F9: stk::CommSparse::CommSparse(ompi_communicator_t*) (CommSparse.hpp:189)
+==1682959==    by 0x47E8D3: stk::coupling::SyncInfo::exchange(stk::coupling::SplitComms const&, int) const (SyncInfo.cpp:56)
+==1682959==    by 0x47F568: stk::coupling::SyncInfo::exchange(stk::coupling::SplitComms const&) const (SyncInfo.cpp:93)
+==1682959==    by 0x444865: (anonymous namespace)::TestSyncInfo_exchange_multi_way_Test::TestBody() (UnitTestSyncInfo.cpp:353)
+==1682959==    by 0x473BDC: void testing::internal::HandleExceptionsInMethodIfSupported<testing::Test, void>(testing::Test*, void (testing::Test::*)(), char const*) (in /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest)
+==1682959==    by 0x468D6F: testing::Test::Run() [clone .part.0] (in /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest)
+==1682959==    by 0x4691A1: testing::TestInfo::Run() [clone .part.0] (in /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest)
+==1682959==    by 0x469381: testing::TestSuite::Run() [clone .part.0] (in /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest)
+==1682959==    by 0x46A3D7: testing::internal::UnitTestImpl::RunAllTests() (in /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest)
+==1682959==    by 0x46A6DA: testing::UnitTest::Run() (in /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest)
+==1682959==    by 0x41DA24: RUN_ALL_TESTS (gtest.h:2473)
+==1682959==    by 0x41DA24: run_all_tests (ngp_test.hpp:139)
+==1682959==    by 0x41DA24: main (UnitTestMain.cpp:82)
+==1682959== 
+</pre>
+
+<pre>==1682959== LEAK SUMMARY:
+==1682959==    definitely lost: 504 bytes in 7 blocks
+==1682959==    indirectly lost: 0 bytes in 0 blocks
+==1682959==      possibly lost: 0 bytes in 0 blocks
+==1682959==    still reachable: 176 bytes in 1 blocks
+==1682959==         suppressed: 824,629 bytes in 10,901 blocks
+==1682959== Reachable blocks (those to which a pointer was found) are not shown.
+==1682959== To see them, rerun with: --leak-check=full --show-leak-kinds=all
+==1682959== 
+</pre>
+
+<pre>==1682959== ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 28 from 28)
+</pre>
+
+<pre>--1682959-- 
+--1682959-- used_suppression:      3 OMPI_Leaks-init-realloc /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:47 suppressed: 431,132 bytes in 7 blocks
+--1682959-- used_suppression:     37 OMPI_Leaks-init-malloc2 /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:31 suppressed: 372,595 bytes in 10,817 blocks
+--1682959-- used_suppression:      9 OMPI_Leaks-init-calloc /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:38 suppressed: 11,976 bytes in 35 blocks
+--1682959-- used_suppression:      1 MPI-HashTable /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:372 suppressed: 6,944 bytes in 7 blocks
+--1682959-- used_suppression:      2 OMPI_Leaks-Keyval_create-malloc_gcc_8 /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:299 suppressed: 1,984 bytes in 31 blocks
+--1682959-- used_suppression:      4 <MPI-4 Errors 3> /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:783 suppressed: 77 bytes in 4 blocks
+--1682959-- used_suppression:      1 <nkc_09_09_2024> /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:536
+--1682959-- used_suppression:      1 <MpiInitGCC10.3SetSockOpt> /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:948
+--1682959-- used_suppression:      1 <MpiInitGCC10.3GetSockOptB> /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:939
+--1682959-- used_suppression:      1 <MpiInitGCC10.3GetSockOptA> /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:930
+==1682959== 
+</pre>
+
+<pre>==1682959== ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 28 from 28)
+</pre>
+
+<pre>==1682969== Memcheck, a memory error detector
+==1682969== Copyright (C) 2002-2022, and GNU GPL'd, by Julian Seward et al.
+==1682969== Using Valgrind-3.22.0-bd4db67b1d-20231031 and LibVEX; rerun with -h for copyright info
+==1682969== Command: /ceeGPFS/fgs/jccrean/code/results/2025_03_17_17_01_51/stk_coupling_rtest_unit_test_unit_test.test/np8/bin/stk_coupling_utest
+==1682969== Parent PID: 1682966
+==1682969== 
+</pre>
+
+<pre>--1682969-- 
+--1682969-- Valgrind options:
+--1682969--    -v
+--1682969--    --tool=memcheck
+--1682969--    --log-file=/ceeGPFS/fgs/jccrean/code/results/2025_03_17_17_01_51/stk_coupling_rtest_unit_test_unit_test.test/np8/valgrind_%p.output
+--1682969--    --suppressions=/sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress
+--1682969--    --num-callers=50
+--1682969--    --track-origins=yes
+--1682969--    --trace-children=yes
+--1682969--    --leak-check=yes
+--1682969--    --leak-resolution=med
+--1682969--    --max-stackframe=3500000
+--1682969-- Contents of /proc/version:
+--1682969--   Linux version 4.18.0-553.37.1.el8_10.x86_64 (mockbuild@x86-64-05.build.eng.rdu2.redhat.com) (gcc version 8.5.0 20210514 (Red Hat 8.5.0-22) (GCC)) #1 SMP Fri Jan 17 08:51:54 EST 2025
+--1682969-- 
+--1682969-- Arch and hwcaps: AMD64, LittleEndian, amd64-cx16-lzcnt-rdtscp-sse3-ssse3-avx-avx2-bmi-f16c-rdrand-rdseed
+--1682969-- Page sizes: currently 4096, max supported 4096
+--1682969-- Valgrind library directory: /usr/libexec/valgrind
+--1682969-- Reading syms from /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest
+--1682969-- Reading syms from /usr/lib64/ld-2.28.so
+--1682969-- Warning: cross-CU LIMITATION: some inlined fn names
+--1682969-- might be shown as UnknownInlinedFun
+--1682969-- Reading syms from /usr/libexec/valgrind/memcheck-amd64-linux
+--1682969--    object doesn't have a dynamic symbol table
+--1682969-- Scheduler: using generic scheduler lock implementation.
+--1682969-- Reading suppressions file: /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress
+--1682969-- Reading suppressions file: /usr/libexec/valgrind/default.supp
+</pre>
+
+<pre>==1682969== embedded gdbserver: reading from /tmp/vgdb-pipe-from-vgdb-to-1682969-by-jccrean-on-cee-build032
+==1682969== embedded gdbserver: writing to   /tmp/vgdb-pipe-to-vgdb-from-1682969-by-jccrean-on-cee-build032
+==1682969== embedded gdbserver: shared mem   /tmp/vgdb-pipe-shared-mem-vgdb-1682969-by-jccrean-on-cee-build032
+==1682969== 
+</pre>
+
+<pre>==1682969== TO CONTROL THIS PROCESS USING vgdb (which you probably
+==1682969== don't want to do, unless you know exactly what you're doing,
+==1682969== or are doing some strange experiment):
+==1682969==   /usr/libexec/valgrind/../../bin/vgdb --pid=1682969 ...command...
+==1682969== 
+</pre>
+
+<pre>==1682969== TO DEBUG THIS PROCESS USING GDB: start GDB like this
+==1682969==   /path/to/gdb /ceeGPFS/fgs/jccrean/code/results/2025_03_17_17_01_51/stk_coupling_rtest_unit_test_unit_test.test/np8/bin/stk_coupling_utest
+==1682969== and then give GDB the following command
+==1682969==   target remote | /usr/libexec/valgrind/../../bin/vgdb --pid=1682969
+==1682969== --pid is optional if only one valgrind process is running
+==1682969== 
+</pre>
+
+<pre>--1682969-- REDIR: 0x4004400 (ld-linux-x86-64.so.2:strlen) redirected to 0x580d2e42 (???)
+--1682969-- REDIR: 0x4002d80 (ld-linux-x86-64.so.2:index) redirected to 0x580d2e5c (???)
+--1682969-- Reading syms from /usr/libexec/valgrind/vgpreload_core-amd64-linux.so
+--1682969-- Reading syms from /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so
+</pre>
+
+<pre>==1682969== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682969--     old: 0x04004400 (strlen              ) R-> (0000.0) 0x580d2e42 ???
+--1682969--     new: 0x04004400 (strlen              ) R-> (2007.0) 0x04c42300 strlen
+--1682969-- REDIR: 0x4002fb0 (ld-linux-x86-64.so.2:strcmp) redirected to 0x4c434c0 (strcmp)
+--1682969-- REDIR: 0x40045a0 (ld-linux-x86-64.so.2:strncmp) redirected to 0x4c42bc0 (strncmp)
+--1682969-- REDIR: 0x4002760 (ld-linux-x86-64.so.2:mempcpy) redirected to 0x4c46ff0 (mempcpy)
+--1682969-- REDIR: 0x4002c90 (ld-linux-x86-64.so.2:stpcpy) redirected to 0x4c45c50 (stpcpy)
+--1682969-- Reading syms from /usr/lib64/liboneagentproc.so
+--1682969-- Reading syms from /usr/lib64/libdl-2.28.so
+--1682969-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/818788d6/gcc-10.3.0/install/linux-rhel8-x86_64/gcc-8.5.0/gcc-10.3.0-6ljscis/lib64/libgfortran.so.5.0.0
+--1682969-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi.so.40.30.6
+--1682969-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi_usempif08.so.40.30.0
+--1682969-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi_usempi_ignore_tkr.so.40.30.0
+--1682969-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi_mpifh.so.40.30.0
+--1682969-- Reading syms from /usr/lib64/libpthread-2.28.so
+--1682969-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/818788d6/gcc-10.3.0/install/linux-rhel8-x86_64/gcc-8.5.0/gcc-10.3.0-6ljscis/lib64/libstdc++.so.6.0.28
+--1682969-- Reading syms from /usr/lib64/libm-2.28.so
+--1682969-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/818788d6/gcc-10.3.0/install/linux-rhel8-x86_64/gcc-8.5.0/gcc-10.3.0-6ljscis/lib64/libgcc_s.so.1
+--1682969-- Reading syms from /usr/lib64/libc-2.28.so
+</pre>
+
+<pre>==1682969== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682969--     old: 0x06040f50 (memalign            ) R-> (1011.0) 0x04c40d9e memalign
+--1682969--     new: 0x06040f50 (memalign            ) R-> (1017.0) 0x04c41527 aligned_alloc
+</pre>
+
+<pre>==1682969== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682969--     old: 0x06040f50 (memalign            ) R-> (1011.0) 0x04c40d9e memalign
+--1682969--     new: 0x06040f50 (memalign            ) R-> (1017.0) 0x04c413bd aligned_alloc
+</pre>
+
+<pre>==1682969== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682969--     old: 0x06040f50 (memalign            ) R-> (1011.0) 0x04c40d9e memalign
+--1682969--     new: 0x06040f50 (memalign            ) R-> (1017.0) 0x04c41527 aligned_alloc
+</pre>
+
+<pre>==1682969== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682969--     old: 0x06040f50 (memalign            ) R-> (1011.0) 0x04c40d9e memalign
+--1682969--     new: 0x06040f50 (memalign            ) R-> (1017.0) 0x04c413bd aligned_alloc
+</pre>
+
+<pre>==1682969== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682969--     old: 0x06040f50 (memalign            ) R-> (1011.0) 0x04c40d9e memalign
+--1682969--     new: 0x06040f50 (memalign            ) R-> (1017.0) 0x04c41527 aligned_alloc
+</pre>
+
+<pre>==1682969== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682969--     old: 0x06040f50 (memalign            ) R-> (1011.0) 0x04c40d9e memalign
+--1682969--     new: 0x06040f50 (memalign            ) R-> (1017.0) 0x04c413bd aligned_alloc
+--1682969-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/818788d6/gcc-10.3.0/install/linux-rhel8-x86_64/gcc-8.5.0/gcc-10.3.0-6ljscis/lib64/libquadmath.so.0.0.0
+--1682969-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libopen-rte.so.40.30.3
+--1682969-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libopen-pal.so.40.30.3
+--1682969-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/pmix-4.1.2-k2sy222/lib/libpmix.so.2.5.2
+--1682969-- Reading syms from /usr/lib64/libnl-3.so.200.26.0
+--1682969-- Reading syms from /usr/lib64/libnl-route-3.so.200.26.0
+--1682969-- Reading syms from /usr/lib64/librt-2.28.so
+--1682969-- Reading syms from /usr/lib64/libutil-2.28.so
+--1682969-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/zlib-ng-2.1.4-2doi7gn/lib/libz.so.1.3.0.zlib-ng
+--1682969-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/hwloc-2.9.1-p5xbfhp/lib/libhwloc.so.15.6.2
+--1682969-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/libevent-2.1.12-ytr5fzy/lib/libevent_core-2.1.so.7.0.1
+--1682969-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/libevent-2.1.12-ytr5fzy/lib/libevent_pthreads-2.1.so.7.0.1
+--1682969-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/libpciaccess-0.17-4ycon7f/lib/libpciaccess.so.0.11.1
+--1682969-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/libxml2-2.10.3-66temxb/lib/libxml2.so.2.10.3
+--1682969-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/xz-5.4.1-r2q7nx7/lib/liblzma.so.5.4.1
+--1682969-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/libiconv-1.17-fz2467k/lib/libiconv.so.2.6.1
+--1682969-- REDIR: 0x6045460 (libc.so.6:memmove) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+</pre>
+
+<pre>==1682969== Preferring higher priority redirection:
+</pre>
+
+<pre>--1682969--     old: 0x0604c800 (__memcpy_avx_unalign) R-> (2018.0) 0x04c44700 __memcpy_avx_unaligned_erms
+--1682969--     new: 0x0604c800 (__memcpy_avx_unalign) R-> (2018.1) 0x04c46030 memmove
+--1682969-- REDIR: 0x6044680 (libc.so.6:strncpy) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682969-- REDIR: 0x6045a40 (libc.so.6:strcasecmp) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682969-- REDIR: 0x6043df0 (libc.so.6:strcat) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682969-- REDIR: 0x6044710 (libc.so.6:rindex) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682969-- REDIR: 0x6047210 (libc.so.6:rawmemchr) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682969-- REDIR: 0x608b420 (libc.so.6:wmemchr) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682969-- REDIR: 0x608ad40 (libc.so.6:wcscmp) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682969-- REDIR: 0x6045690 (libc.so.6:mempcpy) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682969-- REDIR: 0x60453c0 (libc.so.6:bcmp) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682969-- REDIR: 0x60445e0 (libc.so.6:strncmp) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682969-- REDIR: 0x6043f00 (libc.so.6:strcmp) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682969-- REDIR: 0x6045590 (libc.so.6:memset) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682969-- REDIR: 0x608acc0 (libc.so.6:wcschr) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682969-- REDIR: 0x60444d0 (libc.so.6:strnlen) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682969-- REDIR: 0x6044040 (libc.so.6:strcspn) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682969-- REDIR: 0x6045ae0 (libc.so.6:strncasecmp) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682969-- REDIR: 0x6043fb0 (libc.so.6:strcpy) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682969-- REDIR: 0x6045d20 (libc.so.6:memcpy@@GLIBC_2.14) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682969-- REDIR: 0x608c7c0 (libc.so.6:wcsnlen) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682969-- REDIR: 0x6044790 (libc.so.6:strpbrk) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682969-- REDIR: 0x6043e80 (libc.so.6:index) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682969-- REDIR: 0x6044450 (libc.so.6:strlen) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682969-- REDIR: 0x604bd80 (libc.so.6:memrchr) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682969-- REDIR: 0x6045b80 (libc.so.6:strcasecmp_l) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682969-- REDIR: 0x6045330 (libc.so.6:memchr) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682969-- REDIR: 0x608ae90 (libc.so.6:wcslen) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682969-- REDIR: 0x6044a50 (libc.so.6:strspn) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682969-- REDIR: 0x60459b0 (libc.so.6:stpncpy) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682969-- REDIR: 0x6045920 (libc.so.6:stpcpy) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682969-- REDIR: 0x60472a0 (libc.so.6:strchrnul) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682969-- REDIR: 0x6045c20 (libc.so.6:strncasecmp_l) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682969-- REDIR: 0x6044550 (libc.so.6:strncat) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682969-- REDIR: 0x60f0cb0 (libc.so.6:__memcpy_chk) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682969-- REDIR: 0x6045250 (libc.so.6:strstr) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682969-- REDIR: 0x6052a30 (libc.so.6:__strrchr_avx2) redirected to 0x4c41c90 (rindex)
+--1682969-- REDIR: 0x60500e0 (libc.so.6:__strlen_avx2) redirected to 0x4c421e0 (strlen)
+--1682969-- REDIR: 0x604f7f0 (libc.so.6:__strcmp_avx2) redirected to 0x4c43380 (strcmp)
+--1682969-- REDIR: 0x60401e0 (libc.so.6:malloc) redirected to 0x4c3910f (malloc)
+--1682969-- REDIR: 0x604f600 (libc.so.6:__strchrnul_avx2) redirected to 0x4c46b20 (strchrnul)
+--1682969-- REDIR: 0x604c800 (libc.so.6:__memcpy_avx_unaligned_erms) redirected to 0x4c46030 (memmove)
+--1682969-- REDIR: 0x6040870 (libc.so.6:free) redirected to 0x4c3c459 (free)
+--1682969-- REDIR: 0x6044f60 (libc.so.6:__GI_strstr) redirected to 0x4c471d0 (__strstr_sse2)
+--1682969-- REDIR: 0x604c080 (libc.so.6:__memchr_avx2) redirected to 0x4c43560 (memchr)
+--1682969-- REDIR: 0x6089970 (libc.so.6:__strspn_sse42) redirected to 0x4c473e0 (strspn)
+--1682969-- REDIR: 0x6089480 (libc.so.6:__strcspn_sse42) redirected to 0x4c47320 (strcspn)
+--1682969-- REDIR: 0x604e330 (libc.so.6:__strcasecmp_avx2) redirected to 0x4c42c30 (strcasecmp)
+--1682969-- REDIR: 0x6041010 (libc.so.6:calloc) redirected to 0x4c408d9 (calloc)
+--1682969-- REDIR: 0x604c360 (libc.so.6:__memcmp_avx2_movbe) redirected to 0x4c45700 (bcmp)
+--1682969-- REDIR: 0x5afbef0 (libstdc++.so.6:operator new(unsigned long)) redirected to 0x4c398a1 (operator new(unsigned long))
+--1682969-- REDIR: 0x5afa2e0 (libstdc++.so.6:operator delete(void*)) redirected to 0x4c3ccf3 (operator delete(void*))
+--1682969-- REDIR: 0x5afbf40 (libstdc++.so.6:operator new[](unsigned long)) redirected to 0x4c3b041 (operator new[](unsigned long))
+--1682969-- REDIR: 0x604d340 (libc.so.6:__memset_avx2_unaligned_erms) redirected to 0x4c45f20 (memset)
+--1682969-- REDIR: 0x5afa310 (libstdc++.so.6:operator delete[](void*)) redirected to 0x4c3ed6f (operator delete[](void*))
+--1682969-- REDIR: 0x604f3c0 (libc.so.6:__strchr_avx2) redirected to 0x4c41e70 (index)
+--1682969-- REDIR: 0x5afa2f0 (libstdc++.so.6:operator delete(void*, unsigned long)) redirected to 0x4c3d1f3 (operator delete(void*, unsigned long))
+--1682969-- REDIR: 0x60517b0 (libc.so.6:__strncmp_avx2) redirected to 0x4c42990 (strncmp)
+--1682969-- REDIR: 0x6040af0 (libc.so.6:realloc) redirected to 0x4c40af3 (realloc)
+--1682969-- REDIR: 0x5fdb7e0 (libc.so.6:__strstr_sse2_unaligned) redirected to 0x4c47160 (strstr)
+--1682969-- REDIR: 0x604c7e0 (libc.so.6:__mempcpy_avx_unaligned_erms) redirected to 0x4c46c30 (mempcpy)
+--1682969-- REDIR: 0x6051e00 (libc.so.6:__strncpy_avx2) redirected to 0x4c424d0 (strncpy)
+--1682969-- REDIR: 0x6050da0 (libc.so.6:__strncat_avx2) redirected to 0x4c42060 (strncat)
+--1682969-- REDIR: 0x604d480 (libc.so.6:__rawmemchr_avx2) redirected to 0x4c46b50 (rawmemchr)
+--1682969-- REDIR: 0x6050260 (libc.so.6:__strncasecmp_avx2) redirected to 0x4c42d10 (strncasecmp)
+--1682969-- REDIR: 0x5ff5900 (libc.so.6:setenv) redirected to 0x4c47b60 (setenv)
+--1682969-- REDIR: 0x604fd50 (libc.so.6:__strcpy_avx2) redirected to 0x4c42330 (strcpy)
+--1682969-- REDIR: 0x6041cd0 (libc.so.6:posix_memalign) redirected to 0x4c4123b (posix_memalign)
+--1682969-- REDIR: 0x5afbfd0 (libstdc++.so.6:operator new(unsigned long, std::align_val_t, std::nothrow_t const&)) redirected to 0x4c3a9c7 (operator new(unsigned long, std::align_val_t, std::nothrow_t const&))
+--1682969-- REDIR: 0x5afc030 (libstdc++.so.6:operator delete(void*, std::align_val_t, std::nothrow_t const&)) redirected to 0x4c3e60b (operator delete(void*, std::align_val_t, std::nothrow_t const&))
+==1682969== 
+</pre>
+
+<pre>==1682969== HEAP SUMMARY:
+==1682969==     in use at exit: 825,309 bytes in 10,909 blocks
+==1682969==   total heap usage: 126,615 allocs, 115,706 frees, 1,590,503,781 bytes allocated
+==1682969== 
+</pre>
+
+<pre>==1682969== Searching for pointers to 10,909 not-freed blocks
+==1682969== Checked 3,914,192 bytes
+==1682969== 
+</pre>
+
+<a name="error1"><h2>7,448 (504 direct, 6,944 indirect) bytes in 7 blocks are definitely lost</h2></a>
+<font size=small><a href="#duplication-steps">(Show me how to reproduce this <b>error</b>)</a></font>
+<pre>==1682969== 7,448 (504 direct, 6,944 indirect) bytes in 7 blocks are definitely lost in loss record 54 of 58
+==1682969==    at 0x4C39185: malloc (vg_replace_malloc.c:442)
+==1682969==    by 0x558CAA7: set_value (in /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi.so.40.30.6)
+==1682969==    by 0x558D181: ompi_attr_set_c (in /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi.so.40.30.6)
+==1682969==    by 0x55CCF06: PMPI_Comm_set_attr (in /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi.so.40.30.6)
+==1682969==    by 0x4A67A9: stk::impl::MPIKeyManager::get_key(ompi_communicator_t*) (MPICommKey.cpp:67)
+==1682969==    by 0x4A75A8: stk::impl::MPIKeyManager::register_callback(ompi_communicator_t*, unsigned long long, std::function<void (ompi_communicator_t*)>) (MPICommKey.cpp:104)
+==1682969==    by 0x4A2057: stk::MPITagManager::get_tag(ompi_communicator_t*, int) (MPITagManager.cpp:46)
+==1682969==    by 0x430C1E: stk::DataExchangeUnknownPatternNonBlocking::DataExchangeUnknownPatternNonBlocking(ompi_communicator_t*, int) (DataExchangeUnknownPatternNonBlocking.hpp:71)
+==1682969==    by 0x4315F9: DataExchangeUnknownPatternNonBlockingCommBuffer (DataExchangeUnknownPatternNonBlockingBuffer.hpp:104)
+==1682969==    by 0x4315F9: construct<stk::DataExchangeUnknownPatternNonBlockingCommBuffer, ompi_communicator_t*&> (new_allocator.h:150)
+==1682969==    by 0x4315F9: construct<stk::DataExchangeUnknownPatternNonBlockingCommBuffer, ompi_communicator_t*&> (alloc_traits.h:512)
+==1682969==    by 0x4315F9: _Sp_counted_ptr_inplace<ompi_communicator_t*&> (shared_ptr_base.h:551)
+==1682969==    by 0x4315F9: __shared_count<stk::DataExchangeUnknownPatternNonBlockingCommBuffer, std::allocator<stk::DataExchangeUnknownPatternNonBlockingCommBuffer>, ompi_communicator_t*&> (shared_ptr_base.h:682)
+==1682969==    by 0x4315F9: __shared_ptr<std::allocator<stk::DataExchangeUnknownPatternNonBlockingCommBuffer>, ompi_communicator_t*&> (shared_ptr_base.h:1371)
+==1682969==    by 0x4315F9: shared_ptr<std::allocator<stk::DataExchangeUnknownPatternNonBlockingCommBuffer>, ompi_communicator_t*&> (shared_ptr.h:408)
+==1682969==    by 0x4315F9: allocate_shared<stk::DataExchangeUnknownPatternNonBlockingCommBuffer, std::allocator<stk::DataExchangeUnknownPatternNonBlockingCommBuffer>, ompi_communicator_t*&> (shared_ptr.h:860)
+==1682969==    by 0x4315F9: make_shared<stk::DataExchangeUnknownPatternNonBlockingCommBuffer, ompi_communicator_t*&> (shared_ptr.h:876)
+==1682969==    by 0x4315F9: stk::CommSparse::CommSparse(ompi_communicator_t*) (CommSparse.hpp:189)
+==1682969==    by 0x47E8D3: stk::coupling::SyncInfo::exchange(stk::coupling::SplitComms const&, int) const (SyncInfo.cpp:56)
+==1682969==    by 0x47F568: stk::coupling::SyncInfo::exchange(stk::coupling::SplitComms const&) const (SyncInfo.cpp:93)
+==1682969==    by 0x444865: (anonymous namespace)::TestSyncInfo_exchange_multi_way_Test::TestBody() (UnitTestSyncInfo.cpp:353)
+==1682969==    by 0x473BDC: void testing::internal::HandleExceptionsInMethodIfSupported<testing::Test, void>(testing::Test*, void (testing::Test::*)(), char const*) (in /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest)
+==1682969==    by 0x468D6F: testing::Test::Run() [clone .part.0] (in /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest)
+==1682969==    by 0x4691A1: testing::TestInfo::Run() [clone .part.0] (in /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest)
+==1682969==    by 0x469381: testing::TestSuite::Run() [clone .part.0] (in /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest)
+==1682969==    by 0x46A3D7: testing::internal::UnitTestImpl::RunAllTests() (in /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest)
+==1682969==    by 0x46A6DA: testing::UnitTest::Run() (in /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest)
+==1682969==    by 0x41DA24: RUN_ALL_TESTS (gtest.h:2473)
+==1682969==    by 0x41DA24: run_all_tests (ngp_test.hpp:139)
+==1682969==    by 0x41DA24: main (UnitTestMain.cpp:82)
+==1682969== 
+</pre>
+
+<pre>==1682969== LEAK SUMMARY:
+==1682969==    definitely lost: 504 bytes in 7 blocks
+==1682969==    indirectly lost: 0 bytes in 0 blocks
+==1682969==      possibly lost: 0 bytes in 0 blocks
+==1682969==    still reachable: 176 bytes in 1 blocks
+==1682969==         suppressed: 824,629 bytes in 10,901 blocks
+==1682969== Reachable blocks (those to which a pointer was found) are not shown.
+==1682969== To see them, rerun with: --leak-check=full --show-leak-kinds=all
+==1682969== 
+</pre>
+
+<pre>==1682969== ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 28 from 28)
+</pre>
+
+<pre>--1682969-- 
+--1682969-- used_suppression:      3 OMPI_Leaks-init-realloc /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:47 suppressed: 431,132 bytes in 7 blocks
+--1682969-- used_suppression:     37 OMPI_Leaks-init-malloc2 /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:31 suppressed: 372,595 bytes in 10,817 blocks
+--1682969-- used_suppression:      9 OMPI_Leaks-init-calloc /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:38 suppressed: 11,976 bytes in 35 blocks
+--1682969-- used_suppression:      1 MPI-HashTable /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:372 suppressed: 6,944 bytes in 7 blocks
+--1682969-- used_suppression:      2 OMPI_Leaks-Keyval_create-malloc_gcc_8 /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:299 suppressed: 1,984 bytes in 31 blocks
+--1682969-- used_suppression:      4 <MPI-4 Errors 3> /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:783 suppressed: 77 bytes in 4 blocks
+--1682969-- used_suppression:      1 <nkc_09_09_2024> /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:536
+--1682969-- used_suppression:      1 <MpiInitGCC10.3SetSockOpt> /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:948
+--1682969-- used_suppression:      1 <MpiInitGCC10.3GetSockOptB> /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:939
+--1682969-- used_suppression:      1 <MpiInitGCC10.3GetSockOptA> /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:930
+==1682969== 
+</pre>
+
+<pre>==1682969== ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 28 from 28)
+</pre>
+
+<pre>==1682963== Memcheck, a memory error detector
+==1682963== Copyright (C) 2002-2022, and GNU GPL'd, by Julian Seward et al.
+==1682963== Using Valgrind-3.22.0-bd4db67b1d-20231031 and LibVEX; rerun with -h for copyright info
+==1682963== Command: /ceeGPFS/fgs/jccrean/code/results/2025_03_17_17_01_51/stk_coupling_rtest_unit_test_unit_test.test/np8/bin/stk_coupling_utest
+==1682963== Parent PID: 1682957
+==1682963== 
+</pre>
+
+<pre>--1682963-- 
+--1682963-- Valgrind options:
+--1682963--    -v
+--1682963--    --tool=memcheck
+--1682963--    --log-file=/ceeGPFS/fgs/jccrean/code/results/2025_03_17_17_01_51/stk_coupling_rtest_unit_test_unit_test.test/np8/valgrind_%p.output
+--1682963--    --suppressions=/sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress
+--1682963--    --num-callers=50
+--1682963--    --track-origins=yes
+--1682963--    --trace-children=yes
+--1682963--    --leak-check=yes
+--1682963--    --leak-resolution=med
+--1682963--    --max-stackframe=3500000
+--1682963-- Contents of /proc/version:
+--1682963--   Linux version 4.18.0-553.37.1.el8_10.x86_64 (mockbuild@x86-64-05.build.eng.rdu2.redhat.com) (gcc version 8.5.0 20210514 (Red Hat 8.5.0-22) (GCC)) #1 SMP Fri Jan 17 08:51:54 EST 2025
+--1682963-- 
+--1682963-- Arch and hwcaps: AMD64, LittleEndian, amd64-cx16-lzcnt-rdtscp-sse3-ssse3-avx-avx2-bmi-f16c-rdrand-rdseed
+--1682963-- Page sizes: currently 4096, max supported 4096
+--1682963-- Valgrind library directory: /usr/libexec/valgrind
+--1682963-- Reading syms from /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest
+--1682963-- Reading syms from /usr/lib64/ld-2.28.so
+--1682963-- Warning: cross-CU LIMITATION: some inlined fn names
+--1682963-- might be shown as UnknownInlinedFun
+--1682963-- Reading syms from /usr/libexec/valgrind/memcheck-amd64-linux
+--1682963--    object doesn't have a dynamic symbol table
+--1682963-- Scheduler: using generic scheduler lock implementation.
+--1682963-- Reading suppressions file: /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress
+--1682963-- Reading suppressions file: /usr/libexec/valgrind/default.supp
+</pre>
+
+<pre>==1682963== embedded gdbserver: reading from /tmp/vgdb-pipe-from-vgdb-to-1682963-by-jccrean-on-cee-build032
+==1682963== embedded gdbserver: writing to   /tmp/vgdb-pipe-to-vgdb-from-1682963-by-jccrean-on-cee-build032
+==1682963== embedded gdbserver: shared mem   /tmp/vgdb-pipe-shared-mem-vgdb-1682963-by-jccrean-on-cee-build032
+==1682963== 
+</pre>
+
+<pre>==1682963== TO CONTROL THIS PROCESS USING vgdb (which you probably
+==1682963== don't want to do, unless you know exactly what you're doing,
+==1682963== or are doing some strange experiment):
+==1682963==   /usr/libexec/valgrind/../../bin/vgdb --pid=1682963 ...command...
+==1682963== 
+</pre>
+
+<pre>==1682963== TO DEBUG THIS PROCESS USING GDB: start GDB like this
+==1682963==   /path/to/gdb /ceeGPFS/fgs/jccrean/code/results/2025_03_17_17_01_51/stk_coupling_rtest_unit_test_unit_test.test/np8/bin/stk_coupling_utest
+==1682963== and then give GDB the following command
+==1682963==   target remote | /usr/libexec/valgrind/../../bin/vgdb --pid=1682963
+==1682963== --pid is optional if only one valgrind process is running
+==1682963== 
+</pre>
+
+<pre>--1682963-- REDIR: 0x4004400 (ld-linux-x86-64.so.2:strlen) redirected to 0x580d2e42 (???)
+--1682963-- REDIR: 0x4002d80 (ld-linux-x86-64.so.2:index) redirected to 0x580d2e5c (???)
+--1682963-- Reading syms from /usr/libexec/valgrind/vgpreload_core-amd64-linux.so
+--1682963-- Reading syms from /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so
+</pre>
+
+<pre>==1682963== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682963--     old: 0x04004400 (strlen              ) R-> (0000.0) 0x580d2e42 ???
+--1682963--     new: 0x04004400 (strlen              ) R-> (2007.0) 0x04c42300 strlen
+--1682963-- REDIR: 0x4002fb0 (ld-linux-x86-64.so.2:strcmp) redirected to 0x4c434c0 (strcmp)
+--1682963-- REDIR: 0x40045a0 (ld-linux-x86-64.so.2:strncmp) redirected to 0x4c42bc0 (strncmp)
+--1682963-- REDIR: 0x4002760 (ld-linux-x86-64.so.2:mempcpy) redirected to 0x4c46ff0 (mempcpy)
+--1682963-- REDIR: 0x4002c90 (ld-linux-x86-64.so.2:stpcpy) redirected to 0x4c45c50 (stpcpy)
+--1682963-- Reading syms from /usr/lib64/liboneagentproc.so
+--1682963-- Reading syms from /usr/lib64/libdl-2.28.so
+--1682963-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/818788d6/gcc-10.3.0/install/linux-rhel8-x86_64/gcc-8.5.0/gcc-10.3.0-6ljscis/lib64/libgfortran.so.5.0.0
+--1682963-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi.so.40.30.6
+--1682963-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi_usempif08.so.40.30.0
+--1682963-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi_usempi_ignore_tkr.so.40.30.0
+--1682963-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi_mpifh.so.40.30.0
+--1682963-- Reading syms from /usr/lib64/libpthread-2.28.so
+--1682963-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/818788d6/gcc-10.3.0/install/linux-rhel8-x86_64/gcc-8.5.0/gcc-10.3.0-6ljscis/lib64/libstdc++.so.6.0.28
+--1682963-- Reading syms from /usr/lib64/libm-2.28.so
+--1682963-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/818788d6/gcc-10.3.0/install/linux-rhel8-x86_64/gcc-8.5.0/gcc-10.3.0-6ljscis/lib64/libgcc_s.so.1
+--1682963-- Reading syms from /usr/lib64/libc-2.28.so
+</pre>
+
+<pre>==1682963== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682963--     old: 0x06040f50 (memalign            ) R-> (1011.0) 0x04c40d9e memalign
+--1682963--     new: 0x06040f50 (memalign            ) R-> (1017.0) 0x04c41527 aligned_alloc
+</pre>
+
+<pre>==1682963== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682963--     old: 0x06040f50 (memalign            ) R-> (1011.0) 0x04c40d9e memalign
+--1682963--     new: 0x06040f50 (memalign            ) R-> (1017.0) 0x04c413bd aligned_alloc
+</pre>
+
+<pre>==1682963== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682963--     old: 0x06040f50 (memalign            ) R-> (1011.0) 0x04c40d9e memalign
+--1682963--     new: 0x06040f50 (memalign            ) R-> (1017.0) 0x04c41527 aligned_alloc
+</pre>
+
+<pre>==1682963== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682963--     old: 0x06040f50 (memalign            ) R-> (1011.0) 0x04c40d9e memalign
+--1682963--     new: 0x06040f50 (memalign            ) R-> (1017.0) 0x04c413bd aligned_alloc
+</pre>
+
+<pre>==1682963== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682963--     old: 0x06040f50 (memalign            ) R-> (1011.0) 0x04c40d9e memalign
+--1682963--     new: 0x06040f50 (memalign            ) R-> (1017.0) 0x04c41527 aligned_alloc
+</pre>
+
+<pre>==1682963== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682963--     old: 0x06040f50 (memalign            ) R-> (1011.0) 0x04c40d9e memalign
+--1682963--     new: 0x06040f50 (memalign            ) R-> (1017.0) 0x04c413bd aligned_alloc
+--1682963-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/818788d6/gcc-10.3.0/install/linux-rhel8-x86_64/gcc-8.5.0/gcc-10.3.0-6ljscis/lib64/libquadmath.so.0.0.0
+--1682963-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libopen-rte.so.40.30.3
+--1682963-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libopen-pal.so.40.30.3
+--1682963-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/pmix-4.1.2-k2sy222/lib/libpmix.so.2.5.2
+--1682963-- Reading syms from /usr/lib64/libnl-3.so.200.26.0
+--1682963-- Reading syms from /usr/lib64/libnl-route-3.so.200.26.0
+--1682963-- Reading syms from /usr/lib64/librt-2.28.so
+--1682963-- Reading syms from /usr/lib64/libutil-2.28.so
+--1682963-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/zlib-ng-2.1.4-2doi7gn/lib/libz.so.1.3.0.zlib-ng
+--1682963-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/hwloc-2.9.1-p5xbfhp/lib/libhwloc.so.15.6.2
+--1682963-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/libevent-2.1.12-ytr5fzy/lib/libevent_core-2.1.so.7.0.1
+--1682963-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/libevent-2.1.12-ytr5fzy/lib/libevent_pthreads-2.1.so.7.0.1
+--1682963-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/libpciaccess-0.17-4ycon7f/lib/libpciaccess.so.0.11.1
+--1682963-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/libxml2-2.10.3-66temxb/lib/libxml2.so.2.10.3
+--1682963-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/xz-5.4.1-r2q7nx7/lib/liblzma.so.5.4.1
+--1682963-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/libiconv-1.17-fz2467k/lib/libiconv.so.2.6.1
+--1682963-- REDIR: 0x6045460 (libc.so.6:memmove) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+</pre>
+
+<pre>==1682963== Preferring higher priority redirection:
+</pre>
+
+<pre>--1682963--     old: 0x0604c800 (__memcpy_avx_unalign) R-> (2018.0) 0x04c44700 __memcpy_avx_unaligned_erms
+--1682963--     new: 0x0604c800 (__memcpy_avx_unalign) R-> (2018.1) 0x04c46030 memmove
+--1682963-- REDIR: 0x6044680 (libc.so.6:strncpy) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682963-- REDIR: 0x6045a40 (libc.so.6:strcasecmp) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682963-- REDIR: 0x6043df0 (libc.so.6:strcat) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682963-- REDIR: 0x6044710 (libc.so.6:rindex) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682963-- REDIR: 0x6047210 (libc.so.6:rawmemchr) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682963-- REDIR: 0x608b420 (libc.so.6:wmemchr) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682963-- REDIR: 0x608ad40 (libc.so.6:wcscmp) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682963-- REDIR: 0x6045690 (libc.so.6:mempcpy) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682963-- REDIR: 0x60453c0 (libc.so.6:bcmp) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682963-- REDIR: 0x60445e0 (libc.so.6:strncmp) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682963-- REDIR: 0x6043f00 (libc.so.6:strcmp) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682963-- REDIR: 0x6045590 (libc.so.6:memset) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682963-- REDIR: 0x608acc0 (libc.so.6:wcschr) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682963-- REDIR: 0x60444d0 (libc.so.6:strnlen) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682963-- REDIR: 0x6044040 (libc.so.6:strcspn) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682963-- REDIR: 0x6045ae0 (libc.so.6:strncasecmp) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682963-- REDIR: 0x6043fb0 (libc.so.6:strcpy) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682963-- REDIR: 0x6045d20 (libc.so.6:memcpy@@GLIBC_2.14) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682963-- REDIR: 0x608c7c0 (libc.so.6:wcsnlen) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682963-- REDIR: 0x6044790 (libc.so.6:strpbrk) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682963-- REDIR: 0x6043e80 (libc.so.6:index) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682963-- REDIR: 0x6044450 (libc.so.6:strlen) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682963-- REDIR: 0x604bd80 (libc.so.6:memrchr) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682963-- REDIR: 0x6045b80 (libc.so.6:strcasecmp_l) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682963-- REDIR: 0x6045330 (libc.so.6:memchr) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682963-- REDIR: 0x608ae90 (libc.so.6:wcslen) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682963-- REDIR: 0x6044a50 (libc.so.6:strspn) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682963-- REDIR: 0x60459b0 (libc.so.6:stpncpy) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682963-- REDIR: 0x6045920 (libc.so.6:stpcpy) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682963-- REDIR: 0x60472a0 (libc.so.6:strchrnul) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682963-- REDIR: 0x6045c20 (libc.so.6:strncasecmp_l) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682963-- REDIR: 0x6044550 (libc.so.6:strncat) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682963-- REDIR: 0x60f0cb0 (libc.so.6:__memcpy_chk) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682963-- REDIR: 0x6045250 (libc.so.6:strstr) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682963-- REDIR: 0x6052a30 (libc.so.6:__strrchr_avx2) redirected to 0x4c41c90 (rindex)
+--1682963-- REDIR: 0x60500e0 (libc.so.6:__strlen_avx2) redirected to 0x4c421e0 (strlen)
+--1682963-- REDIR: 0x604f7f0 (libc.so.6:__strcmp_avx2) redirected to 0x4c43380 (strcmp)
+--1682963-- REDIR: 0x60401e0 (libc.so.6:malloc) redirected to 0x4c3910f (malloc)
+--1682963-- REDIR: 0x604f600 (libc.so.6:__strchrnul_avx2) redirected to 0x4c46b20 (strchrnul)
+--1682963-- REDIR: 0x604c800 (libc.so.6:__memcpy_avx_unaligned_erms) redirected to 0x4c46030 (memmove)
+--1682963-- REDIR: 0x6040870 (libc.so.6:free) redirected to 0x4c3c459 (free)
+--1682963-- REDIR: 0x6044f60 (libc.so.6:__GI_strstr) redirected to 0x4c471d0 (__strstr_sse2)
+--1682963-- REDIR: 0x604c080 (libc.so.6:__memchr_avx2) redirected to 0x4c43560 (memchr)
+--1682963-- REDIR: 0x6089970 (libc.so.6:__strspn_sse42) redirected to 0x4c473e0 (strspn)
+--1682963-- REDIR: 0x6089480 (libc.so.6:__strcspn_sse42) redirected to 0x4c47320 (strcspn)
+--1682963-- REDIR: 0x604e330 (libc.so.6:__strcasecmp_avx2) redirected to 0x4c42c30 (strcasecmp)
+--1682963-- REDIR: 0x6041010 (libc.so.6:calloc) redirected to 0x4c408d9 (calloc)
+--1682963-- REDIR: 0x604c360 (libc.so.6:__memcmp_avx2_movbe) redirected to 0x4c45700 (bcmp)
+--1682963-- REDIR: 0x5afbef0 (libstdc++.so.6:operator new(unsigned long)) redirected to 0x4c398a1 (operator new(unsigned long))
+--1682963-- REDIR: 0x5afa2e0 (libstdc++.so.6:operator delete(void*)) redirected to 0x4c3ccf3 (operator delete(void*))
+--1682963-- REDIR: 0x5afbf40 (libstdc++.so.6:operator new[](unsigned long)) redirected to 0x4c3b041 (operator new[](unsigned long))
+--1682963-- REDIR: 0x604d340 (libc.so.6:__memset_avx2_unaligned_erms) redirected to 0x4c45f20 (memset)
+--1682963-- REDIR: 0x5afa310 (libstdc++.so.6:operator delete[](void*)) redirected to 0x4c3ed6f (operator delete[](void*))
+--1682963-- REDIR: 0x604f3c0 (libc.so.6:__strchr_avx2) redirected to 0x4c41e70 (index)
+--1682963-- REDIR: 0x5afa2f0 (libstdc++.so.6:operator delete(void*, unsigned long)) redirected to 0x4c3d1f3 (operator delete(void*, unsigned long))
+--1682963-- REDIR: 0x60517b0 (libc.so.6:__strncmp_avx2) redirected to 0x4c42990 (strncmp)
+--1682963-- REDIR: 0x6040af0 (libc.so.6:realloc) redirected to 0x4c40af3 (realloc)
+--1682963-- REDIR: 0x5fdb7e0 (libc.so.6:__strstr_sse2_unaligned) redirected to 0x4c47160 (strstr)
+--1682963-- REDIR: 0x604c7e0 (libc.so.6:__mempcpy_avx_unaligned_erms) redirected to 0x4c46c30 (mempcpy)
+--1682963-- REDIR: 0x6051e00 (libc.so.6:__strncpy_avx2) redirected to 0x4c424d0 (strncpy)
+--1682963-- REDIR: 0x6050da0 (libc.so.6:__strncat_avx2) redirected to 0x4c42060 (strncat)
+--1682963-- REDIR: 0x604d480 (libc.so.6:__rawmemchr_avx2) redirected to 0x4c46b50 (rawmemchr)
+--1682963-- REDIR: 0x6050260 (libc.so.6:__strncasecmp_avx2) redirected to 0x4c42d10 (strncasecmp)
+--1682963-- REDIR: 0x5ff5900 (libc.so.6:setenv) redirected to 0x4c47b60 (setenv)
+--1682963-- REDIR: 0x604fd50 (libc.so.6:__strcpy_avx2) redirected to 0x4c42330 (strcpy)
+--1682963-- REDIR: 0x6041cd0 (libc.so.6:posix_memalign) redirected to 0x4c4123b (posix_memalign)
+--1682963-- REDIR: 0x5afbfd0 (libstdc++.so.6:operator new(unsigned long, std::align_val_t, std::nothrow_t const&)) redirected to 0x4c3a9c7 (operator new(unsigned long, std::align_val_t, std::nothrow_t const&))
+--1682963-- REDIR: 0x5afc030 (libstdc++.so.6:operator delete(void*, std::align_val_t, std::nothrow_t const&)) redirected to 0x4c3e60b (operator delete(void*, std::align_val_t, std::nothrow_t const&))
+==1682963== 
+</pre>
+
+<pre>==1682963== HEAP SUMMARY:
+==1682963==     in use at exit: 825,309 bytes in 10,909 blocks
+==1682963==   total heap usage: 131,725 allocs, 120,816 frees, 1,591,064,603 bytes allocated
+==1682963== 
+</pre>
+
+<pre>==1682963== Searching for pointers to 10,909 not-freed blocks
+==1682963== Checked 3,914,192 bytes
+==1682963== 
+</pre>
+
+<a name="error1"><h2>7,448 (504 direct, 6,944 indirect) bytes in 7 blocks are definitely lost</h2></a>
+<font size=small><a href="#duplication-steps">(Show me how to reproduce this <b>error</b>)</a></font>
+<pre>==1682963== 7,448 (504 direct, 6,944 indirect) bytes in 7 blocks are definitely lost in loss record 53 of 57
+==1682963==    at 0x4C39185: malloc (vg_replace_malloc.c:442)
+==1682963==    by 0x558CAA7: set_value (in /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi.so.40.30.6)
+==1682963==    by 0x558D181: ompi_attr_set_c (in /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi.so.40.30.6)
+==1682963==    by 0x55CCF06: PMPI_Comm_set_attr (in /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi.so.40.30.6)
+==1682963==    by 0x4A67A9: stk::impl::MPIKeyManager::get_key(ompi_communicator_t*) (MPICommKey.cpp:67)
+==1682963==    by 0x4A75A8: stk::impl::MPIKeyManager::register_callback(ompi_communicator_t*, unsigned long long, std::function<void (ompi_communicator_t*)>) (MPICommKey.cpp:104)
+==1682963==    by 0x4A2057: stk::MPITagManager::get_tag(ompi_communicator_t*, int) (MPITagManager.cpp:46)
+==1682963==    by 0x430C1E: stk::DataExchangeUnknownPatternNonBlocking::DataExchangeUnknownPatternNonBlocking(ompi_communicator_t*, int) (DataExchangeUnknownPatternNonBlocking.hpp:71)
+==1682963==    by 0x4315F9: DataExchangeUnknownPatternNonBlockingCommBuffer (DataExchangeUnknownPatternNonBlockingBuffer.hpp:104)
+==1682963==    by 0x4315F9: construct<stk::DataExchangeUnknownPatternNonBlockingCommBuffer, ompi_communicator_t*&> (new_allocator.h:150)
+==1682963==    by 0x4315F9: construct<stk::DataExchangeUnknownPatternNonBlockingCommBuffer, ompi_communicator_t*&> (alloc_traits.h:512)
+==1682963==    by 0x4315F9: _Sp_counted_ptr_inplace<ompi_communicator_t*&> (shared_ptr_base.h:551)
+==1682963==    by 0x4315F9: __shared_count<stk::DataExchangeUnknownPatternNonBlockingCommBuffer, std::allocator<stk::DataExchangeUnknownPatternNonBlockingCommBuffer>, ompi_communicator_t*&> (shared_ptr_base.h:682)
+==1682963==    by 0x4315F9: __shared_ptr<std::allocator<stk::DataExchangeUnknownPatternNonBlockingCommBuffer>, ompi_communicator_t*&> (shared_ptr_base.h:1371)
+==1682963==    by 0x4315F9: shared_ptr<std::allocator<stk::DataExchangeUnknownPatternNonBlockingCommBuffer>, ompi_communicator_t*&> (shared_ptr.h:408)
+==1682963==    by 0x4315F9: allocate_shared<stk::DataExchangeUnknownPatternNonBlockingCommBuffer, std::allocator<stk::DataExchangeUnknownPatternNonBlockingCommBuffer>, ompi_communicator_t*&> (shared_ptr.h:860)
+==1682963==    by 0x4315F9: make_shared<stk::DataExchangeUnknownPatternNonBlockingCommBuffer, ompi_communicator_t*&> (shared_ptr.h:876)
+==1682963==    by 0x4315F9: stk::CommSparse::CommSparse(ompi_communicator_t*) (CommSparse.hpp:189)
+==1682963==    by 0x47E8D3: stk::coupling::SyncInfo::exchange(stk::coupling::SplitComms const&, int) const (SyncInfo.cpp:56)
+==1682963==    by 0x47F568: stk::coupling::SyncInfo::exchange(stk::coupling::SplitComms const&) const (SyncInfo.cpp:93)
+==1682963==    by 0x444865: (anonymous namespace)::TestSyncInfo_exchange_multi_way_Test::TestBody() (UnitTestSyncInfo.cpp:353)
+==1682963==    by 0x473BDC: void testing::internal::HandleExceptionsInMethodIfSupported<testing::Test, void>(testing::Test*, void (testing::Test::*)(), char const*) (in /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest)
+==1682963==    by 0x468D6F: testing::Test::Run() [clone .part.0] (in /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest)
+==1682963==    by 0x4691A1: testing::TestInfo::Run() [clone .part.0] (in /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest)
+==1682963==    by 0x469381: testing::TestSuite::Run() [clone .part.0] (in /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest)
+==1682963==    by 0x46A3D7: testing::internal::UnitTestImpl::RunAllTests() (in /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest)
+==1682963==    by 0x46A6DA: testing::UnitTest::Run() (in /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest)
+==1682963==    by 0x41DA24: RUN_ALL_TESTS (gtest.h:2473)
+==1682963==    by 0x41DA24: run_all_tests (ngp_test.hpp:139)
+==1682963==    by 0x41DA24: main (UnitTestMain.cpp:82)
+==1682963== 
+</pre>
+
+<pre>==1682963== LEAK SUMMARY:
+==1682963==    definitely lost: 504 bytes in 7 blocks
+==1682963==    indirectly lost: 0 bytes in 0 blocks
+==1682963==      possibly lost: 0 bytes in 0 blocks
+==1682963==    still reachable: 176 bytes in 1 blocks
+==1682963==         suppressed: 824,629 bytes in 10,901 blocks
+==1682963== Reachable blocks (those to which a pointer was found) are not shown.
+==1682963== To see them, rerun with: --leak-check=full --show-leak-kinds=all
+==1682963== 
+</pre>
+
+<pre>==1682963== ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 27 from 27)
+</pre>
+
+<pre>--1682963-- 
+--1682963-- used_suppression:      3 OMPI_Leaks-init-realloc /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:47 suppressed: 431,132 bytes in 7 blocks
+--1682963-- used_suppression:     37 OMPI_Leaks-init-malloc2 /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:31 suppressed: 372,595 bytes in 10,817 blocks
+--1682963-- used_suppression:      9 OMPI_Leaks-init-calloc /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:38 suppressed: 11,976 bytes in 35 blocks
+--1682963-- used_suppression:      1 MPI-HashTable /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:372 suppressed: 6,944 bytes in 7 blocks
+--1682963-- used_suppression:      1 OMPI_Leaks-Keyval_create-malloc_gcc_8 /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:299 suppressed: 1,984 bytes in 31 blocks
+--1682963-- used_suppression:      4 <MPI-4 Errors 3> /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:783 suppressed: 77 bytes in 4 blocks
+--1682963-- used_suppression:      1 <nkc_09_09_2024> /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:536
+--1682963-- used_suppression:      1 <MpiInitGCC10.3SetSockOpt> /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:948
+--1682963-- used_suppression:      1 <MpiInitGCC10.3GetSockOptB> /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:939
+--1682963-- used_suppression:      1 <MpiInitGCC10.3GetSockOptA> /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:930
+==1682963== 
+</pre>
+
+<pre>==1682963== ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 27 from 27)
+</pre>
+
+<pre>==1682968== Memcheck, a memory error detector
+==1682968== Copyright (C) 2002-2022, and GNU GPL'd, by Julian Seward et al.
+==1682968== Using Valgrind-3.22.0-bd4db67b1d-20231031 and LibVEX; rerun with -h for copyright info
+==1682968== Command: /ceeGPFS/fgs/jccrean/code/results/2025_03_17_17_01_51/stk_coupling_rtest_unit_test_unit_test.test/np8/bin/stk_coupling_utest
+==1682968== Parent PID: 1682964
+==1682968== 
+</pre>
+
+<pre>--1682968-- 
+--1682968-- Valgrind options:
+--1682968--    -v
+--1682968--    --tool=memcheck
+--1682968--    --log-file=/ceeGPFS/fgs/jccrean/code/results/2025_03_17_17_01_51/stk_coupling_rtest_unit_test_unit_test.test/np8/valgrind_%p.output
+--1682968--    --suppressions=/sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress
+--1682968--    --num-callers=50
+--1682968--    --track-origins=yes
+--1682968--    --trace-children=yes
+--1682968--    --leak-check=yes
+--1682968--    --leak-resolution=med
+--1682968--    --max-stackframe=3500000
+--1682968-- Contents of /proc/version:
+--1682968--   Linux version 4.18.0-553.37.1.el8_10.x86_64 (mockbuild@x86-64-05.build.eng.rdu2.redhat.com) (gcc version 8.5.0 20210514 (Red Hat 8.5.0-22) (GCC)) #1 SMP Fri Jan 17 08:51:54 EST 2025
+--1682968-- 
+--1682968-- Arch and hwcaps: AMD64, LittleEndian, amd64-cx16-lzcnt-rdtscp-sse3-ssse3-avx-avx2-bmi-f16c-rdrand-rdseed
+--1682968-- Page sizes: currently 4096, max supported 4096
+--1682968-- Valgrind library directory: /usr/libexec/valgrind
+--1682968-- Reading syms from /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest
+--1682968-- Reading syms from /usr/lib64/ld-2.28.so
+--1682968-- Warning: cross-CU LIMITATION: some inlined fn names
+--1682968-- might be shown as UnknownInlinedFun
+--1682968-- Reading syms from /usr/libexec/valgrind/memcheck-amd64-linux
+--1682968--    object doesn't have a dynamic symbol table
+--1682968-- Scheduler: using generic scheduler lock implementation.
+--1682968-- Reading suppressions file: /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress
+--1682968-- Reading suppressions file: /usr/libexec/valgrind/default.supp
+</pre>
+
+<pre>==1682968== embedded gdbserver: reading from /tmp/vgdb-pipe-from-vgdb-to-1682968-by-jccrean-on-cee-build032
+==1682968== embedded gdbserver: writing to   /tmp/vgdb-pipe-to-vgdb-from-1682968-by-jccrean-on-cee-build032
+==1682968== embedded gdbserver: shared mem   /tmp/vgdb-pipe-shared-mem-vgdb-1682968-by-jccrean-on-cee-build032
+==1682968== 
+</pre>
+
+<pre>==1682968== TO CONTROL THIS PROCESS USING vgdb (which you probably
+==1682968== don't want to do, unless you know exactly what you're doing,
+==1682968== or are doing some strange experiment):
+==1682968==   /usr/libexec/valgrind/../../bin/vgdb --pid=1682968 ...command...
+==1682968== 
+</pre>
+
+<pre>==1682968== TO DEBUG THIS PROCESS USING GDB: start GDB like this
+==1682968==   /path/to/gdb /ceeGPFS/fgs/jccrean/code/results/2025_03_17_17_01_51/stk_coupling_rtest_unit_test_unit_test.test/np8/bin/stk_coupling_utest
+==1682968== and then give GDB the following command
+==1682968==   target remote | /usr/libexec/valgrind/../../bin/vgdb --pid=1682968
+==1682968== --pid is optional if only one valgrind process is running
+==1682968== 
+</pre>
+
+<pre>--1682968-- REDIR: 0x4004400 (ld-linux-x86-64.so.2:strlen) redirected to 0x580d2e42 (???)
+--1682968-- REDIR: 0x4002d80 (ld-linux-x86-64.so.2:index) redirected to 0x580d2e5c (???)
+--1682968-- Reading syms from /usr/libexec/valgrind/vgpreload_core-amd64-linux.so
+--1682968-- Reading syms from /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so
+</pre>
+
+<pre>==1682968== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682968--     old: 0x04004400 (strlen              ) R-> (0000.0) 0x580d2e42 ???
+--1682968--     new: 0x04004400 (strlen              ) R-> (2007.0) 0x04c42300 strlen
+--1682968-- REDIR: 0x4002fb0 (ld-linux-x86-64.so.2:strcmp) redirected to 0x4c434c0 (strcmp)
+--1682968-- REDIR: 0x40045a0 (ld-linux-x86-64.so.2:strncmp) redirected to 0x4c42bc0 (strncmp)
+--1682968-- REDIR: 0x4002760 (ld-linux-x86-64.so.2:mempcpy) redirected to 0x4c46ff0 (mempcpy)
+--1682968-- REDIR: 0x4002c90 (ld-linux-x86-64.so.2:stpcpy) redirected to 0x4c45c50 (stpcpy)
+--1682968-- Reading syms from /usr/lib64/liboneagentproc.so
+--1682968-- Reading syms from /usr/lib64/libdl-2.28.so
+--1682968-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/818788d6/gcc-10.3.0/install/linux-rhel8-x86_64/gcc-8.5.0/gcc-10.3.0-6ljscis/lib64/libgfortran.so.5.0.0
+--1682968-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi.so.40.30.6
+--1682968-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi_usempif08.so.40.30.0
+--1682968-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi_usempi_ignore_tkr.so.40.30.0
+--1682968-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi_mpifh.so.40.30.0
+--1682968-- Reading syms from /usr/lib64/libpthread-2.28.so
+--1682968-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/818788d6/gcc-10.3.0/install/linux-rhel8-x86_64/gcc-8.5.0/gcc-10.3.0-6ljscis/lib64/libstdc++.so.6.0.28
+--1682968-- Reading syms from /usr/lib64/libm-2.28.so
+--1682968-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/818788d6/gcc-10.3.0/install/linux-rhel8-x86_64/gcc-8.5.0/gcc-10.3.0-6ljscis/lib64/libgcc_s.so.1
+--1682968-- Reading syms from /usr/lib64/libc-2.28.so
+</pre>
+
+<pre>==1682968== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682968--     old: 0x06040f50 (memalign            ) R-> (1011.0) 0x04c40d9e memalign
+--1682968--     new: 0x06040f50 (memalign            ) R-> (1017.0) 0x04c41527 aligned_alloc
+</pre>
+
+<pre>==1682968== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682968--     old: 0x06040f50 (memalign            ) R-> (1011.0) 0x04c40d9e memalign
+--1682968--     new: 0x06040f50 (memalign            ) R-> (1017.0) 0x04c413bd aligned_alloc
+</pre>
+
+<pre>==1682968== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682968--     old: 0x06040f50 (memalign            ) R-> (1011.0) 0x04c40d9e memalign
+--1682968--     new: 0x06040f50 (memalign            ) R-> (1017.0) 0x04c41527 aligned_alloc
+</pre>
+
+<pre>==1682968== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682968--     old: 0x06040f50 (memalign            ) R-> (1011.0) 0x04c40d9e memalign
+--1682968--     new: 0x06040f50 (memalign            ) R-> (1017.0) 0x04c413bd aligned_alloc
+</pre>
+
+<pre>==1682968== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682968--     old: 0x06040f50 (memalign            ) R-> (1011.0) 0x04c40d9e memalign
+--1682968--     new: 0x06040f50 (memalign            ) R-> (1017.0) 0x04c41527 aligned_alloc
+</pre>
+
+<pre>==1682968== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682968--     old: 0x06040f50 (memalign            ) R-> (1011.0) 0x04c40d9e memalign
+--1682968--     new: 0x06040f50 (memalign            ) R-> (1017.0) 0x04c413bd aligned_alloc
+--1682968-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/818788d6/gcc-10.3.0/install/linux-rhel8-x86_64/gcc-8.5.0/gcc-10.3.0-6ljscis/lib64/libquadmath.so.0.0.0
+--1682968-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libopen-rte.so.40.30.3
+--1682968-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libopen-pal.so.40.30.3
+--1682968-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/pmix-4.1.2-k2sy222/lib/libpmix.so.2.5.2
+--1682968-- Reading syms from /usr/lib64/libnl-3.so.200.26.0
+--1682968-- Reading syms from /usr/lib64/libnl-route-3.so.200.26.0
+--1682968-- Reading syms from /usr/lib64/librt-2.28.so
+--1682968-- Reading syms from /usr/lib64/libutil-2.28.so
+--1682968-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/zlib-ng-2.1.4-2doi7gn/lib/libz.so.1.3.0.zlib-ng
+--1682968-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/hwloc-2.9.1-p5xbfhp/lib/libhwloc.so.15.6.2
+--1682968-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/libevent-2.1.12-ytr5fzy/lib/libevent_core-2.1.so.7.0.1
+--1682968-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/libevent-2.1.12-ytr5fzy/lib/libevent_pthreads-2.1.so.7.0.1
+--1682968-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/libpciaccess-0.17-4ycon7f/lib/libpciaccess.so.0.11.1
+--1682968-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/libxml2-2.10.3-66temxb/lib/libxml2.so.2.10.3
+--1682968-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/xz-5.4.1-r2q7nx7/lib/liblzma.so.5.4.1
+--1682968-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/libiconv-1.17-fz2467k/lib/libiconv.so.2.6.1
+--1682968-- REDIR: 0x6045460 (libc.so.6:memmove) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+</pre>
+
+<pre>==1682968== Preferring higher priority redirection:
+</pre>
+
+<pre>--1682968--     old: 0x0604c800 (__memcpy_avx_unalign) R-> (2018.0) 0x04c44700 __memcpy_avx_unaligned_erms
+--1682968--     new: 0x0604c800 (__memcpy_avx_unalign) R-> (2018.1) 0x04c46030 memmove
+--1682968-- REDIR: 0x6044680 (libc.so.6:strncpy) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682968-- REDIR: 0x6045a40 (libc.so.6:strcasecmp) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682968-- REDIR: 0x6043df0 (libc.so.6:strcat) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682968-- REDIR: 0x6044710 (libc.so.6:rindex) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682968-- REDIR: 0x6047210 (libc.so.6:rawmemchr) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682968-- REDIR: 0x608b420 (libc.so.6:wmemchr) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682968-- REDIR: 0x608ad40 (libc.so.6:wcscmp) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682968-- REDIR: 0x6045690 (libc.so.6:mempcpy) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682968-- REDIR: 0x60453c0 (libc.so.6:bcmp) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682968-- REDIR: 0x60445e0 (libc.so.6:strncmp) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682968-- REDIR: 0x6043f00 (libc.so.6:strcmp) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682968-- REDIR: 0x6045590 (libc.so.6:memset) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682968-- REDIR: 0x608acc0 (libc.so.6:wcschr) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682968-- REDIR: 0x60444d0 (libc.so.6:strnlen) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682968-- REDIR: 0x6044040 (libc.so.6:strcspn) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682968-- REDIR: 0x6045ae0 (libc.so.6:strncasecmp) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682968-- REDIR: 0x6043fb0 (libc.so.6:strcpy) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682968-- REDIR: 0x6045d20 (libc.so.6:memcpy@@GLIBC_2.14) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682968-- REDIR: 0x608c7c0 (libc.so.6:wcsnlen) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682968-- REDIR: 0x6044790 (libc.so.6:strpbrk) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682968-- REDIR: 0x6043e80 (libc.so.6:index) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682968-- REDIR: 0x6044450 (libc.so.6:strlen) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682968-- REDIR: 0x604bd80 (libc.so.6:memrchr) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682968-- REDIR: 0x6045b80 (libc.so.6:strcasecmp_l) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682968-- REDIR: 0x6045330 (libc.so.6:memchr) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682968-- REDIR: 0x608ae90 (libc.so.6:wcslen) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682968-- REDIR: 0x6044a50 (libc.so.6:strspn) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682968-- REDIR: 0x60459b0 (libc.so.6:stpncpy) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682968-- REDIR: 0x6045920 (libc.so.6:stpcpy) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682968-- REDIR: 0x60472a0 (libc.so.6:strchrnul) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682968-- REDIR: 0x6045c20 (libc.so.6:strncasecmp_l) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682968-- REDIR: 0x6044550 (libc.so.6:strncat) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682968-- REDIR: 0x60f0cb0 (libc.so.6:__memcpy_chk) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682968-- REDIR: 0x6045250 (libc.so.6:strstr) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682968-- REDIR: 0x6052a30 (libc.so.6:__strrchr_avx2) redirected to 0x4c41c90 (rindex)
+--1682968-- REDIR: 0x60500e0 (libc.so.6:__strlen_avx2) redirected to 0x4c421e0 (strlen)
+--1682968-- REDIR: 0x604f7f0 (libc.so.6:__strcmp_avx2) redirected to 0x4c43380 (strcmp)
+--1682968-- REDIR: 0x60401e0 (libc.so.6:malloc) redirected to 0x4c3910f (malloc)
+--1682968-- REDIR: 0x604f600 (libc.so.6:__strchrnul_avx2) redirected to 0x4c46b20 (strchrnul)
+--1682968-- REDIR: 0x604c800 (libc.so.6:__memcpy_avx_unaligned_erms) redirected to 0x4c46030 (memmove)
+--1682968-- REDIR: 0x6040870 (libc.so.6:free) redirected to 0x4c3c459 (free)
+--1682968-- REDIR: 0x6044f60 (libc.so.6:__GI_strstr) redirected to 0x4c471d0 (__strstr_sse2)
+--1682968-- REDIR: 0x604c080 (libc.so.6:__memchr_avx2) redirected to 0x4c43560 (memchr)
+--1682968-- REDIR: 0x6089970 (libc.so.6:__strspn_sse42) redirected to 0x4c473e0 (strspn)
+--1682968-- REDIR: 0x6089480 (libc.so.6:__strcspn_sse42) redirected to 0x4c47320 (strcspn)
+--1682968-- REDIR: 0x604e330 (libc.so.6:__strcasecmp_avx2) redirected to 0x4c42c30 (strcasecmp)
+--1682968-- REDIR: 0x6041010 (libc.so.6:calloc) redirected to 0x4c408d9 (calloc)
+--1682968-- REDIR: 0x604c360 (libc.so.6:__memcmp_avx2_movbe) redirected to 0x4c45700 (bcmp)
+--1682968-- REDIR: 0x5afbef0 (libstdc++.so.6:operator new(unsigned long)) redirected to 0x4c398a1 (operator new(unsigned long))
+--1682968-- REDIR: 0x5afa2e0 (libstdc++.so.6:operator delete(void*)) redirected to 0x4c3ccf3 (operator delete(void*))
+--1682968-- REDIR: 0x5afbf40 (libstdc++.so.6:operator new[](unsigned long)) redirected to 0x4c3b041 (operator new[](unsigned long))
+--1682968-- REDIR: 0x604d340 (libc.so.6:__memset_avx2_unaligned_erms) redirected to 0x4c45f20 (memset)
+--1682968-- REDIR: 0x5afa310 (libstdc++.so.6:operator delete[](void*)) redirected to 0x4c3ed6f (operator delete[](void*))
+--1682968-- REDIR: 0x604f3c0 (libc.so.6:__strchr_avx2) redirected to 0x4c41e70 (index)
+--1682968-- REDIR: 0x5afa2f0 (libstdc++.so.6:operator delete(void*, unsigned long)) redirected to 0x4c3d1f3 (operator delete(void*, unsigned long))
+--1682968-- REDIR: 0x60517b0 (libc.so.6:__strncmp_avx2) redirected to 0x4c42990 (strncmp)
+--1682968-- REDIR: 0x6040af0 (libc.so.6:realloc) redirected to 0x4c40af3 (realloc)
+--1682968-- REDIR: 0x5fdb7e0 (libc.so.6:__strstr_sse2_unaligned) redirected to 0x4c47160 (strstr)
+--1682968-- REDIR: 0x604c7e0 (libc.so.6:__mempcpy_avx_unaligned_erms) redirected to 0x4c46c30 (mempcpy)
+--1682968-- REDIR: 0x6051e00 (libc.so.6:__strncpy_avx2) redirected to 0x4c424d0 (strncpy)
+--1682968-- REDIR: 0x6050da0 (libc.so.6:__strncat_avx2) redirected to 0x4c42060 (strncat)
+--1682968-- REDIR: 0x604d480 (libc.so.6:__rawmemchr_avx2) redirected to 0x4c46b50 (rawmemchr)
+--1682968-- REDIR: 0x6050260 (libc.so.6:__strncasecmp_avx2) redirected to 0x4c42d10 (strncasecmp)
+--1682968-- REDIR: 0x5ff5900 (libc.so.6:setenv) redirected to 0x4c47b60 (setenv)
+--1682968-- REDIR: 0x604fd50 (libc.so.6:__strcpy_avx2) redirected to 0x4c42330 (strcpy)
+--1682968-- REDIR: 0x6041cd0 (libc.so.6:posix_memalign) redirected to 0x4c4123b (posix_memalign)
+--1682968-- REDIR: 0x5afbfd0 (libstdc++.so.6:operator new(unsigned long, std::align_val_t, std::nothrow_t const&)) redirected to 0x4c3a9c7 (operator new(unsigned long, std::align_val_t, std::nothrow_t const&))
+--1682968-- REDIR: 0x5afc030 (libstdc++.so.6:operator delete(void*, std::align_val_t, std::nothrow_t const&)) redirected to 0x4c3e60b (operator delete(void*, std::align_val_t, std::nothrow_t const&))
+==1682968== 
+</pre>
+
+<pre>==1682968== HEAP SUMMARY:
+==1682968==     in use at exit: 825,309 bytes in 10,909 blocks
+==1682968==   total heap usage: 134,082 allocs, 123,173 frees, 1,592,081,935 bytes allocated
+==1682968== 
+</pre>
+
+<pre>==1682968== Searching for pointers to 10,909 not-freed blocks
+==1682968== Checked 3,914,192 bytes
+==1682968== 
+</pre>
+
+<a name="error1"><h2>7,448 (504 direct, 6,944 indirect) bytes in 7 blocks are definitely lost</h2></a>
+<font size=small><a href="#duplication-steps">(Show me how to reproduce this <b>error</b>)</a></font>
+<pre>==1682968== 7,448 (504 direct, 6,944 indirect) bytes in 7 blocks are definitely lost in loss record 54 of 58
+==1682968==    at 0x4C39185: malloc (vg_replace_malloc.c:442)
+==1682968==    by 0x558CAA7: set_value (in /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi.so.40.30.6)
+==1682968==    by 0x558D181: ompi_attr_set_c (in /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi.so.40.30.6)
+==1682968==    by 0x55CCF06: PMPI_Comm_set_attr (in /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi.so.40.30.6)
+==1682968==    by 0x4A67A9: stk::impl::MPIKeyManager::get_key(ompi_communicator_t*) (MPICommKey.cpp:67)
+==1682968==    by 0x4A75A8: stk::impl::MPIKeyManager::register_callback(ompi_communicator_t*, unsigned long long, std::function<void (ompi_communicator_t*)>) (MPICommKey.cpp:104)
+==1682968==    by 0x4A2057: stk::MPITagManager::get_tag(ompi_communicator_t*, int) (MPITagManager.cpp:46)
+==1682968==    by 0x430C1E: stk::DataExchangeUnknownPatternNonBlocking::DataExchangeUnknownPatternNonBlocking(ompi_communicator_t*, int) (DataExchangeUnknownPatternNonBlocking.hpp:71)
+==1682968==    by 0x4315F9: DataExchangeUnknownPatternNonBlockingCommBuffer (DataExchangeUnknownPatternNonBlockingBuffer.hpp:104)
+==1682968==    by 0x4315F9: construct<stk::DataExchangeUnknownPatternNonBlockingCommBuffer, ompi_communicator_t*&> (new_allocator.h:150)
+==1682968==    by 0x4315F9: construct<stk::DataExchangeUnknownPatternNonBlockingCommBuffer, ompi_communicator_t*&> (alloc_traits.h:512)
+==1682968==    by 0x4315F9: _Sp_counted_ptr_inplace<ompi_communicator_t*&> (shared_ptr_base.h:551)
+==1682968==    by 0x4315F9: __shared_count<stk::DataExchangeUnknownPatternNonBlockingCommBuffer, std::allocator<stk::DataExchangeUnknownPatternNonBlockingCommBuffer>, ompi_communicator_t*&> (shared_ptr_base.h:682)
+==1682968==    by 0x4315F9: __shared_ptr<std::allocator<stk::DataExchangeUnknownPatternNonBlockingCommBuffer>, ompi_communicator_t*&> (shared_ptr_base.h:1371)
+==1682968==    by 0x4315F9: shared_ptr<std::allocator<stk::DataExchangeUnknownPatternNonBlockingCommBuffer>, ompi_communicator_t*&> (shared_ptr.h:408)
+==1682968==    by 0x4315F9: allocate_shared<stk::DataExchangeUnknownPatternNonBlockingCommBuffer, std::allocator<stk::DataExchangeUnknownPatternNonBlockingCommBuffer>, ompi_communicator_t*&> (shared_ptr.h:860)
+==1682968==    by 0x4315F9: make_shared<stk::DataExchangeUnknownPatternNonBlockingCommBuffer, ompi_communicator_t*&> (shared_ptr.h:876)
+==1682968==    by 0x4315F9: stk::CommSparse::CommSparse(ompi_communicator_t*) (CommSparse.hpp:189)
+==1682968==    by 0x47E8D3: stk::coupling::SyncInfo::exchange(stk::coupling::SplitComms const&, int) const (SyncInfo.cpp:56)
+==1682968==    by 0x47F568: stk::coupling::SyncInfo::exchange(stk::coupling::SplitComms const&) const (SyncInfo.cpp:93)
+==1682968==    by 0x444865: (anonymous namespace)::TestSyncInfo_exchange_multi_way_Test::TestBody() (UnitTestSyncInfo.cpp:353)
+==1682968==    by 0x473BDC: void testing::internal::HandleExceptionsInMethodIfSupported<testing::Test, void>(testing::Test*, void (testing::Test::*)(), char const*) (in /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest)
+==1682968==    by 0x468D6F: testing::Test::Run() [clone .part.0] (in /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest)
+==1682968==    by 0x4691A1: testing::TestInfo::Run() [clone .part.0] (in /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest)
+==1682968==    by 0x469381: testing::TestSuite::Run() [clone .part.0] (in /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest)
+==1682968==    by 0x46A3D7: testing::internal::UnitTestImpl::RunAllTests() (in /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest)
+==1682968==    by 0x46A6DA: testing::UnitTest::Run() (in /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest)
+==1682968==    by 0x41DA24: RUN_ALL_TESTS (gtest.h:2473)
+==1682968==    by 0x41DA24: run_all_tests (ngp_test.hpp:139)
+==1682968==    by 0x41DA24: main (UnitTestMain.cpp:82)
+==1682968== 
+</pre>
+
+<pre>==1682968== LEAK SUMMARY:
+==1682968==    definitely lost: 504 bytes in 7 blocks
+==1682968==    indirectly lost: 0 bytes in 0 blocks
+==1682968==      possibly lost: 0 bytes in 0 blocks
+==1682968==    still reachable: 176 bytes in 1 blocks
+==1682968==         suppressed: 824,629 bytes in 10,901 blocks
+==1682968== Reachable blocks (those to which a pointer was found) are not shown.
+==1682968== To see them, rerun with: --leak-check=full --show-leak-kinds=all
+==1682968== 
+</pre>
+
+<pre>==1682968== ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 28 from 28)
+</pre>
+
+<pre>--1682968-- 
+--1682968-- used_suppression:      3 OMPI_Leaks-init-realloc /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:47 suppressed: 431,132 bytes in 7 blocks
+--1682968-- used_suppression:     37 OMPI_Leaks-init-malloc2 /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:31 suppressed: 372,595 bytes in 10,817 blocks
+--1682968-- used_suppression:      9 OMPI_Leaks-init-calloc /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:38 suppressed: 11,976 bytes in 35 blocks
+--1682968-- used_suppression:      1 MPI-HashTable /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:372 suppressed: 6,944 bytes in 7 blocks
+--1682968-- used_suppression:      2 OMPI_Leaks-Keyval_create-malloc_gcc_8 /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:299 suppressed: 1,984 bytes in 31 blocks
+--1682968-- used_suppression:      4 <MPI-4 Errors 3> /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:783 suppressed: 77 bytes in 4 blocks
+--1682968-- used_suppression:      1 <nkc_09_09_2024> /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:536
+--1682968-- used_suppression:      1 <MpiInitGCC10.3SetSockOpt> /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:948
+--1682968-- used_suppression:      1 <MpiInitGCC10.3GetSockOptB> /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:939
+--1682968-- used_suppression:      1 <MpiInitGCC10.3GetSockOptA> /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:930
+==1682968== 
+</pre>
+
+<pre>==1682968== ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 28 from 28)
+</pre>
+
+<pre>==1682958== Memcheck, a memory error detector
+==1682958== Copyright (C) 2002-2022, and GNU GPL'd, by Julian Seward et al.
+==1682958== Using Valgrind-3.22.0-bd4db67b1d-20231031 and LibVEX; rerun with -h for copyright info
+==1682958== Command: /ceeGPFS/fgs/jccrean/code/results/2025_03_17_17_01_51/stk_coupling_rtest_unit_test_unit_test.test/np8/bin/stk_coupling_utest
+==1682958== Parent PID: 1682953
+==1682958== 
+</pre>
+
+<pre>--1682958-- 
+--1682958-- Valgrind options:
+--1682958--    -v
+--1682958--    --tool=memcheck
+--1682958--    --log-file=/ceeGPFS/fgs/jccrean/code/results/2025_03_17_17_01_51/stk_coupling_rtest_unit_test_unit_test.test/np8/valgrind_%p.output
+--1682958--    --suppressions=/sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress
+--1682958--    --num-callers=50
+--1682958--    --track-origins=yes
+--1682958--    --trace-children=yes
+--1682958--    --leak-check=yes
+--1682958--    --leak-resolution=med
+--1682958--    --max-stackframe=3500000
+--1682958-- Contents of /proc/version:
+--1682958--   Linux version 4.18.0-553.37.1.el8_10.x86_64 (mockbuild@x86-64-05.build.eng.rdu2.redhat.com) (gcc version 8.5.0 20210514 (Red Hat 8.5.0-22) (GCC)) #1 SMP Fri Jan 17 08:51:54 EST 2025
+--1682958-- 
+--1682958-- Arch and hwcaps: AMD64, LittleEndian, amd64-cx16-lzcnt-rdtscp-sse3-ssse3-avx-avx2-bmi-f16c-rdrand-rdseed
+--1682958-- Page sizes: currently 4096, max supported 4096
+--1682958-- Valgrind library directory: /usr/libexec/valgrind
+--1682958-- Reading syms from /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest
+--1682958-- Reading syms from /usr/lib64/ld-2.28.so
+--1682958-- Warning: cross-CU LIMITATION: some inlined fn names
+--1682958-- might be shown as UnknownInlinedFun
+--1682958-- Reading syms from /usr/libexec/valgrind/memcheck-amd64-linux
+--1682958--    object doesn't have a dynamic symbol table
+--1682958-- Scheduler: using generic scheduler lock implementation.
+--1682958-- Reading suppressions file: /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress
+--1682958-- Reading suppressions file: /usr/libexec/valgrind/default.supp
+</pre>
+
+<pre>==1682958== embedded gdbserver: reading from /tmp/vgdb-pipe-from-vgdb-to-1682958-by-jccrean-on-cee-build032
+==1682958== embedded gdbserver: writing to   /tmp/vgdb-pipe-to-vgdb-from-1682958-by-jccrean-on-cee-build032
+==1682958== embedded gdbserver: shared mem   /tmp/vgdb-pipe-shared-mem-vgdb-1682958-by-jccrean-on-cee-build032
+==1682958== 
+</pre>
+
+<pre>==1682958== TO CONTROL THIS PROCESS USING vgdb (which you probably
+==1682958== don't want to do, unless you know exactly what you're doing,
+==1682958== or are doing some strange experiment):
+==1682958==   /usr/libexec/valgrind/../../bin/vgdb --pid=1682958 ...command...
+==1682958== 
+</pre>
+
+<pre>==1682958== TO DEBUG THIS PROCESS USING GDB: start GDB like this
+==1682958==   /path/to/gdb /ceeGPFS/fgs/jccrean/code/results/2025_03_17_17_01_51/stk_coupling_rtest_unit_test_unit_test.test/np8/bin/stk_coupling_utest
+==1682958== and then give GDB the following command
+==1682958==   target remote | /usr/libexec/valgrind/../../bin/vgdb --pid=1682958
+==1682958== --pid is optional if only one valgrind process is running
+==1682958== 
+</pre>
+
+<pre>--1682958-- REDIR: 0x4004400 (ld-linux-x86-64.so.2:strlen) redirected to 0x580d2e42 (???)
+--1682958-- REDIR: 0x4002d80 (ld-linux-x86-64.so.2:index) redirected to 0x580d2e5c (???)
+--1682958-- Reading syms from /usr/libexec/valgrind/vgpreload_core-amd64-linux.so
+--1682958-- Reading syms from /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so
+</pre>
+
+<pre>==1682958== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682958--     old: 0x04004400 (strlen              ) R-> (0000.0) 0x580d2e42 ???
+--1682958--     new: 0x04004400 (strlen              ) R-> (2007.0) 0x04c42300 strlen
+--1682958-- REDIR: 0x4002fb0 (ld-linux-x86-64.so.2:strcmp) redirected to 0x4c434c0 (strcmp)
+--1682958-- REDIR: 0x40045a0 (ld-linux-x86-64.so.2:strncmp) redirected to 0x4c42bc0 (strncmp)
+--1682958-- REDIR: 0x4002760 (ld-linux-x86-64.so.2:mempcpy) redirected to 0x4c46ff0 (mempcpy)
+--1682958-- REDIR: 0x4002c90 (ld-linux-x86-64.so.2:stpcpy) redirected to 0x4c45c50 (stpcpy)
+--1682958-- Reading syms from /usr/lib64/liboneagentproc.so
+--1682958-- Reading syms from /usr/lib64/libdl-2.28.so
+--1682958-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/818788d6/gcc-10.3.0/install/linux-rhel8-x86_64/gcc-8.5.0/gcc-10.3.0-6ljscis/lib64/libgfortran.so.5.0.0
+--1682958-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi.so.40.30.6
+--1682958-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi_usempif08.so.40.30.0
+--1682958-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi_usempi_ignore_tkr.so.40.30.0
+--1682958-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi_mpifh.so.40.30.0
+--1682958-- Reading syms from /usr/lib64/libpthread-2.28.so
+--1682958-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/818788d6/gcc-10.3.0/install/linux-rhel8-x86_64/gcc-8.5.0/gcc-10.3.0-6ljscis/lib64/libstdc++.so.6.0.28
+--1682958-- Reading syms from /usr/lib64/libm-2.28.so
+--1682958-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/818788d6/gcc-10.3.0/install/linux-rhel8-x86_64/gcc-8.5.0/gcc-10.3.0-6ljscis/lib64/libgcc_s.so.1
+--1682958-- Reading syms from /usr/lib64/libc-2.28.so
+</pre>
+
+<pre>==1682958== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682958--     old: 0x06040f50 (memalign            ) R-> (1011.0) 0x04c40d9e memalign
+--1682958--     new: 0x06040f50 (memalign            ) R-> (1017.0) 0x04c41527 aligned_alloc
+</pre>
+
+<pre>==1682958== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682958--     old: 0x06040f50 (memalign            ) R-> (1011.0) 0x04c40d9e memalign
+--1682958--     new: 0x06040f50 (memalign            ) R-> (1017.0) 0x04c413bd aligned_alloc
+</pre>
+
+<pre>==1682958== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682958--     old: 0x06040f50 (memalign            ) R-> (1011.0) 0x04c40d9e memalign
+--1682958--     new: 0x06040f50 (memalign            ) R-> (1017.0) 0x04c41527 aligned_alloc
+</pre>
+
+<pre>==1682958== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682958--     old: 0x06040f50 (memalign            ) R-> (1011.0) 0x04c40d9e memalign
+--1682958--     new: 0x06040f50 (memalign            ) R-> (1017.0) 0x04c413bd aligned_alloc
+</pre>
+
+<pre>==1682958== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682958--     old: 0x06040f50 (memalign            ) R-> (1011.0) 0x04c40d9e memalign
+--1682958--     new: 0x06040f50 (memalign            ) R-> (1017.0) 0x04c41527 aligned_alloc
+</pre>
+
+<pre>==1682958== WARNING: new redirection conflicts with existing -- ignoring it
+</pre>
+
+<pre>--1682958--     old: 0x06040f50 (memalign            ) R-> (1011.0) 0x04c40d9e memalign
+--1682958--     new: 0x06040f50 (memalign            ) R-> (1017.0) 0x04c413bd aligned_alloc
+--1682958-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/818788d6/gcc-10.3.0/install/linux-rhel8-x86_64/gcc-8.5.0/gcc-10.3.0-6ljscis/lib64/libquadmath.so.0.0.0
+--1682958-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libopen-rte.so.40.30.3
+--1682958-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libopen-pal.so.40.30.3
+--1682958-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/pmix-4.1.2-k2sy222/lib/libpmix.so.2.5.2
+--1682958-- Reading syms from /usr/lib64/libnl-3.so.200.26.0
+--1682958-- Reading syms from /usr/lib64/libnl-route-3.so.200.26.0
+--1682958-- Reading syms from /usr/lib64/librt-2.28.so
+--1682958-- Reading syms from /usr/lib64/libutil-2.28.so
+--1682958-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/zlib-ng-2.1.4-2doi7gn/lib/libz.so.1.3.0.zlib-ng
+--1682958-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/hwloc-2.9.1-p5xbfhp/lib/libhwloc.so.15.6.2
+--1682958-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/libevent-2.1.12-ytr5fzy/lib/libevent_core-2.1.so.7.0.1
+--1682958-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/libevent-2.1.12-ytr5fzy/lib/libevent_pthreads-2.1.so.7.0.1
+--1682958-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/libpciaccess-0.17-4ycon7f/lib/libpciaccess.so.0.11.1
+--1682958-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/libxml2-2.10.3-66temxb/lib/libxml2.so.2.10.3
+--1682958-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/xz-5.4.1-r2q7nx7/lib/liblzma.so.5.4.1
+--1682958-- Reading syms from /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/libiconv-1.17-fz2467k/lib/libiconv.so.2.6.1
+--1682958-- REDIR: 0x6045460 (libc.so.6:memmove) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+</pre>
+
+<pre>==1682958== Preferring higher priority redirection:
+</pre>
+
+<pre>--1682958--     old: 0x0604c800 (__memcpy_avx_unalign) R-> (2018.0) 0x04c44700 __memcpy_avx_unaligned_erms
+--1682958--     new: 0x0604c800 (__memcpy_avx_unalign) R-> (2018.1) 0x04c46030 memmove
+--1682958-- REDIR: 0x6044680 (libc.so.6:strncpy) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682958-- REDIR: 0x6045a40 (libc.so.6:strcasecmp) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682958-- REDIR: 0x6043df0 (libc.so.6:strcat) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682958-- REDIR: 0x6044710 (libc.so.6:rindex) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682958-- REDIR: 0x6047210 (libc.so.6:rawmemchr) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682958-- REDIR: 0x608b420 (libc.so.6:wmemchr) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682958-- REDIR: 0x608ad40 (libc.so.6:wcscmp) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682958-- REDIR: 0x6045690 (libc.so.6:mempcpy) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682958-- REDIR: 0x60453c0 (libc.so.6:bcmp) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682958-- REDIR: 0x60445e0 (libc.so.6:strncmp) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682958-- REDIR: 0x6043f00 (libc.so.6:strcmp) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682958-- REDIR: 0x6045590 (libc.so.6:memset) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682958-- REDIR: 0x608acc0 (libc.so.6:wcschr) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682958-- REDIR: 0x60444d0 (libc.so.6:strnlen) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682958-- REDIR: 0x6044040 (libc.so.6:strcspn) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682958-- REDIR: 0x6045ae0 (libc.so.6:strncasecmp) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682958-- REDIR: 0x6043fb0 (libc.so.6:strcpy) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682958-- REDIR: 0x6045d20 (libc.so.6:memcpy@@GLIBC_2.14) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682958-- REDIR: 0x608c7c0 (libc.so.6:wcsnlen) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682958-- REDIR: 0x6044790 (libc.so.6:strpbrk) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682958-- REDIR: 0x6043e80 (libc.so.6:index) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682958-- REDIR: 0x6044450 (libc.so.6:strlen) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682958-- REDIR: 0x604bd80 (libc.so.6:memrchr) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682958-- REDIR: 0x6045b80 (libc.so.6:strcasecmp_l) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682958-- REDIR: 0x6045330 (libc.so.6:memchr) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682958-- REDIR: 0x608ae90 (libc.so.6:wcslen) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682958-- REDIR: 0x6044a50 (libc.so.6:strspn) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682958-- REDIR: 0x60459b0 (libc.so.6:stpncpy) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682958-- REDIR: 0x6045920 (libc.so.6:stpcpy) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682958-- REDIR: 0x60472a0 (libc.so.6:strchrnul) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682958-- REDIR: 0x6045c20 (libc.so.6:strncasecmp_l) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682958-- REDIR: 0x6044550 (libc.so.6:strncat) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682958-- REDIR: 0x60f0cb0 (libc.so.6:__memcpy_chk) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682958-- REDIR: 0x6045250 (libc.so.6:strstr) redirected to 0x4a3277b (_vgnU_ifunc_wrapper)
+--1682958-- REDIR: 0x6052a30 (libc.so.6:__strrchr_avx2) redirected to 0x4c41c90 (rindex)
+--1682958-- REDIR: 0x60500e0 (libc.so.6:__strlen_avx2) redirected to 0x4c421e0 (strlen)
+--1682958-- REDIR: 0x604f7f0 (libc.so.6:__strcmp_avx2) redirected to 0x4c43380 (strcmp)
+--1682958-- REDIR: 0x60401e0 (libc.so.6:malloc) redirected to 0x4c3910f (malloc)
+--1682958-- REDIR: 0x604f600 (libc.so.6:__strchrnul_avx2) redirected to 0x4c46b20 (strchrnul)
+--1682958-- REDIR: 0x604c800 (libc.so.6:__memcpy_avx_unaligned_erms) redirected to 0x4c46030 (memmove)
+--1682958-- REDIR: 0x6040870 (libc.so.6:free) redirected to 0x4c3c459 (free)
+--1682958-- REDIR: 0x6044f60 (libc.so.6:__GI_strstr) redirected to 0x4c471d0 (__strstr_sse2)
+--1682958-- REDIR: 0x604c080 (libc.so.6:__memchr_avx2) redirected to 0x4c43560 (memchr)
+--1682958-- REDIR: 0x6089970 (libc.so.6:__strspn_sse42) redirected to 0x4c473e0 (strspn)
+--1682958-- REDIR: 0x6089480 (libc.so.6:__strcspn_sse42) redirected to 0x4c47320 (strcspn)
+--1682958-- REDIR: 0x604e330 (libc.so.6:__strcasecmp_avx2) redirected to 0x4c42c30 (strcasecmp)
+--1682958-- REDIR: 0x6041010 (libc.so.6:calloc) redirected to 0x4c408d9 (calloc)
+--1682958-- REDIR: 0x604c360 (libc.so.6:__memcmp_avx2_movbe) redirected to 0x4c45700 (bcmp)
+--1682958-- REDIR: 0x5afbef0 (libstdc++.so.6:operator new(unsigned long)) redirected to 0x4c398a1 (operator new(unsigned long))
+--1682958-- REDIR: 0x5afa2e0 (libstdc++.so.6:operator delete(void*)) redirected to 0x4c3ccf3 (operator delete(void*))
+--1682958-- REDIR: 0x5afbf40 (libstdc++.so.6:operator new[](unsigned long)) redirected to 0x4c3b041 (operator new[](unsigned long))
+--1682958-- REDIR: 0x604d340 (libc.so.6:__memset_avx2_unaligned_erms) redirected to 0x4c45f20 (memset)
+--1682958-- REDIR: 0x5afa310 (libstdc++.so.6:operator delete[](void*)) redirected to 0x4c3ed6f (operator delete[](void*))
+--1682958-- REDIR: 0x604f3c0 (libc.so.6:__strchr_avx2) redirected to 0x4c41e70 (index)
+--1682958-- REDIR: 0x5afa2f0 (libstdc++.so.6:operator delete(void*, unsigned long)) redirected to 0x4c3d1f3 (operator delete(void*, unsigned long))
+--1682958-- REDIR: 0x60517b0 (libc.so.6:__strncmp_avx2) redirected to 0x4c42990 (strncmp)
+--1682958-- REDIR: 0x6040af0 (libc.so.6:realloc) redirected to 0x4c40af3 (realloc)
+--1682958-- REDIR: 0x5fdb7e0 (libc.so.6:__strstr_sse2_unaligned) redirected to 0x4c47160 (strstr)
+--1682958-- REDIR: 0x604c7e0 (libc.so.6:__mempcpy_avx_unaligned_erms) redirected to 0x4c46c30 (mempcpy)
+--1682958-- REDIR: 0x6051e00 (libc.so.6:__strncpy_avx2) redirected to 0x4c424d0 (strncpy)
+--1682958-- REDIR: 0x6050da0 (libc.so.6:__strncat_avx2) redirected to 0x4c42060 (strncat)
+--1682958-- REDIR: 0x604d480 (libc.so.6:__rawmemchr_avx2) redirected to 0x4c46b50 (rawmemchr)
+--1682958-- REDIR: 0x6050260 (libc.so.6:__strncasecmp_avx2) redirected to 0x4c42d10 (strncasecmp)
+--1682958-- REDIR: 0x5ff5900 (libc.so.6:setenv) redirected to 0x4c47b60 (setenv)
+--1682958-- REDIR: 0x604fd50 (libc.so.6:__strcpy_avx2) redirected to 0x4c42330 (strcpy)
+--1682958-- REDIR: 0x6041cd0 (libc.so.6:posix_memalign) redirected to 0x4c4123b (posix_memalign)
+--1682958-- REDIR: 0x5afbfd0 (libstdc++.so.6:operator new(unsigned long, std::align_val_t, std::nothrow_t const&)) redirected to 0x4c3a9c7 (operator new(unsigned long, std::align_val_t, std::nothrow_t const&))
+--1682958-- REDIR: 0x5afc030 (libstdc++.so.6:operator delete(void*, std::align_val_t, std::nothrow_t const&)) redirected to 0x4c3e60b (operator delete(void*, std::align_val_t, std::nothrow_t const&))
+==1682958== 
+</pre>
+
+<pre>==1682958== HEAP SUMMARY:
+==1682958==     in use at exit: 825,296 bytes in 10,908 blocks
+==1682958==   total heap usage: 151,723 allocs, 140,815 frees, 1,597,075,738 bytes allocated
+==1682958== 
+</pre>
+
+<pre>==1682958== Searching for pointers to 10,908 not-freed blocks
+==1682958== Checked 3,914,192 bytes
+==1682958== 
+</pre>
+
+<a name="error1"><h2>7,448 (504 direct, 6,944 indirect) bytes in 7 blocks are definitely lost</h2></a>
+<font size=small><a href="#duplication-steps">(Show me how to reproduce this <b>error</b>)</a></font>
+<pre>==1682958== 7,448 (504 direct, 6,944 indirect) bytes in 7 blocks are definitely lost in loss record 53 of 57
+==1682958==    at 0x4C39185: malloc (vg_replace_malloc.c:442)
+==1682958==    by 0x558CAA7: set_value (in /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi.so.40.30.6)
+==1682958==    by 0x558D181: ompi_attr_set_c (in /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi.so.40.30.6)
+==1682958==    by 0x55CCF06: PMPI_Comm_set_attr (in /projects/aue/cee/builds/x86_64/rhel8/9dea1b76/openmpi-4.1.6-gcc-10.3.0/install/linux-rhel8-x86_64/gcc-10.3.0/openmpi-4.1.6-2pvbzft/lib/libmpi.so.40.30.6)
+==1682958==    by 0x4A67A9: stk::impl::MPIKeyManager::get_key(ompi_communicator_t*) (MPICommKey.cpp:67)
+==1682958==    by 0x4A75A8: stk::impl::MPIKeyManager::register_callback(ompi_communicator_t*, unsigned long long, std::function<void (ompi_communicator_t*)>) (MPICommKey.cpp:104)
+==1682958==    by 0x4A2057: stk::MPITagManager::get_tag(ompi_communicator_t*, int) (MPITagManager.cpp:46)
+==1682958==    by 0x430C1E: stk::DataExchangeUnknownPatternNonBlocking::DataExchangeUnknownPatternNonBlocking(ompi_communicator_t*, int) (DataExchangeUnknownPatternNonBlocking.hpp:71)
+==1682958==    by 0x4315F9: DataExchangeUnknownPatternNonBlockingCommBuffer (DataExchangeUnknownPatternNonBlockingBuffer.hpp:104)
+==1682958==    by 0x4315F9: construct<stk::DataExchangeUnknownPatternNonBlockingCommBuffer, ompi_communicator_t*&> (new_allocator.h:150)
+==1682958==    by 0x4315F9: construct<stk::DataExchangeUnknownPatternNonBlockingCommBuffer, ompi_communicator_t*&> (alloc_traits.h:512)
+==1682958==    by 0x4315F9: _Sp_counted_ptr_inplace<ompi_communicator_t*&> (shared_ptr_base.h:551)
+==1682958==    by 0x4315F9: __shared_count<stk::DataExchangeUnknownPatternNonBlockingCommBuffer, std::allocator<stk::DataExchangeUnknownPatternNonBlockingCommBuffer>, ompi_communicator_t*&> (shared_ptr_base.h:682)
+==1682958==    by 0x4315F9: __shared_ptr<std::allocator<stk::DataExchangeUnknownPatternNonBlockingCommBuffer>, ompi_communicator_t*&> (shared_ptr_base.h:1371)
+==1682958==    by 0x4315F9: shared_ptr<std::allocator<stk::DataExchangeUnknownPatternNonBlockingCommBuffer>, ompi_communicator_t*&> (shared_ptr.h:408)
+==1682958==    by 0x4315F9: allocate_shared<stk::DataExchangeUnknownPatternNonBlockingCommBuffer, std::allocator<stk::DataExchangeUnknownPatternNonBlockingCommBuffer>, ompi_communicator_t*&> (shared_ptr.h:860)
+==1682958==    by 0x4315F9: make_shared<stk::DataExchangeUnknownPatternNonBlockingCommBuffer, ompi_communicator_t*&> (shared_ptr.h:876)
+==1682958==    by 0x4315F9: stk::CommSparse::CommSparse(ompi_communicator_t*) (CommSparse.hpp:189)
+==1682958==    by 0x47E8D3: stk::coupling::SyncInfo::exchange(stk::coupling::SplitComms const&, int) const (SyncInfo.cpp:56)
+==1682958==    by 0x47F568: stk::coupling::SyncInfo::exchange(stk::coupling::SplitComms const&) const (SyncInfo.cpp:93)
+==1682958==    by 0x444865: (anonymous namespace)::TestSyncInfo_exchange_multi_way_Test::TestBody() (UnitTestSyncInfo.cpp:353)
+==1682958==    by 0x473BDC: void testing::internal::HandleExceptionsInMethodIfSupported<testing::Test, void>(testing::Test*, void (testing::Test::*)(), char const*) (in /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest)
+==1682958==    by 0x468D6F: testing::Test::Run() [clone .part.0] (in /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest)
+==1682958==    by 0x4691A1: testing::TestInfo::Run() [clone .part.0] (in /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest)
+==1682958==    by 0x469381: testing::TestSuite::Run() [clone .part.0] (in /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest)
+==1682958==    by 0x46A3D7: testing::internal::UnitTestImpl::RunAllTests() (in /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest)
+==1682958==    by 0x46A6DA: testing::UnitTest::Run() (in /ceeGPFS/fgs/jccrean/code/bin/linux-gcc-10.3.0-openmpi-4.1.6/release-symbols/stk_coupling_utest)
+==1682958==    by 0x41DA24: RUN_ALL_TESTS (gtest.h:2473)
+==1682958==    by 0x41DA24: run_all_tests (ngp_test.hpp:139)
+==1682958==    by 0x41DA24: main (UnitTestMain.cpp:82)
+==1682958== 
+</pre>
+
+<pre>==1682958== LEAK SUMMARY:
+==1682958==    definitely lost: 504 bytes in 7 blocks
+==1682958==    indirectly lost: 0 bytes in 0 blocks
+==1682958==      possibly lost: 0 bytes in 0 blocks
+==1682958==    still reachable: 176 bytes in 1 blocks
+==1682958==         suppressed: 824,616 bytes in 10,900 blocks
+==1682958== Reachable blocks (those to which a pointer was found) are not shown.
+==1682958== To see them, rerun with: --leak-check=full --show-leak-kinds=all
+==1682958== 
+</pre>
+
+<pre>==1682958== ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 27 from 27)
+</pre>
+
+<pre>--1682958-- 
+--1682958-- used_suppression:      3 OMPI_Leaks-init-realloc /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:47 suppressed: 431,132 bytes in 7 blocks
+--1682958-- used_suppression:     36 OMPI_Leaks-init-malloc2 /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:31 suppressed: 372,582 bytes in 10,816 blocks
+--1682958-- used_suppression:      9 OMPI_Leaks-init-calloc /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:38 suppressed: 11,976 bytes in 35 blocks
+--1682958-- used_suppression:      1 MPI-HashTable /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:372 suppressed: 6,944 bytes in 7 blocks
+--1682958-- used_suppression:      2 OMPI_Leaks-Keyval_create-malloc_gcc_8 /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:299 suppressed: 1,984 bytes in 31 blocks
+--1682958-- used_suppression:      4 <MPI-4 Errors 3> /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:783 suppressed: 77 bytes in 4 blocks
+--1682958-- used_suppression:      1 <nkc_09_09_2024> /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:536
+--1682958-- used_suppression:      1 <MpiInitGCC10.3SetSockOpt> /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:948
+--1682958-- used_suppression:      1 <MpiInitGCC10.3GetSockOptB> /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:939
+--1682958-- used_suppression:      1 <MpiInitGCC10.3GetSockOptA> /sierra/temp/jccrean/tmpgyse97qa/valmsg.suppress:930
+==1682958== 
+</pre>
+
+<pre>==1682958== ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 27 from 27)
+</pre>
+
+</html>

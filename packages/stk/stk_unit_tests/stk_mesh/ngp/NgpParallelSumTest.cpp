@@ -1141,4 +1141,68 @@ NGP_TEST_F(NgpParallelOpIncludingGhosts, sum_hex_3procs_two_mesh_mods_device)
   }
 }
 
+void test_assemble_field_rank_offsets(const stk::mesh::BulkData& mesh,
+                                      const std::vector<const stk::mesh::FieldBase*>& fields)
+{
+  stk::mesh::Entity node1 = mesh.get_entity(stk::topology::NODE_RANK, 1);
+  stk::mesh::Entity elem1 = mesh.get_entity(stk::topology::ELEM_RANK, 1);
+
+  const std::vector<stk::mesh::EntityRank> fieldRanks = stk::mesh::impl::assemble_rank_list(fields);
+  const std::vector<unsigned> rankFieldOffsets = stk::mesh::impl::group_fields_by_rank(fields, fieldRanks);
+  const auto fieldData = stk::mesh::impl::assemble_field_data_on_device<double,stk::ngp::HostSpace,stk::mesh::Layout::Right>(fields, fieldRanks);
+
+  EXPECT_EQ(2u, fieldRanks.size());
+  EXPECT_EQ(stk::topology::NODE_RANK, fieldRanks[0]);
+  EXPECT_EQ(stk::topology::ELEM_RANK, fieldRanks[1]);
+  EXPECT_EQ(3u, rankFieldOffsets.size());
+  EXPECT_EQ(0u, rankFieldOffsets[0]);
+  EXPECT_EQ(1u, rankFieldOffsets[1]);
+  //there's no easy way to test that the FieldData objects were placed in
+  //the 'fieldData' view in the right order, other than checking that the
+  //value of the field data for a particular entity matches a known value:
+  auto nodeValue = fieldData(0).entity_values(node1);
+  EXPECT_DOUBLE_EQ(42, nodeValue(0_comp));
+  auto elemValue = fieldData(1).entity_values(elem1);
+  EXPECT_DOUBLE_EQ(99, elemValue(0_comp));
+}
+
+NGP_TEST_F(NgpParallelOpIncludingGhosts, assembleFieldRankOffsets)
+{
+  stk::ParallelMachine comm = stk::parallel_machine_world();
+  const int numProcs = stk::parallel_machine_size(comm);
+  if(numProcs != 1) { GTEST_SKIP(); }
+
+  setup_mesh();
+  stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
+  create_node_and_elem_fields<double>(meta, "myTest");
+
+  stk::mesh::Entity node1 = bulkPtr->get_entity(stk::topology::NODE_RANK, 1);
+  stk::mesh::Entity elem1 = bulkPtr->get_entity(stk::topology::ELEM_RANK, 1);
+
+  {
+    auto nodeFieldData = nodeField->template data<double, stk::mesh::ReadWrite>();
+    auto value = nodeFieldData.entity_values(node1);
+    const double initValue = 42;
+    value(0_comp) = initValue;
+  }
+  {
+    auto elemFieldData = elemField->template data<double, stk::mesh::ReadWrite>();
+    auto value = elemFieldData.entity_values(elem1);
+    const double initValue = 99;
+    value(0_comp) = initValue;
+  }
+
+  {
+    //fields in order node-rank then elem-rank:
+    std::vector<const stk::mesh::FieldBase*> fields = {nodeField, elemField};
+    test_assemble_field_rank_offsets(*bulkPtr, fields);
+  }
+
+  {
+    //fields in order elem-rank then node-rank:
+    std::vector<const stk::mesh::FieldBase*> fields = {elemField, nodeField};
+    test_assemble_field_rank_offsets(*bulkPtr, fields);
+  }
+}
+
 }

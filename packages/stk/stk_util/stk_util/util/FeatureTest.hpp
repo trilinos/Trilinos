@@ -44,16 +44,6 @@
 ///
 /// Bugs and workarounds:
 ///
-/// @def SIERRA_TYPE_INFO_BEFORE_EQUALITY_BUG
-/// SIERRA_TYPE_INFO_BEFORE_EQUALITY_BUG -- The before() function of the std::type_info
-///   class has been implemented improperly, resulting in type_info which are equal to
-///   always return true.  Equal std::type_info objects should alway return false.  Define
-///   this is type_info::before() is not implemented properly.
-///
-/// @def SIERRA_TEMPLATE_FUNCTION_SELECT_BUG
-/// SIERRA_TEMPLATE_FUNCTION_SELECT_BUG -- The function selection algorithm is broken and
-///   special workaround code must included to allow the compile to complete.
-///
 /// @def SIERRA_USE_PLATFORM_DEMANGLER
 /// SIERRA_USE_PLATFORM_DEMANGLER -- The platform type_info::name() function returns a
 ///   mangled name which needs to be demangled.
@@ -110,20 +100,7 @@
 
 // Compiler/runtime specific features and bugs
 
-#if defined(__xlC__)				// IBM compiler
-#  if __xlC__ < 0x0800
-#    define SIERRA_TEMPLATE_FUNCTION_SELECT_BUG
-#  endif
-#  define SIERRA_TYPE_INFO_BEFORE_EQUALITY_BUG
-
-#elif defined(__INTEL_COMPILER)			// Intel compiler
-#  if __INTEL_COMPILER/100 == 10 && defined(__ia64) // Version 10 Intel compiler on ia64
-#    define SIERRA_IA64_OPTIMIZER_FIX
-#  elif __INTEL_COMPILER/100 == 11 && defined(__ia64) // Version 11 Intel compiler on ia64
-#    define SIERRA_IA64_OPTIMIZER_FIX
-#  elif __INTEL_COMPILER/100 >= 12 && defined(__ia64) // Version 12+ Intel compiler on ia64
-#    define SIERRA_IA64_OPTIMIZER_WARN
-#  endif
+#if defined(__INTEL_COMPILER)			// Intel compiler
 
 #elif defined(__PGI)				// PGI compiler
 

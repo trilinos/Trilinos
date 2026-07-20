@@ -78,6 +78,11 @@ TransferMainStatus TransferMainHandler::exit_code() const
   return m_exitCode;
 }
 
+void TransferMainHandler::set_master_element_provider(std::shared_ptr<stk::search::MasterElementProviderInterface> masterElemProvider)
+{
+  m_masterElementProvider = masterElemProvider;
+}
+
 void TransferMainHandler::parse()
 {
   m_parser.parse_command_line_options(m_argc, m_argv);
@@ -110,13 +115,40 @@ void TransferMainHandler::transfer()
   TransferMainIO io(m_comm, m_settings.get_sendMesh_filename(), m_settings.get_recvMesh_filename());
   io.load_meshes();
 
-  TransferMainBroker broker(m_comm, io.get_sendBulkData(), io.get_recvBulkData(), m_settings);
-  broker.check_fields();
+  TransferMainBroker broker(m_comm, io.get_sendBulkData(), io.get_recvBulkData(), m_settings, m_masterElementProvider);
+  
   broker.check_parts();
-  broker.transfer();
+  broker.check_and_create_fields();
+ 
+  broker.transfer_initialize();
 
-  io.write_transfer_output(broker.get_recv_fields_for_transfer());
+  const std::vector<double> sendTimeSteps = io.get_send_time_steps();
+  const std::vector<double> recvTimeSteps = io.get_recv_time_steps();
+  STK_ThrowRequireMsg(recvTimeSteps.empty() || sendTimeSteps.size() == recvTimeSteps.size(),
+      "The recv mesh is required to either have no time steps or have the same number of time steps as the send mesh.");
 
+  const bool recvMeshHasTimeSteps = sendTimeSteps.size() == recvTimeSteps.size();
+
+  io.initialize_transfer_output(m_settings.get_outputMesh_filename());
+
+  const std::vector<double> xferTimeSteps = get_times(m_settings.get_time_steps_spec(), sendTimeSteps);
+
+  for(unsigned i=0; i<xferTimeSteps.size(); ++i) {
+    int step = i + 1;
+    double time = xferTimeSteps[i];
+
+    io.load_send_fields_at_time(time);
+
+    if (recvMeshHasTimeSteps) {
+      io.load_recv_fields_at_time(time);
+    }
+
+    broker.transfer_apply();
+
+    io.write_transfer_output(step, time);
+  }
+
+  stk::transfer_util::log_message(m_comm, "Finished writing output mesh.");
 }
 
 void TransferMainHandler::print_parse_error(const char* what) const
@@ -139,10 +171,21 @@ void TransferMainHandler::print_running_message() const
   stk::transfer_util::log_message(m_comm, "Transfer Information:");
   stk::transfer_util::log_message(m_comm, "Send-mesh: "+ m_settings.get_sendMesh_filename());
   stk::transfer_util::log_message(m_comm, "Recv-mesh: "+ m_settings.get_recvMesh_filename());
+  stk::transfer_util::log_message(m_comm, "Output-mesh: "+ m_settings.get_outputMesh_filename());
+  stk::transfer_util::log_message(m_comm, "Transfer type: "+ m_settings.get_transfer_type());
+  stk::transfer_util::log_message(m_comm, "Receive type: "+ m_settings.get_recv_type_string());
   stk::transfer_util::log_message(m_comm, "Fields being transferred: "
                                           + (m_settings.get_transfer_fields().size() == 0 ? "all fields" : 
                                              m_settings.get_field_list_string()));
+  stk::transfer_util::log_message(m_comm, "Send parts for transfer: "
+                                          + (m_settings.get_transfer_send_parts().size() == 0 ? "all send parts" : 
+                                             m_settings.get_send_part_list_string()));
+  stk::transfer_util::log_message(m_comm, "Recv parts for transfer: "
+                                          + (m_settings.get_transfer_recv_parts().size() == 0 ? "all recv parts" : 
+                                             m_settings.get_recv_part_list_string()));
+  stk::transfer_util::log_message(m_comm, "Time-steps: "+ m_settings.get_time_steps_spec());
   stk::transfer_util::log_message(m_comm, "Extrapolate option: "+ m_settings.get_extrapolate_option_string());
+  stk::transfer_util::log_message(m_comm, "MasterElements implementation: "+ m_settings.get_master_elements_name());
 }
 
 } }

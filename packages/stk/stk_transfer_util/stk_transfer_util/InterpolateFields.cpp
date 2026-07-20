@@ -75,9 +75,21 @@ void InterpolateFieldsInterface::set_fields(const FieldSpecVector& fieldSpecs)
   m_fieldsAreSet = true;
 }
 
-void InterpolateFieldsInterface::apply_bounds(const unsigned index, const unsigned length, double* fieldData) const
+void InterpolateFieldsInterface::apply_bounds(const unsigned index, const unsigned length, const int stride, double* fieldData) const
 {
-  stk::transfer::apply_bounds(length, fieldData, m_lowerBound[index], m_upperBound[index]);
+  stk::transfer::apply_bounds(length, stride, fieldData, m_lowerBound[index], m_upperBound[index]);
+}
+
+void InterpolateFieldsInterface::acquire_field_data()
+{
+  STK_ThrowAssert(m_fieldsAreSet);
+
+  fill_cached_const_field_data(m_fieldVec, m_cachedFieldData);
+}
+
+void InterpolateFieldsInterface::release_field_data()
+{
+  clear_cached_field_data(m_cachedFieldData);
 }
 
 MasterElementFieldInterpolator::MasterElementFieldInterpolator(
@@ -103,14 +115,16 @@ void MasterElementFieldInterpolator::interpolate_fields(const stk::search::spmd:
   for(unsigned k = 0; k < data.nFields; ++k) {
     unsigned n = data.fieldKey[k];
 
+    const stk::mesh::FieldBase* field = m_fieldVec[n].field;
+
     FieldTransform preTransform = m_preTransform[n];
     FieldTransform postTransform = m_postTransform[n];
 
-    double* toField = data.fieldPtr[n];
+    double* recvField = data.fieldPtr[n];
     unsigned sizeOfRecvField = data.fieldSize[n];
-    unsigned sizeOfSendField = stk::transfer::get_size_of_field(m_fieldVec[n].field);
+    unsigned sizeOfSendField = stk::transfer::get_size_of_field(field);
 
-    if(nullptr == toField) {
+    if(nullptr == recvField) {
       continue;
     }
 
@@ -119,11 +133,13 @@ void MasterElementFieldInterpolator::interpolate_fields(const stk::search::spmd:
     unsigned sendIndex = m_fieldVec[n].index;
     unsigned recvIndex = data.fieldDataIndex[n];
 
+    int recvFieldStride = data.fieldComponentStride[n];
+
     m_fieldDataBuffer.resize(num_nodes * sizeOfSendField);
     m_resultBuffer.resize(sizeOfSendField);
 
     auto meTopo = stk::search::SearchTopology(topo, key, &bucket);
-    auto meField = stk::search::SearchField(m_fieldVec[n].field, preTransform, defaultValue);
+    auto meField = stk::search::SearchField(m_cachedFieldData[n], preTransform, defaultValue);
 
     m_masterElemProvider->nodal_field_data(key, meField, numFieldComponents, numNodes, m_fieldDataBuffer);
     m_masterElemProvider->evaluate_field(meTopo, parametricCoords, sizeOfSendField, m_fieldDataBuffer, m_resultBuffer);
@@ -133,25 +149,28 @@ void MasterElementFieldInterpolator::interpolate_fields(const stk::search::spmd:
     if(r || s) {
       STK_ThrowAssertMsg(r <= sizeOfRecvField, "Error: Index too large for receiving field: r = "
                                                 << r << " sizeOfRecvField = " << sizeOfRecvField
-                                                << " field name = " << m_fieldVec[n].field->name());
+                                                << " field name = " << field->name());
       STK_ThrowAssertMsg(s <= sizeOfSendField, "Error: Index too large for sending field: s = "
                                                 << s << " sizeOfRecvField = " << sizeOfSendField
-                                                << " field name = " << m_fieldVec[n].field->name());
-      std::fill(toField, toField + sizeOfRecvField, defaultValue);
+                                                << " field name = " << field->name());
+
+      for(unsigned i(0); i < sizeOfRecvField; ++i) {
+        recvField[i*recvFieldStride] = defaultValue;
+      }
+
       const unsigned i = r ? r - 1 : 0;
       const unsigned j = s ? s - 1 : 0;
-      toField[i] = postTransform(m_resultBuffer[j]);
-      apply_bounds(n, 1, &toField[i]);
+
+      const unsigned offset = i*recvFieldStride;
+      recvField[offset] = postTransform(m_resultBuffer[j]);
+      apply_bounds(n, 1, 1, &recvField[offset]);
     }
     else {
-      STK_ThrowAssertMsg(sizeOfRecvField <= sizeOfSendField, "Error: recv field too long on entity "
-                                                              << key << ". Length(send,recv) = (" << sizeOfSendField
-                                                              << "," << sizeOfRecvField
-                                                              << ") send field = " << m_fieldVec[n].field->name());
-      for(unsigned i(0); i < sizeOfRecvField; ++i) {
-        toField[i] = postTransform(m_resultBuffer[i]);
+      for(unsigned i(0); i < std::min(sizeOfRecvField, sizeOfSendField); ++i) {
+        recvField[i*recvFieldStride] = postTransform(m_resultBuffer[i]);
       }
-      apply_bounds(n, sizeOfRecvField, toField);
+
+      apply_bounds(n, sizeOfRecvField, recvFieldStride, recvField);
     }
   }
 }
@@ -162,7 +181,7 @@ PatchRecoveryFieldInterpolator::PatchRecoveryFieldInterpolator(stk::mesh::BulkDa
                                                                const stk::mesh::Selector* meshSelector,
                                                                const stk::transfer::PatchRecoveryEvaluationType type)
   : InterpolateFieldsInterface(bulk)
-  , m_coordinates(coordinates)
+  , m_coordinateField(coordinates)
   , m_meshPart(meshPart)
   , m_meshSelector(nullptr != meshSelector ? new stk::mesh::Selector(*meshSelector) : nullptr)
   , m_activeSelector(stk::mesh::Selector().complement())
@@ -178,13 +197,25 @@ PatchRecoveryFieldInterpolator::PatchRecoveryFieldInterpolator(stk::mesh::BulkDa
                                                                const stk::mesh::Selector* meshSelector,
                                                                const stk::transfer::PatchRecoveryEvaluationType type)
   : InterpolateFieldsInterface(bulk)
-  , m_coordinates(coordinates)
+  , m_coordinateField(coordinates)
   , m_meshPart(meshPart)
   , m_meshSelector(nullptr != meshSelector ? new stk::mesh::Selector(*meshSelector) : nullptr)
   , m_activeSelector(activeSelector)
   , m_patchFilter(m_meshPart, m_meshSelector)
 {
   set_interpolator(type);
+}
+
+void PatchRecoveryFieldInterpolator::acquire_field_data()
+{
+  InterpolateFieldsInterface::acquire_field_data();
+  stk::search::fill_cached_const_field_data(m_coordinateField, m_cachedCoordinateFieldData);
+}
+
+void PatchRecoveryFieldInterpolator::release_field_data()
+{
+  InterpolateFieldsInterface::release_field_data();
+  stk::search::clear_cached_field_data(m_cachedCoordinateFieldData);
 }
 
 void PatchRecoveryFieldInterpolator::set_interpolator(const stk::transfer::PatchRecoveryEvaluationType type)
@@ -241,8 +272,10 @@ void PatchRecoveryFieldInterpolator::interpolate_fields(const stk::search::spmd:
                                                         const std::vector<double>& /*parametricCoords*/,
                                                         InterpolationData& data) const
 {
-  for(unsigned i = 0; i < data.nFields; ++i) {
-    unsigned fieldIndex = data.fieldKey[i];
+  for(unsigned k = 0; k < data.nFields; ++k) {
+    unsigned fieldIndex = data.fieldKey[k];
+
+    const stk::mesh::FieldBase* field = m_fieldVec[fieldIndex].field;
 
     FieldTransform preTransform = m_preTransform[fieldIndex];
     FieldTransform postTransform = m_postTransform[fieldIndex];
@@ -250,17 +283,29 @@ void PatchRecoveryFieldInterpolator::interpolate_fields(const stk::search::spmd:
     const unsigned sendDataIndex = m_fieldVec[fieldIndex].index;
     const unsigned recvDataIndex = data.fieldDataIndex[fieldIndex];
 
-    stk::transfer::EntityInterpolationData interpData(m_bulk, m_fieldVec[fieldIndex].field,
-                                                      sendDataIndex, recvDataIndex,
-                                                      m_coordinates, key, m_meshPart, m_meshSelector,
-                                                      preTransform, postTransform, m_defaultFieldValue[fieldIndex]);
+    const int recvFieldStride = data.fieldComponentStride[fieldIndex];
 
-    bool solvable = m_leastSquaresInterpolator(interpData, evalPoint, data.fieldSize[fieldIndex], data.fieldPtr[fieldIndex]);
+    double* recvField = data.fieldPtr[fieldIndex];
+    const unsigned sizeOfRecvField = data.fieldSize[fieldIndex];
+    const unsigned sizeOfSendField = stk::mesh::field_scalars_per_entity(*field, key);
+
+    STK_ThrowAssertMsg(sizeOfSendField != 0, "Error: send field " << field->name() << " not defined on entity " << key);
+
+    const double defaultValue = m_defaultFieldValue[fieldIndex];
+
+    m_resultBuffer.resize(sizeOfSendField);
+
+    stk::transfer::EntityInterpolationData interpData(m_bulk, m_cachedFieldData[fieldIndex],
+                                                      sendDataIndex, recvDataIndex,
+                                                      m_cachedCoordinateFieldData, key, m_meshPart, m_meshSelector,
+                                                      preTransform, postTransform, defaultValue);
+
+    bool solvable = m_leastSquaresInterpolator(interpData, evalPoint, sizeOfRecvField, m_resultBuffer.data());
 
     if(false == solvable) {
       std::stringstream oss;
 
-      oss << "Could not construct least squares patch for field " << m_fieldVec[i].field->name()
+      oss << "Could not construct least squares patch for field " << field->name()
           << " at coordinate: " << evalPoint[0] << "," << evalPoint[1]
           << ((evalPoint.size() > 2) ? "," : "");
 
@@ -269,14 +314,29 @@ void PatchRecoveryFieldInterpolator::interpolate_fields(const stk::search::spmd:
       STK_ThrowRequireMsg(solvable, oss.str());
     }
     else {
-      const int r = recvDataIndex;
+      for(unsigned i(0); i < sizeOfRecvField; ++i) {
+        recvField[i*recvFieldStride] = m_resultBuffer[i];
+      }
+
+      const unsigned r = recvDataIndex;
       if(r) {
-        STK_ThrowAssertMsg(r <= data.fieldSize[fieldIndex], "Error: Index too large for receiving field.");
-        const int ri = r - 1;
-        apply_bounds(fieldIndex, 1, &data.fieldPtr[fieldIndex][ri]);
+        STK_ThrowAssertMsg(r <= sizeOfRecvField, "Error: Index too large for receiving field: r = "
+                                                  << r << " sizeOfRecvField = " << sizeOfRecvField
+                                                  << " field name = " << field->name());
+
+
+        const unsigned i = r ? r - 1 : 0;
+        const unsigned offset = i*recvFieldStride;
+
+        apply_bounds(fieldIndex, 1, 1, &recvField[offset]);
       }
       else {
-        apply_bounds(fieldIndex, data.fieldSize[fieldIndex], data.fieldPtr[fieldIndex]);
+        STK_ThrowAssertMsg(sizeOfRecvField <= sizeOfSendField, "Error: recv field too long on entity "
+                                                                << key << ". Length(send,recv) = (" << sizeOfSendField
+                                                                << "," << sizeOfRecvField
+                                                                << ") send field = " << field->name());
+
+        apply_bounds(fieldIndex, sizeOfRecvField, recvFieldStride, recvField);
       }
     }
   }
@@ -292,9 +352,14 @@ void CopyFieldInterpolator::interpolate_fields(const stk::search::spmd::EntityKe
                                                const std::vector<double>& /*parametricCoords*/,
                                                InterpolationData& data) const
 {
-  for(unsigned i = 0; i < data.nFields; ++i) {
+  for(unsigned k = 0; k < data.nFields; ++k) {
+    unsigned fieldIndex = data.fieldKey[k];
 
-    unsigned fieldIndex = data.fieldKey[i];
+    stk::search::CachedEntityFieldData sendFieldData;
+    stk::mesh::Entity sendEntity = key;
+    m_cachedFieldData[fieldIndex]->populate_entity_data(sendEntity, sendFieldData);
+
+    const stk::mesh::FieldBase* field = m_fieldVec[fieldIndex].field;
 
     FieldTransform preTransform = m_preTransform[fieldIndex];
     FieldTransform postTransform = m_postTransform[fieldIndex];
@@ -302,10 +367,13 @@ void CopyFieldInterpolator::interpolate_fields(const stk::search::spmd::EntityKe
     unsigned sendIndex = m_fieldVec[fieldIndex].index;
     unsigned recvIndex = data.fieldDataIndex[fieldIndex];
 
-    const unsigned sendLength = stk::mesh::field_scalars_per_entity(*m_fieldVec[fieldIndex].field, key);
-    [[maybe_unused]] const unsigned recvLength = data.fieldSize[fieldIndex];
+    const int sendFieldComponentStride = sendFieldData.componentStride;
+    const int recvFieldComponentStride = data.fieldComponentStride[fieldIndex];
 
-    const double* sendField = static_cast<const double *>(stk::mesh::field_data(*m_fieldVec[fieldIndex].field, key));
+    const unsigned sendLength = sendFieldData.numComponents * sendFieldData.numCopies;
+    [[maybe_unused]] const unsigned recvLength = data.fieldComponents[fieldIndex] * data.fieldCopies[fieldIndex];
+
+    const double* sendField = sendFieldData.constPointer;;
     double* recvField = data.fieldPtr[fieldIndex];
 
     if (nullptr == recvField){
@@ -316,24 +384,31 @@ void CopyFieldInterpolator::interpolate_fields(const stk::search::spmd::EntityKe
 
     if(sendLength) {
       STK_ThrowAssertMsg(sendField, "The field does not exist, nullptr pointer found.\n"
-                                      << "Field name: " << m_fieldVec[fieldIndex].field->name() << "\n"
+                                      << "Field name: " << field->name() << "\n"
                                       << "Entity: " << key);
 
       STK_ThrowAssertMsg(recvField, "Recv field does not exist, nullptr pointer found.\n"
-                                      << "Send field Name: " << m_fieldVec[fieldIndex].field->name() << "\n"
+                                      << "Send field Name: " << field->name() << "\n"
                                       << "Send entity: " << key);
 
-      STK_ThrowAssertMsg(m_bulk.bucket(key).field_data_is_allocated(*m_fieldVec[fieldIndex].field),
+      STK_ThrowAssertMsg(m_bulk.bucket(key).field_data_is_allocated(*field),
                           "The field does not exist on send entity. Field name: "
-                          << m_fieldVec[fieldIndex].field->name() << "\n"
+                          << field->name() << "\n"
                           << "Entity: " << key);
 
-      if(stk::topology::NODE_RANK == m_fieldVec[fieldIndex].field->entity_rank() &&
+      STK_ThrowAssertMsg(sendFieldData.numComponents == data.fieldComponents[fieldIndex],
+                         "The send and recv fields do not have matching component counts.\n"
+                         << "Field name: " << field->name() << "\n"
+                         << "Entity: " << key << "\n"
+                         << "Send component count: " << sendFieldData.numComponents << "\n"
+                         << "Recv component count: " << data.fieldComponents[fieldIndex]);
+
+      if(stk::topology::NODE_RANK == field->entity_rank() &&
          stk::topology::NODE_RANK != m_bulk.entity_rank(key)) {
         std::ostringstream oss;
         oss << "The INTERPOLATION FUNCTION COPY can not be used for NODE transfers.\n"
             << "Attempt to use the COPY interpolation to interpolate field name: "
-            << m_fieldVec[fieldIndex].field->name() << "\n"
+            << field->name() << "\n"
             << "(which is of type node) "
             << "\n"
             << "Remove INTERPOLATION FUNCTION COPY and use standard interpolation instead.\n\n";
@@ -341,29 +416,46 @@ void CopyFieldInterpolator::interpolate_fields(const stk::search::spmd::EntityKe
         throw std::runtime_error(oss.str());
       }
 
+      int numCopies = std::min(sendFieldData.numCopies, data.fieldCopies[fieldIndex]);
+
       const unsigned r = recvIndex;
       const unsigned s = sendIndex;
       if(r || s) {
         STK_ThrowAssertMsg(r <= recvLength, "Error: Index too large for receiving field.");
         STK_ThrowAssertMsg(s <= sendLength, "Error: Index too large for sending field.");
-        std::fill(recvField, recvField + recvLength, defaultValue);
+
+        for(unsigned i(0); i < recvLength; ++i) {
+          recvField[i*recvFieldComponentStride] = defaultValue;
+        }
+
         const unsigned ri = r ? r - 1 : 0;
         const unsigned si = s ? s - 1 : 0;
-        recvField[ri] = postTransform( preTransform(sendField[si]) );
-        apply_bounds(fieldIndex, 1, &recvField[ri]);
+
+        for (int copy = 0; copy < numCopies; ++copy) {
+          int recvPtrIndex = copy*data.fieldCopyStride[fieldIndex] + ri*recvFieldComponentStride;
+          int sendPtrIndex = copy*sendFieldData.copyStride         + si*sendFieldComponentStride;
+
+          recvField[recvPtrIndex] = postTransform( preTransform(sendField[sendPtrIndex]) );
+        }
+
+        apply_bounds(fieldIndex, 1, recvFieldComponentStride, &recvField[ri*recvFieldComponentStride]);
       }
       else {
         STK_ThrowAssertMsg(sendLength <= recvLength, "Error: Send field too long on entity "
                                                       << key << ". Length(send,recv) = (" << sendLength << ","
                                                       << recvLength
-                                                      << ") send field = " << m_fieldVec[fieldIndex].field->name());
-        std::copy(sendField, sendField + sendLength, recvField);
+                                                      << ") send field = " << field->name());
 
-        for(unsigned j(0); j < sendLength; ++j) {
-          recvField[j] = postTransform( preTransform(recvField[j]) );
+        for (int copy = 0; copy < numCopies; ++copy) {
+          for (int component = 0; component < sendFieldData.numComponents; ++component) {
+            int recvPtrIndex = copy*data.fieldCopyStride[fieldIndex] + component*recvFieldComponentStride;
+            int sendPtrIndex = copy*sendFieldData.copyStride         + component*sendFieldComponentStride;
+
+            recvField[recvPtrIndex] = postTransform( preTransform(sendField[sendPtrIndex]) );
+          }
         }
 
-        apply_bounds(fieldIndex, sendLength, recvField);
+        apply_bounds(fieldIndex, sendLength, recvFieldComponentStride, recvField);
       }
     }
   }
@@ -379,8 +471,14 @@ void SumFieldInterpolator::interpolate_fields(const stk::search::spmd::EntityKey
                                               const std::vector<double>& /*parametricCoords*/,
                                               InterpolationData& data) const
 {
-  for(unsigned i = 0; i < data.nFields; ++i) {
-    unsigned fieldIndex = data.fieldKey[i];
+  for(unsigned k = 0; k < data.nFields; ++k) {
+    unsigned fieldIndex = data.fieldKey[k];
+
+    stk::search::CachedEntityFieldData sendFieldData;
+    stk::mesh::Entity sendEntity = key;
+    m_cachedFieldData[fieldIndex]->populate_entity_data(sendEntity, sendFieldData);
+
+    const stk::mesh::FieldBase* field = m_fieldVec[fieldIndex].field;
 
     FieldTransform preTransform = m_preTransform[fieldIndex];
     FieldTransform postTransform = m_postTransform[fieldIndex];
@@ -388,60 +486,95 @@ void SumFieldInterpolator::interpolate_fields(const stk::search::spmd::EntityKey
     unsigned sendIndex = m_fieldVec[fieldIndex].index;
     unsigned recvIndex = data.fieldDataIndex[fieldIndex];
 
-    const unsigned sendLength = stk::mesh::field_scalars_per_entity(*m_fieldVec[fieldIndex].field, key);
-    const unsigned recvLength = data.fieldSize[fieldIndex];
+    const int sendFieldComponentStride = sendFieldData.componentStride;
+    const int recvFieldComponentStride = data.fieldComponentStride[fieldIndex];
 
-    const double* sendField = static_cast<const double *>(stk::mesh::field_data(*m_fieldVec[fieldIndex].field, key));
+    const unsigned sendLength = sendFieldData.numComponents * sendFieldData.numCopies;
+    [[maybe_unused]] const unsigned recvLength = data.fieldComponents[fieldIndex] * data.fieldCopies[fieldIndex];
+
+    const double* sendField = sendFieldData.constPointer;;
     double* recvField = data.fieldPtr[fieldIndex];
+
+    if (nullptr == recvField){
+        continue;
+    }
 
     double defaultValue = m_defaultFieldValue[fieldIndex];
 
     if(sendLength) {
       STK_ThrowAssertMsg(sendField, "The field does not exist, nullptr pointer found.\n"
-                                      << "Field name: " << m_fieldVec[fieldIndex].field->name() << "\n"
+                                      << "Field name: " << field->name() << "\n"
                                       << "Entity: " << key);
 
       STK_ThrowAssertMsg(recvField, "Recv field does not exist, nullptr pointer found.\n"
-                                      << "Send field name: " << m_fieldVec[fieldIndex].field->name() << "\n"
+                                      << "Send field Name: " << field->name() << "\n"
                                       << "Send entity: " << key);
 
-      STK_ThrowAssertMsg(m_bulk.bucket(key).field_data_is_allocated(*m_fieldVec[fieldIndex].field),
+      STK_ThrowAssertMsg(m_bulk.bucket(key).field_data_is_allocated(*field),
                           "The field does not exist on send entity. Field name: "
-                          << m_fieldVec[fieldIndex].field->name() << "\n"
+                          << field->name() << "\n"
                           << "Entity: " << key);
 
-      if(stk::topology::NODE_RANK == m_fieldVec[fieldIndex].field->entity_rank() &&
+      STK_ThrowAssertMsg(sendFieldData.numComponents == data.fieldComponents[fieldIndex],
+                         "The send and recv fields do not have matching component counts.\n"
+                         << "Field name: " << field->name() << "\n"
+                         << "Entity: " << key << "\n"
+                         << "Send component count: " << sendFieldData.numComponents << "\n"
+                         << "Recv component count: " << data.fieldComponents[fieldIndex]);
+
+      if(stk::topology::NODE_RANK == field->entity_rank() &&
          stk::topology::NODE_RANK != m_bulk.entity_rank(key)) {
         std::ostringstream oss;
-        oss << "The INTERPOLATION FUNCTION COPY can not be used for NODE transfers.\n"
-            << "Attempt to use the COPY interpolation to interpolate field Name:"
-            << m_fieldVec[fieldIndex].field->name() << "\n"
+        oss << "The INTERPOLATION FUNCTION SUM can not be used for NODE transfers.\n"
+            << "Attempt to use the SUM interpolation to interpolate field name: "
+            << field->name() << "\n"
             << "(which is of type node) "
             << "\n"
-            << "Remove INTERPOLATION FUNCTION COPY and use standard interpolation instead.\n\n";
+            << "Remove INTERPOLATION FUNCTION SUM and use standard interpolation instead.\n\n";
+
         throw std::runtime_error(oss.str());
       }
+
+      int numCopies = std::min(sendFieldData.numCopies, data.fieldCopies[fieldIndex]);
 
       const unsigned r = recvIndex;
       const unsigned s = sendIndex;
       if(r || s) {
         STK_ThrowAssertMsg(r <= recvLength, "Error: Index too large for receiving field.");
         STK_ThrowAssertMsg(s <= sendLength, "Error: Index too large for sending field.");
-        std::fill(recvField, recvField + recvLength, defaultValue);
+
+        for(unsigned i(0); i < recvLength; ++i) {
+          recvField[i*recvFieldComponentStride] = defaultValue;
+        }
+
         const unsigned ri = r ? r - 1 : 0;
         const unsigned si = s ? s - 1 : 0;
-        recvField[ri] += postTransform( preTransform(sendField[si]) );
-        apply_bounds(fieldIndex, 1, &recvField[ri]);
+
+        for (int copy = 0; copy < numCopies; ++copy) {
+          int recvPtrIndex = copy*data.fieldCopyStride[fieldIndex] + ri*recvFieldComponentStride;
+          int sendPtrIndex = copy*sendFieldData.copyStride         + si*sendFieldComponentStride;
+
+          recvField[recvPtrIndex] += postTransform( preTransform(sendField[sendPtrIndex]) );
+        }
+
+        apply_bounds(fieldIndex, 1, recvFieldComponentStride, &recvField[ri*recvFieldComponentStride]);
       }
       else {
-        STK_ThrowAssertMsg(recvLength <= sendLength, "Error: Recv field too long on entity "
+        STK_ThrowAssertMsg(sendLength <= recvLength, "Error: Send field too long on entity "
                                                       << key << ". Length(send,recv) = (" << sendLength << ","
                                                       << recvLength
-                                                      << ") send field = " << m_fieldVec[fieldIndex].field->name());
-        for(unsigned idx(0); idx < recvLength; ++idx) {
-          recvField[idx] += postTransform( preTransform(sendField[idx]) );
+                                                      << ") send field = " << field->name());
+
+        for (int copy = 0; copy < numCopies; ++copy) {
+          for (int component = 0; component < sendFieldData.numComponents; ++component) {
+            int recvPtrIndex = copy*data.fieldCopyStride[fieldIndex] + component*recvFieldComponentStride;
+            int sendPtrIndex = copy*sendFieldData.copyStride         + component*sendFieldComponentStride;
+
+            recvField[recvPtrIndex] += postTransform( preTransform(sendField[sendPtrIndex]) );
+          }
         }
-        apply_bounds(fieldIndex, recvLength, recvField);
+
+        apply_bounds(fieldIndex, sendLength, recvFieldComponentStride, recvField);
       }
     }
   }

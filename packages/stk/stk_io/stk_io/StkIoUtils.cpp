@@ -81,6 +81,21 @@ size_t get_entities_for_nodeblock(stk::io::OutputParams &params,
     return entities.size();
 }
 
+int get_max_name_length(const stk::mesh::MetaData& meta)
+{
+  int maxNameLength = 0;
+  for(const auto* part : meta.get_parts()) {
+    if (stk::mesh::is_auto_declared_part(*part)) { continue; }
+    const int nameLen = part->name().size()+1;
+    maxNameLength = std::max(maxNameLength, nameLen);
+  }
+  for(const auto* field : meta.get_fields()) {
+    const int nameLen = field->name().size()+1;
+    maxNameLength = std::max(maxNameLength, nameLen);
+  }
+  return maxNameLength;
+}
+
 size_t get_entities(stk::io::OutputParams &params,
                         const stk::mesh::Part &part,
                         stk::mesh::EntityRank type,

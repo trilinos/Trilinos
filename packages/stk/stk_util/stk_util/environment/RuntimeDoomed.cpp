@@ -79,7 +79,7 @@ report_symmetric_doomed(
   report_message(message, MSG_SYMMETRIC | MSG_DOOMED, message_code);
 }
  
-
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after May 2026
 void
 report_deferred_doomed(
   const char *          message,
@@ -88,7 +88,7 @@ report_deferred_doomed(
 {
   add_deferred_message(MSG_DOOMED, message_code.m_id, message_code.m_throttle.m_cutoff, message_code.m_throttle.m_group, message, aggregate);
 }
-
+#endif
 
 RuntimeDoomedAdHoc::RuntimeDoomedAdHoc(
   const MessageCode & message_code)
@@ -121,7 +121,7 @@ RuntimeDoomedSymmetric::~RuntimeDoomedSymmetric()
   {}
 }
 
-
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after May 2026
 RuntimeDoomedDeferred::RuntimeDoomedDeferred(
   const MessageCode & message_code)
   : m_messageCode(message_code)
@@ -136,6 +136,7 @@ RuntimeDoomedDeferred::~RuntimeDoomedDeferred()
   catch (std::exception &)
   {}
 }
+#endif
 
 } // namespace stk
 

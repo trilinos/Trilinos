@@ -122,6 +122,7 @@ void NodeSendMesh::consistency_check()
 void NodeSendMesh::bounding_boxes(std::vector<BoundingBox>& v_box, bool includeGhosts) const
 {
   STK_ThrowAssert(m_isInitialized);
+  STK_ThrowAssert(m_hasAcquiredFieldData);
 
   Point center;
 
@@ -136,10 +137,13 @@ void NodeSendMesh::bounding_boxes(std::vector<BoundingBox>& v_box, bool includeG
     stk::mesh::Bucket& b = *ib;
 
     for(auto node : b) {
-      const double* coords = static_cast<const double *>(stk::mesh::field_data(*m_coordinateField, node));
+      CachedEntityFieldData data;
+      m_cachedCoordinateFieldData->populate_entity_data(node, data);
+
+      const double* coords = data.constPointer;
 
       for(unsigned j = 0; j < nDim; ++j) {
-        center[j] = coords[j];
+        center[j] = coords[j * data.componentStride];
       }
 
       EntityProc theIdent(make_entity_key_pair(m_bulk,node), m_bulk->parallel_rank());
@@ -157,6 +161,7 @@ void NodeSendMesh::find_parametric_coords(const EntityKey& k, const std::vector<
                                           bool& isWithinParametricTolerance) const
 {
   STK_ThrowAssert(m_isInitialized);
+  STK_ThrowAssert(m_hasAcquiredFieldData);
   m_findParametricCoords->find_parametric_coords(k, toCoords,
                                                  parametricCoords,
                                                  parametricDistance,
@@ -175,10 +180,8 @@ bool NodeSendMesh::modify_search_outside_parametric_tolerance(const EntityKey& /
 double
 NodeSendMesh::get_closest_geometric_distance_squared(const EntityKey& k, const std::vector<double>& toCoords) const
 {
-  unsigned numDimension = m_meta->spatial_dimension();
-  const stk::mesh::Entity node = k;
-  const double* entityCoords = static_cast<const double *>(stk::mesh::field_data(*m_coordinateField, node));
-  return stk::search::distance_sq(numDimension, entityCoords, toCoords.data());
+  STK_ThrowAssert(m_hasAcquiredFieldData);
+  return get_distance_squared_from_centroid(k, toCoords);
 }
 
 void NodeSendMesh::initialize()
@@ -260,11 +263,13 @@ bool NodeSendMesh::is_valid(const EntityKey& k) const {
 
 double NodeSendMesh::get_distance_from_nearest_node(const EntityKey& k, const std::vector<double>& toCoords) const
 {
+  STK_ThrowAssert(m_hasAcquiredFieldData);
   return get_distance_from_centroid(k, toCoords);
 }
 
 double NodeSendMesh::get_distance_from_centroid(const EntityKey& k, const std::vector<double>& toCoords) const
 {
+  STK_ThrowAssert(m_hasAcquiredFieldData);
   double distanceSquared = get_distance_squared_from_centroid(k, toCoords);
   return std::sqrt(distanceSquared);
 }
@@ -272,11 +277,15 @@ double NodeSendMesh::get_distance_from_centroid(const EntityKey& k, const std::v
 double NodeSendMesh::get_distance_squared_from_centroid(const EntityKey& k, const std::vector<double>& toCoords) const
 {
   STK_ThrowAssert(m_isInitialized);
+  STK_ThrowAssert(m_hasAcquiredFieldData);
+
   const stk::mesh::Entity e = k;
   const unsigned nDim = m_meta->spatial_dimension();
 
-  const double* coor = static_cast<const double *>(stk::mesh::field_data(*m_coordinateField, e));
-  return stk::search::distance_sq(nDim, coor, toCoords.data());
+  CachedEntityFieldData data;
+  m_cachedCoordinateFieldData->populate_entity_data(e, data);
+
+  return stk::search::distance_sq(nDim, data.constPointer, data.componentStride, toCoords.data(), 1);
 }
 
 stk::mesh::EntityId NodeSendMesh::id(const EntityKey& k) const
@@ -287,19 +296,27 @@ stk::mesh::EntityId NodeSendMesh::id(const EntityKey& k) const
 
 void NodeSendMesh::centroid(const EntityKey& k, std::vector<double>& centroid) const
 {
-  const stk::mesh::Entity node = k;
-  const double* centroidCoord = static_cast<const double *>(stk::mesh::field_data(*m_coordinateField, node));
-  const unsigned nDim = m_meta->spatial_dimension();
-  centroid.assign(centroidCoord, centroidCoord + nDim);
+  STK_ThrowAssert(m_hasAcquiredFieldData);
+  coordinates(k, centroid);
 }
 
 void NodeSendMesh::coordinates(const EntityKey& k, std::vector<double>& coords) const
 {
   STK_ThrowAssert(m_isInitialized);
+  STK_ThrowAssert(m_hasAcquiredFieldData);
+
   const stk::mesh::Entity node = k;
-  const double* data = static_cast<const double *>(stk::mesh::field_data(*m_coordinateField, node));
   const unsigned nDim = m_meta->spatial_dimension();
-  coords.assign(data, data+nDim);
+
+  CachedEntityFieldData data;
+  m_cachedCoordinateFieldData->populate_entity_data(node, data);
+
+  STK_ThrowAssert(nDim == static_cast<unsigned>(data.numComponents));
+
+  coords.clear();
+  for(unsigned j(0); j < nDim; ++j) {
+    coords.push_back(data.constPointer[j * data.componentStride]);
+  }
 }
 
 void NodeSendMesh::post_mesh_modification_event()
@@ -312,6 +329,26 @@ std::vector<std::string> NodeSendMesh::get_part_membership(const EntityKey& k) c
 {
   const stk::mesh::Entity elem = k;
   return stk::search::get_part_membership(*m_bulk, elem, m_meshParts);
+}
+
+void NodeSendMesh::acquire_field_data()
+{
+  STK_ThrowAssert(m_isInitialized);
+
+  m_findParametricCoords->acquire_field_data();
+
+  fill_cached_const_field_data(m_coordinateField, m_cachedCoordinateFieldData);
+
+  m_hasAcquiredFieldData = true;
+}
+
+void NodeSendMesh::release_field_data()
+{
+  m_findParametricCoords->release_field_data();
+
+  clear_cached_field_data(m_cachedCoordinateFieldData);
+
+  m_hasAcquiredFieldData = false;
 }
 
 } // namespace spmd

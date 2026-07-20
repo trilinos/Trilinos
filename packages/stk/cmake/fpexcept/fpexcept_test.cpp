@@ -3,7 +3,7 @@
 #include <cmath>
 #include <iostream>
 
-int main(int argc, char** argv)
+int main(int, char**)
 {
   bool haveFpExcept = false;
   if (math_errhandling & MATH_ERREXCEPT) {

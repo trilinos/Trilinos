@@ -276,6 +276,9 @@ class GeometricSearch : public SearchBase {
   void set_search_method(const stk::search::SearchMethod searchMethod) { m_searchMethod = searchMethod; }
   stk::search::SearchMethod get_search_method() const { return m_searchMethod; }
 
+  void acquire_field_data() const;
+  void release_field_data() const;
+
  protected:
   double m_expansionFactor{0.5};
   double m_expansionSum{0.0};
@@ -321,14 +324,23 @@ void GeometricSearch<SENDMESH,RECVMESH>::coarse_search()
 {
    m_globalRangeToDomain.clear();
 
+   m_mesha->acquire_field_data();
+   m_meshb->acquire_field_data();
+
    coarse_search_by_range();
    ghost_from_elements();
    update_ghosted_keys();
+
+   m_mesha->release_field_data();
+   m_meshb->release_field_data();
 }
 
 template <typename SENDMESH, typename RECVMESH>
 void GeometricSearch<SENDMESH,RECVMESH>::local_search()
 {
+   m_mesha->acquire_field_data();
+   m_meshb->acquire_field_data();
+
   unsigned numUnpairedRecvEntities = stk::get_global_sum(m_comm, m_unpairedRecvEntities.size());
   if (numUnpairedRecvEntities > 0) {
     const bool includeGhosts = true;
@@ -343,6 +355,9 @@ void GeometricSearch<SENDMESH,RECVMESH>::local_search()
 
   m_filteredSearchResult.clear();
   stk::search::filter_coarse_search(m_name, m_globalRangeToDomain, *m_mesha, *m_meshb, filterOptions, m_filteredSearchResult);
+
+  m_mesha->release_field_data();
+  m_meshb->release_field_data();
 }
 
 template <typename SENDMESH, typename RECVMESH>
@@ -356,6 +371,20 @@ template <typename SENDMESH, typename RECVMESH>
 void GeometricSearch<SENDMESH,RECVMESH>::reinitialize()
 {
 
+}
+
+template <typename SENDMESH, typename RECVMESH>
+void GeometricSearch<SENDMESH,RECVMESH>::acquire_field_data() const
+{
+  m_mesha->acquire_field_data();
+  m_meshb->acquire_field_data();
+}
+
+template <typename SENDMESH, typename RECVMESH>
+void GeometricSearch<SENDMESH,RECVMESH>::release_field_data() const
+{
+  m_mesha->release_field_data();
+  m_meshb->release_field_data();
 }
 
 template <typename SENDMESH, typename RECVMESH>
@@ -502,6 +531,12 @@ void GeometricSearch<SENDMESH,RECVMESH>::coarse_search_for_objects_outside_domai
 {
   stk::search::ObjectOutsideDomainPolicy extrapolatePolicy = m_mesha->get_extrapolate_option();
 
+  bool sendMeshHasAcquiredFieldData = m_mesha ? m_mesha->has_acquired_field_data() : true;
+  bool recvMeshHasAcquiredFieldData = m_meshb ? m_meshb->has_acquired_field_data() : true;
+
+  if(!sendMeshHasAcquiredFieldData) m_mesha->acquire_field_data();
+  if(!recvMeshHasAcquiredFieldData) m_meshb->acquire_field_data();
+
   if(extrapolatePolicy != stk::search::ObjectOutsideDomainPolicy::IGNORE) {
     if(m_fractionalLimitForObjectsOutsideDomain > 0.0) {
       coarse_search_for_objects_outside_domain_by_nearest_node(includeGhosts);
@@ -509,6 +544,9 @@ void GeometricSearch<SENDMESH,RECVMESH>::coarse_search_for_objects_outside_domai
       coarse_search_for_objects_outside_domain_by_default_filter(includeGhosts);
     }
   }
+
+  if(!sendMeshHasAcquiredFieldData) m_mesha->release_field_data();
+  if(!recvMeshHasAcquiredFieldData) m_meshb->release_field_data();
 }
 
 template <typename SENDMESH, typename RECVMESH>
@@ -557,12 +595,18 @@ void GeometricSearch<SENDMESH,RECVMESH>::coarse_search_for_objects_inside_domain
   std::vector<BoundingBoxA> domain_vector;
   std::vector<BoundingBoxB> range_vector;
 
+  bool sendMeshHasAcquiredFieldData = m_mesha ? m_mesha->has_acquired_field_data() : true;
+  bool recvMeshHasAcquiredFieldData = m_meshb ? m_meshb->has_acquired_field_data() : true;
+
+  if(!sendMeshHasAcquiredFieldData) m_mesha->acquire_field_data();
   if(m_mesha) m_mesha->bounding_boxes(domain_vector);
 
   if (stk::is_true_on_all_procs(m_comm, domain_vector.empty())) {
+    if(!sendMeshHasAcquiredFieldData) m_mesha->release_field_data();
     return;
   }
 
+  if(!recvMeshHasAcquiredFieldData) m_meshb->acquire_field_data();
   if(m_meshb) m_meshb->bounding_boxes(range_vector);
 
   if(!local_is_sorted(domain_vector.begin(), domain_vector.end(), impl::BoundingBoxCompare<BoundingBoxA>()))
@@ -649,6 +693,9 @@ void GeometricSearch<SENDMESH,RECVMESH>::coarse_search_for_objects_inside_domain
 
   m_unpairedRecvEntities.swap(range_vector);
   std::sort(m_globalRangeToDomain.begin(), m_globalRangeToDomain.end());
+
+  if(!sendMeshHasAcquiredFieldData) m_mesha->release_field_data();
+  if(!recvMeshHasAcquiredFieldData) m_meshb->release_field_data();
 }
 
 template <typename SENDMESH, typename RECVMESH>

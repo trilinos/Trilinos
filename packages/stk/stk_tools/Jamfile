@@ -47,8 +47,6 @@ if $(RTenv-arg) = "user" {
 project votd
   : requirements
     $(sierra-warnings)
-    <define>STK_BUILT_FOR_SIERRA
-    <define>STK_BUILT_WITH_BJAM
     <define>SIERRA_MIGRATION
     <include>$(stk_tools-root-inc)
   : usage-requirements
@@ -64,7 +62,6 @@ local installed-end-user-files =
   stk_block_extractor
   stk_nc_generator
   stk_io_mesh
-  stk_transfer
   ;
 #
 # This variable should contain the applications and associated files that will
@@ -75,7 +72,6 @@ local installed-developer-files =
   stk_block_extractor
   stk_nc_generator
   stk_io_mesh
-  stk_transfer
   stk_tools_utest
   stk_tools_integration_tester
   stk_tools_pmesh_unit_tester
@@ -196,18 +192,10 @@ exe stk_nc_generator
 exe stk_io_mesh
   :
     $(stk_tools-root)/stk_tools/io_mesh/io_mesh.cpp
-    stk_tools_lib
+    stk_mesh_tools_lib
+    /sierra/stk_expreval//stk_expreval
     /sierra/stk_io//stk_io
     /sierra/stk_util//stk_util_command_line
-  : <tag>@sierra-exec-tag
-  ;
-
-exe stk_transfer
-  :
-    $(stk_tools-root)/stk_tools/transfer/transferMain.cpp
-    /sierra/stk_transfer_util//stk_transfer_util
-    /sierra/stk_io//stk_io
-    /sierra/stk_util//stk_util_parallel
   : <tag>@sierra-exec-tag
   ;
 
@@ -246,6 +234,7 @@ lib stk_mesh_tools_lib
     /sierra/stk_mesh//stk_mesh_base
     /sierra/stk_search//stk_search
     /sierra/stk_io//stk_io
+    /sierra/stk_expreval//stk_expreval
     /sierra/stk_util//stk_util_util
     /sierra/stk_util//stk_util_parallel
     /sierra/stk_util//stk_util_environment

@@ -37,8 +37,10 @@
 
 // #######################  Start Clang Header Tool Managed Headers ########################
 // clang-format off
+#include "stk_mesh/base/FieldData.hpp"
 #include "stk_mesh/base/FieldState.hpp"  // for FieldState, StateNP1, StateNM1
 #include "stk_mesh/base/Types.hpp"       // for EntityRank
+#include "stk_search_util/CachedFieldData.hpp"
 #include "stk_transfer/TransferTypes.hpp"
 #include "stk_util/util/string_case_compare.hpp"
 
@@ -104,6 +106,10 @@ struct IndexedField {
   unsigned fieldSize{0};
 };
 
+void fill_cached_field_data(const std::vector<IndexedField>& fieldVec, std::vector< std::shared_ptr<stk::search::CachedFieldDataBase> > &cachedFieldData);
+
+void fill_cached_const_field_data(const std::vector<IndexedField>& fieldVec, std::vector< std::shared_ptr<stk::search::CachedFieldDataBase> > &cachedFieldData);
+
 stk::mesh::FieldState state_name(const char* name);
 
 std::vector<IndexedField>
@@ -125,6 +131,7 @@ std::vector<double> get_lower_bounds(const std::vector<stk::transfer::FieldSpec>
 
 std::vector<double> get_default_field_values(const std::vector<stk::transfer::FieldSpec>& fieldSpecs);
 
+void apply_bounds(const unsigned length, const int stride, double* fieldData, const double lowerBound, const double upperBound);
 void apply_bounds(const unsigned length, double* fieldData, const double lowerBound, const double upperBound);
 void apply_bounds(std::vector<double>& fieldData, const double lowerBound, const double upperBound);
 

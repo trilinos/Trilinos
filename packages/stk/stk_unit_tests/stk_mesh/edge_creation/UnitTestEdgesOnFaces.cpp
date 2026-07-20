@@ -83,11 +83,12 @@ void test_faces_have_edges(stk::mesh::BulkData& bulk, const std::vector<stk::mes
 {
   for (stk::mesh::Entity face : faces)
   {
+    ASSERT_TRUE(bulk.is_valid(face));
     stk::mesh::Entity const* beginEdges = bulk.begin_edges(face);
     stk::mesh::Entity const* endEdges = bulk.end_edges(face);
     ptrdiff_t numEdges = endEdges - beginEdges;
 
-    EXPECT_EQ(numEdges, numExpectedEdgesPerFace);
+    EXPECT_EQ(numEdges, numExpectedEdgesPerFace)<<"face: "<<bulk.identifier(face)<<(bulk.bucket(face).owned()?"Owned":"-")<<(bulk.bucket(face).shared()?"Shr":"-")<<(bulk.bucket(face).in_aura()?"Au":"-");
     for (int i=0; i < numEdges; ++i)
     {
       for (int j=0; j < numEdges; ++j)
@@ -168,7 +169,7 @@ TEST_F(EdgesOnFacesFixture, Hex4x4MeshWithAuraAndCustomGhosting)
     GTEST_SKIP();
   }
 
-  setup("generated:4x4x4|sideset:x", false);  // TODO: turn aura back on
+  setup("generated:4x4x4|sideset:x", false);
 
   bulk->modification_begin();
   stk::mesh::Ghosting& ghosting = bulk->create_ghosting("my_custom_ghosting");
@@ -189,19 +190,17 @@ TEST_F(EdgesOnFacesFixture, Hex4x4MeshWithAuraAndCustomGhosting)
   bulk->modification_end();
 
   // its unfortunate we have to do this, because stk does have enough information to update
-  // the downward adjacencies of the ghost faces
+  // the downward adjacencies of the ghost faces.
+  // But stk-mesh is known to not automatically maintain custom ghostings.
   bulk->modification_begin();
+  bulk->destroy_ghosting(ghosting);
   sendGhosts.clear();
-  for (stk::mesh::Bucket* bucket : bulk->get_buckets(stk::topology::EDGE_RANK, *edgePart & bulk->mesh_meta_data().locally_owned_part()))
+  for (stk::mesh::Entity face : ownedFaces)
   {
-    for (stk::mesh::Entity edge : *bucket)
-    {
-      sendGhosts.emplace_back(edge, otherProc);
-    }
+    sendGhosts.emplace_back(face, otherProc);
   }
   bulk->change_ghosting(ghosting, sendGhosts);
   bulk->modification_end();
-
 
   const auto& [edgesInSelector, edgesTotal] = countEdges(*bulk, *edgePart);
   EXPECT_EQ(edgesInSelector, 40);

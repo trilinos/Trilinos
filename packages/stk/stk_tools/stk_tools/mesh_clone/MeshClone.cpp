@@ -292,8 +292,7 @@ stk::mesh::PartVector get_corresponding_part_vector(stk::mesh::MetaData &newMeta
   stk::mesh::PartVector newParts;
   newParts.reserve(oldParts.size());
 
-  for(size_t p=0; p < oldParts.size(); p++)
-  {
+  for(size_t p=0; p < oldParts.size(); p++) {
     stk::mesh::Part* part = get_corresponding_part(newMeta, oldParts[p]);
     if(part!=nullptr)
       newParts.push_back(part);
@@ -302,21 +301,21 @@ stk::mesh::PartVector get_corresponding_part_vector(stk::mesh::MetaData &newMeta
   return newParts;
 }
 
-void remove_shared_part(stk::mesh::PartVector &oldParts, stk::mesh::Part &oldSharedPart)
+void remove_part_from_vector(stk::mesh::PartVector &parts, stk::mesh::Part &rmPart)
 {
-  std::remove(oldParts.begin(), oldParts.end(), &oldSharedPart);
+  auto newEnd = std::remove(parts.begin(), parts.end(), &rmPart);
+  auto newSize = newEnd - parts.begin();
+  parts.resize(newSize);
 }
 
 stk::mesh::PartVector get_new_parts(const stk::mesh::Bucket *bucket, stk::mesh::BulkData &outputBulk)
 {
   const stk::mesh::PartVector &oldParts = bucket->supersets();
   stk::mesh::PartVector newParts = get_corresponding_part_vector(outputBulk.mesh_meta_data(), oldParts);
-  if(is_comm_self(outputBulk) && bucket->shared())
-    remove_shared_part(newParts, outputBulk.mesh_meta_data().globally_shared_part());
-  std::remove(newParts.begin(), newParts.end(), &outputBulk.mesh_meta_data().universal_part());
-  std::remove(newParts.begin(), newParts.end(), &outputBulk.mesh_meta_data().globally_shared_part());
-  std::remove(newParts.begin(), newParts.end(), &outputBulk.mesh_meta_data().locally_owned_part());
-  std::remove(newParts.begin(), newParts.end(), &outputBulk.mesh_meta_data().aura_part());
+  remove_part_from_vector(newParts, outputBulk.mesh_meta_data().universal_part());
+  remove_part_from_vector(newParts, outputBulk.mesh_meta_data().globally_shared_part());
+  remove_part_from_vector(newParts, outputBulk.mesh_meta_data().locally_owned_part());
+  remove_part_from_vector(newParts, outputBulk.mesh_meta_data().aura_part());
   return newParts;
 }
 
@@ -370,7 +369,6 @@ void copy_side_entities(const stk::mesh::BulkData &inputBulk, stk::mesh::Selecto
 
       for(stk::mesh::Entity oldEntity : *bucket)
       {
-        stk::mesh::Entity newEntity;
         unsigned numElems = inputBulk.num_elements(oldEntity);
         if(numElems > 0)
         {
@@ -381,7 +379,7 @@ void copy_side_entities(const stk::mesh::BulkData &inputBulk, stk::mesh::Selecto
             if(inputBulk.bucket(elems[i]).owned() && inputSelector(inputBulk.bucket(elems[i])))
             {
               stk::mesh::Entity newElem = outputBulk.get_entity(inputBulk.entity_key(elems[i]));
-              newEntity = stk::mesh::clone_element_side(outputBulk, inputBulk.identifier(oldEntity), newElem, ords[i], newParts);
+              stk::mesh::clone_element_side(outputBulk, inputBulk.identifier(oldEntity), newElem, ords[i], newParts);
               break;
             }
           }

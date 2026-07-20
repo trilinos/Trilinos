@@ -85,14 +85,6 @@ public:
       m_leftField(nullptr)
   {}
 
-  stk::mesh::Entity create_node(stk::mesh::EntityId nodeId) {
-    get_bulk().modification_begin();
-    stk::mesh::Entity node = get_bulk().declare_node(nodeId);
-    get_bulk().modification_end();
-
-    return node;
-  }
-
   template <typename FieldType>
   void build_two_element_mesh(FieldType* field) {
     stk::mesh::fixtures::HexFixture::fill_mesh(2, 1, 1, get_bulk());

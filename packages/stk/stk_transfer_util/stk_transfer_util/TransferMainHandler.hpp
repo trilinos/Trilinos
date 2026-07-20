@@ -35,6 +35,7 @@
 #define STK_TRANSFER_MAIN_HANDLER_HPP
 
 #include "stk_io/FileValidator.hpp"
+#include "stk_search_util/MasterElementProvider.hpp"
 #include "stk_transfer_util/TransferMainSettings.hpp"
 #include "stk_transfer_util/TransferMainParser.hpp"
 #include <stk_util/environment/LogWithTimeAndMemory.hpp>
@@ -60,6 +61,8 @@ public:
 
   const TransferMainSettings & get_transfer_settings() const { return m_settings; }
 
+  void set_master_element_provider(std::shared_ptr<stk::search::MasterElementProviderInterface> masterElemProvider);
+
 private:
   void parse();
   void print_parse_error(const char* what) const;
@@ -81,6 +84,7 @@ private:
   const stk::io::FileValidator m_validator;
   TransferMainSettings m_settings;
   TransferMainParser m_parser;
+  std::shared_ptr<stk::search::MasterElementProviderInterface> m_masterElementProvider;
 };
 
 } }

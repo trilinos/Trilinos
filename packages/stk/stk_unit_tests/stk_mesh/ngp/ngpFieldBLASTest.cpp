@@ -218,9 +218,9 @@ TEST_F(NgpFieldBLAS, field_fill_device)
 {
   const double myConstantValue = 55.5;
 
-  stk::mesh::field_fill(myConstantValue, *stkField1, stk::ngp::ExecSpace());
+  stk::mesh::field_fill<stk::ngp::DeviceSpace>(myConstantValue, *stkField1);
 
-#ifdef STK_ENABLE_GPU
+#ifdef STK_USE_DEVICE_MESH
   EXPECT_TRUE(stkField1->need_sync_to_host());
 #else
   EXPECT_FALSE(stkField1->need_sync_to_host());
@@ -235,11 +235,11 @@ TEST_F(NgpFieldBLAS, field_fill_device_multiple)
   const double myConstantValue = 55.5;
 
   std::vector<const stk::mesh::FieldBase*> allFields = {stkField1, stkField2, stkField3, stkField4, stkField5};
-  stk::mesh::field_fill(myConstantValue, allFields, stk::ngp::ExecSpace());
+  stk::mesh::field_fill<stk::ngp::DeviceSpace>(myConstantValue, allFields);
 
   for (const stk::mesh::FieldBase* field : allFields)
   {
-#ifdef STK_ENABLE_GPU
+#ifdef STK_USE_DEVICE_MESH
     EXPECT_TRUE(field->need_sync_to_host());
 #else
     EXPECT_FALSE(field->need_sync_to_host());
@@ -255,9 +255,9 @@ TEST_F(NgpFieldBLAS, field_fill_selector_device)
   const double myConstantValue = 55.5;
   stk::mesh::Part& block2 = *get_meta().get_part("block_2");
   stk::mesh::Selector selector = block2;
-  stk::mesh::field_fill(myConstantValue, *stkField1, selector, stk::ngp::ExecSpace());
+  stk::mesh::field_fill<stk::ngp::DeviceSpace>(myConstantValue, *stkField1, selector);
 
-#ifdef STK_ENABLE_GPU
+#ifdef STK_USE_DEVICE_MESH
   EXPECT_TRUE(stkField1->need_sync_to_host());
 #else
   EXPECT_FALSE(stkField1->need_sync_to_host());
@@ -273,10 +273,10 @@ TEST_F(NgpFieldBLAS, field_fill_component_selector_device)
   constexpr double myConstantValue = 55.5;
   stk::mesh::Part& block2 = *get_meta().get_part("block_2");
   stk::mesh::Selector selector = block2;
-  stk::mesh::field_fill(myConstantValue, *stkField1, selector, stk::ngp::ExecSpace());
-  stk::mesh::field_fill(myConstantComponentValue, *stkField1, component, selector, stk::ngp::ExecSpace());
+  stk::mesh::field_fill<stk::ngp::DeviceSpace>(myConstantValue, *stkField1, selector);
+  stk::mesh::field_fill<stk::ngp::DeviceSpace>(myConstantComponentValue, *stkField1, component, selector);
 
-#ifdef STK_ENABLE_GPU
+#ifdef STK_USE_DEVICE_MESH
   EXPECT_TRUE(stkField1->need_sync_to_host());
 #else
   EXPECT_FALSE(stkField1->need_sync_to_host());
@@ -294,12 +294,12 @@ TEST_F(NgpFieldBLAS, field_fill_device_component_multiple)
   std::vector<const stk::mesh::FieldBase*> allFields = {stkField1, stkField2, stkField3, stkField4, stkField5};
   stk::mesh::Part& block2 = *get_meta().get_part("block_2");
   stk::mesh::Selector selector = block2;
-  stk::mesh::field_fill(myConstantValue, allFields, selector, stk::ngp::ExecSpace());
-  stk::mesh::field_fill(myConstantComponentValue, allFields, component, selector, stk::ngp::ExecSpace());
+  stk::mesh::field_fill<stk::ngp::DeviceSpace>(myConstantValue, allFields, selector);
+  stk::mesh::field_fill<stk::ngp::DeviceSpace>(myConstantComponentValue, allFields, component, selector);
 
   for (const stk::mesh::FieldBase* field : allFields)
   {
-#ifdef STK_ENABLE_GPU
+#ifdef STK_USE_DEVICE_MESH
     EXPECT_TRUE(field->need_sync_to_host());
 #else
     EXPECT_FALSE(field->need_sync_to_host());
@@ -309,23 +309,12 @@ TEST_F(NgpFieldBLAS, field_fill_device_component_multiple)
   }
 }
 
-TEST_F(NgpFieldBLAS, field_fill_host_ngp)
-{
-  const double myConstantValue = 55.5;
-  stk::mesh::field_fill(myConstantValue, *stkField1, stk::ngp::HostExecSpace{});
-
-  EXPECT_TRUE(stkField1->need_sync_to_device());
-
-  stk::mesh::Selector selector(*stkField1);
-  ngp_field_test_utils::check_field_data_on_host(get_bulk(), *stkField1, selector, myConstantValue);
-}
-
 TEST_F(NgpFieldBLAS, field_fill_host)
 {
   const double myConstantValue = 55.5;
-  stk::mesh::field_fill(myConstantValue, *stkField1, stk::ngp::HostExecSpace{});
+  stk::mesh::field_fill<stk::ngp::HostSpace>(myConstantValue, *stkField1);
 
-  EXPECT_FALSE(stkField1->need_sync_to_host());
+  EXPECT_TRUE(stkField1->need_sync_to_device());
 
   stk::mesh::Selector selector(*stkField1);
   ngp_field_test_utils::check_field_data_on_host(get_bulk(), *stkField1, selector, myConstantValue);
@@ -337,10 +326,10 @@ TEST_F(NgpFieldBLAS, field_fill_selector_host)
   const double myBlock2Value = 95.5;
   stk::mesh::Part& block2 = *get_meta().get_part("block_2");
   stk::mesh::Selector selector = block2;
-  stk::mesh::field_fill(myConstantValue, *stkField1, stk::ngp::HostExecSpace{});
-  stk::mesh::field_fill(myBlock2Value, *stkField1, selector, stk::ngp::HostExecSpace{});
+  stk::mesh::field_fill<stk::ngp::HostSpace>(myConstantValue, *stkField1);
+  stk::mesh::field_fill<stk::ngp::HostSpace>(myBlock2Value, *stkField1, selector);
 
-  EXPECT_FALSE(stkField1->need_sync_to_host());
+  EXPECT_TRUE(stkField1->need_sync_to_device());
 
   stk::mesh::Selector all(*stkField1);
   stk::mesh::Selector notBlock2 = all - selector;
@@ -351,8 +340,7 @@ TEST_F(NgpFieldBLAS, field_fill_selector_host)
 TEST_F(NgpFieldBLAS, field_fill_device_with_host_build)
 {
   const double myConstantValue = 55.5;
-  constexpr bool MarkModOnDevice = true;
-  stk::mesh::field_fill(myConstantValue, *stkField1, stk::ngp::HostExecSpace{}, MarkModOnDevice);
+  stk::mesh::field_fill<stk::ngp::HostSpace>(myConstantValue, *stkField1);
 
   stk::mesh::Selector selector(*stkField1);
   ngp_field_test_utils::check_field_data_on_host(get_bulk(), *stkField1, selector, myConstantValue);
@@ -361,8 +349,8 @@ TEST_F(NgpFieldBLAS, field_fill_device_with_host_build)
 TEST_F(NgpFieldBLAS, field_copy_device)
 {
   const double myConstantValue = 55.5;
-  stk::mesh::field_fill(myConstantValue, *stkField1, stk::ngp::ExecSpace());
-  stk::mesh::field_copy(*stkField1, *stkField2, stk::ngp::ExecSpace());
+  stk::mesh::field_fill<stk::ngp::DeviceSpace>(myConstantValue, *stkField1);
+  stk::mesh::field_copy<stk::ngp::DeviceSpace>(*stkField1, *stkField2);
 
 #ifdef STK_USE_DEVICE_MESH
   EXPECT_TRUE(stkField1->need_sync_to_host());
@@ -382,12 +370,12 @@ TEST_F(NgpFieldBLAS, field_copy_selector_device)
 {
   const double myConstantValue = 55.5;
   const double myBlock2Value = 95.5;
-  stk::mesh::field_fill(myConstantValue, *stkField1, stk::ngp::ExecSpace());
-  stk::mesh::field_copy(*stkField1, *stkField2, stk::ngp::ExecSpace());
+  stk::mesh::field_fill<stk::ngp::DeviceSpace>(myConstantValue, *stkField1);
+  stk::mesh::field_copy<stk::ngp::DeviceSpace>(*stkField1, *stkField2);
   stk::mesh::Part& block2 = *get_meta().get_part("block_2");
   stk::mesh::Selector selector = block2;
-  stk::mesh::field_fill(myBlock2Value, *stkField1, selector, stk::ngp::ExecSpace());
-  stk::mesh::field_copy(*stkField1, *stkField2, selector, stk::ngp::ExecSpace());
+  stk::mesh::field_fill<stk::ngp::DeviceSpace>(myBlock2Value, *stkField1, selector);
+  stk::mesh::field_copy<stk::ngp::DeviceSpace>(*stkField1, *stkField2, selector);
 
 #ifdef STK_USE_DEVICE_MESH
   EXPECT_TRUE(stkField1->need_sync_to_host());
@@ -408,16 +396,11 @@ TEST_F(NgpFieldBLAS, field_copy_selector_device)
 TEST_F(NgpFieldBLAS, field_copy_host_ngp)
 {
   const double myConstantValue = 55.5;
-  stk::mesh::field_fill(myConstantValue, *stkField1, stk::ngp::HostExecSpace{});
-  stk::mesh::field_copy(*stkField1, *stkField2, stk::ngp::HostExecSpace{});
+  stk::mesh::field_fill<stk::ngp::HostSpace>(myConstantValue, *stkField1);
+  stk::mesh::field_copy<stk::ngp::HostSpace>(*stkField1, *stkField2);
 
-#if defined(STK_USE_DEVICE_MESH) && !defined(STK_ENABLE_GPU)
-  EXPECT_TRUE(stkField1->need_sync_to_host());
-  EXPECT_TRUE(stkField2->need_sync_to_host());
-#else
   EXPECT_FALSE(stkField1->need_sync_to_host());
   EXPECT_FALSE(stkField2->need_sync_to_host());
-#endif
 
   stk::mesh::Selector selector(*stkField1);
   ngp_field_test_utils::check_field_data_on_host(get_bulk(), *stkField1, selector, myConstantValue);
@@ -427,16 +410,11 @@ TEST_F(NgpFieldBLAS, field_copy_host_ngp)
 TEST_F(NgpFieldBLAS, field_copy_host)
 {
   const double myConstantValue = 55.5;
-  stk::mesh::field_fill(myConstantValue, *stkField1, stk::ngp::HostExecSpace{});
-  stk::mesh::field_copy(*stkField1, *stkField2, stk::ngp::HostExecSpace{});
+  stk::mesh::field_fill<stk::ngp::HostSpace>(myConstantValue, *stkField1);
+  stk::mesh::field_copy<stk::ngp::HostSpace>(*stkField1, *stkField2);
 
-#if defined(STK_USE_DEVICE_MESH) && !defined(STK_ENABLE_GPU)
-  EXPECT_TRUE(stkField1->need_sync_to_host());
-  EXPECT_TRUE(stkField2->need_sync_to_host());
-#else
   EXPECT_FALSE(stkField1->need_sync_to_host());
   EXPECT_FALSE(stkField2->need_sync_to_host());
-#endif
 
   stk::mesh::Selector selector(*stkField1);
   ngp_field_test_utils::check_field_data_on_host(get_bulk(), *stkField1, selector, myConstantValue);
@@ -447,20 +425,15 @@ TEST_F(NgpFieldBLAS, field_copy_selector_host)
 {
   const double myConstantValue = 55.5;
   const double myBlock2Value = 95.5;
-  stk::mesh::field_fill(myConstantValue, *stkField1, stk::ngp::HostExecSpace{});
-  stk::mesh::field_copy(*stkField1, *stkField2, stk::ngp::HostExecSpace{});
+  stk::mesh::field_fill<stk::ngp::HostSpace>(myConstantValue, *stkField1);
+  stk::mesh::field_copy<stk::ngp::HostSpace>(*stkField1, *stkField2);
   stk::mesh::Part& block2 = *get_meta().get_part("block_2");
   stk::mesh::Selector selector = block2;
-  stk::mesh::field_fill(myBlock2Value, *stkField1, selector, stk::ngp::HostExecSpace{});
-  stk::mesh::field_copy(*stkField1, *stkField2, selector, stk::ngp::HostExecSpace{});
+  stk::mesh::field_fill<stk::ngp::HostSpace>(myBlock2Value, *stkField1, selector);
+  stk::mesh::field_copy<stk::ngp::HostSpace>(*stkField1, *stkField2, selector);
 
-#if defined(STK_USE_DEVICE_MESH) && !defined(STK_ENABLE_GPU)
-  EXPECT_TRUE(stkField1->need_sync_to_host());
-  EXPECT_TRUE(stkField2->need_sync_to_host());
-#else
   EXPECT_FALSE(stkField1->need_sync_to_host());
   EXPECT_FALSE(stkField2->need_sync_to_host());
-#endif
 
   stk::mesh::Selector all(*stkField1);
   stk::mesh::Selector notBlock2 = all - selector;
@@ -473,10 +446,9 @@ TEST_F(NgpFieldBLAS, field_copy_selector_host)
 TEST_F(NgpFieldBLAS, field_copy_device_with_host_build)
 {
   const double myConstantValue = 55.5;
-  constexpr bool MarkModOnDevice = true;
-  stk::mesh::field_fill(myConstantValue, *stkField1, stk::ngp::HostExecSpace{}, MarkModOnDevice);
+  stk::mesh::field_fill<stk::ngp::HostSpace>(myConstantValue, *stkField1);
 
-  stk::mesh::field_copy(*stkField1, *stkField2, stk::ngp::HostExecSpace{}, MarkModOnDevice);
+  stk::mesh::field_copy<stk::ngp::HostSpace>(*stkField1, *stkField2);
 
   stk::mesh::Selector selector(*stkField1);
   ngp_field_test_utils::check_field_data_on_host(get_bulk(), *stkField1, selector, myConstantValue);
@@ -505,7 +477,7 @@ TEST_F(NgpFieldBLASNode, field_axpbyz_device)
   };
 
 
-  stk::mesh::field_axpbyz(get_bulk(), alpha, *stkField1, beta, *stkField2, *stkField3, selectRule, stk::ngp::ExecSpace());
+  stk::mesh::field_axpbyz<stk::ngp::DeviceSpace>(alpha, *stkField1, beta, *stkField2, *stkField3, selectRule);
 #ifdef STK_USE_DEVICE_MESH
   EXPECT_TRUE(stkField3->need_sync_to_host());
 #else
@@ -537,15 +509,10 @@ TEST_F(NgpFieldBLASNode, field_axpbyz_host)
   };
 
 
-  stk::mesh::field_axpbyz(get_bulk(), alpha, *stkField1, beta, *stkField2, *stkField3, selectRule, stk::ngp::HostExecSpace());
+  stk::mesh::field_axpbyz<stk::ngp::HostSpace>(alpha, *stkField1, beta, *stkField2, *stkField3, selectRule);
 
-#if defined(STK_USE_DEVICE_MESH) && !defined(STK_ENABLE_GPU)
-  EXPECT_TRUE(stkField3->need_sync_to_host());
-#else
   EXPECT_TRUE(stkField3->need_sync_to_device());
-#endif
 
-  stkField3->sync_to_host();
   ngp_field_test_utils::check_field_data_on_host_func(get_bulk(), *stkField3, selectRule, {stkField1, stkField2}, f_expected);
 }
 
@@ -571,7 +538,7 @@ TEST_F(NgpFieldBLASNode, field_axpbyz_no_selector)
   };
 
 
-  stk::mesh::field_axpbyz(get_bulk(), alpha, *stkField1, beta, *stkField2, *stkField3, stk::ngp::ExecSpace());
+  stk::mesh::field_axpbyz<stk::ngp::DeviceSpace>(alpha, *stkField1, beta, *stkField2, *stkField3);
 #ifdef STK_USE_DEVICE_MESH
   EXPECT_TRUE(stkField3->need_sync_to_host());
 #else
@@ -602,7 +569,7 @@ TEST_F(NgpFieldBLASNode, field_axpby_device)
     return result;
   };
 
-  stk::mesh::field_axpby(get_bulk(), alpha, *stkField1, beta, *stkField2, selectRule, stk::ngp::ExecSpace());
+  stk::mesh::field_axpby<stk::ngp::DeviceSpace>(alpha, *stkField1, beta, *stkField2, selectRule);
 #ifdef STK_USE_DEVICE_MESH
   EXPECT_TRUE(stkField2->need_sync_to_host());
 #else
@@ -633,13 +600,9 @@ TEST_F(NgpFieldBLASNode, field_axpby_host)
     return result;
   };
 
-  stk::mesh::field_axpby(get_bulk(), alpha, *stkField1, beta, *stkField2, selectRule, stk::ngp::HostExecSpace());
+  stk::mesh::field_axpby<stk::ngp::HostSpace>(alpha, *stkField1, beta, *stkField2, selectRule);
 
-#if defined(STK_USE_DEVICE_MESH) && !defined(STK_ENABLE_GPU)
-  EXPECT_TRUE(stkField2->need_sync_to_host());
-#else
   EXPECT_TRUE(stkField2->need_sync_to_device());
-#endif
 
   ngp_field_test_utils::check_field_data_on_host_func(get_bulk(), *stkField2, selectRule, {stkField1}, f_expected);
 }
@@ -665,7 +628,7 @@ TEST_F(NgpFieldBLASNode, field_axpby_no_selector)
     return result;
   };
 
-  stk::mesh::field_axpby(get_bulk(), alpha, *stkField1, beta, *stkField2, stk::ngp::ExecSpace());
+  stk::mesh::field_axpby<stk::ngp::DeviceSpace>(alpha, *stkField1, beta, *stkField2);
 #ifdef STK_USE_DEVICE_MESH
   EXPECT_TRUE(stkField2->need_sync_to_host());
 #else
@@ -694,7 +657,7 @@ TEST_F(NgpFieldBLASNode, field_axpy_device)
     return y;
   };
 
-  stk::mesh::field_axpy(get_bulk(), alpha, *stkField1, *stkField2, selectRule, stk::ngp::ExecSpace());
+  stk::mesh::field_axpy<stk::ngp::DeviceSpace>(alpha, *stkField1, *stkField2, selectRule);
 #ifdef STK_USE_DEVICE_MESH
   EXPECT_TRUE(stkField2->need_sync_to_host());
 #else
@@ -723,13 +686,9 @@ TEST_F(NgpFieldBLASNode, field_axpy_host)
     return y;
   };
 
-  stk::mesh::field_axpy(get_bulk(), alpha, *stkField1, *stkField2, selectRule, stk::ngp::HostExecSpace());
+  stk::mesh::field_axpy<stk::ngp::HostSpace>(alpha, *stkField1, *stkField2, selectRule);
 
-#if defined(STK_USE_DEVICE_MESH) && !defined(STK_ENABLE_GPU)
-  EXPECT_TRUE(stkField2->need_sync_to_host());
-#else
   EXPECT_TRUE(stkField2->need_sync_to_device());
-#endif
 
   ngp_field_test_utils::check_field_data_on_host_func(get_bulk(), *stkField2, selectRule, {stkField1}, f_expected);
 }
@@ -753,7 +712,7 @@ TEST_F(NgpFieldBLASNode, field_axpy_no_selector)
     return y;
   };
 
-  stk::mesh::field_axpy(get_bulk(), alpha, *stkField1, *stkField2, stk::ngp::ExecSpace());
+  stk::mesh::field_axpy<stk::ngp::DeviceSpace>(alpha, *stkField1, *stkField2);
 #ifdef STK_USE_DEVICE_MESH
   EXPECT_TRUE(stkField2->need_sync_to_host());
 #else
@@ -783,7 +742,7 @@ TEST_F(NgpFieldBLASNode, field_product_device)
     return result;
   };
 
-  stk::mesh::field_product(get_bulk(), *stkField1, *stkField2, *stkField3, selectRule, stk::ngp::ExecSpace());
+  stk::mesh::field_product<stk::ngp::DeviceSpace>(*stkField1, *stkField2, *stkField3, selectRule);
 #ifdef STK_USE_DEVICE_MESH
   EXPECT_TRUE(stkField3->need_sync_to_host());
 #else
@@ -812,13 +771,9 @@ TEST_F(NgpFieldBLASNode, field_product_host)
     return result;
   };
 
-  stk::mesh::field_product(get_bulk(), *stkField1, *stkField2, *stkField3, selectRule, stk::ngp::HostExecSpace());
+  stk::mesh::field_product<stk::ngp::HostSpace>(*stkField1, *stkField2, *stkField3, selectRule);
 
-#if defined(STK_USE_DEVICE_MESH) && !defined(STK_ENABLE_GPU)
-  EXPECT_TRUE(stkField3->need_sync_to_host());
-#else
   EXPECT_TRUE(stkField3->need_sync_to_device());
-#endif
 
   ngp_field_test_utils::check_field_data_on_host_func(get_bulk(), *stkField3, selectRule, {stkField1, stkField2}, f_expected);
 }
@@ -843,7 +798,7 @@ TEST_F(NgpFieldBLASNode, field_product_no_selector)
     return result;
   };
 
-  stk::mesh::field_product(get_bulk(), *stkField1, *stkField2, *stkField3, stk::ngp::ExecSpace());
+  stk::mesh::field_product<stk::ngp::DeviceSpace>(*stkField1, *stkField2, *stkField3);
 #ifdef STK_USE_DEVICE_MESH
   EXPECT_TRUE(stkField3->need_sync_to_host());
 #else
@@ -855,14 +810,14 @@ TEST_F(NgpFieldBLASNode, field_product_no_selector)
 
 TEST_F(NgpFieldBLAS, field_axpby)
 {
-  stk::mesh::field_fill(3.0, *stkField1, stk::ngp::ExecSpace());
-  stk::mesh::field_fill(10.0, *stkField2, stk::ngp::ExecSpace());
+  stk::mesh::field_fill<stk::ngp::DeviceSpace>(3.0, *stkField1);
+  stk::mesh::field_fill<stk::ngp::DeviceSpace>(10.0, *stkField2);
 
   double alpha = 2.0;
   double beta = 5.0;
   stk::mesh::Selector selectRule(*stkField1);
 
-  stk::mesh::field_axpby(get_bulk(), alpha, *stkField1, beta, *stkField2, selectRule, stk::ngp::ExecSpace());
+  stk::mesh::field_axpby<stk::ngp::DeviceSpace>(alpha, *stkField1, beta, *stkField2, selectRule);
 
   stk::mesh::Selector selector(*stkField2);
   constexpr double expectedValue = 56.0;
@@ -886,7 +841,7 @@ TEST_F(NgpFieldBLASNode, field_scale_device)
     return result;
   };
 
-  stk::mesh::field_scale(get_bulk(), alpha, *stkField1, selectRule, stk::ngp::ExecSpace());
+  stk::mesh::field_scale<stk::ngp::DeviceSpace>(alpha, *stkField1, selectRule);
 #ifdef STK_USE_DEVICE_MESH
   EXPECT_TRUE(stkField1->need_sync_to_host());
 #else
@@ -913,13 +868,9 @@ TEST_F(NgpFieldBLASNode, field_scale_host)
     return result;
   };
 
-  stk::mesh::field_scale(get_bulk(), alpha, *stkField1, selectRule, stk::ngp::HostExecSpace());
+  stk::mesh::field_scale<stk::ngp::HostSpace>(alpha, *stkField1, selectRule);
 
-#if defined(STK_USE_DEVICE_MESH) && !defined(STK_ENABLE_GPU)
-  EXPECT_TRUE(stkField1->need_sync_to_host());
-#else
   EXPECT_TRUE(stkField1->need_sync_to_device());
-#endif
 
   ngp_field_test_utils::check_field_data_on_host_func(get_bulk(), *stkField1, selectRule, {}, f_expected);
 }
@@ -941,7 +892,7 @@ TEST_F(NgpFieldBLASNode, field_scale_no_selector)
     return result;
   };
 
-  stk::mesh::field_scale(get_bulk(), alpha, *stkField1, stk::ngp::ExecSpace());
+  stk::mesh::field_scale<stk::ngp::DeviceSpace>(alpha, *stkField1);
 #ifdef STK_USE_DEVICE_MESH
   EXPECT_TRUE(stkField1->need_sync_to_host());
 #else
@@ -968,7 +919,7 @@ TEST_F(NgpFieldBLASNode, field_swap_device)
     return func1(coords);
   };
 
-  stk::mesh::field_swap(get_bulk(), *stkField1, *stkField2, selectRule, stk::ngp::ExecSpace());
+  stk::mesh::field_swap<stk::ngp::DeviceSpace>(*stkField1, *stkField2, selectRule);
 #ifdef STK_USE_DEVICE_MESH
   EXPECT_TRUE(stkField1->need_sync_to_host());
   EXPECT_TRUE(stkField2->need_sync_to_host());
@@ -998,15 +949,10 @@ TEST_F(NgpFieldBLASNode, field_swap_host)
   };
 
 
-  stk::mesh::field_swap(get_bulk(), *stkField1, *stkField2, selectRule, stk::ngp::HostExecSpace());
+  stk::mesh::field_swap<stk::ngp::HostSpace>(*stkField1, *stkField2, selectRule);
 
-#if defined(STK_USE_DEVICE_MESH) && !defined(STK_ENABLE_GPU)
-  EXPECT_TRUE(stkField1->need_sync_to_host());
-  EXPECT_TRUE(stkField2->need_sync_to_host());
-#else
   EXPECT_TRUE(stkField1->need_sync_to_device());
   EXPECT_TRUE(stkField2->need_sync_to_device());
-#endif
 
   ngp_field_test_utils::check_field_data_on_host_func(get_bulk(), *stkField1, selectRule, {stkField2}, f1_expected);
   ngp_field_test_utils::check_field_data_on_host_func(get_bulk(), *stkField2, selectRule, {stkField1}, f2_expected);
@@ -1028,7 +974,7 @@ TEST_F(NgpFieldBLASNode, field_swap_no_selector)
     return func1(coords);
   };
 
-  stk::mesh::field_swap(get_bulk(), *stkField1, *stkField2, stk::ngp::ExecSpace());
+  stk::mesh::field_swap<stk::ngp::DeviceSpace>(*stkField1, *stkField2);
 #ifdef STK_USE_DEVICE_MESH
   EXPECT_TRUE(stkField1->need_sync_to_host());
   EXPECT_TRUE(stkField2->need_sync_to_host());
@@ -1046,7 +992,6 @@ TEST_F(NgpFieldBLASNode, field_amax_device)
 {
   stk::mesh::Selector selectRule(*stkField1);
   ngp_field_test_utils::set_field_data_on_host(get_bulk(), *stkField1, selectRule, &func1);
-  stkField1->sync_to_device();
 
   double hostAMaxVal = 0.0;
 
@@ -1064,7 +1009,7 @@ TEST_F(NgpFieldBLASNode, field_amax_device)
   stk::all_reduce_max(get_bulk().parallel(), &hostAMaxVal, &globalHostMax, 1u);
 
   double devAmaxVal = 0.0;
-  stk::mesh::field_amax(devAmaxVal, *stkField1, selectRule, stk::ngp::ExecSpace());
+  stk::mesh::field_amax<stk::ngp::DeviceSpace>(devAmaxVal, *stkField1, selectRule);
 
   EXPECT_EQ(globalHostMax, devAmaxVal);
 }
@@ -1090,7 +1035,7 @@ TEST_F(NgpFieldBLASNode, field_amax_host)
   stk::all_reduce_max(get_bulk().parallel(), &hostAMaxVal, &globalHostMax, 1u);
 
   double devAmaxVal = 0.0;
-  stk::mesh::field_amax(devAmaxVal, *stkField1, selectRule, stk::ngp::HostExecSpace());
+  stk::mesh::field_amax<stk::ngp::HostSpace>(devAmaxVal, *stkField1, selectRule);
 
   EXPECT_EQ(globalHostMax, devAmaxVal);
 }
@@ -1116,7 +1061,7 @@ TEST_F(NgpFieldBLASNode, field_amax_no_selector)
   stk::all_reduce_max(get_bulk().parallel(), &hostAMaxVal, &globalHostMax, 1u);
 
   double devAmaxVal = 0.0;
-  stk::mesh::field_amax(devAmaxVal, *stkField1, stk::ngp::ExecSpace());
+  stk::mesh::field_amax<stk::ngp::DeviceSpace>(devAmaxVal, *stkField1);
 
   EXPECT_EQ(globalHostMax, devAmaxVal);
 }
@@ -1125,7 +1070,6 @@ TEST_F(NgpFieldBLASNode, field_amin_device)
 {
   stk::mesh::Selector selectRule(*stkField1);
   ngp_field_test_utils::set_field_data_on_host(get_bulk(), *stkField1, selectRule, &func1);
-  stkField1->sync_to_device();
 
   double hostAMinVal = 0.0;
 
@@ -1143,7 +1087,7 @@ TEST_F(NgpFieldBLASNode, field_amin_device)
   stk::all_reduce_min(get_bulk().parallel(), &hostAMinVal, &globalHostMin, 1u);
 
   double devAminVal = 0.0;
-  stk::mesh::field_amin(devAminVal, *stkField1, selectRule, stk::ngp::ExecSpace());
+  stk::mesh::field_amin<stk::ngp::DeviceSpace>(devAminVal, *stkField1, selectRule);
 
   EXPECT_EQ(globalHostMin, devAminVal);
 }
@@ -1169,7 +1113,7 @@ TEST_F(NgpFieldBLASNode, field_amin_host)
   stk::all_reduce_min(get_bulk().parallel(), &hostAMinVal, &globalHostMin, 1u);
 
   double devAminVal = 0.0;
-  stk::mesh::field_amin(devAminVal, *stkField1, selectRule, stk::ngp::HostExecSpace());
+  stk::mesh::field_amin<stk::ngp::HostSpace>(devAminVal, *stkField1, selectRule);
 
   EXPECT_EQ(globalHostMin, devAminVal);
 }
@@ -1195,7 +1139,7 @@ TEST_F(NgpFieldBLASNode, field_amin_no_selector)
   stk::all_reduce_min(get_bulk().parallel(), &hostAMinVal, &globalHostMin, 1u);
 
   double devAminVal = 0.0;
-  stk::mesh::field_amin(devAminVal, *stkField1, stk::ngp::ExecSpace());
+  stk::mesh::field_amin<stk::ngp::DeviceSpace>(devAminVal, *stkField1);
 
   EXPECT_EQ(globalHostMin, devAminVal);
 }
@@ -1204,7 +1148,6 @@ TEST_F(NgpFieldBLASNode, field_asum_device)
 {
   stk::mesh::Selector selectRule(*stkField1);
   ngp_field_test_utils::set_field_data_on_host(get_bulk(), *stkField1, selectRule, &func1);
-  stkField1->sync_to_device();
 
   double hostASumVal = 0.0;
 
@@ -1222,7 +1165,7 @@ TEST_F(NgpFieldBLASNode, field_asum_device)
   stk::all_reduce_sum(get_bulk().parallel(), &hostASumVal, &globalHostSum, 1u);
 
   double devAsumVal = 0.0;
-  stk::mesh::field_asum(devAsumVal, *stkField1, selectRule, stk::ngp::ExecSpace());
+  stk::mesh::field_asum<stk::ngp::DeviceSpace>(devAsumVal, *stkField1, selectRule);
 
   EXPECT_EQ(globalHostSum, devAsumVal);
 }
@@ -1248,7 +1191,7 @@ TEST_F(NgpFieldBLASNode, field_asum_host)
   stk::all_reduce_sum(get_bulk().parallel(), &hostASumVal, &globalHostSum, 1u);
 
   double devAsumVal = 0.0;
-  stk::mesh::field_asum(devAsumVal, *stkField1, selectRule, stk::ngp::HostExecSpace());
+  stk::mesh::field_asum<stk::ngp::HostSpace>(devAsumVal, *stkField1, selectRule);
 
   EXPECT_EQ(globalHostSum, devAsumVal);
 }
@@ -1274,7 +1217,7 @@ TEST_F(NgpFieldBLASNode, field_asum_no_selector)
   stk::all_reduce_sum(get_bulk().parallel(), &hostASumVal, &globalHostSum, 1u);
 
   double devAsumVal = 0.0;
-  stk::mesh::field_asum(devAsumVal, *stkField1, stk::ngp::ExecSpace());
+  stk::mesh::field_asum<stk::ngp::DeviceSpace>(devAsumVal, *stkField1);
 
   EXPECT_EQ(globalHostSum, devAsumVal);
 }
@@ -1283,7 +1226,6 @@ TEST_F(NgpFieldBLASNode, field_nrm2_device)
 {
   stk::mesh::Selector selectRule(*stkField1);
   ngp_field_test_utils::set_field_data_on_host(get_bulk(), *stkField1, selectRule, &func1);
-  stkField1->sync_to_device();
 
   double hostNrm2Val = 0.0;
 
@@ -1302,7 +1244,7 @@ TEST_F(NgpFieldBLASNode, field_nrm2_device)
   globalHostNrm2 = std::sqrt(globalHostNrm2);
 
   double devNrm2Val = 0.0;
-  stk::mesh::field_nrm2(devNrm2Val, *stkField1, selectRule, stk::ngp::ExecSpace());
+  stk::mesh::field_nrm2<stk::ngp::DeviceSpace>(devNrm2Val, *stkField1, selectRule);
 
   EXPECT_EQ(globalHostNrm2, devNrm2Val);
 }
@@ -1329,7 +1271,7 @@ TEST_F(NgpFieldBLASNode, field_nrm2_host)
   globalHostNrm2 = std::sqrt(globalHostNrm2);
 
   double devNrm2Val = 0.0;
-  stk::mesh::field_nrm2(devNrm2Val, *stkField1, selectRule, stk::ngp::HostExecSpace());
+  stk::mesh::field_nrm2<stk::ngp::HostSpace>(devNrm2Val, *stkField1, selectRule);
 
   EXPECT_EQ(globalHostNrm2, devNrm2Val);
 }
@@ -1356,7 +1298,7 @@ TEST_F(NgpFieldBLASNode, field_nrm2_no_selector)
   globalHostNrm2 = std::sqrt(globalHostNrm2);
 
   double devNrm2Val = 0.0;
-  stk::mesh::field_nrm2(devNrm2Val, *stkField1, stk::ngp::ExecSpace());
+  stk::mesh::field_nrm2<stk::ngp::DeviceSpace>(devNrm2Val, *stkField1);
 
   EXPECT_EQ(globalHostNrm2, devNrm2Val);
 }
@@ -1385,7 +1327,7 @@ TEST_F(NgpFieldBLASNode, field_dot_device)
   stk::all_reduce_sum(get_bulk().parallel(), &hostDotVal, &globalHostSum, 1u);
 
   double devDotVal = 0.0;
-  stk::mesh::field_dot(devDotVal, get_bulk(), *stkField1, *stkField2, selectRule, stk::ngp::ExecSpace());
+  stk::mesh::field_dot<stk::ngp::DeviceSpace>(devDotVal, *stkField1, *stkField2, selectRule);
 
   EXPECT_EQ(globalHostSum, devDotVal);
 }
@@ -1414,7 +1356,7 @@ TEST_F(NgpFieldBLASNode, field_dot_host)
   stk::all_reduce_sum(get_bulk().parallel(), &hostDotVal, &globalHostSum, 1u);
 
   double devDotVal = 0.0;
-  stk::mesh::field_dot(devDotVal, get_bulk(), *stkField1, *stkField2, selectRule, stk::ngp::HostExecSpace());
+  stk::mesh::field_dot<stk::ngp::HostSpace>(devDotVal, *stkField1, *stkField2, selectRule);
 
   EXPECT_EQ(globalHostSum, devDotVal);
 }

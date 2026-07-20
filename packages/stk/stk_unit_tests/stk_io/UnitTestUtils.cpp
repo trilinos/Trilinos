@@ -99,4 +99,16 @@ TEST(CheckElemBlockTopology, invalidTopology)
   EXPECT_THROW(stk::io::throw_if_any_elem_block_has_invalid_topology(meta, "test"), std::runtime_error);
 }
 
+TEST(GetMaxNameLength, metaData)
+{
+  stk::mesh::MetaData meta(3);
+  std::string partName("hereIsAVeryLooooooooooooooooooooooooooooooooooooooongPartName");
+  meta.declare_part(partName, stk::topology::ELEM_RANK);
+  EXPECT_EQ(static_cast<int>(partName.size()+1), stk::io::get_max_name_length(meta));
+
+  std::string fieldName("hereIsAnEvenLoooooooooooooooooooooooooooooooooooooooooooooongerFieldName");
+  meta.declare_field<double>(stk::topology::FACE_RANK,fieldName);
+  EXPECT_EQ(static_cast<int>(fieldName.size()+1), stk::io::get_max_name_length(meta));
+}
+
 }

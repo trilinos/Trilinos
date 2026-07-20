@@ -45,6 +45,7 @@
 #include "stk_search/IdentProc.hpp"                   // for IdentProc
 #include "stk_search/FilterCoarseSearch.hpp"          // for ObjectOutsideDo...
 #include "stk_search/Point.hpp"                       // for Point
+#include "stk_search_util/CachedFieldData.hpp"
 #include "stk_search_util/FindParametricCoordinates.hpp"  // for FindParametr...
 #include "stk_search_util/MeshUtility.hpp"
 #include "stk_search_util/spmd/EntityKeyPair.hpp"
@@ -163,6 +164,10 @@ class NodeSendMesh : public NodeSendMeshSearchBaseClass  {
   const stk::mesh::BulkData* get_bulk() const { return m_bulk; }
   const stk::mesh::MetaData* get_meta() const { return m_meta; }
 
+  void acquire_field_data() override;
+  void release_field_data() override;
+  bool has_acquired_field_data() const override { return m_hasAcquiredFieldData; }
+
  protected:
   stk::mesh::BulkData* m_bulk{nullptr};
   stk::mesh::MetaData* m_meta{nullptr};
@@ -184,7 +189,12 @@ class NodeSendMesh : public NodeSendMeshSearchBaseClass  {
   const double m_coarseSearchTol;
 
   bool m_isInitialized{false};
+
+  bool m_hasAcquiredFieldData{false};
+
   stk::search::ObjectOutsideDomainPolicy m_extrapolateOption{stk::search::ObjectOutsideDomainPolicy::UNDEFINED_OBJFLAG};
+
+  std::shared_ptr<CachedFieldDataBase> m_cachedCoordinateFieldData;
 
   void consistency_check();
 

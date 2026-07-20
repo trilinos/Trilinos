@@ -26,20 +26,20 @@ public:
   using mem_space = typename Space::mem_space;
 
   KOKKOS_FUNCTION ConstFieldDataBytes();
-  ConstFieldDataBytes(ConstFieldDataBytes<stk::ngp::HostSpace>* hostFieldBytes, Layout dataLayout);
+  ConstFieldDataBytes(ConstFieldDataBytes<stk::ngp::HostSpace>* hostFieldBytes, Layout dataLayout,
+                      FieldDataCopyTracking* copyTracking);
   KOKKOS_FUNCTION virtual ~ConstFieldDataBytes() override {}
 
-  KOKKOS_INLINE_FUNCTION ConstFieldDataBytes(const ConstFieldDataBytes& other);
+  KOKKOS_DEFAULTED_FUNCTION ConstFieldDataBytes(const ConstFieldDataBytes&) = default;
   KOKKOS_DEFAULTED_FUNCTION ConstFieldDataBytes(ConstFieldDataBytes&&) = default;
   KOKKOS_DEFAULTED_FUNCTION ConstFieldDataBytes& operator=(const ConstFieldDataBytes&) = default;
   KOKKOS_DEFAULTED_FUNCTION ConstFieldDataBytes& operator=(ConstFieldDataBytes&&) = default;
 
-  KOKKOS_INLINE_FUNCTION Layout data_layout() const;
-  KOKKOS_INLINE_FUNCTION EntityRank entity_rank() const;
-  KOKKOS_INLINE_FUNCTION Ordinal field_ordinal() const;
-
   inline BulkData& mesh();
   inline const BulkData& mesh() const;
+  KOKKOS_INLINE_FUNCTION const char* field_name() const;
+  KOKKOS_INLINE_FUNCTION int num_buckets() const;
+  virtual bool needs_update() const override;
 
   template <Layout DataLayout = Layout::Left>
   KOKKOS_INLINE_FUNCTION
@@ -62,27 +62,22 @@ public:
 protected:
   friend FieldBase;
   template <typename MemSpace_> friend class DeviceFieldDataManager;
+  template <typename MemSpace_> friend class impl::DeviceBucketRepository;
   friend sierra::Fmwk::Region;
 
   virtual void set_mesh(BulkData* bulkData) override;
 
-  virtual bool needs_update() const override;
-  virtual int field_data_synchronized_count() const override;
   virtual void swap_field_data(FieldDataBase& other) override;
   virtual void update_host_bucket_pointers() override;
   virtual void incomplete_swap_field_data(FieldDataBase& other) override;
-
-  virtual bool need_device_metadata_update() override;
-  virtual void update_device_field_metadata() override {}
 
   virtual void sync_to_host(const stk::ngp::ExecSpace&, Layout) override {}
   virtual void sync_to_device(const stk::ngp::ExecSpace&, Layout) override {}
   virtual void update(const stk::ngp::ExecSpace&, Layout, bool) override {}
   virtual void fence(const stk::ngp::ExecSpace&) override {}
 
-  KOKKOS_INLINE_FUNCTION const char* field_name() const;
-  inline void modify_field_meta_data();
-  inline void update_field_meta_data_mod_count();
+  inline void set_up_to_date();
+  inline void set_fast_mesh_indices(FastMeshIndex* fastMeshIndicesPtr, unsigned fastMeshIndicesSize);
 
 #if !defined(NDEBUG) || defined(STK_FIELD_BOUNDS_CHECK)
   KOKKOS_INLINE_FUNCTION void check_updated_field(const char* file, int line) const;
@@ -98,18 +93,15 @@ protected:
   KOKKOS_INLINE_FUNCTION void check_bucket_ordinal(unsigned, unsigned, const char*, int) const {}
 #endif
 
-  EntityRank m_rank;
-  Layout m_layout;
-  Ordinal m_ordinal;
-  DeviceFieldMetaDataArrayType<mem_space> m_deviceFieldMetaData;
-  MeshIndexType<mem_space> m_deviceFastMeshIndices;
-  DeviceStringType m_fieldName;
-  FieldMetaDataModCountType m_fieldMetaDataModCount;
-  BulkData* m_hostBulk;
-  int m_bytesPerScalar;
-  int m_fieldDataSynchronizedCount;
-  unsigned m_localFieldMetaDataModCount;
-  unsigned m_deviceMeshSyncCountAtLastSync;
+  DeviceFieldMetaData* m_deviceFieldMetaData;         //  8 : pointer
+  FastMeshIndex* m_deviceFastMeshIndices;             //  8 : pointer
+  const char* m_fieldName;                            //  8 : pointer
+  unsigned* m_fieldMetaDataModCount;                  //  8 : pointer
+  BulkData* m_hostBulk;                               //  8 : pointer
+  unsigned m_localOffsetExtent;                       //  4 : unsigned
+  int m_numBuckets;                                   //  4 : int
+  int m_bytesPerScalar;                               //  4 : int
+  unsigned m_localFieldMetaDataModCount;              //  4 : unsigned
 };
 
 
@@ -126,41 +118,20 @@ public:
   using exec_space = stk::ngp::HostSpace::exec_space;
 
   ConstFieldDataBytes();
-  ConstFieldDataBytes(EntityRank entityRank, Ordinal fieldOrdinal, const std::string& fieldName,
-                      const DataTraits& dataTraits, Layout dataLayout);
+  ConstFieldDataBytes(EntityRank entityRank, Ordinal fieldOrdinal, const DataTraits& dataTraits, Layout dataLayout);
   KOKKOS_FUNCTION virtual ~ConstFieldDataBytes() override {}
 
-  // The AMD ROCm compiler has an "undefined hidden symbol" link error when this copy constructor is defined
-  // below, along with all of the other functions.  Not sure why this one is special.
-  inline ConstFieldDataBytes(const ConstFieldDataBytes& other)
-    : FieldDataBase(other),
-      m_rank(other.m_rank),
-      m_layout(other.m_layout),
-      m_ordinal(other.m_ordinal),
-      m_fieldMetaData(other.m_fieldMetaData),
-      m_bulk(other.m_bulk),
-      m_dataTraits(other.m_dataTraits),
-    #if !defined(NDEBUG) || defined(STK_FIELD_BOUNDS_CHECK)
-      m_fieldName(other.m_fieldName),
-    #else
-      m_fieldName(),
-    #endif
-      m_fieldMetaDataModCount(other.m_fieldMetaDataModCount),
-      m_fieldDataSynchronizedCount(other.m_fieldDataSynchronizedCount),
-      m_localFieldMetaDataModCount(other.m_localFieldMetaDataModCount)
-  {}
-
+  inline ConstFieldDataBytes(const ConstFieldDataBytes&) = default;
   inline ConstFieldDataBytes(ConstFieldDataBytes&&) = default;
   inline ConstFieldDataBytes& operator=(const ConstFieldDataBytes&) = default;
   inline ConstFieldDataBytes& operator=(ConstFieldDataBytes&&) = default;
 
-  inline Layout data_layout() const;
-  inline EntityRank entity_rank() const;
-  inline Ordinal field_ordinal() const;
-  inline const DataTraits& data_traits() const;
-
   inline BulkData& mesh();
   inline const BulkData& mesh() const;
+  inline const DataTraits& data_traits() const;
+  inline const char* field_name() const;
+  inline int num_buckets() const;
+  virtual bool needs_update() const override;
 
   template <Layout DataLayout = Layout::Auto>
   inline
@@ -195,30 +166,31 @@ public:
 protected:
   friend FieldBase;
   friend sierra::Fmwk::Region;
+  friend FieldDataManager;
   template <typename MemSpace_> friend class ConstFieldDataBytes;
+  template <typename MemSpace_> friend class DeviceMeshT;
+  template <typename MemSpace_> friend class DeviceFieldDataManager;
+  template <typename MemSpace_> friend class impl::DeviceBucketRepository;
 
   virtual void set_mesh(BulkData* bulkData) override;
 
-  virtual bool needs_update() const override;
-  virtual int field_data_synchronized_count() const override;
   virtual void swap_field_data(FieldDataBase& other) override;
   virtual void update_host_bucket_pointers() override {}
   virtual void incomplete_swap_field_data(FieldDataBase&) override {}
-
-  virtual bool need_device_metadata_update() override { return false; }
-  virtual void update_device_field_metadata() override {}
 
   virtual void sync_to_host(const stk::ngp::ExecSpace&, Layout) override {}
   virtual void sync_to_device(const stk::ngp::ExecSpace&, Layout) override {}
   virtual void update(const stk::ngp::ExecSpace&, Layout, bool) override {}
   virtual void fence(const stk::ngp::ExecSpace&) override {}
 
-  inline const char* field_name() const;
-  inline void modify_field_meta_data();
-  inline void update_field_meta_data_mod_count();
+  inline void set_up_to_date();
+  inline void set_field_name(const char* fieldName);
+  inline void set_field_meta_data_mod_count_pointer(unsigned* fieldMetaDataModCountPtr);
+  inline void set_field_meta_data_mod_count(unsigned fieldMetaDataModCount);
+  inline unsigned field_meta_data_mod_count();
+  inline void set_fast_mesh_indices(FastMeshIndex*, unsigned) {}
 
 #if !defined(NDEBUG) || defined(STK_FIELD_BOUNDS_CHECK)
-  inline std::string location_string(const char* file, int line) const;
   inline void check_updated_field(const char* file, int line) const;
   inline void check_mesh(const stk::mesh::BulkData& bulk, const char* target, const char* file, int line) const;
   inline void check_rank(stk::mesh::EntityRank entityRank, const char* target, const char* file, int line) const;
@@ -232,16 +204,13 @@ protected:
   inline void check_bucket_ordinal(unsigned, unsigned, const char*, int) const {}
 #endif
 
-  EntityRank m_rank;
-  Layout m_layout;
-  Ordinal m_ordinal;
-  FieldMetaDataArrayType m_fieldMetaData;
-  BulkData* m_bulk;
-  const DataTraits* m_dataTraits;
-  HostStringType m_fieldName;
-  FieldMetaDataModCountType m_fieldMetaDataModCount;
-  int m_fieldDataSynchronizedCount;
-  unsigned m_localFieldMetaDataModCount;
+  FieldMetaData* m_fieldMetaData;                      //  8 : pointer
+  BulkData* m_bulk;                                    //  8 : pointer
+  const DataTraits* m_dataTraits;                      //  8 : pointer
+  const char* m_fieldName;                             //  8 : pointer
+  unsigned* m_fieldMetaDataModCount;                   //  8 : pointer
+  int m_numBuckets;                                    //  4 : int
+  unsigned m_localFieldMetaDataModCount;               //  4 : unsigned
 };
 
 
@@ -253,58 +222,32 @@ template <typename Space>
 KOKKOS_FUNCTION
 ConstFieldDataBytes<Space>::ConstFieldDataBytes()
   : FieldDataBase(),
-    m_rank(InvalidEntityRank),
-    m_layout(Layout::Left),
-    m_ordinal(InvalidOrdinal),
+    m_deviceFieldMetaData(nullptr),
+    m_deviceFastMeshIndices(nullptr),
+    m_fieldName(nullptr),
+    m_fieldMetaDataModCount(nullptr),
     m_hostBulk(nullptr),
+    m_localOffsetExtent(0),
+    m_numBuckets(0),
     m_bytesPerScalar(0),
-    m_fieldDataSynchronizedCount(0),
-    m_localFieldMetaDataModCount(0),
-    m_deviceMeshSyncCountAtLastSync(0)
+    m_localFieldMetaDataModCount(0)
 {
 }
 
 //------------------------------------------------------------------------------
 template <typename Space>
 ConstFieldDataBytes<Space>::ConstFieldDataBytes(ConstFieldDataBytes<stk::ngp::HostSpace>* hostFieldBytes,
-                                                Layout dataLayout)
-  : FieldDataBase(true),
-    m_rank(hostFieldBytes->entity_rank()),
-    m_layout(dataLayout),
-    m_ordinal(hostFieldBytes->field_ordinal()),
+                                                Layout dataLayout, FieldDataCopyTracking* copyTracking)
+  : FieldDataBase(copyTracking, hostFieldBytes->field_ordinal(), hostFieldBytes->entity_rank(), dataLayout),
+    m_deviceFieldMetaData(nullptr),
+    m_deviceFastMeshIndices(nullptr),
+    m_fieldName(hostFieldBytes->m_fieldName),
+    m_fieldMetaDataModCount(hostFieldBytes->m_fieldMetaDataModCount),
     m_hostBulk(nullptr),
+    m_localOffsetExtent(0),
+    m_numBuckets(0),
     m_bytesPerScalar(hostFieldBytes->data_traits().alignment_of),
-    m_fieldDataSynchronizedCount(0),
-    m_localFieldMetaDataModCount(0),
-    m_deviceMeshSyncCountAtLastSync(0)
-{
-  const std::string fieldName(hostFieldBytes->field_name());
-  m_fieldName = DeviceStringType(Kokkos::view_alloc(Kokkos::WithoutInitializing, fieldName), fieldName.size()+1);
-  std::strcpy(m_fieldName.data(), fieldName.c_str());
-  m_fieldMetaDataModCount = hostFieldBytes->m_fieldMetaDataModCount;
-}
-
-//------------------------------------------------------------------------------
-template <typename Space>
-KOKKOS_INLINE_FUNCTION
-ConstFieldDataBytes<Space>::ConstFieldDataBytes(const ConstFieldDataBytes& other)
-  : FieldDataBase(other),
-    m_rank(other.m_rank),
-    m_layout(other.m_layout),
-    m_ordinal(other.m_ordinal),
-    m_deviceFieldMetaData(other.m_deviceFieldMetaData),
-    m_deviceFastMeshIndices(other.m_deviceFastMeshIndices),
-    #if !defined(NDEBUG) || defined(STK_FIELD_BOUNDS_CHECK)
-    m_fieldName(other.m_fieldName),
-    #else
-    m_fieldName(),
-    #endif
-    m_fieldMetaDataModCount(other.m_fieldMetaDataModCount),
-    m_hostBulk(other.m_hostBulk),
-    m_bytesPerScalar(other.m_bytesPerScalar),
-    m_fieldDataSynchronizedCount(other.m_fieldDataSynchronizedCount),
-    m_localFieldMetaDataModCount(other.m_localFieldMetaDataModCount),
-    m_deviceMeshSyncCountAtLastSync(other.m_deviceMeshSyncCountAtLastSync)
+    m_localFieldMetaDataModCount(0)
 {
 }
 
@@ -379,56 +322,34 @@ ConstFieldDataBytes<Space>::bucket_bytes(int bucketId,
 
 //------------------------------------------------------------------------------
 template <typename Space>
-KOKKOS_INLINE_FUNCTION Layout
-ConstFieldDataBytes<Space>::data_layout() const
-{
-  return m_layout;
-}
-
-//------------------------------------------------------------------------------
-template <typename Space>
-KOKKOS_INLINE_FUNCTION EntityRank
-ConstFieldDataBytes<Space>::entity_rank() const
-{
-  return m_rank;
-}
-
-//------------------------------------------------------------------------------
-template <typename Space>
-KOKKOS_INLINE_FUNCTION Ordinal
-ConstFieldDataBytes<Space>::field_ordinal() const
-{
-  return m_ordinal;
-}
-
-//------------------------------------------------------------------------------
-template <typename Space>
 KOKKOS_INLINE_FUNCTION const char*
 ConstFieldDataBytes<Space>::field_name() const
 {
-#if !defined(NDEBUG) || defined(STK_FIELD_BOUNDS_CHECK)
-  return m_fieldName.data();
-#else
-  return "";
-#endif
+  return m_fieldName;
+}
+
+template <typename Space>
+KOKKOS_INLINE_FUNCTION int
+ConstFieldDataBytes<Space>::num_buckets() const
+{
+  return m_numBuckets;
 }
 
 //------------------------------------------------------------------------------
 template <typename Space>
 void
-ConstFieldDataBytes<Space>::modify_field_meta_data()
+ConstFieldDataBytes<Space>::set_up_to_date()
 {
-  ++m_fieldMetaDataModCount();
+  m_localFieldMetaDataModCount = *m_fieldMetaDataModCount;
 }
 
 //------------------------------------------------------------------------------
 template <typename Space>
 void
-ConstFieldDataBytes<Space>::update_field_meta_data_mod_count()
+ConstFieldDataBytes<Space>::set_fast_mesh_indices(FastMeshIndex* fastMeshIndicesPtr, unsigned fastMeshIndicesSize)
 {
-#if !defined(NDEBUG) || defined(STK_FIELD_BOUNDS_CHECK)
-  m_localFieldMetaDataModCount = m_fieldMetaDataModCount();
-#endif
+  m_deviceFastMeshIndices = fastMeshIndicesPtr;
+  m_localOffsetExtent = fastMeshIndicesSize;
 }
 
 //------------------------------------------------------------------------------
@@ -455,7 +376,7 @@ void
 ConstFieldDataBytes<Space>::set_mesh(BulkData* bulkData)
 {
   m_hostBulk = bulkData;
-  m_fieldDataSynchronizedCount = 0;
+  m_localFieldMetaDataModCount = 0;
 }
 
 //------------------------------------------------------------------------------
@@ -463,22 +384,41 @@ template <typename Space>
 bool
 ConstFieldDataBytes<Space>::needs_update() const
 {
-#ifndef NDEBUG
-  const int maxValidSyncCount = static_cast<int>(mesh().synchronized_count()+1);
-  STK_ThrowAssertMsg(m_fieldDataSynchronizedCount <= maxValidSyncCount,
-                     "Invalid sync state detected for Field: " << field_name() << ": field-sync-count (" <<
-                     m_fieldDataSynchronizedCount << ") shouldn't be greater than mesh-sync-count (" <<
-                     mesh().synchronized_count() << ")");
-#endif
-  return m_fieldDataSynchronizedCount != static_cast<int>(mesh().synchronized_count());
+  return (m_localFieldMetaDataModCount != *m_fieldMetaDataModCount || mesh().in_modifiable_state());
 }
 
 //------------------------------------------------------------------------------
-template <typename Space>
-int
-ConstFieldDataBytes<Space>::field_data_synchronized_count() const
+[[maybe_unused]]
+static
+void swap_all_meta_data_pointers_on_device(DeviceFieldMetaData* deviceFieldMetaDataA,
+                                           DeviceFieldMetaData* deviceFieldMetaDataB, unsigned numBuckets)
 {
-  return m_fieldDataSynchronizedCount;
+  Kokkos::parallel_for(numBuckets,
+                       KOKKOS_LAMBDA(unsigned bucketIdx) {
+                         std::byte* tmpData = deviceFieldMetaDataA[bucketIdx].m_data;
+                         deviceFieldMetaDataA[bucketIdx].m_data = deviceFieldMetaDataB[bucketIdx].m_data;
+                         deviceFieldMetaDataB[bucketIdx].m_data = tmpData;
+
+                         std::byte* tmpHostData = deviceFieldMetaDataA[bucketIdx].m_hostData;
+                         deviceFieldMetaDataA[bucketIdx].m_hostData = deviceFieldMetaDataB[bucketIdx].m_hostData;
+                         deviceFieldMetaDataB[bucketIdx].m_hostData = tmpHostData;
+                       }
+                      );
+}
+
+//------------------------------------------------------------------------------
+[[maybe_unused]]
+static
+void swap_device_meta_data_pointers_on_device(DeviceFieldMetaData* deviceFieldMetaDataA,
+                                              DeviceFieldMetaData* deviceFieldMetaDataB, unsigned numBuckets)
+{
+  Kokkos::parallel_for(numBuckets,
+                       KOKKOS_LAMBDA(unsigned bucketIdx) {
+                         std::byte* tmpData = deviceFieldMetaDataA[bucketIdx].m_data;
+                         deviceFieldMetaDataA[bucketIdx].m_data = deviceFieldMetaDataB[bucketIdx].m_data;
+                         deviceFieldMetaDataB[bucketIdx].m_data = tmpData;
+                       }
+                      );
 }
 
 //------------------------------------------------------------------------------
@@ -490,13 +430,17 @@ ConstFieldDataBytes<Space>::swap_field_data(FieldDataBase& other)
   STK_ThrowRequireMsg(otherFieldBytes != nullptr,
                       "ConstFieldDataBytes::swap_field_data() called with an imcompatible ConstFieldDataBytes object.");
 
+  swap_all_meta_data_pointers_on_device(this->m_deviceFieldMetaData, otherFieldBytes->m_deviceFieldMetaData,
+                                        this->m_numBuckets);
+
   DeviceFieldDataManagerBase* deviceFieldDataManager = impl::get_device_field_data_manager<Space>(this->mesh());
   STK_ThrowRequire(deviceFieldDataManager != nullptr);
 
-  deviceFieldDataManager->swap_field_data(this->field_ordinal(), otherFieldBytes->field_ordinal());
+  deviceFieldDataManager->swap_host_cache_all_meta_data_pointers(this->field_ordinal(),
+                                                                 otherFieldBytes->field_ordinal());
 
-  deviceFieldDataManager->set_device_field_meta_data(*this);
-  deviceFieldDataManager->set_device_field_meta_data(other);
+  std::swap(this->m_fieldMetaDataModCount, otherFieldBytes->m_fieldMetaDataModCount);
+  std::swap(this->m_localFieldMetaDataModCount, otherFieldBytes->m_localFieldMetaDataModCount);
 }
 
 //------------------------------------------------------------------------------
@@ -520,27 +464,17 @@ ConstFieldDataBytes<Space>::incomplete_swap_field_data(FieldDataBase& other)
                       "ConstFieldDataBytes::incomplete_swap_field_data() called with an imcompatible "
                       "ConstFieldDataBytes object.");
 
+  swap_device_meta_data_pointers_on_device(this->m_deviceFieldMetaData, otherFieldBytes->m_deviceFieldMetaData,
+                                           this->m_numBuckets);
+
   DeviceFieldDataManagerBase* deviceFieldDataManager = impl::get_device_field_data_manager<Space>(this->mesh());
   STK_ThrowRequire(deviceFieldDataManager != nullptr);
 
-  deviceFieldDataManager->swap_field_data(this->field_ordinal(), otherFieldBytes->field_ordinal());
+  deviceFieldDataManager->swap_host_cache_device_meta_data_pointers(this->field_ordinal(),
+                                                                    otherFieldBytes->field_ordinal());
 
-  // Reset the host bucket pointers after the rotation, to mimic the incomplete behavior
-  // of only rotating the device field data and leaving the host bucket pointers alone.
-  // This is only called (in Sierra) after neglecting to rotate the host-side pointers.
-  deviceFieldDataManager->update_host_bucket_pointers(this->field_ordinal());
-  deviceFieldDataManager->update_host_bucket_pointers( otherFieldBytes->field_ordinal());
-
-  deviceFieldDataManager->set_device_field_meta_data(*this);
-  deviceFieldDataManager->set_device_field_meta_data(other);
-}
-
-template <typename Space>
-bool
-ConstFieldDataBytes<Space>::need_device_metadata_update()
-{
-  DeviceFieldDataManagerBase* deviceFieldDataManager = impl::get_device_field_data_manager<Space>(this->mesh());
-  return deviceFieldDataManager->synchronized_count() > m_deviceMeshSyncCountAtLastSync;
+  std::swap(this->m_fieldMetaDataModCount, otherFieldBytes->m_fieldMetaDataModCount);
+  std::swap(this->m_localFieldMetaDataModCount, otherFieldBytes->m_localFieldMetaDataModCount);
 }
 
 
@@ -550,14 +484,14 @@ template <typename Space>
 KOKKOS_INLINE_FUNCTION void
 ConstFieldDataBytes<Space>::check_updated_field(const char* file, int line) const
 {
-  if (this->m_localFieldMetaDataModCount != this->m_fieldMetaDataModCount()) {
-    if (line == -1) {
-      printf("Error: Accessing out-of-date FieldData after a mesh modification for Field '%s'.  "
-             "please re-acquire this FieldData instance.", this->field_name());
+  if (this->m_localFieldMetaDataModCount != *this->m_fieldMetaDataModCount) {
+    if (line == 0) {
+      printf("Error: Accessing out-of-date FieldData after a host or device mesh modification for Field '%s'.  "
+             "Please re-acquire this FieldData instance.", this->field_name());
     }
     else {
-      printf("Error: %s:%i: Accessing out-of-date FieldData after a mesh modification for Field '%s'.  "
-             "please re-acquire this FieldData instance.", file, line, this->field_name());
+      printf("Error: %s:%i: Accessing out-of-date FieldData after a host or device mesh modification for Field '%s'.  "
+             "Please re-acquire this FieldData instance.", file, line, this->field_name());
     }
     STK_NGP_ThrowErrorMsg("Field consistency error.");
   }
@@ -568,16 +502,16 @@ template <typename Space>
 KOKKOS_INLINE_FUNCTION void
 ConstFieldDataBytes<Space>::check_entity_local_offset(unsigned localOffset, const char* file, int line) const
 {
-  if (localOffset >= this->m_deviceFastMeshIndices.extent(0)) {
-    if (line == -1) {
+  if (localOffset >= this->m_localOffsetExtent) {
+    if (line == 0) {
       printf("Error: Called FieldData::entity_values() for Field '%s' with an out-of-bounds Entity local "
-             "offset (%u) for a FastMeshIndex array with extent %lu.\n", this->field_name(), localOffset,
-             this->m_deviceFastMeshIndices.extent(0));
+             "offset (%u) for a FastMeshIndex array with extent %u.\n", this->field_name(), localOffset,
+             this->m_localOffsetExtent);
     }
     else {
       printf("Error: %s:%i: Called FieldData::entity_values() for Field '%s' with an out-of-bounds Entity local "
-             "offset (%u) for a FastMeshIndex array with extent %lu.\n", file, line, this->field_name(), localOffset,
-             this->m_deviceFastMeshIndices.extent(0));
+             "offset (%u) for a FastMeshIndex array with extent %u.\n", file, line, this->field_name(), localOffset,
+             this->m_localOffsetExtent);
     }
     STK_NGP_ThrowErrorMsg("Field consistency error.");
   }
@@ -588,16 +522,16 @@ template <typename Space>
 KOKKOS_INLINE_FUNCTION void
 ConstFieldDataBytes<Space>::check_bucket_id(unsigned bucketId, const char* valuesType, const char* file, int line) const
 {
-  if (bucketId >= this->m_deviceFieldMetaData.extent(0)) {
-    if (line == -1) {
+  if (bucketId >= static_cast<unsigned>(this->m_numBuckets)) {
+    if (line == 0) {
       printf("Error: Called FieldData::%s_values() for Field '%s' with an out-of-bounds Bucket ID (%u) for a "
-             "DeviceFieldMetaData array with extent %lu.\n", valuesType, this->field_name(), bucketId,
-             this->m_deviceFieldMetaData.extent(0));
+             "DeviceFieldMetaData array with extent %i.\n", valuesType, this->field_name(), bucketId,
+             this->m_numBuckets);
     }
     else {
       printf("Error: %s:%i: Called FieldData::%s_values() for Field '%s' with an out-of-bounds Bucket ID (%u) for a "
-             "DeviceFieldMetaData array with extent %lu.\n", file, line, valuesType, this->field_name(), bucketId,
-             this->m_deviceFieldMetaData.extent(0));
+             "DeviceFieldMetaData array with extent %i.\n", file, line, valuesType, this->field_name(), bucketId,
+             this->m_numBuckets);
     }
     STK_NGP_ThrowErrorMsg("Field consistency error.");
   }
@@ -613,7 +547,7 @@ ConstFieldDataBytes<Space>::check_bucket_ordinal(unsigned bucketId, unsigned buc
   // to query EntityValues::is_field_defined() inside a loop.
   if ((bucketOrd >= static_cast<unsigned>(this->m_deviceFieldMetaData[bucketId].m_bucketSize)) &&
       (this->m_deviceFieldMetaData[bucketId].m_bucketSize > 0)) {
-    if (line == -1) {
+    if (line == 0) {
       printf("Error: Called FieldData::entity_values() for Field '%s' with an out-of-bounds Bucket ordinal (%u) "
              "for Bucket %u with size %i.\n", this->field_name(), bucketOrd, bucketId,
              this->m_deviceFieldMetaData[bucketId].m_bucketSize);
@@ -636,12 +570,12 @@ ConstFieldDataBytes<Space>::check_bucket_ordinal(unsigned bucketId, unsigned buc
 inline
 ConstFieldDataBytes<stk::ngp::HostSpace>::ConstFieldDataBytes()
   : FieldDataBase(),
-    m_rank(InvalidEntityRank),
-    m_layout(Layout::Right),
-    m_ordinal(InvalidOrdinal),
+    m_fieldMetaData(nullptr),
     m_bulk(nullptr),
     m_dataTraits(&stk::mesh::data_traits<void>()),
-    m_fieldDataSynchronizedCount(0),
+    m_fieldName(nullptr),
+    m_fieldMetaDataModCount(nullptr),
+    m_numBuckets(0),
     m_localFieldMetaDataModCount(0)
 {
 }
@@ -649,20 +583,16 @@ ConstFieldDataBytes<stk::ngp::HostSpace>::ConstFieldDataBytes()
 //------------------------------------------------------------------------------
 inline
 ConstFieldDataBytes<stk::ngp::HostSpace>::ConstFieldDataBytes(EntityRank entityRank, Ordinal fieldOrdinal,
-                                                              [[maybe_unused]] const std::string& fieldName,
                                                               const DataTraits& dataTraits, Layout dataLayout)
-  : FieldDataBase(true),
-    m_rank(entityRank),
-    m_layout(dataLayout),
-    m_ordinal(fieldOrdinal),
+  : FieldDataBase(fieldOrdinal, entityRank, dataLayout),
+    m_fieldMetaData(nullptr),
     m_bulk(nullptr),
     m_dataTraits(&dataTraits),
-    m_fieldDataSynchronizedCount(0),
+    m_fieldName(nullptr),
+    m_fieldMetaDataModCount(nullptr),
+    m_numBuckets(0),
     m_localFieldMetaDataModCount(0)
 {
-  m_fieldName = HostStringType(fieldName, fieldName.size()+1);
-  std::strcpy(m_fieldName.data(), fieldName.c_str());
-  m_fieldMetaDataModCount = FieldMetaDataModCountType("FieldMetaDataModCount");
 }
 
 //------------------------------------------------------------------------------
@@ -1014,53 +944,53 @@ ConstFieldDataBytes<stk::ngp::HostSpace>::bucket_bytes<Layout::Right>(int bucket
 
 
 //------------------------------------------------------------------------------
-inline Layout
-ConstFieldDataBytes<stk::ngp::HostSpace>::data_layout() const
-{
-  return m_layout;
-}
-
-//------------------------------------------------------------------------------
-inline EntityRank
-ConstFieldDataBytes<stk::ngp::HostSpace>::entity_rank() const
-{
-  return m_rank;
-}
-
-//------------------------------------------------------------------------------
-inline Ordinal
-ConstFieldDataBytes<stk::ngp::HostSpace>::field_ordinal() const
-{
-  return m_ordinal;
-}
-
-//------------------------------------------------------------------------------
 inline const char*
 ConstFieldDataBytes<stk::ngp::HostSpace>::field_name() const
 {
-#if !defined(NDEBUG) || defined(STK_FIELD_BOUNDS_CHECK)
-  return m_fieldName.data();
-#else
-  return "";
-#endif
+  return m_fieldName;
+}
+
+//------------------------------------------------------------------------------
+inline int
+ConstFieldDataBytes<stk::ngp::HostSpace>::num_buckets() const
+{
+  return m_numBuckets;
 }
 
 //------------------------------------------------------------------------------
 inline void
-ConstFieldDataBytes<stk::ngp::HostSpace>::modify_field_meta_data()
+ConstFieldDataBytes<stk::ngp::HostSpace>::set_up_to_date()
 {
-  ++m_fieldMetaDataModCount();
+  m_localFieldMetaDataModCount = *m_fieldMetaDataModCount;
 }
 
 //------------------------------------------------------------------------------
 inline void
-ConstFieldDataBytes<stk::ngp::HostSpace>::update_field_meta_data_mod_count()
+ConstFieldDataBytes<stk::ngp::HostSpace>::set_field_name(const char* fieldName)
 {
-#if !defined(NDEBUG) || defined(STK_FIELD_BOUNDS_CHECK)
-  m_localFieldMetaDataModCount = m_fieldMetaDataModCount();
-#endif
+  m_fieldName = fieldName;
 }
 
+//------------------------------------------------------------------------------
+inline void
+ConstFieldDataBytes<stk::ngp::HostSpace>::set_field_meta_data_mod_count_pointer(unsigned* fieldMetaDataModCountPtr)
+{
+  m_fieldMetaDataModCount = fieldMetaDataModCountPtr;
+}
+
+//------------------------------------------------------------------------------
+inline void
+ConstFieldDataBytes<stk::ngp::HostSpace>::set_field_meta_data_mod_count(unsigned fieldMetaDataModCount)
+{
+  *m_fieldMetaDataModCount = fieldMetaDataModCount;
+}
+
+//------------------------------------------------------------------------------
+inline unsigned
+ConstFieldDataBytes<stk::ngp::HostSpace>::field_meta_data_mod_count()
+{
+  return *m_fieldMetaDataModCount;
+}
 
 //------------------------------------------------------------------------------
 inline const DataTraits&
@@ -1090,29 +1020,14 @@ inline void
 ConstFieldDataBytes<stk::ngp::HostSpace>::set_mesh(BulkData* bulkData)
 {
   m_bulk = bulkData;
-  m_fieldDataSynchronizedCount = 0;
+  m_localFieldMetaDataModCount = 0;
 }
 
 //------------------------------------------------------------------------------
 inline bool
 ConstFieldDataBytes<stk::ngp::HostSpace>::needs_update() const
 {
-#ifndef NDEBUG
-  const int maxValidSyncCount = static_cast<int>(mesh().synchronized_count()+1);
-  STK_ThrowAssertMsg(m_fieldDataSynchronizedCount <= maxValidSyncCount,
-                     "Invalid sync state detected for Field: " << field_name()
-                     << ": field-sync-count (" << m_fieldDataSynchronizedCount
-                     << ") shouldn't be greater than mesh-sync-count ("
-                     << mesh().synchronized_count() << ")");
-#endif
-  return m_fieldDataSynchronizedCount != static_cast<int>(mesh().synchronized_count());
-}
-
-//------------------------------------------------------------------------------
-inline int
-ConstFieldDataBytes<stk::ngp::HostSpace>::field_data_synchronized_count() const
-{
-  return m_fieldDataSynchronizedCount;
+  return (m_localFieldMetaDataModCount != *m_fieldMetaDataModCount);
 }
 
 //------------------------------------------------------------------------------
@@ -1123,36 +1038,31 @@ ConstFieldDataBytes<stk::ngp::HostSpace>::swap_field_data(FieldDataBase& other)
       dynamic_cast<ConstFieldDataBytes<stk::ngp::HostSpace>*>(&other);
   STK_ThrowRequireMsg(otherFieldBytes != nullptr,
                       "ConstFieldDataBytes::swap_field_data() called with an imcompatible ConstFieldDataBytes object.");
+  STK_ThrowRequireMsg(this->m_numBuckets == otherFieldBytes->m_numBuckets,
+                      "Multiple states of the same Field (" << this->m_fieldName <<
+                      ") must be registered on identical subsets of the mesh.");
 
-  std::swap(this->m_fieldMetaData, otherFieldBytes->m_fieldMetaData);
+  const unsigned numBuckets = this->m_numBuckets;
+
+  for (unsigned bucketIdx = 0; bucketIdx < numBuckets; ++bucketIdx) {
+    std::swap(this->m_fieldMetaData[bucketIdx].m_data, otherFieldBytes->m_fieldMetaData[bucketIdx].m_data);
+  }
+
+  std::swap(this->m_fieldMetaDataModCount, otherFieldBytes->m_fieldMetaDataModCount);
+  std::swap(this->m_localFieldMetaDataModCount, otherFieldBytes->m_localFieldMetaDataModCount);
 }
 
 #if !defined(NDEBUG) || defined(STK_FIELD_BOUNDS_CHECK)
 
 //------------------------------------------------------------------------------
-inline std::string
-ConstFieldDataBytes<stk::ngp::HostSpace>::location_string(const char* file, int line) const
-{
-  if (line != -1) {
-    std::string fileName(file);
-    std::size_t pathDelimeter = fileName.find_last_of("/");
-    if (pathDelimeter < fileName.size()) {
-      fileName = fileName.substr(pathDelimeter+1);
-    }
-    return fileName + ":" + std::to_string(line) + ": ";
-  }
-  else {
-    return "";
-  }
-}
-
-//------------------------------------------------------------------------------
 inline void
 ConstFieldDataBytes<stk::ngp::HostSpace>::check_updated_field(const char* file, int line) const
 {
-  STK_ThrowRequireMsg(m_localFieldMetaDataModCount == m_fieldMetaDataModCount(),
-                      location_string(file, line) << "Accessing out-of-date FieldData after a mesh modification "
-                                                     "for Field '" << field_name() << "'.  Please re-acquire this FieldData instance.");
+  STK_ThrowRequireMsg(m_localFieldMetaDataModCount == *m_fieldMetaDataModCount,
+                      source_location_string(file, line) << "Accessing out-of-date FieldData after a host or device "
+                      "mesh modification for Field '" << field_name() << "'.  Please re-acquire this FieldData "
+                      "instance, potentially after calling NgpMesh::update_bulk_data() if you have modified the "
+                      "mesh on device.");
 }
 
 //------------------------------------------------------------------------------
@@ -1161,8 +1071,8 @@ ConstFieldDataBytes<stk::ngp::HostSpace>::check_mesh(const stk::mesh::BulkData& 
                                                      const char* file, int line) const
 {
   STK_ThrowRequireMsg(&bulk == &mesh(),
-                      location_string(file, line) << "Accessing " << target << " from a different mesh for Field '" <<
-                      field_name() << "'.");
+                      source_location_string(file, line) << "Accessing " << target <<
+                      " from a different mesh for Field '" << field_name() << "'.");
 }
 
 //------------------------------------------------------------------------------
@@ -1171,7 +1081,7 @@ ConstFieldDataBytes<stk::ngp::HostSpace>::check_rank(stk::mesh::EntityRank targe
                                                      const char* file, int line) const
 {
   STK_ThrowRequireMsg(entity_rank() == targetRank,
-                      location_string(file, line) << "Accessing " << target << " with rank " << targetRank <<
+                      source_location_string(file, line) << "Accessing " << target << " with rank " << targetRank <<
                       " for Field '" << field_name() << "' with rank " << entity_rank() <<
                       ".  Are the Field and " << target << " from the same mesh?");
 }
@@ -1181,10 +1091,10 @@ inline void
 ConstFieldDataBytes<stk::ngp::HostSpace>::check_bucket_id(unsigned bucketId, const char* valuesType,
                                                           const char* file, int line) const
 {
-  STK_ThrowRequireMsg(bucketId < m_fieldMetaData.size(),
-                      location_string(file, line) << "Called FieldData::" << valuesType << "_values() for Field '" <<
-                      field_name() << "' with an out-of-bounds Bucket ID (" << bucketId <<
-                      ") for a FieldMetaData array with size " << m_fieldMetaData.size());
+  STK_ThrowRequireMsg(bucketId < static_cast<unsigned>(m_numBuckets),
+                      source_location_string(file, line) << "Called FieldData::" << valuesType <<
+                      "_values() for Field '" << field_name() << "' with an out-of-bounds Bucket ID (" << bucketId <<
+                      ") for a FieldMetaData array with size " << m_numBuckets);
 }
 
 //------------------------------------------------------------------------------
@@ -1197,7 +1107,7 @@ ConstFieldDataBytes<stk::ngp::HostSpace>::check_bucket_ordinal(unsigned bucketId
   // to query EntityValues::is_field_defined() inside a loop.
   STK_ThrowRequireMsg((bucketOrd < static_cast<unsigned>(m_fieldMetaData[bucketId].m_bucketSize)) ||
                       (m_fieldMetaData[bucketId].m_bucketSize == 0),
-                      location_string(file, line) << "Called FieldData::entity_values() for Field '" <<
+                      source_location_string(file, line) << "Called FieldData::entity_values() for Field '" <<
                       field_name() << "' with an out-of-bounds Bucket ordinal (" << bucketOrd << ") for Bucket " <<
                       bucketId << " with size " << m_fieldMetaData[bucketId].m_bucketSize);
 }

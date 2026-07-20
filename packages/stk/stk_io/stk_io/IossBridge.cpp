@@ -2461,6 +2461,13 @@ void define_side_block(stk::io::OutputParams &params,
     }
   }
 
+  if(elementTopo == nullptr && parentElementBlock != nullptr) {
+    std::string tmpTopoName = map_stk_topology_to_ioss(parentElementBlock->topology());
+    elementTopo = Ioss::ElementTopology::factory(tmpTopoName, true);
+    stkElementTopology = parentElementBlock->topology();
+    elementTopoName = map_stk_topology_to_ioss(stkElementTopology);
+  }
+
   const Ioss::ElementTopology* iossSideTopo = Ioss::ElementTopology::factory(ioTopo, true);
   int64_t sideOffset = get_side_offset(iossSideTopo, elementTopo);
   size_t sideCount = get_number_sides_in_sideset(params, part, stkElementTopology, parentElementBlock, sideOffset);
@@ -3087,7 +3094,7 @@ struct part_compare_by_name {
   }
 };
 
-bool has_io_subset_but_no_non_assembly_io_superset(const stk::mesh::Part& part)
+bool has_no_non_assembly_io_superset(const stk::mesh::Part& part)
 {
   for(const stk::mesh::Part* superset : part.supersets()) {
     if (stk::io::is_part_io_part(*superset) &&
@@ -3095,23 +3102,19 @@ bool has_io_subset_but_no_non_assembly_io_superset(const stk::mesh::Part& part)
       return false;
     }
   }
-  for(const stk::mesh::Part* subset : part.subsets()) {
-    if (stk::io::is_part_io_part(*subset)) {
-      return true;
-    }
-  }
-  return false;
+
+  return true;
 }
 
 bool is_edge_rank_sideset_part(const stk::mesh::Part& part)
 {
-  if (!stk::io::is_part_edge_block_io_part(part)) {
+  if (part.primary_entity_rank() == stk::topology::EDGE_RANK && !stk::io::is_part_edge_block_io_part(part)) {
     const unsigned spatialDim = part.mesh_meta_data().spatial_dimension();
     if (part.primary_entity_rank() == stk::topology::EDGE_RANK) {
       if (spatialDim == 2) {
         return true;
       }
-      if (spatialDim == 3 && has_io_subset_but_no_non_assembly_io_superset(part)) {
+      if (spatialDim == 3 && has_no_non_assembly_io_superset(part)) {
         return true;
       }
     }

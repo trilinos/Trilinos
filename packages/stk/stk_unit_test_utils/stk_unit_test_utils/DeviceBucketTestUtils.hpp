@@ -35,7 +35,6 @@
 #include <gtest/gtest.h>
 #include "stk_mesh/base/BucketConnectivity.hpp"
 #include "stk_mesh/base/MeshBuilder.hpp"
-#include "stk_mesh/base/BulkData.hpp"
 #include "stk_mesh/base/MetaData.hpp"
 #include "stk_mesh/base/Ngp.hpp"
 #include "stk_mesh/base/GetNgpMesh.hpp"

@@ -40,8 +40,9 @@
 #include <stk_mesh/base/Types.hpp>      // for PartVector, EntityId, etc
 #include <vector>                       // for vector, etc
 #include <stk_topology/topology.hpp>
-#include "stk_mesh/base/Entity.hpp"     // for Entity
-#include "stk_util/util/ReportHandler.hpp"
+#include <stk_mesh/base/Entity.hpp>     // for Entity
+#include <stk_mesh/baseImpl/GetOrdPermImpl.hpp>
+#include <stk_util/util/ReportHandler.hpp>
 
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class Part; } }
@@ -149,12 +150,15 @@ Entity connect_side_to_element_with_ordinal( BulkData & mesh ,
  *
  *
  */
-typedef std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> OrdinalAndPermutation;
-
+template<typename NodeArrayType>
 OrdinalAndPermutation get_ordinal_and_permutation(const stk::mesh::BulkData& mesh,
                                                   stk::mesh::Entity parent_entity,
                                                   stk::mesh::EntityRank to_rank,
-                                                  const stk::mesh::EntityVector &nodes_of_sub_rank);
+                                                  const NodeArrayType& nodes_of_sub_rank)
+{
+    impl::ShellPermutationFilter pFilter(mesh, parent_entity, to_rank);
+    return impl::get_ordinal_and_permutation_with_filter(mesh, parent_entity, to_rank, nodes_of_sub_rank, pFilter);
+}
 
 bool element_side_polarity(const BulkData& mesh,
                            const Entity elem ,

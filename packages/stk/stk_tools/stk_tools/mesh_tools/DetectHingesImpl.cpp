@@ -33,6 +33,7 @@
 //
 
 #include "stk_tools/mesh_tools/DetectHingesImpl.hpp"
+#include "stk_tools/mesh_tools/DetectHinges.hpp"
 #include "stk_tools/mesh_tools/DisconnectBlocksImpl.hpp"
 #include "stk_util/util/GraphCycleDetector.hpp"
 #include "stk_mesh/base/BulkData.hpp"
@@ -56,119 +57,6 @@ void print_node_count(stk::mesh::BulkData& bulk, const std::string str)
   std::cout << str << std::endl;
   std::cout << "p:" << bulk.parallel_rank() << " num nodes: " << nodeCount << std::endl;
 }
-
-bool are_equal(const stk::mesh::Entity* nodesPtr, const stk::mesh::EntityVector& nodesVec)
-{
-  for(stk::mesh::Entity node : nodesVec) {
-    if (node != *nodesPtr) {
-      return false;
-    }
-    ++nodesPtr;
-  }
-  return true;
-}
-
-class SideFinder
-{
-public:
-  SideFinder(const stk::mesh::BulkData& bulkData, stk::mesh::Entity element)
-    : m_bulk(bulkData), m_elem(element)
-  {
-    const unsigned numNodes = m_bulk.num_nodes(m_elem);
-    if (numNodes > MAX_NUM_NODES) {
-      m_heapScratchSpace.resize(numNodes);
-      m_scratchSpace = m_heapScratchSpace.data();
-    }
-    else {
-      m_scratchSpace = m_stackScratchSpace;
-    }
-  }
-
-  virtual ~SideFinder() {}
-
-  bool put_nodes_in_side_order(stk::mesh::EntityVector& nodes)
-  {
-    stk::topology elementTopo = m_bulk.bucket(m_elem).topology();
-    stk::mesh::EntityRank subRank = m_bulk.mesh_meta_data().side_rank();
-
-    const unsigned numSubTopo = elementTopo.num_sub_topology(subRank);
-    const unsigned numNodes = nodes.size();
-    const stk::mesh::Entity* elemNodes = m_bulk.begin_nodes(m_elem);
-
-    for(unsigned i = 0; i < numSubTopo; i++) {
-      stk::topology subTopo = elementTopo.sub_topology(subRank, i);
-      if(numNodes != subTopo.num_nodes()) {
-        continue;
-      }
-
-      elementTopo.sub_topology_nodes(elemNodes, subRank, i, m_scratchSpace);
-      std::sort(m_scratchSpace, m_scratchSpace+subTopo.num_nodes());
-
-      if(are_equal(m_scratchSpace, nodes)) {
-        elementTopo.sub_topology_nodes(elemNodes, subRank, i, nodes.data());
-        return true;
-      }
-    }
-    return false;
-  }
-
-private:
-  const stk::mesh::BulkData& m_bulk;
-  stk::mesh::Entity m_elem;
-  static constexpr unsigned MAX_NUM_NODES = 32;
-  stk::mesh::Entity m_stackScratchSpace[MAX_NUM_NODES];
-  stk::mesh::EntityVector m_heapScratchSpace;
-  stk::mesh::Entity* m_scratchSpace;
-};
-
-std::pair<stk::mesh::EntityVector,bool> get_pairwise_common_nodes(const stk::mesh::BulkData& bulk,
-                                                                  stk::mesh::Entity elem1,
-                                                                  stk::mesh::Entity elem2)
-{
-  std::pair<stk::mesh::EntityVector,bool> result;
-  stk::mesh::EntityVector& commonNodes = result.first;
-  commonNodes.assign(bulk.begin_nodes(elem1), bulk.end_nodes(elem1));
-
-  const stk::mesh::Entity* elem2Nodes = bulk.begin_nodes(elem2);
-  const unsigned numElem2Nodes = bulk.num_nodes(elem2);
-  unsigned numIntersect = 0;
-  const unsigned numElem1Nodes = commonNodes.size();
-  for(unsigned n=0; n<numElem1Nodes; ++n) {
-    for(unsigned m=0; m<numElem2Nodes; ++m) {
-      if (commonNodes[n] == elem2Nodes[m]) {
-        if (n > numIntersect) {
-          commonNodes[numIntersect] = commonNodes[n];
-        }
-        ++numIntersect;
-        break;
-      }
-    }
-  }
-  commonNodes.resize(numIntersect);
-  std::sort(commonNodes.begin(), commonNodes.end());
-
-  SideFinder sideFinder(bulk, elem1);
-  bool commonNodesAreSideNodes = sideFinder.put_nodes_in_side_order(commonNodes);
-  result.second = commonNodesAreSideNodes;
-
-  return result;
-}
-
-stk::mesh::EntityVector get_common_elements(const stk::mesh::BulkData& bulk, stk::mesh::Entity node1, stk::mesh::Entity node2)
-{
-  stk::mesh::EntityVector commonElements;
-  stk::mesh::EntityVector node1Elems(bulk.begin_elements(node1), bulk.begin_elements(node1)+bulk.num_elements(node1));
-  stk::mesh::EntityVector node2Elems(bulk.begin_elements(node2), bulk.begin_elements(node2)+bulk.num_elements(node2));
-
-  std::sort(node1Elems.begin(), node1Elems.end());
-  std::sort(node2Elems.begin(), node2Elems.end());
-  std::set_intersection(node1Elems.begin(), node1Elems.end(),
-                        node2Elems.begin(), node2Elems.end(),
-                        std::back_inserter(commonElements));
-
-  return commonElements;
-}
-
 
 void populate_pairwise_side_info(const stk::mesh::BulkData& bulk, stk::mesh::Entity elem1,
                                  stk::mesh::Entity elem2, PairwiseSideInfoVector& infoVec)
@@ -453,34 +341,6 @@ void prune_hinge_nodes(const stk::mesh::BulkData& bulk, HingeNodeVector& hingeNo
   for(const HingeEdge& edge : hingeEdges) {
     prune_hinge_edge(bulk, edge, hingeNodes);
   }
-}
-
-void fill_mesh_hinges(const stk::mesh::BulkData& bulk, HingeNodeVector& hingeNodes)
-{
-  std::vector<std::string> blocksToDetect;
-  fill_mesh_hinges( bulk,  blocksToDetect, hingeNodes);
-}
-
-void fill_mesh_hinges(const stk::mesh::BulkData& bulk, const std::vector<std::string>& blocksToDetect, HingeNodeVector& hingeNodes)
-{
-  hingeNodes = get_hinge_nodes(bulk, blocksToDetect);
-}
-
-void fill_mesh_hinges(const stk::mesh::BulkData& bulk, HingeNodeVector& hingeNodes, HingeEdgeVector& hingeEdges, bool onlyIfConnectedToSolidElements)
-{
-  std::vector<std::string> blocksToDetect;
-  fill_mesh_hinges( bulk,  blocksToDetect, hingeNodes, hingeEdges, onlyIfConnectedToSolidElements);
-}
-
-void fill_mesh_hinges(const stk::mesh::BulkData& bulk, const std::vector<std::string>& blocksToDetect, HingeNodeVector& hingeNodes, HingeEdgeVector& hingeEdges, bool onlyIfConnectedToSolidElements)
-{
-  hingeNodes = get_hinge_nodes(bulk, blocksToDetect, onlyIfConnectedToSolidElements);
-
-  if(hingeNodes.size() != 0) {
-    hingeEdges = get_hinge_edges(bulk, hingeNodes);
-  }
-
-  prune_hinge_nodes(bulk, hingeNodes, hingeEdges);
 }
 
 bool hinge_node_is_locally_owned(const stk::mesh::BulkData& bulk, const HingeNode& node)

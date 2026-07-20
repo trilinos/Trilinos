@@ -66,8 +66,8 @@ WriterParser::parse(
   return OptionMaskParser::parse(mask_string);
 }
 
-
-void
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after May 2026
+STK_DEPRECATED void
 WriterParser::parseArg(
   const std::string &  name,
   const std::string &  arg) const
@@ -117,19 +117,33 @@ WriterParser::parseArg(
     OptionMaskNameMap::const_iterator mask_entry = m_optionMaskNameMap.find(name.c_str());
 
     if (mask_entry != m_optionMaskNameMap.end())
+    {
       m_optionMask |= (*mask_entry).second.m_mask;
-    else {
-      Mask  mask_hex = 0;
+    }
+    else 
+    {
+      Mask mask_hex = 0;
       std::istringstream mask_hex_stream(name.c_str());
       if (mask_hex_stream >> std::resetiosflags(std::ios::basefield) >> mask_hex)
+      {
         m_optionMask |= mask_hex;
+      }
       else
       {
-        throw std::runtime_error("Error: Unrecognized option flag argument: " + name + "\n");
+        std::ostringstream os;
+        os << "Error: Unrecognized option flag argument: '" << name << "'.\n"
+           << "Valid option flags are:\n";
+
+        for (const auto& kv : m_optionMaskNameMap) {
+          os << "  " << kv.first << '\n';
+        }
+
+        throw std::runtime_error(os.str());
       }
     }
   }
 }
+#endif
 
 } // namespace diag
 } // namespace stk

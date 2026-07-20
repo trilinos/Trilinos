@@ -1,9 +1,36 @@
 # CHANGELOG
 
-5.27.3-patch (STK_VERSION 5270301) 2/16/26
-  Unusual patch release. Partial stk update.
-  stk_ngp_test: remove RDC requirement for recent ROCM versions
-                (still required for 6.2)
+5.31.2    (STK_VERSION 5310200)
+  stk_mesh:     improve behavior of for_each_entity_run when OpenMP is enabled
+  stk_transfer: enable transfers between 2D and 3D mesh, as well as 
+                axisymmetric transfers
+  stk_mesh:     make field_blas functions work on Rocm when unified memory is
+                enabled
+  stk_transfer: enable stk_transfer executable to use Intrepid2 master elements
+  stk_mesh:     move DeviceMesh connectivity data out of buckets and into
+                separate data structure
+  stk_mesh:     change DeviceMesh to sort the entities in the same order
+                as BulkData
+  stk_transfer: add optional coordinate transform to receive mesh
+                wrapper to enable transfers between similar but
+                not identical meshes
+  stk_mesh:     make field state rotation work on device for fields
+                where some states do not have device data
+  stk_transfer: enable transfers to repeat the search when directed
+                by the user mesh wrappers.  Makes stk_transfer
+                usable for adaptive mesh refinement.
+  stk_mesh:     reduce size of FieldData objects and improve the
+                performance of creating them         
+  
+ 
+5.27.4    (STK_VERSION 5270400)  1/6/26
+  stk_mesh: parallel_sum/min/max and '_including_ghosts' versions
+            now use single consolidated code-path for both CPU and
+            GPU builds. Also fixes a Kokkos 5 build error related
+            to '::HostMirror' vs '::host_mirror_type'.
+  stk_mesh: Reduced size of device FieldData objects.
+  stk_mesh: Fixed the 'STK_USE_DEVICE_MESH' build (which is used for
+            debugging device code-paths in a non-GPU build).
 
 5.27.3    (STK_VERSION 5270300) 12/16/25
   stk_mesh: initial GPU Mesh mod: NgpMesh::batch_change_entity_parts

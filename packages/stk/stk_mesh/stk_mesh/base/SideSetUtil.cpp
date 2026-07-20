@@ -301,11 +301,16 @@ bool does_not_contain_internal_sideset(const stk::mesh::BulkData &bulk, const st
 const stk::mesh::Part& get_sideset_parent(const stk::mesh::Part& sidesetPart)
 {
     for(stk::mesh::Part * part : sidesetPart.supersets()) {
-        if((part->id() != stk::mesh::Part::INVALID_ID) &&
-           (part->id() == sidesetPart.id()) &&
-           (part->primary_entity_rank() == sidesetPart.primary_entity_rank())) {
-            return *part;
-        }
+      const bool sameRank = part->primary_entity_rank() == sidesetPart.primary_entity_rank();
+      const bool alreadyExists = impl::has_sideset_part_attribute(*part) && impl::get_sideset_part_attribute(*part);
+
+      if(sameRank && alreadyExists) {
+        return *part;
+      }
+
+      if((part->id() != stk::mesh::Part::INVALID_ID) && (part->id() == sidesetPart.id()) && sameRank) {
+        return *part;
+      }
     }
 
     return sidesetPart;

@@ -44,6 +44,7 @@
 #include "stk_mesh/base/Types.hpp"      // for BucketVector, EntityId, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_unit_test_utils/stk_mesh_fixtures/HexFixture.hpp"  // for HexFixture
+#include "stk_unit_test_utils/stk_mesh_fixtures/QuadShellFixture.hpp"  // for QuadShellFixture
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowRequire
 #include "gtest/gtest.h"                // for EXPECT_EQ
 #include <algorithm>                    // for max, min
@@ -64,6 +65,7 @@ namespace {
 
 using namespace stk::mesh;
 using stk::mesh::fixtures::HexFixture;
+using stk::mesh::fixtures::QuadShellFixture;
 
 template <typename T>
 T do_operation(Operation Op, T lhs, T rhs)
@@ -621,6 +623,88 @@ TEST(FieldParallel, parallel_max_including_ghosts)
   do_parallel_assemble_including_ghosts<Operation::MAX, stk::mesh::Layout::Right>();
 #else
   do_parallel_assemble_including_ghosts<Operation::MAX, stk::mesh::Layout::Left>();
+#endif
+}
+
+template <stk::mesh::Layout DataLayout>
+void do_parallel_assemble_including_ghosts_check_consistency()
+{
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+
+  const int p_rank = stk::parallel_machine_rank(pm);
+  const int p_size = stk::parallel_machine_size(pm);
+
+  if (p_size != 4) { GTEST_SKIP(); }
+
+  const unsigned NX = 3;
+  const unsigned NY = 3;
+
+  QuadShellFixture fixture(pm, NX, NY);
+
+  MetaData& meta = fixture.m_meta;
+  BulkData& bulk = fixture.m_bulk_data;
+
+  using ScalarField = Field<double, DataLayout>;
+
+  ScalarField& universal_scalar_node_field =
+      meta.declare_field<double, DataLayout>(stk::topology::NODE_RANK, "universal_scalar_node_field");
+
+  put_field_on_mesh(universal_scalar_node_field, meta.universal_part(), nullptr);
+
+  meta.commit();
+
+  fixture.generate_mesh();
+
+  Selector shared_sel = meta.globally_shared_part();
+
+  std::vector<size_t> counts;
+  count_entities( shared_sel, bulk, counts );
+
+  // Fill field data
+
+  {
+    auto universal_scalar_field_data = universal_scalar_node_field.template data<stk::mesh::OverwriteAll>();
+    const stk::mesh::Entity centerNode = bulk.get_entity(stk::topology::NODE_RANK, 5U);
+    auto f = universal_scalar_field_data.entity_values(centerNode);
+    switch(p_rank) {
+    case 0:
+      f() = 1.e16;
+      break;
+    case 1:
+      f() = -1.e16;
+      break;
+    case 2:
+      f() = 1;
+      break;
+    case 3:
+      f() = 1;
+      break;
+    default:
+      throw std::runtime_error("Should not have gotten here");
+    }
+  }
+
+  std::vector<const FieldBase*> double_field_vector;
+  double_field_vector.push_back(&universal_scalar_node_field);
+
+  do_assemble_including_ghosts(Operation::SUM, bulk, double_field_vector);
+
+  // Check field values
+
+  {
+    auto universal_scalar_field_data = universal_scalar_node_field.template data<stk::mesh::ReadOnly>();
+    const stk::mesh::Entity centerNode = bulk.get_entity(stk::topology::NODE_RANK, 5U);
+    auto f = universal_scalar_field_data.entity_values(centerNode);
+    EXPECT_EQ(f(), 2.);
+  }
+}
+
+TEST(FieldParallel, parallel_consistency)
+{
+#ifndef STK_UNIFIED_MEMORY
+  do_parallel_assemble_including_ghosts_check_consistency<stk::mesh::Layout::Right>();
+#else
+  do_parallel_assemble_including_ghosts_check_consistency<stk::mesh::Layout::Left>();
 #endif
 }
 

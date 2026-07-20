@@ -60,6 +60,14 @@ namespace stk {
 namespace mesh {
 namespace impl {
 
+struct SidesetPartAttribute
+{
+  bool value;
+};
+
+void set_sideset_part_attribute(stk::mesh::Part& part, const bool hasAttribute);
+bool has_sideset_part_attribute(stk::mesh::Part& part);
+bool get_sideset_part_attribute(stk::mesh::Part& part);
 
 template<typename KEY>
 struct SideSetKeyGenerator {

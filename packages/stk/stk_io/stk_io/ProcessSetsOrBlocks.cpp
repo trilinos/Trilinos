@@ -33,6 +33,8 @@
 #include "stk_util/environment/RuntimeWarning.hpp"
 #include "stk_util/parallel/CommSparse.hpp"        // for CommSparse, pack_a...
 #include "stk_util/parallel/ParallelComm.hpp"      // for CommBuffer
+#include "stk_util/parallel/ParallelReduceBool.hpp"
+#include "stk_util/parallel/ParallelVectorConcat.hpp"
 #include "stk_util/util/ReportHandler.hpp"         // for ThrowRequireMsg
 #include "stk_util/util/SortAndUnique.hpp"         // for sort_and_unique
 
@@ -417,13 +419,14 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
             for(size_t is=0; is<side_count; ++is) {
                 stk::mesh::Entity const elem = bulk.get_entity(elem_rank, elem_side[is*2]);
 
-                // If NULL, then the element was probably assigned to an
+                // If not valid, then the element was probably assigned to an
                 // element block that appears in the database, but was
-                // subsetted out of the analysis mesh. Only process if
-                // non-null.
+                // subsetted out of the analysis mesh. Only process if valid.
                 if (bulk.is_valid(elem)) {
                     // Ioss uses 1-based side ordinal, stk::mesh uses 0-based.
                     int side_ordinal = elem_side[is*2+1] + sideSetOffset - 1;
+                    STK_ThrowRequireMsg(static_cast<unsigned>(side_ordinal) < bulk.bucket(elem).topology().num_sides(),
+                        "Error reading sideset, side_ordinal("<<side_ordinal<<"), zero-based, not valid for element topology "<<bulk.bucket(elem).topology()<<".");
                     stk::mesh::EntityId side_id_for_classic_behavior = stk::mesh::impl::side_id_formula(elem_side[is*2], side_ordinal);
 
                     if(par_dimen == 0)
@@ -740,9 +743,32 @@ void process_sidesets(Ioss::Region &region, stk::mesh::BulkData &bulk, const stk
     const Ioss::SideSetContainer& side_sets = region.get_sidesets();
 
     std::vector<ElemSidePartOrds> sidesToMove;
-    for(Ioss::SideSetContainer::const_iterator it = side_sets.begin(); it != side_sets.end(); ++it)
-        if(stk::io::include_entity(*it))
-            process_surface_entity(*it, bulk, sidesToMove, behavior);
+    std::string errMsg;
+    try {
+      for(auto* ss : side_sets) {
+        if(stk::io::include_entity(ss)) {
+          process_surface_entity(ss, bulk, sidesToMove, behavior);
+        }
+      }
+    }
+    catch(std::exception& e) {
+      errMsg = e.what();
+    }
+    const bool isParallel = bulk.parallel() != MPI_COMM_NULL && bulk.parallel_size() > 1;
+    const bool threwException = isParallel ? 
+        stk::is_true_on_any_proc(bulk.parallel(), !errMsg.empty()) : !errMsg.empty();
+
+    if (threwException) {
+      std::vector<std::string> globalErrMsgs = {errMsg};
+      if (isParallel) {
+        stk::parallel_vector_concat(bulk.parallel(), {errMsg}, globalErrMsgs);
+      }
+      errMsg = "";
+      for(auto& str : globalErrMsgs) {
+        errMsg += str;
+      }
+      STK_ThrowErrorMsg(errMsg);
+    }
 
     move_sideset_to_follow_element(bulk, elemIdMovedToProc, sidesToMove);
 }

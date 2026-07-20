@@ -39,6 +39,7 @@
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/FieldBase.hpp>
 #include <stk_mesh/base/FieldDataManager.hpp>
+#include <stk_mesh/base/ForEachEntity.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/GetNgpField.hpp>
@@ -143,25 +144,24 @@ public:
     auto velFieldData   = velField->data();
     auto accFieldData   = accField->data();
     auto forceFieldData = forceField->data<stk::mesh::ReadWrite>();
+    stk::mesh::Selector selector = get_meta().locally_owned_part();
 
     for (unsigned i = 0; i < NUM_ITERS; ++i) {
-      const stk::mesh::BucketVector& buckets = get_bulk().get_buckets(stk::topology::NODE_RANK,
-                                                                      get_meta().locally_owned_part());
-      for (const stk::mesh::Bucket* bucket : buckets) {
-        for (const stk::mesh::Entity& entity : *bucket) {
-          auto dispValues  = dispFieldData.entity_values(entity);
-          auto velValues   = velFieldData.entity_values(entity);
-          auto accValues   = accFieldData.entity_values(entity);
-          auto forceValues = forceFieldData.entity_values(entity);
+      stk::mesh::for_each_entity_run(get_bulk(), stk::topology::NODE_RANK, selector,
+        [&](const stk::mesh::BulkData&, const stk::mesh::MeshIndex& index)
+        {
+          auto dispValues  = dispFieldData.entity_values(index);
+          auto velValues   = velFieldData.entity_values(index);
+          auto accValues   = accFieldData.entity_values(index);
+          auto forceValues = forceFieldData.entity_values(index);
           for (stk::mesh::ComponentIdx component : forceValues.components()) {
             forceValues(component) = alpha * dispValues(component) +
                                      beta * velValues(component) +
                                      gamma * accValues(component);
           }
-        }
+        });
       }
     }
-  }
 
   void checkHostResult()
   {

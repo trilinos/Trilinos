@@ -81,6 +81,7 @@
 #include <stk_search/morton_lbvh/MortonLBVH_CollisionList.hpp>
 #include <stk_search/morton_lbvh/MortonLBVH_Tree.hpp>
 #include <stk_util/util/ReportHandler.hpp>
+#include <stk_util/ngp/NgpSpaces.hpp>
 #include <Kokkos_Core.hpp>
 #include "Kokkos_Sort.hpp"
 //#if KOKKOS_VERSION < 40300
@@ -428,7 +429,7 @@ void SortByCodeIdPair<TreeType, ExecutionSpace>::apply(const TreeType &tree,
 template <typename TreeType, typename ExecutionSpace>
 struct SortByCode
 {
-  static void apply(const TreeType &tree, ExecutionSpace const& execSpace)
+  static void apply(const TreeType &tree, [[maybe_unused]] ExecutionSpace const &execSpace)
   {
     if constexpr (Kokkos::SpaceAccessibility<ExecutionSpace, Kokkos::DefaultHostExecutionSpace::memory_space>::accessible) {
       SortByCodeIdPair<TreeType, ExecutionSpace>::apply(tree);
@@ -860,8 +861,10 @@ struct Traverse_MASTB_BVH_Functor
                              Callback& callback,
                              bool flippedResults = false);
 
+  void operator()(unsigned domainIdx) const requires ngp::is_host_exec_space<ExecutionSpace>;
+
   KOKKOS_INLINE_FUNCTION
-  void operator()(unsigned domainIdx) const;
+  void operator()(unsigned domainIdx) const requires ngp::is_device_exec_space<ExecutionSpace>;
 
   KOKKOS_FORCEINLINE_FUNCTION
   bool overlaps_range(RealType bvMinMax[6], LocalOrdinal rangeIdx) const;
@@ -874,8 +877,15 @@ struct Traverse_MASTB_BVH_Functor
 
   std::ostream &stream_pair(LocalOrdinal domainIdx, bool overlap, LocalOrdinal rangeIdx, std::ostream &os) const;
 
+  void record_result(LocalOrdinal domainIdx, LocalOrdinal rangeIdx, bool flip) const requires ngp::is_host_exec_space<ExecutionSpace>
+  {
+    LocalOrdinal domainIdxFlipped = flip ? rangeIdx : domainIdx;
+    LocalOrdinal rangeIdxFlipped  = flip ? domainIdx : rangeIdx;
+    m_callback(domainIdxFlipped, rangeIdxFlipped);
+  }
+
   KOKKOS_INLINE_FUNCTION
-  void record_result(LocalOrdinal domainIdx, LocalOrdinal rangeIdx, bool flip) const
+  void record_result(LocalOrdinal domainIdx, LocalOrdinal rangeIdx, bool flip) const requires ngp::is_device_exec_space<ExecutionSpace>
   {
     LocalOrdinal domainIdxFlipped = flip ? rangeIdx : domainIdx;
     LocalOrdinal rangeIdxFlipped  = flip ? domainIdx : rangeIdx;
@@ -955,7 +965,73 @@ void search_tree(
 }
 
 template <typename DomainViewType, typename RangeViewType, typename ExecutionSpace, typename Callback>
-KOKKOS_INLINE_FUNCTION void Traverse_MASTB_BVH_Functor<DomainViewType, RangeViewType, ExecutionSpace, Callback>::operator()(unsigned argDomainIdx) const
+void Traverse_MASTB_BVH_Functor<DomainViewType, RangeViewType, ExecutionSpace, Callback>::operator()(unsigned argDomainIdx) const requires ngp::is_host_exec_space<ExecutionSpace>
+{
+  LocalOrdinal domainIdx = tm_domainIds(argDomainIdx);
+
+  RealType bvMinMax[6];
+  get_box(bvMinMax, domainIdx, m_domainMinMaxs);
+
+  if (m_rangeRoot > 1) {
+    int ridxStack[64];
+    int* stackPtr = ridxStack;
+    *stackPtr++ = -1;
+
+    int nodeIdx = m_rangeRoot;
+    do {
+      // Check each child node for overlap.
+      const int childL = tm_rangeNodeChildren(nodeIdx, 0);
+      const int childR = tm_rangeNodeChildren(nodeIdx, 1);
+      const bool overlapL = overlaps_range(bvMinMax, childL);
+      const bool overlapR = overlaps_range(bvMinMax, childR);
+
+      bool traverseL = false;
+
+      // Query overlaps a leaf node => report collision.
+      if (overlapL) {
+        if (is_range_leaf(childL)) {
+           record_result(domainIdx, childL, m_flippedResults);
+        }
+        else {
+          traverseL = true;
+          nodeIdx = childL;
+        }
+      }
+
+      // Query overlaps and internal node => traverse.
+      if (overlapR) {
+        if (is_range_leaf(childR)) {
+          record_result(domainIdx, childR, m_flippedResults);
+          if (!traverseL) {
+            nodeIdx = *--stackPtr; // pop
+          }
+        }
+        else {
+          if (traverseL) {
+            *stackPtr++ = childR;  // push
+          }
+          else {
+            nodeIdx = childR;
+          }
+        }
+      }
+      else if (!traverseL) {
+        nodeIdx = *--stackPtr; // pop
+      }
+    } while (nodeIdx >= 0);
+  }
+  else {
+    // Degenerate case of only one leaf node
+    bool overlap = overlaps_range(bvMinMax, 0);
+    if (overlap) {
+      record_result(domainIdx, 0, m_flippedResults);
+    }
+  }
+}
+
+template <typename DomainViewType, typename RangeViewType, typename ExecutionSpace, typename Callback>
+KOKKOS_INLINE_FUNCTION
+void Traverse_MASTB_BVH_Functor<DomainViewType, RangeViewType, ExecutionSpace, Callback>::operator()(unsigned argDomainIdx) const requires ngp::is_device_exec_space<ExecutionSpace>
 {
   LocalOrdinal domainIdx = tm_domainIds(argDomainIdx);
 

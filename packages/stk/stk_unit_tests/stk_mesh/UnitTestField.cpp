@@ -1409,7 +1409,11 @@ TEST(SharedSidesetField, verifySidesetFieldAfterMeshRead) {
       stk::mesh::BulkData& bulk = *bulkPtr;
       stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
       stk::io::StkMeshIoBroker stkIo;
+#ifdef STK_HAS_SEACAS_IOSS_ZOLTAN
       stkIo.property_add(Ioss::Property("DECOMPOSITION_METHOD", "RIB"));
+#else
+      stkIo.property_add(Ioss::Property("DECOMPOSITION_METHOD", "LINEAR"));
+#endif
 
       stkIo.set_bulk_data(bulk);
       stkIo.add_mesh_database(serialOutputMeshName, stk::io::READ_MESH);
@@ -2006,7 +2010,7 @@ public:
   {
     const stk::mesh::BucketVector & buckets = m_bulk->buckets(stk::topology::NODE_RANK);
     auto stkFieldDataHost = stkField.data<FieldValueType>();
-    auto& fieldMetaData = stkField.get_meta_data_for_field();
+    const stk::mesh::FieldMetaData* fieldMetaData = stkField.get_meta_data_for_field();
 
     for (const stk::mesh::Bucket * bucket : buckets) {
       const unsigned bucketId = bucket->bucket_id();
@@ -2699,6 +2703,7 @@ TEST_F(LateFieldsTestFixture, get_ngp_field_multistate_no_seg_fault) {
     stk::topology::rank_t topology_rank = stk::topology::NODE_RANK;
     stk::io::FieldOutputType field_output_type = stk::io::FieldOutputType::VECTOR_3D;
     stk::mesh::FieldBase &data_field = meta_data.declare_field<double>(topology_rank, "displacement_coefficients", 2);
+    EXPECT_ANY_THROW(meta_data.declare_field<double>(topology_rank, "displacement_coefficients", 4));
     stk::mesh::Selector selector = stk::mesh::Selector(meta_data.universal_part());
 
     std::vector<double> initial_values(3, 0.0);

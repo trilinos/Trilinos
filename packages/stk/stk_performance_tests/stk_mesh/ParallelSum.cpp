@@ -55,7 +55,7 @@ stk::mesh::EntityId node_id( unsigned x , unsigned y , unsigned z, unsigned nx, 
   return 1 + x + ( nx + 1 ) * ( y + ( ny + 1 ) * z );
 }
 
-void do_stk_test(bool with_ghosts=false, bool device_mpi=false)
+void do_stk_test(bool with_ghosts=false, bool device_mpi=false, bool deterministic=false)
 {
   using namespace stk::mesh;
 
@@ -180,18 +180,6 @@ void do_stk_test(bool with_ghosts=false, bool device_mpi=false)
     }
   }
 
-  NgpMesh* ngpMesh = nullptr;
-  if (device_mpi) {
-    ngpMesh = & stk::mesh::get_updated_ngp_mesh(bulk);
-  }
-
-  std::vector<NgpField<double>*> ngpFields(numFields);
-  if (device_mpi) {
-    for (int i = 0; i < numFields; ++i) {
-      ngpFields[i] = &stk::mesh::get_updated_ngp_field<double>(*fields[i]);
-    }
-  }
-
   MPI_Barrier(pm);
 
   stk::unit_test_util::BatchTimer batchTimer(pm);
@@ -204,22 +192,18 @@ void do_stk_test(bool with_ghosts=false, bool device_mpi=false)
     for (int t = 0; t < numIters; ++t) {
       if (with_ghosts) {
         if (device_mpi) {
-          stk::mesh::parallel_sum_including_ghosts(*ngpMesh, ngpFields);
+          stk::mesh::parallel_sum_including_ghosts<stk::ngp::DeviceSpace>(bulk, fields, deterministic);
         }
         else {
-          stk::mesh::parallel_sum_including_ghosts(bulk, fields);
+          stk::mesh::parallel_sum_including_ghosts<stk::ngp::HostSpace>(bulk, fields, deterministic);
         }
       }
       else {
         if (device_mpi) {
-          stk::mesh::parallel_sum(*ngpMesh, ngpFields);
+          stk::mesh::parallel_sum<stk::ngp::DeviceSpace>(bulk, fields, deterministic);
         }
         else {
-          stk::mesh::parallel_sum(bulk, fields);
-
-          for (int i = 0; i < numFields; ++i) {
-            ngpFields[i] = &stk::mesh::get_updated_ngp_field<double>(*fields[i]);
-          }
+          stk::mesh::parallel_sum<stk::ngp::HostSpace>(bulk, fields, deterministic);
         }
       }
     }
@@ -230,12 +214,6 @@ void do_stk_test(bool with_ghosts=false, bool device_mpi=false)
   double power2 = std::pow(2,numIters*NUM_RUNS);
   double power3 = std::pow(3,numIters*NUM_RUNS);
   const double tolerance = 1.e-8;
-
-  if (device_mpi) {
-    for (int i = 0; i < numFields; ++i) {
-      ngpFields[i]->sync_to_host();
-    }
-  }
 
   // Sanity check
   for (int i = 0; i < numFields; ++i) {
@@ -368,30 +346,109 @@ TEST(ParallelDataExchange, test_nonsym_known_sizes_from_all_other_procs_to_proc0
     }
 }
 
+void do_kokkos_test()
+{
+  constexpr int N = 1000;
+  constexpr int numDoubles = 80802*2*20;
+
+  using BufferView = Kokkos::View<double*, stk::ngp::HostSpace::mem_space>;
+
+  stk::unit_test_util::BatchTimer batchTimer(stk::parallel_machine_world());
+  batchTimer.initialize_batch_timer();
+
+  for(int i=0; i<N; ++i) {
+    batchTimer.start_batch_timer();
+
+    {
+      auto data = BufferView("data", numDoubles);
+      int half = numDoubles/2;
+      auto firstHalf = Kokkos::subview(data, std::make_pair(0, half));
+      auto secondHalf = Kokkos::subview(data, std::make_pair(half, numDoubles));
+      Kokkos::deep_copy(data, 1.0);
+
+      double sum = 0.0;
+      for(int j=0; j<numDoubles/2; ++j) {
+        sum += firstHalf(j);
+      }
+      for(int j=0; j<numDoubles/2; ++j) {
+        sum += secondHalf(j);
+      }
+      EXPECT_DOUBLE_EQ(sum, static_cast<double>(numDoubles));
+    }
+
+    batchTimer.stop_batch_timer();
+  }
+
+  batchTimer.print_batch_timing(N);
+}
+
+TEST(PureKokkos, looping)
+{
+  do_kokkos_test();
+}
+
 TEST(STKMesh_perf, parallel_sum)
 {
     const bool with_ghosts = false;
-    do_stk_test(with_ghosts);
+    const bool device_mpi = false;
+    const bool deterministic = false;
+    do_stk_test(with_ghosts, device_mpi, deterministic);
 }
 
 TEST(STKMesh_perf, parallel_sum_device_mpi)
 {
     const bool with_ghosts = false;
     const bool device_mpi = true;
-    do_stk_test(with_ghosts, device_mpi);
+    const bool deterministic = false;
+    do_stk_test(with_ghosts, device_mpi, deterministic);
+}
+
+TEST(STKMesh_perf, parallel_sum_deterministic)
+{
+    const bool with_ghosts = false;
+    const bool device_mpi = false;
+    const bool deterministic = true;
+    do_stk_test(with_ghosts, device_mpi, deterministic);
+}
+
+TEST(STKMesh_perf, parallel_sum_device_mpi_deterministic)
+{
+    const bool with_ghosts = false;
+    const bool device_mpi = true;
+    const bool deterministic = true;
+    do_stk_test(with_ghosts, device_mpi, deterministic);
 }
 
 TEST(STKMesh_perf, parallel_sum_including_ghosts)
 {
     const bool with_ghosts = true;
-    do_stk_test(with_ghosts);
+    const bool device_mpi = false;
+    const bool deterministic = false;
+    do_stk_test(with_ghosts, device_mpi, deterministic);
 }
 
 TEST(STKMesh_perf, parallel_sum_including_ghosts_device_mpi)
 {
     const bool with_ghosts = true;
     const bool device_mpi = true;
-    do_stk_test(with_ghosts, device_mpi);
+    const bool deterministic = false;
+    do_stk_test(with_ghosts, device_mpi, deterministic);
+}
+
+TEST(STKMesh_perf, parallel_sum_including_ghosts_deterministic)
+{
+    const bool with_ghosts = true;
+    const bool device_mpi = false;
+    const bool deterministic = true;
+    do_stk_test(with_ghosts, device_mpi, deterministic);
+}
+
+TEST(STKMesh_perf, parallel_sum_including_ghosts_device_mpi_deterministic)
+{
+    const bool with_ghosts = true;
+    const bool device_mpi = true;
+    const bool deterministic = true;
+    do_stk_test(with_ghosts, device_mpi, deterministic);
 }
 
 } //namespace STKperf

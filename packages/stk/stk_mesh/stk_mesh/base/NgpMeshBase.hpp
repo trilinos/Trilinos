@@ -18,13 +18,14 @@ public:
   KOKKOS_DEFAULTED_FUNCTION NgpMeshBase& operator=(const NgpMeshBase&) = default;
   KOKKOS_DEFAULTED_FUNCTION NgpMeshBase& operator=(NgpMeshBase&&) = default;
 
-  virtual void update_mesh() = 0;
+  virtual void update() = 0;
   virtual void update_bulk_data() = 0;
 #ifndef STK_HIDE_DEPRECATED_CODE
   STK_DEPRECATED_MSG("Use need_update_bulk_data() instead.")
   virtual bool need_sync_to_host() const = 0;
 #endif
-  virtual bool need_update_bulk_data() const = 0;
+  virtual bool needs_update() const = 0;
+  virtual bool needs_update_bulk_data() const = 0;
   virtual unsigned synchronized_count() const = 0;
 };
 

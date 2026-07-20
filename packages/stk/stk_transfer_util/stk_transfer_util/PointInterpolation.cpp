@@ -73,12 +73,30 @@ void nodal_interpolation(stk::mesh::Entity entity,
 }
 
 void nodal_interpolation(stk::mesh::Entity entity,
+                         std::shared_ptr<stk::search::CachedFieldDataBase>& fieldData, const std::vector<double>& paramCoords,
+                         const stk::search::MasterElementProviderInterface& masterElement, const double lowerBound,
+                         const double upperBound, std::vector<double>& fieldDataScratch, std::vector<double>& result)
+{
+  const stk::search::SearchField meField(fieldData);
+  nodal_interpolation(entity, meField, paramCoords, masterElement, lowerBound, upperBound, fieldDataScratch, result);
+}
+
+void nodal_interpolation(stk::mesh::Entity entity,
                          const stk::mesh::FieldBase& field, const std::vector<double>& paramCoords,
                          const stk::search::MasterElementProviderInterface& masterElement, const double lowerBound,
                          const double upperBound, std::vector<double>& fieldDataScratch, std::vector<double>& result)
 {
   const stk::search::SearchField meField(&field);
   nodal_interpolation(entity, meField, paramCoords, masterElement, lowerBound, upperBound, fieldDataScratch, result);
+}
+
+void nodal_interpolation(stk::mesh::Entity entity,
+                         std::shared_ptr<stk::search::CachedFieldDataBase>& fieldData, const std::vector<double>& paramCoords,
+                         const stk::search::MasterElementProviderInterface& masterElement, const double lowerBound,
+                         const double upperBound, std::vector<double>& result)
+{
+  std::vector<double> fieldDataScratch;
+  nodal_interpolation(entity, fieldData, paramCoords, masterElement, lowerBound, upperBound, fieldDataScratch, result);
 }
 
 void nodal_interpolation(stk::mesh::Entity entity,

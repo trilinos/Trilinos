@@ -60,10 +60,10 @@ namespace Ioss { class DatabaseIO; }
 
 namespace {
 
-TEST(StkMeshIoBrokerHowTo, writeResults)
+TEST(StkMeshIoBrokerHowTo, writeResults_timeSteps)
 {
   std::string mesh_name = "input_mesh_example.e";
-  std::string results_name = "output.results";
+  std::string results_name = "2x2x2nodeField5steps.e";
   MPI_Comm communicator = MPI_COMM_WORLD;
 
   {
@@ -72,10 +72,12 @@ TEST(StkMeshIoBrokerHowTo, writeResults)
     //+ Create a basic mesh with a hex block, 3 shell blocks, 3 nodesets, and 3 sidesets.
     std::unique_ptr<stk::mesh::BulkData> mesh = stk::mesh::MeshBuilder(communicator).create();
 
-    const std::string generatedFileName = "generated:8x8x8|shell:xyz|nodeset:xyz|sideset:XYZ";
+    const std::string generatedFileName = "generated:2x2x2|bbox:0,0,0,1,1,1|nodeset:xyz|sideset:XYZ";
     stk::io::fill_mesh(generatedFileName, *mesh);
     stk::io::write_mesh(mesh_name, *mesh);
   }
+
+  const std::string fieldName = "field1";
 
   {
     //-BEGIN
@@ -91,9 +93,9 @@ TEST(StkMeshIoBrokerHowTo, writeResults)
     //+ Declare a field
     //+ NOTE: Fields must be declared before "populate_bulk_data()" is called
     //+       since it commits the meta data.
-    const std::string fieldName = "disp";
     stk::mesh::Field<double> &field = stkIo.meta_data().declare_field<double>(stk::topology::NODE_RANK, fieldName, 1);
-    stk::mesh::put_field_on_mesh(field, stkIo.meta_data().universal_part(), nullptr);
+    const double initValue = 3.14159;
+    stk::mesh::put_field_on_mesh(field, stkIo.meta_data().universal_part(), &initValue);
 
     //+ commit the meta data and create the bulk data.
     //+ populate the bulk data with data from the mesh file.
@@ -105,7 +107,7 @@ TEST(StkMeshIoBrokerHowTo, writeResults)
     size_t fh = stkIo.create_output_mesh(results_name, stk::io::WRITE_RESULTS);
 
     //+ The field will be output to the results file with the default field name.
-    stkIo.add_field(fh, field); /*@\label{io:results:add_field}*/
+    stkIo.add_field(fh, field);
 
     // Iterate the application's execute loop five times and output
     // field data each iteration (mimicing time steps).
@@ -131,10 +133,10 @@ TEST(StkMeshIoBrokerHowTo, writeResults)
     Ioss::Region results(resultsDb);
     // Should be 5 steps on database...
     EXPECT_EQ(results.get_property("state_count").get_int(), 5);
-    // Should be 1 nodal field on database named "disp";
+    // Should be 1 nodal field on database named "field1";
     Ioss::NodeBlock *nb = results.get_node_blocks()[0];
     EXPECT_EQ(1u, nb->field_count(Ioss::Field::TRANSIENT));
-    EXPECT_TRUE(nb->field_exists("disp"));
+    EXPECT_TRUE(nb->field_exists(fieldName));
 
     // Iterate each step and verify that the correct data was written.
     for (size_t step=0; step < 5; step++) {
@@ -144,7 +146,7 @@ TEST(StkMeshIoBrokerHowTo, writeResults)
       EXPECT_EQ(time, db_time);
 
       std::vector<double> field_data;
-      nb->get_field_data("disp", field_data);
+      nb->get_field_data(fieldName, field_data);
       const double expectedValue = 10.0 * time;
       for (size_t node = 0; node < field_data.size(); node++) {
         EXPECT_EQ(field_data[node], expectedValue);
@@ -156,7 +158,7 @@ TEST(StkMeshIoBrokerHowTo, writeResults)
   // ============================================================
   // Cleanup
   unlink(mesh_name.c_str());
-  unlink(results_name.c_str());
+//  unlink(results_name.c_str());
 }
 
 }

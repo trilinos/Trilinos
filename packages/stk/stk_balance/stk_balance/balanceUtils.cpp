@@ -10,10 +10,8 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_topology/topology.hpp>
 
-namespace stk
-{
-namespace balance
-{
+namespace stk {
+namespace balance {
 
 //////////////////////////////////////////////////////////////////////////
 

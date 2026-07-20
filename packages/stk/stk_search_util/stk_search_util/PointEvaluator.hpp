@@ -53,7 +53,20 @@ namespace stk { namespace mesh { class MetaData; } }
 namespace stk {
 namespace search {
 
-using PointEvaluatorInterface = EvaluatePointsInterface<stk::topology, spmd::EntityKeyPair>;
+using PointEvaluatorInterfaceBase = EvaluatePointsInterface<stk::topology, spmd::EntityKeyPair>;
+
+class PointEvaluatorInterface : public PointEvaluatorInterfaceBase {
+ public:
+  PointEvaluatorInterface() = default;
+  virtual ~PointEvaluatorInterface() = default;
+
+  virtual void acquire_field_data() = 0;
+  virtual void release_field_data() = 0;
+
+ protected:
+  PointEvaluatorInterface(const PointEvaluatorInterface&) = delete;
+  const PointEvaluatorInterface& operator()(const PointEvaluatorInterface&) = delete;
+};
 
 class MasterElementGaussPointEvaluator : public PointEvaluatorInterface {
  public:
@@ -63,11 +76,14 @@ class MasterElementGaussPointEvaluator : public PointEvaluatorInterface {
   size_t num_points(const spmd::EntityKeyPair&, const stk::topology&) override;
   void coordinates(const spmd::EntityKeyPair&, size_t, std::vector<double>& coords) override;
 
+  void acquire_field_data() override;
+  void release_field_data() override;
+
   ~MasterElementGaussPointEvaluator() = default;
 
  private:
   stk::mesh::BulkData& m_bulk;
-  const SearchField m_coords;
+  SearchField m_coords;
   std::shared_ptr<MasterElementProviderInterface> m_masterElemProvider;
   const unsigned m_spatialDimension{0};
 
@@ -85,11 +101,14 @@ class CentroidEvaluator : public PointEvaluatorInterface {
   size_t num_points(const spmd::EntityKeyPair&, const stk::topology&) override;
   void coordinates(const spmd::EntityKeyPair&, size_t, std::vector<double>& coords) override;
 
+  void acquire_field_data() override;
+  void release_field_data() override;
+
   ~CentroidEvaluator() = default;
 
  private:
-  const stk::mesh::FieldBase* m_coords{nullptr};
-
+  const stk::mesh::FieldBase* m_coordinateField{nullptr};
+  std::shared_ptr<CachedFieldDataBase> m_cachedCoordinateFieldData;
   mutable std::vector<double> m_coordVector;
 };
 
@@ -100,11 +119,14 @@ class NodeEvaluator : public PointEvaluatorInterface {
   size_t num_points(const spmd::EntityKeyPair&, const stk::topology&) override;
   void coordinates(const spmd::EntityKeyPair&, size_t, std::vector<double>& coords) override;
 
+  void acquire_field_data() override;
+  void release_field_data() override;
+
   ~NodeEvaluator() = default;
 
  private:
-  const stk::mesh::FieldBase* m_coords{nullptr};
-
+  const stk::mesh::FieldBase* m_coordinateField{nullptr};
+  std::shared_ptr<CachedFieldDataBase> m_cachedCoordinateFieldData;
   mutable std::vector<double> m_coordVector;
 };
 

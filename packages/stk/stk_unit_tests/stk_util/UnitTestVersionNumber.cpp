@@ -45,6 +45,9 @@ TEST(VersionNumber, SetCurrentFromString)
   EXPECT_EQ(stk::util::VersionNumber(3, 49), stk::util::VersionNumber::current_version());
   stk::util::VersionNumber::set_current_version("badstring");
   EXPECT_EQ(stk::util::VersionNumber(-1, -1), stk::util::VersionNumber::current_version());
+  stk::util::VersionNumber::set_current_version("foo.bar.baz");
+  EXPECT_EQ(stk::util::VersionNumber(-1, -1), stk::util::VersionNumber::current_version());
 }
+
 }
 }

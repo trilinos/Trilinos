@@ -628,7 +628,7 @@ public:
 private:
   void validate_spatial_dim(unsigned spatialDim)
   {
-    STK_ThrowRequireMsg(spatialDim == 2 || spatialDim == 3, "Error!  Spatial dimension not defined to be 2 or 3!");
+    STK_ThrowRequireMsg(spatialDim == 2 || spatialDim == 3, "Error!  Spatial dimension should be 2 or 3, not "<<spatialDim);
   }
 
   stk::mesh::BulkData& m_bulk;

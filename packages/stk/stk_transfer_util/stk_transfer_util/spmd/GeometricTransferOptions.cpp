@@ -191,6 +191,10 @@ bool make_field_interpolator(TransferOptionHelper* helper)
 {
   return helper->make_field_interpolator();
 }
+bool make_coord_transform(TransferOptionHelper* helper)
+{
+  return helper->make_coord_transform();
+}
 bool make_parametric_tolerance(TransferOptionHelper* helper)
 {
   return helper->make_parametric_tolerance();
@@ -492,6 +496,7 @@ void TransferOptionHelper::initialize_prerequisite_map()
   register_prerequisite_map_entry(TransferOptions::NODE_RECV_MESH              , impl::make_node_recv_mesh               , "node recv mesh");
   register_prerequisite_map_entry(TransferOptions::ELEMENT_RECV_MESH           , impl::make_element_recv_mesh            , "element recv mesh");
   register_prerequisite_map_entry(TransferOptions::PARALLEL_MACHINE            , impl::make_parallel_machine             , "parallel machine");
+  register_prerequisite_map_entry(TransferOptions::COORD_TRANSFORM             , impl::make_coord_transform              , "coord transform");
 
   m_mapInitialized = true;
 }
@@ -884,10 +889,18 @@ bool TransferOptionHelper::make_point_evaluator()
   case RecvMeshType::ELEMENT_GAUSS_POINT:
   {
     if(!make_prerequisite(TransferOptions::COORDINATE_FIELD, preamble)) { return false; }
-    if(!make_prerequisite(TransferOptions::MASTER_ELEMENT_PROVIDER, preamble)) { return false; }
 
-    set_point_evaluator(std::make_shared<stk::search::MasterElementGaussPointEvaluator>(
-        m_bulk, m_coordinateField, m_masterElemProvider));
+    if(get_interpolation_type() == InterpolationType::COPY || get_interpolation_type() == InterpolationType::SUM) {
+      // Force point evaluator to be centroid based so that the CopyFieldInterpolator
+      // simply copies all gauss point values from the same element
+      set_point_evaluator(std::make_shared<stk::search::CentroidEvaluator>(m_bulk, m_coordinateField));
+    } else {
+      if(!make_prerequisite(TransferOptions::MASTER_ELEMENT_PROVIDER, preamble)) { return false; }
+
+      set_point_evaluator(std::make_shared<stk::search::MasterElementGaussPointEvaluator>(
+          m_bulk, m_coordinateField, m_masterElemProvider));
+    }
+
     break;
   }
   default:
@@ -895,6 +908,34 @@ bool TransferOptionHelper::make_point_evaluator()
   }
 
   return has_option(TransferOptions::POINT_EVALUATOR);
+}
+
+void TransferOptionHelper::set_coord_transform(std::shared_ptr<stk::search::CoordTransformInterface> transform)
+{
+  m_coordTransform = transform;
+  set_option(TransferOptions::COORD_TRANSFORM);
+}
+
+std::shared_ptr<stk::search::CoordTransformInterface> TransferOptionHelper::get_coord_transform() const
+{
+  return m_coordTransform;
+}
+
+bool TransferOptionHelper::check_coord_transform() const
+{
+  return has_option(TransferOptions::COORD_TRANSFORM);
+}
+
+bool TransferOptionHelper::make_coord_transform()
+{
+  if (has_option(TransferOptions::COORD_TRANSFORM))
+  {
+    return true;
+  }
+
+  m_coordTransform = std::make_shared<stk::search::CoordTransformIdentity>();
+
+  return true;
 }
 
 void TransferOptionHelper::set_parametric_tolerance(double parametricTolerance)
@@ -1043,6 +1084,7 @@ bool TransferOptionHelper::make_element_send_mesh()
   if(!make_prerequisite(TransferOptions::PARAMETRIC_COORDINATE_FINDER, preamble)) { return false; }
   if(!make_prerequisite(TransferOptions::EXTERNAL_POINT_HANDLER, preamble)) { return false; }
   if(!make_prerequisite(TransferOptions::FIELD_INTERPOLATOR, preamble)) { return false; }
+  if(!make_prerequisite(TransferOptions::COORD_TRANSFORM, preamble)) { return false; }
 
   if(has_option(TransferOptions::MASTER_ELEMENT_PROVIDER)) {
     if(!make_prerequisite(TransferOptions::MASTER_ELEMENT_PROVIDER, preamble)) { return false; }
@@ -1063,12 +1105,14 @@ bool TransferOptionHelper::make_element_send_mesh()
                                                                                  sendEntityRank, sendParts, m_activeSelector,
                                                                                  m_bulk.parallel(), m_parametricCoordsFinder,
                                                                                  m_externalPointHandler, m_fieldInterpolator,
-                                                                                 m_masterElemProvider));
+                                                                                 m_masterElemProvider,
+                                                                                 m_coordTransform));
   } else {
     set_element_send_mesh(std::make_shared<stk::transfer::spmd::ElementSendMesh>(&m_bulk, m_coordinateField, m_fieldSpecs,
                                                                                  sendEntityRank, sendParts, m_activeSelector,
                                                                                  m_bulk.parallel(), m_parametricCoordsFinder,
-                                                                                 m_externalPointHandler, m_fieldInterpolator));
+                                                                                 m_externalPointHandler, m_fieldInterpolator,
+                                                                                 m_coordTransform));
   }
 
   if(has_option(TransferOptions::EXTRAPOLATION_TYPE)) {
@@ -1094,13 +1138,15 @@ bool TransferOptionHelper::make_node_recv_mesh()
   if(!make_prerequisite(TransferOptions::ACTIVE_SELECTOR, preamble)) { return false; }
   if(!make_prerequisite(TransferOptions::PARAMETRIC_TOLERANCE, preamble)) { return false; }
   if(!make_prerequisite(TransferOptions::GEOMETRIC_TOLERANCE, preamble)) { return false; }
+  if(!make_prerequisite(TransferOptions::COORD_TRANSFORM, preamble)) { return false; }
 
   const stk::mesh::MetaData& meta = m_bulk.mesh_meta_data();
   stk::mesh::PartVector recvParts = get_parts(meta, m_partNames, m_transferName, m_defaultPart);
 
   set_node_recv_mesh(std::make_shared<stk::transfer::spmd::NodeRecvMesh>(&m_bulk, m_coordinateField, m_fieldSpecs,
                                                                          recvParts, m_activeSelector, m_bulk.parallel(),
-                                                                         m_parametricTolerance, m_geometricTolerance));
+                                                                         m_parametricTolerance, m_geometricTolerance,
+                                                                         m_coordTransform));
 
   return has_option(TransferOptions::NODE_RECV_MESH);
 }
@@ -1122,6 +1168,8 @@ bool TransferOptionHelper::make_element_recv_mesh()
   if(!make_prerequisite(TransferOptions::POINT_EVALUATOR, preamble)) { return false; }
   if(!make_prerequisite(TransferOptions::PARAMETRIC_TOLERANCE, preamble)) { return false; }
   if(!make_prerequisite(TransferOptions::GEOMETRIC_TOLERANCE, preamble)) { return false; }
+  if(!make_prerequisite(TransferOptions::COORD_TRANSFORM, preamble)) { return false; }
+
 
   const stk::mesh::MetaData& meta = m_bulk.mesh_meta_data();
 
@@ -1132,7 +1180,8 @@ bool TransferOptionHelper::make_element_recv_mesh()
   set_element_recv_mesh(std::make_shared<stk::transfer::spmd::ElementRecvMesh>(&m_bulk, m_coordinateField, m_fieldSpecs,
                                                                                recvEntityRank, recvParts, m_activeSelector,
                                                                                m_bulk.parallel(), m_pointEvaluator,
-                                                                               m_parametricTolerance, m_geometricTolerance));
+                                                                               m_parametricTolerance, m_geometricTolerance,
+                                                                               m_coordTransform));
 
   return has_option(TransferOptions::ELEMENT_RECV_MESH);
 }

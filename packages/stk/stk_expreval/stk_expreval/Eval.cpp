@@ -239,6 +239,22 @@ Eval::is_variable(const std::string& variableName) const
   return (m_variableMap.count(variableName) > 0);
 }
 
+bool Eval::is_dependent_variable(const std::string& variableName) const
+{
+  bool isDependentVar = false;
+
+  if (m_variableMap.count(variableName) > 0) {
+    stk::expreval::Variable* variable = m_variableMap.find(variableName)->second.get();
+    isDependentVar = variable->isDependent();
+  }
+
+  return isDependentVar;
+}
+
+bool Eval::is_independent_variable(const std::string& variableName) const
+{
+  return (is_variable(variableName) && !is_dependent_variable(variableName));
+}
 bool
 Eval::is_scalar(const std::string& variableName) const
 {

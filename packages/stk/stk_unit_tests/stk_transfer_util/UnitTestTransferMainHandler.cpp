@@ -33,8 +33,10 @@
 
 #include "gtest/gtest.h"
 #include "stk_transfer_util/TransferMainHandler.hpp"
+#include "stk_mesh/base/MetaData.hpp"
+#include "stk_mesh/base/BulkData.hpp"
+#include "stk_mesh/base/MeshBuilder.hpp"
 #include "stk_unit_test_utils/ioUtils.hpp"
-#include "stk_unit_test_utils/GeneratedMeshToFile.hpp"
 #include "stk_unit_test_utils/CommandLineArgs.hpp"
 #include <stk_util/parallel/OutputStreams.hpp>
 
@@ -57,7 +59,7 @@ TEST(TransferMainHandler, basic)
 
   build_serial_mesh(sendMesh);
   build_serial_mesh(recvMesh);
-  stk::unit_test_util::Args args({"stk_transfer", "--send-mesh", sendMesh, "--recv-mesh", recvMesh});
+  stk::unit_test_util::Args args({"stk_transfer", "--send-mesh", sendMesh, "--recv-mesh", recvMesh, "--use-master-elements", "intrepid2"});
 
   stk::set_outputP0(&stk::outputNull(), comm);
   stk::transfer_util::TransferMainHandler handlerBasic(comm, args.argc(), args.argv());
@@ -67,6 +69,43 @@ TEST(TransferMainHandler, basic)
 
   unlink(sendMesh.c_str());
   unlink(recvMesh.c_str());
+}
+
+TEST(TransferMainHandler, outputMeshHasPreExistingRecvMeshFields)
+{
+  stk::ParallelMachine comm = stk::parallel_machine_world();
+  if(stk::parallel_machine_size(comm) != 1) { GTEST_SKIP(); }
+
+  std::string sendMesh = "source.exo";
+  std::string recvMesh = "target.exo";
+  std::string outputMesh = "output.exo";
+
+  build_serial_mesh(sendMesh);
+  std::string field2("field_2");
+  build_serial_mesh(recvMesh, field2);
+  stk::unit_test_util::Args args({"stk_transfer", "--send-mesh", sendMesh, "--recv-mesh", recvMesh, "--use-master-elements", "intrepid2", "--output-mesh", outputMesh});
+
+  stk::set_outputP0(&stk::outputNull(), comm);
+  stk::transfer_util::TransferMainHandler handlerBasic(comm, args.argc(), args.argv());
+  handlerBasic.run();
+
+  EXPECT_EQ(handlerBasic.exit_code(), stk::transfer_util::TransferMainStatus::SUCCESS);
+
+  {
+    auto output = stk::mesh::MeshBuilder(comm).create();
+    stk::io::fill_mesh_with_fields(outputMesh, *output);
+    const stk::mesh::MetaData& meta = output->mesh_meta_data();
+
+    const auto* preExistingScalarFieldOnRecvMesh = meta.get_field(stk::topology::NODE_RANK, field2+"_scalar");
+    EXPECT_TRUE(preExistingScalarFieldOnRecvMesh != nullptr);
+
+    const auto* preExistingVectorFieldOnRecvMesh = meta.get_field(stk::topology::NODE_RANK, field2+"_vector");
+    EXPECT_TRUE(preExistingVectorFieldOnRecvMesh != nullptr);
+  }
+
+  unlink(sendMesh.c_str());
+  unlink(recvMesh.c_str());
+  unlink(outputMesh.c_str());
 }
 
 TEST(TransferMainHandler, all)
@@ -80,7 +119,9 @@ TEST(TransferMainHandler, all)
   build_serial_mesh(sendMesh);
   build_serial_mesh(recvMesh);
   stk::unit_test_util::Args args({"stk_transfer", "--send-mesh", sendMesh, "--recv-mesh", recvMesh,
-                                 "--field-list", "field_1_scalar", "--extrapolate-option", "PROJECT" });
+                                 "--field-list", "field_1_scalar", "--part-list", "block_1:block_1", 
+                                 "--extrapolate-option", "PROJECT", "--xfer-type", "INTERP",
+                                 "--use-master-elements", "intrepid2" });
   
   stk::set_outputP0(&stk::outputNull(), comm);
   stk::transfer_util::TransferMainHandler handlerAll(comm, args.argc(), args.argv());
@@ -159,15 +200,56 @@ TEST(TransferMainHandler, invalidExtrapolateOption)
   build_serial_mesh(sendMesh);
   build_serial_mesh(recvMesh);
   stk::unit_test_util::Args args({"stk_transfer", "--send-mesh", sendMesh, "--recv-mesh", recvMesh,
-                                 "--field-list", "field_1", "--extrapolate_option", "FAKE" });
+                                 "--field-list", "field_1", "--extrapolate-option", "FAKE" });
 
   testing::internal::CaptureStderr();
   stk::set_outputP0(&stk::outputNull(), comm);
-  stk::transfer_util::TransferMainHandler handlerAll(comm, args.argc(), args.argv());
-  handlerAll.run(); 
+  EXPECT_ANY_THROW(stk::transfer_util::TransferMainHandler handlerAll(comm, args.argc(), args.argv()));
   testing::internal::GetCapturedStderr();
 
-  EXPECT_EQ(handlerAll.exit_code(), stk::transfer_util::TransferMainStatus::PARSE_ERROR);
+  unlink(sendMesh.c_str());
+  unlink(recvMesh.c_str());
+}
+
+TEST(TransferMainHandler, invalidTransferType)
+{
+  stk::ParallelMachine comm = stk::parallel_machine_world();
+  if(stk::parallel_machine_size(comm) != 1) { GTEST_SKIP(); }
+
+  std::string sendMesh = "source.exo";
+  std::string recvMesh = "target.exo";
+
+  build_serial_mesh(sendMesh);
+  build_serial_mesh(recvMesh);
+  stk::unit_test_util::Args args({"stk_transfer", "--send-mesh", sendMesh, "--recv-mesh", recvMesh,
+                                 "--field-list", "field_1", "--xfer-type", "FAKE" });
+
+  testing::internal::CaptureStderr();
+  stk::set_outputP0(&stk::outputNull(), comm);
+  EXPECT_ANY_THROW(stk::transfer_util::TransferMainHandler handlerAll(comm, args.argc(), args.argv()));
+  testing::internal::GetCapturedStderr();
+
+  unlink(sendMesh.c_str());
+  unlink(recvMesh.c_str());
+}
+
+TEST(TransferMainHandler, invalidRecvType)
+{
+  stk::ParallelMachine comm = stk::parallel_machine_world();
+  if(stk::parallel_machine_size(comm) != 1) { GTEST_SKIP(); }
+
+  std::string sendMesh = "source.exo";
+  std::string recvMesh = "target.exo";
+
+  build_serial_mesh(sendMesh);
+  build_serial_mesh(recvMesh);
+  stk::unit_test_util::Args args({"stk_transfer", "--send-mesh", sendMesh, "--recv-mesh", recvMesh,
+                                 "--field-list", "field_1", "--recv-type", "FAKE" });
+
+  testing::internal::CaptureStderr();
+  stk::set_outputP0(&stk::outputNull(), comm);
+  EXPECT_ANY_THROW(stk::transfer_util::TransferMainHandler handlerAll(comm, args.argc(), args.argv()));
+  testing::internal::GetCapturedStderr();
 
   unlink(sendMesh.c_str());
   unlink(recvMesh.c_str());

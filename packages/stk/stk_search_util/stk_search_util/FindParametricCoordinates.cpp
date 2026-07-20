@@ -57,7 +57,7 @@ MasterElementParametricCoordsFinder::MasterElementParametricCoordsFinder(
     const double parametricTolerance)
   : m_bulk(bulk)
   , m_meta(bulk.mesh_meta_data())
-  , m_coords(coords)
+  , m_coordinateField(coords)
   , m_masterElemProvider(masterElemProvider)
   , m_parametricTolerance(parametricTolerance)
   , m_spatialDimension(m_meta.spatial_dimension())
@@ -70,9 +70,9 @@ void MasterElementParametricCoordsFinder::gather_nodal_coordinates(const spmd::E
   unsigned numFieldComponents;
   unsigned numNodes;
 
-  m_masterElemProvider->nodal_field_data(key, m_coords, numFieldComponents, numNodes, m_elementCoords);
+  m_masterElemProvider->nodal_field_data(key, m_coordinateField, numFieldComponents, numNodes, m_elementCoords);
 
-  STK_ThrowAssertMsg(numFieldComponents == m_spatialDimension, "Invalid coordinate field: " << m_coords.name());
+  STK_ThrowAssertMsg(numFieldComponents == m_spatialDimension, "Invalid coordinate field: " << m_coordinateField.name());
   STK_ThrowAssertMsg(numNodes == topo.num_nodes(), "Mismatch between key: " << key << " and topology: " << topo.name());
 }
 
@@ -111,9 +111,23 @@ MasterElementParametricCoordsFinder::evaluate_parametric_coords(const spmd::Enti
   m_masterElemProvider->evaluate_field(meTopo, paramCoords, m_spatialDimension, m_elementCoords, evalPoint);
 }
 
+void MasterElementParametricCoordsFinder::acquire_field_data()
+{
+  m_coordinateField.acquire_field_data();
+
+  m_masterElemProvider->acquire_field_data();
+}
+
+void MasterElementParametricCoordsFinder::release_field_data()
+{
+  m_coordinateField.release_field_data();
+
+  m_masterElemProvider->release_field_data();
+}
+
 NodeParametricCoordsFinder::NodeParametricCoordsFinder(stk::mesh::BulkData& bulk, const stk::mesh::FieldBase* coords)
   : m_meta(bulk.mesh_meta_data())
-  , m_coords(coords)
+  , m_coordinateField(coords)
 {
 }
 
@@ -125,12 +139,14 @@ void NodeParametricCoordsFinder::find_parametric_coords(const spmd::EntityKeyPai
 
   stk::mesh::Entity theNode = k;
 
-  const double* fromCoords = static_cast<const double *>(stk::mesh::field_data(*m_coords, theNode));
+  CachedEntityFieldData<double> data;
+  m_cachedCoordinateFieldData->populate_entity_data(theNode, data);
+
   unsigned nDim = m_meta.spatial_dimension();
 
   paramCoords.assign(nDim, 0.0);
 
-  paramDistance = distance(nDim, fromCoords, toCoords.data());
+  paramDistance = distance(nDim, data.constPointer, data.componentStride, toCoords.data(), 1);
 
   isWithinParametricTolerance = true;
 }
@@ -143,11 +159,29 @@ void NodeParametricCoordsFinder::evaluate_parametric_coords(const spmd::EntityKe
 
   stk::mesh::Entity theNode = k;
 
-  const double* fromCoords = static_cast<const double *>(stk::mesh::field_data(*m_coords, theNode));
+  CachedEntityFieldData<double> data;
+  m_cachedCoordinateFieldData->populate_entity_data(theNode, data);
+
   unsigned nDim = m_meta.spatial_dimension();
 
-  evalPoint.assign(fromCoords, fromCoords + nDim);
+  STK_ThrowRequire(nDim == static_cast<unsigned>(data.numComponents));
+
+  evalPoint.clear();
+  for(unsigned j(0); j < nDim; ++j) {
+    evalPoint.push_back(data.constPointer[j * data.componentStride]);
+  }
 }
+
+void NodeParametricCoordsFinder::acquire_field_data()
+{
+  fill_cached_const_field_data(m_coordinateField, m_cachedCoordinateFieldData);
+}
+
+void NodeParametricCoordsFinder::release_field_data()
+{
+  clear_cached_field_data(m_cachedCoordinateFieldData);
+}
+
 
 } // namespace search
 } // namespace stk

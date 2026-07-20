@@ -129,7 +129,8 @@ class ElementRecvMesh : public ElementRecvMeshSearchBaseClass,
                   const stk::mesh::PartVector& recvParts,
                   const stk::ParallelMachine recvComm,
                   std::shared_ptr<stk::search::PointEvaluatorInterface> pointEvaluator,
-                  double parametricTolerance, double geometricTolerance);
+                  double parametricTolerance, double geometricTolerance,
+                  std::shared_ptr<stk::search::CoordTransformInterface> coordTransform = std::make_shared<stk::search::CoordTransformIdentity>());
 
   ElementRecvMesh(stk::mesh::BulkData* recvBulk,
                   const stk::mesh::FieldBase* coordinateField,
@@ -139,7 +140,8 @@ class ElementRecvMesh : public ElementRecvMeshSearchBaseClass,
                   const stk::mesh::Selector& activeSelector,
                   const stk::ParallelMachine recvComm,
                   std::shared_ptr<stk::search::PointEvaluatorInterface> pointEvaluator,
-                  double parametricTolerance, double geometricTolerance);
+                  double parametricTolerance, double geometricTolerance,
+                  std::shared_ptr<stk::search::CoordTransformInterface> coordTransform = std::make_shared<stk::search::CoordTransformIdentity>());
 
   virtual ~ElementRecvMesh() = default;
 
@@ -163,21 +165,7 @@ class ElementRecvMesh : public ElementRecvMeshSearchBaseClass,
 
   virtual void initialize() override;
 
-
-  virtual double* value(const EntityKey& k, const unsigned fieldIndex) const override;
-
-  virtual unsigned value_size(const EntityKey& k, const unsigned fieldIndex) const override;
-
-  virtual unsigned num_values(const EntityKey& e) const override;
-
-  virtual unsigned max_num_values() const override;
-
-  virtual unsigned value_key(const EntityKey& k, const unsigned fieldIndex) const override;
-
   virtual void update_values() override;
-
-  virtual unsigned get_index(const unsigned i) const override;
-
 
   stk::mesh::EntityId id(const EntityKey& k) const;
 
@@ -194,14 +182,21 @@ class ElementRecvMesh : public ElementRecvMeshSearchBaseClass,
   const stk::mesh::BulkData* get_bulk() const { return m_bulk; }
   const stk::mesh::MetaData* get_meta() const { return m_meta; }
 
+  void acquire_field_data() override;
+  void release_field_data() override;
+  bool has_acquired_field_data() const override { return m_hasAcquiredFieldData; }
+
+  void populate_interpolation_data(const EntityKey& k, InterpolationData& data) const override;
+
  protected:
   stk::mesh::BulkData* m_bulk{nullptr};
   stk::mesh::MetaData* m_meta{nullptr};
-  const stk::mesh::FieldBase* m_coordinateField{nullptr};
   const stk::mesh::EntityRank m_transferEntityRank;
 
   std::vector<stk::transfer::FieldSpec> m_fieldSpecs;
   std::vector<IndexedField> m_fieldVec;
+
+  std::vector< std::shared_ptr<stk::search::CachedFieldDataBase> > m_cachedFieldData;
 
   stk::mesh::PartVector m_meshParts;
   const stk::ParallelMachine m_comm;
@@ -217,7 +212,11 @@ class ElementRecvMesh : public ElementRecvMeshSearchBaseClass,
 
   bool m_isInitialized{false};
 
+  bool m_hasAcquiredFieldData{false};
+
   void consistency_check();
+
+  unsigned field_size(const EntityKey& k, const unsigned fieldIndex) const;
 
  private:
   std::string m_name{"<UNKNOWN RECV ELEMENT TRANSFER MESH>"};

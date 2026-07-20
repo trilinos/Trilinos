@@ -549,23 +549,6 @@ class HeatEquationHalo
       return val;
     }
 
-    void local_periodic_communication()
-    {
-      for (int i=0; i < m_nptsPerDirection; ++i)
-        for (int g=1; g <= m_nghost; ++g)
-        {
-          m_sol[get_sol_idx(i, -g)] = m_sol[get_sol_idx(i, m_nptsPerDirection - g)];
-          m_sol[get_sol_idx(i, m_nptsPerDirection + g - 1)] = m_sol[get_sol_idx(i, g - 1)];
-        }
-
-      for (int j=0; j < m_nptsPerDirection; ++j)
-        for (int g=1; g <= m_nghost; ++g)
-        {
-          m_sol[get_sol_idx(-g, j)] = m_sol[get_sol_idx(m_nptsPerDirection - g, j)];
-          m_sol[get_sol_idx(m_nptsPerDirection + g - 1, j)] = m_sol[get_sol_idx(g - 1, j)];
-        }
-    }
-
     void set_exact_ghost_values()
     {
       for (int i=0; i < 4; ++i)

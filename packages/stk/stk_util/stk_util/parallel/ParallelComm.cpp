@@ -129,10 +129,11 @@ void CommBroadcast::communicate()
 
 //----------------------------------------------------------------------
 
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after May 2026
 //
 //  Determine the number of items each other process will send to the current processor
 //
-std::vector<int> ComputeReceiveList(std::vector<int>& sendSizeArray, MPI_Comm &mpi_communicator)
+STK_DEPRECATED std::vector<int> ComputeReceiveList(std::vector<int>& sendSizeArray, MPI_Comm &mpi_communicator)
 {
   auto msg_tag = get_mpi_tag_manager().get_tag(mpi_communicator, 10240);
   int num_procs = sendSizeArray.size();
@@ -182,7 +183,7 @@ std::vector<int> ComputeReceiveList(std::vector<int>& sendSizeArray, MPI_Comm &m
 
   return receiveSizeArray;
 }
-
+#endif
 #endif
 
 }

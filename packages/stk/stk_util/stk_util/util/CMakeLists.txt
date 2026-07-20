@@ -55,6 +55,11 @@ ELSE()
   target_link_libraries(stk_util_util PUBLIC Kokkos::kokkos)
 ENDIF()
 
+if(STK_HAVE_BOOST)
+  find_package(Boost REQUIRED)
+  target_include_directories(stk_util_util PRIVATE ${Boost_INCLUDE_DIRS})
+endif()
+
 target_include_directories(stk_util_util PUBLIC
   $<BUILD_INTERFACE:${STK_TOPLEVEL_SOURCE_DIR}/stk_util>
   $<INSTALL_INTERFACE:include>
@@ -63,6 +68,10 @@ target_include_directories(stk_util_util PUBLIC
   $<BUILD_INTERFACE:${STK_TOPLEVEL_BINARY_DIR}>
   $<INSTALL_INTERFACE:include>
 )
+
+if (STK_HAVE_BOOST AND CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+  target_compile_definitions(stk_util_util PRIVATE BOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED)
+endif()
 
 INSTALL(FILES ${HEADERS} DESTINATION
     ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_util/util/)
