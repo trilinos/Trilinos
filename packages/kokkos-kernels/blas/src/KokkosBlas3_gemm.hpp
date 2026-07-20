@@ -141,7 +141,7 @@ void gemm(const execution_space& space, const char transA[], const char transB[]
 
   // Simply scale C if A matrix is degenerated
   if (A.extent(1) == 0) {
-    scal(C, beta, C);
+    scal(space, C, beta, C);
     return;
   }
 

@@ -58,17 +58,6 @@ namespace KokkosBatched {
 #define Int2String(A) Int2StringHelper(A)
 #define StringCat(A, B) A B
 
-// nvcc+MSVC device code cannot resolve Kokkos::View::rank via instance call;
-// use ViewType::rank() (compile-time) for fixed-rank View, v.rank() for DynRankView.
-template <typename ViewType>
-KOKKOS_INLINE_FUNCTION size_t view_rank(const ViewType &v) {
-  if constexpr (Kokkos::is_view_v<ViewType>) {
-    return ViewType::rank();
-  } else {
-    return v.rank();
-  }
-}
-
 void print_compiler_info();
 
 template <typename T>
@@ -725,7 +714,7 @@ KOKKOS_INLINE_FUNCTION int get_extent_int(const ViewType &v, const int r) {
                   "KokkosBatched: ViewType must be a Kokkos::View or a Kokkos::DynRankView");
   }
 
-  const std::size_t V_rank = view_rank(v);
+  const std::size_t V_rank = Kokkos::rank(v);
 
   if (r == 0) {
     int V_extent_0 = V_rank < 1 ? 1 : v.extent_int(0);
@@ -750,7 +739,7 @@ KOKKOS_INLINE_FUNCTION std::size_t get_stride(const ViewType &v, const int r) {
                   "KokkosBatched: ViewType must be a Kokkos::View or a Kokkos::DynRankView");
   }
 
-  const std::size_t V_rank = view_rank(v);
+  const std::size_t V_rank = Kokkos::rank(v);
 
   if (r == 0) {
     std::size_t V_stride_0 = V_rank < 1 ? 1 : v.stride(0);

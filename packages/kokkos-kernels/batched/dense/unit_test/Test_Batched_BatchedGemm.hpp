@@ -277,9 +277,9 @@ void test_batched_gemm_with_layout(int N) {
 
   // Non-square cases
   for (int i = 1; i < 5; ++i) {
-    int dimM = 1 * i;
+    int dimM = 3 * i;
     int dimN = 2 * i;
-    int dimK = 3 * i;
+    int dimK = i;
     if ((std::is_same<typename ParamTagType::transA, KokkosBatched::Trans::NoTranspose>::value) &&
         (std::is_same<typename ParamTagType::transB, KokkosBatched::Trans::NoTranspose>::value)) {
       Test::impl_test_batched_gemm<DeviceType, ViewType, ScalarType, ParamTagType>(N, dimM, dimK, dimK, dimN, dimM,
