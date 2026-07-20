@@ -34,7 +34,6 @@ template <typename ArgUplo> struct LDL_nopiv<ArgUplo, Algo::OnDevice> {
     using policy_type = Kokkos::RangePolicy<exec_space>;
     using value_type = typename ViewTypeA::non_const_value_type;
     using arith_traits = ArithTraits<value_type>;
-    using range_type = Kokkos::pair<ordinal_type, ordinal_type>;
 
     const auto &exec_instance = member;
     const bool conjugate = false;
@@ -108,7 +107,6 @@ template <typename ArgUplo> struct LDL_nopiv<ArgUplo, Algo::OnDevice> {
     using value_type = typename ViewTypeA::non_const_value_type;
     using range_type = Kokkos::pair<ordinal_type, ordinal_type>;
 
-    const value_type zero ( 0);
     const value_type  one ( 1);
     const value_type mone (-1);
     const ordinal_type m  = A.extent(0);
