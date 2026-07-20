@@ -493,7 +493,7 @@ int main_(int argc, char *argv[]) {
   {
     stk::mesh::Selector globallySharedSelector = metaData.globally_shared_part();
     globallySharedSelector &= !locallyOwnedSelector; //not owned
-    stk::mesh::for_each_entity_run(bulkData, NODE_RANK, globallySharedSelector,
+    stk::mesh::for_each_entity_run_no_threads(bulkData, NODE_RANK, globallySharedSelector,
       [&](const stk::mesh::BulkData& mesh, stk::mesh::Entity node)
       {
         ownedPlusSharedGIDs.push_back(mesh.identifier(node)-1);
@@ -535,7 +535,7 @@ int main_(int argc, char *argv[]) {
   auto nnzPerRowUpperBound_h = nnzPerRowUpperBound.view_host();
 
   // Count the local elements and get node index upper bound
-  stk::mesh::for_each_entity_run(bulkData, ELEMENT_RANK, locallyOwnedSelector,
+  stk::mesh::for_each_entity_run_no_threads(bulkData, ELEMENT_RANK, locallyOwnedSelector,
     [&](const stk::mesh::BulkData& mesh, stk::mesh::Entity elem)
     {
       stk::mesh::ConnectedEntities nodes = mesh.get_connected_entities(elem,NODE_RANK);
@@ -552,7 +552,7 @@ int main_(int argc, char *argv[]) {
   // Build the Graph
   RCP<Tpetra_FECrsGraph> StiffGraph = rcp(new Tpetra_FECrsGraph(globalMapG,ownedPlusSharedMapG,nnzPerRowUpperBound));
   Tpetra::beginAssembly(*StiffGraph);
-  stk::mesh::for_each_entity_run(bulkData, ELEMENT_RANK, locallyOwnedSelector,
+  stk::mesh::for_each_entity_run_no_threads(bulkData, ELEMENT_RANK, locallyOwnedSelector,
     [&](const stk::mesh::BulkData& mesh, stk::mesh::Entity elem)
     {
       stk::mesh::ConnectedEntities nodes = mesh.get_connected_entities(elem,NODE_RANK);
