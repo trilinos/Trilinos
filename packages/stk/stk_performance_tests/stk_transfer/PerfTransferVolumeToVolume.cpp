@@ -44,6 +44,7 @@
 #include "stk_unit_test_utils/FieldEvaluator.hpp"
 #include "stk_unit_test_utils/UnitTestSearchUtils.hpp"
 #include "stk_unit_test_utils/UnitTestTransferUtils.hpp"
+#include "stk_unit_test_utils/MockMasterElementProvider.hpp"
 
 #include <gtest/gtest.h>
 #include "mpi.h"            // for MPI_COMM_WORLD
@@ -94,7 +95,7 @@ void run_perf_master_element_to_gauss_point_transfer(const std::string& sendMesh
 
   stk::search::ObjectOutsideDomainPolicy extrapolateOption = stk::search::ObjectOutsideDomainPolicy::ABORT;
   std::shared_ptr<stk::search::MasterElementProviderInterface> masterElemProvider =
-      std::make_shared<stk::transfer_util::MasterElementProvider>();
+      std::make_shared<stk::unit_test_util::MasterElementProvider>();
 
   stk::search::SearchTopology hex8Topo(stk::topology::HEX_8);
   unsigned numSendCopies = 1;
@@ -163,7 +164,7 @@ void run_perf_patch_recovery_to_gauss_point_transfer(const std::string& sendMesh
 
   stk::search::ObjectOutsideDomainPolicy extrapolateOption = stk::search::ObjectOutsideDomainPolicy::ABORT;
   std::shared_ptr<stk::search::MasterElementProviderInterface> masterElemProvider =
-      std::make_shared<stk::transfer_util::MasterElementProvider>();
+      std::make_shared<stk::unit_test_util::MasterElementProvider>();
 
   stk::search::SearchTopology hex8Topo(stk::topology::HEX_8);
   unsigned numSendCopies = 1;

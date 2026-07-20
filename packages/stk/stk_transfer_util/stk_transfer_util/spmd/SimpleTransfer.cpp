@@ -204,6 +204,17 @@ void SimpleTransfer::add_recv_part_names(const std::vector<std::string>& partNam
   impl::add_part_name(m_recvPartNames, partNames);
 }
 
+void SimpleTransfer::add_send_mesh_coord_transform(std::shared_ptr<stk::search::CoordTransformInterface> coordTransform)
+{
+  m_send_coordTransform = coordTransform;
+}
+
+void SimpleTransfer::add_recv_mesh_coord_transform(std::shared_ptr<stk::search::CoordTransformInterface> coordTransform)
+{
+  m_recv_coordTransform = coordTransform;
+}
+
+
 void SimpleTransfer::set_send_mesh_transfer_options(
     stk::mesh::BulkData& sendBulk,
     stk::mesh::EntityRank sendRank,
@@ -223,6 +234,11 @@ void SimpleTransfer::set_send_mesh_transfer_options(
   // parts and fields
   sendOptions.add_part(m_sendPartNames);
   sendOptions.add_field_spec(m_sendFieldSpecs);
+
+  if (m_send_coordTransform)
+  {
+    sendOptions.set_coord_transform(m_send_coordTransform);
+  }
 }
 
 void SimpleTransfer::set_send_mesh_transfer_options(
@@ -248,6 +264,11 @@ void SimpleTransfer::set_send_mesh_transfer_options(
   // parts and fields
   sendOptions.add_part(m_sendPartNames);
   sendOptions.add_field_spec(m_sendFieldSpecs);
+
+  if (m_send_coordTransform)
+  {
+    sendOptions.set_coord_transform(m_send_coordTransform);
+  }
 }
 
 void SimpleTransfer::set_recv_mesh_transfer_options(stk::mesh::BulkData& recvBulk,
@@ -266,6 +287,11 @@ void SimpleTransfer::set_recv_mesh_transfer_options(stk::mesh::BulkData& recvBul
   // parts and fields
   recvOptions.add_part(m_recvPartNames);
   recvOptions.add_field_spec(m_recvFieldSpecs);
+
+  if (m_recv_coordTransform)
+  {
+    recvOptions.set_coord_transform(m_recv_coordTransform);
+  }
 }
 
 void SimpleTransfer::set_recv_mesh_transfer_options(

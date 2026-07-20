@@ -259,6 +259,7 @@ protected:
                                         bool only_consider_upper_symmetry = true) const;
 
     void fill_elements_attached_to_local_nodes(const stk::mesh::EntityVector& sideNodesOfReceivedElement,
+                                               stk::mesh::Entity element,
                                                stk::mesh::EntityId elementId,
                                                stk::topology elementTopology,
                                                impl::SerialElementDataVector& connectedElementDataVector) const;
@@ -313,7 +314,6 @@ protected:
 
     stk::mesh::BulkData &m_bulk_data;
     Graph m_graph;
-    std::vector<GraphEdge> m_edgesToAdd;
     std::vector<GraphEdge> m_edgesToDelete;
     std::vector<GraphEdge> m_newGraphEdges;
     std::vector<GraphEdge> m_coincidentGraphEdges;
@@ -376,19 +376,6 @@ private:
 
 namespace impl
 {
-
-template<typename SideData>
-void add_second_side_if_shell(const stk::mesh::Entity* connectedElemNodes, SideData& elemData, std::vector<SideData> & element_data)
-{
-    if (elemData.get_element_topology().is_shell())
-    {
-        // Also add the back-side face if this is a shell
-        unsigned index = (elemData.get_element_side_index() == 0) ? 1 : 0;
-        elemData.set_element_side_index(index);
-        elemData.get_element_topology().side_nodes(connectedElemNodes, elemData.get_element_side_index(), elemData.side_nodes_begin());
-        element_data.push_back(elemData);
-    }
-}
 
 inline
 stk::mesh::OrdinalAndPermutation flip_shell_to_get_opposing_normal(const stk::mesh::OrdinalAndPermutation &connectedOrdAndPerm,

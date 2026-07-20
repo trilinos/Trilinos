@@ -40,8 +40,6 @@
 #include <stk_io/InputFile.hpp>                      // for InputFile
 #include <stk_io/StkMeshIoBroker.hpp>                // for StkMeshIoBroker, etc
 #include <stk_mesh/base/BulkData.hpp>                // for BulkData
-#include <stk_mesh/base/MetaData.hpp>                // for BulkData
-#include <stk_mesh/base/Part.hpp>                // for BulkData
 #include <stk_mesh/base/SideSetEntry.hpp>            // for SideSet, etc
 #include <stk_util/parallel/Parallel.hpp>            // for ParallelMachine
 #include <string>                                    // for string
@@ -51,7 +49,6 @@
 #include "Ioss_SideBlock.h"                          // for SideBlock
 #include "Ioss_SideSet.h"                            // for SideSet
 #include "mpi.h"
-#include "stk_io/IossBridge.hpp"                     // for include_entity
 #include "stk_mesh/base/Entity.hpp"                  // for Entity
 #include "stk_topology/topology.hpp"                 // for topology, etc
 #include "stk_unit_test_utils/FaceTestingUtils.hpp"

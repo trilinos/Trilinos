@@ -3,7 +3,7 @@
 #include <vector>
 #include <stk_util/stk_config.h>
 
-#include <stk_tools/block_extractor/ParseCsv.hpp>
+#include <stk_util/util/ParseCsv.hpp>
 #include <stk_util/command_line/CommandLineParserParallel.hpp>
 #include <stk_util/command_line/CommandLineParserUtils.hpp>
 #include <stk_util/util/ReportHandler.hpp>
@@ -68,13 +68,13 @@ int main(int argc, char** argv)
   if (commandLine.is_option_provided("extract-blocks")) {
     csvBlocks = commandLine.get_option_value<std::string>("extract-blocks");
   }
-  std::vector<int> block_ids = stk::tools::get_ids_from_strings(stk::split_csv_string(csvBlocks));
+  std::vector<int> block_ids = stk::util::get_ids_from_strings(stk::split_csv_string(csvBlocks));
 
   std::string csvNodesets;
   if (commandLine.is_option_provided("extract-nodesets")) {
     csvNodesets = commandLine.get_option_value<std::string>("extract-nodesets");
   }
-  std::vector<int> nodeset_ids = stk::tools::get_ids_from_strings(stk::split_csv_string(csvNodesets));
+  std::vector<int> nodeset_ids = stk::util::get_ids_from_strings(stk::split_csv_string(csvNodesets));
 
   print_ids_to_extract("blocks", block_ids);
 

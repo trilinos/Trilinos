@@ -38,7 +38,6 @@
 // clang-format off
 #include <Ioss_Field.h>                     // for Field, Field::REDUCTION
 #include <Ioss_PropertyManager.h>           // for PropertyManager
-      // file exists and is readable and will throw an exception if not.
 #include <cstddef>                          // for size_t
 #include <stk_io/DatabasePurpose.hpp>       // for DatabasePurpose
 #include <stk_io/DynamicTopology.hpp>
@@ -699,8 +698,8 @@ namespace stk {
 
       void create_bulk_data();
       void validate_input_file_index(size_t input_file_index) const;
-      void stk_mesh_resolve_node_sharing() { bulk_data().resolve_node_sharing(); }
-      void stk_mesh_modification_end_after_node_sharing_resolution() { bulk_data().modification_end_after_node_sharing_resolution(); }
+      void stk_mesh_resolve_node_sharing();
+      void stk_mesh_modification_end_after_node_sharing_resolution();
     private:
       StkMeshIoBroker(const StkMeshIoBroker&); // Do not implement
       StkMeshIoBroker& operator=(const StkMeshIoBroker&); // Do not implement

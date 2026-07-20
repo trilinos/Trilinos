@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,7 +30,7 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
 #ifndef  STK_GEOMETRICTRANSFER_HPP
 #define  STK_GEOMETRICTRANSFER_HPP
@@ -146,6 +146,9 @@ void GeometricTransfer<INTERPOLATE>::coarse_search()
     m_has_parallel_machine = true;
   }
 
+  impl::need_repeat_search(*m_mesha);
+  impl::need_repeat_search(*m_meshb);
+
   impl::coarse_search_impl<INTERPOLATE>(m_global_range_to_domain,
                 m_parallel_machine,
                 m_mesha.get(),
@@ -207,8 +210,8 @@ GeometricTransfer<INTERPOLATE>::localize_entity_key_map()
 }
 
 template <class INTERPOLATE> void
-GeometricTransfer<INTERPOLATE>::copy_domain_to_range_processors()  {
-
+GeometricTransfer<INTERPOLATE>::copy_domain_to_range_processors()
+{
   typename MeshA::EntityProcVec entities_to_copy ;
 
   determine_entities_to_copy(entities_to_copy);

@@ -267,16 +267,13 @@ bool pack_and_communicate(stk::CommSparse & comm, const PACK_ALGORITHM & algorit
 template<typename UNPACK_ALGORITHM>
 void unpack_communications(stk::CommSparse & comm, const UNPACK_ALGORITHM & algorithm)
 {
-    for(int proc_id=0; proc_id<comm.parallel_size(); ++proc_id)
+  for(int proc_id=0; proc_id<comm.parallel_size(); ++proc_id)
+  {
+    while(comm.recv_buffer(proc_id).remaining())
     {
-        if (proc_id != comm.parallel_rank())
-        {
-            while(comm.recv_buffer(proc_id).remaining())
-            {
-                algorithm(proc_id);
-            }
-        }
+      algorithm(proc_id);
     }
+  }
 }
 
 template <typename T>

@@ -41,8 +41,9 @@
 #include <sstream>  // for operator<<, basic_ostream, ostream, basic_ostream::operator<<, ostri...
 #include <string>   // for basic_string, string, basic_string<>::const_iterator, char_traits
 
-#if __GNUC__ >= 3
+#if __has_include(<cxxabi.h>)
 #include <cxxabi.h>  // for __cxa_demangle
+#define STK_HAVE_CXXABI
 #endif
 
 //----------------------------------------------------------------------
@@ -233,79 +234,30 @@ std::string word_wrap(
 
 #ifdef SIERRA_USE_PLATFORM_DEMANGLER
 
-  #if defined(__GNUC__)
+std::string
+demangle(const char * symbol)
+{
+#ifdef STK_HAVE_CXXABI
 
-    #if (__GNUC__ == 3)
-      std::string
-      demangle(const char * symbol)
-     {
-       std::string s;
-       int status;
+  std::string s;
 
-       char *demangled_symbol = abi::__cxa_demangle(symbol, 0, 0, &status);
+  int status = -1;
 
-       if (demangled_symbol) {
-         s = std::string(demangled_symbol);
-         free(demangled_symbol);
-       }
+  char *demangled_symbol = abi::__cxa_demangle(symbol, 0, 0, &status);
 
-       if (status != 0)
-         s = std::string(symbol);
+  if (demangled_symbol) {
+    s = std::string(demangled_symbol);
+    free(demangled_symbol);
+  }
 
-       return s;
-     }
+  if (status != 0)
+    s = std::string(symbol);
 
-    #elif (__GNUC__ == 4)
-      std::string
-      demangle(const char * symbol)
-      {
-        std::string s;
-
-        int status = -1;
-
-        char *demangled_symbol = __cxxabiv1::__cxa_demangle(symbol, 0, 0, &status);
-
-        if (demangled_symbol) {
-          s = std::string(demangled_symbol);
-          free(demangled_symbol);
-        }
-
-        if (status != 0)
-          s = std::string(symbol);
-
-        return s;
-      }
-
-    #elif (__GNUC__ >= 5)
-      std::string
-      demangle(const char * symbol)
-      {
-        std::string s;
-
-        int status = -1;
-
-        char *demangled_symbol = abi::__cxa_demangle(symbol, 0, 0, &status);
-
-        if (demangled_symbol) {
-          s = std::string(demangled_symbol);
-          free(demangled_symbol);
-        }
-
-        if (status != 0)
-          s = std::string(symbol);
-
-        return s;
-      }
-      
-    #endif // (__GNUC__ == 3)
-
+  return s;
 #else
-
-std::string demangle(const char *symbol) {
   return symbol;
+#endif
 }
-
-#endif // defined(__GNUC__)
 
 #else
 

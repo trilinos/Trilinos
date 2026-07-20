@@ -4,19 +4,19 @@
 # Solutions of Sandia, LLC (NTESS). Under the terms of Contract
 # DE-NA0003525 with NTESS, the U.S. Government retains certain rights
 # in this software.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are
 # met:
-# 
+#
 #     * Redistributions of source code must retain the above copyright
 #       notice, this list of conditions and the following disclaimer.
-# 
+#
 #     * Redistributions in binary form must reproduce the above
 #       copyright notice, this list of conditions and the following
 #       disclaimer in the documentation and/or other materials provided
 #       with the distribution.
-# 
+#
 #     * Neither the name of NTESS nor the names of its contributors
 #       may be used to endorse or promote products derived from this
 #       software without specific prior written permission.
@@ -32,17 +32,18 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-# 
+#
 DIR=$(dirname $0)
 STK_HEADER_FILE=${1:-stk_version.hpp}
 
 # The current working directory might not be the source tree, so go there
 # so that the git commands will work (if the source tree is a git repository.)
-# Note that it seems a bad assumption that this script will also be in 
+# Note that it seems a bad assumption that this script will also be in
 # the source tree, but I'm not going to change that now.
 cd ${DIR}
 
 REMOTE_REPO="git@cee-gitlab.sandia.gov:1540-compsim/sierra/base"
+
 
 # Don't prepend DIR here, since we are now in that directory.
 test -r $STK_HEADER_FILE &&
@@ -52,9 +53,13 @@ test -r $STK_HEADER_FILE &&
 # approaches to getting the version below, depending on whether this
 # is an internal or external build.
 NEW_VERSION=$(git describe --long --abbrev=8 --match=[0-9]*.[0-9]*.[0-9]* HEAD 2>/dev/null)
+if [ -n "${SPACK_SIERRA_VERSION:-}" ]
+then
+    NEW_VERSION=${SPACK_SIERRA_VERSION}-${NEW_VERSION##*-}
+fi
 
 # If we do not have access to the REMOTE_REPO assume this is an external customer build.
-if ! git ls-remote --exit-code --tags ${REMOTE_REPO} >/dev/null 2>&1
+if [ -n "${STK_FORCE_LOCAL_VERSION}" ] || ! git ls-remote --exit-code --tags ${REMOTE_REPO} >/dev/null 2>&1
 then
     # External user builds.
     # This could still be a clone of our repo (ie, Goodyear), in which case

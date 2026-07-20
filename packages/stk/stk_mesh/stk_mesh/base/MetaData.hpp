@@ -72,21 +72,16 @@ namespace stk { namespace mesh { class MetaData; } }
 namespace stk {
 namespace mesh {
 
-template <typename>
-struct is_field : std::false_type {};
+template <typename field_type> struct is_field : std::false_type {};
+template <typename T> struct is_field<Field<T>> : std::true_type {};
+template <typename field_type> constexpr bool is_field_v = is_field<field_type>::value;
 
-template <typename Scalar>
-struct is_field<Field<Scalar>> : std::true_type {};
+template <typename field_type> struct is_field_base : std::is_same<field_type, FieldBase> {};
+template <typename field_type> constexpr bool is_field_base_v = is_field_base<field_type>::value;
 
-template <typename field_type>
-constexpr bool is_field_v = is_field<field_type>::value;
-
-
-template <typename field_type>
-struct is_field_base : std::is_same<field_type, FieldBase> {};
-
-template <typename field_type>
-constexpr bool is_field_base_v = is_field_base<field_type>::value;
+template <typename T> struct is_std_complex : std::false_type {};
+template <typename U> struct is_std_complex<std::complex<U>> : std::true_type {};
+template <typename T> inline constexpr bool is_std_complex_v = is_std_complex<T>::value;
 
 
 /** \addtogroup stk_mesh_module
@@ -409,7 +404,24 @@ public:
   template <typename T, Layout HostLayout = DefaultHostLayout>
   Field<T, HostLayout> & declare_field(stk::topology::rank_t arg_entity_rank,
                                        const std::string& name,
-                                       unsigned number_of_states = 1);
+                                       unsigned number_of_states = 1)
+  requires (not is_std_complex_v<T>)
+  {
+    return this->template declare_field_impl<T, HostLayout>(arg_entity_rank, name, number_of_states);
+  }
+
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after July 2026
+  template <typename T, Layout HostLayout = DefaultHostLayout>
+  STK_DEPRECATED_MSG("std::complex<...> as a Field datatype is being deprecated due to lack of GPU support.  "
+                     "Please migrate all usage to Kokkos::complex<...> instead.")
+  Field<T, HostLayout> & declare_field(stk::topology::rank_t arg_entity_rank,
+                                       const std::string& name,
+                                       unsigned number_of_states = 1)
+  requires is_std_complex_v<T>
+  {
+    return this->template declare_field_impl<T, HostLayout>(arg_entity_rank, name, number_of_states);
+  }
+#endif
 
   /** \brief  Declare an attribute on a field.
    *          Return the attribute of that type,
@@ -512,6 +524,7 @@ public:
 
   stk::topology get_topology(const Part & part) const;
 
+  void set_mesh_on_field(BulkData* bulk, FieldBase& field);
   void set_mesh_on_fields(BulkData* bulk);
 
   void set_surface_to_block_mapping(const stk::mesh::Part* surface, const std::vector<const stk::mesh::Part*> &blocks)
@@ -596,6 +609,11 @@ protected:
 private:
   MetaData( const MetaData & );                ///< \brief  Not allowed
   MetaData & operator = ( const MetaData & );  ///< \brief  Not allowed
+
+  template <typename T, Layout HostLayout = DefaultHostLayout>
+  Field<T, HostLayout> & declare_field_impl(stk::topology::rank_t arg_entity_rank,
+                                            const std::string& name,
+                                            unsigned number_of_states = 1);
 
   const char** reserved_state_suffix() const;
 
@@ -757,7 +775,7 @@ inline bool MetaData::is_valid_part_ordinal(unsigned ord) const
 inline
 Part & MetaData::get_part( unsigned ord ) const
 {
-  STK_ThrowAssertMsg(is_valid_part_ordinal(ord), "Invalid ordinal: " << ord);
+  STK_ThrowRequireMsg(is_valid_part_ordinal(ord), "Invalid ordinal: " << ord);
 
   return *m_part_repo.get_all_parts()[ord];
 }
@@ -790,7 +808,7 @@ MetaData::get_field(stk::mesh::EntityRank arg_entity_rank, const std::string & n
 
 template <typename T, Layout HostLayout>
 Field<T, HostLayout> &
-MetaData::declare_field(stk::topology::rank_t arg_entity_rank, const std::string & name, unsigned number_of_states)
+MetaData::declare_field_impl(stk::topology::rank_t arg_entity_rank, const std::string & name, unsigned number_of_states)
 {
   static_assert(not is_field_v<T> && not is_field_base_v<T>,
                 "You must use a datatype as the template parameter to MetaData::declare_field(), "

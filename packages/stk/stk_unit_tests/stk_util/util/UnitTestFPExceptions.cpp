@@ -52,7 +52,7 @@ TEST(FPExceptions, Log0Error)
   if (!stk::util::have_errno() && !stk::util::have_errexcept()) GTEST_SKIP();
 
   stk::util::clear_fp_errors();
-  std::log(0.0);
+  [[maybe_unused]] const double log_0 = std::log(0.0);
   EXPECT_ANY_THROW(stk::util::throw_on_fp_error());
 }
 
@@ -61,7 +61,7 @@ TEST(FPExceptions, FlagsAreClearedAfterThrow)
   if (!stk::util::have_errno() && !stk::util::have_errexcept()) GTEST_SKIP();
 
   stk::util::clear_fp_errors();
-  std::log(0.0);
+  [[maybe_unused]] const double log_0 = std::log(0.0);
   EXPECT_ANY_THROW(stk::util::throw_on_fp_error());
   EXPECT_NO_THROW(stk::util::throw_on_fp_error());
 }
@@ -71,7 +71,7 @@ TEST(FPExceptions, ErrorMessageContainsName)
   if (!stk::util::have_errno() && !stk::util::have_errexcept()) GTEST_SKIP();
 
   stk::util::clear_fp_errors();
-  std::log(0.0);
+  [[maybe_unused]] const double log_0 = std::log(0.0);
 
   std::string fname = "my_very_specific_and_clear_function_name";
   try {
@@ -101,7 +101,7 @@ TEST(FPExceptions, Warning)
   if (!stk::util::have_errno() && !stk::util::have_errexcept()) GTEST_SKIP();
 
   stk::util::clear_fp_errors();
-  std::log(0.0);
+  [[maybe_unused]] const double log_0 = std::log(0.0);
   std::stringstream ss;
   EXPECT_TRUE(stk::util::warn_on_fp_error(nullptr, ss));
   EXPECT_GT(ss.str().size(), 0U);

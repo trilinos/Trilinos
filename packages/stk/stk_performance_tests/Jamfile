@@ -42,8 +42,6 @@ project votd
     $(sierra-warnings)
     <include>$(stk_performance_tests-root)
     <include>$(stk_performance_tests-root)/..
-    <define>STK_BUILT_FOR_SIERRA
-    <define>STK_BUILT_WITH_BJAM
   : usage-requirements
     <include>$(stk_performance_tests-root)
     <include>$(stk_performance_tests-root)/..

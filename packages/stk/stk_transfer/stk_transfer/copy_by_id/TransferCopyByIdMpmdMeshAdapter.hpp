@@ -52,6 +52,13 @@ public:
   TransferCopyByIdMpmdMeshAdapter(stk::ParallelMachine pm, const int num_fields);
   const void* field_data(const Mesh_ID & id, const unsigned field_index) const override;
   void* field_data(const Mesh_ID & id, const unsigned field_index) override;
+
+  int num_components(const Mesh_ID & id, const unsigned field_index) const override;
+  int component_stride(const Mesh_ID & id, const unsigned field_index) const override;
+  int num_bytes(const Mesh_ID & id, const unsigned field_index) const override;
+  int bytes_per_scalar(const Mesh_ID & id, const unsigned field_index) const override;
+  int scalar_byte_stride(const Mesh_ID & id, const unsigned field_index) const override;
+
   std::string field_name(const unsigned field_index) const override;
   unsigned field_data_size(const Mesh_ID & id, const unsigned field_index) const override;
   unsigned num_fields() const override;

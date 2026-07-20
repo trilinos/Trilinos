@@ -46,7 +46,9 @@
 #include "stk_search/IdentProc.hpp"        // for IdentProc
 #include "stk_search/Sphere.hpp"           // for Sphere
 #include "stk_search/SearchInterface.hpp"
+#include "stk_search_util/CoordTransform.hpp"
 #include "stk_search_util/CachedEntity.hpp"
+#include "stk_search_util/CachedFieldData.hpp"
 #include "stk_search_util/MeshUtility.hpp" // for get_time_stamp
 #include "stk_search_util/spmd/EntityKeyPair.hpp"
 #include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine
@@ -93,14 +95,16 @@ public:
                const stk::mesh::FieldBase* coordinateField,
                const stk::mesh::PartVector& recvParts,
                const stk::ParallelMachine recvComm,
-               double parametricTolerance, double geometricTolerance);
+               double parametricTolerance, double geometricTolerance,
+               std::shared_ptr<CoordTransformInterface> coordTransform = std::make_shared<CoordTransformIdentity>());
 
   NodeRecvMesh(stk::mesh::BulkData* recvBulk,
                const stk::mesh::FieldBase* coordinateField,
                const stk::mesh::PartVector& recvParts,
                const stk::mesh::Selector& activeSelector,
                const stk::ParallelMachine recvComm,
-               double parametricTolerance, double geometricTolerance);
+               double parametricTolerance, double geometricTolerance,
+               std::shared_ptr<CoordTransformInterface> coordTransform = std::make_shared<CoordTransformIdentity>());
 
   virtual ~NodeRecvMesh() = default;
 
@@ -138,6 +142,10 @@ public:
   const stk::mesh::BulkData* get_bulk() const { return m_bulk; }
   const stk::mesh::MetaData* get_meta() const { return m_meta; }
 
+  void acquire_field_data() override;
+  void release_field_data() override;
+  bool has_acquired_field_data() const override { return m_hasAcquiredFieldData; }
+
  protected:
   stk::mesh::BulkData* m_bulk{nullptr};
   stk::mesh::MetaData* m_meta{nullptr};
@@ -150,7 +158,13 @@ public:
   const double m_parametricTolerance;
   const double m_searchTolerance;
 
+  std::shared_ptr<CoordTransformInterface> m_coordTransform;
+
   bool m_isInitialized{false};
+
+  bool m_hasAcquiredFieldData{false};
+
+  std::shared_ptr<CachedFieldDataBase> m_cachedCoordinateFieldData;
 
   void consistency_check();
 

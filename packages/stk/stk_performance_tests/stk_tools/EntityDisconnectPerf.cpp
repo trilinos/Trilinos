@@ -66,7 +66,8 @@ TEST_F(ElementDisconnectPerfFixture, disconnect_all_faces_batched_destroy_declar
     reset_mesh();
     setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
     create_mesh_with_faces(100, 100, 100);
-    auto allFaces = get_faces([](const stk::mesh::BulkData& bulk, const stk::mesh::Entity& face) { return true; });
+    auto allFaces =
+        get_faces([](const stk::mesh::BulkData& /*bulk*/, const stk::mesh::Entity& /*face*/) { return true; });
 
     batchTimer.start_batch_timer();
     stk::experimental::EntityDisconnectTool disconnecter(get_bulk(), allFaces);

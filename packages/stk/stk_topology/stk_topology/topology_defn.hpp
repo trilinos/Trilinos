@@ -233,7 +233,14 @@ unsigned topology::side_ordinal(unsigned ranked_side_ordinal, rank_t rank) const
     return invalid_ordinal;
   }
 
-  if (num_side_ranks() == 2) {
+  if (num_side_ranks() == 1) {
+    if(rank != side_rank()) {
+      return invalid_ordinal;
+    }
+
+    return ranked_side_ordinal;
+  }
+  else if (num_side_ranks() == 2) {
     if(rank != stk::topology::FACE_RANK && rank != stk::topology::EDGE_RANK) {
       return invalid_ordinal;
     }
@@ -243,12 +250,6 @@ unsigned topology::side_ordinal(unsigned ranked_side_ordinal, rank_t rank) const
     } else if(rank == stk::topology::EDGE_RANK) {
       return ranked_side_ordinal + num_faces();
     }
-  } else if (num_side_ranks() == 1) {
-    if(rank != side_rank()) {
-      return invalid_ordinal;
-    }
-
-    return ranked_side_ordinal;
   }
 
   return invalid_ordinal;

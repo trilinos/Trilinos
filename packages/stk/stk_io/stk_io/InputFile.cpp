@@ -339,7 +339,7 @@ namespace io {
 
       Ioss::Region *region = m_region.get();
 
-      int step_count = region->get_property("state_count").get_int();
+      [[maybe_unused]]int step_count = region->get_property("state_count").get_int();
 
       STK_ThrowErrorMsgIf(step_count == 0, 
 		      "ERROR: Input database '" << region->get_database()->get_filename()
@@ -455,11 +455,11 @@ namespace io {
 
       int step_count = region->get_property("state_count").get_int();
 
-      STK_ThrowErrorMsgIf(step_count == 0,
+      STK_ThrowRequireMsg(step_count > 0,
                       "ERROR: Input database '" << region->get_database()->get_filename()
                       << "' has no transient data.");
 
-      STK_ThrowErrorMsgIf(step > step_count,
+      STK_ThrowRequireMsg(step <= step_count,
                       "ERROR: Input database '" << region->get_database()->get_filename()
                       << "'. Step " << step << " was specified, but database only has "
                       << step_count << " steps.");

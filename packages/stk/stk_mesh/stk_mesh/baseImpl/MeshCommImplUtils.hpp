@@ -39,7 +39,6 @@
 
 #include <stk_util/parallel/CommSparse.hpp>
 #include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/EntityProcMapping.hpp>
 
 #include <vector>
@@ -48,6 +47,7 @@
 
 namespace stk {
 namespace mesh {
+class BulkData;
 namespace impl {
 
 //----------------------------------------------------------------------

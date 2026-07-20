@@ -107,17 +107,6 @@ public:
     construct_device_data();
   }
 
-  void setup_multi_block_mesh_with_fields_on_all_blocks()
-  {
-    std::string meshDesc = stk::unit_test_util::get_many_block_mesh_desc(m_numBlocks);
-    std::vector<double> coordinates = stk::unit_test_util::get_many_block_coordinates(m_numBlocks);
-
-    setup_fields_on_all_blocks();
-    stk::unit_test_util::setup_text_mesh(
-          get_bulk(), stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
-    construct_device_data();
-  }
-
   void construct_device_data()
   {
     for(auto field : m_fields) {
@@ -145,45 +134,9 @@ public:
     }
   }
 
-  void setup_fields_on_all_blocks()
-  {
-    unsigned numStates = 1;
-    std::vector<int> init;
-    setup_field_component_data(init);
-
-    for(unsigned i = 1; i <= m_numBlocks; i++) {
-      std::string blockName = "block_" + std::to_string(i);
-
-      stk::mesh::Part& part = get_meta().declare_part_with_topology(blockName, stk::topology::HEX_8);
-      get_meta().set_part_id(part, i);
-      EXPECT_NE(&part, nullptr);
-
-      for(unsigned j = 1; j <= m_numFields; j++) {
-        std::string fieldName = "field_on_all_blocks_" + std::to_string(j);
-        stk::mesh::Field<int>& field = get_meta().declare_field<int>(stk::topology::ELEM_RANK, fieldName, numStates);
-        stk::mesh::put_field_on_mesh(field, part, m_numComponents, init.data());
-        m_fields.push_back(&field);
-      }
-    }
-  }
-
   std::vector<stk::mesh::Field<int>*> get_fields()
   {
     return m_fields;
-  }
-
-  stk::mesh::PartVector get_parts()
-  {
-    auto allParts = get_meta().get_parts();
-    stk::mesh::PartVector elemParts;
-
-    for(auto part : allParts) {
-      if(part->primary_entity_rank() == stk::topology::ELEM_RANK && part->id() != stk::mesh::Part::INVALID_ID) {
-        elemParts.push_back(part);
-      }
-    }
-
-    return elemParts;
   }
 
   void setup_test(unsigned numBlocks, unsigned numStreams, unsigned multiplier)
@@ -201,26 +154,11 @@ public:
     }
   }
 
-  void setup_selected_field_data_on_host(stk::mesh::Selector& selector)
-  {
-    for(auto field : m_fields) {
-      set_element_field_data(*field, selector, m_multiplier);
-    }
-  }
-
   void setup_field_data_on_device()
   {
     for(auto field : m_fields) {
       auto& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
       set_element_field_data_on_device(ngpMesh, *field, stk::mesh::Selector(*field), m_multiplier);
-    }
-  }
-
-  void setup_selected_field_data_on_device(stk::mesh::Selector& selector)
-  {
-    for(auto field : m_fields) {
-      auto& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
-      set_element_field_data_on_device(ngpMesh, *field, selector, m_multiplier);
     }
   }
 
@@ -230,15 +168,6 @@ public:
     stk::mesh::get_entities(get_bulk(), stk::topology::ELEM_RANK, entities);
 
     get_bulk().batch_change_entity_parts(entities, addParts, {});
-  }
-
-  void change_parts_on_selected_blocks(stk::mesh::PartVector& addParts, stk::mesh::PartVector& removeParts,
-                                       stk::mesh::Selector& blockSelector)
-  {
-    stk::mesh::EntityVector entities;
-    stk::mesh::get_selected_entities(blockSelector, get_bulk().buckets(stk::topology::ELEM_RANK), entities);
-
-    get_bulk().batch_change_entity_parts(entities, addParts, removeParts);
   }
 
   void sync_fields_to_host()

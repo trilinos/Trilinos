@@ -33,6 +33,9 @@
 # 
 
 FILE(GLOB SOURCES CONFIGURE_DEPENDS *.cpp)
+if (NOT ${PROJECT_NAME}_ENABLE_STKTools)
+  LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/HowToApplyMeshFunction.cpp")
+endif()
 
 if(HAVE_STK_Trilinos)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(stk_expreval_doc_tests
@@ -48,6 +51,7 @@ else()
   target_link_libraries(stk_expreval_doc_tests stk_expreval)
   target_link_libraries(stk_expreval_doc_tests stk_ngp_test)
   target_link_libraries(stk_expreval_doc_tests stk_unit_main)
+  target_link_libraries(stk_expreval_doc_tests stk_tools_lib)
 
   INSTALL(TARGETS stk_expreval_doc_tests DESTINATION ${STK_INSTALL_BINDIR})
 

@@ -52,6 +52,26 @@ namespace transfer {
   {
     return nullptr;
   }
+  int TransferCopyByIdMpmdMeshAdapter::num_components(const Mesh_ID & /*id*/, const unsigned /*field_index*/) const
+  {
+    return 0;
+  }
+  int TransferCopyByIdMpmdMeshAdapter::component_stride(const Mesh_ID & /*id*/, const unsigned /*field_index*/) const
+  {
+    return 1;
+  }
+  int TransferCopyByIdMpmdMeshAdapter::num_bytes(const Mesh_ID & /*id*/, const unsigned /*field_index*/) const
+  {
+    return 0;
+  }
+  int TransferCopyByIdMpmdMeshAdapter::bytes_per_scalar(const Mesh_ID & /*id*/, const unsigned /*field_index*/) const
+  {
+    return 0;
+  }
+  int TransferCopyByIdMpmdMeshAdapter::scalar_byte_stride(const Mesh_ID & /*id*/, const unsigned /*field_index*/) const
+  {
+    return 0;
+  }
   unsigned TransferCopyByIdMpmdMeshAdapter::field_data_size(const Mesh_ID & /*id*/, const unsigned /*field_index*/) const
   {
     return 0;

@@ -168,7 +168,7 @@ double real_rand()
 /// Sets x as the random number seed. Interface to the srand function provided by the
 /// ANSI C math library.
 KOKKOS_INLINE_FUNCTION
-double real_srand(double x)
+double real_srand([[maybe_unused]]double x)
 {
   KOKKOS_IF_ON_HOST((
     std::srand(static_cast<int>(x));
@@ -202,7 +202,7 @@ extern int sRandomRangeLowValue;
 
 /// Sets x as the "seed" for the pseudo-random number generator.
 KOKKOS_INLINE_FUNCTION
-void random_seed(double x)
+void random_seed([[maybe_unused]]double x)
 {
   KOKKOS_IF_ON_HOST((
     int y = std::hash<double>{}(x);
@@ -243,7 +243,7 @@ double random0()
 
 /// Non-platform specific (pseudo) random number generator.
 KOKKOS_INLINE_FUNCTION
-double random1(double seed)
+double random1([[maybe_unused]]double seed)
 {
   KOKKOS_IF_ON_HOST((
     random_seed(seed);

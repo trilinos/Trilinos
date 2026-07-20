@@ -34,6 +34,7 @@
 
 #include <algorithm>                    // for sort, unique
 #include <set>                          // for set
+#include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine
 #include <stk_mesh/base/Entity.hpp>     // for Entity
 #include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element
 #include <stk_mesh/base/Types.hpp>      // for EntityId, EntityIdVector
@@ -42,12 +43,11 @@
 #include <stk_unit_test_utils/stk_mesh_fixtures/HexFixture.hpp>
 #include <stk_util/util/ReportHandler.hpp>  // for ThrowRequireMsg
 #include <utility>                      // for pair
-#include "mpi.h"                        // for ompi_communicator_t
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData, etc
 #include "stk_mesh/base/Field.hpp"      // for Field
 #include "stk_mesh/base/FieldBase.hpp"  // for field_data
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData, put_field
-#include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine
+#include "stk_mesh/base/GetEntities.hpp"
 
 namespace stk {
 namespace mesh {
@@ -328,6 +328,7 @@ void HexFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_proce
   {
     // Declare the elements that belong on this process
     stk::mesh::EntityIdVector elem_nodes(8);
+    stk::mesh::EntityVector nodeVec(8);
     for (EntityId entity_id : element_ids_on_this_processor) {
       size_t ix = 0, iy = 0, iz = 0;
       elem_x_y_z(entity_id, ix, iy, iz);
@@ -340,31 +341,38 @@ void HexFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_proce
       elem_nodes[5] = node_id( ix+1 , iy   , iz+1 );
       elem_nodes[6] = node_id( ix+1 , iy+1 , iz+1 );
       elem_nodes[7] = node_id( ix   , iy+1 , iz+1 );
-
-      stk::mesh::declare_element( m_bulk_data, m_elem_parts, elem_id( ix , iy , iz ) , elem_nodes);
-
-      for (size_t i = 0; i<8; ++i) {
-        EntityId node_id = elem_nodes[i];
-        stk::mesh::Entity const node = m_bulk_data.get_entity( stk::topology::NODE_RANK , node_id );
+      stk::mesh::Entity elem = stk::mesh::declare_element( m_bulk_data, m_elem_parts, elem_id( ix , iy , iz ) , elem_nodes);
+      auto elemNodes = m_bulk_data.get_connected_entities(elem, stk::topology::NODE_RANK);
+      nodeVec.clear();
+      for(stk::mesh::Entity node : elemNodes) {
+        nodeVec.push_back(node); //put in vector so memory doesn't move during change-parts operation
+      }
+      for(stk::mesh::Entity node : nodeVec) {
         m_bulk_data.change_entity_parts(node, m_node_parts);
-
+        EntityId node_id = m_bulk_data.identifier(node);
         stk::mesh::fixtures::DoAddNodeSharings(m_bulk_data, m_nodes_to_procs, node_id, node);
+      }
+    }
 
-        STK_ThrowRequireMsg( m_bulk_data.is_valid(node),
-          "This process should know about the nodes that make up its element");
+    stk::mesh::EntityVector nodes;
+    stk::mesh::Selector nodeSelector = stk::mesh::selectIntersection(m_elem_parts);
+    stk::mesh::get_entities(m_bulk_data, stk::topology::NODE_RANK, nodeSelector, nodes);
 
-        // Compute and assign coordinates to the node
-        size_t nx = 0, ny = 0, nz = 0;
-        node_x_y_z(elem_nodes[i], nx, ny, nz);
+    auto data = m_coord_field->data<stk::mesh::ReadWrite>();
 
-        auto data = m_coord_field->data<stk::mesh::ReadWrite>().entity_values(node);
-        std::array<double, 3> data_array{data(0_comp), data(1_comp), data(2_comp)};
+    for(stk::mesh::Entity node : nodes) {
+      EntityId node_id = m_bulk_data.identifier(node);
 
-        coordMap.getNodeCoordinates(data_array.data(), nx, ny, nz);
+      // Compute and assign coordinates to the node
+      size_t nx = 0, ny = 0, nz = 0;
+      node_x_y_z(node_id, nx, ny, nz);
 
-        for (stk::mesh::ComponentIdx d : data.components()) {
-          data(d) = data_array[d];
-        }
+      auto nodeData = data.entity_values(node);
+      std::array<double, 3> data_array{0,0,0};
+
+      coordMap.getNodeCoordinates(data_array.data(), nx, ny, nz);
+      for (stk::mesh::ComponentIdx d : nodeData.components()) {
+        nodeData(d) = data_array[d];
       }
     }
   }

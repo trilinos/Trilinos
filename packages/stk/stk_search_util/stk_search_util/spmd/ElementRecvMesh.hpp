@@ -43,16 +43,18 @@
 #include "stk_mesh/base/Part.hpp"               // for Part
 #include "stk_mesh/base/Selector.hpp"           // for Selector
 #include "stk_mesh/base/Types.hpp"              // for EntityRank, PartVector
-#include "stk_search_util/PointEvaluator.hpp"   // for EvaluatePointsInte...
-#include "stk_search_util/MeshUtility.hpp"
 #include "stk_search_util/CachedEntity.hpp"
+#include "stk_search_util/CachedFieldData.hpp"
+#include "stk_search_util/MeshUtility.hpp"
+#include "stk_search_util/PointEvaluator.hpp"   // for EvaluatePointsInte...
+#include "stk_search_util/CoordTransform.hpp"
+#include "stk_search_util/spmd/EntityKeyPair.hpp"
 #include "stk_search/Point.hpp"                 // for Point
 #include "stk_search/IdentProc.hpp"             // for IdentProc
 #include "stk_search/Box.hpp"                   // for Box
 #include "stk_search/Sphere.hpp"                // for Sphere
 #include "stk_search/SearchInterface.hpp"
 #include "stk_util/parallel/Parallel.hpp"       // for ParallelMachine
-#include "stk_search_util/spmd/EntityKeyPair.hpp"
 #include <Kokkos_Core_fwd.hpp>
 
 #include <memory>                               // for shared_ptr
@@ -99,7 +101,8 @@ class ElementRecvMesh : public ElementRecvMeshSearchBaseClass {
                   const stk::mesh::PartVector& recvParts,
                   const stk::ParallelMachine recvComm,
                   std::shared_ptr<PointEvaluatorInterface> pointEvaluator,
-                  double parametricTolerance, double geometricTolerance);
+                  double parametricTolerance, double geometricTolerance,
+                  std::shared_ptr<CoordTransformInterface> coordTransform = std::make_shared<CoordTransformIdentity>());
 
   ElementRecvMesh(stk::mesh::BulkData* recvBulk,
                   const stk::mesh::FieldBase* coordinateField,
@@ -108,7 +111,8 @@ class ElementRecvMesh : public ElementRecvMeshSearchBaseClass {
                   const stk::mesh::Selector& activeSelector,
                   const stk::ParallelMachine recvComm,
                   std::shared_ptr<PointEvaluatorInterface> pointEvaluator,
-                  double parametricTolerance, double geometricTolerance);
+                  double parametricTolerance, double geometricTolerance,
+                  std::shared_ptr<CoordTransformInterface> coordTransform = std::make_shared<CoordTransformIdentity>());
 
   virtual ~ElementRecvMesh() = default;
 
@@ -147,6 +151,10 @@ class ElementRecvMesh : public ElementRecvMeshSearchBaseClass {
   const stk::mesh::BulkData* get_bulk() const { return m_bulk; }
   const stk::mesh::MetaData* get_meta() const { return m_meta; }
 
+  void acquire_field_data() override;
+  void release_field_data() override;
+  bool has_acquired_field_data() const override { return m_hasAcquiredFieldData; }
+
  protected:
   stk::mesh::BulkData* m_bulk{nullptr};
   stk::mesh::MetaData* m_meta{nullptr};
@@ -159,10 +167,16 @@ class ElementRecvMesh : public ElementRecvMeshSearchBaseClass {
 
   std::shared_ptr<PointEvaluatorInterface> m_pointEvaluator;
 
+  std::shared_ptr<CachedFieldDataBase> m_cachedCoordinateFieldData;
+
   const double m_parametricTolerance;
   const double m_searchTolerance;
 
+  std::shared_ptr<CoordTransformInterface> m_coordTransform;
+
   bool m_isInitialized{false};
+
+  bool m_hasAcquiredFieldData{false};
 
   void consistency_check();
 

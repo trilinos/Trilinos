@@ -179,6 +179,7 @@ void NodeSendMesh::consistency_check()
 void NodeSendMesh::bounding_boxes(std::vector<TransferBaseClass::BoundingBox>& v_box, bool includeGhosts) const
 {
   STK_ThrowAssert(m_isInitialized);
+  STK_ThrowAssert(m_hasAcquiredFieldData);
   m_searchMesh.bounding_boxes(v_box, includeGhosts);
 }
 
@@ -198,6 +199,7 @@ void NodeSendMesh::find_parametric_coords(const EntityKey& k,
                                           double& parametricDistance,
                                           bool& isWithinParametricTolerance) const
 {
+  STK_ThrowAssert(m_hasAcquiredFieldData);
   m_searchMesh.find_parametric_coords(k, evalPoint, parametricCoords, parametricDistance, isWithinParametricTolerance);
 }
 
@@ -207,18 +209,21 @@ bool NodeSendMesh::modify_search_outside_parametric_tolerance(const EntityKey& k
                                                               double& geometricDistanceSquared,
                                                               bool& isWithinGeometricTolerance) const
 {
+  STK_ThrowAssert(m_hasAcquiredFieldData);
   return m_searchMesh.modify_search_outside_parametric_tolerance(k, evalPoint, parametricCoords,
                                                                  geometricDistanceSquared, isWithinGeometricTolerance);
 }
 
 double NodeSendMesh::get_closest_geometric_distance_squared(const EntityKey& k, const std::vector<double>& evalPoint) const
 {
+  STK_ThrowAssert(m_hasAcquiredFieldData);
   return m_searchMesh.get_closest_geometric_distance_squared(k, evalPoint);
 }
 
 void NodeSendMesh::interpolate_fields(const EntityKey& k, std::vector<double>& evalPoint,
                                          std::vector<double>& sendParametricCoords, InterpolationData& data) const
 {
+  STK_ThrowAssert(m_hasAcquiredFieldData);
   m_interpolateFields->interpolate_fields(k, evalPoint, sendParametricCoords, data);
 }
 
@@ -246,11 +251,6 @@ void NodeSendMesh::update_values()
 {
   STK_ThrowAssert(m_isInitialized);
 
-  for(auto field : m_fieldVec) {
-    field.field->sync_to_host();
-    field.field->modify_on_host();
-  }
-
   stk::mesh::Ghosting* ghosting = m_searchMesh.get_ghosting();
   if(nullptr != ghosting) {
     std::vector<const stk::mesh::FieldBase*> fields = stk::transfer::extract_field_pointers(m_fieldVec);
@@ -267,16 +267,19 @@ bool NodeSendMesh::is_valid(const EntityKey& k) const { return m_bulk->is_valid(
 
 double NodeSendMesh::get_distance_from_centroid(const EntityKey& k, const std::vector<double>& evalPoint) const
 {
+  STK_ThrowAssert(m_hasAcquiredFieldData);
   return m_searchMesh.get_distance_from_centroid(k, evalPoint);
 }
 
 double NodeSendMesh::get_distance_squared_from_centroid(const EntityKey& k, const std::vector<double>& evalPoint) const
 {
+  STK_ThrowAssert(m_hasAcquiredFieldData);
   return m_searchMesh.get_distance_squared_from_centroid(k, evalPoint);
 }
 
 double NodeSendMesh::get_distance_from_nearest_node(const EntityKey& k, const std::vector<double>& evalPoint) const
 {
+  STK_ThrowAssert(m_hasAcquiredFieldData);
   return m_searchMesh.get_distance_from_nearest_node(k, evalPoint);
 }
 
@@ -287,11 +290,13 @@ stk::mesh::EntityId NodeSendMesh::id(const EntityKey& k) const
 
 void NodeSendMesh::centroid(const EntityKey& k, std::vector<double>& centroid) const
 {
+  STK_ThrowAssert(m_hasAcquiredFieldData);
   m_searchMesh.centroid(k, centroid);
 }
 
 void NodeSendMesh::coordinates(const EntityKey& k, std::vector<double>& coords) const
 {
+  STK_ThrowAssert(m_hasAcquiredFieldData);
   m_searchMesh.coordinates(k, coords);
 }
 
@@ -310,6 +315,31 @@ stk::search::ObjectOutsideDomainPolicy NodeSendMesh::get_extrapolate_option() co
   return m_searchMesh.get_extrapolate_option();
 }
 
+void NodeSendMesh::acquire_field_data()
+{
+  STK_ThrowAssert(m_isInitialized);
+
+  m_interpolateFields->acquire_field_data();
+
+  m_searchMesh.acquire_field_data();
+
+  fill_cached_const_field_data(m_fieldVec, m_cachedFieldData);
+
+  m_hasAcquiredFieldData = true;
+}
+
+void NodeSendMesh::release_field_data()
+{
+  STK_ThrowAssert(m_isInitialized);
+
+  m_interpolateFields->release_field_data();
+
+  m_searchMesh.release_field_data();
+
+  clear_cached_field_data(m_cachedFieldData);
+
+  m_hasAcquiredFieldData = false;
+}
 
 } // namespace spmd
 } // namespace transfer

@@ -39,6 +39,7 @@
 #include <iostream>   // for cout
 #include <sstream>    // for ostringstream, operator<<, basic_ostream, basic_ostream::operator<<
 #include <stdexcept>  // for runtime_error, logic_error, invalid_argument
+#include <filesystem>
 
 #ifdef STK_HAVE_BOOST
 #include "boost/version.hpp"
@@ -173,6 +174,16 @@ source_relative_path(
   return path;
 }
 
+std::string source_location_string(const char* file, unsigned line, const char* trailing_delimeter)
+{
+  if (line > 0 && file != nullptr) {
+    return std::filesystem::path(file).filename().string() + ":" + std::to_string(line) + trailing_delimeter;
+  }
+  else {
+    return "";
+  }
+}
+
 void default_assert_handler(const char* expr,
                             const std::string& location,
                             std::ostringstream& message)
@@ -268,12 +279,12 @@ std::ostream & output_stacktrace(std::ostream & os)
 
 #ifndef STK_ENABLE_GPU_BUT_NO_RDC
 
-KOKKOS_FUNCTION void ThrowMsgDevice(const char * message)
+[[noreturn]] KOKKOS_FUNCTION void ThrowMsgDevice(const char * message)
 {
   Kokkos::abort(message);
 }
 
-KOKKOS_FUNCTION void ThrowErrorMsgDevice(const char * message)
+[[noreturn]] KOKKOS_FUNCTION void ThrowErrorMsgDevice(const char * message)
 {
   Kokkos::abort(message);
 }

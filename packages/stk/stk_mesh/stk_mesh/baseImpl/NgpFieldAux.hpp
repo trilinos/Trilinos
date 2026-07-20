@@ -37,213 +37,268 @@
 #include "stk_mesh/base/NgpTypes.hpp"
 #include <Kokkos_Core.hpp>
 
-namespace stk {
-namespace mesh {
-namespace impl {
+namespace stk::mesh::impl {
 
 //------------------------------------------------------------------------------
-template <typename ValueType, typename ExecSpaceType, typename DeviceFieldMetaDataViewType, typename FieldOrdinalType,
-          typename DeviceBucketsModifiedType>
+template <typename ValueType, typename ExecSpaceType, typename FieldOrdinalType, typename DeviceBucketsModifiedType>
 void transpose_modified_buckets_to_device(const ExecSpaceType& execSpace,
-                                          const DeviceFieldMetaDataViewType& deviceFieldMetaData,
+                                          const DeviceFieldMetaData* deviceFieldMetaData,
+                                          int maxNumScalarsPerEntity,
+                                          int numBuckets,
                                           const FieldOrdinalType& fieldIndex,
                                           const DeviceBucketsModifiedType& bucketsMarkedModified,
                                           Layout hostDataLayout)
 {
   using TeamHandleType = typename stk::ngp::TeamPolicy<ExecSpaceType>::member_type;
 
-  size_t numBuckets = deviceFieldMetaData.extent(0);
+  if (maxNumScalarsPerEntity == 1) {
+    auto teamPolicy = stk::ngp::TeamPolicy<ExecSpaceType>(execSpace, numBuckets, Kokkos::AUTO);
+    Kokkos::parallel_for("transpose_modified_buckets_to_device", teamPolicy,
+                         KOKKOS_LAMBDA(const TeamHandleType& team) {
+                           const unsigned bucketIndex = team.league_rank();
+                           const DeviceFieldMetaData& fieldMetaData = deviceFieldMetaData[bucketIndex];
+                           const ValueType* hostBucketPtr = reinterpret_cast<ValueType*>(fieldMetaData.m_hostData);
+                           ValueType* deviceBucketPtr = reinterpret_cast<ValueType*>(fieldMetaData.m_data);
+                           if (bucketsMarkedModified(fieldIndex, bucketIndex) == 0 ||
+                               hostBucketPtr == nullptr || deviceBucketPtr == nullptr) {
+                             return;  // Field not on this Bucket
+                           }
+                           const int bucketSize = fieldMetaData.m_bucketSize;
+                           Kokkos::parallel_for(Kokkos::TeamVectorRange(team, 0, bucketSize),
+                                                [&](const int entity) {
+                                                  deviceBucketPtr[entity] = hostBucketPtr[entity];
+                                                });
+                         });
+  }
+  else {
+    if (hostDataLayout == Layout::Right) {
+      auto teamPolicy = stk::ngp::TeamPolicy<ExecSpaceType>(execSpace, numBuckets, Kokkos::AUTO);
+      Kokkos::parallel_for("transpose_modified_buckets_to_device", teamPolicy,
+                           KOKKOS_LAMBDA(const TeamHandleType & team) {
+                             const unsigned bucketIndex = team.league_rank();
 
-  const auto& teamPolicy = stk::ngp::TeamPolicy<ExecSpaceType>(execSpace, numBuckets, Kokkos::AUTO);
-  Kokkos::parallel_for("transpose_new_and_modified_buckets_to_device", teamPolicy,
-    KOKKOS_LAMBDA(const TeamHandleType & team) {
-      const unsigned bucketIndex = team.league_rank();
+                             const DeviceFieldMetaData& fieldMetaData = deviceFieldMetaData[bucketIndex];
+                             const ValueType* hostBucketPtr = reinterpret_cast<ValueType*>(fieldMetaData.m_hostData);
+                             ValueType* deviceBucketPtr = reinterpret_cast<ValueType*>(fieldMetaData.m_data);
+                             if (bucketsMarkedModified(fieldIndex, bucketIndex) == 0 ||
+                                 hostBucketPtr == nullptr || deviceBucketPtr == nullptr) {
+                               return;  // Field not on this Bucket
+                             }
+                             const int bucketSize = fieldMetaData.m_bucketSize;
+                             const int bucketCapacity = fieldMetaData.m_bucketCapacity;
+                             const int numScalarsPerEntity = fieldMetaData.m_numComponentsPerEntity*fieldMetaData.m_numCopiesPerEntity;
+                             const int numValues = numScalarsPerEntity * bucketSize;
+                             Kokkos::parallel_for(Kokkos::TeamVectorRange(team, 0, numValues),
+                                                  [&](const int idx) {
+                                                    const int entity = idx / numScalarsPerEntity;
+                                                    const int scalar = idx % numScalarsPerEntity;
+                                                    deviceBucketPtr[scalar*bucketCapacity + entity] = hostBucketPtr[entity*numScalarsPerEntity + scalar];
+                                                  });
+                           });
 
-      const DeviceFieldMetaData& fieldMetaData = deviceFieldMetaData(bucketIndex);
-      ValueType* hostBucketPtr = reinterpret_cast<ValueType*>(fieldMetaData.m_hostData);
-      ValueType* deviceBucketPtr = reinterpret_cast<ValueType*>(fieldMetaData.m_data);
-
-      if (bucketsMarkedModified(fieldIndex, bucketIndex) == 0 ||
-          hostBucketPtr == nullptr || deviceBucketPtr == nullptr) { return; }
-
-      const unsigned bucketSize = fieldMetaData.m_bucketSize;
-      const unsigned bucketCapacity = fieldMetaData.m_bucketCapacity;
-      const unsigned numScalarsPerEntity = fieldMetaData.m_numComponentsPerEntity*fieldMetaData.m_numCopiesPerEntity;
-
-      bool isScalarField = (numScalarsPerEntity == 1);
-
-      if (isScalarField) {
-        Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, bucketSize),
-          [=](const unsigned& entity) {
-            deviceBucketPtr[entity] = hostBucketPtr[entity];
-          });
-      }
-      else {
-        if (hostDataLayout == Layout::Right) {
-          Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numScalarsPerEntity),
-            [=](const int& component) {
-              for (unsigned entity = 0; entity < bucketSize; ++entity) {
-                const ValueType* hostData = hostBucketPtr + entity*numScalarsPerEntity + component;
-                ValueType* deviceData = deviceBucketPtr + component*bucketCapacity + entity;
-                *deviceData = *hostData;
-              }
-            }
-          );
-        }
-        else {
-          Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numScalarsPerEntity),
-            [=](const int& component) {
-              for (unsigned entity = 0; entity < bucketSize; ++entity) {
-                const ValueType* hostData = hostBucketPtr + component*bucketCapacity + entity;
-                ValueType* deviceData = deviceBucketPtr + component*bucketCapacity + entity;
-                *deviceData = *hostData;
-              }
-            }
-          );
-        }
-      }
     }
-  );
+    else {
+      auto teamPolicy = stk::ngp::TeamPolicy<ExecSpaceType>(execSpace, numBuckets, Kokkos::AUTO);
+      Kokkos::parallel_for("transpose_modified_buckets_to_device", teamPolicy,
+                           KOKKOS_LAMBDA(const TeamHandleType& team) {
+                             const unsigned bucketIndex = team.league_rank();
+                             const DeviceFieldMetaData& fieldMetaData = deviceFieldMetaData[bucketIndex];
+                             const ValueType* hostBucketPtr = reinterpret_cast<ValueType*>(fieldMetaData.m_hostData);
+                             ValueType* deviceBucketPtr = reinterpret_cast<ValueType*>(fieldMetaData.m_data);
+                             if (bucketsMarkedModified(fieldIndex, bucketIndex) == 0 ||
+                                 hostBucketPtr == nullptr || deviceBucketPtr == nullptr) {
+                               return;  // Field not on this Bucket
+                             }
+                             const int bucketSize = fieldMetaData.m_bucketSize;
+                             const int bucketCapacity = fieldMetaData.m_bucketCapacity;
+                             const int numScalarsPerEntity = fieldMetaData.m_numComponentsPerEntity*fieldMetaData.m_numCopiesPerEntity;
+                             const int numValues = numScalarsPerEntity * bucketSize;
+                             Kokkos::parallel_for(Kokkos::TeamVectorRange(team, 0, numValues),
+                                                  [&](const int idx) {
+                                                    const int entity = idx / numScalarsPerEntity;
+                                                    const int scalar = idx % numScalarsPerEntity;
+                                                    deviceBucketPtr[scalar*bucketCapacity + entity] = hostBucketPtr[scalar*bucketCapacity + entity];
+                                                  });
+                           });
+
+    }
+  }
 }
 
-template <typename ValueType, typename DeviceFieldMetaDataViewType, typename ExecSpaceType>
+template <typename ValueType, typename ExecSpaceType>
 void transpose_from_pinned_and_mapped_memory(const ExecSpaceType& execSpace,
-                                             const DeviceFieldMetaDataViewType& deviceFieldMetaData,
+                                             const DeviceFieldMetaData* deviceFieldMetaData,
+                                             int maxNumScalarsPerEntity,
+                                             int numBuckets,
                                              Layout hostDataLayout)
 {
   using TeamHandleType = typename stk::ngp::TeamPolicy<ExecSpaceType>::member_type;
-  size_t numBuckets = deviceFieldMetaData.extent(0);
 
-  const auto& teamPolicy = stk::ngp::TeamPolicy<ExecSpaceType>(execSpace, numBuckets, Kokkos::AUTO);
-  Kokkos::parallel_for("transpose_from_pinned_and_mapped_memory", teamPolicy,
-    KOKKOS_LAMBDA(const TeamHandleType & team) {
-      const unsigned bucketIndex = team.league_rank();
+  if (maxNumScalarsPerEntity == 1) {
+    auto teamPolicy = stk::ngp::TeamPolicy<ExecSpaceType>(execSpace, numBuckets, Kokkos::AUTO);
+    Kokkos::parallel_for("transpose_from_pinned_and_mapped_memory", teamPolicy,
+                         KOKKOS_LAMBDA(const TeamHandleType& team) {
+                           const unsigned bucketIndex = team.league_rank();
+                           const DeviceFieldMetaData& fieldMetaData = deviceFieldMetaData[bucketIndex];
+                           const ValueType* hostBucketPtr = reinterpret_cast<ValueType*>(fieldMetaData.m_hostData);
+                           ValueType* deviceBucketPtr = reinterpret_cast<ValueType*>(fieldMetaData.m_data);
+                           if (hostBucketPtr == nullptr || deviceBucketPtr == nullptr) {
+                             return;  // Field not on this Bucket
+                           }
+                           const int bucketSize = fieldMetaData.m_bucketSize;
+                           Kokkos::parallel_for(Kokkos::TeamVectorRange(team, 0, bucketSize),
+                                                [&](const int entity) {
+                                                  deviceBucketPtr[entity] = hostBucketPtr[entity];
+                                                });
+                         });
+  }
+  else {
+    if (hostDataLayout == Layout::Right) {
+      auto teamPolicy = stk::ngp::TeamPolicy<ExecSpaceType>(execSpace, numBuckets, Kokkos::AUTO);
+      Kokkos::parallel_for("transpose_from_pinned_and_mapped_memory", teamPolicy,
+                           KOKKOS_LAMBDA(const TeamHandleType & team) {
+                             const unsigned bucketIndex = team.league_rank();
 
-      const DeviceFieldMetaData& fieldMetaData = deviceFieldMetaData(bucketIndex);
-      ValueType* hostBucketPtr = reinterpret_cast<ValueType*>(fieldMetaData.m_hostData);
-      ValueType* deviceBucketPtr = reinterpret_cast<ValueType*>(fieldMetaData.m_data);
+                             const DeviceFieldMetaData& fieldMetaData = deviceFieldMetaData[bucketIndex];
+                             const ValueType* hostBucketPtr = reinterpret_cast<ValueType*>(fieldMetaData.m_hostData);
+                             ValueType* deviceBucketPtr = reinterpret_cast<ValueType*>(fieldMetaData.m_data);
+                             if (hostBucketPtr == nullptr || deviceBucketPtr == nullptr) {
+                               return;  // Field not on this Bucket
+                             }
+                             const int bucketSize = fieldMetaData.m_bucketSize;
+                             const int bucketCapacity = fieldMetaData.m_bucketCapacity;
+                             const int numScalarsPerEntity = fieldMetaData.m_numComponentsPerEntity*fieldMetaData.m_numCopiesPerEntity;
+                             const int numValues = numScalarsPerEntity * bucketSize;
+                             Kokkos::parallel_for(Kokkos::TeamVectorRange(team, 0, numValues),
+                                                  [&](const int idx) {
+                                                    const int entity = idx / numScalarsPerEntity;
+                                                    const int scalar = idx % numScalarsPerEntity;
+                                                    deviceBucketPtr[scalar*bucketCapacity + entity] = hostBucketPtr[entity*numScalarsPerEntity + scalar];
+                                                  });
+                           });
 
-      if (hostBucketPtr == nullptr || deviceBucketPtr == nullptr) {
-        return;  // Field not on this Bucket
-      }
-
-      const unsigned bucketSize = fieldMetaData.m_bucketSize;
-      const unsigned bucketCapacity = fieldMetaData.m_bucketCapacity;
-      const unsigned numScalarsPerEntity = fieldMetaData.m_numComponentsPerEntity*fieldMetaData.m_numCopiesPerEntity;
-
-      bool isScalarField = (numScalarsPerEntity == 1);
-
-      if (isScalarField) {
-        Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, bucketSize),
-          [=](const unsigned& entity) {
-            deviceBucketPtr[entity] = hostBucketPtr[entity];
-          }
-        );
-      }
-      else {
-        if (hostDataLayout == Layout::Right) {
-          Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numScalarsPerEntity),
-            [=](const int& scalar) {
-              for (unsigned entity = 0; entity < bucketSize; ++entity) {
-                const ValueType* hostData = hostBucketPtr + entity*numScalarsPerEntity + scalar;
-                ValueType* deviceData = deviceBucketPtr + scalar*bucketCapacity + entity;
-                *deviceData = *hostData;
-              }
-            }
-          );
-        }
-        else {
-          Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numScalarsPerEntity),
-            [=](const int& scalar) {
-              for (unsigned entity = 0; entity < bucketSize; ++entity) {
-                const ValueType* hostData = hostBucketPtr + scalar*bucketCapacity + entity;
-                ValueType* deviceData = deviceBucketPtr + scalar*bucketCapacity + entity;
-                *deviceData = *hostData;
-              }
-            }
-          );
-        }
-      }
     }
-  );
+    else {
+      auto teamPolicy = stk::ngp::TeamPolicy<ExecSpaceType>(execSpace, numBuckets, Kokkos::AUTO);
+      Kokkos::parallel_for("transpose_from_pinned_and_mapped_memory", teamPolicy,
+                           KOKKOS_LAMBDA(const TeamHandleType& team) {
+                             const unsigned bucketIndex = team.league_rank();
+                             const DeviceFieldMetaData& fieldMetaData = deviceFieldMetaData[bucketIndex];
+                             const ValueType* hostBucketPtr = reinterpret_cast<ValueType*>(fieldMetaData.m_hostData);
+                             ValueType* deviceBucketPtr = reinterpret_cast<ValueType*>(fieldMetaData.m_data);
+                             if (hostBucketPtr == nullptr || deviceBucketPtr == nullptr) {
+                               return;  // Field not on this Bucket
+                             }
+                             const int bucketSize = fieldMetaData.m_bucketSize;
+                             const int bucketCapacity = fieldMetaData.m_bucketCapacity;
+                             const int numScalarsPerEntity = fieldMetaData.m_numComponentsPerEntity*fieldMetaData.m_numCopiesPerEntity;
+                             const int numValues = numScalarsPerEntity * bucketSize;
+                             Kokkos::parallel_for(Kokkos::TeamVectorRange(team, 0, numValues),
+                                                  [&](const int idx) {
+                                                    const int entity = idx / numScalarsPerEntity;
+                                                    const int scalar = idx % numScalarsPerEntity;
+                                                    deviceBucketPtr[scalar*bucketCapacity + entity] = hostBucketPtr[scalar*bucketCapacity + entity];
+                                                  });
+                           });
+
+    }
+  }
 }
 
-template <typename ValueType, typename DeviceFieldMetaDataViewType, typename ExecSpaceType>
+template <typename ValueType, typename ExecSpaceType>
 void transpose_to_pinned_and_mapped_memory(const ExecSpaceType& execSpace,
-                                           const DeviceFieldMetaDataViewType& deviceFieldMetaData,
+                                           const DeviceFieldMetaData* deviceFieldMetaData,
+                                           int maxNumScalarsPerEntity,
+                                           int numBuckets,
                                            Layout hostDataLayout)
 {
   using TeamHandleType = typename stk::ngp::TeamPolicy<ExecSpaceType>::member_type;
 
-  size_t numBuckets = deviceFieldMetaData.extent(0);
+  if (maxNumScalarsPerEntity == 1) {
+    auto teamPolicy = stk::ngp::TeamPolicy<ExecSpaceType>(execSpace, numBuckets, Kokkos::AUTO);
+    Kokkos::parallel_for("transpose_from_pinned_and_mapped_memory", teamPolicy,
+                         KOKKOS_LAMBDA(const TeamHandleType& team) {
+                           const unsigned bucketIndex = team.league_rank();
+                           const DeviceFieldMetaData& fieldMetaData = deviceFieldMetaData[bucketIndex];
+                           ValueType* hostBucketPtr = reinterpret_cast<ValueType*>(fieldMetaData.m_hostData);
+                           const ValueType* deviceBucketPtr = reinterpret_cast<ValueType*>(fieldMetaData.m_data);
+                           if (hostBucketPtr == nullptr || deviceBucketPtr == nullptr) {
+                             return;  // Field not on this Bucket
+                           }
+                           const int bucketSize = fieldMetaData.m_bucketSize;
+                           Kokkos::parallel_for(Kokkos::TeamVectorRange(team, 0, bucketSize),
+                                                [&](const int entity) {
+                                                  hostBucketPtr[entity] = deviceBucketPtr[entity];
+                                                });
+                         });
+  }
+  else {
+    if (hostDataLayout == Layout::Right) {
+      auto teamPolicy = stk::ngp::TeamPolicy<ExecSpaceType>(execSpace, numBuckets, Kokkos::AUTO);
+      Kokkos::parallel_for("transpose_from_pinned_and_mapped_memory", teamPolicy,
+                           KOKKOS_LAMBDA(const TeamHandleType & team) {
+                             const unsigned bucketIndex = team.league_rank();
 
-  const auto& teamPolicy = stk::ngp::TeamPolicy<ExecSpaceType>(execSpace, numBuckets, Kokkos::AUTO);
-  Kokkos::parallel_for("transpose_to_zero_copy_pinned_memory", teamPolicy,
-    KOKKOS_LAMBDA(const TeamHandleType & team) {
-      const unsigned bucketIndex = team.league_rank();
+                             const DeviceFieldMetaData& fieldMetaData = deviceFieldMetaData[bucketIndex];
+                             ValueType* hostBucketPtr = reinterpret_cast<ValueType*>(fieldMetaData.m_hostData);
+                             const ValueType* deviceBucketPtr = reinterpret_cast<ValueType*>(fieldMetaData.m_data);
+                             if (hostBucketPtr == nullptr || deviceBucketPtr == nullptr) {
+                               return;  // Field not on this Bucket
+                             }
+                             const int bucketSize = fieldMetaData.m_bucketSize;
+                             const int bucketCapacity = fieldMetaData.m_bucketCapacity;
+                             const int numScalarsPerEntity = fieldMetaData.m_numComponentsPerEntity*fieldMetaData.m_numCopiesPerEntity;
+                             const int numValues = numScalarsPerEntity * bucketSize;
+                             Kokkos::parallel_for(Kokkos::TeamVectorRange(team, 0, numValues),
+                                                  [&](const int idx) {
+                                                    const int entity = idx / numScalarsPerEntity;
+                                                    const int scalar = idx % numScalarsPerEntity;
+                                                    hostBucketPtr[entity*numScalarsPerEntity + scalar] = deviceBucketPtr[scalar*bucketCapacity + entity];
+                                                  });
+                           });
 
-      const DeviceFieldMetaData& fieldMetaData = deviceFieldMetaData(bucketIndex);
-      ValueType* hostBucketPtr = reinterpret_cast<ValueType*>(fieldMetaData.m_hostData);
-      ValueType* deviceBucketPtr = reinterpret_cast<ValueType*>(fieldMetaData.m_data);
+    }
+    else {
+      auto teamPolicy = stk::ngp::TeamPolicy<ExecSpaceType>(execSpace, numBuckets, Kokkos::AUTO);
+      Kokkos::parallel_for("transpose_from_pinned_and_mapped_memory", teamPolicy,
+                           KOKKOS_LAMBDA(const TeamHandleType& team) {
+                             const unsigned bucketIndex = team.league_rank();
+                             const DeviceFieldMetaData& fieldMetaData = deviceFieldMetaData[bucketIndex];
+                             ValueType* hostBucketPtr = reinterpret_cast<ValueType*>(fieldMetaData.m_hostData);
+                             const ValueType* deviceBucketPtr = reinterpret_cast<ValueType*>(fieldMetaData.m_data);
+                             if (hostBucketPtr == nullptr || deviceBucketPtr == nullptr) {
+                               return;  // Field not on this Bucket
+                             }
+                             const int bucketSize = fieldMetaData.m_bucketSize;
+                             const int bucketCapacity = fieldMetaData.m_bucketCapacity;
+                             const int numScalarsPerEntity = fieldMetaData.m_numComponentsPerEntity*fieldMetaData.m_numCopiesPerEntity;
+                             const int numValues = numScalarsPerEntity * bucketSize;
+                             Kokkos::parallel_for(Kokkos::TeamVectorRange(team, 0, numValues),
+                                                  [&](const int idx) {
+                                                    const int entity = idx / numScalarsPerEntity;
+                                                    const int scalar = idx % numScalarsPerEntity;
+                                                    hostBucketPtr[scalar*bucketCapacity + entity] = deviceBucketPtr[scalar*bucketCapacity + entity];
+                                                  });
+                           });
 
-      if (hostBucketPtr == nullptr || deviceBucketPtr == nullptr) {
-        return;  // Field not on this Bucket
-      }
-
-      const unsigned bucketSize = fieldMetaData.m_bucketSize;
-      const unsigned bucketCapacity = fieldMetaData.m_bucketCapacity;
-      const unsigned numScalarsPerEntity = fieldMetaData.m_numComponentsPerEntity*fieldMetaData.m_numCopiesPerEntity;
-
-      bool isScalarField = (numScalarsPerEntity == 1);
-
-      if (isScalarField) {
-        Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, bucketSize),
-          [=](const unsigned& entity) {
-            hostBucketPtr[entity] = deviceBucketPtr[entity];
-          });
-      }
-      else {
-        if (hostDataLayout == Layout::Right) {
-          Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numScalarsPerEntity),
-            [=](const int& component) {
-              for (unsigned entity = 0; entity < bucketSize; ++entity) {
-                ValueType* hostData = hostBucketPtr + entity*numScalarsPerEntity + component;
-                const ValueType* deviceData = deviceBucketPtr + component*bucketCapacity + entity;
-                *hostData = *deviceData;
-              }
-            }
-          );
-        }
-        else {
-          Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numScalarsPerEntity),
-            [=](const int& component) {
-              for (unsigned entity = 0; entity < bucketSize; ++entity) {
-                ValueType* hostData = hostBucketPtr + component*bucketCapacity + entity;
-                const ValueType* deviceData = deviceBucketPtr + component*bucketCapacity + entity;
-                *hostData = *deviceData;
-              }
-            }
-          );
-        }
-      }
-    });
+    }
+  }
 }
 
-template <typename ValueType, typename DeviceFieldMetaDataViewType, typename ExecSpaceType>
+template <typename ValueType, typename ExecSpaceType>
 void fill_field_with_value(const ExecSpaceType& execSpace,
-                           const DeviceFieldMetaDataViewType& deviceFieldMetaData,
+                           const DeviceFieldMetaData* deviceFieldMetaData,
+                           int numBuckets,
                            ValueType value)
 {
   using TeamHandleType = typename stk::ngp::TeamPolicy<ExecSpaceType>::member_type;
-
-  size_t numBuckets = deviceFieldMetaData.extent(0);
 
   const auto& teamPolicy = stk::ngp::TeamPolicy<ExecSpaceType>(execSpace, numBuckets, Kokkos::AUTO);
   Kokkos::parallel_for("fill_field_with_value", teamPolicy,
     KOKKOS_LAMBDA(const TeamHandleType & team) {
       const unsigned bucketIndex = team.league_rank();
 
-      const DeviceFieldMetaData& fieldMetaData = deviceFieldMetaData(bucketIndex);
+      const DeviceFieldMetaData& fieldMetaData = deviceFieldMetaData[bucketIndex];
       ValueType* deviceBucketPtr = reinterpret_cast<ValueType*>(fieldMetaData.m_data);
 
       if (deviceBucketPtr == nullptr) {
@@ -274,7 +329,5 @@ void fill_field_with_value(const ExecSpaceType& execSpace,
     });
 }
 
-}
-}
 }
 #endif

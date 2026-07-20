@@ -50,6 +50,7 @@
 #include "stk_search_util/MasterElementProvider.hpp"  // for ProvideMaste...
 #include "stk_search_util/MeshUtility.hpp"
 #include "stk_search_util/PointEvaluator.hpp"   // for EvaluatePointsInte...
+#include "stk_search_util/CoordTransform.hpp"
 #include "stk_transfer_util/InterpolateFields.hpp"
 #include <stk_transfer_util/PointInterpolation.hpp>
 #include "stk_util/parallel/Parallel.hpp"
@@ -151,7 +152,8 @@ enum TransferOptions {
   NODE_RECV_MESH               = (1L << 21),
   ELEMENT_RECV_MESH            = (1L << 22),
   ELEMENT_MESH_ENTITY_RANK     = (1L << 23),
-  PARALLEL_MACHINE             = (1L << 24)
+  PARALLEL_MACHINE             = (1L << 24),
+  COORD_TRANSFORM              = (1L << 25)
 };
 
 std::ostream & operator<<(std::ostream &out, TransferOptions option);
@@ -161,6 +163,7 @@ using MasterElemProviderSharedPtr   = std::shared_ptr<stk::search::MasterElement
 using FindParametricCoordsSharedPtr = std::shared_ptr<stk::search::FindParametricCoordsInterface>;
 using InterpolateFieldsSharePtr     = std::shared_ptr<stk::transfer::InterpolateFieldsInterface>;
 using PointEvaluatorSharedPtr       = std::shared_ptr<stk::search::PointEvaluatorInterface>;
+using CoordTransformSharedPtr       = std::shared_ptr<stk::search::CoordTransformInterface>;
 
 using NodeSendMeshSharedPtr = std::shared_ptr<stk::transfer::spmd::NodeSendMesh>;
 using NodeRecvMeshSharedPtr = std::shared_ptr<stk::transfer::spmd::NodeRecvMesh>;
@@ -262,6 +265,11 @@ class TransferOptionHelper {
   bool check_field_interpolator() const;
   bool make_field_interpolator();
 
+  void set_coord_transform(std::shared_ptr<stk::search::CoordTransformInterface> transform);
+  std::shared_ptr<stk::search::CoordTransformInterface> get_coord_transform() const;
+  bool check_coord_transform() const;
+  bool make_coord_transform();
+
   void set_parametric_tolerance(double parametricTolerance);
   double get_parametric_tolerance() const;
   bool check_parametric_tolerance() const;
@@ -362,6 +370,7 @@ class TransferOptionHelper {
   std::shared_ptr<stk::search::FindParametricCoordsInterface>  m_parametricCoordsFinder;
   std::shared_ptr<stk::transfer::InterpolateFieldsInterface>   m_fieldInterpolator;
   std::shared_ptr<stk::search::PointEvaluatorInterface>        m_pointEvaluator;
+  std::shared_ptr<stk::search::CoordTransformInterface>        m_coordTransform;
 
   std::shared_ptr<stk::transfer::spmd::NodeSendMesh>    m_nodeSendMesh;
   std::shared_ptr<stk::transfer::spmd::NodeRecvMesh>    m_nodeRecvMesh;
@@ -484,6 +493,11 @@ class GeometricSendTransferOptions {
   bool check_geometric_tolerance() const                  { return m_helper.check_geometric_tolerance(); }
   bool make_geometric_tolerance()                         { return m_helper.make_geometric_tolerance(); }
 
+  void set_coord_transform(CoordTransformSharedPtr pointEvaluator) { m_helper.set_coord_transform(pointEvaluator); }
+  CoordTransformSharedPtr get_coord_transform() const              { return m_helper.get_coord_transform(); }
+  bool check_coord_transform() const                               { return m_helper.check_coord_transform(); }
+  bool make_coord_transform()                                      { return m_helper.make_coord_transform(); }
+
   void set_active_selector(const stk::mesh::Selector& activeSelector) { m_helper.set_active_selector(activeSelector); }
   const stk::mesh::Selector& get_active_selector() const              { return m_helper.get_active_selector(); }
   bool check_active_selector() const                                  { return m_helper.check_active_selector(); }
@@ -570,10 +584,20 @@ class GeometricRecvTransferOptions {
   void add_part(const std::string& partName)                { m_helper.add_part(partName); }
   void add_part(const std::vector<std::string>& partNames)  { m_helper.add_part(partNames); }
 
+  void set_interpolation_type(InterpolationType interpolationType) { m_helper.set_interpolation_type(interpolationType); }
+  InterpolationType get_interpolation_type() const                 { return m_helper.get_interpolation_type(); }
+  bool check_interpolation_type() const                            { return m_helper.check_interpolation_type(); }
+  bool make_interpolation_type()                                   { return m_helper.make_interpolation_type(); }
+
   void set_point_evaluator(PointEvaluatorSharedPtr pointEvaluator) { m_helper.set_point_evaluator(pointEvaluator); }
   PointEvaluatorSharedPtr get_point_evaluator() const              { return m_helper.get_point_evaluator(); }
   bool check_point_evaluator() const                               { return m_helper.check_point_evaluator(); }
   bool make_point_evaluator()                                      { return m_helper.make_point_evaluator(); }
+
+  void set_coord_transform(CoordTransformSharedPtr pointEvaluator) { m_helper.set_coord_transform(pointEvaluator); }
+  CoordTransformSharedPtr get_coord_transform() const              { return m_helper.get_coord_transform(); }
+  bool check_coord_transform() const                               { return m_helper.check_coord_transform(); }
+  bool make_coord_transform()                                      { return m_helper.make_coord_transform(); }
 
   void set_master_element_provider(MasterElemProviderSharedPtr masterElemProvider) { m_helper.set_master_element_provider(masterElemProvider); }
   MasterElemProviderSharedPtr get_master_element_provider() const                  { return m_helper.get_master_element_provider(); }
@@ -658,7 +682,8 @@ class GeometricTransferOptions {
   bool has_option(TransferOptions flag) const { return m_helper.has_option(flag); }
 
   void set_interpolation_type(InterpolationType interpolationType) { m_helper.set_interpolation_type(interpolationType);
-                                                                     m_sendOptions.set_interpolation_type(interpolationType); }
+                                                                     m_sendOptions.set_interpolation_type(interpolationType);
+                                                                     m_recvOptions.set_interpolation_type(interpolationType); }
   InterpolationType get_interpolation_type() const                 { return m_helper.get_interpolation_type(); }
   bool check_interpolation_type() const                            { return m_helper.check_interpolation_type(); }
   bool make_interpolation_type()                                   { return m_helper.make_interpolation_type(); }

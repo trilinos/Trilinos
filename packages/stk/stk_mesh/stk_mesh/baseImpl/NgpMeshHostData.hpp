@@ -38,11 +38,7 @@
 #include "stk_mesh/base/NgpTypes.hpp"
 #include "stk_util/ngp/NgpSpaces.hpp"
 
-namespace stk
-{
-namespace mesh
-{
-namespace impl
+namespace stk::mesh::impl
 {
 
 struct NgpMeshHostDataBase {
@@ -59,10 +55,10 @@ struct NgpMeshHostData : NgpMeshHostDataBase {
 
   typename UnsignedViewType<NgpMemSpace>::host_mirror_type m_hostBufferOffsets;
   typename UnsignedViewType<NgpMemSpace>::host_mirror_type m_hostMeshIndicesOffsets;
+
+  typename Kokkos::View<std::byte*, NgpMemSpace>::host_mirror_type m_byteBuffer;
 };
 
-}  // namespace impl
-}  // namespace mesh
-}  // namespace stk
+}  // namespace stk::mesh::impl
 
 #endif

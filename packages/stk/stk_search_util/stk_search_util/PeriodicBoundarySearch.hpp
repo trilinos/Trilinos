@@ -43,6 +43,10 @@
 #include <stk_mesh/base/FieldParallel.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/base/ConstFieldData.hpp>
+#include <stk_mesh/base/Field.hpp>
+#include <type_traits>
+
 namespace stk { namespace mesh {
 
 class matrix3x3
@@ -239,6 +243,8 @@ public:
     m_search_results.clear();
     m_unique_search_results.clear();
 
+    m_get_coordinates.acquire_field_data();
+
     //resolve multiple periodicity once
     if (m_firstCallToFindPeriodicNodes)
     {
@@ -265,6 +271,8 @@ public:
     std::sort(m_unique_search_results.begin(), m_unique_search_results.end());
     SearchPairSet::iterator itor = std::unique(m_unique_search_results.begin(), m_unique_search_results.end());
     m_unique_search_results.erase(itor, m_unique_search_results.end());
+
+    m_get_coordinates.release_field_data();
   }
 
   size_t size() const { return m_unique_search_results.size();}
@@ -652,20 +660,39 @@ struct GetCoordinates
   typedef void result_type;
   GetCoordinates(stk::mesh::BulkData & bulk_data, const CoordFieldType & coords_field)
     : m_bulk_data(bulk_data),
-      m_coords_field(coords_field)
+      m_coords_field(coords_field),
+      m_coords_field_data(get_field_data(coords_field))
   {}
 
   void operator()(stk::mesh::Entity e, Scalar * coords) const
   {
-    const unsigned nDim = m_bulk_data.mesh_meta_data().spatial_dimension();
-    const double * const temp_coords = reinterpret_cast<Scalar *>(stk::mesh::field_data(m_coords_field, e));
-    for (unsigned i = 0; i < nDim; ++i) {
-      coords[i] = temp_coords[i];
+    auto values = m_coords_field_data.entity_values(e);
+    for (stk::mesh::ComponentIdx component : values.components()) {
+      int d = static_cast<int>(component);
+      coords[d] = values(component);
     }
+  }
+
+  auto get_field_data(const CoordFieldType & coords_field)
+  {
+    const stk::mesh::Field<Scalar>& field = static_cast<const stk::mesh::Field<Scalar>&>(coords_field);
+
+    return field.template data<stk::mesh::ReadOnly, stk::ngp::HostSpace>();
+  }
+
+  void acquire_field_data()
+  {
+    m_coords_field_data = get_field_data(m_coords_field);
+  }
+
+  void release_field_data()
+  {
+    m_coords_field_data = stk::mesh::ConstFieldData<Scalar, stk::ngp::HostSpace>();
   }
 
   stk::mesh::BulkData & m_bulk_data;
   const CoordFieldType & m_coords_field;
+  stk::mesh::ConstFieldData<Scalar, stk::ngp::HostSpace> m_coords_field_data;
 };
 
 }} //namespace stk::mesh

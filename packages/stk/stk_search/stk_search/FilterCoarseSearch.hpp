@@ -479,6 +479,12 @@ void filter_coarse_search(const std::string& name,
                           FilterCoarseSearchResult<RECVMESH>& filterResult)
 //ENDfilter_coarse_search_impl
 {
+  bool sendMeshHasAcquiredFieldData = sendMesh.has_acquired_field_data();
+  bool recvMeshHasAcquiredFieldData = recvMesh.has_acquired_field_data();
+
+  if(!sendMeshHasAcquiredFieldData) sendMesh.acquire_field_data();
+  if(!recvMeshHasAcquiredFieldData) recvMesh.acquire_field_data();
+
   const double parametricTol = recvMesh.get_parametric_tolerance();
   const double geometricTol = recvMesh.get_search_tolerance();
   impl::FilterCoarseSearchStats stats = impl::filter_coarse_search_by_range(rangeToDomain, sendMesh, recvMesh,
@@ -508,6 +514,9 @@ void filter_coarse_search(const std::string& name,
       throw std::runtime_error("Aborting search due to user specified option");
     }
   }
+
+  if(!sendMeshHasAcquiredFieldData) sendMesh.release_field_data();
+  if(!recvMeshHasAcquiredFieldData) recvMesh.release_field_data();
 }
 
 }}

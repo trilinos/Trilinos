@@ -868,8 +868,8 @@ inline void create_hierarchy(ObjectBoundingBoxHierarchy_T<RangeBoxType> *hierarc
     //  This method attempts to exploit maximum available parallelism.  However, the method requires
     //  nested threading which can have high overhead on some systems, only use if a largeish number
     //  of threads is available.
-    int origNesting = omp_get_nested();
-    omp_set_nested(1);
+    int origNesting = omp_get_max_active_levels();
+    omp_set_max_active_levels(omp_get_supported_active_levels());
     create_hierarchy_fork_threaded(hierarchy_data,
                                                    boxes,
                                                    scratch_boxes.data(),
@@ -882,7 +882,7 @@ inline void create_hierarchy(ObjectBoundingBoxHierarchy_T<RangeBoxType> *hierarc
                                                    scratch_index2_array.data(),
                                                    maxThreadCount);
 
-    omp_set_nested(origNesting);
+    omp_set_max_active_levels(origNesting);
   }
 
 #else 

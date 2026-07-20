@@ -125,7 +125,8 @@ class NodeRecvMesh : public NodeRecvMeshSearchBaseClass,
                const std::vector<stk::transfer::FieldSpec>& fieldSpecs,
                const stk::mesh::PartVector& recvParts,
                const stk::ParallelMachine recvComm,
-               double parametricTolerance, double geometricTolerance);
+               double parametricTolerance, double geometricTolerance,
+               std::shared_ptr<stk::search::CoordTransformInterface> coordTransform = std::make_shared<stk::search::CoordTransformIdentity>());
 
   NodeRecvMesh(stk::mesh::BulkData* recvBulk,
                const stk::mesh::FieldBase* coordinateField,
@@ -133,7 +134,8 @@ class NodeRecvMesh : public NodeRecvMeshSearchBaseClass,
                const stk::mesh::PartVector& recvParts,
                const stk::mesh::Selector& activeSelector,
                const stk::ParallelMachine recvComm,
-               double parametricTolerance, double geometricTolerance);
+               double parametricTolerance, double geometricTolerance,
+               std::shared_ptr<stk::search::CoordTransformInterface> coordTransform = std::make_shared<stk::search::CoordTransformIdentity>());
 
   virtual ~NodeRecvMesh() = default;
 
@@ -160,19 +162,19 @@ class NodeRecvMesh : public NodeRecvMeshSearchBaseClass,
   virtual void initialize() override;
 
 
-  virtual double* value(const EntityKey& k, const unsigned fieldIndex) const override;
+//  virtual double* value(const EntityKey& k, const unsigned fieldIndex) const override;
 
-  virtual unsigned value_size(const EntityKey& k, const unsigned fieldIndex) const override;
+//  virtual unsigned value_size(const EntityKey& k, const unsigned fieldIndex) const override;
 
-  virtual unsigned num_values(const EntityKey& e) const override;
+//  virtual unsigned num_values(const EntityKey& e) const override;
 
-  virtual unsigned max_num_values() const override;
+//  virtual unsigned max_num_values() const override;
 
-  virtual unsigned value_key(const EntityKey& k, const unsigned fieldIndex) const override;
+//  virtual unsigned value_key(const EntityKey& k, const unsigned fieldIndex) const override;
 
   virtual void update_values() override;
 
-  virtual unsigned get_index(const unsigned i) const override;
+//  virtual unsigned get_index(const unsigned i) const override;
 
 
   stk::mesh::EntityId id(const EntityKey& k) const;
@@ -191,6 +193,12 @@ class NodeRecvMesh : public NodeRecvMeshSearchBaseClass,
   const stk::mesh::BulkData* get_bulk() const { return m_bulk; }
   const stk::mesh::MetaData* get_meta() const { return m_meta; }
 
+  void acquire_field_data() override;
+  void release_field_data() override;
+  bool has_acquired_field_data() const override { return m_hasAcquiredFieldData; }
+
+  void populate_interpolation_data(const EntityKey& k, InterpolationData& data) const override;
+
  protected:
   stk::mesh::BulkData* m_bulk{nullptr};
   stk::mesh::MetaData* m_meta{nullptr};
@@ -198,6 +206,8 @@ class NodeRecvMesh : public NodeRecvMeshSearchBaseClass,
 
   std::vector<stk::transfer::FieldSpec> m_fieldSpecs;
   std::vector<IndexedField> m_fieldVec;
+
+  std::vector< std::shared_ptr<stk::search::CachedFieldDataBase> > m_cachedFieldData;
 
   stk::mesh::PartVector m_meshParts;
   const stk::ParallelMachine m_comm;
@@ -210,6 +220,8 @@ class NodeRecvMesh : public NodeRecvMeshSearchBaseClass,
   stk::search::spmd::NodeRecvMesh m_searchMesh;
 
   bool m_isInitialized{false};
+
+  bool m_hasAcquiredFieldData{false};
 
   void consistency_check();
 

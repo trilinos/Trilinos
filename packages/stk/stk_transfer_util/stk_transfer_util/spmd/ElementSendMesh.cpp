@@ -68,7 +68,8 @@ ElementSendMesh::ElementSendMesh(stk::mesh::BulkData* sendBulk,
                                  std::shared_ptr<stk::search::FindParametricCoordsInterface> findParametricCoords,
                                  std::shared_ptr<stk::search::HandleExternalPointInterface> externalPointHandler,
                                  std::shared_ptr<stk::transfer::InterpolateFieldsInterface> interpolateFields,
-                                 std::shared_ptr<stk::search::MasterElementProviderInterface> masterElemProvider)
+                                 std::shared_ptr<stk::search::MasterElementProviderInterface> masterElemProvider,
+                                 std::shared_ptr<stk::search::CoordTransformInterface> coordTransform)
   : m_bulk(sendBulk)
   , m_meta(m_bulk != nullptr ? &m_bulk->mesh_meta_data() : nullptr)
   , m_coordinateField(coordinateField)
@@ -80,7 +81,7 @@ ElementSendMesh::ElementSendMesh(stk::mesh::BulkData* sendBulk,
   , m_activeSelector(stk::mesh::Selector().complement())
   , m_interpolateFields(interpolateFields)
   , m_searchMesh(m_bulk, m_coordinateField, m_transferEntityRank, m_meshParts, m_activeSelector,
-                 m_comm, findParametricCoords, externalPointHandler, masterElemProvider)
+                 m_comm, findParametricCoords, externalPointHandler, masterElemProvider, coordTransform)
 {
   initialize();
 }
@@ -95,7 +96,8 @@ ElementSendMesh::ElementSendMesh(stk::mesh::BulkData* sendBulk,
                                  std::shared_ptr<stk::search::FindParametricCoordsInterface> findParametricCoords,
                                  std::shared_ptr<stk::search::HandleExternalPointInterface> externalPointHandler,
                                  std::shared_ptr<stk::transfer::InterpolateFieldsInterface> interpolateFields,
-                                 std::shared_ptr<stk::search::MasterElementProviderInterface> masterElemProvider)
+                                 std::shared_ptr<stk::search::MasterElementProviderInterface> masterElemProvider,
+                                 std::shared_ptr<stk::search::CoordTransformInterface> coordTransform)
   : m_bulk(sendBulk)
   , m_meta(m_bulk != nullptr ? &m_bulk->mesh_meta_data() : nullptr)
   , m_coordinateField(coordinateField)
@@ -107,7 +109,7 @@ ElementSendMesh::ElementSendMesh(stk::mesh::BulkData* sendBulk,
   , m_activeSelector(activeSelector)
   , m_interpolateFields(interpolateFields)
   , m_searchMesh(m_bulk, m_coordinateField, m_transferEntityRank, m_meshParts, m_activeSelector,
-                 m_comm, findParametricCoords, externalPointHandler, masterElemProvider)
+                 m_comm, findParametricCoords, externalPointHandler, masterElemProvider, coordTransform)
 {
   initialize();
 }
@@ -120,7 +122,8 @@ ElementSendMesh::ElementSendMesh(stk::mesh::BulkData* sendBulk,
                                  const stk::ParallelMachine sendComm,
                                  std::shared_ptr<stk::search::FindParametricCoordsInterface> findParametricCoords,
                                  std::shared_ptr<stk::search::HandleExternalPointInterface> externalPointHandler,
-                                 std::shared_ptr<stk::transfer::InterpolateFieldsInterface> interpolateFields)
+                                 std::shared_ptr<stk::transfer::InterpolateFieldsInterface> interpolateFields,
+                                 std::shared_ptr<stk::search::CoordTransformInterface> coordTransform)
   : m_bulk(sendBulk)
   , m_meta(m_bulk != nullptr ? &m_bulk->mesh_meta_data() : nullptr)
   , m_coordinateField(coordinateField)
@@ -132,7 +135,7 @@ ElementSendMesh::ElementSendMesh(stk::mesh::BulkData* sendBulk,
   , m_activeSelector(stk::mesh::Selector().complement())
   , m_interpolateFields(interpolateFields)
   , m_searchMesh(m_bulk, m_coordinateField, m_transferEntityRank, m_meshParts, m_activeSelector,
-                 m_comm, findParametricCoords, externalPointHandler)
+                 m_comm, findParametricCoords, externalPointHandler, coordTransform)
 {
   initialize();
 }
@@ -146,7 +149,8 @@ ElementSendMesh::ElementSendMesh(stk::mesh::BulkData* sendBulk,
                                  const stk::ParallelMachine sendComm,
                                  std::shared_ptr<stk::search::FindParametricCoordsInterface> findParametricCoords,
                                  std::shared_ptr<stk::search::HandleExternalPointInterface> externalPointHandler,
-                                 std::shared_ptr<stk::transfer::InterpolateFieldsInterface> interpolateFields)
+                                 std::shared_ptr<stk::transfer::InterpolateFieldsInterface> interpolateFields,
+                                 std::shared_ptr<stk::search::CoordTransformInterface> coordTransform)
   : m_bulk(sendBulk)
   , m_meta(m_bulk != nullptr ? &m_bulk->mesh_meta_data() : nullptr)
   , m_coordinateField(coordinateField)
@@ -158,7 +162,7 @@ ElementSendMesh::ElementSendMesh(stk::mesh::BulkData* sendBulk,
   , m_activeSelector(activeSelector)
   , m_interpolateFields(interpolateFields)
   , m_searchMesh(m_bulk, m_coordinateField, m_transferEntityRank, m_meshParts, m_activeSelector,
-                 m_comm, findParametricCoords, externalPointHandler)
+                 m_comm, findParametricCoords, externalPointHandler, coordTransform)
 {
   initialize();
 }
@@ -217,6 +221,7 @@ void ElementSendMesh::find_parametric_coords(const EntityKey& k,
                                              double& parametricDistance,
                                              bool& isWithinParametricTolerance) const
 {
+  STK_ThrowAssert(m_hasAcquiredFieldData);
   m_searchMesh.find_parametric_coords(k, evalPoint, parametricCoords, parametricDistance, isWithinParametricTolerance);
 }
 
@@ -226,18 +231,21 @@ bool ElementSendMesh::modify_search_outside_parametric_tolerance(const EntityKey
                                                                  double& geometricDistanceSquared,
                                                                  bool& isWithinGeometricTolerance) const
 {
+  STK_ThrowAssert(m_hasAcquiredFieldData);
   return m_searchMesh.modify_search_outside_parametric_tolerance(k, evalPoint, parametricCoords,
                                                                  geometricDistanceSquared, isWithinGeometricTolerance);
 }
 
 double ElementSendMesh::get_closest_geometric_distance_squared(const EntityKey& k, const std::vector<double>& evalPoint) const
 {
+  STK_ThrowAssert(m_hasAcquiredFieldData);
   return m_searchMesh.get_closest_geometric_distance_squared(k, evalPoint);
 }
 
 void ElementSendMesh::interpolate_fields(const EntityKey& k, std::vector<double>& evalPoint,
                                          std::vector<double>& sendParametricCoords, InterpolationData& data) const
 {
+  STK_ThrowAssert(m_hasAcquiredFieldData);
   m_interpolateFields->interpolate_fields(k, evalPoint, sendParametricCoords, data);
 }
 
@@ -265,11 +273,6 @@ void ElementSendMesh::update_values()
 {
   STK_ThrowAssert(m_isInitialized);
 
-  for(auto field : m_fieldVec) {
-    field.field->sync_to_host();
-    field.field->modify_on_host();
-  }
-
   stk::mesh::Ghosting* ghosting = m_searchMesh.get_ghosting();
   if(nullptr != ghosting) {
     std::vector<const stk::mesh::FieldBase*> fields = stk::transfer::extract_field_pointers(m_fieldVec);
@@ -286,16 +289,19 @@ bool ElementSendMesh::is_valid(const EntityKey& k) const { return m_bulk->is_val
 
 double ElementSendMesh::get_distance_from_centroid(const EntityKey& k, const std::vector<double>& evalPoint) const
 {
+  STK_ThrowAssert(m_hasAcquiredFieldData);
   return m_searchMesh.get_distance_from_centroid(k, evalPoint);
 }
 
 double ElementSendMesh::get_distance_squared_from_centroid(const EntityKey& k, const std::vector<double>& evalPoint) const
 {
+  STK_ThrowAssert(m_hasAcquiredFieldData);
   return m_searchMesh.get_distance_squared_from_centroid(k, evalPoint);
 }
 
 double ElementSendMesh::get_distance_from_nearest_node(const EntityKey& k, const std::vector<double>& evalPoint) const
 {
+  STK_ThrowAssert(m_hasAcquiredFieldData);
   return m_searchMesh.get_distance_from_nearest_node(k, evalPoint);
 }
 
@@ -306,11 +312,13 @@ stk::mesh::EntityId ElementSendMesh::id(const EntityKey& k) const
 
 void ElementSendMesh::centroid(const EntityKey& k, std::vector<double>& centroid) const
 {
+  STK_ThrowAssert(m_hasAcquiredFieldData);
   m_searchMesh.centroid(k, centroid);
 }
 
 void ElementSendMesh::coordinates(const EntityKey& k, std::vector<double>& coords) const
 {
+  STK_ThrowAssert(m_hasAcquiredFieldData);
   m_searchMesh.coordinates(k, coords);
 }
 
@@ -329,6 +337,31 @@ stk::search::ObjectOutsideDomainPolicy ElementSendMesh::get_extrapolate_option()
   return m_searchMesh.get_extrapolate_option();
 }
 
+void ElementSendMesh::acquire_field_data()
+{
+  STK_ThrowAssert(m_isInitialized);
+
+  m_interpolateFields->acquire_field_data();
+
+  m_searchMesh.acquire_field_data();
+
+  fill_cached_const_field_data(m_fieldVec, m_cachedFieldData);
+
+  m_hasAcquiredFieldData = true;
+}
+
+void ElementSendMesh::release_field_data()
+{
+  STK_ThrowAssert(m_isInitialized);
+
+  m_interpolateFields->release_field_data();
+
+  m_searchMesh.release_field_data();
+
+  clear_cached_field_data(m_cachedFieldData);
+
+  m_hasAcquiredFieldData = false;
+}
 
 } // namespace spmd
 } // namespace transfer

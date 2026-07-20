@@ -38,7 +38,7 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/MeshBuilder.hpp>
 #include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/NgpFieldBLAS.hpp>
+#include <stk_mesh/base/FieldBLAS.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_io/FillMesh.hpp>
@@ -82,11 +82,10 @@ TEST(StkNgpField, multiStateRotation)
 
   Kokkos::Profiling::pushRegion("get_updated_ngp_mesh");
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(*bulkPtr);
-  EXPECT_FALSE(ngpMesh.need_update_bulk_data());
+  EXPECT_FALSE(ngpMesh.needs_update_bulk_data());
   Kokkos::Profiling::popRegion();
 
   Kokkos::Profiling::pushRegion("initialize fields");
-  stk::ngp::ExecSpace execSpace;
   constexpr double initValue1 = 1.14;
   constexpr double initValue2 = 3.14;
   for(int s=0; s<numFieldStates; ++s) {
@@ -95,10 +94,10 @@ TEST(StkNgpField, multiStateRotation)
     stk::mesh::Field<double>& tensorField2_state = tensorField2.field_of_state(state);
     stk::mesh::Field<double>& vectorField1_state = vectorField1.field_of_state(state);
     stk::mesh::Field<double>& vectorField2_state = vectorField2.field_of_state(state);
-    stk::mesh::field_fill(initValue1, tensorField1_state, execSpace);
-    stk::mesh::field_fill(initValue2, tensorField2_state, execSpace);
-    stk::mesh::field_fill(initValue1, vectorField1_state, execSpace);
-    stk::mesh::field_fill(initValue2, vectorField2_state, execSpace);
+    stk::mesh::field_fill<stk::ngp::DeviceSpace>(initValue1, tensorField1_state);
+    stk::mesh::field_fill<stk::ngp::DeviceSpace>(initValue2, tensorField2_state);
+    stk::mesh::field_fill<stk::ngp::DeviceSpace>(initValue1, vectorField1_state);
+    stk::mesh::field_fill<stk::ngp::DeviceSpace>(initValue2, vectorField2_state);
   }
   Kokkos::Profiling::popRegion();
 
@@ -111,12 +110,12 @@ TEST(StkNgpField, multiStateRotation)
     for(unsigned i=0; i<NUM_ITERS; ++i) {
       Kokkos::Profiling::pushRegion("field_copy");
       if (i%2==0) {
-        stk::mesh::field_copy(tensorField1, tensorField2, execSpace);
-        stk::mesh::field_copy(vectorField1, vectorField2, execSpace);
+        stk::mesh::field_copy<stk::ngp::DeviceSpace>(tensorField1, tensorField2);
+        stk::mesh::field_copy<stk::ngp::DeviceSpace>(vectorField1, vectorField2);
       }
       else {
-        stk::mesh::field_copy(tensorField2, tensorField1, execSpace);
-        stk::mesh::field_copy(vectorField2, vectorField1, execSpace);
+        stk::mesh::field_copy<stk::ngp::DeviceSpace>(tensorField2, tensorField1);
+        stk::mesh::field_copy<stk::ngp::DeviceSpace>(vectorField2, vectorField1);
       }
       Kokkos::Profiling::popRegion();
 

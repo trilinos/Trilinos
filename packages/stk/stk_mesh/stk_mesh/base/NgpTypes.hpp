@@ -72,7 +72,6 @@ template <typename MemSpace> using UnsignedPairViewType           = Kokkos::View
 template <typename MemSpace> using EntityRankViewType             = Kokkos::View<EntityRank*, MemSpace>;
 
 using DeviceStringType = Kokkos::View<char*, stk::ngp::HostPinnedSpace>;
-using HostStringType = Kokkos::View<char*, stk::ngp::HostMemSpace>;
 
 template <typename MemSpace> using DeviceFieldMetaDataArrayType   = Kokkos::View<DeviceFieldMetaData*, MemSpace>;
 template <typename MemSpace> using HostFieldMetaDataArrayType     = typename DeviceFieldMetaDataArrayType<MemSpace>::host_mirror_type;

@@ -222,10 +222,14 @@ class NodeSendMesh : public NodeSendMeshSearchBaseClass,
 
   virtual std::string get_inspector_delimiter() const;
 
-  std::shared_ptr<stk::transfer::InterpolateFieldsInterface> get_interpolato_fields_interface() const { return m_interpolateFields; }
+  std::shared_ptr<stk::transfer::InterpolateFieldsInterface> get_interpolator_fields_interface() const { return m_interpolateFields; }
 
   const stk::mesh::BulkData* get_bulk() const { return m_bulk; }
   const stk::mesh::MetaData* get_meta() const { return m_meta; }
+
+  void acquire_field_data() override;
+  void release_field_data() override;
+  bool has_acquired_field_data() const override { return m_hasAcquiredFieldData; }
 
  protected:
   stk::mesh::BulkData* m_bulk{nullptr};
@@ -234,6 +238,8 @@ class NodeSendMesh : public NodeSendMeshSearchBaseClass,
 
   std::vector<stk::transfer::FieldSpec> m_fieldSpecs;
   std::vector<IndexedField> m_fieldVec;
+
+  std::vector< std::shared_ptr<stk::search::CachedFieldDataBase> > m_cachedFieldData;
 
   stk::mesh::PartVector m_meshParts;
   const stk::ParallelMachine m_comm;
@@ -252,6 +258,8 @@ class NodeSendMesh : public NodeSendMeshSearchBaseClass,
   stk::search::spmd::NodeSendMesh m_searchMesh;
 
   bool m_isInitialized{false};
+
+  bool m_hasAcquiredFieldData{false};
 
   void consistency_check();
 

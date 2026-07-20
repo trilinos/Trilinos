@@ -1,5 +1,6 @@
 // #######################  Start Clang Header Tool Managed Headers ########################
 // clang-format off
+#include <stk_util/stk_config.h>
 #include "stk_io/FillMesh.hpp"
 #include "Ioss_Property.h"             // for Property
 #include "stk_io/StkMeshIoBroker.hpp"  // for StkMeshIoBroker
@@ -28,7 +29,11 @@ void fill_mesh_preexisting(stk::io::StkMeshIoBroker & stkIo,
 
 void fill_mesh_with_auto_decomp(const std::string &meshSpec, stk::mesh::BulkData &bulkData, stk::io::StkMeshIoBroker &stkIo)
 {
+#ifdef STK_HAS_SEACAS_IOSS_ZOLTAN
     stkIo.property_add(Ioss::Property("DECOMPOSITION_METHOD", "RCB"));
+#else
+    stkIo.property_add(Ioss::Property("DECOMPOSITION_METHOD", "LINEAR"));
+#endif
     fill_mesh_preexisting(stkIo, meshSpec, bulkData);
 }
 

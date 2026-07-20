@@ -168,8 +168,8 @@ stk::mesh::PartVector setup_mesh_4block_4quad_bowtie_1hinge(stk::mesh::BulkData&
 stk::mesh::PartVector setup_mesh_3block_3quad_1hinge(stk::mesh::BulkData& bulk);
 
 void print_hinge_info(const stk::mesh::BulkData& bulk,
-                      const stk::tools::impl::HingeNodeVector& hingeNodes,
-                      const stk::tools::impl::HingeEdgeVector& hingeEdges);
+                      const stk::tools::HingeNodeVector& hingeNodes,
+                      const stk::tools::HingeEdgeVector& hingeEdges);
 
 bool is_debug();
 
@@ -191,7 +191,7 @@ inline void test_two_element_one_hinge_grouping(const stk::mesh::BulkData& bulk,
 {
   stk::mesh::Entity elem1 = bulk.get_entity(stk::topology::ELEMENT_RANK, 1u);
   stk::mesh::Entity elem2 = bulk.get_entity(stk::topology::ELEMENT_RANK, 2u);
-  stk::tools::impl::HingeGroupVector groupings = stk::tools::impl::get_convex_groupings(bulk, hinge);
+  stk::tools::HingeGroupVector groupings = stk::tools::impl::get_convex_groupings(bulk, hinge);
   int ranTest = 0;
 
   if(!groupings.empty()) {

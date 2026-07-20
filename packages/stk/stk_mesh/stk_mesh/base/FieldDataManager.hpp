@@ -36,6 +36,7 @@
 #define stk_mesh_FieldDataManager_hpp
 
 #include <stk_mesh/base/Types.hpp>      // for EntityRank, PartVector
+#include <stk_mesh/base/NgpTypes.hpp>
 #include <stk_util/util/FieldDataAllocator.hpp>
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include <cstddef>
@@ -46,7 +47,15 @@ namespace stk { namespace mesh { class FieldBase; } }
 namespace stk {
 namespace mesh {
 
-struct BucketFieldSegment {
+struct FieldLayoutData
+{
+  int numBytesPerEntity {};
+  int numComponents {};
+  int numCopies {};
+};
+
+struct BucketFieldSegment
+{
   BucketFieldSegment(int offset_, int size_)
     : offset(offset_),
       size(size_)
@@ -105,6 +114,8 @@ public:
   void reset_empty_field_data(EntityRank rank, unsigned bucketId, unsigned bucketSize,
                               unsigned bucketCapacity, const FieldVector& fieldsOfRank);
 
+  void initialize_field_on_entity(const stk::mesh::FieldBase& field, unsigned bucketId, unsigned bucketOrd);
+
   unsigned get_bucket_capacity(EntityRank rank, unsigned bucketId) const {
     return m_bucketCapacity[rank][bucketId];
   }
@@ -118,6 +129,11 @@ public:
   const FieldDataAllocator<std::byte>& get_field_data_allocator() const { return m_fieldDataAllocator; }
 
 private:
+  const FieldMetaDataArrayType& field_meta_data_array(const FieldBase& field) const;
+  FieldMetaDataArrayType& field_meta_data_array(FieldBase& field);
+
+  void set_field_meta_data_array_on_field(FieldBase& field);
+
   void allocate_new_field_meta_data(const EntityRank rank, const unsigned bucketId,
                                     const std::vector<FieldBase*>& fieldsOfRank);
   void reallocate_bucket_field_data(const EntityRank rank, const unsigned bucketId, FieldBase & currentField,
@@ -127,6 +143,32 @@ private:
                                           const PartVector& supersetParts, unsigned totalNumFields, unsigned bucketOrd,
                                           unsigned size, unsigned capacity);
   void resize_bucket_arrays(const EntityRank rank, const std::vector<FieldBase*>& fieldsOfRank, int newNumBuckets);
+  void resize_field_arrays(int newNumFields);
+
+  void check_field_rank(const FieldBase* field, EntityRank expectedRank) const;
+  FieldLayoutData get_field_layout_data(const FieldBase& field, const EntityRank rank, const PartVector& supersetParts);
+  void update_field_pointer(FieldMetaData& fieldMetaData, const size_t capacity, size_t &currentFieldOffset,
+                            std::byte* allData, size_t alignmentPaddingSize);
+  void update_field_pointers_to_new_bucket(const EntityRank rank, const unsigned bucketId,
+                                           const std::vector<FieldBase*>& fieldsOfRank, const size_t capacity,
+                                           std::byte* newAllocationAllFields, unsigned alignmentPaddingSize);
+  void initialize_field_on_bucket(const stk::mesh::FieldBase& field, int bucketId, const FieldMetaData& fieldMetaData,
+                                  unsigned size, unsigned capacity);
+  template <typename EntityBytesType>
+  void copy_init_into_entity(EntityBytesType& entityBytes, const std::byte* initVal);
+  void initialize_new_field_values(const FieldBase& newField, const EntityRank rank, const unsigned bucketId,
+                                   unsigned size, unsigned capacity);
+  void resize_field_meta_data(FieldBase& field, int newSize);
+  void update_field_meta_data(const EntityRank rank, const unsigned bucketId, const std::vector<FieldBase*> & allFields,
+                              const PartVector & supersetParts, unsigned bucketSize, unsigned bucketCapacity);
+
+  void copy_field_data_from_old_to_new_bucket(EntityRank rank, unsigned bucketSize, unsigned bucketId,
+                                              const std::vector<FieldBase*>& fieldsOfRank,
+                                              const std::byte* oldAllocationAllFields,
+                                              std::byte* newAllocationAllFields,
+                                              const std::vector<BucketFieldSegment>& oldOffsetForField,
+                                              const std::vector<BucketFieldSegment>& newOffsetForField,
+                                              unsigned oldBucketCapacity, unsigned newBucketCapacity);
 
   std::vector<BucketFieldSegment> get_old_bucket_field_offsets(const EntityRank rank,
                                                                const unsigned bucketId,
@@ -141,12 +183,11 @@ private:
 
   FieldDataAllocator<std::byte> m_fieldDataAllocator;
   unsigned m_alignmentPaddingSize;
+  std::vector<FieldMetaDataArrayType> m_fieldMetaDataArrays;
   std::vector<std::vector<AllocationType>> m_fieldRawData;
   std::vector<std::vector<unsigned>> m_bucketCapacity;
   std::vector<size_t> m_numBytesAllocatedPerField;
 };
-
-void initialize_field_on_entity(const stk::mesh::FieldBase& field, unsigned bucketId, unsigned bucketOrd);
 
 }
 }

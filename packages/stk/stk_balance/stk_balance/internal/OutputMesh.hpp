@@ -36,9 +36,9 @@
 
 #include <stk_balance/internal/RebalanceTransientFieldTransferById.hpp>
 #include <stk_balance/internal/OutputSerializerBulkData.hpp>
-#include <stk_mesh/base/MetaData.hpp>
 #include <vector>
 
+namespace stk { namespace mesh { class MetaData; }}
 namespace stk { namespace balance { class InputMesh; }}
 
 namespace stk {

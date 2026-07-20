@@ -36,9 +36,8 @@
 
 #include "stk_mesh/base/BulkData.hpp"
 #include "stk_mesh/base/FieldParallel.hpp"
-#include <stk_mesh/base/GetNgpField.hpp>
-#include <stk_mesh/base/GetNgpMesh.hpp>
 #include "stk_mesh/base/Ngp.hpp"
+#include "stk_mesh/base/NgpMesh.hpp"
 #include "stk_mesh/base/NgpField.hpp"
 #include "stk_mesh/base/NgpParallelComm.hpp"
 #include "stk_mesh/base/NgpParallelDataExchange.hpp"
@@ -47,7 +46,9 @@
 
 namespace stk::mesh {
 
+#ifndef STK_HIDE_DEPRECATED_CODE // delete after June 2026
 template <typename T>
+STK_DEPRECATED_MSG("Replace with code 'stk::mesh::parallel_sum<stk::ngp::HostSpace>(bulk, stkFields)`")
 void parallel_sum(const stk::mesh::BulkData & bulk,
                   const std::vector<stk::mesh::NgpField<T> *> & ngpFields,
                   bool doFinalSyncBackToDevice = true)
@@ -68,6 +69,7 @@ void parallel_sum(const stk::mesh::BulkData & bulk,
 }
 
 template <typename T>
+STK_DEPRECATED_MSG("Replace with code 'stk::mesh::parallel_sum_including_ghosts<stk::ngp::HostSpace>(bulk, stkFields, deterministic)`")
 void parallel_sum_including_ghosts(const stk::mesh::BulkData & bulk,
                                    const std::vector<stk::mesh::NgpField<T> *> & ngpFields,
                                    bool doFinalSyncBackToDevice = true,
@@ -87,6 +89,7 @@ void parallel_sum_including_ghosts(const stk::mesh::BulkData & bulk,
     do_final_sync_to_device(ngpFields);
   }
 }
+#endif
 
 template <typename T>
 void do_final_sync_to_device(const std::vector<NgpField<T>*>& ngpFields)
@@ -156,7 +159,9 @@ void communicate_field_data(const stk::mesh::BulkData & bulk,
   }
 }
 
+#ifndef STK_HIDE_DEPRECATED_CODE // delete after June 2026
 template <typename T>
+STK_DEPRECATED_MSG("Replace with code 'stk::mesh::parallel_sum<stk::ngp::DeviceSpace>(bulk, stkFields, false)`")
 void parallel_sum_device_mpi(const stk::mesh::NgpMesh& ngpMesh, const std::vector<stk::mesh::NgpField<T> *> & ngpFields)
 {
   const stk::mesh::BulkData& bulk = ngpMesh.get_bulk_on_host();
@@ -172,8 +177,10 @@ void parallel_sum_device_mpi(const stk::mesh::NgpMesh& ngpMesh, const std::vecto
 }
 
 template <Operation OP, typename NGPMESH, typename NGPFIELD>
+STK_DEPRECATED_MSG("Replace with code 'stk::mesh::parallel_op<stk::ngp::DeviceSpace, OP, true>(bulk, stkFields, deterministic)`")
 void parallel_op_including_ghosts_device_mpi(const NGPMESH& ngpMesh, const std::vector<NGPFIELD*> & ngpFields, bool deterministic)
 {
+  Kokkos::Profiling::pushRegion("parallel_op_including_ghosts_device_mpi");
   const stk::mesh::BulkData& bulk = ngpMesh.get_bulk_on_host();
   const stk::mesh::MetaData & meta = bulk.mesh_meta_data();
   const std::vector<stk::mesh::FieldBase *> & allStkFields = meta.get_fields();
@@ -184,9 +191,11 @@ void parallel_op_including_ghosts_device_mpi(const NGPMESH& ngpMesh, const std::
   }
 
   ngp_parallel_op<stk::ngp::DeviceSpace, OP, true>(bulk, stkFields, deterministic);
+  Kokkos::Profiling::popRegion();
 }
 
 template <typename NGPMESH, typename NGPFIELD>
+STK_DEPRECATED_MSG("Replace with code 'stk::mesh::parallel_sum_including_ghosts<stk::ngp::DeviceSpace>(bulk, stkFields, deterministic)`")
 void parallel_sum_including_ghosts_device_mpi(const NGPMESH& ngpMesh,
                                   const std::vector<NGPFIELD*> & ngpFields,
                                               bool deterministic = true)
@@ -195,6 +204,7 @@ void parallel_sum_including_ghosts_device_mpi(const NGPMESH& ngpMesh,
 }
 
 template <typename NgpMesh, typename NgpField, typename MemSpace = stk::ngp::MemSpace>
+STK_DEPRECATED_MSG("Replace with code 'stk::mesh::parallel_sum<stk::ngp::DeviceSpace>(bulk, stkFields, false)`")
 void parallel_sum(NgpMesh const& ngpMesh, std::vector<NgpField*> const& ngpFields, bool doFinalSyncBackToDevice = true)
 {
   Kokkos::Profiling::pushRegion("parallel_sum");
@@ -221,6 +231,7 @@ void parallel_sum(NgpMesh const& ngpMesh, std::vector<NgpField*> const& ngpField
 }
 
 template <typename NGPMESH, typename NGPFIELD, typename MemSpace = stk::ngp::MemSpace>
+STK_DEPRECATED_MSG("Replace with code 'stk::mesh::parallel_sum_including_ghosts<stk::ngp::DeviceSpace>(bulk, stkFields, deterministic)`")
 void parallel_sum_including_ghosts(NGPMESH const& ngpMesh, std::vector<NGPFIELD*> const& ngpFields, bool deterministic = true)
 {
   STK_ThrowRequireMsg((Kokkos::SpaceAccessibility<typename NGPMESH::MeshExecSpace, MemSpace>::accessible), "parallel_sum_including_ghosts MemSpace not accessible from NGPMESH::MeshExecSpace");
@@ -244,6 +255,7 @@ void parallel_sum_including_ghosts(NGPMESH const& ngpMesh, std::vector<NGPFIELD*
 }
 
 template <typename NGPMESH, typename NGPFIELD, typename MemSpace = stk::ngp::MemSpace>
+STK_DEPRECATED_MSG("Replace with code 'stk::mesh::parallel_max_including_ghosts<stk::ngp::DeviceSpace>(bulk, stkFields, deterministic)`")
 void parallel_max_including_ghosts(NGPMESH const& ngpMesh, std::vector<NGPFIELD*> const& ngpFields, bool deterministic = true)
 {
   STK_ThrowRequireMsg((Kokkos::SpaceAccessibility<typename NGPMESH::MeshExecSpace, MemSpace>::accessible), "parallel_max_including_ghosts MemSpace not accessible from NGPMESH::MeshExecSpace");
@@ -267,6 +279,7 @@ void parallel_max_including_ghosts(NGPMESH const& ngpMesh, std::vector<NGPFIELD*
 }
 
 template <typename NGPMESH, typename NGPFIELD, typename MemSpace = stk::ngp::MemSpace>
+STK_DEPRECATED_MSG("Replace with code 'stk::mesh::parallel_min_including_ghosts<stk::ngp::DeviceSpace>(bulk, stkFields, deterministic)`")
 void parallel_min_including_ghosts(NGPMESH const& ngpMesh, std::vector<NGPFIELD*> const& ngpFields, bool deterministic = true)
 {
   STK_ThrowRequireMsg((Kokkos::SpaceAccessibility<typename NGPMESH::MeshExecSpace, MemSpace>::accessible), "parallel_min_including_ghosts MemSpace not accessible from NGPMESH::MeshExecSpace");
@@ -288,6 +301,7 @@ void parallel_min_including_ghosts(NGPMESH const& ngpMesh, std::vector<NGPFIELD*
     parallel_min_including_ghosts<stk::ngp::HostSpace>(bulk, stkFields, deterministic);
   }
 }
+#endif
 
 } // namespace stk::mesh
 

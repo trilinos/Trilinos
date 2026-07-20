@@ -64,11 +64,6 @@ class SearchFilterTester : public ::testing::Test {
     using EntityKey = int;
     using EntityProc = stk::search::IdentProc<EntityKey, unsigned>;
 
-    stk::search::ObjectOutsideDomainPolicy get_extrapolate_option() const
-    {
-      return stk::search::ObjectOutsideDomainPolicy::EXTRAPOLATE;
-    }
-
     void find_parametric_coords(const EntityKey k, const std::vector<double>& /*coords*/, std::vector<double>& /*parametricCoords*/,
                                 double& parametricDistance, bool& isWithinParametricTolerance) const
     {

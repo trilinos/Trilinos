@@ -185,6 +185,7 @@ void TriFixtureImpl<DIM>::generate_mesh(std::vector<size_t> & quad_range_on_this
     // Declare the elements that belong on this process
     stk::mesh::EntityIdVector elem_nodes(4);
     stk::mesh::EntityIdVector tri_nodes(3);
+    stk::mesh::EntityVector nodeVec;
 
     for (size_t quad_id : quad_range_on_this_processor) {
       size_t ix = 0, iy = 0;
@@ -201,32 +202,40 @@ void TriFixtureImpl<DIM>::generate_mesh(std::vector<size_t> & quad_range_on_this
         tri_nodes[2] = elem_nodes[tri_vert[tri][2]];
 
         EntityId tri_id = 2*quad_id + tri + m_elem_id_start;
-        stk::mesh::declare_element( m_bulk_data, m_elem_parts, tri_id, tri_nodes);
-
-        for (size_t i = 0; i<3; ++i) {
-          stk::mesh::Entity const node = m_bulk_data.get_entity( stk::topology::NODE_RANK , tri_nodes[i] );
+        Entity elem = stk::mesh::declare_element( m_bulk_data, m_elem_parts, tri_id, tri_nodes);
+        nodeVec.clear();
+        auto elemNodes = m_bulk_data.get_connected_entities(elem, stk::topology::NODE_RANK);
+        for(Entity node : elemNodes) {
+          nodeVec.push_back(node);
+        }
+        for(Entity node : nodeVec) {
           m_bulk_data.change_entity_parts(node, m_node_parts);
-
-          STK_ThrowRequireMsg( m_bulk_data.is_valid(node),
-               "This process should know about the nodes that make up its element");
-
-          DoAddNodeSharings(m_bulk_data, m_nodes_to_procs, tri_nodes[i], node);
-
-          // Compute and assign coordinates to the node
-          size_t nx = 0, ny = 0;
-          node_x_y(tri_nodes[i], nx, ny);
-
-          auto data = m_coord_field->data<stk::mesh::ReadWrite>().entity_values(node);
-
-          // The CoordinateMappings are used for 2D and 3D so make sure we give it enough space to write to.
-          std::array<double, 3> temp;
-          coordMap.getNodeCoordinates(temp.data(), nx, ny, 0);
-
-          data(0_comp) = temp[0];
-          data(1_comp) = temp[1];
-          if(DIM == 3) data(2_comp) = 0.;
+          EntityId nodeId = m_bulk_data.identifier(node);
+          DoAddNodeSharings(m_bulk_data, m_nodes_to_procs, nodeId, node);
         }
       }
+    }
+       
+    stk::mesh::Selector nodeSelector = stk::mesh::selectIntersection(m_elem_parts);
+    stk::mesh::get_entities(m_bulk_data, stk::topology::NODE_RANK, nodeSelector, nodeVec);
+
+    auto data = m_coord_field->data<stk::mesh::ReadWrite>();
+
+    for (Entity node : nodeVec) {
+      stk::mesh::EntityId nodeId = m_bulk_data.identifier(node);
+
+      // Compute and assign coordinates to the node
+      size_t nx = 0, ny = 0;
+      node_x_y(nodeId, nx, ny);
+
+      // The CoordinateMappings are used for 2D and 3D so make sure we give it enough space to write to.
+      std::array<double, 3> temp;
+      coordMap.getNodeCoordinates(temp.data(), nx, ny, 0);
+
+      auto nodeData = data.entity_values(node);
+      nodeData(0_comp) = temp[0];
+      nodeData(1_comp) = temp[1];
+      if(DIM == 3) nodeData(2_comp) = 0.;
     }
   }
   m_bulk_data.modification_end();

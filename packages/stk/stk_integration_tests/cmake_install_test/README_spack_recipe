@@ -1,34 +1,27 @@
 
-# recipe for creating a spack env and building trilinos/stk,
-# then building a stk-test-app using the spack-installed trilinos/stk
+# recipe for creating a spack env and building trilinos/stk
 
-mkdir -p /fgs/william/sandbox_spack
-cd /fgs/william/sandbox_spack
+Note that this recipe assumes you are a Sierra developer,
+working with STK inside a clone of Sierra code.
 
-git clone --depth=100 --branch=releases/v0.21 https://github.com/spack/spack.git
-source ./spack/share/spack/setup-env.sh
+The scripts used below will assume that you have these directories:
+/fgs/$USER/stk-cmake-testing
+/fgs/$USER/code (<-- sierra code)
+These directories can be changed by setting variables that the
+scripts below use. See inside the scripts if you are brave.
 
-spack env create mystkenv
-spack env activate mystkenv
-#want to add gcc 10.2.0 compiler
-module load sierra-devel
-spack compiler add
-#optionally remove old compilers that spack found
-spack compiler remove gcc@4.8.5
-spack compiler remove gcc@4.4.7
+$ cd /fgs/$USER/code
 
-spack add trilinos@master +exodus+zoltan2+stk
+# do this next step once. create/setup spack and TPLs
+$ source stk/stk_integration_tests/cmake_install_test/stk_spack_create_env.sh
 
-spack concretize -f
-spack install
+# do this each time you want to build stk using tribits/cmake
+$ ./stk/stk_integration_tests/cmake_install_test/build_stk_using_cmake
 
-spack load cmake
-spack load openmpi
-
-cp -r /fgs/william/code/stk/stk_integration_tests/cmake_install_test/stk_test_app .
-cd stk_test_app
-source run_cmake_in_spack_env
-#note: the run_cmake_in_spack_env script also did 'cd build' so you're now in build subdir
-make
-mpirun --np 4 ./test_stk_app
+# other build configurations include:
+build_stk_serial_using_cmake
+build_stk_no_tests_using_cmake
+build_stk_no_stk_search_util_using_cmake
+build_stk_no_stk_mesh_using_cmake
+build_stk_no_stk_io_using_cmake
 

@@ -362,18 +362,17 @@ void communicateSharingInfoToProcsThatShareEntity(const int /*numProcs*/, const 
 {
     for(int phase = 0; phase < 2; ++phase)
     {    
-        stk::mesh::EntityToDependentProcessorsMap::iterator iter = entityKeySharing.begin();
-        for(; iter != entityKeySharing.end(); iter++)
+        for(auto& iter : entityKeySharing)
         {
-            std::vector<int> sharingProcs(iter->second.begin(), iter->second.end());
-            for(size_t j = 0; j < sharingProcs.size(); j++)
+            const auto& sharingProcs = iter.second;
+            for(int shProc : sharingProcs)
             {
-                if(sharingProcs[j] == myProcId) { continue; }
-                commStage2.send_buffer(sharingProcs[j]).pack<stk::mesh::EntityKey>(iter->first);
-                commStage2.send_buffer(sharingProcs[j]).pack<size_t>(sharingProcs.size());
-                for(size_t k = 0; k < sharingProcs.size(); k++)
+                if(shProc == myProcId) { continue; }
+                commStage2.send_buffer(shProc).pack<stk::mesh::EntityKey>(iter.first);
+                commStage2.send_buffer(shProc).pack<size_t>(sharingProcs.size());
+                for(int shProc_k : sharingProcs)
                 {
-                    commStage2.send_buffer(sharingProcs[j]).pack<int>(sharingProcs[k]);
+                    commStage2.send_buffer(shProc).pack<int>(shProc_k);
                 }
             }
         }

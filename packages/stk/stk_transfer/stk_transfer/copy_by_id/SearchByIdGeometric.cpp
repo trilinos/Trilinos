@@ -51,6 +51,9 @@ void SearchByIdGeometric::do_search(const TransferCopyByIdMeshAdapter & mesha,
   key_to_target_processor.clear();
   m_remote_keys.clear();
 
+  mesha.begin_search();
+  meshb.begin_search();
+
   using MeshIDVector = TransferCopyByIdMeshAdapter::MeshIDVector;
   using Point = stk::search::Point<float>;
   using Sphere = stk::search::Sphere<float>;
@@ -111,6 +114,9 @@ void SearchByIdGeometric::do_search(const TransferCopyByIdMeshAdapter & mesha,
       }
     }
   }
+
+  mesha.end_search();
+  meshb.end_search();
 }
 
 }  } // namespace transfer stk

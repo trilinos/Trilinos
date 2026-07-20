@@ -62,22 +62,6 @@ void check_sideset_part_constraints(const BulkData& bulk, const stk::mesh::Part 
     stk::RuntimeWarning() << "create_sideset: part " << part.name()
                                                      << " has rank " << part.primary_entity_rank();
   }
-  if((part.id() == stk::mesh::Part::INVALID_ID) &&
-     (part.name() != "universal_sideset") && !part.subsets().empty()) {
-    stk::RuntimeWarning() << "create_sideset: part " << part.name()
-                                                       << " has invalid id ";
-  }
-
-  for(const stk::mesh::Part* subsetPart : part.subsets()) {
-    if(subsetPart->primary_entity_rank() == meta.side_rank()) {
-      if(subsetPart->id() != part.id()) {
-        stk::RuntimeWarning() << "create_sideset: part " << part.name()
-                                                         << " with id " << part.id()
-                                                         << "; subset sideblock part " << subsetPart->name()
-                                                         << " has different id " << subsetPart->id();
-      }
-    }
-  }
 }
 
 } // namespace impl

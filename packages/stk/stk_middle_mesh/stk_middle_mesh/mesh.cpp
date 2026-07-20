@@ -15,7 +15,6 @@ namespace middle_mesh {
 namespace mesh {
 
 const std::vector<utils::Point> NO_NODES;
-const std::vector<MeshEntityPtr> NO_DOWN;
 
 Mesh::~Mesh()
 {

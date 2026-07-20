@@ -34,6 +34,7 @@
 #include <Kokkos_Core.hpp>
 
 #include <stk_util/parallel/Parallel.hpp>
+#include <stk_util/parallel/OutputStreams.hpp>
 #include <stk_transfer_util/TransferMainHandler.hpp>
 
 int main(int argc, const char** argv)
@@ -44,6 +45,7 @@ int main(int argc, const char** argv)
   stk::transfer_util::TransferMainHandler transfer(comm, argc, argv);
   if (transfer.exit_code() == stk::transfer_util::TransferMainStatus::SUCCESS) {
     Kokkos::ScopeGuard guard(argc, const_cast<char**>(argv));
+    
     transfer.run();
   }
 

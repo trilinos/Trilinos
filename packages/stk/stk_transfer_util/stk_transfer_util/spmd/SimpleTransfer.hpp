@@ -45,6 +45,7 @@
 #include <string>                                       // for string
 #include <utility>                                      // for pair
 #include <vector>                                       // for vector
+#include "stk_search_util/CoordTransform.hpp"
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################
 
@@ -93,6 +94,9 @@ class SimpleTransfer {
 
   virtual void add_recv_part_name(const std::string& partName);
   virtual void add_recv_part_names(const std::vector<std::string>& partNames);
+
+  virtual void add_send_mesh_coord_transform(std::shared_ptr<stk::search::CoordTransformInterface> coordTransform);
+  virtual void add_recv_mesh_coord_transform(std::shared_ptr<stk::search::CoordTransformInterface> coordTransform);
 
   void setup_patch_recovery_transfer(stk::mesh::BulkData& sendBulk,
                                      stk::mesh::BulkData& recvBulk,
@@ -185,6 +189,9 @@ class SimpleTransfer {
 
   std::vector<std::string> m_sendPartNames;
   std::vector<std::string> m_recvPartNames;
+
+  std::shared_ptr<stk::search::CoordTransformInterface> m_send_coordTransform;
+  std::shared_ptr<stk::search::CoordTransformInterface> m_recv_coordTransform;
 
   stk::transfer::PatchRecoveryEvaluationType m_defaultPatchRecovery{stk::transfer::PatchRecoveryEvaluationType::LINEAR_LEAST_SQUARES};
 

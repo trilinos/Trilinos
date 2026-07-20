@@ -33,7 +33,6 @@
 //
 
 #include "DisconnectBlocksMeshConstruction.hpp"
-#include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 #include "stk_unit_test_utils/getOption.h"
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/util/SortAndUnique.hpp>
@@ -42,10 +41,11 @@
 #include <stk_io/WriteMesh.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/SkinBoundary.hpp>
 #include <stk_mesh/base/Comm.hpp>
-#include <stk_tools/mesh_tools/DetectHingesImpl.hpp>
+#include <stk_mesh/base/ExodusTranslator.hpp>
+#include <stk_tools/mesh_tools/DetectHinges.hpp>
 #include <stk_tools/mesh_tools/DisconnectBlocks.hpp>
 #include <stk_tools/mesh_tools/DisconnectBlocksImpl.hpp>
 #include <stk_tools/mesh_tools/DisconnectUtils.hpp>
@@ -1028,21 +1028,34 @@ stk::mesh::PartVector setup_mesh_3block_3quad_1hinge(stk::mesh::BulkData& bulk)
 
 
 void print_hinge_info(const stk::mesh::BulkData& bulk,
-                      const stk::tools::impl::HingeNodeVector& hingeNodes,
-                      const stk::tools::impl::HingeEdgeVector& hingeEdges)
+                      const stk::tools::HingeNodeVector& hingeNodes,
+                      const stk::tools::HingeEdgeVector& hingeEdges)
 {
   std::ostringstream os;
   if(hingeNodes.size() > 0) {
     os << "PRINTING HINGE NODES on Proc " << bulk.parallel_rank() << " : " << std::endl;
-    for(const stk::tools::impl::HingeNode& node : hingeNodes) {
-      os << "\tHinge node id: " << bulk.identifier(node.get_node()) << std::endl;
+    for(const stk::tools::HingeNode& node : hingeNodes) {
+      os << "\tHinge node id: " << bulk.identifier(node.get_node()) << ": ";
+      auto elems = bulk.get_connected_entities(node.get_node(), stk::topology::ELEM_RANK);
+      for(stk::mesh::Entity elem : elems) {
+        stk::mesh::Part* blockPart = stk::mesh::get_element_block_part(bulk, elem);
+        os << "element " << bulk.identifier(elem) << ", block: " << blockPart->name() << "; ";
+      }
+
+      os << std::endl;
     }
   }
   if(hingeEdges.size() > 0) {
     os << "PRINTING HINGE EDGES on Proc " << bulk.parallel_rank() << " : " << std::endl;
-    for(const stk::tools::impl::HingeEdge& edge : hingeEdges) {
+    for(const stk::tools::HingeEdge& edge : hingeEdges) {
       os << "\tHinge edge ids: " << bulk.identifier(edge.first.get_node())
-         << ", " << bulk.identifier(edge.second.get_node()) << std::endl;
+         << ", " << bulk.identifier(edge.second.get_node()) << " ";
+      stk::mesh::EntityVector elems = stk::tools::get_common_elements(bulk, edge.first.get_node(), edge.second.get_node());
+      for(stk::mesh::Entity elem : elems) {
+        stk::mesh::Part* blockPart = stk::mesh::get_element_block_part(bulk, elem);
+        os << "element " << bulk.identifier(elem) << ", block: " << blockPart->name() << "; ";
+      }
+      os << std::endl;
     }
   }
 
