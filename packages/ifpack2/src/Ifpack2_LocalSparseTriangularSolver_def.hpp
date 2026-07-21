@@ -351,7 +351,7 @@ void LocalSparseTriangularSolver<MatrixType>::
   using Teuchos::ParameterList;
   using Teuchos::RCP;
 
-  Details::TrisolverType::Enum trisolverType = Details::TrisolverType::Internal;
+  Details::TrisolverType::Enum trisolverType = node_type::is_gpu ? Details::TrisolverType::KSPTRSV : Details::TrisolverType::Internal;
   do {
     static const char typeName[] = "trisolver: type";
 
