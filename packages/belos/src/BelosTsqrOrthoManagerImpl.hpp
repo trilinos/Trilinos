@@ -15,6 +15,7 @@
 
 #include "BelosConfigDefs.hpp" // HAVE_BELOS_TSQR
 #include "BelosMultiVecTraits.hpp"
+#include "BelosDenseMatTraits.hpp"
 #include "BelosOrthoManager.hpp" // OrthoError, etc.
 
 #include "Teuchos_as.hpp"
@@ -152,7 +153,7 @@ namespace Belos {
   ///   implement the OrthoManager and MatOrthoManager interfaces for
   ///   the case where the inner product operator is not the identity
   ///   matrix.
-  template<class Scalar, class MV>
+  template<class Scalar, class MV, class DM>
   class TsqrOrthoManagerImpl :
     public Teuchos::ParameterListAcceptorDefaultBase {
   public:
@@ -160,13 +161,14 @@ namespace Belos {
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
     typedef MV multivector_type;
     //! Type of the projection and normalization coefficients
-    typedef Teuchos::SerialDenseMatrix<int, Scalar> mat_type;
+    typedef DM                     mat_type;
     typedef Teuchos::RCP<mat_type> mat_ptr;
 
   private:
     typedef Teuchos::ScalarTraits<Scalar> SCT;
     typedef Teuchos::ScalarTraits<magnitude_type> SCTM;
-    typedef MultiVecTraits<Scalar, MV> MVT;
+    typedef MultiVecTraits<Scalar, MV, DM> MVT;
+    typedef DenseMatTraits<Scalar, DM>     DMT;
     typedef typename MVT::tsqr_adaptor_type tsqr_adaptor_type;
 
   public:
@@ -418,12 +420,14 @@ namespace Belos {
     {
       const Scalar ONE = SCT::one();
       const int ncols = MVT::GetNumberVecs(X);
-      mat_type XTX (ncols, ncols);
-      innerProd (X, X, XTX);
+      mat_ptr XTX = DMT::Create(ncols, ncols);
+      innerProd (X, X, *XTX);
+      DMT::SyncDeviceToHost( *XTX );
       for (int k = 0; k < ncols; ++k) {
-        XTX(k,k) -= ONE;
+        DMT::Value(*XTX,k,k) -= ONE;
       }
-      return XTX.normFrobenius();
+      DMT::SyncHostToDevice( *XTX );
+      return DMT::NormFrobenius( *XTX );
     }
 
     //! Return the Frobenius norm of the inner product of X1 with itself.
@@ -433,9 +437,9 @@ namespace Belos {
     {
       const int ncols_X1 = MVT::GetNumberVecs (X1);
       const int ncols_X2 = MVT::GetNumberVecs (X2);
-      mat_type X1_T_X2 (ncols_X1, ncols_X2);
-      innerProd (X1, X2, X1_T_X2);
-      return X1_T_X2.normFrobenius();
+      mat_ptr X1_T_X2 = DMT::Create(ncols_X1, ncols_X2);
+      innerProd (X1, X2, *X1_T_X2);
+      return DMT::NormFrobenius( *X1_T_X2 );
     }
 
     /// Relative tolerance for triggering a block reorthogonalization.
@@ -699,9 +703,9 @@ namespace Belos {
     int normalizeImpl (MV& X, MV& Q, mat_ptr B, const bool outOfPlace);
   };
 
-  template<class Scalar, class MV>
+  template<class Scalar, class MV, class DM>
   void
-  TsqrOrthoManagerImpl<Scalar, MV>::
+  TsqrOrthoManagerImpl<Scalar, MV, DM>::
   setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& params)
   {
     using Teuchos::ParameterList;
@@ -759,8 +763,8 @@ namespace Belos {
     setMyParamList (theParams);
   }
 
-  template<class Scalar, class MV>
-  TsqrOrthoManagerImpl<Scalar, MV>::
+  template<class Scalar, class MV, class DM>
+  TsqrOrthoManagerImpl<Scalar, MV, DM>::
   TsqrOrthoManagerImpl (const Teuchos::RCP<Teuchos::ParameterList>& params,
                         const std::string& label) :
     label_ (label),
@@ -782,8 +786,8 @@ namespace Belos {
 #endif // BELOS_TEUCHOS_TIME_MONITOR
   }
 
-  template<class Scalar, class MV>
-  TsqrOrthoManagerImpl<Scalar, MV>::
+  template<class Scalar, class MV, class DM>
+  TsqrOrthoManagerImpl<Scalar, MV, DM>::
   TsqrOrthoManagerImpl (const std::string& label) :
     label_ (label),
     Q_ (Teuchos::null),               // Initialized on demand
@@ -804,9 +808,9 @@ namespace Belos {
 #endif // BELOS_TEUCHOS_TIME_MONITOR
   }
 
-  template<class Scalar, class MV>
+  template<class Scalar, class MV, class DM>
   void
-  TsqrOrthoManagerImpl<Scalar, MV>::
+  TsqrOrthoManagerImpl<Scalar, MV, DM>::
   norm (const MV& X, std::vector<magnitude_type>& normVec) const
   {
     const int numCols = MVT::GetNumberVecs (X);
@@ -817,9 +821,9 @@ namespace Belos {
     MVT::MvNorm (X, normVec);
   }
 
-  template<class Scalar, class MV>
+  template<class Scalar, class MV, class DM>
   void
-  TsqrOrthoManagerImpl<Scalar, MV>::project (MV& X,
+  TsqrOrthoManagerImpl<Scalar, MV, DM>::project (MV& X,
                                              Teuchos::Array<mat_ptr> C,
                                              Teuchos::ArrayView<Teuchos::RCP<const MV> > Q)
   {
@@ -890,15 +894,15 @@ namespace Belos {
         rawProject (X, Q, C2);
         // Update the projection coefficients
         for (int k = 0; k < num_Q_blocks; ++k)
-          *C[k] += *C2[k];
+          DMT::Add(*C[k],*C2[k]);
       }
     }
   }
 
 
-  template<class Scalar, class MV>
+  template<class Scalar, class MV, class DM>
   int
-  TsqrOrthoManagerImpl<Scalar, MV>::normalize (MV& X, mat_ptr B)
+  TsqrOrthoManagerImpl<Scalar, MV, DM>::normalize (MV& X, mat_ptr B)
   {
     using Teuchos::Range1D;
     using Teuchos::RCP;
@@ -973,9 +977,9 @@ namespace Belos {
     }
   }
 
-  template<class Scalar, class MV>
+  template<class Scalar, class MV, class DM>
   void
-  TsqrOrthoManagerImpl<Scalar, MV>::
+  TsqrOrthoManagerImpl<Scalar, MV, DM>::
   allocateProjectionCoefficients (Teuchos::Array<mat_ptr>& C,
                                   Teuchos::ArrayView<Teuchos::RCP<const MV> > Q,
                                   const MV& X,
@@ -992,14 +996,14 @@ namespace Belos {
             // Create a new C[i] if necessary, otherwise resize if
             // necessary, otherwise fill with zeros.
             if (C[i].is_null())
-              C[i] = Teuchos::rcp (new mat_type (ncols_Qi, ncols_X));
+              C[i] = DMT::Create(ncols_Qi, ncols_X);
             else
               {
                 mat_type& Ci = *C[i];
-                if (Ci.numRows() != ncols_Qi || Ci.numCols() != ncols_X)
-                  Ci.shape (ncols_Qi, ncols_X);
+                if (DMT::GetNumRows(Ci) != ncols_Qi || DMT::GetNumCols(Ci) != ncols_X)
+                  DMT::Reshape(Ci, ncols_Qi, ncols_X);
                 else
-                  Ci.putScalar (SCT::zero());
+                  DMT::PutScalar(Ci, SCT::zero());
               }
           }
       }
@@ -1008,14 +1012,14 @@ namespace Belos {
         for (int i = 0; i < num_Q_blocks; ++i)
           {
             const int ncols_Qi = MVT::GetNumberVecs (*Q[i]);
-            C[i] = Teuchos::rcp (new mat_type (ncols_Qi, ncols_X));
+            C[i] = DMT::Create(ncols_Qi, ncols_X);
           }
       }
   }
 
-  template<class Scalar, class MV>
+  template<class Scalar, class MV, class DM>
   int
-  TsqrOrthoManagerImpl<Scalar, MV>::
+  TsqrOrthoManagerImpl<Scalar, MV, DM>::
   normalizeOutOfPlace (MV& X, MV& Q, mat_ptr B)
   {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
@@ -1046,9 +1050,9 @@ namespace Belos {
     }
   }
 
-  template<class Scalar, class MV>
+  template<class Scalar, class MV, class DM>
   int
-  TsqrOrthoManagerImpl<Scalar, MV>::
+  TsqrOrthoManagerImpl<Scalar, MV, DM>::
   projectAndNormalizeImpl (MV& X_in,
                            MV& X_out, // Only written if outOfPlace==false.
                            const bool outOfPlace,
@@ -1121,7 +1125,7 @@ namespace Belos {
     // by reference.)
     mat_ptr B_out;
     if (B.is_null()) {
-      B_out = rcp (new mat_type (ncols_X, ncols_X));
+      B_out = DMT::Create(ncols_X, ncols_X);
     } else {
       // Make sure that B is no smaller than numCols x numCols.
       TEUCHOS_TEST_FOR_EXCEPTION(B->numRows() < ncols_X || B->numCols() < ncols_X,
@@ -1133,7 +1137,7 @@ namespace Belos {
       // Create a view of the ncols_X by ncols_X upper left
       // submatrix of *B.  TSQR will write the normalization
       // coefficients there.
-      B_out = rcp (new mat_type (Teuchos::View, *B, ncols_X, ncols_X));
+      B_out = DMT::Subview(*B, ncols_X, ncols_X);
     }
 
     // Rank of X(_in) after first projection pass.  If outOfPlace,
@@ -1174,10 +1178,10 @@ namespace Belos {
       Teuchos::Array<mat_ptr> C_null (num_Q_blocks);
       for (int k = 0; k < num_Q_blocks; ++k) {
         const int numColsQk = MVT::GetNumberVecs(*Q[k]);
-        C_null[k] = rcp (new mat_type (numColsQk, numNullSpaceCols));
+        C_null[k] = DMT::Create(numColsQk, numNullSpaceCols);
       }
       // Space for normalization coefficients (will be thrown away).
-      RCP<mat_type> B_null (new mat_type (numNullSpaceCols, numNullSpaceCols));
+      mat_ptr B_null = DMT::Create(numNullSpaceCols, numNullSpaceCols);
 
       int randomVectorsRank;
       if (outOfPlace) {
@@ -1240,11 +1244,12 @@ namespace Belos {
       // compute column norms of X before and after projection.  Here,
       // we get them for free from the normalization coefficients.
       Teuchos::BLAS<int, Scalar> blas;
+      DMT::SyncDeviceToHost( *B_out );
       for (int j = 0; j < firstPassRank; ++j) {
-        const Scalar* const B_j = &(*B_out)(0,j);
+        mat_ptr B_j = DMT::Subview( *B_out, firstPassRank, 1, 0, j );
         // Teuchos::BLAS::NRM2 returns a magnitude_type result on
         // Scalar inputs.
-        normsAfterFirstPass[j] = blas.NRM2 (firstPassRank, B_j, 1);
+        normsAfterFirstPass[j] = blas.NRM2 (firstPassRank, DMT::GetRawHostPtr(*B_j), 1);
       }
       // Test whether any of the norms dropped below the
       // reorthogonalization threshold.
@@ -1309,7 +1314,7 @@ namespace Belos {
         rawProject (X_in, Q, C2);
 
         // Coefficients for (re)normalization of X_in.
-        RCP<mat_type> B2 (new mat_type (ncols_X, ncols_X));
+        mat_ptr B2 = DMT::Create(ncols_X, ncols_X);
 
         // Normalize X_in (into X_out, if working out of place).
         const int secondPassRank = outOfPlace ?
@@ -1320,32 +1325,38 @@ namespace Belos {
         // Update normalization coefficients.  We begin with copying
         // B_out, since the BLAS' _GEMM routine doesn't let us alias
         // its input and output arguments.
-        mat_type B_copy (Copy, *B_out, B_out->numRows(), B_out->numCols());
+        mat_ptr B_copy = DMT::CreateCopy(*B_out);
         // B_out := B2 * B_out (where input B_out is in B_copy).
-        const int err = B_out->multiply (NO_TRANS, NO_TRANS, SCT::one(),
-                                         *B2, B_copy, SCT::zero());
-        TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::logic_error,
-                           "Teuchos::SerialDenseMatrix::multiply "
-                           "returned err = " << err << " != 0");
+        DMT::SyncDeviceToHost( *B2 );
+        DMT::SyncDeviceToHost( *B_out );
+        blas.GEMM( NO_TRANS, NO_TRANS, DMT::GetNumRows( *B2 ), DMT::GetNumCols( *B_copy ), 
+                   DMT::GetNumCols( *B2 ), SCT::one(), DMT::GetRawHostPtr( *B2 ),
+                   DMT::GetStride( *B2 ), DMT::GetRawHostPtr( *B_copy ),
+                   DMT::GetStride( *B_copy ), SCT::zero(), 
+                   DMT::GetRawHostPtr( *B_out ), DMT::GetStride( *B_out ) );
+        DMT::SyncHostToDevice( *B_out );
+
         // Update the block coefficients from the projection step.  We
         // use B_copy for this (a copy of B_out, the first-pass
         // normalization coefficients).
         for (int k = 0; k < num_Q_blocks; ++k) {
-          mat_type C_k_copy (Copy, *C[k], C[k]->numRows(), C[k]->numCols());
-
           // C[k] := C2[k]*B_copy + C[k].
-          const int err1 = C[k]->multiply (NO_TRANS, NO_TRANS, SCT::one(),
-                                          *C2[k], B_copy, SCT::one());
-          TEUCHOS_TEST_FOR_EXCEPTION(err1 != 0, std::logic_error,
-                             "Teuchos::SerialDenseMatrix::multiply "
-                             "returned err = " << err1 << " != 0");
+          DMT::SyncDeviceToHost( *C[k] );
+          DMT::SyncDeviceToHost( *C2[k] );
+       
+          blas.GEMM( NO_TRANS, NO_TRANS, DMT::GetNumRows( *C2[k] ), DMT::GetNumCols( *B_copy ), 
+                     DMT::GetNumCols( *C2[k] ), SCT::one(), DMT::GetRawHostPtr( *C2[k] ),
+                     DMT::GetStride( *C2[k] ), DMT::GetRawHostPtr( *B_copy ),
+                     DMT::GetStride( *B_copy ), SCT::one(), 
+                     DMT::GetRawHostPtr( *C[k] ), DMT::GetStride( *C[k] ) );
+          DMT::SyncHostToDevice( *C[k] );
         }
         // Compute post-second-pass (pre-normalization) norms, using
         // B2 (the coefficients from the second normalization step) in
         // the same way as with B_out before.
         for (int j = 0; j < rank; ++j) {
-          const Scalar* const B2_j = &(*B2)(0,j);
-          normsAfterSecondPass[j] = blas.NRM2 (rank, B2_j, 1);
+          mat_ptr B2_j = DMT::Subview( *B2, rank, 1, 0, j );
+          normsAfterSecondPass[j] = blas.NRM2 (rank, DMT::GetRawHostPtr(*B2_j), 1);
         }
         // Test whether any of the norms dropped below the
         // reorthogonalization threshold.  If so, it's an
@@ -1381,10 +1392,9 @@ namespace Belos {
     return rank;
   }
 
-
-  template<class Scalar, class MV>
+  template<class Scalar, class MV, class DM>
   void
-  TsqrOrthoManagerImpl<Scalar, MV>::
+  TsqrOrthoManagerImpl<Scalar, MV, DM>::
   raiseReorthogFault (const std::vector<magnitude_type>& normsAfterFirstPass,
                       const std::vector<magnitude_type>& normsAfterSecondPass,
                       const std::vector<int>& faultIndices)
@@ -1404,9 +1414,9 @@ namespace Belos {
     throw TsqrOrthoFault (os.str());
   }
 
-  template<class Scalar, class MV>
+  template<class Scalar, class MV, class DM>
   Teuchos::RCP<const Teuchos::ParameterList>
-  TsqrOrthoManagerImpl<Scalar, MV>::getValidParameters () const
+  TsqrOrthoManagerImpl<Scalar, MV, DM>::getValidParameters () const
   {
     using Teuchos::ParameterList;
     using Teuchos::parameterList;
@@ -1469,9 +1479,9 @@ namespace Belos {
     return defaultParams_;
   }
 
-  template<class Scalar, class MV>
+  template<class Scalar, class MV, class DM>
   Teuchos::RCP<const Teuchos::ParameterList>
-  TsqrOrthoManagerImpl<Scalar, MV>::getFastParameters ()
+  TsqrOrthoManagerImpl<Scalar, MV, DM>::getFastParameters ()
   {
     using Teuchos::ParameterList;
     using Teuchos::RCP;
@@ -1496,12 +1506,12 @@ namespace Belos {
     return params;
   }
 
-  template<class Scalar, class MV>
+  template<class Scalar, class MV, class DM>
   int
-  TsqrOrthoManagerImpl<Scalar, MV>::
+  TsqrOrthoManagerImpl<Scalar, MV, DM>::
   rawNormalize (MV& X,
                 MV& Q,
-                Teuchos::SerialDenseMatrix<int, Scalar>& B)
+                DM& B)
   {
     int rank;
     try {
@@ -1518,18 +1528,18 @@ namespace Belos {
     return rank;
   }
 
-  template<class Scalar, class MV>
+  template<class Scalar, class MV, class DM>
   int
-  TsqrOrthoManagerImpl<Scalar, MV>::
+  TsqrOrthoManagerImpl<Scalar, MV, DM>::
   normalizeOne (MV& X,
-                Teuchos::RCP<Teuchos::SerialDenseMatrix<int, Scalar> > B) const
+                Teuchos::RCP<DM> B) const
   {
     // Make space for the normalization coefficient.  This will either
     // be a freshly allocated matrix (if B is null), or a view of the
     // 1x1 upper left submatrix of *B (if B is not null).
     mat_ptr B_out;
     if (B.is_null()) {
-      B_out = Teuchos::rcp (new mat_type (1, 1));
+      B_out = DMT::Create(1, 1);
     } else {
       const int theNumRows = B->numRows ();
       const int theNumCols = B->numCols ();
@@ -1538,13 +1548,13 @@ namespace Belos {
         "normalizeOne: Input matrix B must be at least 1 x 1, but "
         "is instead " << theNumRows << " x " << theNumCols << ".");
       // Create a view of the 1x1 upper left submatrix of *B.
-      B_out = Teuchos::rcp (new mat_type (Teuchos::View, *B, 1, 1));
+      B_out = DMT::Subview(*B, 1, 1);
     }
 
     // Compute the norm of X, and write the result to B_out.
     std::vector<magnitude_type> theNorm (1, SCTM::zero());
     MVT::MvNorm (X, theNorm);
-    (*B_out)(0,0) = theNorm[0];
+    DMT::PutScalar(*B_out, theNorm[0]);
 
     if (B.is_null()) {
       // The input matrix B is null, so assign B_out to it.  If B was
@@ -1590,12 +1600,12 @@ namespace Belos {
   }
 
 
-  template<class Scalar, class MV>
+  template<class Scalar, class MV, class DM>
   void
-  TsqrOrthoManagerImpl<Scalar, MV>::
+  TsqrOrthoManagerImpl<Scalar, MV, DM>::
   rawProject (MV& X,
               Teuchos::ArrayView<Teuchos::RCP<const MV> > Q,
-              Teuchos::ArrayView<Teuchos::RCP<Teuchos::SerialDenseMatrix<int, Scalar> > > C) const
+              Teuchos::ArrayView<Teuchos::RCP<DM> > C) const
   {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor timerMonitorNormalize(*timerProject_);
@@ -1619,12 +1629,12 @@ namespace Belos {
   }
 
 
-  template<class Scalar, class MV>
+  template<class Scalar, class MV, class DM>
   void
-  TsqrOrthoManagerImpl<Scalar, MV>::
+  TsqrOrthoManagerImpl<Scalar, MV, DM>::
   rawProject (MV& X,
               const Teuchos::RCP<const MV>& Q,
-              const Teuchos::RCP<Teuchos::SerialDenseMatrix<int, Scalar> >& C) const
+              const Teuchos::RCP<DM>& C) const
   {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor timerMonitorNormalize(*timerProject_);
@@ -1635,12 +1645,12 @@ namespace Belos {
     MVT::MvTimesMatAddMv (-SCT::one(), *Q, *C, SCT::one(), X);
   }
 
-  template<class Scalar, class MV>
+  template<class Scalar, class MV, class DM>
   int
-  TsqrOrthoManagerImpl<Scalar, MV>::
+  TsqrOrthoManagerImpl<Scalar, MV, DM>::
   normalizeImpl (MV& X,
                  MV& Q,
-                 Teuchos::RCP<Teuchos::SerialDenseMatrix<int, Scalar> > B,
+                 Teuchos::RCP<DM> B,
                  const bool outOfPlace)
   {
     using Teuchos::Range1D;
@@ -1672,7 +1682,7 @@ namespace Belos {
     // not null).
     mat_ptr B_out;
     if (B.is_null ()) {
-      B_out = rcp (new mat_type (numCols, numCols));
+      B_out = DMT::Create(numCols, numCols);
     } else {
       // Make sure that B is no smaller than numCols x numCols.
       TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1682,7 +1692,7 @@ namespace Belos {
         << " x " << B->numCols() << ".");
       // Create a view of the numCols x numCols upper left submatrix
       // of *B.  TSQR will write the normalization coefficients there.
-      B_out = rcp (new mat_type (Teuchos::View, *B, numCols, numCols));
+      B_out = DMT::Subview(*B, numCols, numCols);
     }
 
     // Compute rank-revealing decomposition (in this case, TSQR of X
@@ -1792,7 +1802,7 @@ namespace Belos {
         // Temporary storage for projection coefficients.  We don't
         // need to keep them, since they represent the null space
         // basis (for which the coefficients are logically zero).
-        mat_ptr C_null (new mat_type (rank, nullSpaceNumCols));
+        mat_ptr C_null = DMT::Create(rank, nullSpaceNumCols);
         rawProject (*Q_null, Q_col, C_null);
       }
       // Normalize the projected random vectors, so that they are
@@ -1805,9 +1815,9 @@ namespace Belos {
       RCP<MV> X_null = MVT::CloneViewNonConst (X, nullSpaceIndices);
       // Normalization coefficients for projected random vectors.
       // Will be thrown away.
-      mat_type B_null (nullSpaceNumCols, nullSpaceNumCols);
+      mat_ptr B_null = DMT::Create(nullSpaceNumCols, nullSpaceNumCols);
       // Write the normalized vectors to X_null (in X).
-      const int nullSpaceBasisRank = rawNormalize (*Q_null, *X_null, B_null);
+      const int nullSpaceBasisRank = rawNormalize (*Q_null, *X_null, *B_null);
 
       // It's possible, but unlikely, that X_null doesn't have full
       // rank (after the projection step).  We could recursively fill
@@ -1871,9 +1881,9 @@ namespace Belos {
   }
 
 
-  template<class Scalar, class MV>
+  template<class Scalar, class MV, class DM>
   void
-  TsqrOrthoManagerImpl<Scalar, MV>::
+  TsqrOrthoManagerImpl<Scalar, MV, DM>::
   checkProjectionDims (int& ncols_X,
                        int& num_Q_blocks,
                        int& ncols_Q_total,

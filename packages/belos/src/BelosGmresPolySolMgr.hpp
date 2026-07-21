@@ -118,15 +118,15 @@ class GmresPolySolMgrPolynomialFailure : public BelosError {public:
 ///   - Any parameter not explicitly set in the input ParameterList
 ///     retains its current value
 
-template<class ScalarType, class MV, class OP>
-class GmresPolySolMgr : public SolverManager<ScalarType,MV,OP> {
+template<class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int,ScalarType>>
+class GmresPolySolMgr : public SolverManager<ScalarType,MV,OP,DM> {
 private:
 
   typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
 
   typedef Teuchos::ScalarTraits<MagnitudeType> MTS;
-  typedef Belos::GmresPolyOp<ScalarType,MV,OP> gmres_poly_t;
-  typedef Belos::GmresPolyMv<ScalarType,MV>    gmres_poly_mv_t;
+  typedef Belos::GmresPolyOp<ScalarType,MV,OP,DM> gmres_poly_t;
+  typedef Belos::GmresPolyMv<ScalarType,MV, DM>    gmres_poly_mv_t;
 
 public:
 
@@ -158,15 +158,15 @@ public:
    *   - "Outer Solver Params" -a \c Teuchos::ParameterList giving parameters for the outer solver.
    *   - "Timer Label" -a \c std::string specifying the label on polynomial solve timers.
    */
-  GmresPolySolMgr( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+  GmresPolySolMgr( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > &problem,
     const Teuchos::RCP<Teuchos::ParameterList> &pl );
 
   //! Destructor.
   virtual ~GmresPolySolMgr() {};
 
   //! clone for Inverted Injection (DII)
-  Teuchos::RCP<SolverManager<ScalarType, MV, OP> > clone () const override {
-    return Teuchos::rcp(new GmresPolySolMgr<ScalarType,MV,OP>);
+  Teuchos::RCP<SolverManager<ScalarType, MV, OP, DM> > clone () const override {
+    return Teuchos::rcp(new GmresPolySolMgr<ScalarType,MV,OP,DM>);
   }
   //@}
 
@@ -175,7 +175,7 @@ public:
 
   /*! \brief Get current linear problem being solved for in this object.
    */
-  const LinearProblem<ScalarType,MV,OP>& getProblem() const override {
+  const LinearProblem<ScalarType,MV,OP,DM>& getProblem() const override {
     return *problem_;
   }
 
@@ -232,7 +232,7 @@ public:
   //@{
 
   //! Set the linear problem that needs to be solved.
-  void setProblem( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem ) override { problem_ = problem; }
+  void setProblem( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > &problem ) override { problem_ = problem; }
 
   //! Set the parameters the solver manager should use to solve the linear problem.
   void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params ) override;
@@ -293,7 +293,7 @@ public:
 private:
 
   // Linear problem.
-  Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > problem_;
+  Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > problem_;
 
   // Output manager.
   Teuchos::RCP<std::ostream> outputStream_;
@@ -342,8 +342,8 @@ private:
 };
 
 
-template<class ScalarType, class MV, class OP>
-GmresPolySolMgr<ScalarType,MV,OP>::GmresPolySolMgr () :
+template<class ScalarType, class MV, class OP, class DM>
+GmresPolySolMgr<ScalarType,MV,OP,DM>::GmresPolySolMgr () :
   outputStream_ (Teuchos::rcpFromRef(std::cout)),
   polyTol_ (DefaultSolverParameters::polyTol),
   achievedTol_(MTS::zero()),
@@ -364,9 +364,9 @@ GmresPolySolMgr<ScalarType,MV,OP>::GmresPolySolMgr () :
 {}
 
 
-template<class ScalarType, class MV, class OP>
-GmresPolySolMgr<ScalarType,MV,OP>::
-GmresPolySolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+template<class ScalarType, class MV, class OP, class DM>
+GmresPolySolMgr<ScalarType,MV,OP,DM>::
+GmresPolySolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > &problem,
                  const Teuchos::RCP<Teuchos::ParameterList> &pl) :
   problem_ (problem),
   outputStream_ (Teuchos::rcpFromRef(std::cout)),
@@ -400,9 +400,9 @@ GmresPolySolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
 }
 
 
-template<class ScalarType, class MV, class OP>
+template<class ScalarType, class MV, class OP, class DM>
 Teuchos::RCP<const Teuchos::ParameterList>
-GmresPolySolMgr<ScalarType,MV,OP>::getValidParameters() const
+GmresPolySolMgr<ScalarType,MV,OP,DM>::getValidParameters() const
 {
   if (validPL_.is_null ()) {
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList ();
@@ -441,8 +441,8 @@ GmresPolySolMgr<ScalarType,MV,OP>::getValidParameters() const
 }
 
 
-template<class ScalarType, class MV, class OP>
-void GmresPolySolMgr<ScalarType,MV,OP>::
+template<class ScalarType, class MV, class OP, class DM>
+void GmresPolySolMgr<ScalarType,MV,OP,DM>::
 setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
 {
   // Create the internal parameter list if ones doesn't already exist.
@@ -502,11 +502,11 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
   // Check if the orthogonalization changed.
   if (params->isParameter("Orthogonalization")) {
     std::string tempOrthoType = params->get("Orthogonalization",orthoType_default_);
-    OrthoManagerFactory<ScalarType, MV, OP> factory;
+    OrthoManagerFactory<ScalarType, MV, OP, DM> factory;
     // Ensure that the specified orthogonalization type is valid.
     if (! factory.isValidName (tempOrthoType)) {
       std::ostringstream os;
-      os << "Belos::GCRODRSolMgr: Invalid orthogonalization name \""
+      os << "Belos::GmresPolySolMgr: Invalid orthogonalization name \""
          << tempOrthoType << "\".  The following are valid options "
          << "for the \"Orthogonalization\" name parameter: ";
       factory.printValidNames (os);
@@ -596,8 +596,8 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
 }
 
 
-template<class ScalarType, class MV, class OP>
-ReturnType GmresPolySolMgr<ScalarType,MV,OP>::solve ()
+template<class ScalarType, class MV, class OP, class DM>
+ReturnType GmresPolySolMgr<ScalarType,MV,OP,DM>::solve ()
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -644,8 +644,8 @@ ReturnType GmresPolySolMgr<ScalarType,MV,OP>::solve ()
 
     // Then the polynomial will be used as an operator for an outer solver.
     // Use outer solver parameter list passed in a sublist.
-    Belos::GenericSolverFactory<ScalarType, MultiVec<ScalarType>, Operator<ScalarType> > factory;
-    RCP<SolverManager<ScalarType, MultiVec<ScalarType>, Operator<ScalarType> > > solver = factory.create( outerSolverType_, outerParams_ );
+    Belos::GenericSolverFactory<ScalarType, MultiVec<ScalarType,DM>, Operator<ScalarType, DM>, DM> factory;
+    RCP<SolverManager<ScalarType, MultiVec<ScalarType,DM>, Operator<ScalarType, DM>, DM> > solver = factory.create( outerSolverType_, outerParams_ );
     TEUCHOS_TEST_FOR_EXCEPTION( solver == Teuchos::null, std::invalid_argument,
       "Belos::GmresPolySolMgr::solve(): Selected solver is not valid.");
 
@@ -654,8 +654,8 @@ ReturnType GmresPolySolMgr<ScalarType,MV,OP>::solve ()
     RCP<gmres_poly_mv_t> new_lhs = rcp( new gmres_poly_mv_t( problem_->getLHS() ) );
     RCP<gmres_poly_mv_t> new_rhs = rcp( new gmres_poly_mv_t( rcp_const_cast<MV>( problem_->getRHS() ) ) );
     RCP<gmres_poly_t> A = rcp( new gmres_poly_t( problem_ ) );  // This just performs problem_->applyOp
-    RCP<LinearProblem<ScalarType,MultiVec<ScalarType>,Operator<ScalarType> > > newProblem =
-      rcp( new LinearProblem<ScalarType,MultiVec<ScalarType>,Operator<ScalarType> >( A, new_lhs, new_rhs ) );
+    RCP<LinearProblem<ScalarType,MultiVec<ScalarType,DM>,Operator<ScalarType, DM>, DM> > newProblem =
+      rcp( new LinearProblem<ScalarType,MultiVec<ScalarType,DM>,Operator<ScalarType, DM>, DM>( A, new_lhs, new_rhs ) );
     std::string solverLabel = label_ + ": Hybrid Gmres";
     newProblem->setLabel(solverLabel); 
 
@@ -678,22 +678,23 @@ ReturnType GmresPolySolMgr<ScalarType,MV,OP>::solve ()
     achievedTol_ = solver->achievedTol();
 
   } // if (hasOuterSolver_ && maxDegree_)
-  else if (hasOuterSolver_) {
+  // TODO: RENABLE THIS BRANCH
+  // else if (hasOuterSolver_) {
 
-    // There is no polynomial, just create the outer solver with the outerSolverType_ and outerParams_.
-    Belos::SolverFactory<ScalarType, MV, OP> factory;
-    RCP<SolverManager<ScalarType, MV, OP> > solver = factory.create( outerSolverType_, outerParams_ );
-    TEUCHOS_TEST_FOR_EXCEPTION( solver == Teuchos::null, std::invalid_argument,
-      "Belos::GmresPolySolMgr::solve(): Selected solver is not valid.");
+  //   // There is no polynomial, just create the outer solver with the outerSolverType_ and outerParams_.
+  //   Belos::SolverFactory<ScalarType, MV, OP, DM> factory;
+  //   RCP<SolverManager<ScalarType, MV, OP, DM> > solver = factory.create( outerSolverType_, outerParams_ );
+  //   TEUCHOS_TEST_FOR_EXCEPTION( solver == Teuchos::null, std::invalid_argument,
+  //     "Belos::GmresPolySolMgr::solve(): Selected solver is not valid.");
 
-    solver->setProblem( problem_ );
-    
-    retType = solver->solve();
-    numIters_ = solver->getNumIters();
-    loaDetected_ = solver->isLOADetected();
-    achievedTol_ = solver->achievedTol();
+  //   solver->setProblem( problem_ );
 
-  }
+  //   retType = solver->solve();
+  //   numIters_ = solver->getNumIters();
+  //   loaDetected_ = solver->isLOADetected();
+  //   achievedTol_ = solver->achievedTol();
+
+  // }
   else if (maxDegree_) {
 
     // Apply the polynomial to the current linear system
@@ -706,8 +707,8 @@ ReturnType GmresPolySolMgr<ScalarType,MV,OP>::solve ()
 }
 
 
-template<class ScalarType, class MV, class OP>
-std::string GmresPolySolMgr<ScalarType,MV,OP>::description () const
+template<class ScalarType, class MV, class OP, class DM>
+std::string GmresPolySolMgr<ScalarType,MV,OP,DM>::description () const
 {
   std::ostringstream out;
 

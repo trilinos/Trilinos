@@ -8,8 +8,8 @@
 // @HEADER
 
 // Purpose
-// The example tests the successive right-hand sides capabilities of MueLu
-// and Belos on a heat flow u_t = u_xx problem.
+// The example tests the successive right-hand sides capabilities of Belos
+// on a heat flow u_t = u_xx problem.
 //
 // A sequence of linear systems with the same coefficient matrix and
 // different right-hand sides is solved.  A seed space is generated dynamically,
@@ -32,12 +32,12 @@
 
 // Adapted from test_pcpg_epetraex.cpp by David M. Day (with original comments)
 
-// All preconditioning has been commented out
-
 // Belos
 #include <BelosPCPGSolMgr.hpp>
 #include <BelosLinearProblem.hpp>
 #include <BelosTpetraAdapter.hpp>
+#include <BelosKokkosDenseAdapter.hpp>
+#include "BelosTpetraTestFramework.hpp"
 
 // Tpetra
 #include <Tpetra_Core.hpp>
@@ -45,10 +45,6 @@
 #include <Tpetra_Vector_fwd.hpp>
 #include <Tpetra_CrsMatrix_fwd.hpp>
 #include <TpetraExt_MatrixMatrix.hpp>
-
-// MueLu
-// #include <MueLu_TpetraOperator.hpp>
-// #include <MueLu_CreateTpetraPreconditioner.hpp>
 
 // Teuchos
 #include <Teuchos_RCP.hpp>
@@ -62,8 +58,7 @@
 #include <Teuchos_StandardCatchMacros.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 
-
-template<typename ScalarType>
+template <class ScalarType, class DM>
 int run(int argc, char *argv[]) {
     using ST = typename Tpetra::Vector<ScalarType>::scalar_type;
     using LO = typename Tpetra::Vector<>::local_ordinal_type;
@@ -81,8 +76,6 @@ int run(int argc, char *argv[]) {
     using tmap_t         = Tpetra::Map<LO,GO,NT>;
     using tvector_t      = Tpetra::Vector<ST,LO,GO,NT>;
     using tmultivector_t = Tpetra::MultiVector<ST,LO,GO,NT>;
-
-    // using mtoperator_t = MueLu::TpetraOperator<ST,LO,GO,NT>;
 
     using starray_t = Teuchos::Array<ST>;
     using goarray_t = Teuchos::Array<GO>;
@@ -251,23 +244,6 @@ int run(int argc, char *argv[]) {
         LHS = Teuchos::rcp_implicit_cast<tmultivector_t>(vecLHS);
         RHS = Teuchos::rcp_implicit_cast<tmultivector_t>(vecRHS);
 
-        ////////////////////////////////////////////////////
-        //            Construct Preconditioner            //
-        ////////////////////////////////////////////////////
-
-//         ParameterList MueLuList; // Set MueLuList for Smoothed Aggregation
-
-//         MueLuList.set("smoother: type", "CHEBYSHEV");
-//         MueLuList.set("smoother: pre or post", "both"); // both pre- and post-smoothing
-
-// #ifdef HAVE_MUELU_AMESOS2
-//         MueLuList.set("coarse: type", "KLU2");
-// #else
-//         MueLuList.set("coarse: type", "none")
-// #endif
-//         RCP<toperator_t> A_op = A;
-//         RCP<mtoperator_t> Prec = MueLu::CreateTpetraPreconditioner(A_op, MueLuList);
-
         ///////////////////////////////////////////////////
         //             Create Parameter List             //
         ///////////////////////////////////////////////////
@@ -301,8 +277,8 @@ int run(int argc, char *argv[]) {
         //  Construct /*Preconditioned*/ Linear Problem  //
         ///////////////////////////////////////////////////
 
-        RCP<Belos::LinearProblem<ST,MV,OP> > problem
-            = rcp( new Belos::LinearProblem<ST,MV,OP>( A, LHS, RHS ) );
+        RCP<Belos::LinearProblem<ST,MV,OP,DM> > problem
+          = rcp( new Belos::LinearProblem<ST,MV,OP,DM>( A, LHS, RHS ) );
 
         // problem->setLeftPrec( Prec ); // for Preconditioned Problem
 
@@ -315,8 +291,8 @@ int run(int argc, char *argv[]) {
         }
 
         // Create an iterative solver manager.
-        RCP< Belos::SolverManager<ST,MV,OP> > solver
-        = rcp( new Belos::PCPGSolMgr<ST,MV,OP>(problem, rcp(&belosList,false)) );
+        RCP< Belos::SolverManager<ST,MV,OP,DM> > solver
+        = rcp( new Belos::PCPGSolMgr<ST,MV,OP,DM>(problem, rcp(&belosList,false)) );
 
         ////////////////////////////////////////////////////
         //                  Iterate PCPG                  //
@@ -388,8 +364,5 @@ int run(int argc, char *argv[]) {
     return (success ? EXIT_SUCCESS : EXIT_FAILURE);
 } // run
 
-int main(int argc, char *argv[]) {
-    // run with different ST
-    run<double>(argc, argv);
-    // run<float>(argc, argv); // FAILS -- will need to change tolerance
-}
+
+BELOS_TPETRA_MAIN(run, typename Tpetra::MultiVector<>::scalar_type);

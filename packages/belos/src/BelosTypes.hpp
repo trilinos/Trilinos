@@ -17,6 +17,12 @@
 
 #include "BelosConfigDefs.hpp"
 #include "Teuchos_Assert.hpp"
+#ifdef HAVE_BELOS_DENSEMATRIXKOKKOSDEFAULT
+#include "Kokkos_DualView.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
+#else
+#include "Teuchos_SerialDenseMatrix.hpp"
+#endif
 
 namespace Belos {
 
@@ -326,6 +332,13 @@ namespace Belos {
     static const double impTolScale;
   };
 
+#ifdef HAVE_BELOS_DENSEMATRIXKOKKOSDEFAULT
+  template <class Ordinal, class Scalar>
+  using DefaultDenseMatrix = Kokkos::DualView<typename KokkosKernels::ArithTraits<Scalar>::val_type **, Kokkos::LayoutLeft>;
+#else
+  template <class Ordinal, class Scalar>
+  using DefaultDenseMatrix = Teuchos::SerialDenseMatrix<Ordinal, Scalar>;
+#endif
 
 } // end Belos namespace
 

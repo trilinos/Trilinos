@@ -52,10 +52,10 @@ int main(int argc, char *argv[])
   }
     typedef double ScalarType;
     typedef float ScalarType2;
-    typedef Belos::MultiVec<ScalarType> KMV;
-    typedef Belos::Operator<ScalarType> KOP; 
-    typedef Belos::MultiVec<ScalarType2> KMV2;
-    typedef Belos::Operator<ScalarType2> KOP2; 
+    typedef Belos::MultiVec<ScalarType, Teuchos::SerialDenseMatrix<int, ScalarType>> KMV;
+    typedef Belos::Operator<ScalarType, Teuchos::SerialDenseMatrix<int, ScalarType>> KOP;
+    typedef Belos::MultiVec<ScalarType2, Teuchos::SerialDenseMatrix<int, ScalarType2>> KMV2;
+    typedef Belos::Operator<ScalarType2, Teuchos::SerialDenseMatrix<int, ScalarType2>> KOP2;
     typedef Kokkos::DefaultExecutionSpace     EXSP;
 
     // Create an output manager to handle the I/O from the solver (defaults to std::cout).

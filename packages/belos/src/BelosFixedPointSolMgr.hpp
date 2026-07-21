@@ -27,6 +27,8 @@
 #include "BelosStatusTestCombo.hpp"
 #include "BelosStatusTestOutputFactory.hpp"
 #include "BelosOutputManager.hpp"
+#include "BelosTeuchosDenseAdapter.hpp"
+#include "BelosKokkosDenseAdapter.hpp"
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
 #  include "Teuchos_TimeMonitor.hpp"
 #endif
@@ -55,11 +57,11 @@ namespace Belos {
     FixedPointSolMgrLinearProblemFailure(const std::string& what_arg) : BelosError(what_arg)
     {}};
 
-  template<class ScalarType, class MV, class OP>
-  class FixedPointSolMgr : public SolverManager<ScalarType,MV,OP> {
+  template<class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int, ScalarType>>
+  class FixedPointSolMgr : public SolverManager<ScalarType,MV,OP,DM> {
 
   private:
-    typedef MultiVecTraits<ScalarType,MV> MVT;
+    typedef MultiVecTraits<ScalarType,MV,DM> MVT;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
@@ -94,22 +96,22 @@ namespace Belos {
      *                                         information is printed. Default: false
      *   - "Timer Label" - a \c std::string to use as a prefix for the timer labels.  Default: "Belos"
      */
-    FixedPointSolMgr( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+    FixedPointSolMgr( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > &problem,
                    const Teuchos::RCP<Teuchos::ParameterList> &pl );
 
     //! Destructor.
     virtual ~FixedPointSolMgr() {};
 
     //! clone for Inverted Injection (DII)
-    Teuchos::RCP<SolverManager<ScalarType, MV, OP> > clone () const override {
-      return Teuchos::rcp(new FixedPointSolMgr<ScalarType,MV,OP>);
+    Teuchos::RCP<SolverManager<ScalarType, MV, OP, DM> > clone () const override {
+      return Teuchos::rcp(new FixedPointSolMgr<ScalarType,MV,OP,DM>);
     }
     //@}
 
     //! @name Accessor methods
     //@{ 
     
-    const LinearProblem<ScalarType,MV,OP>& getProblem() const override {
+    const LinearProblem<ScalarType,MV,OP,DM>& getProblem() const override {
       return *problem_;
     }
 
@@ -153,21 +155,21 @@ namespace Belos {
     //@{
    
     //! Set the linear problem that needs to be solved. 
-    void setProblem( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem ) override { problem_ = problem; }
+    void setProblem( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > &problem ) override { problem_ = problem; }
    
     //! Set the parameters the solver manager should use to solve the linear problem. 
     void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params ) override;
     
     //! Set user-defined convergence status test.
-    void replaceUserConvStatusTest( const Teuchos::RCP<StatusTestResNorm<ScalarType,MV,OP> > &userConvStatusTest )
+    void replaceUserConvStatusTest( const Teuchos::RCP<StatusTestResNorm<ScalarType,MV,OP,DM> > &userConvStatusTest )
     {
 
       convTest_ = userConvStatusTest;
 
-      typedef Belos::StatusTestCombo<ScalarType,MV,OP>  StatusTestCombo_t;
+      typedef Belos::StatusTestCombo<ScalarType,MV,OP,DM>  StatusTestCombo_t;
       sTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, maxIterTest_, convTest_ ) );
 
-      StatusTestOutputFactory<ScalarType,MV,OP> stoFactory( outputStyle_ );
+      StatusTestOutputFactory<ScalarType,MV,OP,DM> stoFactory( outputStyle_ );
       outputTest_ = stoFactory.create( printer_, sTest_, outputFreq_, Passed+Failed+Undefined );
 
       std::string solverDesc = " Fixed Point ";
@@ -218,7 +220,7 @@ namespace Belos {
   private:
 
     //! The linear problem to solve.
-    Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > problem_;
+    Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > problem_;
 
     //! Output manager, that handles printing of different kinds of messages.
     Teuchos::RCP<OutputManager<ScalarType> > printer_;
@@ -229,16 +231,16 @@ namespace Belos {
     ///
     /// This is an OR combination of the maximum iteration count test
     /// (\c maxIterTest_) and convergence test (\c convTest_).
-    Teuchos::RCP<StatusTest<ScalarType,MV,OP> > sTest_;
+    Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > sTest_;
 
     //! Maximum iteration count stopping criterion.
-    Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP> > maxIterTest_;
+    Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP,DM> > maxIterTest_;
 
     //! Convergence stopping criterion.
-    Teuchos::RCP<StatusTestResNorm<ScalarType,MV,OP> > convTest_;
+    Teuchos::RCP<StatusTestResNorm<ScalarType,MV,OP,DM> > convTest_;
 
     //! Output "status test" that controls all the other status tests.
-    Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP> > outputTest_;
+    Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP,DM> > outputTest_;
 
     //! Current parameter list.
     Teuchos::RCP<Teuchos::ParameterList> params_;
@@ -289,8 +291,8 @@ namespace Belos {
 
 
 // Empty Constructor
-template<class ScalarType, class MV, class OP>
-FixedPointSolMgr<ScalarType,MV,OP>::FixedPointSolMgr() :
+template<class ScalarType, class MV, class OP, class DM>
+FixedPointSolMgr<ScalarType,MV,OP,DM>::FixedPointSolMgr() :
   outputStream_(Teuchos::rcpFromRef(std::cout)),
   convtol_(DefaultSolverParameters::convTol),
   achievedTol_(Teuchos::ScalarTraits<MagnitudeType>::zero()),
@@ -307,9 +309,9 @@ FixedPointSolMgr<ScalarType,MV,OP>::FixedPointSolMgr() :
 
 
 // Basic Constructor
-template<class ScalarType, class MV, class OP>
-FixedPointSolMgr<ScalarType,MV,OP>::
-FixedPointSolMgr(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+template<class ScalarType, class MV, class OP, class DM>
+FixedPointSolMgr<ScalarType,MV,OP,DM>::
+FixedPointSolMgr(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > &problem,
               const Teuchos::RCP<Teuchos::ParameterList> &pl) :
   problem_(problem),
   outputStream_(Teuchos::rcpFromRef(std::cout)),
@@ -336,9 +338,9 @@ FixedPointSolMgr(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
   }
 }
 
-template<class ScalarType, class MV, class OP>
+template<class ScalarType, class MV, class OP, class DM>
 void
-FixedPointSolMgr<ScalarType,MV,OP>::
+FixedPointSolMgr<ScalarType,MV,OP,DM>::
 setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
 {
   // Create the internal parameter list if one doesn't already exist.
@@ -439,8 +441,8 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
   }
 
   // Convergence
-  typedef Belos::StatusTestCombo<ScalarType,MV,OP>  StatusTestCombo_t;
-  typedef Belos::StatusTestGenResNorm<ScalarType,MV,OP>  StatusTestResNorm_t;
+  typedef Belos::StatusTestCombo<ScalarType,MV,OP,DM>  StatusTestCombo_t;
+  typedef Belos::StatusTestGenResNorm<ScalarType,MV,OP,DM>  StatusTestResNorm_t;
 
   // Check for convergence tolerance
   if (params->isParameter("Convergence Tolerance")) {
@@ -471,7 +473,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
 
   // Basic test checks maximum iterations and native residual.
   if (maxIterTest_ == Teuchos::null)
-    maxIterTest_ = Teuchos::rcp( new StatusTestMaxIters<ScalarType,MV,OP>( maxIters_ ) );
+    maxIterTest_ = Teuchos::rcp( new StatusTestMaxIters<ScalarType,MV,OP,DM>( maxIters_ ) );
 
   // Implicit residual test, using the native residual to determine if convergence was achieved.
   if (convTest_ == Teuchos::null)
@@ -484,7 +486,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
 
     // Create the status test output class.
     // This class manages and formats the output from the status test.
-    StatusTestOutputFactory<ScalarType,MV,OP> stoFactory( outputStyle_ );
+    StatusTestOutputFactory<ScalarType,MV,OP,DM> stoFactory( outputStyle_ );
     outputTest_ = stoFactory.create( printer_, sTest_, outputFreq_, Passed+Failed+Undefined );
 
     // Set the solver string for the output test
@@ -506,9 +508,9 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
 }
 
 
-template<class ScalarType, class MV, class OP>
+template<class ScalarType, class MV, class OP, class DM>
 Teuchos::RCP<const Teuchos::ParameterList>
-FixedPointSolMgr<ScalarType,MV,OP>::getValidParameters() const
+FixedPointSolMgr<ScalarType,MV,OP,DM>::getValidParameters() const
 {
   static Teuchos::RCP<const Teuchos::ParameterList> validPL;
 
@@ -550,8 +552,8 @@ FixedPointSolMgr<ScalarType,MV,OP>::getValidParameters() const
 
 
 // solve()
-template<class ScalarType, class MV, class OP>
-ReturnType FixedPointSolMgr<ScalarType,MV,OP>::solve() {
+template<class ScalarType, class MV, class OP, class DM>
+ReturnType FixedPointSolMgr<ScalarType,MV,OP,DM>::solve() {
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_const_cast;
@@ -603,8 +605,8 @@ ReturnType FixedPointSolMgr<ScalarType,MV,OP>::solve() {
   ////////////////////////////////////////////////////////////////////////////
   // Set up the FixedPoint Iteration subclass.
 
-  RCP<FixedPointIteration<ScalarType,MV,OP> > block_fp_iter;
-  block_fp_iter = rcp (new FixedPointIter<ScalarType,MV,OP> (problem_, printer_, outputTest_, plist));
+  RCP<FixedPointIteration<ScalarType,MV,OP,DM> > block_fp_iter;
+  block_fp_iter = rcp (new FixedPointIter<ScalarType,MV,OP,DM> (problem_, printer_, outputTest_, plist));
 
   // Enter solve() iterations
   {
@@ -812,8 +814,8 @@ ReturnType FixedPointSolMgr<ScalarType,MV,OP>::solve() {
 }
 
 //  This method requires the solver manager to return a std::string that describes itself.
-template<class ScalarType, class MV, class OP>
-std::string FixedPointSolMgr<ScalarType,MV,OP>::description() const
+template<class ScalarType, class MV, class OP, class DM>
+std::string FixedPointSolMgr<ScalarType,MV,OP,DM>::description() const
 {
   std::ostringstream oss;
   oss << "Belos::FixedPointSolMgr<...,"<<Teuchos::ScalarTraits<ScalarType>::name()<<">";

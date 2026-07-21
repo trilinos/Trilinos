@@ -57,9 +57,10 @@ namespace Belos {
   TestKokkosMultiVecTraits (const Teuchos::RCP<OutputManager<ScalarType> > &om,
                       const Teuchos::RCP<const MV> &A)
   {
-    using Teuchos::SetScientific;
     using std::endl;
-    typedef MultiVecTraits<ScalarType, MV>    MVT;
+    using Teuchos::SetScientific;
+    using DM = Teuchos::SerialDenseMatrix<int, ScalarType>;
+    typedef MultiVecTraits<ScalarType, MV, DM>    MVT;
     typedef Teuchos::ScalarTraits<ScalarType> STS;
     typedef typename STS::magnitudeType       MagType;
 
@@ -788,7 +789,7 @@ namespace Belos {
       const int q = 9;
       Teuchos::RCP<MV> B, C;
       std::vector<MagType> normsB(p), normsC(q);
-      Teuchos::SerialDenseMatrix<int,ScalarType> SDM(p,q);
+      DM SDM(p,q);
 
       B = MVT::Clone(*A,p);
       C = MVT::Clone(*A,q);
@@ -942,7 +943,7 @@ namespace Belos {
                            normsC1(p), normsC2(p),
                            normsD1(p), normsD2(p);
 
-      Teuchos::SerialDenseMatrix<int,ScalarType> Alpha(1,1), Beta(1,1);
+      DM Alpha(1,1), Beta(1,1);
       Teuchos::randomSyncedMatrix( Alpha );
       Teuchos::randomSyncedMatrix( Beta );
       ScalarType alpha = Alpha(0,0),
@@ -1133,7 +1134,7 @@ namespace Belos {
     {
       const int p = 7, q = 5;
       Teuchos::RCP<MV> B, C;
-      Teuchos::SerialDenseMatrix<int,ScalarType> SDM(p,q);
+      DM SDM(p,q);
       std::vector<MagType> normsC1(q), normsC2(q),
                            normsB1(p), normsB2(p);
 
@@ -1269,7 +1270,7 @@ namespace Belos {
     {
       const int p = 5, q = 7;
       Teuchos::RCP<MV> B, C;
-      Teuchos::SerialDenseMatrix<int,ScalarType> SDM(p,q);
+      DM SDM(p,q);
       std::vector<MagType> normsC1(q), normsC2(q),
                            normsB1(p), normsB2(p);
 
@@ -1429,9 +1430,10 @@ namespace Belos {
                       const Teuchos::RCP<const MV> &A,
                       const Teuchos::RCP<const OP> &M)
   {
-    using Teuchos::SetScientific;
     using std::endl;
-    typedef MultiVecTraits<ScalarType, MV>    MVT;
+    using Teuchos::SetScientific;
+    using DM = Teuchos::SerialDenseMatrix<int, ScalarType>;
+    typedef MultiVecTraits<ScalarType, MV, DM> MVT;
     typedef Teuchos::ScalarTraits<ScalarType> STS;
     typedef typename STS::magnitudeType       MagType;
 
@@ -1451,7 +1453,7 @@ namespace Belos {
              Does not modify input arguments
     *********************************************************************/
 
-    typedef MultiVecTraits<ScalarType, MV>     MVT;
+    typedef MultiVecTraits<ScalarType, MV, DM> MVT;
     typedef Teuchos::ScalarTraits<ScalarType>  STS;
     typedef OperatorTraits<ScalarType, MV, OP> OPT;
     typedef typename STS::magnitudeType        MagType;

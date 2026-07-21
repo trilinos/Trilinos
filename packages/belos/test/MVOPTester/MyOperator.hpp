@@ -29,8 +29,8 @@
  *
  * \date Last modified on 01-Nov-05
  */
-template <class ScalarType>
-class MyOperator : public Belos::Operator<ScalarType>
+template <class ScalarType, class DM>
+class MyOperator : public Belos::Operator<ScalarType, DM>
 {
 
 public:

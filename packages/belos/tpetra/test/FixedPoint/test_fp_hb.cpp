@@ -16,11 +16,9 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosTpetraAdapter.hpp"
+#include "BelosKokkosDenseAdapter.hpp"
 #include "BelosFixedPointSolMgr.hpp"
-
-// I/O for Harwell-Boeing files
-#define HIDE_TPETRA_INOUT_IMPLEMENTATIONS
-#include <Tpetra_MatrixIO.hpp>
+#include "BelosTpetraTestFramework.hpp"
 
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_ParameterList.hpp>
@@ -28,6 +26,7 @@
 #include <Teuchos_StandardCatchMacros.hpp>
 #include <Tpetra_Core.hpp>
 #include <Tpetra_CrsMatrix.hpp>
+#include <Tpetra_MatrixIO.hpp>
 
 using namespace Teuchos;
 using Tpetra::Operator;
@@ -38,15 +37,16 @@ using std::cout;
 using std::vector;
 using Teuchos::tuple;
 
-int main(int argc, char *argv[]) {
-  typedef Tpetra::MultiVector<>::scalar_type ST;
+template <class ScalarType, class DM>
+int run(int argc, char *argv[]) {
+  typedef typename Tpetra::MultiVector<ScalarType>::scalar_type ST;
   typedef ScalarTraits<ST>                SCT;
-  typedef SCT::magnitudeType               MT;
+  typedef typename SCT::magnitudeType      MT;
   typedef Tpetra::Operator<ST>             OP;
   typedef Tpetra::MultiVector<ST>          MV;
   typedef Tpetra::Vector<ST>               VV;
   typedef Belos::OperatorTraits<ST,MV,OP> OPT;
-  typedef Belos::MultiVecTraits<ST,MV>    MVT;
+  typedef Belos::MultiVecTraits<ST,MV,DM> MVT;
   using GO = MV::global_ordinal_type;
 
   GlobalMPISession mpisess(&argc,&argv,&cout);
@@ -175,7 +175,7 @@ int main(int argc, char *argv[]) {
     //
     // Construct an linear problem instance.
     //
-    Belos::LinearProblem<ST,MV,OP> problem( A, X, B );
+    Belos::LinearProblem<ST,MV,OP,DM> problem( A, X, B );
     // diagonal preconditioner
     if (precond) {
       VV diagonal(A->getRowMap());
@@ -209,7 +209,7 @@ int main(int argc, char *argv[]) {
     // *************Start the fixed point iteration***********************
     // *******************************************************************
     //
-    Belos::FixedPointSolMgr<ST,MV,OP> solver( rcpFromRef(problem), rcpFromRef(belosList) );
+    Belos::FixedPointSolMgr<ST,MV,OP,DM> solver( rcpFromRef(problem), rcpFromRef(belosList) );
 
     //
     // **********Print out information about problem*******************
@@ -262,3 +262,6 @@ int main(int argc, char *argv[]) {
 
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 } // end test_fp_hb.cpp
+
+
+BELOS_TPETRA_MAIN(run, typename Tpetra::MultiVector<>::scalar_type);

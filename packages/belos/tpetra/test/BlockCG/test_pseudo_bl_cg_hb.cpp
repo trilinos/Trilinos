@@ -16,44 +16,51 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosTpetraAdapter.hpp"
+#include "BelosKokkosDenseAdapter.hpp"
 #include "BelosPseudoBlockCGSolMgr.hpp"
-
-#include <Tpetra_Core.hpp>
-#include <Tpetra_CrsMatrix.hpp>
-// I/O for Harwell-Boeing files
-#define HIDE_TPETRA_INOUT_IMPLEMENTATIONS
-#include <Tpetra_MatrixIO.hpp>
+#include "BelosTpetraTestFramework.hpp"
 
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
+#include <Tpetra_Core.hpp>
+#include <Tpetra_CrsMatrix.hpp>
+#include <Tpetra_MatrixIO.hpp>
 
-template <typename ScalarType>
-int run(int argc, char *argv[])
-{
-  using ST = typename Tpetra::MultiVector<ScalarType>::scalar_type;
-  using OP = typename Tpetra::Operator<ST>;
-  using MV = typename Tpetra::MultiVector<ST>;
+using namespace Teuchos;
+using Tpetra::Operator;
+using Tpetra::CrsMatrix;
+using Tpetra::MultiVector;
+using std::endl;
+using std::cout;
+using std::vector;
+using Teuchos::tuple;
 
-  using SCT = typename Teuchos::ScalarTraits<ST>;
-  using MT = typename SCT::magnitudeType;
-  
-  using OPT = typename Belos::OperatorTraits<ST,MV,OP>;
-  using MVT = typename Belos::MultiVecTraits<ST,MV>;
+template <class ScalarType, class DM>
+int run (int argc, char *argv[]) {
+  typedef ScalarType ST;
+  typedef ScalarTraits<ST>                SCT;
+  typedef typename SCT::magnitudeType               MT;
+  typedef Tpetra::Operator<ST>             OP;
+  typedef Tpetra::MultiVector<ST>          MV;
+  typedef Belos::OperatorTraits<ST,MV,OP> OPT;
+  typedef Belos::MultiVecTraits<ST,MV>    MVT;
 
-  using Teuchos::Comm;
-  using Teuchos::RCP;
-  
-  Teuchos::GlobalMPISession mpisess(&argc,&argv,&std::cout);
-  RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
-  int MyPID = rank(*comm);
+  GlobalMPISession mpisess(&argc,&argv,&cout);
 
   bool success = false;
   bool verbose = false;
-
   try {
+    const ST one  = SCT::one();
+
+    int MyPID = 0;
+
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
+
+    //
     // Get test parameters from command-line processor
+    //
     bool proc_verbose = false;
     bool debug = false;
     int frequency = -1;  // how often residuals are printed by solver
@@ -63,7 +70,7 @@ int run(int argc, char *argv[])
     std::string filename("bcsstk14.hb");
     MT tol = 1.0e-5;     // relative residual tolerance
 
-    Teuchos::CommandLineProcessor cmdp(false,true);
+    CommandLineProcessor cmdp(false,true);
     cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
     cmdp.setOption("debug","nodebug",&debug,"Run debugging checks.");
     cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
@@ -72,7 +79,7 @@ int run(int argc, char *argv[])
     cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
     cmdp.setOption("max-iters",&maxiters,"Maximum number of iterations per linear system (-1 := adapted to problem/block size).");
     cmdp.setOption("block-size",&blocksize,"Block size to be used by the CG solver.");
-    if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
+    if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
       return -1;
     }
     if (debug) {
@@ -82,16 +89,18 @@ int run(int argc, char *argv[])
       frequency = -1;  // reset frequency if test is not verbose
     }
 
-    // Verbose
+    MyPID = rank(*comm);
     proc_verbose = ( verbose && (MyPID==0) );
+
     if (proc_verbose) {
       std::cout << Belos::Belos_Version() << std::endl << std::endl;
     }
-    
+    //
     // Get the data from the HB file and build the Map,Matrix
-    RCP< Tpetra::CrsMatrix<ST> > A;
+    //
+    RCP<CrsMatrix<ST> > A;
     Tpetra::Utils::readHBMatrix(filename,comm,A);
-    RCP< const Tpetra::Map<> > map = A->getDomainMap();
+    RCP<const Tpetra::Map<> > map = A->getDomainMap();
 
     // Create initial vectors
     RCP<MV> B, X;
@@ -101,14 +110,16 @@ int run(int argc, char *argv[])
     OPT::Apply( *A, *X, *B );
     MVT::MvInit( *X, 0.0 );
 
-    // Other information used by block solver (can be user specified)
+    //
+    // ********Other information used by block solver***********
+    // *****************(can be user specified)******************
+    //
     const int NumGlobalElements = B->getGlobalLength();
     if (maxiters == -1) {
       maxiters = NumGlobalElements/blocksize - 1; // maximum number of iterations to run
     }
-
-    // Belos parameter list
-    Teuchos::ParameterList belosList;
+    //
+    ParameterList belosList;
     belosList.set( "Block Size", blocksize );              // Blocksize to be used by iterative solver
     belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
     belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
@@ -126,20 +137,26 @@ int run(int argc, char *argv[])
         belosList.set( "Output Frequency", frequency );
       }
     }
-    
+    //
     // Construct an unpreconditioned linear problem instance.
-    Belos::LinearProblem<ST,MV,OP> problem( A, X, B );
+    //
+    Belos::LinearProblem<ST,MV,OP,DM> problem( A, X, B );
     bool set = problem.setProblem();
     if (set == false) {
       if (proc_verbose)
         std::cout << std::endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
       return -1;
     }
+    //
+    // *******************************************************************
+    // *************Start the block CG iteration***********************
+    // *******************************************************************
+    //
+    Belos::PseudoBlockCGSolMgr<ST,MV,OP,DM> solver( rcpFromRef(problem), rcpFromRef(belosList) );
 
-    // Start the block CG iteration
-    Belos::PseudoBlockCGSolMgr<ST,MV,OP> solver( rcpFromRef(problem), rcpFromRef(belosList) );
-
-    // Print out information about problem
+    //
+    // **********Print out information about problem*******************
+    //
     if (proc_verbose) {
       std::cout << std::endl << std::endl;
       std::cout << "Dimension of matrix: " << NumGlobalElements << std::endl;
@@ -149,12 +166,13 @@ int run(int argc, char *argv[])
       std::cout << "Relative residual tolerance: " << tol << std::endl;
       std::cout << std::endl;
     }
-    
+    //
     // Perform solve
+    //
     Belos::ReturnType ret = solver.solve();
-
+    //
     // Compute actual residuals.
-    const ST one = SCT::one();
+    //
     bool badRes = false;
     std::vector<MT> actual_resids( numrhs );
     std::vector<MT> rhs_norm( numrhs );
@@ -197,12 +215,6 @@ int run(int argc, char *argv[])
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
-} // end test_pseudo_bl_cg_hb.cpp
+} // end test_bl_cg_hb.cpp
 
-int main(int argc, char *argv[]) {
-  return run<double>(argc,argv);
-
-  // wrapped with a check: CMake option Trilinos_ENABLE_FLOAT=ON
-  // return run<float>(argc,argv);
-}
-
+BELOS_TPETRA_MAIN(run, typename Tpetra::MultiVector<>::scalar_type);

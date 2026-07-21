@@ -24,9 +24,8 @@
 #include "BelosStatusTestGenResNorm.hpp"
 #include "BelosOperatorTraits.hpp"
 #include "BelosMultiVecTraits.hpp"
+#include "BelosDenseMatTraits.hpp"
 
-#include "Teuchos_SerialDenseMatrix.hpp"
-#include "Teuchos_SerialDenseVector.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
@@ -50,8 +49,8 @@ namespace Belos {
    *
    * This struct is utilized by CGIteration::initialize() and CGIteration::getState().
    */
-  template <class ScalarType, class MV>
-  class CGIterationState : public CGIterationStateBase<ScalarType, MV> {
+  template <class ScalarType, class MV, class DM>
+  class CGIterationState : public CGIterationStateBase<ScalarType, MV, DM> {
 
   public:
     CGIterationState() = default;
@@ -63,7 +62,7 @@ namespace Belos {
     virtual ~CGIterationState() = default;
 
     void initialize(Teuchos::RCP<const MV> tmp, int _numVectors) {
-      using MVT = MultiVecTraits<ScalarType, MV>;
+      using MVT = MultiVecTraits<ScalarType, MV, DM>;
       TEUCHOS_ASSERT(_numVectors == 1);
 
       // S = (R, Z)
@@ -78,11 +77,11 @@ namespace Belos {
       this->P = MVT::Clone( *tmp, 1 );
       this->AP = MVT::Clone(*tmp, 1);
 
-      CGIterationStateBase<ScalarType, MV>::initialize(tmp, _numVectors);
+      CGIterationStateBase<ScalarType, MV, DM>::initialize(tmp, _numVectors);
     }
 
     bool matches(Teuchos::RCP<const MV> tmp, int _numVectors=1) const {
-      return (CGIterationStateBase<ScalarType, MV>::matches(tmp, _numVectors) &&
+      return (CGIterationStateBase<ScalarType, MV, DM>::matches(tmp, _numVectors) &&
               !S.is_null());
     }
 
@@ -90,16 +89,17 @@ namespace Belos {
 
 };
 
-template<class ScalarType, class MV, class OP>
-class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
+template<class ScalarType, class MV, class OP, class DM>
+class CGIter : virtual public CGIteration<ScalarType,MV,OP,DM> {
 
   public:
 
   //
   // Convenience typedefs
   //
-  using MVT = MultiVecTraits<ScalarType, MV>;
+  using MVT = MultiVecTraits<ScalarType, MV, DM>;
   using OPT = OperatorTraits<ScalarType, MV, OP>;
+  using DMT = DenseMatTraits<ScalarType,DM>;
   using SCT = Teuchos::ScalarTraits<ScalarType>;
   using MagnitudeType = typename SCT::magnitudeType;
 
@@ -111,10 +111,10 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
    * This constructor takes pointers required by the linear solver iteration, in addition
    * to a parameter list of options for the linear solver.
    */
-  CGIter( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+  CGIter( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > &problem,
 		  const Teuchos::RCP<OutputManager<ScalarType> > &printer,
-		  const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
-                  const Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP> > &convTester,
+		  const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &tester,
+                  const Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP,DM> > &convTester,
 		  Teuchos::ParameterList &params );
 
   //! Destructor.
@@ -153,7 +153,7 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
    * \note For any pointer in \c newstate which directly points to the multivectors in
    * the solver, the data is not copied.
    */
-  void initializeCG(Teuchos::RCP<CGIterationStateBase<ScalarType,MV> > newstate, Teuchos::RCP<MV> R_0);
+  void initializeCG(Teuchos::RCP<CGIterationStateBase<ScalarType,MV, DM> > newstate, Teuchos::RCP<MV> R_0);
 
   /*! \brief Initialize the solver with the initial vectors from the linear problem
    *  or random data.
@@ -169,8 +169,8 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
    *
    * \returns A CGIterationState object containing const pointers to the current solver state.
    */
-  Teuchos::RCP<CGIterationStateBase<ScalarType,MV> > getState() const {
-    auto state = Teuchos::rcp(new CGIterationState<ScalarType,MV>());
+  Teuchos::RCP<CGIterationStateBase<ScalarType,MV, DM> > getState() const {
+    auto state = Teuchos::rcp(new CGIterationState<ScalarType,MV,DM>());
     state->R = R_;
     state->P = P_;
     state->AP = AP_;
@@ -179,8 +179,8 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
     return state;
   }
 
-  void setState(Teuchos::RCP<CGIterationStateBase<ScalarType,MV> > state) {
-    auto s = Teuchos::rcp_dynamic_cast<CGIterationState<ScalarType,MV> >(state, true);
+  void setState(Teuchos::RCP<CGIterationStateBase<ScalarType,MV, DM> > state) {
+    auto s = Teuchos::rcp_dynamic_cast<CGIterationState<ScalarType,MV,DM> >(state, true);
     R_ = s->R;
     Z_ = s->Z;
     P_ = s->P;
@@ -221,7 +221,7 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
   //@{
 
   //! Get a constant reference to the linear problem.
-  const LinearProblem<ScalarType,MV,OP>& getProblem() const { return *lp_; }
+  const LinearProblem<ScalarType,MV,OP,DM>& getProblem() const { return *lp_; }
 
   //! Get the blocksize to be used by the iterative solver in solving this linear problem.
   int getBlockSize() const { return 1; }
@@ -278,10 +278,10 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
   //
   // Classes inputed through constructor that define the linear problem to be solved.
   //
-  const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >    lp_;
+  const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> >    lp_;
   const Teuchos::RCP<OutputManager<ScalarType> >          om_;
-  const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >       stest_;
-  const Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP> >       convTest_;
+  const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> >       stest_;
+  const Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP,DM> >       convTest_;
 
   //
   // Current solver state
@@ -331,12 +331,12 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Constructor.
-  template<class ScalarType, class MV, class OP>
-  CGIter<ScalarType,MV,OP>::CGIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
-						   const Teuchos::RCP<OutputManager<ScalarType> > &printer,
-						   const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
-                                                   const Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP> > &convTester,
-						   Teuchos::ParameterList &params ):
+  template<class ScalarType, class MV, class OP, class DM>
+  CGIter<ScalarType,MV,OP,DM>::CGIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > &problem,
+				      const Teuchos::RCP<OutputManager<ScalarType> > &printer,
+				      const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &tester,
+                                      const Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP,DM> > &convTester,
+				      Teuchos::ParameterList &params ):
     lp_(problem),
     om_(printer),
     stest_(tester),
@@ -353,18 +353,18 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Initialize this iteration object
-  template <class ScalarType, class MV, class OP>
-  void CGIter<ScalarType,MV,OP>::initializeCG(Teuchos::RCP<CGIterationStateBase<ScalarType,MV> > newstate, Teuchos::RCP<MV> R_0)
+  template <class ScalarType, class MV, class OP, class DM>
+  void CGIter<ScalarType,MV,OP,DM>::initializeCG(Teuchos::RCP<CGIterationStateBase<ScalarType,MV, DM> > newstate, Teuchos::RCP<MV> R_0)
   {
     // Initialize the state storage if it isn't already.
     Teuchos::RCP<const MV> lhsMV = lp_->getLHS();
     Teuchos::RCP<const MV> rhsMV = lp_->getRHS();
     Teuchos::RCP<const MV> tmp = ( (rhsMV!=Teuchos::null)? rhsMV: lhsMV );
     TEUCHOS_ASSERT(!newstate.is_null());
-    if (!Teuchos::rcp_dynamic_cast<CGIterationState<ScalarType,MV> >(newstate, true)->matches(tmp, 1))
+    if (!Teuchos::rcp_dynamic_cast<CGIterationState<ScalarType,MV,DM> >(newstate, true)->matches(tmp, 1))
       newstate->initialize(tmp, 1);
     setState(newstate);
-
+  
     // Tracking information for condition number estimation
     if(numEntriesForCondEst_ > 0) {
       diag_.resize(numEntriesForCondEst_);
@@ -373,7 +373,7 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
 
     std::string errstr("Belos::CGIter::initialize(): Specified multivectors must have a consistent length and width.");
     {
-
+    
       TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength(*R_0) != MVT::GetGlobalLength(*R_),
                           std::invalid_argument, errstr );
       TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*R_0) != 1,
@@ -382,7 +382,7 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
       // Copy basis vectors from newstate into V
       if (R_0 != R_) {
         // copy over the initial residual (unpreconditioned).
-	MVT::Assign( *R_0, *R_ );
+        MVT::Assign( *R_0, *R_ );
       }
 
       // Compute initial direction vectors
@@ -411,8 +411,8 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Iterate until the status test informs us we should stop.
-  template <class ScalarType, class MV, class OP>
-  void CGIter<ScalarType,MV,OP>::iterate()
+  template<class ScalarType, class MV, class OP, class DM>
+  void CGIter<ScalarType,MV,OP,DM>::iterate()
   {
     //
     // Allocate/initialize data structures
@@ -427,7 +427,7 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
     std::vector<ScalarType> rHz(1);
     std::vector<ScalarType> rHz_old(1);
     std::vector<ScalarType> pAp(1);
-    Teuchos::SerialDenseMatrix<int,ScalarType> rHs( 1, 2 );
+    Teuchos::RCP<DM> rHs = DMT::Create( 1, 2 );
 
     // Create convenience variables for zero and one.
     const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
@@ -447,9 +447,10 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
 
     // Compute first <r,z> a.k.a. rHz
     if (foldConvergenceDetectionIntoAllreduce_ && convTest_->getResNormType() == Belos::TwoNorm) {
-      MVT::MvTransMv( one, *R_, *S_, rHs );
-      rHr_ = rHs(0,0);
-      rHz[0] = rHs(0,1);
+      MVT::MvTransMv( one, *R_, *S_, *rHs );
+      DMT::SyncDeviceToHost( *rHs );
+      rHr_ = DMT::ValueConst(*rHs,0,0);
+      rHz[0] = DMT::ValueConst(*rHs,0,1);
     } else
       MVT::MvDot( *R_, *Z_, rHz );
 
@@ -506,9 +507,10 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
       }
       //
       if (foldConvergenceDetectionIntoAllreduce_ && convTest_->getResNormType() == Belos::TwoNorm) {
-        MVT::MvTransMv( one, *R_, *S_, rHs );
-        rHr_ = rHs(0,0);
-        rHz[0] = rHs(0,1);
+        MVT::MvTransMv( one, *R_, *S_, *rHs );
+        DMT::SyncDeviceToHost( *rHs );
+        rHr_ = DMT::ValueConst(*rHs,0,0);
+        rHz[0] = DMT::ValueConst(*rHs,0,1);
       } else
         MVT::MvDot( *R_, *Z_, rHz );
       //

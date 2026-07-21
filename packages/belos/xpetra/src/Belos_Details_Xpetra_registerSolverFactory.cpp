@@ -39,16 +39,17 @@ void registerSolverFactory() {
 
 #define BELOS_XPETRA_CALL(INSTMACRO) TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(INSTMACRO)
 
-  #define BELOS_LCL_CALL_FOR_MANAGER(manager,name,SC, LO, GO, NT)              \
-    Impl::registerSolverSubclassForTypes<manager<                              \
-              SC,                                                              \
-              ::Xpetra::MultiVector<SC, LO, GO, NT>,                           \
-              ::Belos::OperatorT<::Xpetra::MultiVector<SC, LO, GO, NT>>>,      \
-              SC,                                                              \
-              ::Xpetra::MultiVector<SC, LO, GO, NT>,                           \
-              ::Belos::OperatorT<::Xpetra::MultiVector<SC, LO, GO, NT>>> (name);
+#define BELOS_LCL_CALL_FOR_MANAGER(manager, name, SC, LO, GO, NT)              \
+  Impl::registerSolverSubclassForTypes<                                        \
+      manager<SC, ::Xpetra::MultiVector<SC, LO, GO, NT>,                       \
+              ::Belos::OperatorT<::Xpetra::MultiVector<SC, LO, GO, NT>>,       \
+              ::Teuchos::SerialDenseMatrix<int, SC>>,                          \
+      SC, ::Xpetra::MultiVector<SC, LO, GO, NT>,                               \
+      ::Belos::OperatorT<::Xpetra::MultiVector<SC, LO, GO, NT>>,               \
+      ::Teuchos::SerialDenseMatrix<int, SC>>(name);
 
-  #define LCL_CALL( SC, LO, GO, NT ) BELOS_LCL_CALL_FOR_MANAGER(BiCGStabSolMgr, "BICGSTAB", SC, LO, GO, NT)
+#define LCL_CALL(SC, LO, GO, NT)                                               \
+  BELOS_LCL_CALL_FOR_MANAGER(BiCGStabSolMgr, "BICGSTAB", SC, LO, GO, NT)
   BELOS_XPETRA_CALL( LCL_CALL )
 
   #undef LCL_CALL

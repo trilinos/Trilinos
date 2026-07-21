@@ -18,7 +18,7 @@
 // for later solves.
 // The optimal numbers of vectors to deflate and save are not known.
 // Presently, the maximum number of vectors to deflate (seed space dimension)
-// and to save are user paraemters.
+// and to save are user parameters.
 // The seed space dimension is less than or equal to total number of vectors
 // saved. The difference between the seed space dimension and the total number
 // of vectors, is the number of vectors used to update the seed space after each
@@ -62,8 +62,10 @@
 #include "BelosLinearProblem.hpp"
 #include "BelosPCPGSolMgr.hpp"
 #include "BelosTpetraAdapter.hpp"
+#include "BelosKokkosDenseAdapter.hpp"
+#include "BelosTpetraTestFramework.hpp"
 
-template <typename ScalarType>
+template <class ScalarType, class DM>
 int run(int argc, char *argv[]) {
   //
   // Laplace's equation, homogeneous Dirichlet boundary conditions, [0,1]^2
@@ -83,15 +85,15 @@ int run(int argc, char *argv[]) {
   using V = typename Tpetra::Vector<ST, LO, GO, NT>;
   using MV = typename Tpetra::MultiVector<ST, LO, GO, NT>;
   using OP = typename Tpetra::Operator<ST, LO, GO, NT>;
-  using MVT = typename Belos::MultiVecTraits<ST, MV>;
+  using MVT = typename Belos::MultiVecTraits<ST, MV, DM>;
   using OPT = typename Belos::OperatorTraits<ST, MV, OP>;
   using MAP = typename Tpetra::Map<LO, GO, NT>;
   using MAT = typename Tpetra::CrsMatrix<ST, LO, GO, NT>;
   using SCT = typename Teuchos::ScalarTraits<ST>;
   using MT = typename SCT::magnitudeType;
 
-  using LinearProblem = typename Belos::LinearProblem<ST, MV, OP>;
-  using PCPGSolMgr = ::Belos::PCPGSolMgr<ST, MV, OP>;
+  using LinearProblem = typename Belos::LinearProblem<ST, MV, OP, DM>;
+  using PCPGSolMgr = ::Belos::PCPGSolMgr<ST, MV, OP, DM>;
 
   Teuchos::GlobalMPISession session(&argc, &argv, NULL);
   RCP<const Teuchos::Comm<int>> comm = Tpetra::getDefaultComm();
@@ -392,9 +394,7 @@ int run(int argc, char *argv[]) {
   return success ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
-int main(int argc, char *argv[]) { 
-  return run<double>(argc, argv);
-  // return run<float>(argc, argv); }
-}
+
+BELOS_TPETRA_MAIN(run, typename Tpetra::MultiVector<>::scalar_type);
 
 // end PCPGTpetraExFile.cpp

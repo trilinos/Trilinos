@@ -18,6 +18,8 @@
 #include "BelosTpetraAdapter.hpp"
 #include "BelosTpetraOperator.hpp"
 #include "BelosBlockGmresSolMgr.hpp"
+#include "BelosKokkosDenseAdapter.hpp"
+#include "BelosTpetraTestFramework.hpp"
 
 // I/O for Harwell-Boeing files
 #include "Tpetra_MatrixIO.hpp"
@@ -39,14 +41,15 @@ using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::ParameterList;
 
-int main(int argc, char *argv[]) {
-  typedef Tpetra::MultiVector<>::scalar_type ST;
+template <class ScalarType, class DM>
+int run(int argc, char *argv[]) {
+  typedef typename Tpetra::MultiVector<ScalarType>::scalar_type ST;
   typedef Teuchos::ScalarTraits<ST>       SCT;
-  typedef SCT::magnitudeType               MT;
+  typedef typename SCT::magnitudeType               MT;
   typedef Tpetra::Operator<ST>             OP;
   typedef Tpetra::MultiVector<ST>          MV;
   typedef Belos::OperatorTraits<ST,MV,OP> OPT;
-  typedef Belos::MultiVecTraits<ST,MV>    MVT;
+  typedef Belos::MultiVecTraits<ST,MV,DM> MVT;
 
   Tpetra::ScopeGuard tpetraScope(&argc,&argv);
 
@@ -153,21 +156,20 @@ int main(int argc, char *argv[]) {
     innerBelosList.set( "Timer Label", "Belos Preconditioner Solve" );// Choose a different label for the inner solve
 
     // *****Construct linear problem for the inner iteration using A *****
-    Belos::LinearProblem<ST,MV,OP> innerProblem;
+    Belos::LinearProblem<ST,MV,OP,DM> innerProblem;
     innerProblem.setOperator( A );
     innerProblem.setLabel( "Belos Preconditioner Solve" );
 
     //  
     // *****Create the inner block Gmres iteration********
     //  
-    RCP<Belos::TpetraOperator<ST>> innerSolver;
-    innerSolver = rcp( new Belos::TpetraOperator<ST>( rcpFromRef(innerProblem), rcpFromRef(innerBelosList), "Block Gmres", true ) );
+    auto innerSolver = rcp( new Belos::TpetraOperator<ST, typename MV::local_ordinal_type, typename MV::global_ordinal_type, typename MV::node_type, DM>( rcpFromRef(innerProblem), rcpFromRef(innerBelosList), "Block Gmres", true ) );
     //  
 
     //
     // Construct a linear problem instance with GMRES as preconditoner.
     //
-    Belos::LinearProblem<ST,MV,OP> problem( A, X, B );
+    Belos::LinearProblem<ST,MV,OP,DM> problem( A, X, B );
     problem.setInitResVec( B );
     problem.setRightPrec( innerSolver );
     problem.setLabel( "Belos Flexible Gmres Solve" );
@@ -182,7 +184,7 @@ int main(int argc, char *argv[]) {
     // *************Start the block Gmres iteration***********************
     // *******************************************************************
     //
-    Belos::BlockGmresSolMgr<ST,MV,OP> solver( rcpFromRef(problem), rcpFromRef(belosList) );
+    Belos::BlockGmresSolMgr<ST,MV,OP,DM> solver( rcpFromRef(problem), rcpFromRef(belosList) );
 
     //
     // **********Print out information about problem*******************
@@ -235,4 +237,6 @@ int main(int argc, char *argv[]) {
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
-} // end test_bl_fgmres_hb.cpp
+} // end test_kokkos_bl_fgmres_hb.cpp
+
+BELOS_TPETRA_MAIN(run, typename Tpetra::MultiVector<>::scalar_type);

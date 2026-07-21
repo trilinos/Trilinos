@@ -18,6 +18,7 @@
 #include "BelosLinearProblem.hpp"
 #include "BelosTpetraAdapter.hpp"
 #include "BelosGCRODRSolMgr.hpp"
+#include "BelosKokkosDenseAdapter.hpp"
 #include "BelosTpetraTestFramework.hpp"
 
 #include <Tpetra_Core.hpp>
@@ -27,7 +28,7 @@
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 
-template<typename ScalarType>
+template <class ScalarType, class DM>
 int run(int argc, char *argv[])
 {
   using Teuchos::Comm;
@@ -37,11 +38,11 @@ int run(int argc, char *argv[])
   
   using SCT = typename Teuchos::ScalarTraits<ST>;
   using MT = typename SCT::magnitudeType;
-  
+
   using OP = typename Tpetra::Operator<ST>;
   using MV = typename Tpetra::MultiVector<ST>;
   using OPT = typename Belos::OperatorTraits<ST,MV,OP>;
-  using MVT = typename Belos::MultiVecTraits<ST,MV>;
+  using MVT = typename Belos::MultiVecTraits<ST,MV,DM>;
 
   using tcrsmatrix_t = Tpetra::CrsMatrix<ST>;
 
@@ -60,7 +61,7 @@ int run(int argc, char *argv[])
   int maxsubspace = 250;      // maximum number of blocks the solver can use for the subspace
   int recycle = 50;      // maximum number of blocks the solver can use for the subspace
   int maxrestarts = 15;      // number of restarts allowed
-  std::string filename("sherman5.hb");
+  std::string filename("orsirr1.hb");
   std::string ortho("IMGS");
   MT tol = 1.0e-10;           // relative residual tolerance
 
@@ -128,7 +129,7 @@ int run(int argc, char *argv[])
   belosList.set( "Verbosity", verbosity );
   
   // Construct an unpreconditioned linear problem instance.
-  Belos::LinearProblem<ST,MV,OP> problem( A, X, B );
+  Belos::LinearProblem<ST,MV,OP,DM> problem( A, X, B );
   bool set = problem.setProblem();
   if (set == false) {
     if (proc_verbose)
@@ -137,7 +138,7 @@ int run(int argc, char *argv[])
   }
 
   // Start the GCRODR iteration
-  Belos::GCRODRSolMgr<ST,MV,OP> solver( rcpFromRef(problem), rcpFromRef(belosList) );
+  Belos::GCRODRSolMgr<ST,MV,OP,DM> solver( rcpFromRef(problem), rcpFromRef(belosList) );
 
   // Print out information about problem
   if (proc_verbose) {
@@ -190,8 +191,4 @@ int run(int argc, char *argv[])
   //
 } // end test_gcrodr_hb.cpp
 
-int main(int argc, char *argv[]) {
-  return run<double>(argc, argv);
-  // return run<float>(argc, argv);
-}
-
+BELOS_TPETRA_MAIN(run, typename Tpetra::MultiVector<>::scalar_type);

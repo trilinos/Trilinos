@@ -6,23 +6,15 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
 )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
+BELOS_ADD_EXECUTABLE_AND_TEUCHOS_AND_KOKKOS_TESTS(
   Tpetra_tfqmr_hb
   SOURCES test_tfqmr_hb.cpp
   COMM serial mpi
   ARGS
     "--verbose --not-pseudo --filename=orsirr1_scaled.hb"
+    "--verbose --pseudo --filename=orsirr1_scaled.hb"
     "--verbose --not-pseudo --explicit --filename=orsirr1_scaled.hb"
     "--verbose --not-pseudo --recursive --filename=orsirr1_scaled.hb"
-  STANDARD_PASS_OUTPUT
-)
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  Tpetra_pseudo_tfqmr_hb
-  SOURCES test_tfqmr_hb.cpp
-  COMM serial mpi
-  ARGS
-    "--verbose --pseudo --filename=orsirr1_scaled.hb"
   STANDARD_PASS_OUTPUT
 )
 

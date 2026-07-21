@@ -20,6 +20,7 @@
 
 #include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
 #include "BelosPseudoBlockCGIter.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
 
 /*!
   \class Belos::PseudoBlockCGIter
@@ -38,9 +39,9 @@
 
 namespace Belos {
 
-  template<class Storage, class MV, class OP>
-  class PseudoBlockCGIter<Sacado::MP::Vector<Storage>, MV, OP> :
-    virtual public CGIteration<Sacado::MP::Vector<Storage>, MV, OP> {
+  template<class Storage, class MV, class OP, class DM>
+  class PseudoBlockCGIter<Sacado::MP::Vector<Storage>, MV, OP, DM> :
+    virtual public CGIteration<Sacado::MP::Vector<Storage>, MV, OP, Teuchos::SerialDenseMatrix<int, Sacado::MP::Vector<Storage> > > {
 
   public:
 
@@ -48,7 +49,8 @@ namespace Belos {
     // Convenience typedefs
     //
     typedef Sacado::MP::Vector<Storage> ScalarType;
-    typedef MultiVecTraits<ScalarType,MV> MVT;
+    typedef Teuchos::SerialDenseMatrix<int, ScalarType> DMType;
+    typedef MultiVecTraits<ScalarType,MV,DM> MVT;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename SCT::magnitudeType MagnitudeType;
@@ -64,7 +66,7 @@ namespace Belos {
      */
     PseudoBlockCGIter( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
                           const Teuchos::RCP<OutputManager<ScalarType> > &printer,
-                          const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
+                          const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DMType> > &tester,
                           Teuchos::ParameterList &params );
 
     //! Destructor.
@@ -110,7 +112,7 @@ namespace Belos {
      * \note For any pointer in \c newstate which directly points to the multivectors in
      * the solver, the data is not copied.
      */
-    void initializeCG(Teuchos::RCP<CGIterationStateBase<ScalarType,MV> > newstate, Teuchos::RCP<MV> R_0);
+    void initializeCG(Teuchos::RCP<CGIterationStateBase<ScalarType,MV, DM> > newstate, Teuchos::RCP<MV> R_0);
 
     /*! \brief Initialize the solver with the initial vectors from the linear problem
      *  or random data.
@@ -127,8 +129,8 @@ namespace Belos {
      * \returns A CGIterationState object containing const pointers to the current
      * solver state.
      */
-    Teuchos::RCP<CGIterationStateBase<ScalarType,MV> > getState() const {
-      auto state = Teuchos::rcp(new PseudoBlockCGIterationState<ScalarType,MV>());
+    Teuchos::RCP<CGIterationStateBase<ScalarType,MV, DM> > getState() const {
+      auto state = Teuchos::rcp(new PseudoBlockCGIterationState<ScalarType,MV,DM>());
       state->R = R_;
       state->P = P_;
       state->AP = AP_;
@@ -136,8 +138,8 @@ namespace Belos {
       return state;
     }
 
-    void setState(Teuchos::RCP<CGIterationStateBase<ScalarType,MV> > state) {
-      auto s = Teuchos::rcp_dynamic_cast<PseudoBlockCGIterationState<ScalarType,MV> >(state, true);
+    void setState(Teuchos::RCP<CGIterationStateBase<ScalarType,MV, DM> > state) {
+      auto s = Teuchos::rcp_dynamic_cast<PseudoBlockCGIterationState<ScalarType,MV,DM> >(state, true);
       R_ = s->R;
       Z_ = s->Z;
       P_ = s->P;
@@ -223,9 +225,9 @@ namespace Belos {
     //
     // Classes inputed through constructor that define the linear problem to be solved.
     //
-    const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >    lp_;
-    const Teuchos::RCP<OutputManager<ScalarType> >          om_;
-    const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >       stest_;
+    const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >        lp_;
+    const Teuchos::RCP<OutputManager<ScalarType> >              om_;
+    const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DMType> >    stest_;
 
     //
     // Algorithmic parameters
@@ -274,11 +276,11 @@ namespace Belos {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Constructor.
-  template<class StorageType, class MV, class OP>
-  PseudoBlockCGIter<Sacado::MP::Vector<StorageType>,MV,OP>::
+  template<class StorageType, class MV, class OP, class DM>
+  PseudoBlockCGIter<Sacado::MP::Vector<StorageType>,MV,OP,DM>::
   PseudoBlockCGIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
                                                                const Teuchos::RCP<OutputManager<ScalarType> > &printer,
-                                                               const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
+                                                               const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DMType> > &tester,
                                                                Teuchos::ParameterList &params ):
     lp_(problem),
     om_(printer),
@@ -295,9 +297,9 @@ namespace Belos {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Initialize this iteration object
-  template <class StorageType, class MV, class OP>
-  void PseudoBlockCGIter<Sacado::MP::Vector<StorageType>,MV,OP>::
-  initializeCG(Teuchos::RCP<CGIterationStateBase<ScalarType,MV> >  newstate, Teuchos::RCP<MV> R_0) {
+  template <class StorageType, class MV, class OP, class DM>
+  void PseudoBlockCGIter<Sacado::MP::Vector<StorageType>,MV,OP,DM>::
+  initializeCG(Teuchos::RCP<CGIterationStateBase<ScalarType,MV,DM> >  newstate, Teuchos::RCP<MV> R_0) {
 
     // Check if there is any mltivector to clone from.
     Teuchos::RCP<const MV> lhsMV = lp_->getCurrLHSVec();
@@ -313,7 +315,7 @@ namespace Belos {
     numRHS_ = numRHS;
 
     // Initialize the state storage if it isn't already.
-    if (!Teuchos::rcp_dynamic_cast<PseudoBlockCGIterationState<ScalarType,MV> >(newstate, true)->matches(tmp, numRHS_))
+    if (!Teuchos::rcp_dynamic_cast<PseudoBlockCGIterationState<ScalarType,MV,DM> >(newstate, true)->matches(tmp, numRHS_))
       newstate->initialize(tmp, numRHS_);
     setState(newstate);
 
@@ -365,8 +367,8 @@ namespace Belos {
 
  //////////////////////////////////////////////////////////////////////////////////////////////////
   // Iterate until the status test informs us we should stop.
-  template <class StorageType, class MV, class OP>
-  void PseudoBlockCGIter<Sacado::MP::Vector<StorageType>,MV,OP>::
+  template <class StorageType, class MV, class OP, class DM>
+  void PseudoBlockCGIter<Sacado::MP::Vector<StorageType>,MV,OP,DM>::
   iterate()
   {
     //

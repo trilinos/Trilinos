@@ -1,6 +1,6 @@
 
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
+BELOS_ADD_EXECUTABLE_AND_TEUCHOS_AND_KOKKOS_TESTS(
   Tpetra_OrthoManager_test
   SOURCES belos_orthomanager_tpetra.cpp
   ARGS "--ortho=ICGS --verbose"

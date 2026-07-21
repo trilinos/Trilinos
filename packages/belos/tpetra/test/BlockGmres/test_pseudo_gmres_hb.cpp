@@ -28,10 +28,11 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosTpetraTestFramework.hpp"
+#include "BelosKokkosDenseAdapter.hpp"
 #include "BelosPseudoBlockGmresSolMgr.hpp"
 
 
-template <typename ScalarType>
+template <class ScalarType, class DM>
 int run(int argc, char *argv[]) {
 
   using ST = typename Tpetra::CrsMatrix<ScalarType>::scalar_type;
@@ -46,7 +47,7 @@ int run(int argc, char *argv[]) {
   using tmap_t       = Tpetra::Map<LO,GO,NT>;
   using tcrsmatrix_t = Tpetra::CrsMatrix<ST,LO,GO,NT>;
 
-  using MVT = typename Belos::MultiVecTraits<ST,MV>;
+  using MVT = typename Belos::MultiVecTraits<ST,MV,DM>;
   using OPT = typename Belos::OperatorTraits<ST,MV,OP>;
 
   using Teuchos::RCP;
@@ -133,7 +134,7 @@ int run(int argc, char *argv[]) {
     MVT::MvRandom( *initX );
     OPT::Apply( *A, *initX, *initB );
     initX->putScalar( 0.0 );
-    Belos::LinearProblem<ST,MV,OP> initProblem( A, initX, initB );
+    Belos::LinearProblem<ST,MV,OP,DM> initProblem( A, initX, initB );
     initProblem.setLabel("Belos Init");
 
     bool set = initProblem.setProblem();
@@ -148,8 +149,8 @@ int run(int argc, char *argv[]) {
     // *********************Perform initial solve*************************
     // *******************************************************************
 
-    RCP< Belos::SolverManager<ST,MV,OP> > initSolver
-      = rcp( new Belos::PseudoBlockGmresSolMgr<ST,MV,OP>( rcp(&initProblem,false), rcp(&belosList,false) ) );
+    RCP< Belos::SolverManager<ST,MV,OP,DM> > initSolver
+      = rcp( new Belos::PseudoBlockGmresSolMgr<ST,MV,OP,DM>( rcp(&initProblem,false), rcp(&belosList,false) ) );
 
     // Perform solve
     Belos::ReturnType ret = initSolver->solve();
@@ -197,7 +198,7 @@ int run(int argc, char *argv[]) {
     tmpX->scale( 1.0, *augX );
     tmpB->scale( 1.0, *augB );
 
-    Belos::LinearProblem<ST,MV,OP> augProblem( A, augX, augB );
+    Belos::LinearProblem<ST,MV,OP,DM> augProblem( A, augX, augB );
     augProblem.setLabel("Belos Aug");
 
     set = augProblem.setProblem();
@@ -217,8 +218,8 @@ int run(int argc, char *argv[]) {
     belosList.set( "Timer Label", "Belos Aug" );          // Label used by the timers in this solver
     belosList.set( "Implicit Residual Scaling", "Norm of RHS" ); // Implicit residual scaling for convergence
     belosList.set( "Explicit Residual Scaling", "Norm of RHS" ); // Explicit residual scaling for convergence
-    RCP< Belos::SolverManager<ST,MV,OP> > augSolver
-      = rcp( new Belos::PseudoBlockGmresSolMgr<ST,MV,OP>( rcp(&augProblem,false), rcp(&belosList,false) ) );
+    RCP< Belos::SolverManager<ST,MV,OP,DM> > augSolver
+      = rcp( new Belos::PseudoBlockGmresSolMgr<ST,MV,OP,DM>( rcp(&augProblem,false), rcp(&belosList,false) ) );
 
     // Perform solve
     ret = augSolver->solve();
@@ -281,8 +282,4 @@ int run(int argc, char *argv[]) {
   return success ? EXIT_SUCCESS : EXIT_FAILURE;
 } // run
 
-int main(int argc, char *argv[]) {
-  // run with different ST
-  return run<double>(argc,argv);
-  // run<float>(argc,argv); // FAILS
-}
+BELOS_TPETRA_MAIN(run, typename Tpetra::MultiVector<>::scalar_type);

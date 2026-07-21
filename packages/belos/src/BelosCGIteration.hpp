@@ -29,7 +29,7 @@ namespace Belos {
    *
    * This struct is utilized by CGIteration::initialize() and CGIteration::getState().
    */
-  template <class ScalarType, class MV>
+  template <class ScalarType, class MV, class DM>
   class CGIterationStateBase {
 
   public:
@@ -49,7 +49,7 @@ namespace Belos {
     int numVectors() const { return numVectors_; }
 
     virtual bool matches(Teuchos::RCP<const MV> tmp, int _numVectors=1) const {
-      using MVT = MultiVecTraits<ScalarType, MV>;
+      using MVT = MultiVecTraits<ScalarType, MV, DM>;
       return (isInitialized() &&
               !R.is_null() &&
               !Z.is_null() &&
@@ -138,8 +138,8 @@ namespace Belos {
   //@}
 
 
-template<class ScalarType, class MV, class OP>
-class CGIteration : virtual public Iteration<ScalarType,MV,OP> {
+template<class ScalarType, class MV, class OP, class DM>
+class CGIteration : virtual public Iteration<ScalarType,MV,OP,DM> {
 
   public:
 
@@ -159,7 +159,7 @@ class CGIteration : virtual public Iteration<ScalarType,MV,OP> {
    * \note For any pointer in \c newstate which directly points to the multivectors in
    * the solver, the data is not copied.
    */
-  virtual void initializeCG(Teuchos::RCP<CGIterationStateBase<ScalarType,MV> > newstate, Teuchos::RCP<MV> R_0) = 0;
+  virtual void initializeCG(Teuchos::RCP<CGIterationStateBase<ScalarType,MV, DM> > newstate, Teuchos::RCP<MV> R_0) = 0;
 
   /*! \brief Get the current state of the linear solver.
    *
@@ -167,9 +167,9 @@ class CGIteration : virtual public Iteration<ScalarType,MV,OP> {
    *
    * \returns A CGIterationState object containing const pointers to the current solver state.
    */
-  virtual Teuchos::RCP<CGIterationStateBase<ScalarType,MV> > getState() const = 0;
+  virtual Teuchos::RCP<CGIterationStateBase<ScalarType,MV, DM> > getState() const = 0;
 
-  virtual void setState(Teuchos::RCP<CGIterationStateBase<ScalarType,MV> > state) = 0;
+  virtual void setState(Teuchos::RCP<CGIterationStateBase<ScalarType,MV, DM> > state) = 0;
   //@}
 
 

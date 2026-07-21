@@ -15,6 +15,7 @@
 */
 
 #include "BelosConfigDefs.hpp"
+#include "BelosDenseMatTraits.hpp"
 #include "BelosTypes.hpp"
 
 #include "BelosOperator.hpp"
@@ -29,7 +30,6 @@
 
 #include "BelosStatusTestMaxIters.hpp"
 #include "BelosStatusTestGenResNorm.hpp"
-#include "BelosStatusTestImpResNorm.hpp"
 #include "BelosStatusTestCombo.hpp"
 #include "BelosStatusTestOutputFactory.hpp"
 
@@ -61,8 +61,8 @@ namespace Belos {
       {}};
 
   // Create a shell class for the MV, inherited off MultiVec<> that will operate with the GmresPolyOp.
-  template <class ScalarType, class MV>
-  class GmresPolyMv : public MultiVec< ScalarType > 
+  template <class ScalarType, class MV, class DM = DefaultDenseMatrix<int, ScalarType>>
+  class GmresPolyMv : public MultiVec< ScalarType, DM >
   {
     public:
 
@@ -104,37 +104,37 @@ namespace Belos {
      ptrdiff_t GetGlobalLength () const { return MVT::GetGlobalLength( *mv_ ); }
      int GetNumberVecs () const { return MVT::GetNumberVecs( *mv_ ); }
      void MvTimesMatAddMv (const ScalarType alpha,
-                           const MultiVec<ScalarType>& A,
-                           const Teuchos::SerialDenseMatrix<int,ScalarType>& B, const ScalarType beta) 
+                           const MultiVec<ScalarType, DM>& A,
+                           const DM& B, const ScalarType beta) 
      {  
-       const GmresPolyMv<ScalarType,MV>& A_in = dynamic_cast<const GmresPolyMv<ScalarType,MV>&>(A);
+       const GmresPolyMv<ScalarType,MV,DM>& A_in = dynamic_cast<const GmresPolyMv<ScalarType,MV,DM>&>(A);
        MVT::MvTimesMatAddMv( alpha, *(A_in.getConstMV()), B, beta, *mv_ );
      }
-     void MvAddMv ( const ScalarType alpha, const MultiVec<ScalarType>& A, const ScalarType beta, const MultiVec<ScalarType>& B ) 
+    void MvAddMv ( const ScalarType alpha, const MultiVec<ScalarType, DM>& A, const ScalarType beta, const MultiVec<ScalarType, DM>& B )
      {
-       const GmresPolyMv<ScalarType,MV>& A_in = dynamic_cast<const GmresPolyMv<ScalarType,MV>&>(A);
-       const GmresPolyMv<ScalarType,MV>& B_in = dynamic_cast<const GmresPolyMv<ScalarType,MV>&>(B);
+       const GmresPolyMv<ScalarType,MV,DM>& A_in = dynamic_cast<const GmresPolyMv<ScalarType,MV,DM>&>(A);
+       const GmresPolyMv<ScalarType,MV,DM>& B_in = dynamic_cast<const GmresPolyMv<ScalarType,MV,DM>&>(B);
        MVT::MvAddMv( alpha, *(A_in.getConstMV()), beta, *(B_in.getConstMV()), *mv_ );
      }
      void MvScale ( const ScalarType alpha ) { MVT::MvScale( *mv_, alpha ); }
      void MvScale ( const std::vector<ScalarType>& alpha ) { MVT::MvScale( *mv_, alpha ); }
-     void MvTransMv ( const ScalarType alpha, const MultiVec<ScalarType>& A, Teuchos::SerialDenseMatrix<int,ScalarType>& B) const 
+    void MvTransMv ( const ScalarType alpha, const MultiVec<ScalarType, DM>& A, DM& B) const
      {
-       const GmresPolyMv<ScalarType,MV>& A_in = dynamic_cast<const GmresPolyMv<ScalarType,MV>&>(A);
+       const GmresPolyMv<ScalarType,MV,DM>& A_in = dynamic_cast<const GmresPolyMv<ScalarType,MV,DM>&>(A);
        MVT::MvTransMv( alpha, *(A_in.getConstMV()), *mv_, B );
      }
-     void MvDot ( const MultiVec<ScalarType>& A, std::vector<ScalarType>& b ) const 
+    void MvDot ( const MultiVec<ScalarType, DM>& A, std::vector<ScalarType>& b ) const
      {
-       const GmresPolyMv<ScalarType,MV>& A_in = dynamic_cast<const GmresPolyMv<ScalarType,MV>&>(A);
+       const GmresPolyMv<ScalarType,MV,DM>& A_in = dynamic_cast<const GmresPolyMv<ScalarType,MV,DM>&>(A);
        MVT::MvDot( *(A_in.getConstMV()), *mv_, b );
      }
      void MvNorm ( std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>& normvec, NormType type = TwoNorm ) const
      {
        MVT::MvNorm( *mv_, normvec, type ); 
      }
-     void SetBlock ( const MultiVec<ScalarType>& A, const std::vector<int>& index ) 
+    void SetBlock ( const MultiVec<ScalarType, DM>& A, const std::vector<int>& index )
      {
-       const GmresPolyMv<ScalarType,MV>& A_in = dynamic_cast<const GmresPolyMv<ScalarType,MV>&>(A);
+       const GmresPolyMv<ScalarType,MV,DM>& A_in = dynamic_cast<const GmresPolyMv<ScalarType,MV,DM>&>(A);
        MVT::SetBlock( *(A_in.getConstMV()), index, *mv_ );
      }
      void MvRandom () { MVT::MvRandom( *mv_ ); }
@@ -143,7 +143,7 @@ namespace Belos {
 
     private:
 
-      typedef MultiVecTraits<ScalarType,MV> MVT;
+      typedef MultiVecTraits<ScalarType,MV,DM> MVT;
 
       Teuchos::RCP<MV> mv_;
 
@@ -159,15 +159,18 @@ namespace Belos {
 
 	\author Heidi Thornquist and Jennifer Loe
   */
-  template <class ScalarType, class MV, class OP>
-  class GmresPolyOp : public Operator<ScalarType> {
+  template <class ScalarType, class MV, class OP, class DM>
+  class GmresPolyOp : public Operator<ScalarType, DM> {
+
+    using DMT = Belos::DenseMatTraits<ScalarType, DM>;
+
   public:
     
     //! @name Constructor/Destructor
     //@{ 
     
     //! Basic contstructor 
-    GmresPolyOp( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >& problem_in, 
+    GmresPolyOp( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> >& problem_in,
                  const Teuchos::RCP<Teuchos::ParameterList>& params_in
                )
       : problem_(problem_in), 
@@ -192,7 +195,7 @@ namespace Belos {
     }
 
     //! Given no ParameterList, constructor creates no polynomial and only applies the given operator.
-    GmresPolyOp( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >& problem_in )
+    GmresPolyOp( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> >& problem_in )
       : problem_(problem_in)
     {
       // If dimension is zero, it will just apply the operator from problem_in in the Apply method.
@@ -241,10 +244,10 @@ namespace Belos {
     /*! \brief This routine casts the MultiVec to GmresPolyMv to retrieve the MV.  Then the above
         apply method is called.
     */
-    void Apply ( const MultiVec<ScalarType>& x, MultiVec<ScalarType>& y, ETrans /* trans */=NOTRANS ) const
+    void Apply ( const MultiVec<ScalarType, DM>& x, MultiVec<ScalarType, DM>& y, ETrans /* trans */=NOTRANS ) const
     {
-      const GmresPolyMv<ScalarType,MV>& x_in = dynamic_cast<const GmresPolyMv<ScalarType,MV>&>(x);
-      GmresPolyMv<ScalarType,MV>& y_in = dynamic_cast<GmresPolyMv<ScalarType,MV>&>(y);
+      const GmresPolyMv<ScalarType,MV,DM>& x_in = dynamic_cast<const GmresPolyMv<ScalarType,MV,DM>&>(x);
+      GmresPolyMv<ScalarType,MV,DM>& y_in = dynamic_cast<GmresPolyMv<ScalarType,MV,DM>&>(y);
       ApplyPoly( *(x_in.getConstMV()), *(y_in.getMV()) ); 
     }
 
@@ -258,7 +261,7 @@ namespace Belos {
     std::string polyUpdateLabel_;
 
     typedef int OT; //Ordinal type 
-    typedef MultiVecTraits<ScalarType,MV> MVT;
+    typedef MultiVecTraits<ScalarType,MV,DM> MVT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT ;
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
     typedef Teuchos::ScalarTraits<MagnitudeType> MCT ;
@@ -274,7 +277,7 @@ namespace Belos {
     static constexpr bool addRoots_default_ = true;
 
     // Variables for generating the polynomial
-    Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > problem_;
+    Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > problem_;
     Teuchos::RCP<Teuchos::ParameterList> params_;
     Teuchos::RCP<const OP> LP_, RP_;
 
@@ -283,7 +286,7 @@ namespace Belos {
     Teuchos::RCP<std::ostream> outputStream_ = Teuchos::rcpFromRef(std::cout);
  
     // Orthogonalization manager.
-    Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > ortho_;
+    Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP,DM> > ortho_;
 
     // Current polynomial parameters
     MagnitudeType polyTol_ = DefaultSolverParameters::polyTol;
@@ -299,12 +302,12 @@ namespace Belos {
     
     // Variables for Arnoldi polynomial
     mutable Teuchos::RCP<MV> V_, wL_, wR_;
-    Teuchos::SerialDenseMatrix<OT,ScalarType> H_, y_;
-    Teuchos::SerialDenseVector<OT,ScalarType> r0_;
+    DM H_, y_;
+    DM r0_;
 
     // Variables for Gmres polynomial;
     bool autoDeg = false;
-    Teuchos::SerialDenseMatrix< OT, ScalarType > pCoeff_;
+    DM pCoeff_;
 
     // Variables for Roots polynomial:
     Teuchos::SerialDenseMatrix< OT, MagnitudeType > theta_; 
@@ -317,8 +320,8 @@ namespace Belos {
     void ComputeAddedRoots();
   };
   
-  template <class ScalarType, class MV, class OP>
-  void GmresPolyOp<ScalarType, MV, OP>::setParameters( const Teuchos::RCP<Teuchos::ParameterList>& params_in )
+  template <class ScalarType, class MV, class OP, class DM>
+  void GmresPolyOp<ScalarType, MV, OP, DM>::setParameters( const Teuchos::RCP<Teuchos::ParameterList>& params_in )
   {
     // Check which Gmres polynomial to use
     if (params_in->isParameter("Polynomial Type")) {
@@ -381,8 +384,8 @@ namespace Belos {
     }
   }
 
-  template <class ScalarType, class MV, class OP>
-  void GmresPolyOp<ScalarType, MV, OP>::generateGmresPoly()
+  template <class ScalarType, class MV, class OP, class DM>
+  void GmresPolyOp<ScalarType, MV, OP, DM>::generateGmresPoly()
   {
     Teuchos::RCP< MV > V = MVT::Clone( *problem_->getRHS(), maxDegree_+1 );   
 
@@ -417,7 +420,7 @@ namespace Belos {
     Teuchos::RCP< const MV > AV = MVT::CloneView( *V, range);
    
     //Make lhs (AV)^T(AV)
-    Teuchos::SerialDenseMatrix< OT, ScalarType > AVtransAV( maxDegree_, maxDegree_);
+    DM AVtransAV = *DMT::Create( maxDegree_, maxDegree_);
     MVT::MvTransMv( SCT::one(), *AV, *AV, AVtransAV);
     //This process adds pDeg*pDeg + pDeg inner products that aren't in the final count.
 
@@ -426,12 +429,13 @@ namespace Belos {
     bool status = true; //Keep adjusting poly deg when true.
    
     dim_ = maxDegree_; 
-    Teuchos::SerialDenseMatrix< OT, ScalarType > lhs;
+    DM lhs;
     while( status && dim_ >= 1)
     {
-      Teuchos::SerialDenseMatrix< OT, ScalarType > lhstemp(Teuchos::Copy, AVtransAV,  dim_, dim_);
-      lapack.POTRF( 'U', dim_, lhstemp.values(), lhstemp.stride(), &infoInt);
+      DM lhstemp = *DMT::SubviewCopy(AVtransAV, dim_, dim_);
+      lapack.POTRF( 'U', dim_, DMT::GetRawHostPtr(lhstemp), DMT::GetStride(lhstemp), &infoInt);
       
+      DMT::SyncHostToDevice(lhstemp);
       if(autoDeg == false)
       { 
         status = false;
@@ -459,21 +463,22 @@ namespace Belos {
     } 
     if(dim_ == 0)
     {
-      pCoeff_.shape( 1, 1);
-      pCoeff_(0,0) = SCT::one(); 
+      DMT::Reshape(pCoeff_, 1, 1);
+      DMT::Value(pCoeff_, 0,0) = SCT::one();
       std::cout << "Poly Degree is zero.  No preconditioner created." << std::endl;
     } 
     else
     {
-      pCoeff_.shape( dim_, 1);
+      DMT::Reshape(pCoeff_, dim_, 1);
       //Get correct submatrix of AV:
       Teuchos::Range1D rangeSub( 1, dim_);
       Teuchos::RCP< const MV > AVsub = MVT::CloneView( *V, rangeSub);
       
       //Compute rhs (AV)^T V0
       MVT::MvTransMv( SCT::one(), *AVsub, *V0, pCoeff_);
-      lapack.POTRS( 'U', dim_, 1, lhs.values(), lhs.stride(), pCoeff_.values(), pCoeff_.stride(), &infoInt);
+      lapack.POTRS( 'U', dim_, 1, DMT::GetRawHostPtr(lhs), DMT::GetStride(lhs), DMT::GetRawHostPtr(pCoeff_), DMT::GetStride(pCoeff_), &infoInt);
       if(infoInt != 0) 
+      DMT::SyncHostToDevice(pCoeff_);
       {
         std::cout << "BelosGmresPolyOp.hpp: LAPACK POTRS was not successful!!" << std::endl;
         std::cout << "Error code: " << infoInt << std::endl; 
@@ -481,8 +486,8 @@ namespace Belos {
     } 
   }
 
-  template <class ScalarType, class MV, class OP>
-  void GmresPolyOp<ScalarType, MV, OP>::generateArnoldiPoly()
+  template <class ScalarType, class MV, class OP, class DM>
+  void GmresPolyOp<ScalarType, MV, OP, DM>::generateArnoldiPoly()
   {
     std::string polyLabel = label_ + ": GmresPolyOp creation";
 
@@ -497,8 +502,8 @@ namespace Belos {
     else {
       MVT::Assign( *(MVT::CloneView(*(problem_->getRHS()), idx)), *newB );
     }
-    Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > newProblem =
-      Teuchos::rcp( new LinearProblem<ScalarType,MV,OP>( problem_->getOperator(), newX, newB ) );
+    Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > newProblem =
+      Teuchos::rcp( new LinearProblem<ScalarType,MV,OP,DM>( problem_->getOperator(), newX, newB ) );
     newProblem->setInitResVec( newB );
     newProblem->setLeftPrec( problem_->getLeftPrec() );
     newProblem->setRightPrec( problem_->getRightPrec() );
@@ -520,28 +525,28 @@ namespace Belos {
     // Create orthogonalization manager if we need to.  
     if (ortho_.is_null()) {
       params_->set("Orthogonalization", orthoType_);
-      Belos::OrthoManagerFactory<ScalarType, MV, OP> factory;
+      Belos::OrthoManagerFactory<ScalarType, MV, OP, DM> factory;
       Teuchos::RCP<Teuchos::ParameterList> paramsOrtho;   // can be null
 
       ortho_ = factory.makeMatOrthoManager (orthoType_, Teuchos::null, printer_, polyLabel, paramsOrtho);
     }
 
     // Create a simple status test that either reaches the relative residual tolerance or maximum polynomial size.
-    Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP> > maxItrTst =
-      Teuchos::rcp( new StatusTestMaxIters<ScalarType,MV,OP>( maxDegree_ ) );
+    Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP,DM> > maxItrTst =
+      Teuchos::rcp( new StatusTestMaxIters<ScalarType,MV,OP,DM>( maxDegree_ ) );
   
     // Implicit residual test, using the native residual to determine if convergence was achieved.
-    Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP> > convTst =
-      Teuchos::rcp( new StatusTestGenResNorm<ScalarType,MV,OP>( polyTol_ ) );
+    Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP,DM> > convTst =
+      Teuchos::rcp( new StatusTestGenResNorm<ScalarType,MV,OP,DM>( polyTol_ ) );
     convTst->defineScaleForm( convertStringToScaleType("Norm of RHS"), Belos::TwoNorm );
   
     // Convergence test that stops the iteration when either are satisfied.
-    Teuchos::RCP<StatusTestCombo<ScalarType,MV,OP> > polyTest =
-      Teuchos::rcp( new StatusTestCombo<ScalarType,MV,OP>( StatusTestCombo<ScalarType,MV,OP>::OR, maxItrTst, convTst ) );
+    Teuchos::RCP<StatusTestCombo<ScalarType,MV,OP,DM> > polyTest =
+      Teuchos::rcp( new StatusTestCombo<ScalarType,MV,OP,DM>( StatusTestCombo<ScalarType,MV,OP,DM>::OR, maxItrTst, convTst ) );
   
     // Create Gmres iteration object to perform one cycle of Gmres.
-    Teuchos::RCP<BlockGmresIter<ScalarType,MV,OP> > gmres_iter;
-    gmres_iter = Teuchos::rcp( new BlockGmresIter<ScalarType,MV,OP>(newProblem,printer_,polyTest,ortho_,polyList) );
+    Teuchos::RCP<BlockGmresIter<ScalarType,MV,OP,DM> > gmres_iter;
+    gmres_iter = Teuchos::rcp( new BlockGmresIter<ScalarType,MV,OP,DM>(newProblem,printer_,polyTest,ortho_,polyList) );
  
     // Create the first block in the current Krylov basis (residual).
     Teuchos::RCP<MV> V_0 = MVT::CloneCopy( *newB );
@@ -554,15 +559,16 @@ namespace Belos {
     }
   
     // Get a matrix to hold the orthonormalization coefficients.
-    r0_.resize(1);
+    DMT::Reshape(r0_, 1, 1);
 
     // Orthonormalize the new V_0
     int rank = ortho_->normalize( *V_0, Teuchos::rcpFromRef(r0_) );
     TEUCHOS_TEST_FOR_EXCEPTION(rank != 1,GmresPolyOpOrthoFailure,
       "Belos::GmresPolyOp::generateArnoldiPoly(): Failed to compute initial block of orthonormal vectors for polynomial generation.");
   
+    DMT::SyncDeviceToHost(r0_);
     // Set the new state and initialize the solver.
-    GmresIterationState<ScalarType,MV> newstate;
+    GmresIterationState<ScalarType,MV,DM> newstate;
     newstate.V = V_0;
     newstate.z = Teuchos::rcpFromRef( r0_);
     newstate.curDim = 0;
@@ -587,7 +593,7 @@ namespace Belos {
     Teuchos::RCP<MV> currX = gmres_iter->getCurrentUpdate();
   
     // Record polynomial info, get current GMRES state
-    GmresIterationState<ScalarType,MV> gmresState = gmres_iter->getState();
+    GmresIterationState<ScalarType,MV,DM> gmresState = gmres_iter->getState();
   
     // If the polynomial has no dimension, the tolerance is too low, return false
     dim_ = gmresState.curDim;
@@ -597,7 +603,7 @@ namespace Belos {
     if(polyType_ == "Arnoldi"){
       //  Make a view and then copy the RHS of the least squares problem.
       //
-      y_ = Teuchos::SerialDenseMatrix<OT,ScalarType>( Teuchos::Copy, *gmresState.z, dim_, 1 );
+      y_ = *DMT::SubviewCopy(*gmresState.z, dim_, 1);
       H_ = *gmresState.H;
 
       //
@@ -606,52 +612,56 @@ namespace Belos {
       Teuchos::BLAS<OT,ScalarType> blas;
       blas.TRSM( Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
           Teuchos::NON_UNIT_DIAG, dim_, 1, SCT::one(),
-          gmresState.R->values(), gmresState.R->stride(),
-          y_.values(), y_.stride() );
+                DMT::GetConstRawHostPtr(*gmresState.R), DMT::GetStride(*gmresState.R),
+                DMT::GetRawHostPtr(y_), DMT::GetStride(y_) );
+      // DMT::SyncHostToDevice(*gmresState.R);  // Why sync this when the result is in y? Shouldn't y be sync'ed before update is computed?
+      DMT::SyncHostToDevice(y_);
     }
     else{ //Generate Roots Poly
     //Find Harmonic Ritz Values to use as polynomial roots:
     
     //Copy of square H used to find poly roots:
-    H_ = Teuchos::SerialDenseMatrix<OT,ScalarType>(Teuchos::Copy, *gmresState.H, dim_, dim_);
+    H_ = *DMT::SubviewCopy(*gmresState.H, dim_, dim_);
     //Zero out below subdiagonal of H:
     for(int i=0; i <= dim_-3; i++) {
       for(int k=i+2; k <= dim_-1; k++) {
-        H_(k,i) = SCT::zero();
+        DMT::Value(H_,k,i) = SCT::zero();
       }
     }
     //Extra copy of H because equilibrate changes the matrix: 
-    Teuchos::SerialDenseMatrix<OT,ScalarType> Htemp (Teuchos::Copy, H_, dim_, dim_);
+    DMT::SyncHostToDevice(H_);
+    DM Htemp = *DMT::CreateCopy(H_);
 
     //View the m+1,m element and last col of H:
-    ScalarType Hlast = (*gmresState.H)(dim_,dim_-1);
-    Teuchos::SerialDenseMatrix<OT,ScalarType> HlastCol (Teuchos::View, H_, dim_, 1, 0, dim_-1);
+    ScalarType Hlast = DMT::ValueConst(*gmresState.H,dim_,dim_-1);
+    DM HlastCol = *DMT::Subview(H_, dim_, 1, 0, dim_-1);
 
     //Set up linear system for H^{-*}e_m:
-    Teuchos::SerialDenseMatrix< OT, ScalarType > F(dim_,1), E(dim_,1);
-    E.putScalar(SCT::zero());
-    E(dim_-1,0) = SCT::one();
+    DM F = *DMT::Create(dim_,1);
+    DM E = *DMT::Create(dim_,1);
+    DMT::PutScalar(E, SCT::zero());
+    DMT::Value(E, dim_-1,0) = SCT::one();
       
-    Teuchos::SerialDenseSolver< OT, ScalarType > HSolver;
-    HSolver.setMatrix( Teuchos::rcpFromRef(Htemp));
-    HSolver.solveWithTransposeFlag( Teuchos::CONJ_TRANS );
-    HSolver.setVectors( Teuchos::rcpFromRef(F), Teuchos::rcpFromRef(E));
-    HSolver.factorWithEquilibration( true );
+    auto HSolver = DMT::createDenseSolver();
+    HSolver->setMatrix( Teuchos::rcpFromRef(Htemp));
+    HSolver->solveWithTransposeFlag( Teuchos::CONJ_TRANS );
+    HSolver->setVectors( Teuchos::rcpFromRef(F), Teuchos::rcpFromRef(E));
+    HSolver->factorWithEquilibration( true );
 
     //Factor matrix and solve for F = H^{-*}e_m:
     int info = 0;
-    info = HSolver.factor();
+    info = HSolver->factor();
     if(info != 0){
       std::cout << "Hsolver factor: info = " << info << std::endl;
     }
-    info = HSolver.solve();
+    info = HSolver->solve();
     if(info != 0){
       std::cout << "Hsolver solve : info = " << info << std::endl;
     }
 
     //Scale F and adjust H for Harmonic Ritz value eigenproblem:
-    F.scale(Hlast*Hlast); 
-    HlastCol += F; 
+    DMT::Scale(F, Hlast*Hlast);
+    DMT::Add(HlastCol, F);
 
     //Set up for eigenvalue problem to get Harmonic Ritz Values:
     Teuchos::LAPACK< OT, ScalarType > lapack;
@@ -666,11 +676,11 @@ namespace Belos {
     std::vector<MagnitudeType> rwork(2*dim_);
 
     //Find workspace size for DGEEV:
-    lapack.GEEV('N','N',dim_,H_.values(),H_.stride(),theta_[0],theta_[1],vlr, ldv, vlr, ldv, &work[0], lwork, &rwork[0], &info);
+    lapack.GEEV('N','N',dim_,DMT::GetRawHostPtr(H_),DMT::GetStride(H_),theta_[0],theta_[1],vlr, ldv, vlr, ldv, &work[0], lwork, &rwork[0], &info);
     lwork = std::abs (static_cast<int> (Teuchos::ScalarTraits<ScalarType>::real (work[0])));
     work.resize( lwork );
     // Solve for Harmonic Ritz Values:
-    lapack.GEEV('N','N',dim_,H_.values(),H_.stride(),theta_[0],theta_[1],vlr, ldv, vlr, ldv, &work[0], lwork, &rwork[0], &info);
+    lapack.GEEV('N','N',dim_,DMT::GetRawHostPtr(H_),DMT::GetStride(H_),theta_[0],theta_[1],vlr, ldv, vlr, ldv, &work[0], lwork, &rwork[0], &info);
 
     if(info != 0){
       std::cout << "GEEV solve : info = " << info << std::endl;
@@ -694,8 +704,8 @@ namespace Belos {
   }
   
   //Function determines whether added roots are needed and adds them if option is turned on.
-  template <class ScalarType, class MV, class OP>
-  void GmresPolyOp<ScalarType, MV, OP>::ComputeAddedRoots()
+  template <class ScalarType, class MV, class OP, class DM>
+  void GmresPolyOp<ScalarType, MV, OP, DM>::ComputeAddedRoots()
   {
     // Store theta (with cols for real and imag parts of Harmonic Ritz Vals) 
     // as one vector of complex numbers to perform arithmetic:
@@ -773,8 +783,8 @@ namespace Belos {
 
   // Modified Leja sorting function. Takes a serial dense matrix of M harmonic Ritz values and an index
   // of values from 0 to M. Returns the sorted values and sorted index, similar to Matlab.
-  template <class ScalarType, class MV, class OP>
-  void GmresPolyOp<ScalarType, MV, OP>::SortModLeja(Teuchos::SerialDenseMatrix< OT, MagnitudeType > &thetaN, std::vector<int> &index) const 
+  template <class ScalarType, class MV, class OP, class DM>
+  void GmresPolyOp<ScalarType, MV, OP, DM>::SortModLeja(Teuchos::SerialDenseMatrix< OT, MagnitudeType > &thetaN, std::vector<int> &index) const
   {
     //Sort theta values via Modified Leja Ordering:
 
@@ -855,8 +865,8 @@ namespace Belos {
     index = newIndex;
   } //End Modified Leja ordering
 
-  template <class ScalarType, class MV, class OP>
-  void GmresPolyOp<ScalarType, MV, OP>::ApplyPoly( const MV& x, MV& y ) const 
+  template <class ScalarType, class MV, class OP, class DM>
+  void GmresPolyOp<ScalarType, MV, OP, DM>::ApplyPoly( const MV& x, MV& y ) const
   {
     if (dim_) {
       if (polyType_ == "Arnoldi")
@@ -872,8 +882,8 @@ namespace Belos {
     }  
   }
 
-  template <class ScalarType, class MV, class OP>
-  void GmresPolyOp<ScalarType, MV, OP>::ApplyGmresPoly( const MV& x, MV& y ) const 
+  template <class ScalarType, class MV, class OP, class DM>
+  void GmresPolyOp<ScalarType, MV, OP, DM>::ApplyGmresPoly( const MV& x, MV& y ) const
   {
     Teuchos::RCP<MV> AX = MVT::CloneCopy(x);
     Teuchos::RCP<MV> AX2 = MVT::Clone( x, MVT::GetNumberVecs(x) );
@@ -889,7 +899,7 @@ namespace Belos {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
       Teuchos::TimeMonitor updateTimer( *timerPolyUpdate_ );
 #endif
-      MVT::MvAddMv(pCoeff_(0,0), *AX, SCT::zero(), y, y); //y= coeff_i(A^ix)
+      MVT::MvAddMv(DMT::ValueConst(pCoeff_,0,0), *AX, SCT::zero(), y, y); //y= coeff_i(A^ix)
     }
     for( int i=1; i < dim_; i++)
     {
@@ -909,7 +919,7 @@ namespace Belos {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
         Teuchos::TimeMonitor updateTimer( *timerPolyUpdate_ );
 #endif
-        MVT::MvAddMv(pCoeff_(i,0), *Y, SCT::one(), y, y); //y= coeff_i(A^ix) +y
+        MVT::MvAddMv(DMT::ValueConst(pCoeff_,i,0), *Y, SCT::one(), y, y); //y= coeff_i(A^ix) +y
       }
     }
 
@@ -920,8 +930,8 @@ namespace Belos {
     }
   }
 
-  template <class ScalarType, class MV, class OP>
-  void GmresPolyOp<ScalarType, MV, OP>::ApplyRootsPoly( const MV& x, MV& y ) const 
+  template <class ScalarType, class MV, class OP, class DM>
+  void GmresPolyOp<ScalarType, MV, OP, DM>::ApplyRootsPoly( const MV& x, MV& y ) const
   {
     MVT::MvInit( y, SCT::zero() ); //Zero out y to take the vector with poly applied.
     Teuchos::RCP<MV> prod = MVT::CloneCopy(x);
@@ -993,8 +1003,8 @@ namespace Belos {
     }
   }
 
-  template <class ScalarType, class MV, class OP>
-  void GmresPolyOp<ScalarType, MV, OP>::ApplyArnoldiPoly( const MV& x, MV& y ) const 
+  template <class ScalarType, class MV, class OP, class DM>
+  void GmresPolyOp<ScalarType, MV, OP, DM>::ApplyArnoldiPoly( const MV& x, MV& y ) const
   {
     // Initialize vector storage.
     if (V_.is_null()) {
@@ -1059,16 +1069,17 @@ namespace Belos {
         }
 
         // Compute A*v_curr - v_prev*H(1:i,i)
-        Teuchos::SerialDenseMatrix<OT,ScalarType> h(Teuchos::View,H_,i+1,1,0,i);
+        // Teuchos::SerialDenseMatrix<OT,ScalarType> h(Teuchos::View,H_,i+1,1,0,i);
+        auto h = DMT::SubviewConst(H_,i+1,1,0,i);
         {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
           Teuchos::TimeMonitor updateTimer( *timerPolyUpdate_ );
 #endif
-          MVT::MvTimesMatAddMv( -SCT::one(), *v_prev, h, SCT::one(), *v_next );
+          MVT::MvTimesMatAddMv( -SCT::one(), *v_prev, *h, SCT::one(), *v_next );
         }
 
         // Scale by H(i+1,i)
-        MVT::MvScale( *v_next, SCT::one()/H_(i+1,i) );  
+        MVT::MvScale( *v_next, SCT::one()/DMT::ValueConst(H_, i+1,i) );
       }
 
       // Compute output y = V*y_./r0_
@@ -1077,7 +1088,7 @@ namespace Belos {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
           Teuchos::TimeMonitor updateTimer( *timerPolyUpdate_ );
 #endif
-          MVT::MvTimesMatAddMv( SCT::one()/r0_(0), *V_, y_, SCT::zero(), *wR_ );
+          MVT::MvTimesMatAddMv( SCT::one()/DMT::ValueConst(r0_, 0, 0), *V_, y_, SCT::zero(), *wR_ );
         }
         problem_->applyRightPrec( *wR_, *y_view );
       } 
@@ -1085,7 +1096,7 @@ namespace Belos {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
         Teuchos::TimeMonitor updateTimer( *timerPolyUpdate_ );
 #endif
-        MVT::MvTimesMatAddMv( SCT::one()/r0_(0), *V_, y_, SCT::zero(), *y_view );
+        MVT::MvTimesMatAddMv( SCT::one()/DMT::ValueConst(r0_, 0, 0), *V_, y_, SCT::zero(), *y_view );
       }
     } // (int j=0; j<n; ++j)
   } // end Apply()

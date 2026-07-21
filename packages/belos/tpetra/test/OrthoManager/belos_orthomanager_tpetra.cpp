@@ -15,6 +15,8 @@
 /// and Tpetra::Operator as the operator implementation.
 ///
 #include "belos_orthomanager_tpetra_util.hpp"
+#include "BelosKokkosDenseAdapter.hpp"
+
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Tpetra_Core.hpp"
 
@@ -226,7 +228,7 @@ public:
 // test are ScalarType and NodeType.
 //
 // Return true if test passed, else return false.
-template<class ScalarType, class LocalOrdinalType, class GlobalOrdinalType, class NodeType>
+template<class ScalarType, class LocalOrdinalType, class GlobalOrdinalType, class NodeType, class DM>
 bool runTest (const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
 {
   using Teuchos::ParameterList;
@@ -304,14 +306,14 @@ bool runTest (const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
 
   // This factory object knows how to make a (Mat)OrthoManager
   // subclass, given a name for the subclass and its parameters.
-  Belos::OrthoManagerFactory<scalar_type, MV, OP> factory;
+  Belos::OrthoManagerFactory<scalar_type, MV, OP, DM> factory;
 
   // Using the factory object, instantiate the specified OrthoManager
   // subclass to be tested.  Specify "default" parameters (which
   // should favor accuracy over performance), but override the default
   // parameters to get the desired normalization method for
   // SimpleOrthoManaager.
-  RCP<Belos::OrthoManager<scalar_type, MV> > orthoMan;
+  RCP<Belos::OrthoManager<scalar_type, MV, DM> > orthoMan;
   {
     std::string label (orthoManName);
     RCP<ParameterList> params =
@@ -342,7 +344,7 @@ bool runTest (const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
   // should return zero).
   int numFailed = 0;
   {
-    typedef Belos::Test::OrthoManagerTester<scalar_type, MV> tester_type;
+    typedef Belos::Test::OrthoManagerTester<scalar_type, MV, DM> tester_type;
     numFailed = tester_type::runTests (orthoMan, isRankRevealing, S,
                                        sizeX1, sizeX2, outMan);
   }
@@ -355,8 +357,9 @@ bool runTest (const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
   }
 }
 
+template <class ScalarType, class DM>
 int
-main (int argc, char *argv[])
+run (int argc, char *argv[])
 {
   using Teuchos::ParameterList;
   using Teuchos::parameterList;
@@ -376,9 +379,9 @@ main (int argc, char *argv[])
     typedef Tpetra::Map<>::node_type node_type;
 
     {
-      typedef Tpetra::MultiVector<>::scalar_type scalar_type;
+      typedef typename Tpetra::MultiVector<ScalarType>::scalar_type scalar_type;
       success = runTest<scalar_type, local_ordinal_type,
-              global_ordinal_type, node_type> (comm);
+                        global_ordinal_type, node_type, DM> (comm);
       if (success) {
         // The Trilinos test framework depends on seeing this message,
         // so don't rely on the OutputManager to report it correctly.
@@ -415,3 +418,6 @@ main (int argc, char *argv[])
 
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }
+
+
+BELOS_TPETRA_MAIN(run, typename Tpetra::MultiVector<>::scalar_type);

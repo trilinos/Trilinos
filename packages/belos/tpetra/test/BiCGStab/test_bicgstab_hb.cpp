@@ -15,6 +15,7 @@
 #include "BelosLinearProblem.hpp"
 #include "BelosTpetraAdapter.hpp"
 #include "BelosBiCGStabSolMgr.hpp"
+#include "BelosKokkosDenseAdapter.hpp"
 #include "BelosTpetraTestFramework.hpp"
 
 #include <Teuchos_CommandLineProcessor.hpp>
@@ -23,8 +24,11 @@
 #include "Teuchos_StandardCatchMacros.hpp"
 #include <Tpetra_Core.hpp>
 #include <Tpetra_CrsMatrix.hpp>
+#include <stdexcept>
 
-int main (int argc, char *argv[])
+
+template <class ScalarType, class DM>
+int run (int argc, char *argv[])
 {
   using Teuchos::ParameterList;
   using Teuchos::RCP;
@@ -32,13 +36,13 @@ int main (int argc, char *argv[])
   using std::cout;
   using std::endl;
 
-  typedef Tpetra::MultiVector<>::scalar_type ST;
+  typedef ScalarType ST;
   typedef Teuchos::ScalarTraits<ST>       SCT;
-  typedef SCT::magnitudeType               MT;
+  typedef typename SCT::magnitudeType               MT;
   typedef Tpetra::Operator<ST>             OP;
   typedef Tpetra::MultiVector<ST>          MV;
   typedef Belos::OperatorTraits<ST,MV,OP> OPT;
-  typedef Belos::MultiVecTraits<ST,MV>    MVT;
+  typedef Belos::MultiVecTraits<ST,MV,DM> MVT;
 
   Teuchos::GlobalMPISession mpisess(&argc,&argv,&cout);
 
@@ -119,8 +123,8 @@ int main (int argc, char *argv[])
     //
     // Construct a preconditioned linear problem
     //
-    RCP<Belos::LinearProblem<ST,MV,OP> > problem
-      = rcp (new Belos::LinearProblem<ST,MV,OP> (A, X, B));
+    RCP<Belos::LinearProblem<ST,MV,OP,DM> > problem
+      = rcp (new Belos::LinearProblem<ST,MV,OP,DM> (A, X, B));
     bool set = problem->setProblem ();
     if (! set) {
       if (proc_verbose) {
@@ -130,8 +134,7 @@ int main (int argc, char *argv[])
     }
 
     // Create a Belos solver.
-    RCP<Belos::SolverManager<ST,MV,OP> > solver
-      = rcp (new Belos::BiCGStabSolMgr<ST,MV,OP> (problem, belosList));
+    Belos::BiCGStabSolMgr<ST,MV,OP,DM> solver( problem, belosList );
 
     if (proc_verbose) {
       cout << endl << endl;
@@ -143,7 +146,7 @@ int main (int argc, char *argv[])
     }
 
     // Ask Belos to solve the linear system.
-    Belos::ReturnType ret = solver->solve();
+    Belos::ReturnType ret = solver.solve();
 
     //
     // Compute actual residuals.
@@ -188,3 +191,6 @@ int main (int argc, char *argv[])
 
   return success ? EXIT_SUCCESS : EXIT_FAILURE;
 }
+
+
+BELOS_TPETRA_MAIN(run, double);
