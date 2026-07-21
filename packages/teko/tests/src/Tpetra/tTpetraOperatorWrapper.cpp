@@ -197,7 +197,6 @@ bool tTpetraOperatorWrapper::test_functionality(int verbosity, std::ostream& os)
           Thyra::tpetraVectorSpace<ST, LO, GO, NT>(tpetraC->getRangeMap()), tpetraC),
       "A");
 
-  // const RCP<Thyra::TpetraOperatorWrapper> epetra_A = rcp(new Thyra::TpetraOperatorWrapper(A));
   const RCP<Teko::TpetraHelpers::TpetraOperatorWrapper> tpetra_A =
       rcp(new Teko::TpetraHelpers::TpetraOperatorWrapper(A));
 
@@ -229,6 +228,7 @@ bool tTpetraOperatorWrapper::test_functionality(int verbosity, std::ostream& os)
                     << " checking largest range element "
                     << "( largest = " << rangeMap->getMaxAllGlobalIndex()
                     << ", true = " << rangeMap->getGlobalNumElements() - 1 << " )");
+
   TEST_EQUALITY(domainMap->getGlobalNumElements() - 1,
                 (Tpetra::global_size_t)domainMap->getMaxAllGlobalIndex(),
                 "   tTpetraOperatorWrapper::test_functionality: "
@@ -244,22 +244,27 @@ bool tTpetraOperatorWrapper::test_functionality(int verbosity, std::ostream& os)
   {
     const RCP<MultiVectorBase<ST>> tv = Thyra::createMembers(A->domain(), 1);
     Thyra::randomize(-100.0, 100.0, tv.ptr());
-    // const Thyra::ConstVector<double> handle_tv(tv);
+
     const RCP<const MultiVectorBase<ST>> tv_0 =
         Teuchos::rcp_dynamic_cast<const Thyra::ProductMultiVectorBase<ST>>(tv)->getMultiVectorBlock(
             0);
+
     const RCP<const MultiVectorBase<ST>> tv_1 =
         Teuchos::rcp_dynamic_cast<const Thyra::ProductMultiVectorBase<ST>>(tv)->getMultiVectorBlock(
             1);
-    const Thyra::ConstDetachedSpmdVectorView<ST> vv_0(tv_0->col(0));
-    const Thyra::ConstDetachedSpmdVectorView<ST> vv_1(tv_1->col(0));
 
-    LO off_0 = vv_0.globalOffset();
-    LO off_1 = vv_1.globalOffset();
-
-    // create its Tpetra counter part
+    // create its Tpetra counterpart
     const RCP<Tpetra::Vector<ST, LO, GO, NT>> ev =
         rcp(new Tpetra::Vector<ST, LO, GO, NT>(tpetra_A->getDomainMap()));
+
+    //
+    // Important:
+    // Do not create Thyra::DetachedSpmdVectorView objects before this copy.
+    // Detached Thyra views create host views. On GPU builds, holding those
+    // host views while Tpetra tries to access device data can trigger:
+    //
+    //   Cannot access data on device while a host view is alive
+    //
     ms->copyThyraIntoTpetra(tv, *ev);
 
     // compare tv to ev!
@@ -269,70 +274,112 @@ bool tTpetraOperatorWrapper::test_functionality(int verbosity, std::ostream& os)
                       << " checking ThyraIntoTpetra copy "
                       << "( thyra dim = " << tv->range()->dim()
                       << ", global length = " << ev->getGlobalLength() << " )");
-    LO numMyElements = domainMap->getLocalNumElements();
+
     TEST_MSG("domainMap->getLocalNumElements() = " << domainMap->getLocalNumElements());
-    bool compareThyraToTpetraValue = true;
-    ST tval                        = 0.0;
-    for (LO i = 0; i < numMyElements; i++) {
-      GO gid = domainMap->getGlobalElement(i);
-      if (gid - off_0 < nx * ny) {
-        tval = vv_0[gid - off_0];
-      } else {
-        tval = vv_1[gid - off_1 - nx * ny];
+
+    {
+      // Create host views only after the copy has completed, and keep them
+      // scoped tightly.
+      const Thyra::ConstDetachedSpmdVectorView<ST> vv_0(tv_0->col(0));
+      const Thyra::ConstDetachedSpmdVectorView<ST> vv_1(tv_1->col(0));
+
+      const GO off_0 = vv_0.globalOffset();
+      const GO off_1 = vv_1.globalOffset();
+
+      auto ev_view = ev->getLocalViewHost(Tpetra::Access::ReadOnly);
+
+      const LO numMyElements = static_cast<LO>(domainMap->getLocalNumElements());
+
+      bool compareThyraToTpetraValue = true;
+
+      for (LO i = 0; i < numMyElements; i++) {
+        const GO gid = domainMap->getGlobalElement(i);
+
+        ST tval = 0.0;
+        if (gid - off_0 < nx * ny) {
+          tval = vv_0[gid - off_0];
+        } else {
+          tval = vv_1[gid - off_1 - nx * ny];
+        }
+
+        compareThyraToTpetraValue &= (ev_view(i, 0) == tval);
       }
-      compareThyraToTpetraValue &= (ev->get1dView()[i] == tval);
+
+      TEST_ASSERT(compareThyraToTpetraValue, "   tTpetraOperatorWrapper::test_functionality: "
+                                                 << toString(status) << ": "
+                                                 << " comparing Thyra to Tpetra values");
     }
-    TEST_ASSERT(compareThyraToTpetraValue, "   tTpetraOperatorWrapper::test_functionality: "
-                                               << toString(status) << ": "
-                                               << " comparing Thyra to Tpetra values");
   }
 
   // create a vector to test: copyTpetraIntoThyra
   //////////////////////////////////////////////////////////////
   {
-    // create an Tpetra vector
+    // create a Tpetra vector
     const RCP<Tpetra::Vector<ST, LO, GO, NT>> ev =
         rcp(new Tpetra::Vector<ST, LO, GO, NT>(tpetra_A->getDomainMap()));
     ev->randomize();
 
-    // create its thyra counterpart
+    // create its Thyra counterpart
     const RCP<MultiVectorBase<ST>> tv = Thyra::createMembers(A->domain(), 1);
+
     const RCP<const MultiVectorBase<ST>> tv_0 =
         Teuchos::rcp_dynamic_cast<const Thyra::ProductMultiVectorBase<ST>>(tv)->getMultiVectorBlock(
             0);
+
     const RCP<const MultiVectorBase<ST>> tv_1 =
         Teuchos::rcp_dynamic_cast<const Thyra::ProductMultiVectorBase<ST>>(tv)->getMultiVectorBlock(
             1);
-    const Thyra::ConstDetachedSpmdVectorView<ST> vv_0(tv_0->col(0));
-    const Thyra::ConstDetachedSpmdVectorView<ST> vv_1(tv_1->col(0));
 
-    LO off_0 = rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<ST>>(tv_0->range())->localOffset();
-    LO off_1 = rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<ST>>(tv_1->range())->localOffset();
-
+    //
+    // Important:
+    // Do not create Thyra::DetachedSpmdVectorView objects before this copy.
+    // Those views are host views and must not be alive while the copy may
+    // access Tpetra/Kokkos device data.
+    //
     ms->copyTpetraIntoThyra(*ev, tv.ptr());
 
-    // compare handle_tv to ev!
+    // compare tv to ev!
     TEST_EQUALITY((Tpetra::global_size_t)tv->range()->dim(), ev->getGlobalLength(),
                   "   tTpetraOperatorWrapper::test_functionality: "
                       << toString(status) << ": "
                       << " checking TpetraIntoThyra copy "
                       << "( thyra dim = " << tv->range()->dim()
                       << ", global length = " << ev->getGlobalLength() << " )");
-    LO numMyElements               = domainMap->getLocalNumElements();
-    bool compareTpetraToThyraValue = true;
-    ST tval                        = 0.0;
-    for (LO i = 0; i < numMyElements; i++) {
-      GO gid = domainMap->getGlobalElement(i);
-      if (gid - off_0 < nx * ny) {
-        tval = vv_0[gid - off_0];
-      } else {
-        tval = vv_1[gid - off_1 - nx * ny];
+
+    {
+      // Create host views only after the copy has completed, and keep them
+      // scoped tightly.
+      const Thyra::ConstDetachedSpmdVectorView<ST> vv_0(tv_0->col(0));
+      const Thyra::ConstDetachedSpmdVectorView<ST> vv_1(tv_1->col(0));
+
+      const GO off_0 =
+          rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<ST>>(tv_0->range())->localOffset();
+      const GO off_1 =
+          rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<ST>>(tv_1->range())->localOffset();
+
+      auto ev_view = ev->getLocalViewHost(Tpetra::Access::ReadOnly);
+
+      const LO numMyElements = static_cast<LO>(domainMap->getLocalNumElements());
+
+      bool compareTpetraToThyraValue = true;
+
+      for (LO i = 0; i < numMyElements; i++) {
+        const GO gid = domainMap->getGlobalElement(i);
+
+        ST tval = 0.0;
+        if (gid - off_0 < nx * ny) {
+          tval = vv_0[gid - off_0];
+        } else {
+          tval = vv_1[gid - off_1 - nx * ny];
+        }
+
+        compareTpetraToThyraValue &= (ev_view(i, 0) == tval);
       }
-      compareTpetraToThyraValue &= (ev->get1dView()[i] == tval);
+
+      TEST_ASSERT(compareTpetraToThyraValue, "   tTpetraOperatorWrapper::test_functionality: "
+                                                 << toString(status) << ": "
+                                                 << " comparing Thyra to Tpetra values");
     }
-    TEST_ASSERT(compareTpetraToThyraValue, "   tTpetraOperatorWrapper::test_functionality: "
-                                               << toString(status) << ": "
-                                               << " comparing Thyra to Tpetra values");
   }
 
   return allPassed;
