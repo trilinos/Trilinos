@@ -150,7 +150,7 @@ void FieldBase::set_initial_value(const void* new_initial_value, unsigned num_by
   }
 }
 
-void FieldBase::insert_restriction(const char     * arg_method,
+void FieldBase::insert_restriction([[maybe_unused]] const char     * arg_method,
                                    const Part     & arg_part,
                                    const unsigned   arg_num_scalars_per_entity,
                                    const unsigned   arg_first_dimension,
@@ -265,7 +265,7 @@ void FieldBase::insert_restriction(const char     * arg_method,
   }
 }
 
-void FieldBase::insert_restriction(const char     * arg_method,
+void FieldBase::insert_restriction([[maybe_unused]] const char     * arg_method,
                                    const Selector & arg_selector,
                                    const unsigned   arg_num_scalars_per_entity,
                                    const unsigned   arg_first_dimension,
@@ -323,7 +323,7 @@ void FieldBase::insert_restriction(const char     * arg_method,
 
       for(FieldRestrictionVector::iterator i=restrs.begin(), iend=restrs.end(); i!=iend; ++i) {
 
-        const unsigned i_num_scalars_per_entity = i->num_scalars_per_entity();
+        [[maybe_unused]] const unsigned i_num_scalars_per_entity = i->num_scalars_per_entity();
 
         std::pair<bool,bool> result =
            check_for_existing_subsets_or_supersets(tmp, i,
@@ -388,7 +388,7 @@ void FieldBase::insert_restriction(const char     * arg_method,
   }
 }
 
-void FieldBase::verify_and_clean_restrictions(const Part& superset, const Part& subset)
+void FieldBase::verify_and_clean_restrictions([[maybe_unused]] const Part& superset, const Part& subset)
 {
   FieldRestrictionVector & restrs = restrictions();
 
@@ -502,24 +502,62 @@ unsigned FieldBase::max_extent(unsigned dimension) const
   }
 }
 
-void FieldBase::rotate_multistate_data(bool rotateNgpFieldViews)
+void FieldBase::rotate_multistate_data(bool alsoRotateOnDevice)
 {
   const int numStates = number_of_states();
-  if (numStates > 1 && StateNew == state()) {
 
-    Kokkos::Profiling::pushRegion("field-meta-data swap");
+  if (numStates > 1 && StateNew == state()) {
+#if defined(STK_USE_DEVICE_MESH)
+    bool allStatesHaveDeviceData = true;
+    bool anyStatesHaveDeviceData = false;
+    if (alsoRotateOnDevice) {
+      for (int s = 0; s < numStates; ++s) {
+        const bool stateHasDeviceData = field_state(static_cast<FieldState>(s))->has_device_data();
+        if (not stateHasDeviceData) {
+          allStatesHaveDeviceData = false;
+        }
+        if (stateHasDeviceData) {
+          anyStatesHaveDeviceData = true;
+        }
+      }
+
+      if (anyStatesHaveDeviceData) {
+        Kokkos::Profiling::pushRegion("update device field states");
+
+        if (not allStatesHaveDeviceData) {
+          construct_missing_device_states();
+        }
+
+        for (int s = 0; s < numStates; ++s) {
+          FieldBase* sField = field_state(static_cast<FieldState>(s));
+          FieldDataBase* sDeviceData = sField->get_device_data();
+          if (sDeviceData->needs_update()) {
+            sDeviceData->update(sField->get_execution_space(), sField->host_data_layout(), sField->need_sync_to_device());
+            sField->increment_num_syncs_to_device();
+            sField->clear_host_sync_state();
+            // sDeviceData->update(sField->get_execution_space(), sField->host_data_layout(), true);
+            if (sField->has_ngp_field()) {
+              // Since DeviceField holds a *copy* of the FieldData, force a reacquisition
+              sField->get_ngp_field()->update_field(sField->get_execution_space());
+            }
+          }
+        }
+        Kokkos::Profiling::popRegion();
+      }
+    }
+#endif
+
+    Kokkos::Profiling::pushRegion("rotate host field states");
     for (int s = numStates-1; s > 0; --s) {
       FieldBase* fieldOld = field_state(static_cast<FieldState>(s));
       FieldBase* fieldNew = field_state(static_cast<FieldState>(s-1));
 
-      auto& fieldMetaDataOld = fieldOld->data_bytes<std::byte>().m_fieldMetaData;
-      auto& fieldMetaDataNew = fieldNew->data_bytes<std::byte>().m_fieldMetaData;
-      const unsigned numBuckets = fieldMetaDataNew.size();
+      auto& hostFieldDataOld = *fieldOld->get_host_data();
+      auto& hostFieldDataNew = *fieldNew->get_host_data();
 
-      for (unsigned bucketIdx = 0; bucketIdx < numBuckets; ++bucketIdx) {
-        std::swap(fieldMetaDataOld[bucketIdx].m_data, fieldMetaDataNew[bucketIdx].m_data);
-      }
+      hostFieldDataNew.swap_field_data(hostFieldDataOld);
 
+      std::swap(fieldOld->m_fieldMetaDataModCount,   fieldNew->m_fieldMetaDataModCount);
       std::swap(fieldOld->m_numSyncsToHost,   fieldNew->m_numSyncsToHost);
       std::swap(fieldOld->m_numSyncsToDevice, fieldNew->m_numSyncsToDevice);
       std::swap(fieldOld->m_modifiedOnHost,   fieldNew->m_modifiedOnHost);
@@ -528,64 +566,68 @@ void FieldBase::rotate_multistate_data(bool rotateNgpFieldViews)
     Kokkos::Profiling::popRegion();
 
 #if defined(STK_USE_DEVICE_MESH)
-    bool allStatesHaveNgpFields = true;
-    for(int s = 0; s < numStates; ++s) {
-      if (not field_state(static_cast<FieldState>(s))->has_device_data()) {
-        allStatesHaveNgpFields = false;
+    if (alsoRotateOnDevice) {
+      if (anyStatesHaveDeviceData) {
+        Kokkos::Profiling::pushRegion("rotate device field states");
+        for (int s = numStates-1; s > 0; --s) {
+          FieldBase* fieldOld = field_state(static_cast<FieldState>(s));
+          FieldBase* fieldNew = field_state(static_cast<FieldState>(s-1));
+
+          auto& deviceFieldDataOld = *fieldOld->get_device_data();
+          auto& deviceFieldDataNew = *fieldNew->get_device_data();
+
+          deviceFieldDataNew.swap_field_data(deviceFieldDataOld);
+        }
+
+        Kokkos::fence();
+        Kokkos::Profiling::popRegion();
       }
     }
-
-    if (!(rotateNgpFieldViews && allStatesHaveNgpFields)) {
-      Kokkos::Profiling::pushRegion("ngpField update_bucket_pointer_view");
-      for(int s = 0; s < numStates; ++s) {
+    else {
+      // Don't rotate on device
+      Kokkos::Profiling::pushRegion("update device field states");
+      for (int s = 0; s < numStates; ++s) {
         FieldBase* sField = field_state(static_cast<FieldState>(s));
         FieldDataBase* deviceData = sField->get_device_data();
         if (deviceData != nullptr) {
           if (deviceData->needs_update()) {
-            deviceData->update(m_defaultExecSpace, host_data_layout(), need_sync_to_device());
+            deviceData->update(sField->get_execution_space(), sField->host_data_layout(), sField->need_sync_to_device());
+            sField->increment_num_syncs_to_device();
+            sField->clear_host_sync_state();
             if (sField->has_ngp_field()) {
               // Since DeviceField holds a *copy* of the FieldData, force a reacquisition
-              sField->get_ngp_field()->update_field(m_defaultExecSpace);
+              sField->get_ngp_field()->update_field(sField->get_execution_space());
             }
-            increment_num_syncs_to_device();
           }
           else {
             deviceData->update_host_bucket_pointers();
           }
-          deviceData->fence(m_defaultExecSpace);
+          deviceData->fence(sField->get_execution_space());
         }
       }
       Kokkos::Profiling::popRegion();
     }
-
-    Kokkos::Profiling::pushRegion("ngpField swap");
-    if (rotateNgpFieldViews && allStatesHaveNgpFields) {
-      for (int s = numStates-1; s > 0; --s) {
-        FieldBase* fieldOld = field_state(static_cast<FieldState>(s));
-        FieldBase* fieldNew = field_state(static_cast<FieldState>(s-1));
-
-        auto& deviceFieldMetaDataOld = fieldOld->data_bytes<std::byte, stk::ngp::DeviceSpace>().m_deviceFieldMetaData;
-        auto& deviceFieldMetaDataNew = fieldNew->data_bytes<std::byte, stk::ngp::DeviceSpace>().m_deviceFieldMetaData;
-        const unsigned numBuckets = deviceFieldMetaDataNew.extent(0);
-
-        Kokkos::parallel_for(numBuckets,
-          KOKKOS_LAMBDA(unsigned bucketIdx) {
-            std::byte* tmpData = deviceFieldMetaDataOld[bucketIdx].m_data;
-            deviceFieldMetaDataOld[bucketIdx].m_data = deviceFieldMetaDataNew[bucketIdx].m_data;
-            deviceFieldMetaDataNew[bucketIdx].m_data = tmpData;
-
-            std::byte* tmpHostData = deviceFieldMetaDataOld[bucketIdx].m_hostData;
-            deviceFieldMetaDataOld[bucketIdx].m_hostData = deviceFieldMetaDataNew[bucketIdx].m_hostData;
-            deviceFieldMetaDataNew[bucketIdx].m_hostData = tmpHostData;
-          }
-        );
-      }
-
-      Kokkos::fence();
-    }
-    Kokkos::Profiling::popRegion();
 #endif  // STK_USE_DEVICE_MESH
   }
+}
+
+void
+FieldBase::construct_missing_device_states()
+{
+#if defined(STK_USE_DEVICE_MESH)
+  const int numStates = number_of_states();
+
+  for (int s = 0; s < numStates; ++s) {
+    FieldBase* fieldState = field_state(static_cast<FieldState>(s));
+    if (not fieldState->has_device_data()) {
+      field_datatype_execute(*fieldState,
+        [&]<typename T>(const stk::mesh::FieldBase& fieldBase) {
+          fieldBase.update_or_create_device_field_data<T, stk::ngp::DeviceSpace, stk::mesh::Layout::Left>();
+        }
+      );
+    }
+  }
+#endif
 }
 
 void
@@ -633,7 +675,7 @@ FieldBase::need_sync_to_host() const
 void
 FieldBase::sync_to_host() const
 {
-  sync_to_host(m_defaultExecSpace);
+  sync_to_host(get_execution_space());
 }
 
 void FieldBase::sync_to_host(const stk::ngp::ExecSpace& execSpace) const
@@ -656,26 +698,31 @@ void FieldBase::sync_to_host(const stk::ngp::ExecSpace& execSpace) const
 void
 FieldBase::sync_to_device() const
 {
-  sync_to_device(m_defaultExecSpace);
+  sync_to_device(get_execution_space());
 }
 
 void FieldBase::sync_to_device(const stk::ngp::ExecSpace& execSpace) const
 {
+  if (has_device_data()) {
+    if (m_deviceFieldData->needs_update()) {
+      m_deviceFieldData->update(execSpace, host_data_layout(), need_sync_to_device());
+      increment_num_syncs_to_device();
+      clear_host_sync_state();
+      return;
+    }
+  }
+
   if (need_sync_to_device()) {
     ProfilingBlock prof("FieldBase::sync_to_device() for " + name());
     if (has_device_data()) {
-      if (m_deviceFieldData->needs_update()) {
-        m_deviceFieldData->update(execSpace, host_data_layout(), need_sync_to_device());
+      if (not has_unified_device_storage()) {
+        m_deviceFieldData->sync_to_device(execSpace, host_data_layout());
       }
       else {
-        if (not has_unified_device_storage()) {
-          m_deviceFieldData->sync_to_device(execSpace, host_data_layout());
-        }
-        else {
-          execSpace.fence();
-        }
+        execSpace.fence();
       }
     }
+
     increment_num_syncs_to_device();
     clear_host_sync_state();
   }
@@ -711,7 +758,7 @@ FieldBase::set_ngp_field(NgpFieldBase * ngpField) const
 void
 FieldBase::fence() const
 {
-  fence(m_defaultExecSpace);
+  fence(get_execution_space());
 }
 
 void

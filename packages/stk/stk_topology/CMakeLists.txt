@@ -1,6 +1,8 @@
 
 STK_SUBPACKAGE(Topology)
 
+message("STKTopology")
+
 ADD_SUBDIRECTORY(stk_topology)
 
 STK_SUBPACKAGE_POSTPROCESS()

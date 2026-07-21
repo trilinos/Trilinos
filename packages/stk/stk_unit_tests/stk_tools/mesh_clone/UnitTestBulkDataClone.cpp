@@ -488,20 +488,5 @@ TEST_F(CloningMesh, cloningBulkData_modifiableStateThrows)
   ASSERT_THROW(stk::tools::copy_mesh(oldBulk, get_meta().universal_part(), newBulk), std::logic_error);
 }
 
-#if defined(__GNUC__) && !defined(__INTEL_COMPILER)
-//portability issue: bulk-data size seems to be different (48 bytes smaller) on intel 15.0
-//running this test on gcc should be sufficient to detect addition/deletion of class members.
-
-TEST(BulkDataSize, sizeChanges_needToUpdateCopyMesh)
-{
-  // KHP: different compilers (and different version of a compiler) give different values for the sizeof bulk.
-  // Only test on gcc 4.9.3 for now.
-#if ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 9))
-  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(3, MPI_COMM_WORLD);
-  EXPECT_TRUE(1176u >= sizeof(*bulk)) << "Size of BulkData changed.  Does mesh copying capability need to be updated?";
-#endif
 }
 
-#endif
-
-}

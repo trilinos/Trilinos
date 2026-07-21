@@ -71,6 +71,12 @@ public:
     static_assert(DataLayout == Layout::Left, "Only Layout::Left is supported for device data");
   }
 
+  KOKKOS_DEFAULTED_FUNCTION EntityValues() = default;
+  KOKKOS_DEFAULTED_FUNCTION EntityValues(const EntityValues&) = default;
+  KOKKOS_DEFAULTED_FUNCTION EntityValues(EntityValues&&) = default;
+  KOKKOS_DEFAULTED_FUNCTION EntityValues& operator=(const EntityValues&) = default;
+  KOKKOS_DEFAULTED_FUNCTION EntityValues& operator=(EntityValues&&) = default;
+
   KOKKOS_DEFAULTED_FUNCTION ~EntityValues() = default;
 
   // The functions below may be used to iterate through your Entity data on either the host or
@@ -184,7 +190,7 @@ private:
 #ifdef STK_FIELD_BOUNDS_CHECK
   KOKKOS_INLINE_FUNCTION void check_defined_field(const char* file, int line) const {
     if (not is_field_defined()) {
-      if (line == -1) {
+      if (line == 0) {
         printf("Error: Accessing EntityValues for Field '%s' that is not defined on this Entity.\n", m_fieldName);
       }
       else {
@@ -196,7 +202,7 @@ private:
   }
   KOKKOS_INLINE_FUNCTION void check_single_scalar_access(const char* file, int line) const {
     if (m_numComponents*m_numCopies != 1) {
-      if (line == -1) {
+      if (line == 0) {
         printf("Error: Accessing EntityValues for Field '%s' as a scalar when it has %i components and %i"
                " copies.  Please use an Entity operator() that takes appropriate index arguments.\n",
                m_fieldName, m_numComponents, m_numCopies);
@@ -212,7 +218,7 @@ private:
   }
   KOKKOS_INLINE_FUNCTION void check_single_component_access(const char* file, int line) const {
     if (m_numComponents != 1) {
-      if (line == -1) {
+      if (line == 0) {
         printf("Error: Accessing EntityValues for Field '%s' as if it only has one component when it actually"
                " has %i components.  Please use an Entity operator() that also has a component argument.\n",
                m_fieldName, m_numComponents);
@@ -227,7 +233,7 @@ private:
   }
   KOKKOS_INLINE_FUNCTION void check_single_copy_access(const char* file, int line) const {
     if (m_numCopies != 1) {
-      if (line == -1) {
+      if (line == 0) {
         printf("Error: Accessing EntityValues for Field '%s' as if it only has one copy when it actually has"
                " %i copies.  Please use an Entity operator() that also has a copy argument.\n",
                m_fieldName, m_numCopies);
@@ -242,7 +248,7 @@ private:
   }
   KOKKOS_INLINE_FUNCTION void check_component_bounds(int component, const char* file, int line) const {
     if ((component < 0) || (component >= m_numComponents)) {
-      if (line == -1) {
+      if (line == 0) {
         printf("Error: Out-of-bounds access to EntityValues for Field '%s' with component index %i for an"
                " Entity with %i components.\n", m_fieldName, component, m_numComponents);
       }
@@ -255,7 +261,7 @@ private:
   }
   KOKKOS_INLINE_FUNCTION void check_copy_bounds(int copy, const char* file, int line) const {
     if ((copy < 0) || (copy >= m_numCopies)) {
-      if (line == -1) {
+      if (line == 0) {
         printf("Error: Out-of-bounds access to EntityValues for Field '%s' with copy index %i for an Entity"
                " with %i copies.\n", m_fieldName, copy, m_numCopies);
       }
@@ -269,7 +275,7 @@ private:
   KOKKOS_INLINE_FUNCTION void check_copy_and_component_bounds(int copy, int component,
                                                               const char* file, int line) const {
     if (((copy < 0) || (copy >= m_numCopies)) || ((component < 0) || (component >= m_numComponents))) {
-      if (line == -1) {
+      if (line == 0) {
         printf("Error: Out-of-bounds access to EntityValues for Field '%s' with component index %i and copy"
                " index %i for an Entity with %i components and %i copies.\n", m_fieldName, component, copy,
                m_numComponents, m_numCopies);
@@ -284,7 +290,7 @@ private:
   }
   KOKKOS_INLINE_FUNCTION void check_scalar_bounds(int scalar, const char* file, int line) const {
     if ((scalar < 0) || (scalar >= m_numCopies*m_numComponents)) {
-      if (line == -1) {
+      if (line == 0) {
         printf("Error: Out-of-bounds access to EntityValues for Field '%s' with scalar index %i for an"
                " Entity with %i scalars.\n", m_fieldName, scalar, m_numCopies*m_numComponents);
       }
@@ -345,6 +351,12 @@ public:
       m_numComponents(numComponents),
       m_numCopies(numCopies)
   {}
+
+  EntityValues() = default;
+  EntityValues(const EntityValues&) = default;
+  EntityValues(EntityValues&&) = default;
+  EntityValues& operator=(const EntityValues&) = default;
+  EntityValues& operator=(EntityValues&&) = default;
 
   ~EntityValues() = default;
 
@@ -457,63 +469,50 @@ public:
 
 private:
 #ifdef STK_FIELD_BOUNDS_CHECK
-  inline std::string location_string(const char* file, int line) const {
-    if (line != -1) {
-      std::string fileName(file);
-      std::size_t pathDelimeter = fileName.find_last_of("/");
-      if (pathDelimeter < fileName.size()) {
-        fileName = fileName.substr(pathDelimeter+1);
-      }
-      return fileName + ":" + std::to_string(line) + ": ";
-    }
-    else {
-      return "";
-    }
-  }
   inline void check_defined_field(const char* file, int line) const {
     STK_ThrowRequireMsg(is_field_defined(),
-                        location_string(file, line) << "Accessing EntityValues for Field '" << m_fieldName << "'"
-                        " that is not defined on this Entity.");
+                        source_location_string(file, line) << "Accessing EntityValues for Field '" << m_fieldName <<
+                        "' that is not defined on this Entity.");
   }
   inline void check_single_scalar_access(const char* file, int line) const {
     STK_ThrowRequireMsg(m_numComponents*m_numCopies == 1,
-                        location_string(file, line) << "Accessing EntityValues for Field '" << m_fieldName << "'"
-                        " as a scalar when it has " << m_numComponents << " components and " << m_numCopies <<
+                        source_location_string(file, line) << "Accessing EntityValues for Field '" << m_fieldName <<
+                        "' as a scalar when it has " << m_numComponents << " components and " << m_numCopies <<
                         " copies.  Please use an Entity operator() that takes appropriate index arguments.");
   }
   inline void check_single_component_access(const char* file, int line) const {
     STK_ThrowRequireMsg(m_numComponents == 1,
-                        location_string(file, line) << "Accessing EntityValues for Field '" << m_fieldName << "'"
-                        " as if it only has one component when it actually has " << m_numComponents <<
+                        source_location_string(file, line) << "Accessing EntityValues for Field '" << m_fieldName <<
+                        "' as if it only has one component when it actually has " << m_numComponents <<
                         " components.  Please use an Entity operator() that also has a component argument.");
   }
   inline void check_single_copy_access(const char* file, int line) const {
     STK_ThrowRequireMsg(m_numCopies == 1,
-                        location_string(file, line) << "Accessing EntityValues for Field '" << m_fieldName << "'"
-                        " as if it only has one copy when it actually has " << m_numCopies <<
+                        source_location_string(file, line) << "Accessing EntityValues for Field '" << m_fieldName <<
+                        "' as if it only has one copy when it actually has " << m_numCopies <<
                         " copies.  Please use an Entity operator() that also has a copy argument.");
   }
   inline void check_component_bounds(int component, const char* file, int line) const {
     STK_ThrowRequireMsg((component >= 0) && (component < m_numComponents),
-                        location_string(file, line) << "Out-of-bounds access to EntityValues for Field '" <<
+                        source_location_string(file, line) << "Out-of-bounds access to EntityValues for Field '" <<
                         m_fieldName << "' with component index " << component << " for an Entity with " <<
                         m_numComponents << " components.");
   }
   inline void check_copy_bounds(int copy, const char* file, int line) const {
     STK_ThrowRequireMsg((copy >= 0) && (copy < m_numCopies),
-                        location_string(file, line) << "Out-of-bounds access to EntityValues for Field '" <<
+                        source_location_string(file, line) << "Out-of-bounds access to EntityValues for Field '" <<
                         m_fieldName << "' with copy index " << copy << " for an Entity with " << m_numCopies <<
                         " copies.");
   }
   inline void check_copy_and_component_bounds(int copy, int component, const char* file, int line) const {
     STK_ThrowRequireMsg(((copy >= 0) && (copy < m_numCopies)) && ((component >= 0) && (component < m_numComponents)),
-                        location_string(file, line) << "Out-of-bounds access to EntityValues for Field '" <<
+                        source_location_string(file, line) << "Out-of-bounds access to EntityValues for Field '" <<
                         m_fieldName << "' with component index " << component << " and copy index " << copy <<
                         " for an Entity with " << m_numComponents << " components and " << m_numCopies << " copies.");
   }
   inline void check_scalar_bounds(int scalar, const char* file, int line) const {
     STK_ThrowRequireMsg((scalar >= 0) && (scalar < m_numCopies*m_numComponents),
-                        location_string(file, line) << "Out-of-bounds access to EntityValues for Field '" <<
+                        source_location_string(file, line) << "Out-of-bounds access to EntityValues for Field '" <<
                         m_fieldName << "' with scalar index " << scalar << " for an Entity with " <<
                         m_numCopies*m_numComponents << " scalars.");
   }
@@ -568,6 +567,12 @@ public:
       m_numCopies(numCopies),
       m_scalarStride(scalarStride)
   {}
+
+  EntityValues() = default;
+  EntityValues(const EntityValues&) = default;
+  EntityValues(EntityValues&&) = default;
+  EntityValues& operator=(const EntityValues&) = default;
+  EntityValues& operator=(EntityValues&&) = default;
 
   ~EntityValues() = default;
 
@@ -680,63 +685,50 @@ public:
 
 private:
 #ifdef STK_FIELD_BOUNDS_CHECK
-  inline std::string location_string(const char* file, int line) const {
-    if (line != -1) {
-      std::string fileName(file);
-      std::size_t pathDelimeter = fileName.find_last_of("/");
-      if (pathDelimeter < fileName.size()) {
-        fileName = fileName.substr(pathDelimeter+1);
-      }
-      return fileName + ":" + std::to_string(line) + ": ";
-    }
-    else {
-      return "";
-    }
-  }
   inline void check_defined_field(const char* file, int line) const {
     STK_ThrowRequireMsg(is_field_defined(),
-                        location_string(file, line) << "Accessing EntityValues for Field '" << m_fieldName << "'"
-                        " that is not defined on this Entity.");
+                        source_location_string(file, line) << "Accessing EntityValues for Field '" << m_fieldName <<
+                        "' that is not defined on this Entity.");
   }
   inline void check_single_scalar_access(const char* file, int line) const {
     STK_ThrowRequireMsg(m_numComponents*m_numCopies == 1,
-                        location_string(file, line) << "Accessing EntityValues for Field '" << m_fieldName << "'"
-                        " as a scalar when it has " << m_numComponents << " components and " << m_numCopies <<
+                        source_location_string(file, line) << "Accessing EntityValues for Field '" << m_fieldName <<
+                        "' as a scalar when it has " << m_numComponents << " components and " << m_numCopies <<
                         " copies.  Please use an Entity operator() that takes appropriate index arguments.");
   }
   inline void check_single_component_access(const char* file, int line) const {
     STK_ThrowRequireMsg(m_numComponents == 1,
-                        location_string(file, line) << "Accessing EntityValues for Field '" << m_fieldName << "'"
-                        " as if it only has one component when it actually has " << m_numComponents <<
+                        source_location_string(file, line) << "Accessing EntityValues for Field '" << m_fieldName <<
+                        "' as if it only has one component when it actually has " << m_numComponents <<
                         " components.  Please use an Entity operator() that also has a component argument.");
   }
   inline void check_single_copy_access(const char* file, int line) const {
     STK_ThrowRequireMsg(m_numCopies == 1,
-                        location_string(file, line) << "Accessing EntityValues for Field '" << m_fieldName << "'"
-                        " as if it only has one copy when it actually has " << m_numCopies <<
+                        source_location_string(file, line) << "Accessing EntityValues for Field '" << m_fieldName <<
+                        "' as if it only has one copy when it actually has " << m_numCopies <<
                         " copies.  Please use an Entity operator() that also has a copy argument.");
   }
   inline void check_component_bounds(int component, const char* file, int line) const {
     STK_ThrowRequireMsg((component >= 0) && (component < m_numComponents),
-                        location_string(file, line) << "Out-of-bounds access to EntityValues for Field '" <<
+                        source_location_string(file, line) << "Out-of-bounds access to EntityValues for Field '" <<
                         m_fieldName << "' with component index " << component << " for an Entity with " <<
                         m_numComponents << " components.");
   }
   inline void check_copy_bounds(int copy, const char* file, int line) const {
     STK_ThrowRequireMsg((copy >= 0) && (copy < m_numCopies),
-                        location_string(file, line) << "Out-of-bounds access to EntityValues for Field '" <<
+                        source_location_string(file, line) << "Out-of-bounds access to EntityValues for Field '" <<
                         m_fieldName << "' with copy index " << copy << " for an Entity with " << m_numCopies <<
                         " copies.");
   }
   inline void check_copy_and_component_bounds(int copy, int component, const char* file, int line) const {
     STK_ThrowRequireMsg(((copy >= 0) && (copy < m_numCopies)) && ((component >= 0) && (component < m_numComponents)),
-                        location_string(file, line) << "Out-of-bounds access to EntityValues for Field '" <<
+                        source_location_string(file, line) << "Out-of-bounds access to EntityValues for Field '" <<
                         m_fieldName << "' with component index " << component << " and copy index " << copy <<
                         " for an Entity with " << m_numComponents << " components and " << m_numCopies << " copies.");
   }
   inline void check_scalar_bounds(int scalar, const char* file, int line) const {
     STK_ThrowRequireMsg((scalar >= 0) && (scalar < m_numCopies*m_numComponents),
-                        location_string(file, line) << "Out-of-bounds access to EntityValues for Field '" <<
+                        source_location_string(file, line) << "Out-of-bounds access to EntityValues for Field '" <<
                         m_fieldName << "' with scalar index " << scalar << " for an Entity with " <<
                         m_numCopies*m_numComponents << " scalars.");
   }
@@ -804,6 +796,12 @@ public:
       m_scalarStride(scalarStride),
       m_isLayoutRight(false)
   {}
+
+  EntityValues() = default;
+  EntityValues(const EntityValues&) = default;
+  EntityValues(EntityValues&&) = default;
+  EntityValues& operator=(const EntityValues&) = default;
+  EntityValues& operator=(EntityValues&&) = default;
 
   ~EntityValues() = default;
 
@@ -949,63 +947,50 @@ public:
 
 private:
 #ifdef STK_FIELD_BOUNDS_CHECK
-  inline std::string location_string(const char* file, int line) const {
-    if (line != -1) {
-      std::string fileName(file);
-      std::size_t pathDelimeter = fileName.find_last_of("/");
-      if (pathDelimeter < fileName.size()) {
-        fileName = fileName.substr(pathDelimeter+1);
-      }
-      return fileName + ":" + std::to_string(line) + ": ";
-    }
-    else {
-      return "";
-    }
-  }
   inline void check_defined_field(const char* file, int line) const {
     STK_ThrowRequireMsg(is_field_defined(),
-                        location_string(file, line) << "Accessing EntityValues for Field '" << m_fieldName << "'"
-                        " that is not defined on this Entity.");
+                        source_location_string(file, line) << "Accessing EntityValues for Field '" << m_fieldName <<
+                        "' that is not defined on this Entity.");
   }
   inline void check_single_scalar_access(const char* file, int line) const {
     STK_ThrowRequireMsg(m_numComponents*m_numCopies == 1,
-                        location_string(file, line) << "Accessing EntityValues for Field '" << m_fieldName << "'"
-                        " as a scalar when it has " << m_numComponents << " components and " << m_numCopies <<
+                        source_location_string(file, line) << "Accessing EntityValues for Field '" << m_fieldName <<
+                        "' as a scalar when it has " << m_numComponents << " components and " << m_numCopies <<
                         " copies.  Please use an Entity operator() that takes appropriate index arguments.");
   }
   inline void check_single_component_access(const char* file, int line) const {
     STK_ThrowRequireMsg(m_numComponents == 1,
-                        location_string(file, line) << "Accessing EntityValues for Field '" << m_fieldName << "'"
-                        " as if it only has one component when it actually has " << m_numComponents <<
+                        source_location_string(file, line) << "Accessing EntityValues for Field '" << m_fieldName <<
+                        "' as if it only has one component when it actually has " << m_numComponents <<
                         " components.  Please use an Entity operator() that also has a component argument.");
   }
   inline void check_single_copy_access(const char* file, int line) const {
     STK_ThrowRequireMsg(m_numCopies == 1,
-                        location_string(file, line) << "Accessing EntityValues for Field '" << m_fieldName << "'"
-                        " as if it only has one copy when it actually has " << m_numCopies <<
+                        source_location_string(file, line) << "Accessing EntityValues for Field '" << m_fieldName <<
+                        "' as if it only has one copy when it actually has " << m_numCopies <<
                         " copies.  Please use an Entity operator() that also has a copy argument.");
   }
   inline void check_component_bounds(int component, const char* file, int line) const {
     STK_ThrowRequireMsg((component >= 0) && (component < m_numComponents),
-                        location_string(file, line) << "Out-of-bounds access to EntityValues for Field '" <<
+                        source_location_string(file, line) << "Out-of-bounds access to EntityValues for Field '" <<
                         m_fieldName << "' with component index " << component << " for an Entity with " <<
                         m_numComponents << " components.");
   }
   inline void check_copy_bounds(int copy, const char* file, int line) const {
     STK_ThrowRequireMsg((copy >= 0) && (copy < m_numCopies),
-                        location_string(file, line) << "Out-of-bounds access to EntityValues for Field '" <<
+                        source_location_string(file, line) << "Out-of-bounds access to EntityValues for Field '" <<
                         m_fieldName << "' with copy index " << copy << " for an Entity with " << m_numCopies <<
                         " copies.");
   }
   inline void check_copy_and_component_bounds(int copy, int component, const char* file, int line) const {
     STK_ThrowRequireMsg(((copy >= 0) && (copy < m_numCopies)) && ((component >= 0) && (component < m_numComponents)),
-                        location_string(file, line) << "Out-of-bounds access to EntityValues for Field '" <<
+                        source_location_string(file, line) << "Out-of-bounds access to EntityValues for Field '" <<
                         m_fieldName << "' with component index " << component << " and copy index " << copy <<
                         " for an Entity with " << m_numComponents << " components and " << m_numCopies << " copies.");
   }
   inline void check_scalar_bounds(int scalar, const char* file, int line) const {
     STK_ThrowRequireMsg((scalar >= 0) && (scalar < m_numCopies*m_numComponents),
-                        location_string(file, line) << "Out-of-bounds access to EntityValues for Field '" <<
+                        source_location_string(file, line) << "Out-of-bounds access to EntityValues for Field '" <<
                         m_fieldName << "' with scalar index " << scalar << " for an Entity with " <<
                         m_numCopies*m_numComponents << " scalars.");
   }

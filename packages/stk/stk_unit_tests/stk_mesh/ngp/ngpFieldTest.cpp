@@ -53,7 +53,6 @@
 #include <stk_mesh/base/ForEachEntity.hpp>
 #include <stk_mesh/base/NgpForEachEntity.hpp>
 #include <stk_mesh/base/FieldBLAS.hpp>
-#include <stk_mesh/base/NgpFieldBLAS.hpp>
 #include <stk_util/util/StkNgpVector.hpp>
 #include "NgpUnitTestUtils.hpp"
 #include "NgpFieldTestUtils.hpp"
@@ -376,21 +375,6 @@ public:
     }
   }
 
-  void set_element_field_data_on_device(stk::mesh::NgpMesh& ngpMesh, stk::mesh::Field<int>& stkIntField,
-                                        const stk::mesh::Selector& selector, unsigned multiplier)
-  {
-    stk::mesh::NgpField<int>& ngpField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
-
-    stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, selector,
-                                   KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entityIndex) {
-                                     const int numScalarsPerEntity = ngpField.get_num_components_per_entity(entityIndex);
-                                     for (int component=0; component<numScalarsPerEntity; component++) {
-                                       stk::mesh::Entity entity = ngpMesh.get_entity(stk::topology::ELEM_RANK, entityIndex);
-                                       ngpField(entityIndex, component) = ngpMesh.identifier(entity) * multiplier + component;
-                                     }
-                                   });
-  }
-
   void setup_3hex_3block_mesh_with_field(unsigned bucketCapacity, stk::mesh::Field<int>& stkIntField)
   {
     ngp_unit_test_utils::setup_mesh_3hex_3block(get_bulk(), bucketCapacity);
@@ -583,7 +567,7 @@ public:
     stk::mesh::PartVector removeParts{get_meta().get_part("block_1")};
     get_bulk().change_entity_parts(get_bulk().get_entity(stk::topology::ELEM_RANK, 1), addParts, removeParts);
     get_bulk().modification_end();
-    ngpMesh.update_mesh();
+    ngpMesh.update();
     check_bucket_layout(get_bulk(), {{{"block_3"}, {1}}, {{"block_2"}, {2}}});
   }
 
@@ -634,7 +618,7 @@ public:
     get_bulk().modification_begin();
     replace_element_and_place_in_block("block_3");
     get_bulk().modification_end();
-    ngpMesh.update_mesh();
+    ngpMesh.update();
     check_bucket_layout(get_bulk(), {{{"block_3"}, {4}}, {{"block_2"}, {2}}});
   }
 
@@ -651,7 +635,7 @@ public:
     removeParts[0] = get_meta().get_part("block_2");
     get_bulk().change_entity_parts(get_bulk().get_entity(stk::topology::ELEM_RANK, 2), addParts, removeParts);
     get_bulk().modification_end();
-    ngpMesh.update_mesh();
+    ngpMesh.update();
     check_bucket_layout(get_bulk(), {{{"block_3"}, {2}}, {{"block_2"}, {1}}});
   }
 
@@ -665,7 +649,7 @@ public:
     stk::mesh::PartVector removeParts{get_meta().get_part("block_2")};
     get_bulk().change_entity_parts(get_bulk().get_entity(stk::topology::ELEM_RANK, 2), addParts, removeParts);
     get_bulk().modification_end();
-    ngpMesh.update_mesh();
+    ngpMesh.update();
     check_bucket_layout(get_bulk(), {{{"block_1"}, {1,2}}, {{"block_3"}, {3}}});
   }
 
@@ -679,7 +663,7 @@ public:
     stk::mesh::PartVector removeParts{get_meta().get_part("block_3")};
     get_bulk().change_entity_parts(get_bulk().get_entity(stk::topology::ELEM_RANK, 3), addParts, removeParts);
     get_bulk().modification_end();
-    ngpMesh.update_mesh();
+    ngpMesh.update();
     check_bucket_layout(get_bulk(), {{{"block_1"}, {1}}, {{"block_1"}, {3}}, {{"block_2"}, {2}}});
   }
 
@@ -696,7 +680,7 @@ public:
     auto stkIntFieldData = stkIntField.data<stk::mesh::ReadWrite>();
     auto data = stkIntFieldData.entity_values(newElement);
     data(0_comp) = get_bulk().identifier(newElement) * 10u;
-    ngpMesh.update_mesh();
+    ngpMesh.update();
 
     if(bucketCapacity == 1) {
       check_bucket_layout(get_bulk(), {{{"block_1"}, {1}}, {{"block_2"}, {2}}, {{"block_3"}, {3}}, {{"block_3"}, {4}}});
@@ -716,7 +700,7 @@ public:
     stk::mesh::PartVector removeParts {get_meta().get_part("block_1")};
     get_bulk().change_entity_parts(get_bulk().get_entity(stk::topology::ELEM_RANK, 2), addParts, removeParts);
     get_bulk().modification_end();
-    ngpMesh.update_mesh();
+    ngpMesh.update();
     check_bucket_layout(get_bulk(), { {{"block_1"}, {1}}, {{"block_3"}, {2, 3}}});
   }
 };
@@ -1115,14 +1099,14 @@ TEST_F(NgpFieldFixture, blas_field_copy_device_to_device)
 
  
   const double myConstantValue = 97.9;
-  stk::mesh::field_fill(myConstantValue, *stkField1, stk::ngp::ExecSpace());
+  stk::mesh::field_fill<stk::ngp::DeviceSpace>(myConstantValue, *stkField1);
 
 #ifdef STK_USE_DEVICE_MESH
   stk::mesh::NgpField<double>& ngpField1 = stk::mesh::get_updated_ngp_field<double>(*stkField1);
   EXPECT_TRUE(ngpField1.need_sync_to_host());
 #endif
 
-  stk::mesh::field_copy(*stkField1, *stkField2, stk::ngp::ExecSpace());
+  stk::mesh::field_copy<stk::ngp::DeviceSpace>(*stkField1, *stkField2);
 
 #ifdef STK_USE_DEVICE_MESH
   EXPECT_TRUE(stkField1->need_sync_to_host());
@@ -1947,91 +1931,36 @@ TEST_F(ModifyBySelectorFixture, hostToDevice_partialField_byReference)
   check_field_data_on_device<int>(ngpFieldByRef, stkField);
 }
 
-TEST(DeviceField, DISABLED_checkSizeof)
+TEST(DeviceField, checkSizeof)
 {
 #ifdef STK_USE_DEVICE_MESH
-  size_t expectedNumBytes = 176;
+  size_t expectedNumBytes = 96;
 #else
-  size_t expectedNumBytes = 160;
+  size_t expectedNumBytes = 88;
 #endif
   std::cout << "sizeof(stk::mesh::DeviceField<double>): " << sizeof(stk::mesh::DeviceField<double>) << std::endl;
   EXPECT_TRUE(sizeof(stk::mesh::DeviceField<double>) <= expectedNumBytes);
 }
 
-TEST(DeviceFieldData, DISABLED_checkSizeof)
+TEST(DeviceFieldData, checkSizeof)
 {
 #ifdef STK_USE_DEVICE_MESH
-  size_t expectedNumBytes = 160;
+  size_t expectedNumBytes = 80;
 #else
-  size_t expectedNumBytes = 144;
+  size_t expectedNumBytes = 72;
 #endif
   std::cout << "sizeof(stk::mesh::FieldData<double, stk::ngp::DeviceSpace>): "
             << sizeof(stk::mesh::FieldData<double, stk::ngp::DeviceSpace>) << std::endl;
   EXPECT_TRUE(sizeof(stk::mesh::FieldData<double, stk::ngp::DeviceSpace>) <= expectedNumBytes);
 }
 
-TEST(HostFieldData, DISABLED_checkSizeof)
+TEST(HostFieldData, checkSizeof)
 {
-  size_t expectedNumBytes = 144;
+  size_t expectedNumBytes = 72;
   std::cout << "sizeof(stk::mesh::FieldData<double, stk::ngp::HostSpace>): "
             << sizeof(stk::mesh::FieldData<double, stk::ngp::HostSpace>) << std::endl;
   EXPECT_TRUE(sizeof(stk::mesh::FieldData<double, stk::ngp::HostSpace>) <= expectedNumBytes);
 }
-
-
-class SortedBulkData : public stk::mesh::BulkData
-{
-protected:
-  friend class SortedMeshBuilder;
-
-  SortedBulkData(std::shared_ptr<stk::mesh::MetaData> metaData,
-                 stk::ParallelMachine parallel,
-                 enum AutomaticAuraOption autoAuraOption = AUTO_AURA,
-                 std::unique_ptr<stk::mesh::FieldDataManager> fieldDataManager = std::unique_ptr<stk::mesh::FieldDataManager>(),
-                 unsigned initialBucketCapacity = stk::mesh::get_default_initial_bucket_capacity(),
-                 unsigned maximumBucketCapacity = stk::mesh::get_default_maximum_bucket_capacity(),
-                 std::shared_ptr<stk::mesh::impl::AuraGhosting> auraGhosting = std::shared_ptr<stk::mesh::impl::AuraGhosting>(),
-                 bool createUpwardConnectivity = true)
-#ifdef SIERRA_MIGRATION
-    : BulkData(metaData, parallel, autoAuraOption, false, std::move(fieldDataManager), initialBucketCapacity,
-               maximumBucketCapacity, auraGhosting, createUpwardConnectivity)
-#else
-    : BulkData(metaData, parallel, autoAuraOption, std::move(fieldDataManager), initialBucketCapacity,
-               maximumBucketCapacity, auraGhosting, createUpwardConnectivity)
-#endif
-  {}
-
-public:
-  bool should_sort_buckets_by_first_entity_identifier() const override {
-    return true;
-  }
-};
-
-class SortedMeshBuilder : public stk::mesh::MeshBuilder
-{
-public:
-  SortedMeshBuilder() = default;
-  SortedMeshBuilder(stk::ParallelMachine comm)
-    : stk::mesh::MeshBuilder(comm)
-  {}
-
-  virtual ~SortedMeshBuilder() override = default;
-
-  //using statement to avoid compile-warning about 'only partially overridden'
-  using stk::mesh::MeshBuilder::create;
-
-  virtual std::unique_ptr<stk::mesh::BulkData> create(std::shared_ptr<stk::mesh::MetaData> metaData) override
-  {
-    STK_ThrowRequireMsg(m_haveComm, "MeshBuilder must be given an MPI communicator before creating BulkData");
-
-    return std::unique_ptr<SortedBulkData>(new SortedBulkData(metaData,
-                                                              m_comm,
-                                                              m_auraOption,
-                                                              std::move(m_fieldDataManager),
-                                                              m_initialBucketCapacity,
-                                                              m_maximumBucketCapacity));
-  }
-};
 
 
 enum PartIds : int {
@@ -2079,7 +2008,7 @@ public:
   }
 
   void create_mesh_with_parts_and_fields(std::vector<PartIds> partIds, std::vector<FieldIdPartIds> fieldPartIds,
-                                         std::vector<NodeIdPartId> nodes, bool useSortedBuckets = false)
+                                         std::vector<NodeIdPartId> nodes)
   {
     for (PartIds partId : partIds) {
       stk::mesh::Part& part = m_meta->declare_part_with_topology("part_" + std::to_string(partId),
@@ -2102,16 +2031,9 @@ public:
       stk::mesh::put_field_on_mesh(field, fieldSelector, nullptr);
     }
 
-    if (useSortedBuckets) {
-      SortedMeshBuilder builder(MPI_COMM_WORLD);
-      builder.set_aura_option(stk::mesh::BulkData::NO_AUTO_AURA);
-      m_bulk = builder.create(m_meta);
-    }
-    else {
-      stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
-      builder.set_aura_option(stk::mesh::BulkData::NO_AUTO_AURA);
-      m_bulk = builder.create(m_meta);
-    }
+    stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
+    builder.set_aura_option(stk::mesh::BulkData::NO_AUTO_AURA);
+    m_bulk = builder.create(m_meta);
 
     m_bulk->modification_begin();
     for (NodeIdPartId node : nodes) {
@@ -2706,27 +2628,6 @@ TEST_F(NgpFieldUpdate, MoveBackwardForwardBackward)
   add_node({3, part_3});
   add_node({4, part_4});
   add_node({9, part_9});
-
-  check_field_values();
-}
-
-// |   1   |   3   |   2   |   4   |       |   2   |   3   |   1   |   4   |
-// |   o   |   o   |   o   |   o   |  ==>  |   o   |   o   |   o   |   o   |
-// |part_1 |part_1 |part_2 |part_2 |       |part_1 |part_1 |part_2 |part_2 |
-//
-TEST_F(NgpFieldUpdate, BucketsSortedByFirstId_SwapPlaces)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
-
-  const bool sortBucketsByFirstId = true;
-  create_mesh_with_parts_and_fields({part_1, part_2},
-                                    {{field_0, {part_1, part_2}}, {field_1, {part_1, part_2}}},
-                                    {{1, part_1}, {2, part_2}, {3, part_1}, {4, part_2}},
-                                    sortBucketsByFirstId);
-  remove_node(1);
-  remove_node(2);
-  add_node({1, part_2});
-  add_node({2, part_1});
 
   check_field_values();
 }

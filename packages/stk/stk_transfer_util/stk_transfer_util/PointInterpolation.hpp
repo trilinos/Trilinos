@@ -77,9 +77,19 @@ void nodal_interpolation(stk::mesh::Entity entity,
                          const double upperBound, std::vector<double>& fieldDataScratch, std::vector<double>& result);
 
 void nodal_interpolation(stk::mesh::Entity entity,
+                         std::shared_ptr<stk::search::CachedFieldDataBase>& fieldData, const std::vector<double>& paramCoords,
+                         const stk::search::MasterElementProviderInterface& masterElement, const double lowerBound,
+                         const double upperBound, std::vector<double>& fieldDataScratch, std::vector<double>& result);
+
+void nodal_interpolation(stk::mesh::Entity entity,
                          const stk::mesh::FieldBase& field, const std::vector<double>& paramCoords,
                          const stk::search::MasterElementProviderInterface& masterElement, const double lowerBound,
                          const double upperBound, std::vector<double>& fieldDataScratch, std::vector<double>& result);
+
+void nodal_interpolation(stk::mesh::Entity entity,
+                         std::shared_ptr<stk::search::CachedFieldDataBase>& fieldData, const std::vector<double>& paramCoords,
+                         const stk::search::MasterElementProviderInterface& masterElement, const double lowerBound,
+                         const double upperBound, std::vector<double>& result);
 
 void nodal_interpolation(stk::mesh::Entity entity,
                          const stk::mesh::FieldBase& field, const std::vector<double>& paramCoords,

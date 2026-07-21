@@ -94,12 +94,21 @@ void for_each_node_transfer_pair_run(std::shared_ptr<stk::transfer::TransferBase
   const std::shared_ptr<SEND> sendMesh = castTransfer->send_mesh();
   const std::shared_ptr<RECV> recvMesh = castTransfer->recv_mesh();
 
+  bool sendMeshHasAcquiredFieldData = sendMesh->has_acquired_field_data();
+  bool recvMeshHasAcquiredFieldData = recvMesh->has_acquired_field_data();
+
+  if(!sendMeshHasAcquiredFieldData) sendMesh->acquire_field_data();
+  if(!recvMeshHasAcquiredFieldData) recvMesh->acquire_field_data();
+
   for(auto& relation : relationVec) {
     const stk::mesh::EntityKey sendEntityKey = relation.second.id();
     const stk::mesh::EntityKey recvEntityKey = relation.first.id();
 
     functor(sendBulk, sendEntityKey, recvBulk, recvEntityKey);
   }
+
+  if(!sendMeshHasAcquiredFieldData) sendMesh->release_field_data();
+  if(!recvMeshHasAcquiredFieldData) recvMesh->release_field_data();
 }
 
 template <typename TRANSFER, typename INTERPOLATE>
@@ -124,6 +133,12 @@ void for_each_element_transfer_pair_run(std::shared_ptr<stk::transfer::TransferB
   const std::shared_ptr<SEND> sendMesh = castTransfer->send_mesh();
   const std::shared_ptr<RECV> recvMesh = castTransfer->recv_mesh();
 
+  bool sendMeshHasAcquiredFieldData = sendMesh->has_acquired_field_data();
+  bool recvMeshHasAcquiredFieldData = recvMesh->has_acquired_field_data();
+
+  if(!sendMeshHasAcquiredFieldData) sendMesh->acquire_field_data();
+  if(!recvMeshHasAcquiredFieldData) recvMesh->acquire_field_data();
+
   for(auto& relation : relationVec) {
     const stk::mesh::EntityKey sendEntityKey = relation.second.id();
     const stk::mesh::EntityKey recvEntityKey = relation.first.id().first;
@@ -131,6 +146,9 @@ void for_each_element_transfer_pair_run(std::shared_ptr<stk::transfer::TransferB
 
     functor(sendBulk, sendEntityKey, recvBulk, recvEntityKey, recvEntityIndex);
   }
+
+  if(!sendMeshHasAcquiredFieldData) sendMesh->release_field_data();
+  if(!recvMeshHasAcquiredFieldData) recvMesh->release_field_data();
 }
 
 stk::mesh::EntityRank get_transfer_rank(const stk::mesh::MetaData& meta,

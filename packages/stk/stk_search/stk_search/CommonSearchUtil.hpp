@@ -34,21 +34,14 @@
 #ifndef COMMON_SEARCH_UTIL_H_
 #define COMMON_SEARCH_UTIL_H_
 
-#ifdef _OPENMP
-#include <omp.h>
-#endif
-
-#include "stk_util/environment/WallTime.hpp"
+#include <Kokkos_Core.hpp>
 #include "stk_util/parallel/Parallel.hpp"
 #include "stk_util/parallel/CommSparse.hpp"
-#include "stk_util/parallel/ParallelComm.hpp"
-#include "stk_util/util/SortAndUnique.hpp"
 #include "stk_search/BoxIdent.hpp"
 #include "stk_search/kdtree/KDTree_BoundingBox.hpp"
 #include "stk_search/kdtree/KDTree.hpp"
 #include "DeviceMPIUtils.hpp"
 #include <any>
-#include <memory>
 
 namespace stk::search {
 
@@ -154,19 +147,10 @@ inline void concatenate_thread_lists(const std::vector<std::vector<DataType>> &v
 
   vectorOut.resize(totSize);
 
-#ifdef _OPENMP
-#pragma omp parallel default(shared)
-  {
-    const unsigned ithread = omp_get_thread_num();
-    const std::vector<DataType> &data = vectorIn[ithread];
-    std::copy(data.begin(), data.end(), &vectorOut[offsets[ithread]]);
-  }
-#else
-  for (unsigned ithread = 0; ithread < numThreadLists; ++ithread) {
-    const std::vector<DataType> &data = vectorIn[ithread];
-    std::copy(data.begin(), data.end(), &vectorOut[offsets[ithread]]);
-  }
-#endif
+  auto policy = Kokkos::RangePolicy<Kokkos::DefaultHostExecutionSpace>(0, numThreadLists);
+  Kokkos::parallel_for(policy, [&](unsigned ithread) {
+    std::ranges::copy(vectorIn[ithread], &vectorOut[offsets[ithread]]);
+  });
 
 }
 

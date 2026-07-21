@@ -81,12 +81,6 @@ protected:
     stk::mesh::put_field_on_mesh(*m_elementFieldRight, get_meta().universal_part(), 3, nullptr);
   }
 
-  void fill_multi_block_mesh(unsigned numElemsPerDim)
-  {
-    stk::io::fill_mesh(stk::unit_test_util::get_mesh_spec(numElemsPerDim), get_bulk());
-    stk::performance_tests::move_elements_to_other_blocks(get_bulk(), numElemsPerDim);
-  }
-
   template <typename BYTES_FUNCTOR, typename VERIFIER_FUNCTOR>
   void run_test(int numIters, const BYTES_FUNCTOR& bytesFunctor, const VERIFIER_FUNCTOR& verifierFunctor)
   {

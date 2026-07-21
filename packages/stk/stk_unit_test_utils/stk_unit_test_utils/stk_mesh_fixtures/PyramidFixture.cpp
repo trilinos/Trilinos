@@ -199,6 +199,7 @@ void PyramidFixture::generate_mesh(std::vector<size_t> & hex_range_on_this_proce
     // Declare the elements that belong on this process
     stk::mesh::EntityIdVector elem_nodes(9);
     stk::mesh::EntityIdVector pyramid_nodes(5);
+    stk::mesh::EntityVector nodeVec(5);
 
     for (size_t hex_id : hex_range_on_this_processor) {
       size_t ix = 0, iy = 0, iz = 0;
@@ -222,31 +223,44 @@ void PyramidFixture::generate_mesh(std::vector<size_t> & hex_range_on_this_proce
         pyramid_nodes[4] = elem_nodes[pyramid_vert[pyr][4]];
 
         EntityId pyramid_id = 6*hex_id + pyr + elem_id_start;
-        stk::mesh::declare_element( m_bulk_data, m_elem_parts, pyramid_id, pyramid_nodes);
-
-        for (size_t i = 0; i<5; ++i) {
-           stk::mesh::Entity const node = m_bulk_data.get_entity( stk::topology::NODE_RANK , pyramid_nodes[i] );
+        stk::mesh::Entity elem = stk::mesh::declare_element( m_bulk_data, m_elem_parts, pyramid_id, pyramid_nodes);
+        auto elemNodes = m_bulk_data.get_connected_entities(elem, stk::topology::NODE_RANK);
+        nodeVec.clear();
+        for (stk::mesh::Entity node : elemNodes) {
+           nodeVec.push_back(node);//put in vector so memory doesn't move during change-parts operation
+        }
+        for (stk::mesh::Entity node : nodeVec) {
            m_bulk_data.change_entity_parts(node, m_node_parts);
 
            STK_ThrowRequireMsg( m_bulk_data.is_valid(node),
                               "This process should know about the nodes that make up its element");
 
-           DoAddNodeSharings(m_bulk_data, m_nodes_to_procs, pyramid_nodes[i], node);
-
-           // Compute and assign coordinates to the node
-           size_t nx = 0, ny = 0, nz = 0;
-           node_x_y_z(pyramid_nodes[i], nx, ny, nz);
-
-           auto data = m_coord_field->data<stk::mesh::ReadWrite>().entity_values(node);
-
-           std::array<double, 3> data_array{data(0_comp), data(1_comp), data(2_comp)};
-           coordMap.getNodeCoordinates(data_array.data(), nx, ny, nz);
-
-           // Since the mesh was expanded by 2x during creation, scale the coordinates accordingly
-           for (stk::mesh::ComponentIdx d : data.components()) {
-              data(d) = 0.5*data_array[d];
-           }
+           stk::mesh::EntityId nodeId = m_bulk_data.identifier(node);
+           DoAddNodeSharings(m_bulk_data, m_nodes_to_procs, nodeId, node);
          }
+      }
+    }
+
+    stk::mesh::EntityVector nodes;
+    stk::mesh::Selector nodeSelector = stk::mesh::selectIntersection(m_elem_parts);
+    stk::mesh::get_entities(m_bulk_data, stk::topology::NODE_RANK, nodeSelector, nodes);
+    auto data = m_coord_field->data<stk::mesh::ReadWrite>();
+
+    for(stk::mesh::Entity node : nodes) {
+      stk::mesh::EntityId nodeId = m_bulk_data.identifier(node);
+
+      // Compute and assign coordinates to the node
+      size_t nx = 0, ny = 0, nz = 0;
+      node_x_y_z(nodeId, nx, ny, nz);
+
+      auto nodeData = data.entity_values(node);
+
+      std::array<double, 3> data_array{0,0,0};
+      coordMap.getNodeCoordinates(data_array.data(), nx, ny, nz);
+
+      // Since the mesh was expanded by 2x during creation, scale the coordinates accordingly
+      for (stk::mesh::ComponentIdx d : nodeData.components()) {
+        nodeData(d) = 0.5*data_array[d];
       }
     }
   }

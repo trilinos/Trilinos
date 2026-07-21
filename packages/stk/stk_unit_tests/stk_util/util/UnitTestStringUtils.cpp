@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,7 +30,7 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
 #include "gtest/gtest.h"
 #include "stk_util/util/string_utils.hpp"  // for make_vector_of_strings
@@ -422,4 +422,57 @@ TEST(SplitCsvString, mixedEmptyNonemptyWhitespaceFields)
   EXPECT_EQ(stk::split_csv_string(",\t,"),      (std::vector<std::string>{"", "\t", ""}     ));
   EXPECT_EQ(stk::split_csv_string("a, ,"),      (std::vector<std::string>{"a", " ", ""}     ));
   EXPECT_EQ(stk::split_csv_string("\t , \n,a"), (std::vector<std::string>{"\t ", " \n", "a"}));
+}
+
+TEST(NumberParsing, stod)
+{
+  EXPECT_DOUBLE_EQ(stk::stod("42.5"), 42.5);
+  EXPECT_DOUBLE_EQ(stk::stod(" 42.5"), 42.5);
+  EXPECT_DOUBLE_EQ(stk::stod("42.5 "), 42.5);
+  EXPECT_DOUBLE_EQ(stk::stod("\t42.5\t"), 42.5);
+  EXPECT_DOUBLE_EQ(stk::stod("1e2"), 100);
+  EXPECT_DOUBLE_EQ(stk::stod("1E2"), 100);
+
+  EXPECT_ANY_THROW(stk::stod("a42.5"));
+  EXPECT_ANY_THROW(stk::stod("42.5a"));
+  EXPECT_ANY_THROW(stk::stod("\t42.5a\t"));
+}
+
+TEST(NumberParsing, stoi)
+{
+  EXPECT_EQ(stk::stoi("42"), 42);
+  EXPECT_EQ(stk::stoi(" 42"), 42);
+  EXPECT_EQ(stk::stoi("42 "), 42);
+  EXPECT_EQ(stk::stoi("\t42\t"), 42);
+
+  EXPECT_ANY_THROW(stk::stoi("42.5"));
+  EXPECT_ANY_THROW(stk::stoi("a42"));
+  EXPECT_ANY_THROW(stk::stoi("42a"));
+  EXPECT_ANY_THROW(stk::stoi("\t42a\t"));
+}
+
+TEST(NumberParsing, stol)
+{
+  EXPECT_EQ(stk::stol("42"), 42);
+  EXPECT_EQ(stk::stol(" 42"), 42);
+  EXPECT_EQ(stk::stol("42 "), 42);
+  EXPECT_EQ(stk::stol("\t42\t"), 42);
+
+  EXPECT_ANY_THROW(stk::stol("42.5"));
+  EXPECT_ANY_THROW(stk::stol("a42"));
+  EXPECT_ANY_THROW(stk::stol("42a"));
+  EXPECT_ANY_THROW(stk::stol("\t42a\t"));
+}
+
+TEST(NumberParsing, stoll)
+{
+  EXPECT_EQ(stk::stoll("42"), 42);
+  EXPECT_EQ(stk::stoll(" 42"), 42);
+  EXPECT_EQ(stk::stoll("42 "), 42);
+  EXPECT_EQ(stk::stoll("\t42\t"), 42);
+
+  EXPECT_ANY_THROW(stk::stoll("42.5"));
+  EXPECT_ANY_THROW(stk::stoll("a42"));
+  EXPECT_ANY_THROW(stk::stoll("42a"));
+  EXPECT_ANY_THROW(stk::stoll("\t42a\t"));
 }

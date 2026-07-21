@@ -35,7 +35,6 @@
 #define _stk_mesh_unit_test_utils_BucketTester_hpp_
 
 #include <stk_mesh/base/Bucket.hpp>
-#include <stk_mesh/base/BulkData.hpp>
 
 namespace stk { namespace mesh { namespace unit_test {
 

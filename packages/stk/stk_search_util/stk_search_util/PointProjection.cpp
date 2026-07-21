@@ -71,7 +71,8 @@ void gather_nodal_coordinates(const ProjectionData& data, stk::mesh::Entity enti
   data.masterElemProvider->nodal_field_data(key, data.projectedCoordinateField, numFieldComponents, numNodes, coords);
 
   const unsigned spatialDimension = data.bulk.mesh_meta_data().spatial_dimension();
-  STK_ThrowRequireMsg(numFieldComponents == spatialDimension, "Invalid coordinate field: " << data.coordinateField.name());
+  STK_ThrowRequireMsg(numFieldComponents == spatialDimension,
+                      "Invalid coordinate field: " << data.projectedCoordinateField.get_field()->name());
 }
 
 void gather_nodal_coordinates(const ProjectionData& data, const spmd::EntityKeyPair& key, std::vector<double>& coords)
@@ -82,7 +83,8 @@ void gather_nodal_coordinates(const ProjectionData& data, const spmd::EntityKeyP
   data.masterElemProvider->nodal_field_data(key, data.projectedCoordinateField, numFieldComponents, numNodes, coords);
 
   const unsigned spatialDimension = data.bulk.mesh_meta_data().spatial_dimension();
-  STK_ThrowRequireMsg(numFieldComponents == spatialDimension, "Invalid coordinate field: " << data.coordinateField.name());
+  STK_ThrowRequireMsg(numFieldComponents == spatialDimension,
+                      "Invalid coordinate field: " << data.projectedCoordinateField.get_field()->name());
 }
 
 void gather_nodal_coordinates(const ProjectionData& data, stk::mesh::EntityVector& sideNodes, std::vector<double>& coords)
@@ -97,7 +99,8 @@ void gather_nodal_coordinates(const ProjectionData& data, stk::mesh::EntityVecto
   data.masterElemProvider->nodal_field_data(data.scratchKeySpace, data.projectedCoordinateField, numFieldComponents, coords);
 
   const unsigned spatialDimension = data.bulk.mesh_meta_data().spatial_dimension();
-  STK_ThrowRequireMsg(numFieldComponents == spatialDimension, "Invalid coordinate field: " << data.coordinateField.name());
+  STK_ThrowRequireMsg(numFieldComponents == spatialDimension,
+                      "Invalid coordinate field: " << data.projectedCoordinateField.get_field()->name());
 }
 
 bool fill_projected_side_location(const ProjectionData& data, stk::mesh::Entity side,

@@ -42,6 +42,7 @@
 #include <vector>                       // for vector
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { struct EntityKey; } }
+namespace stk { namespace mesh { namespace impl { class GhostingCache; } } }
 
 namespace stk {
 namespace mesh {
@@ -88,7 +89,7 @@ private:
    *          and as such can only be modified by its owner.
    */
 
-  friend class BulkData ;
+  friend class impl::GhostingCache ;
 
   BulkData                & m_mesh ; ///< Owner
   const std::string         m_name ; ///< Name for printing purposes

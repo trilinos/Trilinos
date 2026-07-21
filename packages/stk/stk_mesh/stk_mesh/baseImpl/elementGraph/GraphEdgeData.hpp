@@ -60,9 +60,13 @@ public:
     GraphEdgesForElement get_edges_for_element(impl::LocalId elem) const;
     std::vector<GraphEdge> get_edges_for_element_side(impl::LocalId elem, int side) const;
 
+    void add_edge(const GraphEdge& graphEdge) { insert_edge(graphEdge); }
+
     void add_sorted_edges(const std::vector<GraphEdge>& graphEdge);
     void replace_sorted_edges(std::vector<GraphEdge>& graphEdge);
     void delete_sorted_edges(const std::vector<GraphEdge>& graphEdge);
+    void delete_edges_for_element(impl::LocalId elem);
+
     void clear();
 
     void print(std::ostream& os);

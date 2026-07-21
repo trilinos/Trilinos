@@ -159,22 +159,21 @@ class FromMesh : public FromMeshInterface
     {
       STK_ThrowRequireMsg(field->entity_rank() == stk::topology::FACE_RANK,
                           "This implementation of FromMesh requires a Discontinuous Galerkin type face rank field");
-    } 
-    
+    }
+
     void update_values() override {};
 
     void bounding_boxes(std::vector<BoundingBox>& boxes) override
     {
       int myRank = stk::parallel_machine_rank(m_sharedComm);
-      boxes.clear();
       for (stk::mesh::Bucket* bucket : m_mesh->get_buckets(stk::topology::FACE_RANK, *m_field))
       {
         for (stk::mesh::Entity face : *bucket)
         {
-          std::array<double, 3> min{std::numeric_limits<double>::max(), 
+          std::array<double, 3> min{std::numeric_limits<double>::max(),
                                     std::numeric_limits<double>::max(),
                                     std::numeric_limits<double>::max()};
-          std::array<double, 3> max{std::numeric_limits<double>::min(), 
+          std::array<double, 3> max{std::numeric_limits<double>::min(),
                                     std::numeric_limits<double>::min(),
                                     std::numeric_limits<double>::min()};
           for (stk::mesh::Entity node : m_mesh->get_connected_entities(face, stk::topology::NODE_RANK))
@@ -260,8 +259,8 @@ class FromMesh : public FromMeshInterface
         coords[idx][0] = nodeCoords(1_comp);
         coords[idx][1] = nodeCoords(2_comp);
         idx++;
-      } 
-      
+      }
+
       return coords;
     }
 
@@ -299,19 +298,19 @@ class FromMeshWithRepeatSearch : public FromMesh
 
     void modify_mesh(std::shared_ptr<stk::mesh::BulkData>& mesh, stk::mesh::FieldBase* field)
     {
+      m_coordField = mesh->mesh_meta_data().coordinate_field()->data<double, stk::mesh::ReadOnly>();
       m_mesh    = mesh;
       m_field   = field;
-      m_coordField = m_mesh->mesh_meta_data().coordinate_field()->data<double, stk::mesh::ReadOnly>();
       m_meshModifiedSinceLastSearch = true;
     }
 
-    int get_num_searches() const { return m_numSearches; }    
+    int get_num_searches() const { return m_numSearches; }
 
   private:
     bool m_meshModifiedSinceLastSearch = false;
     int m_numSearches = 0;
-};  
-            
+};
+
 
 class ToMeshInterface
 {
@@ -360,7 +359,6 @@ class ToMesh : public ToMeshInterface
     {
       auto coordField = m_mesh->mesh_meta_data().coordinate_field()->data<double>();
 
-      toPointsOnToMesh.clear();
       for (EntityProc entityAndProc : toEntityKeys)
       {
         stk::mesh::Entity node = m_mesh->get_entity(entityAndProc.id());
@@ -376,7 +374,6 @@ class ToMesh : public ToMeshInterface
       stk::mesh::get_entities(*m_mesh, stk::topology::NODE_RANK, *m_field, nodes);
       auto coord_field = m_mesh->mesh_meta_data().coordinate_field()->data<double>();
 
-      boxes.clear();
       for (stk::mesh::Entity node : nodes)
       {
         auto node_coords = coord_field.entity_values(node);
@@ -387,7 +384,7 @@ class ToMesh : public ToMeshInterface
     }
 
     // These are not required by the ReducedDependencyGeometricTransfer,
-    // but are used in the implementation of the Interpolate class    
+    // but are used in the implementation of the Interpolate class
 
     int get_values_per_entity() const
     {
@@ -436,7 +433,7 @@ class ToMeshWithRepeatSearch : public ToMesh
       ToMesh::bounding_boxes(boxes);
 
       m_meshModifiedSinceLastSearch = false;
-      m_numSearches++;      
+      m_numSearches++;
     }
 
     // used for testing
@@ -448,11 +445,11 @@ class ToMeshWithRepeatSearch : public ToMesh
       m_meshModifiedSinceLastSearch = true;
     }
 
-    int get_num_searches() const { return m_numSearches; }    
+    int get_num_searches() const { return m_numSearches; }
 
   private:
     bool m_meshModifiedSinceLastSearch = false;
-    int m_numSearches = 0;  
+    int m_numSearches = 0;
 };
 
 
@@ -519,7 +516,6 @@ class Interpolate : public InterpolateInterface<FromMeshType, ToMeshType>
                           "size mismatch between fromEntities and toPointsDistanceOnFromMesh");
 
       m_toPointParametricCoordsOnFromMesh.resize(fromEntities.size());
-      toPointsDistanceOnFromMesh.resize(fromEntities.size());
       for (size_t i=0; i < fromEntities.size(); ++i)
       {
         std::array<double, 3> pt = {toPointsOnFromMesh[i][0], toPointsOnFromMesh[i][1], toPointsOnFromMesh[i][2]};
@@ -577,9 +573,9 @@ class Interpolate : public InterpolateInterface<FromMeshType, ToMeshType>
       }
     }
 
-    void post_coarse_search_filter(EntityProcRelationVec& BtoA, MeshA* mesha, MeshB* meshb) override {}
+    void post_coarse_search_filter(EntityProcRelationVec& /*BtoA*/, MeshA* /*mesha*/, MeshB* /*meshb*/) override {}
 
-  private:
+   private:
     using Point2 = typename ReferenceElementQuad::Point2;
     std::vector<Point2> m_toPointParametricCoordsOnFromMesh;
 };
@@ -595,10 +591,10 @@ class ReducedDependencyTransferFixtureT : public ::testing::Test
 
       localComm = stk::parallel_machine_world();
       std::tie(fromBulk, fromField) = create_from_mesh(fromMeshSpec, localComm);
-      fromMesh = std::make_shared<FromMeshType>(fromBulk, fromField, localComm);  
+      fromMesh = std::make_shared<FromMeshType>(fromBulk, fromField, localComm);
 
       std::tie(toBulk, toField) = create_to_mesh(toMeshSpec, localComm);
-      toMesh = std::make_shared<ToMeshType>(toBulk, toField, localComm);      
+      toMesh = std::make_shared<ToMeshType>(toBulk, toField, localComm);
 
       create_transfer(localComm);
     }
@@ -617,13 +613,13 @@ class ReducedDependencyTransferFixtureT : public ::testing::Test
       if (color == 0)
       {
         std::tie(fromBulk, fromField) = create_from_mesh(fromMeshSpec, localComm);
-        fromMesh = std::make_shared<FromMeshType>(fromBulk, fromField, sharedComm);  
+        fromMesh = std::make_shared<FromMeshType>(fromBulk, fromField, sharedComm);
       }
 
       if (color == 1)
       {
         std::tie(toBulk, toField) = create_to_mesh(toMeshSpec, localComm);
-        toMesh = std::make_shared<ToMeshType>(toBulk, toField, sharedComm);      
+        toMesh = std::make_shared<ToMeshType>(toBulk, toField, sharedComm);
       }
 
       create_transfer(sharedComm);
@@ -635,7 +631,7 @@ class ReducedDependencyTransferFixtureT : public ::testing::Test
       {
         if (fromMesh)
         {
-          create_from_mesh(spec, localComm);
+          std::tie(fromBulk, fromField) =create_from_mesh(spec, localComm);
           fromMesh->modify_mesh(fromBulk, fromField);
         }
       } else
@@ -650,7 +646,7 @@ class ReducedDependencyTransferFixtureT : public ::testing::Test
       {
         if (toMesh)
         {
-          create_to_mesh(spec, localComm);
+          std::tie(toBulk, toField) = create_to_mesh(spec, localComm);
           toMesh->modify_mesh(toBulk, toField);
         }
       } else
@@ -678,7 +674,7 @@ class ReducedDependencyTransferFixtureT : public ::testing::Test
     stk::mesh::FieldBase* fromField;
 
     std::shared_ptr<stk::mesh::BulkData> toBulk;
-    stk::mesh::FieldBase* toField;    
+    stk::mesh::FieldBase* toField;
 
     std::shared_ptr<FromMeshType> fromMesh;
     std::shared_ptr<ToMeshType> toMesh;
@@ -718,10 +714,10 @@ class ReducedDependencyTransferFixtureT : public ::testing::Test
       stk::io::fill_mesh(meshString, *bulk);
       bulk->mesh_meta_data().enable_late_fields();
       stk::mesh::Part* toSideset = bulk->mesh_meta_data().get_part("surface_1");
-      stk::mesh::put_field_on_mesh(*field, *toSideset, 2, initValue.data()); 
+      stk::mesh::put_field_on_mesh(*field, *toSideset, 2, initValue.data());
 
       return {bulk, field};
-    }  
+    }
 
     void create_transfer(stk::ParallelMachine sharedComm)
     {
@@ -757,7 +753,7 @@ TEST_F(ReducedDependencyTransferFixture, SPMDMultipleTransfers)
   if (stk::parallel_machine_size(stk::parallel_machine_world()) > 3)
   {
     GTEST_SKIP();
-  }  
+  }
   MeshAndFieldSpec fromMeshSpec{3, 3, 3, 1.0};
   MeshAndFieldSpec toMeshSpec{4, 4, 4};
 
@@ -805,8 +801,6 @@ class ClassWithNeedRepeatSearch
 
 class ClassWithoutNeedRepeatSearch
 {
-  public:
-    bool foo() { return true; }
 };
 
 class BaseClassWithNeedRepeatSearch
@@ -819,8 +813,6 @@ class BaseClassWithNeedRepeatSearch
 
 class ClassWithInheritedNeedRepeatSearch : public BaseClassWithNeedRepeatSearch
 {
-  public:
-    void foo() {}
 };
 }
 
@@ -983,7 +975,7 @@ TEST_F(ReducedDependencyTransferFixtureFromMeshMod, SPMDMultipleTransfers)
   if (stk::parallel_machine_size(stk::parallel_machine_world()) > 3)
   {
     GTEST_SKIP();
-  }  
+  }
   MeshAndFieldSpec fromMeshSpec{3, 3, 3, 1.0};
   MeshAndFieldSpec toMeshSpec{4, 4, 4};
 
@@ -999,7 +991,7 @@ TEST_F(ReducedDependencyTransferFixtureFromMeshMod, SPMDWithMeshModThrow)
   if (stk::parallel_machine_size(stk::parallel_machine_world()) > 3)
   {
     GTEST_SKIP();
-  }  
+  }
   MeshAndFieldSpec fromMeshSpec{3, 3, 3, 1.0};
   MeshAndFieldSpec toMeshSpec{4, 4, 4};
 
@@ -1025,7 +1017,7 @@ TEST_F(ReducedDependencyTransferFixtureFromMeshMod, 4ProcMPMD)
   run_and_check_transfer(fromMeshSpec);
 
   fromMeshSpec.field_value_offset += 1;
-  run_and_check_transfer(fromMeshSpec);  
+  run_and_check_transfer(fromMeshSpec);
 }
 
 TEST_F(ReducedDependencyTransferFixtureFromMeshMod, 4ProcMPMDMeshModThrow)
@@ -1042,7 +1034,7 @@ TEST_F(ReducedDependencyTransferFixtureFromMeshMod, 4ProcMPMDMeshModThrow)
 
   MeshAndFieldSpec fromMeshSpecMod{5, 5, 5, 2.0};
   modify_from_mesh(fromMeshSpecMod);
-  EXPECT_ANY_THROW(run_and_check_transfer(fromMeshSpec)); 
+  EXPECT_ANY_THROW(run_and_check_transfer(fromMeshSpec));
 }
 
 
@@ -1054,7 +1046,7 @@ TEST_F(ReducedDependencyTransferFixtureToMeshMod, SPMDMultipleTransfers)
   if (stk::parallel_machine_size(stk::parallel_machine_world()) > 3)
   {
     GTEST_SKIP();
-  }  
+  }
   MeshAndFieldSpec fromMeshSpec{3, 3, 3, 1.0};
   MeshAndFieldSpec toMeshSpec{4, 4, 4};
 
@@ -1070,7 +1062,7 @@ TEST_F(ReducedDependencyTransferFixtureToMeshMod, SPMDWithMeshModThrow)
   if (stk::parallel_machine_size(stk::parallel_machine_world()) > 3)
   {
     GTEST_SKIP();
-  }  
+  }
   MeshAndFieldSpec fromMeshSpec{3, 3, 3, 1.0};
   MeshAndFieldSpec toMeshSpec{4, 4, 4};
 
@@ -1096,7 +1088,7 @@ TEST_F(ReducedDependencyTransferFixtureToMeshMod, 4ProcMPMD)
   run_and_check_transfer(fromMeshSpec);
 
   fromMeshSpec.field_value_offset += 1;
-  run_and_check_transfer(fromMeshSpec);  
+  run_and_check_transfer(fromMeshSpec);
 }
 
 TEST_F(ReducedDependencyTransferFixtureToMeshMod, 4ProcMPMDMeshModThrow)
@@ -1113,5 +1105,5 @@ TEST_F(ReducedDependencyTransferFixtureToMeshMod, 4ProcMPMDMeshModThrow)
 
   MeshAndFieldSpec toMeshSpecMod{5, 5, 5,};
   modify_to_mesh(toMeshSpecMod);
-  EXPECT_ANY_THROW(run_and_check_transfer(fromMeshSpec)); 
+  EXPECT_ANY_THROW(run_and_check_transfer(fromMeshSpec));
 }

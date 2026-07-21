@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,7 +30,7 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
 #ifndef  ReducedDependecy_STK_GEOMETRICTRANSFER_HPP
 #define  ReducedDependecy_STK_GEOMETRICTRANSFER_HPP
@@ -303,7 +303,7 @@ void do_communication(const ReducedDependencyCommData &comm_data, MeshAVec &a_ve
 // on high aspect ratio meshes i.e., the bounding boxes are currently not aligned to a local coordinate system
 
 // 2) various buffers (coords, dist, filter mask) scale w/ the avg. number of candidates which is problematic.
-// moving forward we should refactor this class such that scaling w/ candidates is avoided where possible, punt 
+// moving forward we should refactor this class such that scaling w/ candidates is avoided where possible, punt
 // on this for now.
 template <class MeshAVec, class MeshBVec>
 void do_reverse_communication_max_int(
@@ -459,7 +459,7 @@ template <class INTERPOLATE> ReducedDependencyGeometricTransfer<INTERPOLATE>::Re
         m_meshb.get(), m_search_method, m_expansion_factor);
   }
 
-template <class INTERPOLATE> void ReducedDependencyGeometricTransfer<INTERPOLATE>::communication() {  
+template <class INTERPOLATE> void ReducedDependencyGeometricTransfer<INTERPOLATE>::communication() {
   typename MeshB::EntityProcVec to_entity_keys;
   typename MeshA::EntityProcVec from_entity_keys;
 
@@ -471,6 +471,7 @@ template <class INTERPOLATE> void ReducedDependencyGeometricTransfer<INTERPOLATE
     EntityProcRelationVec().swap(m_domain_to_range);
   }
 
+  to_points_on_to_mesh.clear();
   if (m_meshb)
     m_meshb->get_to_points_coordinates(to_entity_keys, to_points_on_to_mesh);
 
@@ -480,7 +481,7 @@ template <class INTERPOLATE> void ReducedDependencyGeometricTransfer<INTERPOLATE
     m_interpolate.obtain_parametric_coords(from_entity_keys, *m_mesha, to_points_on_from_mesh, to_points_distance_on_from_mesh);
   communicate_distances();
   filter_to_nearest(to_entity_keys, from_entity_keys);
-  
+
   const auto coupling_version = stk::util::get_common_coupling_version();
   if (coupling_version >= 11 and coupling_version <= 14) {
     exchange_transfer_ids();
@@ -551,23 +552,21 @@ void ReducedDependencyGeometricTransfer<INTERPOlATE>::filter_to_nearest(typename
   const int to_count = std::count(FilterMaskTo.begin(), FilterMaskTo.end(), 1);
   const int from_count = std::count(FilterMaskFrom.begin(), FilterMaskFrom.end(), 1);
 
-  if (stk::util::get_common_coupling_version() >= 15)
-  {
+  const auto version = stk::util::get_common_coupling_version();
+  if (version >= 15 && version <= 20) {
     bool exception_on_local_proc = false;
     std::string error_msg;
     try {
       m_interpolate.mask_parametric_coords(FilterMaskFrom, from_count);
       error_msg = "error on another proc";
-    } catch (std::exception& e)
-    {
+    } catch (std::exception &e) {
       exception_on_local_proc = true;
       error_msg = e.what();
     }
-    
+
     bool exception_on_any_proc = stk::is_true_on_any_proc(m_comm_data.m_shared_comm, exception_on_local_proc);
     STK_ThrowRequireMsg(!exception_on_any_proc, error_msg);
-  } else
-  {
+  } else {
     m_interpolate.mask_parametric_coords(FilterMaskFrom, from_count);
   }
 

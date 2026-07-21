@@ -12,6 +12,7 @@
 
 // #######################  Start Clang Header Tool Managed Headers ########################
 // clang-format off
+#include "stk_search_util/CachedFieldData.hpp"
 #include <stk_transfer_util/RecoverField.hpp>  // for RecoverField, RecoverField::...
 #include "stk_transfer/TransferTypes.hpp"
 #include <vector>                        // for vector
@@ -33,8 +34,8 @@ namespace transfer {
 class EntityCentroidLinearRecoverField : public RecoverField {
  public:
   EntityCentroidLinearRecoverField(RecoverField::RecoveryType recType,
-                                   const std::vector<const stk::mesh::FieldBase*>& recVars,
-                                   const stk::mesh::FieldBase& recNodeVar, int nSampElem,
+                                   const std::vector<std::shared_ptr<stk::search::CachedFieldDataBase>>& recVars,
+                                   const std::shared_ptr<stk::search::CachedFieldDataBase>& recNodeVar, int nSampElem,
                                    stk::mesh::Entity entity,
                                    FieldTransform  transform = [](double value) {return value;});
 
@@ -44,8 +45,8 @@ class EntityCentroidLinearRecoverField : public RecoverField {
                     double* basisSample) const override;
 
  protected:
-  std::vector<const stk::mesh::FieldBase*> m_recoverVars;
-  const stk::mesh::FieldBase& m_nodeVar;
+  std::vector<std::shared_ptr<stk::search::CachedFieldDataBase>> m_recoverVars;
+  const std::shared_ptr<stk::search::CachedFieldDataBase>& m_nodeVar;
   FieldTransform  m_transform;
   mutable std::vector<double> m_scratchSpace;
 };
@@ -53,8 +54,8 @@ class EntityCentroidLinearRecoverField : public RecoverField {
 class EntityCentroidQuadraticRecoverField : public RecoverField {
  public:
   EntityCentroidQuadraticRecoverField(RecoverField::RecoveryType recType,
-                                      const std::vector<const stk::mesh::FieldBase*>& recVars,
-                                      const stk::mesh::FieldBase& recNodeVar, int nSampElem,
+                                      const std::vector<std::shared_ptr<stk::search::CachedFieldDataBase>>& recVars,
+                                      const std::shared_ptr<stk::search::CachedFieldDataBase>& recNodeVar, int nSampElem,
                                       stk::mesh::Entity entity,
                                       FieldTransform  transform = [](double value) {return value;});
 
@@ -64,8 +65,8 @@ class EntityCentroidQuadraticRecoverField : public RecoverField {
                     double* basisSample) const override;
 
  protected:
-  std::vector<const stk::mesh::FieldBase*> m_recoverVars;
-  const stk::mesh::FieldBase& m_nodeVar;
+  std::vector<std::shared_ptr<stk::search::CachedFieldDataBase>> m_recoverVars;
+  const std::shared_ptr<stk::search::CachedFieldDataBase>& m_nodeVar;
   FieldTransform  m_transform;
   mutable std::vector<double> m_scratchSpace;
 };
@@ -73,8 +74,8 @@ class EntityCentroidQuadraticRecoverField : public RecoverField {
 class EntityCentroidCubicRecoverField : public RecoverField {
  public:
   EntityCentroidCubicRecoverField(RecoverField::RecoveryType recType,
-                                  const std::vector<const stk::mesh::FieldBase*>& recVars,
-                                  const stk::mesh::FieldBase& recNodeVar, int nSampElem,
+                                  const std::vector<std::shared_ptr<stk::search::CachedFieldDataBase>>& recVars,
+                                  const std::shared_ptr<stk::search::CachedFieldDataBase>& recNodeVar, int nSampElem,
                                   stk::mesh::Entity entity,
                                   FieldTransform  transform = [](double value) {return value;});
 
@@ -84,8 +85,8 @@ class EntityCentroidCubicRecoverField : public RecoverField {
                     double* basisSample) const override;
 
  protected:
-  std::vector<const stk::mesh::FieldBase*> m_recoverVars;
-  const stk::mesh::FieldBase& m_nodeVar;
+  std::vector<std::shared_ptr<stk::search::CachedFieldDataBase>> m_recoverVars;
+  const std::shared_ptr<stk::search::CachedFieldDataBase>& m_nodeVar;
   FieldTransform  m_transform;
   mutable std::vector<double> m_scratchSpace;
 };
@@ -113,18 +114,19 @@ struct EntityPatchFilter {
   /// Return true if entity participates or if none are supplied. Return false otherwise.
   virtual bool pass(stk::mesh::Entity entity, const stk::mesh::BulkData& bulkData) const
   {
+    const stk::mesh::Bucket& bucket = bulkData.bucket(entity);
+
     bool isContainedInMeshPart = true;
     if(nullptr != m_meshPart) {
-      isContainedInMeshPart = bulkData.bucket(entity).member(*m_meshPart);
+      isContainedInMeshPart = bucket.member(*m_meshPart);
     }
 
     if(isContainedInMeshPart && (nullptr != m_field)) {
-      double* result = static_cast<double *>(stk::mesh::field_data(*m_field, entity));
-      isContainedInMeshPart = (nullptr != result) ? true : false;
+      isContainedInMeshPart = bucket.field_data_is_allocated(*m_field);
     }
 
     if(isContainedInMeshPart && (nullptr != m_selector)) {
-      isContainedInMeshPart = (*m_selector)(bulkData.bucket(entity));
+      isContainedInMeshPart = (*m_selector)(bucket);
     }
 
     return isContainedInMeshPart;

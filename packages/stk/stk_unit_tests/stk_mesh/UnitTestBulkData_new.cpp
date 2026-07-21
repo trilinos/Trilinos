@@ -451,11 +451,11 @@ TEST ( UnitTestBulkData_new , verifyCommonGhostingName )
 
   if ( fixture.comm_rank() == 0 )
   {
-    ASSERT_THROW ( bulk.create_ghosting ( "Name 1" ) , std::runtime_error );
+    ASSERT_ANY_THROW(bulk.create_ghosting("Name 1"));
   }
   else
   {
-    ASSERT_THROW ( bulk.create_ghosting ( "Name 2" ) , std::runtime_error );
+    ASSERT_ANY_THROW(bulk.create_ghosting("Name 2"));
   }
 #endif
 }

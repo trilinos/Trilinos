@@ -6,8 +6,6 @@
 #include "TextMeshNodeset.hpp"
 #include "TextMeshUtils.hpp"
 
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/MetaData.hpp>  // for MetaData, put_field, etc
 #include <stk_unit_test_utils/MeshFixture.hpp>
 
 #include <string>
@@ -28,6 +26,9 @@ using SideBlockInfo = text_mesh::SideBlockInfo;
 using SideEntry = std::pair<EntityId, int>;
 using SideVector = std::vector<SideEntry>;
 using SplitType = text_mesh::SplitType;
+
+namespace stk { namespace mesh { class MetaData; }}
+namespace stk { namespace mesh { class BulkData; }}
 
 struct Adjacency {
   using NeighborVector = std::vector<std::pair<int, SideAdjacencyGraph::IndexType>>;

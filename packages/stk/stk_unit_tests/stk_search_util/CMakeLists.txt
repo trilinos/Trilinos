@@ -5,8 +5,11 @@ SET(SOURCES
 )
 
 SET(SOURCES_NEED_IO
+  UnitTestFindParametricCoords.cpp
+  UnitTestMasterElementProviderIntrepid2.cpp
   UnitTestMockSearch.cpp
   UnitTestMockSearchInspector.cpp
+  UnitTestObjectCoordinates.cpp
 )
 
 if(${PROJECT_NAME}_ENABLE_STKIO)

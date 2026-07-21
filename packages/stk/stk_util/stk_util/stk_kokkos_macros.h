@@ -51,7 +51,7 @@
   #define STK_HOST_LINE __builtin_LINE()
 #else
   #define STK_HOST_FILE ""
-  #define STK_HOST_LINE -1
+  #define STK_HOST_LINE 0
 #endif
 
 // None of this is compatible with Clang or ROCm builds, so disable if we are doing a GPU-based device build
@@ -61,7 +61,7 @@
   #define STK_DEVICE_LINE __builtin_LINE()
 #else
   #define STK_DEVICE_FILE ""
-  #define STK_DEVICE_LINE -1
+  #define STK_DEVICE_LINE 0
 #endif
 
 #endif

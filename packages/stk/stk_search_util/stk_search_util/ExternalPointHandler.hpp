@@ -38,6 +38,7 @@
 // #######################  Start Clang Header Tool Managed Headers ########################
 // clang-format off
 #include "stk_search/SearchInterface.hpp"             // for ExternalPointHa...
+#include "stk_search_util/CachedFieldData.hpp"
 #include "stk_search_util/MasterElementProvider.hpp"  // for ProvideMaste...
 #include "stk_search_util/spmd/EntityKeyPair.hpp"
 #include <memory>                                     // for shared_ptr
@@ -51,7 +52,20 @@ namespace stk::mesh { class FieldBase; }
 namespace stk {
 namespace search {
 
-using HandleExternalPointInterface =  stk::search::ExternalPointHandlerInterface<stk::search::spmd::EntityKeyPair>;
+using HandleExternalPointInterfaceBase =  stk::search::ExternalPointHandlerInterface<stk::search::spmd::EntityKeyPair>;
+
+class HandleExternalPointInterface : public HandleExternalPointInterfaceBase {
+ public:
+  HandleExternalPointInterface() = default;
+  virtual ~HandleExternalPointInterface() = default;
+
+  virtual void acquire_field_data() {};
+  virtual void release_field_data() {};
+
+ protected:
+  HandleExternalPointInterface(const HandleExternalPointInterface&) = delete;
+  const HandleExternalPointInterface& operator()(const HandleExternalPointInterface&) = delete;
+};
 
 class ExternalPointNoOpHandler : public HandleExternalPointInterface {
  public:
@@ -72,9 +86,13 @@ class MasterElementExternalPointProjection : public HandleExternalPointInterface
                     double& geometricDistanceSquared,
                     bool& isWithinGeometricTolerance) const override;
 
+  void acquire_field_data() override;
+  void release_field_data() override;
+
  private:
   stk::mesh::BulkData& m_bulk;
-  const stk::mesh::FieldBase* m_coords{nullptr};
+  const stk::mesh::FieldBase* m_coordinateField{nullptr};
+  std::shared_ptr<CachedFieldDataBase> m_cachedCoordinateFieldData;
   std::shared_ptr<MasterElementProviderInterface> m_masterElemProvider;
   const double m_parametricTol;
   const double m_geometricTol;
@@ -95,9 +113,13 @@ class MasterElementExternalPointTruncation : public HandleExternalPointInterface
                     double& geometricDistanceSquared,
                     bool& isWithinGeometricTolerance) const override;
 
+  void acquire_field_data() override;
+  void release_field_data() override;
+
  private:
   stk::mesh::BulkData& m_bulk;
-  const stk::mesh::FieldBase* m_coords{nullptr};
+  const stk::mesh::FieldBase* m_coordinateField{nullptr};
+  std::shared_ptr<CachedFieldDataBase> m_cachedCoordinateFieldData;
   std::shared_ptr<MasterElementProviderInterface> m_masterElemProvider;
   const double m_geometricTol;
 

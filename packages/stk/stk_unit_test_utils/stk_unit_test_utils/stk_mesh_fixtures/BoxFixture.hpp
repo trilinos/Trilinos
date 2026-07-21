@@ -49,6 +49,7 @@
 #include "stk_unit_test_utils/stk_mesh_fixtures/FixtureNodeSharing.hpp"
 
 namespace stk { namespace mesh { class Part; } }
+namespace stk { namespace mesh { class MetaData; } }
 
 namespace stk {
 namespace mesh {

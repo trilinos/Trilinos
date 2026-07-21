@@ -112,6 +112,7 @@ void for_each_entity_run(const std::string& label,
 }
 
 template <typename Mesh, typename AlgorithmPerEntity>
+requires (!std::same_as<std::remove_cvref_t<Mesh>, stk::mesh::BulkData>)
 void for_each_entity_run(Mesh &mesh, stk::topology::rank_t rank, const stk::mesh::Selector &selector, const AlgorithmPerEntity &functor)
 {
   for_each_entity_run("for_each_entity_run - no-label", mesh, rank, selector, functor);

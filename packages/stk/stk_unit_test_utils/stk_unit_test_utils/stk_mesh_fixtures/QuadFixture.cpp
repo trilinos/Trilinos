@@ -398,26 +398,40 @@ void Quad9Fixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_pro
   // Declare the elements that belong on this process
 
   stk::mesh::EntityIdVector elemNodes ;
+  stk::mesh::EntityVector nodeVec;
+
+  for (EntityId entity_id : element_ids_on_this_processor) {
+    elemNodes = node_ids( entity_id );
+
+    Entity elem = stk::mesh::declare_element( m_bulk_data, m_elem_parts, entity_id , elemNodes);
+    auto nodes = m_bulk_data.get_connected_entities(elem, stk::topology::NODE_RANK);
+    nodeVec.clear();
+    for(Entity node : nodes) {
+      nodeVec.push_back(node);
+    }
+
+    for (unsigned i = 0; i<nodeVec.size(); ++i) {
+      stk::mesh::Entity const node = nodeVec[i];
+      m_bulk_data.change_entity_parts(node, m_node_parts);
+
+      DoAddNodeSharings(m_bulk_data, m_nodes_to_procs, elemNodes[i], node);
+    }
+  }
+
+  auto data = m_coord_field->data<stk::mesh::ReadWrite>();
 
   for (EntityId entity_id : element_ids_on_this_processor) {
     elemNodes = node_ids( entity_id );
     std::vector<double> nodeCoords = node_coords(entity_id);
 
-    stk::mesh::declare_element( m_bulk_data, m_elem_parts, entity_id , elemNodes);
+    stk::mesh::Entity elem = m_bulk_data.get_entity(stk::topology::ELEM_RANK , entity_id);
+    auto nodes = m_bulk_data.get_connected_entities(elem, stk::topology::NODE_RANK);
 
-    for (unsigned i = 0; i<elemNodes.size(); ++i) {
-      stk::mesh::Entity const node = m_bulk_data.get_entity( stk::topology::NODE_RANK , elemNodes[i] );
-      m_bulk_data.change_entity_parts(node, m_node_parts);
+    for (unsigned i = 0; i<nodes.size(); ++i) {
+      auto nodeData = data.entity_values(nodes[i]);
 
-      DoAddNodeSharings(m_bulk_data, m_nodes_to_procs, elemNodes[i], node);
-
-      STK_ThrowRequireMsg( m_bulk_data.is_valid(node),
-          "This process should know about the nodes that make up its element");
-
-      auto data = m_coord_field->data<stk::mesh::ReadWrite>().entity_values(node);
-
-      data(0_comp) = nodeCoords[2*i+0];
-      data(1_comp) = nodeCoords[2*i+1] ;
+      nodeData(0_comp) = nodeCoords[2*i+0];
+      nodeData(1_comp) = nodeCoords[2*i+1] ;
     }
   }
 

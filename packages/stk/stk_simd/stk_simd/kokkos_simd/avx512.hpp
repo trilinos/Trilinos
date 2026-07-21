@@ -63,6 +63,18 @@ class avx512 {};
 
 }
 
+// ---- Micro-perf helpers: zero & masks ----
+namespace detail {
+  SIMD_ALWAYS_INLINE inline __m512  mm512_zero_ps() noexcept { return _mm512_setzero_ps(); }
+  SIMD_ALWAYS_INLINE inline __m512d mm512_zero_pd() noexcept { return _mm512_setzero_pd(); }
+
+  SIMD_ALWAYS_INLINE inline __m512i signbit_mask_ps() noexcept { return _mm512_set1_epi32(0x80000000); }
+  SIMD_ALWAYS_INLINE inline __m512i signbit_mask_pd() noexcept { return _mm512_set1_epi64(0x8000000000000000ull); }
+
+  SIMD_ALWAYS_INLINE inline __m512i abs_mask_ps() noexcept { return _mm512_set1_epi32(0x7fffffff); }
+  SIMD_ALWAYS_INLINE inline __m512i abs_mask_pd() noexcept { return _mm512_set1_epi64(0x7fffffffffffffffull); }
+} // namespace detail
+
 template <>
 class simd_mask<float, simd_abi::avx512> {
   __mmask16 m_value;
@@ -156,8 +168,9 @@ class simd<float, simd_abi::avx512> {
   SIMD_ALWAYS_INLINE inline simd operator-(simd const& other) const {
     return simd(_mm512_sub_ps(m_value, other.m_value));
   }
-  SIMD_ALWAYS_INLINE SIMD_HOST_DEVICE inline simd operator-() const {
-    return simd(_mm512_sub_ps(_mm512_set1_ps(0.0), m_value));
+  // Negation: flip sign bit (preserves -0; one XOR)
+  SIMD_ALWAYS_INLINE SIMD_HOST_DEVICE simd operator-() const noexcept {
+    return simd(_mm512_xor_ps(m_value, _mm512_castsi512_ps(detail::signbit_mask_ps())));
   }
   SIMD_ALWAYS_INLINE inline void copy_from(float const* ptr, element_aligned_tag) {
     m_value = _mm512_loadu_ps(ptr);
@@ -175,28 +188,23 @@ class simd<float, simd_abi::avx512> {
 };
 
 SIMD_ALWAYS_INLINE inline simd<float, simd_abi::avx512> multiplysign(simd<float, simd_abi::avx512> const& a, simd<float, simd_abi::avx512> const& b) {
-  static const __m512i sign_mask = reinterpret_cast<__m512i>(simd<float, simd_abi::avx512>(-0.0).get());
+  const __m512i sign_mask = detail::signbit_mask_ps();
   return simd<float, simd_abi::avx512>(
-      reinterpret_cast<__m512>(_mm512_xor_epi32(
-          reinterpret_cast<__m512i>(a.get()), 
-          _mm512_and_epi32(sign_mask, reinterpret_cast<__m512i>(b.get()))
-          ))
-      );
+      _mm512_castsi512_ps(_mm512_xor_epi32(_mm512_castps_si512(a.get()),
+                                           _mm512_and_epi32(sign_mask, _mm512_castps_si512(b.get())))));
 }
 
 SIMD_ALWAYS_INLINE inline simd<float, simd_abi::avx512> copysign(simd<float, simd_abi::avx512> const& a, simd<float, simd_abi::avx512> const& b) {
-  static const __m512i sign_mask = reinterpret_cast<__m512i>(simd<float, simd_abi::avx512>(-0.0).get());
+  const __m512i sign_mask = detail::signbit_mask_ps();
   return simd<float, simd_abi::avx512>(
-      reinterpret_cast<__m512>(_mm512_xor_epi32(
-          _mm512_andnot_epi32(sign_mask, reinterpret_cast<__m512i>(a.get())),
-          _mm512_and_epi32(sign_mask, reinterpret_cast<__m512i>(b.get()))
-          ))
-      );
+      _mm512_castsi512_ps(_mm512_xor_epi32(
+          _mm512_andnot_epi32(sign_mask, _mm512_castps_si512(a.get())),
+          _mm512_and_epi32(sign_mask, _mm512_castps_si512(b.get())))));
 }
 
 SIMD_ALWAYS_INLINE inline simd<float, simd_abi::avx512> abs(simd<float, simd_abi::avx512> const& a) {
-  __m512 const rhs = a.get();
-  return reinterpret_cast<__m512>(_mm512_and_epi32(reinterpret_cast<__m512i>(rhs), _mm512_set1_epi32(0x7fffffff)));
+  return simd<float, simd_abi::avx512>(
+      _mm512_castsi512_ps(_mm512_and_epi32(_mm512_castps_si512(a.get()), detail::abs_mask_ps())));
 }
 
 SIMD_ALWAYS_INLINE inline simd<float, simd_abi::avx512> sqrt(simd<float, simd_abi::avx512> const& a) {
@@ -342,8 +350,9 @@ class simd<double, simd_abi::avx512> {
   SIMD_ALWAYS_INLINE inline simd operator-(simd const& other) const {
     return simd(_mm512_sub_pd(m_value, other.m_value));
   }
-  SIMD_ALWAYS_INLINE SIMD_HOST_DEVICE inline simd operator-() const {
-    return simd(_mm512_sub_pd(_mm512_set1_pd(0.0), m_value));
+  // Negation: flip sign bit (preserves -0; one XOR)
+  SIMD_ALWAYS_INLINE SIMD_HOST_DEVICE simd operator-() const noexcept {
+    return simd(_mm512_xor_pd(m_value, _mm512_castsi512_pd(detail::signbit_mask_pd())));
   }
   SIMD_ALWAYS_INLINE inline void copy_from(double const* ptr, element_aligned_tag) {
     m_value = _mm512_loadu_pd(ptr);
@@ -361,29 +370,24 @@ class simd<double, simd_abi::avx512> {
 };
 
 SIMD_ALWAYS_INLINE inline simd<double, simd_abi::avx512> multiplysign(simd<double, simd_abi::avx512> const& a, simd<double, simd_abi::avx512> const& b) {
-  static const __m512i sign_mask = reinterpret_cast<__m512i>(simd<double, simd_abi::avx512>(-0.0).get());
+  const __m512i sign_mask = detail::signbit_mask_pd();
   return simd<double, simd_abi::avx512>(
-      reinterpret_cast<__m512d>(_mm512_xor_epi64(
-          reinterpret_cast<__m512i>(a.get()), 
-          _mm512_and_epi64(sign_mask, reinterpret_cast<__m512i>(b.get()))
-          ))
-      );
+      _mm512_castsi512_pd(_mm512_xor_epi64(_mm512_castpd_si512(a.get()),
+                                           _mm512_and_epi64(sign_mask, _mm512_castpd_si512(b.get())))));
 }
 
 SIMD_ALWAYS_INLINE inline simd<double, simd_abi::avx512> copysign(simd<double, simd_abi::avx512> const& a, simd<double, simd_abi::avx512> const& b) {
-  static const __m512i sign_mask = reinterpret_cast<__m512i>(simd<double, simd_abi::avx512>(-0.0).get());
+  const __m512i sign_mask = detail::signbit_mask_pd();
   return simd<double, simd_abi::avx512>(
-      reinterpret_cast<__m512d>(_mm512_xor_epi64(
-          _mm512_andnot_epi64(sign_mask, reinterpret_cast<__m512i>(a.get())),
-          _mm512_and_epi64(sign_mask, reinterpret_cast<__m512i>(b.get()))
-          ))
-      );
+      _mm512_castsi512_pd(_mm512_xor_epi64(
+          _mm512_andnot_epi64(sign_mask, _mm512_castpd_si512(a.get())),
+          _mm512_and_epi64   (sign_mask, _mm512_castpd_si512(b.get())))));
 }
 
 SIMD_ALWAYS_INLINE inline simd<double, simd_abi::avx512> abs(simd<double, simd_abi::avx512> const& a) {
-  __m512d const rhs = a.get();
-  return reinterpret_cast<__m512d>(_mm512_and_epi64(_mm512_set1_epi64(0x7FFFFFFFFFFFFFFF),
-        reinterpret_cast<__m512i>(rhs)));
+  return simd<double, simd_abi::avx512>(
+      _mm512_castsi512_pd(_mm512_and_epi64(_mm512_castpd_si512(a.get()),
+                                           detail::abs_mask_pd())));
 }
 
 SIMD_ALWAYS_INLINE inline simd<double, simd_abi::avx512> sqrt(simd<double, simd_abi::avx512> const& a) {

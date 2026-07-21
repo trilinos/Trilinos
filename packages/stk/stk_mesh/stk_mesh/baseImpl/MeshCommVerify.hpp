@@ -60,6 +60,8 @@ namespace impl {
 //----------------------------------------------------------------------
 //
 
+std::string get_sharing_str(const BulkData& mesh, Entity ent);
+
 void unpack_not_owned_verify_compare_closure_relations( const BulkData & mesh,
                                                Entity           entity,
                                                std::vector<Relation> const& recv_relations,

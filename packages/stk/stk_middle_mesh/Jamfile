@@ -47,12 +47,8 @@ if $(RTenv-arg) = "user" {
 project votd
   : requirements
     $(sierra-warnings)
-    <define>STK_BUILT_FOR_SIERRA
-    <define>STK_BUILT_WITH_BJAM
     <include>$(stk_middle_mesh-root-inc)
   : usage-requirements
-    <define>STK_BUILT_FOR_SIERRA
-    <define>STK_BUILT_WITH_BJAM
     <include>$(stk_middle_mesh-root-inc)
   : build-dir $(stk_middle_mesh-builddir)
   ;
@@ -176,6 +172,7 @@ exe stk_middle_mesh_integration_tester
     stk_middle_mesh_test_util
     /sierra/stk_middle_mesh_util//stk_middle_mesh_util
   :
+    <define>STK_BUILT_FOR_SIERRA
     <include>$(stk_middle_mesh-root)/../stk_unit_tests/stk_middle_mesh
     <include>$(stk_middle_mesh-root)/../stk_middle_mesh_util/stk_middle_mesh_util
     <tag>@sierra-exec-tag

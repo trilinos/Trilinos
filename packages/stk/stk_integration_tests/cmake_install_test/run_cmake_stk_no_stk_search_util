@@ -35,9 +35,12 @@ cmake \
 -DTPL_ENABLE_LAPACK=ON \
 -DSTK_ENABLE_TESTS:BOOL=ON \
 -DTrilinos_ENABLE_STK:BOOL=ON \
+-DTrilinos_ENABLE_STKMesh:BOOL=ON \
+-DTrilinos_ENABLE_STKIO:BOOL=ON \
+-DTrilinos_ENABLE_STKUnit_test_utils:BOOL=ON \
 -DTrilinos_ENABLE_STKSearchUtil:BOOL=OFF \
--DTrilinos_ENABLE_STKUnit_tests:BOOL=OFF \
--DTrilinos_ENABLE_STKDoc_tests:BOOL=OFF \
+-DTrilinos_ENABLE_STKUnit_tests:BOOL=ON \
+-DTrilinos_ENABLE_STKDoc_tests:BOOL=ON \
 -DTPL_ENABLE_gtest:BOOL=ON \
 -DGTest_DIR=/fgs/william/googletest/install_gcc-12.3.0/lib64/cmake/GTest \
 -DCMAKE_CXX_FLAGS:STRING="-D${fortran_macro} ${cmake_cxx_flags} -Werror=dangling-else" \

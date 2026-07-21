@@ -162,9 +162,39 @@ struct HostSpace {
 
 #endif
 
+template <typename T>
+concept is_host_space = requires
+{
+  requires std::is_same_v<T, HostSpace>;
+};
 
+template <typename T>
+concept is_device_space = requires
+{
+  requires std::is_same_v<T, DeviceSpace> ||
+           std::is_same_v<T, UVMDeviceSpace> ||
+           std::is_same_v<T, HostPinnedDeviceSpace>;
+  requires !is_host_space<T>;
+};
 
+template <typename T>
+concept is_ngp_space = requires
+{
+  requires is_host_space<T> || is_device_space<T>;
+};
 
+template <typename T>
+concept is_host_exec_space = requires
+{
+  requires std::is_same_v<T, HostExecSpace>;
+};
+
+template <typename T>
+concept is_device_exec_space = requires
+{
+  requires std::is_same_v<T, ExecSpace>;
+  requires !is_host_exec_space<T>;
+};
 
 }
 }

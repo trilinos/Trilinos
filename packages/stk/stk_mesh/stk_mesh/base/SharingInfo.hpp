@@ -50,22 +50,29 @@ namespace mesh {
 
 struct sharing_info
 {
-    stk::mesh::Entity m_entity;
-    int m_sharing_proc;
-    int m_owner;
+    Entity m_entity{};
+    int m_sharing_proc{-1};
+    int m_owner{-1};
 
-    sharing_info(stk::mesh::Entity entity, int sharing_proc, int owner) :
+    sharing_info() = default;
+
+    sharing_info(Entity entity, int sharing_proc, int owner) :
         m_entity(entity), m_sharing_proc(sharing_proc), m_owner(owner) {}
 
-    sharing_info(const sharing_info&) = default;
+    sharing_info(const sharing_info& other) = default;
 
-    sharing_info():
-      m_entity(stk::mesh::Entity()), m_sharing_proc(-1), m_owner(-1) {}
+    sharing_info(sharing_info&& other) noexcept = default;
+
+    sharing_info& operator=(const sharing_info& other) = default;
+
+    sharing_info& operator=(sharing_info&& other) noexcept = default;
+
+    ~sharing_info() = default;
 };
 
 struct SharingInfoLess
 {
-    bool operator()(const stk::mesh::sharing_info &a, const stk::mesh::sharing_info &b)
+    bool operator()(const sharing_info &a, const sharing_info &b)
     {
         if(a.m_entity == b.m_entity)
             return a.m_owner < b.m_owner;
@@ -76,7 +83,7 @@ struct SharingInfoLess
 
 struct SharingInfoLessByEntity
 {
-    bool operator()(const stk::mesh::sharing_info &a, const stk::mesh::sharing_info &b)
+    bool operator()(const sharing_info &a, const sharing_info &b)
     {
       return a.m_entity < b.m_entity;
     }
@@ -84,13 +91,13 @@ struct SharingInfoLessByEntity
 
 struct SharingInfoEqual
 {
-    bool operator()(const stk::mesh::sharing_info &a, const stk::mesh::sharing_info &b)
+    bool operator()(const sharing_info &a, const sharing_info &b)
     {
        return (a.m_entity == b.m_entity &&  a.m_owner == b.m_owner && a.m_sharing_proc == b.m_sharing_proc);
     }
 };
 
-inline void update_sharing_info_ownership(std::vector<stk::mesh::sharing_info>& sharedModified)
+inline void update_sharing_info_ownership(std::vector<sharing_info>& sharedModified)
 {
   stk::util::sort_and_unique(sharedModified, SharingInfoLess(), SharingInfoEqual());
   if(!sharedModified.empty()) {

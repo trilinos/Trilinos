@@ -1,4 +1,5 @@
 #include "stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp"
+#include "stk_mesh/baseImpl/MeshImplUtils.hpp"
 #include "stk_unit_test_utils/getOption.h"
 #include "DisconnectBlocksMeshConstruction.hpp"
 #include "stk_util/parallel/ParallelReduce.hpp"
@@ -2635,3 +2636,49 @@ TEST_F(TestDisconnectWithSidesets, ALRB)
   EXPECT_EQ(1u, numFacesInSurface1);
 }
 
+class TestDisconnectWithSharedFace : public stk::unit_test_util::MeshFixture
+{
+protected:
+  TestDisconnectWithSharedFace() : stk::unit_test_util::MeshFixture(3)
+  {
+    setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
+  }
+};
+
+TEST_F(TestDisconnectWithSharedFace, twoTets)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { GTEST_SKIP(); }
+  auto& bulk = get_bulk();
+
+  std::string meshDesc =
+      "0,1001,TET_4, 103, 102, 101, 105,block_1\n"
+      "1,1002,TET_4, 102, 104, 101, 105,block_2\n"
+      "|sideset:name=surface_1; data=1001,2";
+
+  stk::io::fill_mesh("textmesh:" + meshDesc, bulk);
+
+  auto* sidesetPart = bulk.mesh_meta_data().get_part("surface_1");
+  ASSERT_TRUE(sidesetPart != nullptr);
+
+  stk::mesh::EntityVector entities;
+  stk::mesh::PartVector rmParts;
+
+  if (bulk.parallel_rank() == 0) {
+    stk::mesh::EntityId elemId = 1001;
+    unsigned zeroBasedSideOrdinal = 1;
+    stk::mesh::EntityId faceId = stk::mesh::impl::side_id_formula(elemId, zeroBasedSideOrdinal);
+
+    stk::mesh::Entity face = bulk.get_entity(stk::topology::FACE_RANK, faceId);
+    ASSERT_TRUE(bulk.is_valid(face));
+    entities.push_back(face);
+    rmParts.push_back(sidesetPart);
+  }
+
+  bulk.batch_change_entity_parts(entities, {}, rmParts);
+
+  EXPECT_EQ(1u,stk::mesh::count_entities(bulk, stk::topology::FACE_RANK, bulk.mesh_meta_data().globally_shared_part()));
+
+  stk::tools::disconnect_all_blocks(bulk);
+
+  EXPECT_EQ(0u,stk::mesh::count_entities(bulk, stk::topology::FACE_RANK, bulk.mesh_meta_data().globally_shared_part()));
+}

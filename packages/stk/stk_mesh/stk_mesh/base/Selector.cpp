@@ -429,7 +429,7 @@ bool Selector::select_bucket_impl(Bucket const& bucket, SelectorNode const* root
     //
     if(bucket.mesh().in_synchronized_state() &&
        bucket.entity_rank() == root->field()->entity_rank() &&
-       root->field()->get_meta_data_for_field().size() > bucket.bucket_id())
+       root->field()->get_num_buckets_for_field() > bucket.bucket_id())
     {
       return field_is_allocated_for_bucket(*root->field(), bucket);
     } else {

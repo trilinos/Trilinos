@@ -1,6 +1,7 @@
 include(CMakeFindDependencyMacro)
 find_dependency(Kokkos REQUIRED)
 find_dependency(Shards REQUIRED)
+find_dependency(Intrepid2 REQUIRED)
 find_dependency(BLAS REQUIRED)
 find_dependency(LAPACK REQUIRED)
 find_dependency(MPI REQUIRED)

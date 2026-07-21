@@ -110,6 +110,18 @@ void fillFaceBoxesWithIds(stk::mesh::BulkData &stkMeshBulkData, const BalanceSet
   std::vector<stk::mesh::SideSetEntry> skinnedSideSet = stk::mesh::SkinMeshUtil::get_skinned_sideset_excluding_region(stkMeshBulkData,
                                                                                                                       searchSelector,
                                                                                                                       !searchSelector);
+  //count and pre-allocate (reserve) the number of box/ids we will be adding
+  //to the faceBoxes vector. (This sometimes helps with memory management.)
+  unsigned count = 0;
+  for (stk::mesh::SideSetEntry sidesetEntry : skinnedSideSet) {
+    stk::mesh::Entity sidesetElement = sidesetEntry.element;
+    if (searchSelector(stkMeshBulkData.bucket(sidesetElement))) {
+      ++count;
+    }
+  }
+
+  faceBoxes.reserve(count);
+
   stk::mesh::EntityVector sideNodes;
   for (stk::mesh::SideSetEntry sidesetEntry : skinnedSideSet) {
     stk::mesh::Entity sidesetElement = sidesetEntry.element;
@@ -150,7 +162,7 @@ void fillParticleBoxesWithIds(stk::mesh::BulkData &stkMeshBulkData,
                   stk::balance::internal::StkBox(xyz(0_comp) - eps, xyz(1_comp) - eps, 0,
                                                  xyz(0_comp) + eps, xyz(1_comp) + eps, 0);
 
-            unsigned int val1 = stkMeshBulkData.identifier(bucket[j]);
+            stk::mesh::EntityId val1 = stkMeshBulkData.identifier(bucket[j]);
             int val2 = stkMeshBulkData.parallel_rank();
             stk::balance::internal::SearchIdentProc id(val1, val2);
 

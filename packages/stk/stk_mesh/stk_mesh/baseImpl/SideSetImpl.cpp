@@ -33,6 +33,7 @@
 //
 
 #include <stk_mesh/baseImpl/SideSetImpl.hpp>
+#include "stk_mesh/baseImpl/PartAttribute.hpp"
 #include <stk_mesh/base/Part.hpp>       // for insert
 #include <stk_mesh/base/BulkData.hpp>
 
@@ -70,11 +71,27 @@ SideSet& SideSetImpl<KEY>::create_sideset(KEY sideset_key, bool fromInput)
   return iter->second;
 }
 
+void set_sideset_part_attribute(stk::mesh::Part& part, const bool hasAttribute)
+{
+  stk::mesh::impl::set_part_attribute<SidesetPartAttribute>(part, hasAttribute);
+}
+
+bool has_sideset_part_attribute(stk::mesh::Part& part)
+{
+  return stk::mesh::impl::has_part_attribute<SidesetPartAttribute>(part);
+}
+
+bool get_sideset_part_attribute(stk::mesh::Part& part)
+{
+  return stk::mesh::impl::get_part_attribute<SidesetPartAttribute>(part);
+}
+
 template<typename KEY>
 SideSet& SideSetImpl<KEY>::create_sideset(const stk::mesh::Part &part, bool fromInput)
 {
     SideSet& ss = create_sideset(m_keyGenerator.generate_key(part), fromInput);
     ss.set_part(&part);
+    set_sideset_part_attribute(const_cast<stk::mesh::Part &>(part), true);
     return ss;
 }
 
