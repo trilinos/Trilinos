@@ -325,6 +325,8 @@ private:
     void fill_info_for_element_affected_by_block_part_change(Entity entity,
                                                              SideSetSelectorVector& sidesetsAndSelectors,
                                                              std::vector<std::pair<Entity, unsigned>>& sideAndPartOrdinalVec);
+
+    const Part& internal_get_sideset_parent(const Part& sidesetPart);
 };
 
 }} // end stk mesh namespaces

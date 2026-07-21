@@ -101,8 +101,9 @@ struct DataTypeKey
 };
 
 template<typename SRCTYPE, typename DESTTYPE>
-inline void assign_src_type_to_dest_type(const void* srcAddr, void* destAddr, unsigned index) {
-  ((DESTTYPE*)destAddr)[index] = ((SRCTYPE*)srcAddr)[index];
+inline void assign_src_type_to_dest_type(const void* srcAddr, int srcComponentStride,
+                                         void* destAddr, int destComponentStride, unsigned index) {
+  ((DESTTYPE*)destAddr)[index*destComponentStride] = ((SRCTYPE*)srcAddr)[index*srcComponentStride];
 }
 
 class TranslatorBase
@@ -110,13 +111,16 @@ class TranslatorBase
  public:
   TranslatorBase() {}
 
-  virtual void translate(const void* srcAddr, unsigned srcDataByteSize, DataTypeKey::data_t destType, void* destAddr, unsigned destDataByteSize) const = 0;
+  virtual void translate(const void* srcAddr, int srcNumComponents, int srcComponentStride, DataTypeKey::data_t destType,
+                         void* destAddr, int destNumComponents, int destComponentStride) const = 0;
+  virtual int get_src_component_size(const unsigned srcDataByteSize) const = 0;
+  virtual int get_dest_component_size(DataTypeKey::data_t destType, const unsigned destDataByteSize) const = 0;
   virtual ~TranslatorBase() = default;
 };
 
 struct TranslatorInfo
 {
-  typedef std::function<void(const void*, void*, unsigned)> TranslateFunction;
+  typedef std::function<void(const void*, int, void*, int, unsigned)> TranslateFunction;
   TranslateFunction translateFunction;
   size_t typeSize;
 };
@@ -124,7 +128,6 @@ struct TranslatorInfo
 template<typename TYPE>
 class DataTypeTranslator : public TranslatorBase
 {
-
  public:
   DataTypeTranslator()
   {
@@ -136,16 +139,25 @@ class DataTypeTranslator : public TranslatorBase
     m_translators.push_back({assign_src_type_to_dest_type<TYPE, double>, sizeof(double)});
   }
   
-  void translate(const void* srcAddr, unsigned srcDataByteSize, DataTypeKey::data_t destType, void* destAddr, unsigned destDataByteSize) const override {
-    STK_ThrowRequire(DataTypeKey::is_valid_data_type(destType));
+  int get_src_component_size(const unsigned srcDataByteSize) const override {
     STK_ThrowRequire(srcDataByteSize % sizeof(TYPE) == 0);
-    unsigned srcCount = srcDataByteSize / sizeof(TYPE);
-    unsigned destCount = destDataByteSize / m_translators[destType].typeSize;
+    int srcNumComponents = srcDataByteSize / sizeof(TYPE);
+    return srcNumComponents;
+  }
 
-    unsigned count = std::min(srcCount, destCount);
+  int get_dest_component_size(DataTypeKey::data_t destType, const unsigned destDataByteSize) const override {
+    STK_ThrowRequire(DataTypeKey::is_valid_data_type(destType));
+    int destNumComponents = destDataByteSize / m_translators[destType].typeSize;
+    return destNumComponents;
+  }
+
+  void translate(const void* srcAddr, int srcNumComponents, int srcComponentStride, DataTypeKey::data_t destType,
+                 void* destAddr, int destNumComponents, int destComponentStride) const override {
+    STK_ThrowRequire(DataTypeKey::is_valid_data_type(destType));
+    unsigned count = std::min(srcNumComponents, destNumComponents);
 
     for(unsigned i = 0; i < count; i++) {
-      m_translators[destType].translateFunction(srcAddr, destAddr, i);
+      m_translators[destType].translateFunction(srcAddr, srcComponentStride, destAddr, destComponentStride, i);
     }
   }
 

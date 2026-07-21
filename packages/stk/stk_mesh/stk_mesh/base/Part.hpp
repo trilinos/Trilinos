@@ -122,7 +122,7 @@ public:
 
   //whether an entity's membership in this part is required to be the same on each processor that shares/ghosts the entity.
   bool entity_membership_is_parallel_consistent() const { return m_entity_membership_is_parallel_consistent; }
-  void entity_membership_is_parallel_consistent(bool trueOrFalse) { m_entity_membership_is_parallel_consistent = trueOrFalse; }
+  void entity_membership_is_parallel_consistent(bool trueOrFalse);
 
   int64_t id() const { return m_id; }
 
@@ -217,8 +217,6 @@ private:
   friend class ::stk::mesh::MetaData;
   friend CSet & impl::get_attributes(stk::mesh::Part & part);
 
-#ifndef DOXYGEN_COMPILE
-
   /** Construct a subset part within a given mesh.
    *  Is used internally by the two 'declare_part' methods on PartRepository.
    */
@@ -245,8 +243,6 @@ private:
   Part();
   Part( const Part & );
   Part & operator = ( const Part & );
-
-#endif /* DOXYGEN_COMPILE */
 };
 
 template<class T>

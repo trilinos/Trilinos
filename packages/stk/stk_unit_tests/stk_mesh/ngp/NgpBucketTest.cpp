@@ -159,8 +159,7 @@ public:
       auto partition = deviceBucketRepo.create_partition(testRank, devicePartOrdinals);
 
       for (unsigned i = 0; i < numBuckets; ++i) {
-        auto bucket = deviceBucketRepo.construct_new_bucket(testRank, devicePartOrdinals);
-        partition->add_bucket(bucket);
+        deviceBucketRepo.construct_new_bucket(testRank, devicePartOrdinals, partition);
       }
     }
   }
@@ -193,15 +192,16 @@ public:
     if (expected.extent(0) != found.extent(0)) { return; }
 
     Kokkos::View<bool> result("");
-    Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int i) {
-      for (unsigned i = 0; i < expected.extent(0); ++i) {
-        if (expected(i) != found(i)) {
-          result() = false;
-          return;
-        }
-      }
-      result() = true;
-    });
+    Kokkos::parallel_for(
+        1, KOKKOS_LAMBDA(const int /*i*/) {
+          for (unsigned j = 0; j < expected.extent(0); ++j) {
+            if (expected(j) != found(j)) {
+              result() = false;
+              return;
+            }
+          }
+          result() = true;
+        });
 
     auto hostResult = Kokkos::create_mirror_view_and_copy(stk::ngp::HostMemSpace{}, result);
     EXPECT_TRUE(hostResult());
@@ -218,13 +218,13 @@ public:
     auto partition = deviceBucketRepo.create_partition(testRank, devicePartOrdinals);
 
     for (unsigned i = 0; i < numBuckets*2; ++i) {
-      auto bucket = deviceBucketRepo.construct_new_bucket(testRank, devicePartOrdinals);
-      partition->add_bucket(bucket);
+      deviceBucketRepo.construct_new_bucket(testRank, devicePartOrdinals, partition);
     }
 
     for (unsigned i = 0; i < numBuckets*2; ++i) {
       if (i % 2 == 0) {
-        auto bucket = deviceBucketRepo.get_bucket(testRank, i);
+        auto* bucket = deviceBucketRepo.get_bucket(testRank, i);
+        deviceBucketRepo.invalidate_bucket(bucket);
         partition->remove_bucket(bucket);
       }
     }
@@ -244,17 +244,17 @@ public:
       auto partition = deviceBucketRepo.create_partition(testRank, devicePartOrdinals);
 
       for (unsigned i = 0; i < numBuckets*2; ++i) {
-        auto bucket = deviceBucketRepo.construct_new_bucket(testRank, devicePartOrdinals);
-        partition->add_bucket(bucket);
+        deviceBucketRepo.construct_new_bucket(testRank, devicePartOrdinals, partition);
       }
     }
 
     unsigned initialNumBuckets = deviceBucketRepo.num_buckets(testRank);
     for (unsigned i = 0; i < initialNumBuckets; ++i) {
       if (i % 2 == 0) {
-        auto bucket = deviceBucketRepo.get_bucket(testRank, i);
+        auto* bucket = deviceBucketRepo.get_bucket(testRank, i);
         auto partitionId = bucket->m_owningPartitionId;
-        auto partition = deviceBucketRepo.get_partition(testRank, partitionId);
+        auto* partition = deviceBucketRepo.get_partition(testRank, partitionId);
+        deviceBucketRepo.invalidate_bucket(bucket);
         partition->remove_bucket(bucket);
       }
     }
@@ -274,8 +274,7 @@ public:
       auto partition = deviceBucketRepo.create_partition(testRank, devicePartOrdinals);
 
       for (unsigned i = 0; i < numBuckets; ++i) {
-        auto bucket = deviceBucketRepo.construct_new_bucket(testRank, devicePartOrdinals);
-        partition->add_bucket(bucket);
+        deviceBucketRepo.construct_new_bucket(testRank, devicePartOrdinals, partition);
       }
     }
 
@@ -284,6 +283,7 @@ public:
 
     for (unsigned i = 0; i < initialNumBuckets; ++i) {
       auto bucketPtr = partitionToEmpty->m_buckets[i].bucketPtr;
+      deviceBucketRepo.invalidate_bucket(bucketPtr);
       partitionToEmpty->remove_bucket(bucketPtr);
     }
   }
@@ -334,8 +334,8 @@ public:
     auto numInitBucketCapacity = 32u;
     create_parts(numInitBucketCapacity+1);
 
-    auto part = m_meta->get_part("part0");
-    create_node(1, {part});
+    auto part0 = m_meta->get_part("part0");
+    create_node(1, {part0});
 
     stk::mesh::NgpMesh ngpMesh1 = stk::mesh::get_updated_ngp_mesh(*m_bulk);
     auto& deviceBucketRepo1 = ngpMesh1.get_device_bucket_repository();
@@ -368,8 +368,8 @@ public:
     auto numInitBucketCapacity = 32u;
     create_parts(numInitBucketCapacity*2);
 
-    auto part = m_meta->get_part("part0");
-    create_node(1, {part});
+    auto part0 = m_meta->get_part("part0");
+    create_node(1, {part0});
     stk::mesh::Selector universal = get_meta().universal_part();
 
     {
@@ -432,11 +432,10 @@ public:
     {
       stk::mesh::NgpMesh ngpMesh5 = stk::mesh::get_updated_ngp_mesh(*m_bulk);
       stk::mesh::EntityRank thisRank = testRank;
-      stk::mesh::for_each_entity_run(ngpMesh5, testRank, universal,
-        KOKKOS_LAMBDA(stk::mesh::FastMeshIndex const& index) {
-          [[maybe_unused]] const stk::mesh::Entity entity = ngpMesh5.get_entity(thisRank, index);
-        }
-      );
+      stk::mesh::for_each_entity_run(
+          ngpMesh5, testRank, universal, KOKKOS_LAMBDA(stk::mesh::FastMeshIndex const& index) {
+            [[maybe_unused]] const stk::mesh::Entity entity = ngpMesh5.get_entity(thisRank, index);
+          });
     }
   }
 
@@ -445,8 +444,8 @@ public:
     auto numInitBucketCapacity = 32u;
     create_parts(numInitBucketCapacity*2);
 
-    auto part = m_meta->get_part("part0");
-    create_node(1, {part});
+    auto part0 = m_meta->get_part("part0");
+    create_node(1, {part0});
 
     {
       stk::mesh::NgpMesh ngpMesh1 = stk::mesh::get_updated_ngp_mesh(*m_bulk);
@@ -616,8 +615,7 @@ NGP_TEST_F(NgpBucketRepositoryTest, check_get_or_create_partition)
   EXPECT_EQ(result, nullptr);
 
   for (unsigned i = 0; i < numPartitions; ++i) {
-    auto devicePartOrdinals = get_device_part_ordinals(1, i);
-    deviceBucketRepo.create_partition(testRank, devicePartOrdinals);
+    deviceBucketRepo.create_partition(testRank, get_device_part_ordinals(1, i));
   }
 
   auto createdPartition = deviceBucketRepo.get_or_create_partition(testRank, devicePartOrdinals);
@@ -681,7 +679,7 @@ NGP_TEST_F(NgpBucketRepositoryTest, device_bucket_repo_invalidate_bucket_no_sync
   EXPECT_NO_THROW(deviceBucketRepo.get_bucket(testRank, 0));
   EXPECT_NE(deviceBucketRepo.get_bucket(testRank, 0), nullptr);
 
-  EXPECT_ANY_THROW(deviceBucketRepo.invalidate_bucket(newBucket));
+  deviceBucketRepo.invalidate_bucket(newBucket);
 
   EXPECT_EQ(stk::mesh::INVALID_BUCKET_ID, newBucket->bucket_id());
 }
@@ -822,9 +820,9 @@ NGP_TEST_F(NgpBucketRepositoryTest, check_bucket_repo_ref_counts)
     stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(*m_bulk);
     auto& deviceBucketRepo = ngpMesh.get_device_bucket_repository();
     EXPECT_EQ(0u, deviceBucketRepo.num_buckets(testRank));
-    EXPECT_EQ(0, deviceBucketRepo.m_buckets[testRank].get_view().use_count());
+    EXPECT_EQ(1, deviceBucketRepo.m_buckets[testRank].get_view().use_count());
   }
-  EXPECT_EQ(0, ngpMeshInit.get_device_bucket_repository().m_buckets[testRank].get_view().use_count());
+  EXPECT_EQ(1, ngpMeshInit.get_device_bucket_repository().m_buckets[testRank].get_view().use_count());
 
   unsigned numBucketsToCreate = 33;
   for (unsigned i = 1; i <= numBucketsToCreate; ++i) {
@@ -834,7 +832,7 @@ NGP_TEST_F(NgpBucketRepositoryTest, check_bucket_repo_ref_counts)
     m_bulk->declare_node(i, stk::mesh::PartVector{&part});
     m_bulk->modification_end();
   }
-  EXPECT_EQ(0, ngpMeshInit.get_device_bucket_repository().m_buckets[testRank].get_view().use_count());
+  EXPECT_EQ(1, ngpMeshInit.get_device_bucket_repository().m_buckets[testRank].get_view().use_count());
 
   // reference
   {
@@ -909,7 +907,7 @@ NGP_TEST_F(NgpBucketRepositoryTest, check_multiple_copies_of_ngp_mesh_updated_co
   EXPECT_EQ(numBucketsToCreate+1, ngpMesh3.get_device_bucket_repository().m_buckets[testRank].size());
 
   EXPECT_EQ(0u, ngpMeshInit.get_device_bucket_repository().num_buckets(testRank));
-  EXPECT_EQ(numBucketsToCreate, ngpMesh2.get_device_bucket_repository().num_buckets(testRank));
+  EXPECT_EQ(0u, ngpMesh2.get_device_bucket_repository().num_buckets(testRank));
   EXPECT_EQ(numBucketsToCreate+1, ngpMesh3.get_device_bucket_repository().num_buckets(testRank));
 }
 
@@ -1089,8 +1087,7 @@ NGP_TEST_F(NgpPartitionTest, check_add_bucket)
 
   EXPECT_EQ(0u, deviceBucketRepo.num_buckets(testRank));
   auto partition = deviceBucketRepo.create_partition(testRank, devicePartOrdinals);
-  auto newBucket = deviceBucketRepo.construct_new_bucket(testRank, devicePartOrdinals);
-  partition->add_bucket(newBucket);
+  auto newBucket = deviceBucketRepo.construct_new_bucket(testRank, devicePartOrdinals, partition);
 
   EXPECT_EQ(1u, partition->num_buckets());
   EXPECT_EQ(newBucket->bucket_id(), partition->m_buckets[0]->bucket_id());
@@ -1108,8 +1105,7 @@ NGP_TEST_F(NgpPartitionTest, check_remove_bucket)
 
   EXPECT_EQ(0u, deviceBucketRepo.num_buckets(testRank));
   auto partition = deviceBucketRepo.create_partition(testRank, devicePartOrdinals);
-  auto newBucket = deviceBucketRepo.construct_new_bucket(testRank, devicePartOrdinals);
-  partition->add_bucket(newBucket);
+  auto newBucket = deviceBucketRepo.construct_new_bucket(testRank, devicePartOrdinals, partition);
 
   EXPECT_EQ(1u, partition->num_buckets());
   EXPECT_EQ(newBucket->bucket_id(), partition->m_buckets[0]->bucket_id());
@@ -1118,7 +1114,6 @@ NGP_TEST_F(NgpPartitionTest, check_remove_bucket)
   partition->remove_bucket(newBucket);
 
   EXPECT_EQ(0u, partition->num_buckets());
-  EXPECT_EQ(stk::mesh::INVALID_BUCKET_ID, newBucket->bucket_id());
   EXPECT_EQ(newBucket->m_owningPartitionId, stk::mesh::INVALID_PARTITION_ID);
 }
 
@@ -1612,7 +1607,6 @@ NGP_TEST_F(NgpBucketRepoBatchOpTest, assign_dest_bucket_id_and_ordinal_two_entit
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
-  using DevicePartOrdinalView = stk::mesh::PartOrdinalViewType<stk::ngp::MemSpace>;
   using HostEntitySrcDestView = Kokkos::View<stk::mesh::impl::EntitySrcDest*, stk::ngp::HostMemSpace>;
 
   build_empty_mesh(2, 2);
@@ -1938,8 +1932,8 @@ NGP_TEST_F(NgpBucketRepoBatchOpTest, assign_dest_bucket_id_and_ordinal_six_entit
 
 NGP_TEST_F(NgpBucketRepoBatchOpTest, batch_move_entities_same_partition)
 {
-  using DevicePartOrdinalView = stk::mesh::PartOrdinalViewType<stk::ngp::MemSpace>;
-  using HostPartOrdinalView = typename DevicePartOrdinalView::host_mirror_type;
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+
   using DeviceEntitiesType = Kokkos::View<stk::mesh::Entity*, stk::ngp::MemSpace>;
   using DeviceEntitySrcDestView = Kokkos::View<stk::mesh::impl::EntitySrcDest*, stk::ngp::MemSpace>;
   using HostEntitySrcDestView = typename DeviceEntitySrcDestView::host_mirror_type;
@@ -1978,11 +1972,9 @@ NGP_TEST_F(NgpBucketRepoBatchOpTest, batch_move_entities_same_partition)
   stk::mesh::impl::set_dest_bucket_ids(ngpMesh, deviceEntitySrcDest);
 
   HostBucketConnectivitySize2DView hostNumNewConnSizes("numNewConnSizes", static_cast<unsigned>(stk::topology::NUM_RANKS), 3);
-  hostNumNewConnSizes(stk::topology::NODE_RANK, 2) = {2, 2, 0, 3, 0, 0};
+  hostNumNewConnSizes(stk::topology::NODE_RANK, 2) = {2, 2, 0, 3, 0};
   auto deviceNumNewConnSizes = Kokkos::create_mirror_view_and_copy(stk::ngp::MemSpace{}, hostNumNewConnSizes);
   
-  deviceBucketRepo.batch_init_bucket_connectivity_views(deviceEntitySrcDest, deviceNumNewConnSizes);
-
   deviceBucketRepo.batch_move_entities(deviceEntitySrcDest);
 
   // empty buckets (with stale data) have not been cleared out from partition 0 and 1 at this point
@@ -2000,8 +1992,8 @@ NGP_TEST_F(NgpBucketRepoBatchOpTest, batch_move_entities_same_partition)
 
 NGP_TEST_F(NgpBucketRepoBatchOpTest, batch_move_entities_separate_partitions)
 {
-  using DevicePartOrdinalView = stk::mesh::PartOrdinalViewType<stk::ngp::MemSpace>;
-  using HostPartOrdinalView = typename DevicePartOrdinalView::host_mirror_type;
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+
   using DeviceEntitiesType = Kokkos::View<stk::mesh::Entity*, stk::ngp::MemSpace>;
   using DeviceEntitySrcDestView = Kokkos::View<stk::mesh::impl::EntitySrcDest*, stk::ngp::MemSpace>;
   using HostEntitySrcDestView = typename DeviceEntitySrcDestView::host_mirror_type;
@@ -2042,11 +2034,9 @@ NGP_TEST_F(NgpBucketRepoBatchOpTest, batch_move_entities_separate_partitions)
   stk::mesh::impl::set_dest_bucket_ids(ngpMesh, deviceEntitySrcDest);
 
   HostBucketConnectivitySize2DView hostNumNewConnSizes("numNewConnSizes", static_cast<unsigned>(stk::topology::NUM_RANKS), 4);
-  hostNumNewConnSizes(stk::topology::NODE_RANK, 2) = {2, 2, 0, 2, 0, 0};
-  hostNumNewConnSizes(stk::topology::NODE_RANK, 3) = {3, 2, 0, 2, 0, 0};
+  hostNumNewConnSizes(stk::topology::NODE_RANK, 2) = {2, 2, 0, 2, 0};
+  hostNumNewConnSizes(stk::topology::NODE_RANK, 3) = {3, 2, 0, 2, 0};
   auto deviceNumNewConnSizes = Kokkos::create_mirror_view_and_copy(stk::ngp::MemSpace{}, hostNumNewConnSizes);
-
-  deviceBucketRepo.batch_init_bucket_connectivity_views(deviceEntitySrcDest, deviceNumNewConnSizes);
 
   deviceBucketRepo.batch_move_entities(deviceEntitySrcDest);
 
@@ -2069,8 +2059,8 @@ NGP_TEST_F(NgpBucketRepoBatchOpTest, batch_move_entities_separate_partitions)
 
 NGP_TEST_F(NgpBucketRepoBatchOpTest, batch_move_entities_exchange_partitions)
 {
-  using DevicePartOrdinalView = stk::mesh::PartOrdinalViewType<stk::ngp::MemSpace>;
-  using HostPartOrdinalView = typename DevicePartOrdinalView::host_mirror_type;
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+
   using DeviceEntitiesType = Kokkos::View<stk::mesh::Entity*, stk::ngp::MemSpace>;
   using DeviceEntitySrcDestView = Kokkos::View<stk::mesh::impl::EntitySrcDest*, stk::ngp::MemSpace>;
   using HostEntitySrcDestView = typename DeviceEntitySrcDestView::host_mirror_type;
@@ -2109,11 +2099,9 @@ NGP_TEST_F(NgpBucketRepoBatchOpTest, batch_move_entities_exchange_partitions)
   stk::mesh::impl::set_dest_bucket_ids(ngpMesh, deviceEntitySrcDest);
 
   HostBucketConnectivitySize2DView hostNumNewConnSizes("numNewConnSizes", static_cast<unsigned>(stk::topology::NUM_RANKS), 2);
-  hostNumNewConnSizes(stk::topology::NODE_RANK, 0) = {0, 0, 1, 2, 0, 0};
-  hostNumNewConnSizes(stk::topology::NODE_RANK, 1) = {1, 1, 1, 2, 0, 0};
+  hostNumNewConnSizes(stk::topology::NODE_RANK, 0) = {0, 0, 1, 2, 0};
+  hostNumNewConnSizes(stk::topology::NODE_RANK, 1) = {1, 1, 1, 2, 0};
   auto deviceNumNewConnSizes = Kokkos::create_mirror_view_and_copy(stk::ngp::MemSpace{}, hostNumNewConnSizes);
-
-  deviceBucketRepo.batch_init_bucket_connectivity_views(deviceEntitySrcDest, deviceNumNewConnSizes);
 
   deviceBucketRepo.batch_move_entities(deviceEntitySrcDest);
 
@@ -2124,6 +2112,271 @@ NGP_TEST_F(NgpBucketRepoBatchOpTest, batch_move_entities_exchange_partitions)
   auto partition1 = deviceBucketRepo.get_partition(testRank, 1);
   EXPECT_EQ(1u, partition1->m_numEntities);
   EXPECT_EQ(1u, partition1->num_buckets());
+}
+
+class NgpPartitionTestSortBucketEntitiesTest : public NgpPartitionTest
+{
+public:
+
+  auto& get_device_bucket_repo()
+  {
+    stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(*m_bulk);
+    return ngpMesh.get_device_bucket_repository();
+  }
+
+  void create_device_partitions_with_empty_buckets_without_connectivity(unsigned numPartitions, unsigned numBuckets, unsigned bucketCapacity)
+  {
+    create_device_partitions_with_one_part(numPartitions, bucketCapacity);
+
+    auto& deviceBucketRepo = get_device_bucket_repo();
+    auto& partitions = deviceBucketRepo.get_partitions(testRank);
+
+    for (unsigned i = 0; i < numPartitions; ++i) {
+      auto& partition = partitions[i];
+      auto rank = partition.get_rank();
+      auto& partOrdinals = partition.superset_part_ordinals();
+
+      for (unsigned j = 0; j < numBuckets; ++j) {
+        deviceBucketRepo.construct_new_bucket(rank, partOrdinals, &partition);
+      }
+    }
+  }
+
+  template <typename DevicePartition>
+  void add_entities_in_buckets_in_reverse_order(DevicePartition* partition)
+  {
+    ASSERT_TRUE(partition->num_buckets() > 0);
+
+    unsigned totalNumEntities = partition->get_bucket(0)->capacity() * partition->num_buckets();
+    for (unsigned i = 0; i < partition->num_buckets(); ++i) {
+      auto bucket = partition->m_buckets[i];
+
+      for (unsigned j = 0; j < partition->get_bucket(0)->capacity(); j++) {
+        Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int) {
+          auto idx = bucket->size();
+          partition->add_entity_without_connectivity(stk::mesh::Entity{totalNumEntities}, i, idx);
+        });
+        totalNumEntities--;
+      }
+    }
+  }
+
+  void add_entities_in_partitions_in_reverse_order()
+  {
+    auto& deviceBucketRepo = get_device_bucket_repo();
+    for (unsigned i = 0; i < deviceBucketRepo.num_partitions(testRank); ++i) {
+      auto partition = deviceBucketRepo.get_partition(testRank, i);
+      add_entities_in_buckets_in_reverse_order(partition);
+    }
+  }
+
+  template <typename Lambda>
+  void remove_entities(Lambda const& cond)
+  {
+    auto& deviceBucketRepo = get_device_bucket_repo();
+    auto numPartitions = deviceBucketRepo.num_partitions(testRank);
+    auto rank = testRank;
+
+    Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int) {
+      for (unsigned i = 0; i < numPartitions; ++i) {
+        auto partition = deviceBucketRepo.get_partition(rank, i);
+
+        for (unsigned j = 0; j < partition->num_buckets(); j++) {
+          auto bucket = partition->get_bucket(j);
+          auto bucketSize = bucket->size();
+
+          for (unsigned k = 0; k < bucketSize; k++) {
+            if (cond(k)) {
+              partition->remove_entity(bucket->bucket_id(), k);
+            }
+          }
+        }
+      }
+    });
+  }
+
+  void check_entities_sorted_in_buckets()
+  {
+    auto numPartitions = get_device_bucket_repo().num_partitions(testRank);
+
+    for (unsigned i = 0; i < numPartitions; ++i) {
+      auto partition = get_device_bucket_repo().get_partition(testRank, i);
+      auto numBuckets = partition->num_buckets();
+
+      auto comp = stk::mesh::Entity{};
+      for (unsigned j = 0; j < numBuckets; j++) {
+        auto bucket = partition->m_buckets[j];
+        auto hostEntities = Kokkos::create_mirror_view_and_copy(stk::ngp::HostMemSpace{}, bucket->m_entities);
+        auto isSorted = Kokkos::Experimental::is_sorted(stk::ngp::HostExecSpace{}, hostEntities, stk::mesh::impl::EntityCompareInvalidAtEnd{});
+
+        if (!bucket->is_active()) { continue; }
+
+        EXPECT_TRUE(isSorted);
+        EXPECT_TRUE(comp < hostEntities(0));
+        comp = hostEntities(hostEntities.extent(0)-1);
+      }
+
+    }
+  }
+};
+
+NGP_TEST_F(NgpPartitionTestSortBucketEntitiesTest, get_entities_sorting_level)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+
+  using TeamPolicy = Kokkos::TeamPolicy<stk::ngp::ExecSpace>;
+  auto level0MaxSize = TeamPolicy::scratch_size_max(0);
+
+  auto bucketCapacity = 256;
+  create_device_partitions_with_one_part(1, bucketCapacity);
+
+  auto& deviceBucketRepo = get_device_bucket_repo();
+  auto partition = deviceBucketRepo.get_partition(testRank, 0);
+  auto level0MaxNumBuckets = level0MaxSize / (bucketCapacity * sizeof(stk::mesh::Entity));
+  auto rank = partition->get_rank();
+  auto& partOrdinals = partition->superset_part_ordinals();
+
+  for (unsigned i = 0; i < level0MaxNumBuckets; ++i) {
+    deviceBucketRepo.construct_new_bucket(rank, partOrdinals, partition);
+  }
+
+  auto [mode, shmemSize] = deviceBucketRepo.get_entities_sorting_level(testRank);
+  EXPECT_EQ(mode, stk::mesh::impl::SCRATCH_LEVEL0);
+
+  deviceBucketRepo.construct_new_bucket(rank, partOrdinals, partition);
+
+  auto [mode2, shmemSize2] = deviceBucketRepo.get_entities_sorting_level(testRank);
+  EXPECT_EQ(mode2, stk::mesh::impl::SCRATCH_LEVEL1);
+}
+
+NGP_TEST_F(NgpPartitionTestSortBucketEntitiesTest, unsorted_one_bucket)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+
+  auto numPartitions = 1;
+  auto numBucketsInPartition = 1;
+  auto bucketCapacity = 5;
+  create_device_partitions_with_empty_buckets_without_connectivity(numPartitions, numBucketsInPartition, bucketCapacity);
+  add_entities_in_partitions_in_reverse_order();
+
+  auto& deviceBucketRepo = get_device_bucket_repo();
+  deviceBucketRepo.sort_entities_in_partitions(testRank);
+  check_entities_sorted_in_buckets();
+}
+
+NGP_TEST_F(NgpPartitionTestSortBucketEntitiesTest, unsorted_two_partitions_each_with_one_bucket)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+
+  auto numPartitions = 2;
+  auto numBucketsInPartition = 1;
+  auto bucketCapacity = 5;
+  create_device_partitions_with_empty_buckets_without_connectivity(numPartitions, numBucketsInPartition, bucketCapacity);
+  add_entities_in_partitions_in_reverse_order();
+
+  auto& deviceBucketRepo = get_device_bucket_repo();
+  deviceBucketRepo.sort_entities_in_partitions(testRank);
+  check_entities_sorted_in_buckets();
+}
+
+NGP_TEST_F(NgpPartitionTestSortBucketEntitiesTest, unsorted_two_partitions_each_with_two_buckets)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+
+  auto numPartitions = 2;
+  auto numBucketsInPartition = 2;
+  auto bucketCapacity = 5;
+  create_device_partitions_with_empty_buckets_without_connectivity(numPartitions, numBucketsInPartition, bucketCapacity);
+  add_entities_in_partitions_in_reverse_order();
+
+  auto& deviceBucketRepo = get_device_bucket_repo();
+  deviceBucketRepo.sort_entities_in_partitions(testRank);
+  check_entities_sorted_in_buckets();
+}
+
+struct RemoveFirstAndLastFunctor {
+  unsigned bucketCapacity;
+
+  KOKKOS_INLINE_FUNCTION
+  bool operator()(unsigned idx) const { return idx == 0 || idx == bucketCapacity-1; }
+};
+
+NGP_TEST_F(NgpPartitionTestSortBucketEntitiesTest, buckets_with_invalid_entities)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+
+  unsigned numPartitions = 2;
+  unsigned numBucketsInPartition = 2;
+  unsigned bucketCapacity = 5;
+  create_device_partitions_with_empty_buckets_without_connectivity(numPartitions, numBucketsInPartition, bucketCapacity);
+  add_entities_in_partitions_in_reverse_order();
+  remove_entities(RemoveFirstAndLastFunctor{bucketCapacity});
+
+  auto& deviceBucketRepo = get_device_bucket_repo();
+  deviceBucketRepo.sort_entities_in_partitions(testRank);
+  check_entities_sorted_in_buckets();
+}
+
+struct RemoveAlternateIndicesFunctor {
+  unsigned bucketCapacity;
+
+  KOKKOS_INLINE_FUNCTION
+  bool operator()(unsigned idx) const { return idx % 2 == 0; }
+};
+
+NGP_TEST_F(NgpPartitionTestSortBucketEntitiesTest, empty_buckets_after_sort)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+
+  unsigned numPartitions = 2;
+  unsigned numBucketsInPartition = 2;
+  unsigned bucketCapacity = 5;
+  create_device_partitions_with_empty_buckets_without_connectivity(numPartitions, numBucketsInPartition, bucketCapacity);
+  add_entities_in_partitions_in_reverse_order();
+  remove_entities(RemoveAlternateIndicesFunctor{bucketCapacity});
+
+  auto& deviceBucketRepo = get_device_bucket_repo();
+  deviceBucketRepo.sort_entities_in_partitions(testRank);
+  check_entities_sorted_in_buckets();
+}
+
+struct RemoveTrailingFunctor {
+  unsigned bucketCapacity;
+
+  KOKKOS_INLINE_FUNCTION
+  bool operator()(unsigned idx) const { return idx != 0; }
+};
+
+NGP_TEST_F(NgpPartitionTestSortBucketEntitiesTest, unsorted_two_partitions_each_with_four_buckets_shrinking_to_one_bucket_after_sort)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+
+  unsigned numPartitions = 2;
+  unsigned numBucketsInPartition = 4;
+  unsigned bucketCapacity = 5;
+  create_device_partitions_with_empty_buckets_without_connectivity(numPartitions, numBucketsInPartition, bucketCapacity);
+  add_entities_in_partitions_in_reverse_order();
+  remove_entities(RemoveTrailingFunctor{bucketCapacity});
+
+  auto& deviceBucketRepo = get_device_bucket_repo();
+  deviceBucketRepo.sort_entities_in_partitions(testRank);
+  check_entities_sorted_in_buckets();
+}
+
+NGP_TEST_F(NgpPartitionTestSortBucketEntitiesTest, unsorted_two_partitions_each_with_four_buckets_shrinking_to_two_buckets_after_sort)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+
+  unsigned numPartitions = 2;
+  unsigned numBucketsInPartition = 4;
+  unsigned bucketCapacity = 5;
+  create_device_partitions_with_empty_buckets_without_connectivity(numPartitions, numBucketsInPartition, bucketCapacity);
+  add_entities_in_partitions_in_reverse_order();
+  remove_entities(RemoveAlternateIndicesFunctor{bucketCapacity});
+
+  auto& deviceBucketRepo = get_device_bucket_repo();
+  deviceBucketRepo.sort_entities_in_partitions(testRank);
+  check_entities_sorted_in_buckets();
 }
 
 #endif

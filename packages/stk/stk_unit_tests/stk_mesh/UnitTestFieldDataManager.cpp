@@ -247,7 +247,7 @@ std::shared_ptr<stk::mesh::BulkData> build_mesh(unsigned spatialDim, stk::Parall
 
 using TestTypes = ::testing::Types<char, unsigned char, signed char, short, unsigned short, int, unsigned int,
                                    long, unsigned long, long long, unsigned long long, float, double, long double,
-                                   std::complex<float>, std::complex<double>>;
+                                   Kokkos::complex<float>, Kokkos::complex<double>>;
 
 template <typename T>
 class TestFieldDataManager : public testing::Test {};
@@ -422,10 +422,7 @@ size_t allocateAndTestNodeBucketFieldData(const std::vector<stk::mesh::PartVecto
 {
   const stk::mesh::FieldBase &fieldOnPart1 = *fields[0];
   const stk::mesh::FieldBase &fieldOnPart2 = *fields[1];
-  const stk::mesh::FieldMetaDataArrayType &part1FieldMetaDataVector = fieldOnPart1.get_meta_data_for_field();
-  const stk::mesh::FieldMetaDataArrayType &part2FieldMetaDataVector = fieldOnPart2.get_meta_data_for_field();
   const unsigned totalNumFields = allFields.size();
-
   stk::mesh::FieldDataManager& fieldDataManager = fieldOnPart1.get_mesh().get_field_data_manager();
 
   const size_t bucketSize = 123;
@@ -435,14 +432,18 @@ size_t allocateAndTestNodeBucketFieldData(const std::vector<stk::mesh::PartVecto
                                                 totalNumFields, bucketSize, bucketCapacity);
 
     size_t expectedNumBucketsInField = i+1;
-    EXPECT_EQ(expectedNumBucketsInField, part1FieldMetaDataVector.size());
-    EXPECT_EQ(expectedNumBucketsInField, part2FieldMetaDataVector.size());
+    const unsigned part1NumBuckets = fieldOnPart1.get_num_buckets_for_field();
+    const unsigned part2NumBuckets = fieldOnPart2.get_num_buckets_for_field();
+    EXPECT_EQ(expectedNumBucketsInField, part1NumBuckets);
+    EXPECT_EQ(expectedNumBucketsInField, part2NumBuckets);
 
+    const stk::mesh::FieldMetaData* part1FieldMetaDataArray = fieldOnPart1.get_meta_data_for_field();
+    const stk::mesh::FieldMetaData* part2FieldMetaDataArray = fieldOnPart2.get_meta_data_for_field();
     for (size_t j=0; j<expectedNumBucketsInField; j++) {
       int expectedNumBytesPerEntity = bytesPerEntityForField[0][j];
-      EXPECT_EQ(expectedNumBytesPerEntity, part1FieldMetaDataVector[j].m_bytesPerEntity);
+      EXPECT_EQ(expectedNumBytesPerEntity, part1FieldMetaDataArray[j].m_bytesPerEntity);
       expectedNumBytesPerEntity = bytesPerEntityForField[1][j];
-      EXPECT_EQ(expectedNumBytesPerEntity, part2FieldMetaDataVector[j].m_bytesPerEntity);
+      EXPECT_EQ(expectedNumBytesPerEntity, part2FieldMetaDataArray[j].m_bytesPerEntity);
     }
   }
   return bucketCapacity;

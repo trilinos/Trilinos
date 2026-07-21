@@ -67,6 +67,17 @@ class EvaluatePointsInterface
 };
 
 template <typename ENTITYKEY>
+class CoordTransformBaseInterface
+{
+  public:
+    using EntityKey = ENTITYKEY;
+
+    virtual ~CoordTransformBaseInterface() = default;
+
+    virtual void transform(const ENTITYKEY&, std::vector<double>& coords) = 0;
+};
+
+template <typename ENTITYKEY>
 class ExternalPointHandlerInterface
 {
  public:
@@ -103,6 +114,7 @@ class ProvideMasterElementInterface
  public:
   using Topology  = TOPOLOGY;
   using EntityKey = ENTITYKEY;
+  using Field = FIELD;
 
   virtual void evaluate_field(const TOPOLOGY& topo,
       const std::vector<double>& paramCoords,     // (numParamCoords)
@@ -215,6 +227,10 @@ class SourceMeshInterface
   virtual void centroid(const EntityKey& k, std::vector<double>& centroidVec) const = 0;
 
   virtual void coordinates(const EntityKey& k, std::vector<double>& coords) const = 0;
+
+  virtual void acquire_field_data() = 0;
+  virtual void release_field_data() = 0;
+  virtual bool has_acquired_field_data() const = 0;
 };
 
 template <typename RECVMESH>
@@ -255,6 +271,10 @@ class DestinationMeshInterface
 
   virtual double get_distance_from_nearest_node(
     const EntityKey& k, const std::vector<double>& point) const = 0;
+
+  virtual void acquire_field_data() = 0;
+  virtual void release_field_data() = 0;
+  virtual bool has_acquired_field_data() const = 0;
 };
 //ENDSearch_Interface
 

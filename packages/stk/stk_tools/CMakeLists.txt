@@ -1,6 +1,8 @@
 
 STK_SUBPACKAGE(Tools)
 
+message("STKTools")
+
 ADD_SUBDIRECTORY(stk_tools)
 
 STK_SUBPACKAGE_POSTPROCESS()

@@ -764,6 +764,110 @@ TEST(HostViewVector, emplaceBack_fromDefaultInit)
   EXPECT_EQ(viewVector[4], DummyClass(5, 5));
 }
 
+TEST(HostViewVector, Copy)
+{
+  stk::mesh::impl::ViewVector<int> viewVector("ViewVector");
+
+  viewVector.push_back(1);
+  auto copyViewVector = viewVector;
+
+  EXPECT_EQ(viewVector.size(), 1u);
+  EXPECT_EQ(viewVector[0], 1);
+
+  EXPECT_EQ(copyViewVector.size(), 1u);
+  EXPECT_EQ(copyViewVector[0], 1);
+}
+
+TEST(HostViewVector, CopyAndResizeWithReallocation)
+{
+  stk::mesh::impl::ViewVector<int> viewVector("ViewVector");
+
+  viewVector.push_back(1);
+  auto copyViewVector = viewVector;
+  EXPECT_ANY_THROW(copyViewVector.resize(2));
+}
+
+TEST(HostViewVector, CopyAndResizeWithoutReallocation)
+{
+  stk::mesh::impl::ViewVector<int> viewVector("ViewVector");
+
+  viewVector.reserve(2);
+  viewVector.push_back(1);
+  auto copyViewVector = viewVector;
+  copyViewVector.resize(2);
+  copyViewVector[1] = 2;
+
+  EXPECT_EQ(viewVector.size(), 2u);
+  EXPECT_EQ(viewVector[0], 1);
+  EXPECT_EQ(viewVector[1], 2);
+
+  EXPECT_EQ(copyViewVector.size(), 2u);
+  EXPECT_EQ(copyViewVector[0], 1);
+  EXPECT_EQ(copyViewVector[1], 2);
+}
+
+TEST(HostViewVector, CopyAndModifyValue)
+{
+  stk::mesh::impl::ViewVector<int> viewVector("ViewVector");
+
+  viewVector.push_back(1);
+  auto copyViewVector = viewVector;
+  copyViewVector[0] = 2;
+
+  EXPECT_EQ(viewVector.size(), 1u);
+  EXPECT_EQ(viewVector[0], 2);
+
+  EXPECT_EQ(copyViewVector.size(), 1u);
+  EXPECT_EQ(copyViewVector[0], 2);
+}
+
+TEST(HostViewVector, CopyAndAddElementWithReallocation)
+{
+  stk::mesh::impl::ViewVector<int> viewVector("ViewVector");
+
+  viewVector.push_back(1);
+  auto copyViewVector = viewVector;
+  EXPECT_ANY_THROW(copyViewVector.push_back(2));
+}
+
+TEST(HostViewVector, CopyAndAddElementWithoutReallocation)
+{
+  stk::mesh::impl::ViewVector<int> viewVector("ViewVector");
+
+  viewVector.reserve(2);
+  viewVector.push_back(1);
+  auto copyViewVector = viewVector;
+  copyViewVector.push_back(2);
+
+  EXPECT_EQ(viewVector.size(), 2u);
+  EXPECT_EQ(viewVector[0], 1);
+  EXPECT_EQ(viewVector[1], 2);
+
+  EXPECT_EQ(copyViewVector.size(), 2u);
+  EXPECT_EQ(copyViewVector[0], 1);
+  EXPECT_EQ(copyViewVector[1], 2);
+}
+
+TEST(HostViewVector, CopyAndAddElementWithoutReallocationAddingToBoth)
+{
+  stk::mesh::impl::ViewVector<int> viewVector("ViewVector");
+
+  viewVector.reserve(3);
+  viewVector.push_back(1);
+  auto copyViewVector = viewVector;
+  copyViewVector.push_back(2);
+  viewVector.push_back(3);
+
+  EXPECT_EQ(viewVector.size(), 3u);
+  EXPECT_EQ(viewVector[0], 1);
+  EXPECT_EQ(viewVector[1], 2);
+  EXPECT_EQ(viewVector[2], 3);
+
+  EXPECT_EQ(copyViewVector.size(), 3u);
+  EXPECT_EQ(copyViewVector[0], 1);
+  EXPECT_EQ(copyViewVector[1], 2);
+  EXPECT_EQ(copyViewVector[2], 3);
+}
 
 //------------------------------------------------------------------------------
 TEST(DeviceViewVector, defaultConstruction)
@@ -1275,7 +1379,6 @@ TEST(DeviceViewVector, stdSwap)
   EXPECT_EQ(viewVector2.capacity(), 1u);
 }
 
-
 using namespace stk::unit_test_util;
 
 class ViewVectorObjectLifetimes : public ::testing::Test {
@@ -1293,6 +1396,7 @@ TEST_F(ViewVectorObjectLifetimes, DefaultConstruction)
 {
   {
     stk::mesh::impl::ViewVector<ObjectLifetimeSpy> viewVector;
+    EXPECT_FALSE(viewVector.is_allocated());
     EXPECT_EQ(viewVector.size(), 0u);
     EXPECT_EQ(viewVector.capacity(), 0u);
   }
@@ -1371,14 +1475,11 @@ TEST_F(ViewVectorObjectLifetimes, MoveConstruction)
 TEST_F(ViewVectorObjectLifetimes, CopyAssignment)
 {
   {
-    stk::mesh::impl::ViewVector<ObjectLifetimeSpy> viewVectorA("LifetimeVectorA", 0);
-    EXPECT_EQ(viewVectorA.size(), 0u);
-    EXPECT_EQ(viewVectorA.capacity(), 0u);
     stk::mesh::impl::ViewVector<ObjectLifetimeSpy> viewVectorB("LifetimeVectorB", 1);
     EXPECT_EQ(viewVectorB.size(), 1u);
     EXPECT_EQ(viewVectorB.capacity(), 1u);
 
-    viewVectorA = viewVectorB;
+    auto viewVectorA = viewVectorB;
 
     EXPECT_EQ(viewVectorA.size(), 1u);
     EXPECT_EQ(viewVectorA.capacity(), 1u);
@@ -1395,18 +1496,15 @@ TEST_F(ViewVectorObjectLifetimes, CopyAssignment)
 TEST_F(ViewVectorObjectLifetimes, MoveAssignment)
 {
   {
-    stk::mesh::impl::ViewVector<ObjectLifetimeSpy> viewVectorA("LifetimeVectorA", 0);
-    EXPECT_EQ(viewVectorA.size(), 0u);
-    EXPECT_EQ(viewVectorA.capacity(), 0u);
     stk::mesh::impl::ViewVector<ObjectLifetimeSpy> viewVectorB("LifetimeVectorB", 1);
     EXPECT_EQ(viewVectorB.size(), 1u);
     EXPECT_EQ(viewVectorB.capacity(), 1u);
 
-    viewVectorA = std::move(viewVectorB);
+    auto viewVectorA = std::move(viewVectorB);
 
     EXPECT_EQ(viewVectorA.size(), 1u);
     EXPECT_EQ(viewVectorA.capacity(), 1u);
-    EXPECT_EQ(viewVectorB.size(), 0u);
+    EXPECT_EQ(viewVectorB.size(), 1u);
     EXPECT_EQ(viewVectorB.capacity(), 1u);
     EXPECT_EQ(viewVectorA.data(), viewVectorB.data());
   }
@@ -1625,5 +1723,322 @@ TEST_F(ViewVectorObjectLifetimes, emplaceBackTwice_reallocation)
   EXPECT_EQ(objectLifetimeSpy_getNumDestructions(),      3);
 }
 
+template <typename ViewVector>
+struct ViewVectorDeleter
+{
+  void operator()(ViewVector* ptr) {
+    Kokkos::RangePolicy<Kokkos::Serial> deletePolicy(0, 1);
+    Kokkos::parallel_for(deletePolicy, KOKKOS_LAMBDA(int) {
+      ptr->~ViewVector();
+    });
+    Kokkos::kokkos_free<Kokkos::Serial>(ptr);
+  }
+};
+
+template <typename ViewVector>
+std::unique_ptr<ViewVector, ViewVectorDeleter<ViewVector>> MakePtrCopy(ViewVector original) {
+  auto* rawData = static_cast<ViewVector*>(Kokkos::kokkos_malloc<Kokkos::Serial>("copy", sizeof(ViewVector)));
+  Kokkos::RangePolicy<Kokkos::Serial> rangePolicy(0, 1);
+  Kokkos::parallel_for(rangePolicy, KOKKOS_LAMBDA(int) {
+    new (rawData) ViewVector(original);
+  });
+  auto deleter = ViewVectorDeleter<ViewVector>{};
+  auto dataPtr = std::unique_ptr<ViewVector, ViewVectorDeleter<ViewVector>>(rawData, deleter);
+  return dataPtr;
+}
+
+TEST_F(ViewVectorObjectLifetimes, PlacementNew) {
+  {
+    stk::mesh::impl::ViewVector<ObjectLifetimeSpy> original("LifetimeVector", 1);
+    {
+      auto copyPtr = MakePtrCopy(original);
+      EXPECT_EQ(original.get_view().use_count(), 1);
+    }
+  }
+  EXPECT_EQ(objectLifetimeSpy_getNumConstructions(),     1);
+  EXPECT_EQ(objectLifetimeSpy_getNumCopyConstructions(), 0);
+  EXPECT_EQ(objectLifetimeSpy_getNumMoveConstructions(), 0);
+  EXPECT_EQ(objectLifetimeSpy_getNumDestructions(),      1);
+}
+
+TEST(ViewVectorDeepCopy, HostToHostWithExpansion)
+{
+  stk::mesh::impl::ViewVector<int> viewVector1("ViewVector1");
+  stk::mesh::impl::ViewVector<int> viewVector2("ViewVector2");
+
+  viewVector1.reserve(3);
+  viewVector1.push_back(1);
+  viewVector1.push_back(2);
+
+  stk::mesh::impl::deep_copy(viewVector2, viewVector1);
+
+  EXPECT_EQ(viewVector1.size(), 2u);
+  EXPECT_EQ(viewVector1.capacity(), 3u);
+
+  EXPECT_EQ(viewVector2.size(), 2u);
+  EXPECT_EQ(viewVector2.capacity(), 2u);
+  EXPECT_EQ(viewVector1[0], viewVector2[0]);
+  EXPECT_EQ(viewVector1[1], viewVector2[1]);
+}
+
+TEST(ViewVectorDeepCopy, HostToHostWithExpansionNoCapacityChange)
+{
+  stk::mesh::impl::ViewVector<int> viewVector1("ViewVector1");
+  stk::mesh::impl::ViewVector<int> viewVector2("ViewVector2");
+
+  viewVector1.reserve(3);
+  viewVector1.push_back(1);
+  viewVector1.push_back(2);
+
+  viewVector2.reserve(5);
+
+  stk::mesh::impl::deep_copy(viewVector2, viewVector1);
+
+  EXPECT_EQ(viewVector1.size(), 2u);
+  EXPECT_EQ(viewVector1.capacity(), 3u);
+
+  EXPECT_EQ(viewVector2.size(), 2u);
+  EXPECT_EQ(viewVector2.capacity(), 5u);
+  EXPECT_EQ(viewVector1[0], viewVector2[0]);
+  EXPECT_EQ(viewVector1[1], viewVector2[1]);
+}
+
+TEST(ViewVectorDeepCopy, HostToHostWithContraction)
+{
+  stk::mesh::impl::ViewVector<int> viewVector1("ViewVector1");
+  stk::mesh::impl::ViewVector<int> viewVector2("ViewVector2");
+
+  viewVector1.reserve(3);
+  viewVector1.push_back(1);
+  viewVector1.push_back(2);
+
+  viewVector2.resize(5);
+
+  EXPECT_EQ(viewVector2.size(), 5u);
+  EXPECT_EQ(viewVector2.capacity(), 5u);
+
+  stk::mesh::impl::deep_copy(viewVector2, viewVector1);
+
+  EXPECT_EQ(viewVector1.size(), 2u);
+  EXPECT_EQ(viewVector1.capacity(), 3u);
+
+  EXPECT_EQ(viewVector2.size(), 2u);
+  EXPECT_EQ(viewVector2.capacity(), 5u);
+  EXPECT_EQ(viewVector1[0], viewVector2[0]);
+  EXPECT_EQ(viewVector1[1], viewVector2[1]);
+}
+
+TEST(ViewVectorDeepCopy, HostToDeviceWithExpansion)
+{
+  stk::mesh::impl::ViewVector<int> viewVector1("ViewVector1");
+  stk::mesh::impl::ViewVector<int, stk::ngp::MemSpace> viewVector2("ViewVector2");
+
+  viewVector1.reserve(3);
+  viewVector1.push_back(1);
+  viewVector1.push_back(2);
+
+  stk::mesh::impl::deep_copy(viewVector2, viewVector1);
+
+  EXPECT_EQ(viewVector1.size(), 2u);
+  EXPECT_EQ(viewVector1.capacity(), 3u);
+
+  EXPECT_EQ(viewVector2.size(), 2u);
+  EXPECT_EQ(viewVector2.capacity(), 2u);
+  auto viewVector2Host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), viewVector2.get_view());
+  EXPECT_EQ(viewVector1[0], viewVector2Host[0]);
+  EXPECT_EQ(viewVector1[1], viewVector2Host[1]);
+}
+
+TEST(ViewVectorDeepCopy, HostToDeviceWithExpansionNoCapacityChange)
+{
+  stk::mesh::impl::ViewVector<int> viewVector1("ViewVector1");
+  stk::mesh::impl::ViewVector<int, stk::ngp::MemSpace> viewVector2("ViewVector2");
+
+  viewVector1.reserve(3);
+  viewVector1.push_back(1);
+  viewVector1.push_back(2);
+
+  viewVector2.reserve(5);
+
+  stk::mesh::impl::deep_copy(viewVector2, viewVector1);
+
+  EXPECT_EQ(viewVector1.size(), 2u);
+  EXPECT_EQ(viewVector1.capacity(), 3u);
+
+  EXPECT_EQ(viewVector2.size(), 2u);
+  EXPECT_EQ(viewVector2.capacity(), 5u);
+  auto viewVector2Host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), viewVector2.get_view());
+  EXPECT_EQ(viewVector1[0], viewVector2Host[0]);
+  EXPECT_EQ(viewVector1[1], viewVector2Host[1]);
+}
+
+TEST(ViewVectorDeepCopy, HostToDeviceWithContraction)
+{
+  stk::mesh::impl::ViewVector<int> viewVector1("ViewVector1");
+  stk::mesh::impl::ViewVector<int, stk::ngp::MemSpace> viewVector2("ViewVector2");
+
+  viewVector1.reserve(3);
+  viewVector1.push_back(1);
+  viewVector1.push_back(2);
+
+  viewVector2.resize(5);
+
+  EXPECT_EQ(viewVector2.size(), 5u);
+  EXPECT_EQ(viewVector2.capacity(), 5u);
+
+  stk::mesh::impl::deep_copy(viewVector2, viewVector1);
+
+  EXPECT_EQ(viewVector1.size(), 2u);
+  EXPECT_EQ(viewVector1.capacity(), 3u);
+
+  EXPECT_EQ(viewVector2.size(), 2u);
+  EXPECT_EQ(viewVector2.capacity(), 5u);
+  auto viewVector2Host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), viewVector2.get_view());
+  EXPECT_EQ(viewVector1[0], viewVector2Host[0]);
+  EXPECT_EQ(viewVector1[1], viewVector2Host[1]);
+}
+
+TEST(ViewVectorDeepCopy, DeviceToHostWithExpansion)
+{
+  stk::mesh::impl::ViewVector<int, stk::ngp::MemSpace> viewVector1("ViewVector1");
+  stk::mesh::impl::ViewVector<int> viewVector2("ViewVector2");
+
+  viewVector1.reserve(3);
+  viewVector1.resize(2);
+  fill_device_values(viewVector1);
+
+  stk::mesh::impl::deep_copy(viewVector2, viewVector1);
+
+  EXPECT_EQ(viewVector1.size(), 2u);
+  EXPECT_EQ(viewVector1.capacity(), 3u);
+
+  EXPECT_EQ(viewVector2.size(), 2u);
+  EXPECT_EQ(viewVector2.capacity(), 2u);
+  auto viewVector1Host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), viewVector1.get_view());
+  EXPECT_EQ(viewVector1Host[0], viewVector2[0]);
+  EXPECT_EQ(viewVector1Host[1], viewVector2[1]);
+}
+
+TEST(ViewVectorDeepCopy, DeviceToHostWithExpansionNoCapacityChange)
+{
+  stk::mesh::impl::ViewVector<int, stk::ngp::MemSpace> viewVector1("ViewVector1");
+  stk::mesh::impl::ViewVector<int> viewVector2("ViewVector2");
+
+  viewVector1.reserve(3);
+  viewVector1.resize(2);
+  fill_device_values(viewVector1);
+
+  viewVector2.reserve(5);
+
+  stk::mesh::impl::deep_copy(viewVector2, viewVector1);
+
+  EXPECT_EQ(viewVector1.size(), 2u);
+  EXPECT_EQ(viewVector1.capacity(), 3u);
+
+  EXPECT_EQ(viewVector2.size(), 2u);
+  EXPECT_EQ(viewVector2.capacity(), 5u);
+  auto viewVector1Host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), viewVector1.get_view());
+  EXPECT_EQ(viewVector1Host[0], viewVector2[0]);
+  EXPECT_EQ(viewVector1Host[1], viewVector2[1]);
+}
+
+TEST(ViewVectorDeepCopy, DeviceToHostWithContraction)
+{
+  stk::mesh::impl::ViewVector<int, stk::ngp::MemSpace> viewVector1("ViewVector1");
+  stk::mesh::impl::ViewVector<int> viewVector2("ViewVector2");
+
+  viewVector1.reserve(3);
+  viewVector1.resize(2);
+  fill_device_values(viewVector1);
+
+  viewVector2.resize(5);
+
+  EXPECT_EQ(viewVector2.size(), 5u);
+  EXPECT_EQ(viewVector2.capacity(), 5u);
+
+  stk::mesh::impl::deep_copy(viewVector2, viewVector1);
+
+  EXPECT_EQ(viewVector1.size(), 2u);
+  EXPECT_EQ(viewVector1.capacity(), 3u);
+
+  EXPECT_EQ(viewVector2.size(), 2u);
+  EXPECT_EQ(viewVector2.capacity(), 5u);
+  auto viewVector1Host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), viewVector1.get_view());
+  EXPECT_EQ(viewVector1Host[0], viewVector2[0]);
+  EXPECT_EQ(viewVector1Host[1], viewVector2[1]);
+}
+
+TEST(ViewVectorDeepCopy, DeviceToDeviceWithExpansion)
+{
+  stk::mesh::impl::ViewVector<int, stk::ngp::MemSpace> viewVector1("ViewVector1");
+  stk::mesh::impl::ViewVector<int, stk::ngp::MemSpace> viewVector2("ViewVector2");
+
+  viewVector1.reserve(3);
+  viewVector1.resize(2);
+  fill_device_values(viewVector1);
+
+  stk::mesh::impl::deep_copy(viewVector2, viewVector1);
+
+  EXPECT_EQ(viewVector1.size(), 2u);
+  EXPECT_EQ(viewVector1.capacity(), 3u);
+
+  EXPECT_EQ(viewVector2.size(), 2u);
+  EXPECT_EQ(viewVector2.capacity(), 2u);
+  auto viewVector1Host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), viewVector1.get_view());
+  auto viewVector2Host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), viewVector2.get_view());
+  EXPECT_EQ(viewVector1Host[0], viewVector2Host[0]);
+  EXPECT_EQ(viewVector1Host[1], viewVector2Host[1]);
+}
+
+TEST(ViewVectorDeepCopy, DeviceToDeviceWithExpansionNoCapacityChange)
+{
+  stk::mesh::impl::ViewVector<int, stk::ngp::MemSpace> viewVector1("ViewVector1");
+  stk::mesh::impl::ViewVector<int, stk::ngp::MemSpace> viewVector2("ViewVector2");
+
+  viewVector1.reserve(3);
+  viewVector1.resize(2);
+  fill_device_values(viewVector1);
+
+  viewVector2.reserve(5);
+
+  stk::mesh::impl::deep_copy(viewVector2, viewVector1);
+
+  EXPECT_EQ(viewVector1.size(), 2u);
+  EXPECT_EQ(viewVector1.capacity(), 3u);
+
+  EXPECT_EQ(viewVector2.size(), 2u);
+  EXPECT_EQ(viewVector2.capacity(), 5u);
+  auto viewVector1Host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), viewVector1.get_view());
+  auto viewVector2Host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), viewVector2.get_view());
+  EXPECT_EQ(viewVector1Host[0], viewVector2Host[0]);
+  EXPECT_EQ(viewVector1Host[1], viewVector2Host[1]);
+}
+
+TEST(ViewVectorDeepCopy, DeviceToDeviceWithContraction)
+{
+  stk::mesh::impl::ViewVector<int, stk::ngp::MemSpace> viewVector1("ViewVector1");
+  stk::mesh::impl::ViewVector<int, stk::ngp::MemSpace> viewVector2("ViewVector2");
+
+  viewVector1.reserve(3);
+  viewVector1.resize(2);
+  fill_device_values(viewVector1);
+
+  viewVector2.resize(5);
+
+  EXPECT_EQ(viewVector2.size(), 5u);
+  EXPECT_EQ(viewVector2.capacity(), 5u);
+
+  stk::mesh::impl::deep_copy(viewVector2, viewVector1);
+
+  EXPECT_EQ(viewVector1.size(), 2u);
+  EXPECT_EQ(viewVector1.capacity(), 3u);
+
+  EXPECT_EQ(viewVector2.size(), 2u);
+  EXPECT_EQ(viewVector2.capacity(), 5u);
+  auto viewVector1Host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), viewVector1.get_view());
+  auto viewVector2Host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), viewVector2.get_view());
+  EXPECT_EQ(viewVector1Host[0], viewVector2Host[0]);
+  EXPECT_EQ(viewVector1Host[1], viewVector2Host[1]);
+}
 
 }

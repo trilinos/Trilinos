@@ -35,8 +35,6 @@
 
 #include <string>
 
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/FieldBase.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include "stk_mesh/base/Field.hpp"
@@ -47,6 +45,7 @@
 #include <stk_io/WriteMesh.hpp>
 #include <stk_io/FillMesh.hpp>
 
+namespace stk { namespace mesh { class BulkData; }}
 namespace stk { namespace balance { namespace internal {
 
 class LastStepFieldWriter

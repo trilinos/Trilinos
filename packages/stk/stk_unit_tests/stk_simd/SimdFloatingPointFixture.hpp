@@ -38,6 +38,10 @@
 #include "stk_simd/Simd.hpp"
 
 #include <cstdlib>
+#include <concepts>
+
+template <std::floating_point T>
+constexpr T default_tolerance = std::is_same_v<T, float> ? T(1e-6f) : T(1e-12);
 
 template<typename InputType, typename ResultType, typename InputTypeB = InputType>
 class SimdFloatingPointFixture : public ::testing::Test
@@ -172,7 +176,7 @@ public:
     }
   }
 
-  void verify_with_tolerance(const double tolerance = 1e-12)
+  void verify_with_tolerance(const ResultScalar tolerance = default_tolerance<ResultScalar>)
   {
     for (int i = 0; i < SIZE_A; ++i) {
       // lane-wise compare: ResultType is expected to be SIMD with SIZE_A lanes

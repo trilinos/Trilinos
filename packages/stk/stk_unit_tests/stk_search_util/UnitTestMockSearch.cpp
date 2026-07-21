@@ -41,6 +41,7 @@
 #include "stk_mesh/base/Field.hpp"                         // for Field
 #include "stk_mesh/base/FieldBLAS.hpp"                     // for field_copy
 #include "stk_search/FilterCoarseSearch.hpp"               // for ObjectOuts...
+#include "stk_search_util/MasterElementProviderIntrepid2.hpp"
 #include "stk_search_util/spmd/GeometricSearch.hpp"
 #include "stk_search_util/spmd/GeometricSearchDispatch.hpp"
 #include "stk_unit_test_utils/BuildMesh.hpp"               // for build_mesh
@@ -291,6 +292,8 @@ TEST(MockSearchTest, centroidPointEvaluator)
   EXPECT_NEAR(0.5, elementCentroid[1], 1.0e-6);
   EXPECT_NEAR(0.5, elementCentroid[2], 1.0e-6);
 
+  pointEvaluator->acquire_field_data();
+
   std::vector<double> evalPoint;
   size_t numPts = pointEvaluator->num_points(elementKey, topo);
   EXPECT_EQ(1u, numPts);
@@ -315,7 +318,7 @@ TEST(MockSearchTest, gaussPointEvaluator)
 
   const stk::mesh::FieldBase* coords = meta.coordinate_field();
   std::shared_ptr<stk::search::MasterElementProviderInterface> masterElemProvider =
-      std::make_shared<stk::transfer_util::MasterElementProvider>(0);
+      std::make_shared<stk::search::MasterElementProviderIntrepid2>();
   std::shared_ptr<stk::search::PointEvaluatorInterface> pointEvaluator =
       std::make_shared<stk::search::MasterElementGaussPointEvaluator>(*bulk, coords, masterElemProvider);
 
@@ -348,6 +351,7 @@ TEST(MockSearchTest, gaussPointEvaluator)
   }
 
   std::vector<double> evalPoint;
+  pointEvaluator->acquire_field_data();
 
   size_t numPts = pointEvaluator->num_points(elementKey, topo);
   EXPECT_EQ(numGaussPts, numPts);
@@ -381,7 +385,7 @@ TEST(MockSearchTest, findParametricCoordinates)
 
   const stk::mesh::FieldBase* coords = meta.coordinate_field();
   std::shared_ptr<stk::search::MasterElementProviderInterface> masterElemProvider =
-      std::make_shared<stk::transfer_util::MasterElementProvider>(0);
+      std::make_shared<stk::search::MasterElementProviderIntrepid2>();
   std::shared_ptr<stk::search::MasterElementParametricCoordsFinder> paramCoordsFinder =
       std::make_shared<stk::search::MasterElementParametricCoordsFinder>(*bulk, coords, masterElemProvider, parametricTolerance);
 
@@ -394,6 +398,8 @@ TEST(MockSearchTest, findParametricCoordinates)
   std::vector<double> paramCoords;
   std::vector<double> elementCentroid;
   stk::search::determine_centroid(3, element, *coords, elementCentroid);
+
+  paramCoordsFinder->acquire_field_data();
 
   // Interval [-1,1] x [-1,1] x [-1,1] -> centroid: (xi,eta,zeta) = (0,0,0)
   paramCoordsFinder->find_parametric_coords(elementKey, elementCentroid,

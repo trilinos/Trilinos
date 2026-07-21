@@ -38,6 +38,7 @@
 // #######################  Start Clang Header Tool Managed Headers ########################
 // clang-format off
 #include "stk_search/SearchInterface.hpp"             // for FindParametricC...
+#include "stk_search_util/CachedFieldData.hpp"
 #include "stk_search_util/MasterElementProvider.hpp"  // for ProvideMaste...
 #include "stk_search_util/spmd/EntityKeyPair.hpp"
 #include <memory>                                     // for shared_ptr
@@ -51,7 +52,20 @@ namespace stk { namespace mesh { class MetaData; } }
 namespace stk {
 namespace search {
 
-using FindParametricCoordsInterface = FindParametricCoordinatesInterface<spmd::EntityKeyPair>;
+using FindParametricCoordsInterfaceBase = FindParametricCoordinatesInterface<spmd::EntityKeyPair>;
+
+class FindParametricCoordsInterface : public FindParametricCoordsInterfaceBase {
+ public:
+  FindParametricCoordsInterface() = default;
+  virtual ~FindParametricCoordsInterface() = default;
+
+  virtual void acquire_field_data() {};
+  virtual void release_field_data() {};
+
+ protected:
+  FindParametricCoordsInterface(const FindParametricCoordsInterface&) = delete;
+  const FindParametricCoordsInterface& operator()(const FindParametricCoordsInterface&) = delete;
+};
 
 class MasterElementParametricCoordsFinder : public FindParametricCoordsInterface {
  public:
@@ -67,12 +81,15 @@ class MasterElementParametricCoordsFinder : public FindParametricCoordsInterface
   void evaluate_parametric_coords(const spmd::EntityKeyPair& k, const std::vector<double>& paramCoords,
                                   std::vector<double>& evalPoint) const override;
 
+  void acquire_field_data() override;
+  void release_field_data() override;
+
   ~MasterElementParametricCoordsFinder() = default;
 
  private:
   stk::mesh::BulkData& m_bulk;
   stk::mesh::MetaData& m_meta;
-  const SearchField m_coords;
+  SearchField m_coordinateField;
   std::shared_ptr<MasterElementProviderInterface> m_masterElemProvider;
   double m_parametricTolerance;
   const unsigned m_spatialDimension{0};
@@ -91,11 +108,15 @@ class NodeParametricCoordsFinder : public FindParametricCoordsInterface {
   void evaluate_parametric_coords(const spmd::EntityKeyPair& k, const std::vector<double>& paramCoords,
                                   std::vector<double>& evalPoint) const override;
 
+  void acquire_field_data() override;
+  void release_field_data() override;
+
   ~NodeParametricCoordsFinder() = default;
 
  private:
   const stk::mesh::MetaData& m_meta;
-  const stk::mesh::FieldBase* m_coords{nullptr};
+  const stk::mesh::FieldBase* m_coordinateField{nullptr};
+  std::shared_ptr<CachedFieldDataBase> m_cachedCoordinateFieldData;
 };
 
 } // namespace search

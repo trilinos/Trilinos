@@ -18,7 +18,7 @@ namespace stk {
 namespace mesh {
 namespace impl {
 
-bool MeshModification::modification_begin(const std::string /*description*/, bool resetSymGhostInfo, bool isSyncToHost)
+bool MeshModification::modification_begin(const std::string& /*description*/, bool resetSymGhostInfo, bool isSyncToHost)
 {
     if (isSyncToHost)
     {
@@ -41,18 +41,21 @@ bool MeshModification::modification_begin(const std::string /*description*/, boo
 
     if ( this->in_modifiable_state() ) return false ;
 
-    if (this->synchronized_count() == 0)
-    {
-        this->ensure_meta_data_is_committed();
-
-        if (m_bulkData.parallel_size() > 1) {
-            verify_parallel_consistency( m_bulkData.mesh_meta_data() , m_bulkData.parallel() );
-        }
+    if (this->synchronized_count() == 0) {
+      this->ensure_meta_data_is_committed();
     }
-    else
-    {
-        this->reset_undeleted_entity_states_to_unchanged();
-         m_bulkData.m_removedGhosts.clear();
+
+    bool checkMetaParallelConsistency = this->synchronized_count() == 0;
+#ifndef NDEBUG
+    checkMetaParallelConsistency = true;
+#endif
+    if (checkMetaParallelConsistency && m_bulkData.parallel_size() > 1) {
+        verify_parallel_consistency( m_bulkData.mesh_meta_data() , m_bulkData.parallel() );
+    }
+
+    if (this->synchronized_count() > 0) {
+      this->reset_undeleted_entity_states_to_unchanged();
+       m_bulkData.m_removedGhosts.clear();
     }
 
     this->set_sync_state_modifiable();
@@ -71,6 +74,15 @@ bool MeshModification::modification_begin(const std::string /*description*/, boo
 
       this->increment_sync_count();
     }
+
+    if(m_bulkData.is_mesh_consistency_check_on()) {
+      if (m_bulkData.m_createUpwardConnectivity) {
+        //We can only check owned-closure if upward-connectivity is on.
+        //Otherwise, we'll just have to trust that owned-closure is maintained correctly.
+        STK_ThrowErrorMsgIf(!impl::check_owned_closure_on_shared(m_bulkData), "Owned-closure checks failed.");
+      }
+    }
+
     return true;
 }
 
@@ -128,8 +140,6 @@ bool MeshModification::modification_end(modification_optimization opt)
       }
 
       m_bulkData.internal_resolve_send_ghost_membership();
-
-      m_bulkData.m_modSummary.write_summary(synchronized_count());
   }
 
   m_bulkData.internal_finish_modification_end(opt);
@@ -154,7 +164,6 @@ bool MeshModification::resolve_node_sharing()
     }
     else
     {
-        m_bulkData.m_modSummary.write_summary(synchronized_count());
         if(!m_bulkData.add_fmwk_data())
         {
             std::vector<Entity> shared_modified;
@@ -197,13 +206,9 @@ bool MeshModification::modification_end_after_node_sharing_resolution()
         }
 
         m_bulkData.internal_resolve_send_ghost_membership();
-
-        m_bulkData.m_modSummary.write_summary(synchronized_count());
-        m_bulkData.check_mesh_consistency();
     }
     else
     {
-        m_bulkData.m_modSummary.write_summary(synchronized_count());
         if(!m_bulkData.add_fmwk_data())
         {
             std::vector<Entity> shared_modified;
@@ -304,15 +309,15 @@ void MeshModification::internal_change_entity_owner( const std::vector<EntityPro
     const bool notAddingSendGhosts = true;
 
     // Skip 'm_ghosting[0]' which is the shared subset.
-    for (unsigned i=1; i<m_bulkData.m_ghosting.size(); ++i) {
+    for (unsigned i=1; i<m_bulkData.ghostings().size(); ++i) {
       removesForThisGhosting.clear();
       for(Entity entity : remove_modified_ghosts) {
-        if (m_bulkData.in_receive_ghost(*m_bulkData.m_ghosting[i], entity)) {
+        if (m_bulkData.in_receive_ghost(*m_bulkData.ghostings()[i], entity)) {
           removesForThisGhosting.push_back(entity);
         }
       }
 
-      m_bulkData.internal_change_ghosting(*m_bulkData.m_ghosting[i], empty_add, removesForThisGhosting, notAddingSendGhosts);
+      m_bulkData.internal_change_ghosting(*m_bulkData.ghostings()[i], empty_add, removesForThisGhosting, notAddingSendGhosts);
     }
   }
 
@@ -801,7 +806,7 @@ void MeshModification::internal_resolve_ghosted_modify_delete(const std::vector<
   STK_ThrowRequireMsg(m_bulkData.parallel_size() > 1, "Do not call this in serial");
   // Resolve modifications for ghosted entities:
 
-  const size_t ghosting_count = m_bulkData.m_ghosting.size();
+  const size_t ghosting_count = m_bulkData.ghostings().size();
   const size_t ghosting_count_minus_shared = ghosting_count - 1;
 
   std::vector<Entity> promotingToShared;
@@ -875,7 +880,7 @@ void MeshModification::internal_resolve_ghosted_modify_delete(const std::vector<
 
         if (shouldRemoveFromGhosting) {
           for ( size_t j = ghosting_count_minus_shared ; j >=1 ; --j ) {
-            m_bulkData.entity_comm_map_erase( key, *m_bulkData.m_ghosting[j] );
+            m_bulkData.entity_comm_map_erase( key, *m_bulkData.ghostings()[j] );
           }
         }
 
@@ -883,8 +888,6 @@ void MeshModification::internal_resolve_ghosted_modify_delete(const std::vector<
           const bool was_ghost = true;
           m_bulkData.internal_destroy_entity_with_notification(entity, was_ghost);
         }
-
-        m_bulkData.entity_comm_list_insert(entity);
       }
     }
   } // end loop on remote mod
@@ -904,7 +907,7 @@ void MeshModification::internal_resolve_ghosted_modify_delete(const std::vector<
 
     if ( locally_destroyed ) {
       for ( size_t j = ghosting_count_minus_shared ; j >=1 ; --j ) {
-        m_bulkData.entity_comm_map_erase( i->key, *m_bulkData.m_ghosting[j] );
+        m_bulkData.entity_comm_map_erase( i->key, *m_bulkData.ghostings()[j] );
       }
     }
     else if ( locally_owned_and_modified ) {
@@ -931,7 +934,6 @@ void MeshModification::add_entity_to_same_ghosting(Entity entity, Entity connect
     }
   }
   if(!to_insert.empty()) {
-    m_bulkData.entity_comm_list_insert(entity);
     for(const auto & entry : to_insert) {
       m_bulkData.entity_comm_map_insert(entity, EntityCommInfo(entry.ghost_id, entry.proc));
     }

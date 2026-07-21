@@ -1,4 +1,10 @@
 
+=====================================================
+This spack/cuda recipe is extremely out of date and
+won't work.
+The STK team needs to replace it with a new one...
+=====================================================
+
 # recipe for creating a spack env and building trilinos/stk,
 # then building a stk-test-app using the spack-installed trilinos/stk
 #

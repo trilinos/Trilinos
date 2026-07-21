@@ -51,10 +51,7 @@
 #include <stk_performance_tests/stk_mesh/multi_block.hpp>
 
 #include <stk_mesh/base/SkinBoundary.hpp>
-#include <stk_tools/mesh_tools/DetectHingesImpl.hpp>
 #include <stk_tools/mesh_tools/DisconnectBlocks.hpp>
-#include <stk_tools/mesh_tools/DisconnectBlocksImpl.hpp>
-#include <stk_tools/mesh_tools/DisconnectUtils.hpp>
 namespace stk_perf_many_blocks
 {
 

@@ -38,6 +38,7 @@
 // #######################  Start Clang Header Tool Managed Headers ########################
 // clang-format off
 #include <stk_mesh/base/FieldBase.hpp>     // for FieldBase
+#include <stk_search_util/CachedFieldData.hpp>
 #include "stk_topology/topology.hpp"       // for topology
 #include <map>                             // for map, map<>::value_compare
 #include <vector>                          // for vector
@@ -59,13 +60,42 @@ public:
   SearchField(const stk::mesh::FieldBase* field = nullptr,
               double (*transformFunc)(double) = default_transform,
               double defaultValue = 0.0)
-  : m_field(field)
+  : m_cachedFieldData(get_cached_const_field_data(field))
+  , m_field(field)
   , m_transform(transformFunc)
   , m_defaultValue(defaultValue)
   {
-    if(field && !field->restrictions().empty()) {
-      m_fieldSize = field->restrictions().begin()->num_scalars_per_entity();
+    if(m_field && !m_field->restrictions().empty()) {
+      m_fieldSize = m_field->restrictions().begin()->num_scalars_per_entity();
     }
+  }
+
+  SearchField(const std::shared_ptr<stk::search::CachedFieldDataBase>& cachedFieldData,
+              double (*transformFunc)(double) = default_transform,
+              double defaultValue = 0.0)
+  : m_cachedFieldData(cachedFieldData)
+  , m_field(cachedFieldData->m_field)
+  , m_transform(transformFunc)
+  , m_defaultValue(defaultValue)
+  {
+    if(m_field && !m_field->restrictions().empty()) {
+      m_fieldSize = m_field->restrictions().begin()->num_scalars_per_entity();
+    }
+  }
+
+  void acquire_field_data()
+  {
+    m_cachedFieldData = get_cached_const_field_data(m_field);
+  }
+
+  void release_field_data()
+  {
+    clear_cached_field_data(m_cachedFieldData);
+  }
+
+  void populate_entity_data(stk::mesh::Entity entity, CachedEntityFieldData<double>& data) const
+  {
+    m_cachedFieldData->populate_entity_data(entity, data);
   }
 
   const stk::mesh::FieldBase* get_field() const { return m_field; }
@@ -102,6 +132,7 @@ public:
   }
   
 protected:
+  std::shared_ptr<stk::search::CachedFieldDataBase> m_cachedFieldData;
   const stk::mesh::FieldBase* m_field{nullptr};
   Transform m_transform = default_transform;
   double m_defaultValue{0.0};

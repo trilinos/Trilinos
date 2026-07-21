@@ -522,7 +522,7 @@ TEST_F(LeastSquaresTester, interpolateQuadratic_UsingLeastSquares_AtCentroid)
 
     for(stk::mesh::Entity e : elements) {
       std::vector<double> centroid;
-      stk::unit_test_util::determine_centroid(spatialDimension, e, *coord, centroid);
+      stk::search::determine_centroid(spatialDimension, e, *coord, centroid);
 
       leastSquaresCalculator.resize_data(m_nComponents, m_nSamples, m_basisSize);
       test_quadratic_evaluation(leastSquaresCalculator, evaluator, centroid);

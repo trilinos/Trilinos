@@ -220,7 +220,6 @@ TEST(ParallelComm, CommSparse_pack_and_communicate)
   stk::ParallelMachine comm = MPI_COMM_WORLD;
   stk::CommSparse commSparse(comm);
   const int numProcs = commSparse.parallel_size();
-  if (numProcs == 1) { GTEST_SKIP(); }
   const int myProc = commSparse.parallel_rank();
   const int destProc = myProc+1 == numProcs ? 0 : myProc+1;
   const int srcProc = myProc-1 < 0 ? numProcs-1 : myProc-1;
@@ -236,6 +235,27 @@ TEST(ParallelComm, CommSparse_pack_and_communicate)
       EXPECT_EQ(srcProc, recvData);
     }
   });
+}
+
+TEST(ParallelComm, CommSparse_pack_and_communicate_self_communication) {
+  stk::ParallelMachine comm = MPI_COMM_WORLD;
+  stk::CommSparse commSparse(comm);
+  const int myProc = commSparse.parallel_rank();
+
+  stk::pack_and_communicate(commSparse, [&commSparse, &myProc]() {
+    commSparse.send_buffer(myProc).pack(myProc);
+  });
+
+  bool unpackHasBeenRun = false;
+  stk::unpack_communications(commSparse, [&commSparse, &myProc, &unpackHasBeenRun](int fromProc) {
+    if (fromProc == myProc) {
+      unpackHasBeenRun = true;
+      int recvData = -1;
+      commSparse.recv_buffer(fromProc).unpack(recvData);
+      EXPECT_EQ(myProc, recvData);
+    }
+  });
+  EXPECT_TRUE(unpackHasBeenRun);
 }
 
 TEST(ParallelComm, CommSparse_empty)

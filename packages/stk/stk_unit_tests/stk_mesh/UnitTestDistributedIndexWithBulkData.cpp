@@ -1030,8 +1030,10 @@ TEST(UnderstandingDistributedIndex, MultipleCustomGhostingsWithDestroy)
     stk::unit_test_util::BulkDataTester &stkMeshBulkData = *stkMesh.getBulkData();
 
     stkMeshBulkData.modification_begin();
-    stk::mesh::Ghosting &ghosting1 = stkMeshBulkData.create_ghosting("Ghosting For Algorithm 1");
-    stk::mesh::Ghosting &ghosting2 = stkMeshBulkData.create_ghosting("Ghosting For Algorithm 2");
+    const std::string ghosting_name1 = "Ghosting For Algorithm 1";
+    const std::string ghosting_name2 = "Ghosting For Algorithm 2";
+    stk::mesh::Ghosting &ghosting1 = stkMeshBulkData.create_ghosting(ghosting_name1);
+    stk::mesh::Ghosting &ghosting2 = stkMeshBulkData.create_ghosting(ghosting_name2);
     std::vector<std::pair<stk::mesh::Entity, int> > ghostsToSend;
     if(myProc == owningProc)
     {
@@ -1047,6 +1049,8 @@ TEST(UnderstandingDistributedIndex, MultipleCustomGhostingsWithDestroy)
     stkMeshBulkData.destroy_ghosting(ghosting2);
     testNoGhosts(stkMeshBulkData, ghosting1, ghosting2, nodeIdToGhost, owningProc, ghostReceivingProc, myProc);
 
+    stkMeshBulkData.create_ghosting(ghosting_name1);
+    stkMeshBulkData.create_ghosting(ghosting_name2);
     stkMeshBulkData.change_ghosting(ghosting1, ghostsToSend);
     stkMeshBulkData.change_ghosting(ghosting2, ghostsToSend);
     testOneNodeGhostedTwice(stkMeshBulkData, ghosting1, ghosting2, nodeIdToGhost, owningProc, ghostReceivingProc, myProc);

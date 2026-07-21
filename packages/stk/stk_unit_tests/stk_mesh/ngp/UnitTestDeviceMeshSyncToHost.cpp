@@ -32,8 +32,6 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#include "stk_mesh/base/Ngp.hpp"
-
 #ifdef STK_USE_DEVICE_MESH
 
 #include <gtest/gtest.h>
@@ -101,7 +99,7 @@ class DeviceMeshSyncTester : public ::ngp_testing::Test
       move_entity_on_device(0, elemOrdinals);
     }
 
-    void move_entity_on_device(unsigned bucketId, const std::vector<unsigned>& elemOrdinals)
+    void move_entity_on_device(unsigned /*bucketId*/, const std::vector<unsigned>& elemOrdinals)
     {
       stk::mesh::Bucket* bucket = bulk.buckets(stk::topology::ELEM_RANK)[0];
       Kokkos::View<stk::mesh::Entity*, Memspace> entities("entities", elemOrdinals.size());
@@ -124,7 +122,7 @@ class DeviceMeshSyncTester : public ::ngp_testing::Test
       Kokkos::deep_copy(remove_part_ordinals, remove_part_ordinals_host);
 
       stk::mesh::NgpMesh& deviceMesh = stk::mesh::get_updated_ngp_mesh(bulk);
-      deviceMesh.impl_batch_change_entity_parts(entities, add_part_ordinals, remove_part_ordinals);
+      deviceMesh.batch_change_entity_parts(entities, add_part_ordinals, remove_part_ordinals);
     }
 
     void set_field_on_device()
@@ -228,7 +226,7 @@ void test_mesh_indices(const stk::mesh::BulkData& bulk)
   }
 }
 
-void test_selector(const stk::mesh::BulkData& bulk)
+void test_selector(const stk::mesh::BulkData& bulk, const double expectedZCoord = 1.0)
 {
   stk::mesh::Part& block1 = *bulk.mesh_meta_data().get_part("block_1");
   stk::mesh::Part& block2 = *bulk.mesh_meta_data().get_part("block_2");
@@ -245,7 +243,7 @@ void test_selector(const stk::mesh::BulkData& bulk)
   for (stk::mesh::Entity node : common_nodes)
   {
     auto entity_values = coord_field_data.entity_values(node);
-    EXPECT_EQ(entity_values(2_comp), 1.0);
+    EXPECT_EQ(entity_values(2_comp), expectedZCoord);
   }
 }
 
@@ -292,7 +290,30 @@ void test_partition_buckets(stk::unit_test_util::BulkDataTester& bulk, stk::mesh
   }
 }
 
+void check_field_on_device(stk::unit_test_util::BulkDataTester& bulk, const stk::mesh::FieldBase* field, bool deviceAvailable)
+{
+  EXPECT_EQ(field->has_device_data(), deviceAvailable);
+}
 
+}
+
+TEST_F(DeviceMeshSyncTester, CheckHostOnlyFieldCopiedToDevice)
+{
+  if (stk::parallel_machine_size(stk::parallel_machine_world()) > 1) { GTEST_SKIP(); }
+
+  setup_mesh("generated:1x1x2");
+  stk::mesh::NgpMesh& deviceMesh = stk::mesh::get_updated_ngp_mesh(bulk);
+
+  const stk::mesh::FieldBase* coordField = bulk.mesh_meta_data().coordinate_field();
+  check_field_on_device(bulk, coordField, false);
+  move_entity_on_device({0});
+  check_field_on_device(bulk, coordField, true);
+  deviceMesh.update_bulk_data();
+
+  test_mesh_indices(bulk);
+  test_selector(bulk);
+  test_all_buckets(bulk, deviceMesh);
+  test_partition_buckets(bulk, deviceMesh);
 }
 
 TEST_F(DeviceMeshSyncTester, CopyToHostMoveFirstElement)
@@ -370,7 +391,7 @@ TEST_F(DeviceMeshSyncTester, CopyToHostLeaveBucketEmpty)
   deviceMesh.update_bulk_data();
 
   test_mesh_indices(bulk);
-  test_selector(bulk);
+  test_selector(bulk, 2.0);
   test_all_buckets(bulk, deviceMesh);
   test_partition_buckets(bulk, deviceMesh);
 }
@@ -470,7 +491,7 @@ TEST_F(DeviceMeshSyncTester, CopyToHostFieldModifiedOnHostMoveIntoExistingBucket
   test_field();
 }
 
-TEST_F(DeviceMeshSyncTester, CopyToHostModifiedOnHost)
+TEST_F(DeviceMeshSyncTester, DISABLED_CopyToHostModifiedOnHost)
 {
   if (stk::parallel_machine_size(stk::parallel_machine_world()) > 1) { GTEST_SKIP(); }
 

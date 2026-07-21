@@ -54,7 +54,7 @@
 #include "stk_transfer/copy_by_id/SearchByIdGeometric.hpp"
 #include "stk_transfer/copy_by_id/TransferCopyById.hpp"
 #include "stk_transfer/copy_by_id/TransferCopyByIdMpmdMeshAdapter.hpp"
-#include "stk_transfer/copy_by_id/TransferCopyByIdStkMeshAdapter.hpp"
+#include "stk_transfer_util/TransferCopyByIdStkMeshAdapter.hpp"
 #include "stk_transfer/copy_by_id/TransferCopyTranslator.hpp"
 
 namespace
@@ -2295,7 +2295,7 @@ void test_mismatched_data_type_copy_transfer(unsigned sendBufferSize, unsigned r
   }
 
   unsigned sendBufferDataSize = sendBufferSize * sizeof(SENDTYPE);
-  unsigned recvBufferDataSize = recvBufferSize * sizeof(RECVTYPE);
+//  unsigned recvBufferDataSize = recvBufferSize * sizeof(RECVTYPE);
   int communicatingProc = 1 - stk::parallel_machine_rank(MPI_COMM_WORLD);
   const uint8_t* sendData = reinterpret_cast<const uint8_t*>(sendBuffer.data());
 
@@ -2341,7 +2341,7 @@ void test_mismatched_data_type_copy_transfer(unsigned sendBufferSize, unsigned r
                                                                   &translateLongDouble,
                                                                   &translateDouble };
 
-  dataTranslators[sentDataType]->translate(tmpBuffer.data(), newBufferSize, recvType, recvBuffer.data(), recvBufferDataSize);
+  dataTranslators[sentDataType]->translate(tmpBuffer.data(), sendBufferSize, 1, recvType, recvBuffer.data(), recvBufferSize, 1);
 
   unsigned numEntries = std::min(sendBufferSize, recvBufferSize);
 

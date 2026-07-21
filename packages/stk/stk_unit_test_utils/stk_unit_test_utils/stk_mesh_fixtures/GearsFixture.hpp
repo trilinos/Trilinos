@@ -36,13 +36,13 @@
 #define STK_MESH_FIXTURES_GEARS_FIXTURE_HPP
 
 #include <stddef.h>                     // for size_t
-#include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian
 #include <stk_mesh/base/Field.hpp>      // for Field
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <vector>                       // for vector
 #include "stk_unit_test_utils/BuildMesh.hpp"
+namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class Part; } }
 namespace stk { namespace mesh { namespace fixtures { class Gear; } } }
 

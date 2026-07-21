@@ -49,6 +49,9 @@ ELSE()
 
   target_link_libraries(stk_util_registry PUBLIC stk_util_env)
 
+  if (SPACK_SIERRA_VERSION)
+    set(ENV{SPACK_SIERRA_VERSION} ${SPACK_SIERRA_VERSION})
+  endif()
   execute_process(
       COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/stk_version_gen.sh
       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}

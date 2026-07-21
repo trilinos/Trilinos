@@ -137,7 +137,6 @@ const char * topology::char_name() const
   return "UNKNOWN_TOPOLOGY";
 }
 
-// jvo: Overloading << operator?
 std::ostream & operator<<(std::ostream &out, topology::rank_t r)
 {
   switch (r)
@@ -145,7 +144,7 @@ std::ostream & operator<<(std::ostream &out, topology::rank_t r)
   case topology::NODE_RANK:    out << "NODE_RANK"; break;
   case topology::EDGE_RANK:    out << "EDGE_RANK"; break;
   case topology::FACE_RANK:    out << "FACE_RANK"; break;
-  case topology::ELEMENT_RANK: out << "ELEMENT_RANK"; break;
+  case topology::ELEMENT_RANK: out << "ELEM_RANK"; break;
   case topology::INVALID_RANK: out << "INVALID_RANK"; break;
   default:                     out << "RANK_" << static_cast<unsigned>(r); break;
   }

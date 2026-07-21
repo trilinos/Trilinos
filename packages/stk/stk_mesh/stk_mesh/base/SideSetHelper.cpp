@@ -116,22 +116,6 @@ void SideSetHelper::remove_entity_entries_from_sidesets(const Entity entity, std
   remove_entity_entries_from_sidesets(sidesets, entity, touchedSidesetParts);
 }
 
-Entity get_side(const BulkData& bulk, Entity elem, ConnectivityOrdinal ordinal)
-{
-  const ConnectivityOrdinal* ordinals = bulk.begin_ordinals(elem, bulk.mesh_meta_data().side_rank());
-  const Entity* sides = bulk.begin(elem, bulk.mesh_meta_data().side_rank());
-  unsigned numSides = bulk.num_connectivity(elem, bulk.mesh_meta_data().side_rank());
-  Entity side;
-
-  for(unsigned i=0; i<numSides; ++i) {
-    if(ordinals[i] == ordinal) {
-      side = sides[i];
-    }
-  }
-
-  return side;
-}
-
 void SideSetHelper::add_element_side_entry_to_sideset(SideSetSelector& sidesetSelector, Entity elem, ConnectivityOrdinal ordinal)
 {
   if(ordinal != INVALID_CONNECTIVITY_ORDINAL && mesh.entity_rank(elem) == stk::topology::ELEM_RANK) {

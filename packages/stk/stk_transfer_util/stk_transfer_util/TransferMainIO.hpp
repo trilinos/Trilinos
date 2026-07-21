@@ -28,11 +28,19 @@ public:
   TransferMainIO(MPI_Comm comm, const std::string& sendMesh, const std::string& recvMesh);
 
   void load_meshes();
+  void load_send_fields_at_time(double time);
+  void load_recv_fields_at_time(double time);
 
   std::shared_ptr<stk::mesh::BulkData> get_sendBulkData() { return m_sendBulk; }
   std::shared_ptr<stk::mesh::BulkData> get_recvBulkData() { return m_recvBulk; }
 
-  void write_transfer_output(std::vector<std::string> transferredFields, std::string outputFile = "transferredReceive.exo");
+  std::vector<double> get_send_time_steps() const;
+  std::vector<double> get_recv_time_steps() const;
+
+  void initialize_transfer_output(const std::string& outputFile);
+  void write_transfer_output(int step, double time);
+
+  void write_transfer_output(const std::string& outputFile);
 
 private:
   const MPI_Comm m_comm;
@@ -47,9 +55,11 @@ private:
 
   stk::io::StkMeshIoBroker m_sendBroker;
   stk::io::StkMeshIoBroker m_recvBroker;
-
+  std::shared_ptr<stk::io::StkMeshIoBroker> m_outputBroker;
+  size_t m_outputIndex;
 };
 
+std::vector<double> get_times(const std::string& option, const std::vector<double>& times);
 } // namespace transfer_util
 } // namespace stk
 

@@ -40,12 +40,14 @@
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/EntityLess.hpp>
+#include <stk_mesh/base/ForEachEntity.hpp>
 #include <stk_mesh/base/EntityProcMapping.hpp>
 #include <stk_mesh/base/EntitySorterBase.hpp>
 #include "stk_util/parallel/DistributedIndex.hpp"  // for DistributedIndex, etc
 
 #include <vector>
 #include <algorithm>
+#include <tuple>
 
 //----------------------------------------------------------------------
 
@@ -209,7 +211,8 @@ bool internal_clean_and_verify_parallel_change(
 
 int check_no_shared_elements_or_higher(const BulkData& mesh);
 int check_for_connected_nodes(const BulkData& mesh);
-bool check_permutations_on_all(stk::mesh::BulkData& mesh);
+bool check_permutations_on_all(const BulkData& mesh);
+bool check_owned_closure_on_shared(const BulkData& mesh);
 void find_side_nodes(BulkData& mesh, Entity element, int side_ordinal, EntityVector & permuted_face_nodes);
 
 inline

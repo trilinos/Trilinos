@@ -1,5 +1,7 @@
 STK_SUBPACKAGE(Integration_tests)
 
+message("STKIntegration_tests")
+
 if(HAVE_STK_Trilinos)
 
   message("STK integration tests are not currently supported for Trilinos.")
@@ -143,6 +145,7 @@ else()
     INSTALL(TARGETS stk_middle_mesh_integration_tester DESTINATION ${STK_INSTALL_BINDIR}) 
   endif()
   if (STK_HAS_MPI)
+    INSTALL(TARGETS stk_util_integration_tester DESTINATION ${STK_INSTALL_BINDIR})
     INSTALL(TARGETS mock_sparc DESTINATION ${STK_INSTALL_BINDIR}) 
     INSTALL(TARGETS mock_aria DESTINATION ${STK_INSTALL_BINDIR}) 
     INSTALL(TARGETS mock_salinas DESTINATION ${STK_INSTALL_BINDIR}) 

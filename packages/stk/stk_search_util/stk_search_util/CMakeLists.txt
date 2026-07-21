@@ -48,9 +48,13 @@ if(HAVE_STK_Trilinos)
     SOURCES ${SOURCES} ${SOURCES_SPMD}
   )
 else()
+
   add_library(stk_search_util ${SOURCES} ${SOURCES_SPMD})
+  find_package(Intrepid2 REQUIRED)
+  target_link_libraries(stk_search_util PUBLIC Intrepid2::all_libs)
   target_link_libraries(stk_search_util PUBLIC stk_search)
   target_link_libraries(stk_search_util PUBLIC stk_mesh_base)
+  target_link_libraries(stk_search_util PUBLIC stk_expreval)
 
   target_include_directories(stk_search_util PUBLIC
     $<BUILD_INTERFACE:${STK_TOPLEVEL_SOURCE_DIR}/stk_search_util>

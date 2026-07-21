@@ -35,11 +35,11 @@
 #ifndef STK_MESH_FIXTURES_GRID_MESH_FIXTURE_HPP
 #define STK_MESH_FIXTURES_GRID_MESH_FIXTURE_HPP
 
-#include <stk_mesh/base/BulkData.hpp>   // for BulkData
-#include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include "stk_unit_test_utils/stk_mesh_fixtures/FixtureNodeSharing.hpp"
 #include "stk_unit_test_utils/BuildMesh.hpp"
+namespace stk { namespace mesh { class MetaData; } }
+namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class Part; } }
 
 namespace stk {

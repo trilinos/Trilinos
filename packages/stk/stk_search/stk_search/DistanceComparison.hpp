@@ -80,19 +80,36 @@ inline bool eq_to(const double d1, const double d2, const double eps = STK_COMPA
 }
 
 
-inline double distance_sq(const unsigned spatialDim, const double* p1, const double* p2)
+inline double distance_sq(const unsigned spatialDim,
+                          const double* p1, const int stride1,
+                          const double* p2, const int stride2)
 {
   double distance = 0.0;
   for(unsigned i = 0; i < spatialDim; ++i) {
-    distance += (p1[i] - p2[i]) * (p1[i] - p2[i]);
+    const double len = p1[i*stride1] - p2[i*stride2];
+    distance += len*len;
   }
 
   return distance;
 }
 
+inline double distance_sq(const unsigned spatialDim, const double* p1, const double* p2)
+{
+  return distance_sq(spatialDim, p1, 1, p2, 1);
+}
+
 inline double distance(const unsigned spatialDim, const double* p1, const double* p2)
 {
   double distanceSquared = distance_sq(spatialDim, p1, p2);
+
+  return std::sqrt(distanceSquared);
+}
+
+inline double distance(const unsigned spatialDim,
+                       const double* p1, const int stride1,
+                       const double* p2, const int stride2)
+{
+  double distanceSquared = distance_sq(spatialDim, p1, stride1, p2, stride2);
 
   return std::sqrt(distanceSquared);
 }

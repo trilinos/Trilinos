@@ -45,6 +45,7 @@
 #include "stk_search_util/spmd/EntityKeyPair.hpp"
 #include "stk_transfer/TransferInterface.hpp"
 #include "stk_transfer/TransferTypes.hpp"
+#include "stk_transfer_util/FieldUtility.hpp"
 #include "stk_transfer_util/LeastSquares.hpp"         // for LINEAR_LEAST_SQ...
 #include "stk_transfer_util/PointInterpolation.hpp"
 
@@ -80,9 +81,13 @@ class InterpolateFieldsInterface : public InterpolateFieldsInterfaceBase {
 
   bool fields_are_set() const { return m_fieldsAreSet; }
 
-  virtual void apply_bounds(const unsigned index, const unsigned length, double* fieldData) const;
+  virtual void apply_bounds(const unsigned index, const unsigned length, const int stride, double* fieldData) const;
 
   virtual ~InterpolateFieldsInterface() {}
+
+  virtual void acquire_field_data();
+
+  virtual void release_field_data();
 
  protected:
   stk::mesh::BulkData& m_bulk;
@@ -93,6 +98,7 @@ class InterpolateFieldsInterface : public InterpolateFieldsInterfaceBase {
   std::vector<FieldTransform> m_preTransform;
   std::vector<FieldTransform> m_postTransform;
   std::vector<double> m_defaultFieldValue;
+  std::vector< std::shared_ptr<stk::search::CachedFieldDataBase> > m_cachedFieldData;
 
   bool m_fieldsAreSet{false};
 
@@ -138,8 +144,13 @@ class PatchRecoveryFieldInterpolator : public InterpolateFieldsInterface {
 
   virtual ~PatchRecoveryFieldInterpolator() { delete m_meshSelector; }
 
+  void acquire_field_data() override;
+
+  void release_field_data() override;
+
  protected:
-  const stk::mesh::FieldBase* m_coordinates{nullptr};
+  const stk::mesh::FieldBase* m_coordinateField{nullptr};
+  std::shared_ptr<stk::search::CachedFieldDataBase> m_cachedCoordinateFieldData;
   const stk::mesh::Part* m_meshPart{nullptr};
   stk::mesh::Selector* m_meshSelector{nullptr};
   const stk::mesh::Selector m_activeSelector;
@@ -150,6 +161,7 @@ class PatchRecoveryFieldInterpolator : public InterpolateFieldsInterface {
 
  private:
   EntityPatchFilter m_patchFilter;
+  mutable std::vector<double> m_resultBuffer;
 
   PatchRecoveryFieldInterpolator(const PatchRecoveryFieldInterpolator&) = delete;
   const PatchRecoveryFieldInterpolator& operator()(const PatchRecoveryFieldInterpolator&) = delete;

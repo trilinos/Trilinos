@@ -34,6 +34,7 @@
 
 STK_SUBPACKAGE(Balance)
 
+message("STKBalance")
 ADD_SUBDIRECTORY(stk_balance)
 
 STK_SUBPACKAGE_POSTPROCESS()

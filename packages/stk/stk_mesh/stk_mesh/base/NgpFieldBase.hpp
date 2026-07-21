@@ -34,7 +34,6 @@ public:
   virtual void sync_to_device() = 0;
   virtual void sync_to_device(const stk::ngp::ExecSpace& newExecSpace) = 0;
   virtual void sync_to_device(stk::ngp::ExecSpace&& newExecSpace) = 0;
-  virtual size_t synchronized_count() const = 0;
   virtual size_t num_syncs_to_host() const = 0;
   virtual size_t num_syncs_to_device() const = 0;
   virtual void fence() = 0;

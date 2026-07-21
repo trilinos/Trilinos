@@ -256,11 +256,11 @@ void test_HostMesh_works_on_host_in_any_build(const stk::mesh::BulkData& bulk)
   stk::mesh::HostMesh hostMesh(bulk);
   stk::mesh::Selector all = bulk.mesh_meta_data().universal_part();
   stk::NgpVector<unsigned> vec("elem-count", 1, 0);
-  stk::mesh::for_each_entity_run("host-mesh-test", hostMesh, stk::topology::ELEM_RANK, all,
-    KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& sideIndex) {
-      vec[0] += 1; //we're on host. on device we would use 'vec.device_get(0) += 1;'
-    }
-  );
+  stk::mesh::for_each_entity_run(
+      "host-mesh-test", hostMesh, stk::topology::ELEM_RANK, all,
+      [&](const stk::mesh::FastMeshIndex& /*sideIndex*/) {
+        vec[0] += 1;  // we're on host. on device we would use 'vec.device_get(0) += 1;'
+      });
 
   const unsigned numElems = vec[0];
   EXPECT_EQ(numElems, stk::mesh::count_entities(bulk, stk::topology::ELEM_RANK, all));
@@ -525,25 +525,39 @@ TEST(NgpHostMesh, FieldForEachEntityReduceOnHost_fromTylerVoskuilen)
   EXPECT_EQ(1.0, maxZ);
 }
 
-TEST(NgpDeviceMesh, DISABLED_dont_let_stacksize_get_out_of_control)
+TEST(NgpDeviceMesh, dont_let_stacksize_get_out_of_control)
 {
   constexpr size_t tol = 64;
 
 #ifdef SIERRA_MIGRATION
-  constexpr size_t expectedBulkDataSize = 1320;
+  constexpr size_t expectedBulkDataSize = 1420;
 #else
-  constexpr size_t expectedBulkDataSize = 1256;
+  constexpr size_t expectedBulkDataSize = 1356;
 #endif
   EXPECT_NEAR(expectedBulkDataSize, sizeof(stk::mesh::BulkData), tol);
 
   constexpr size_t expectedBucketSize = 976;
   EXPECT_NEAR(expectedBucketSize, sizeof(stk::mesh::Bucket), tol);
 
-  constexpr size_t expectedDeviceMeshSize = 920;
+#ifdef STK_ENABLE_GPU
+  constexpr size_t expectedDeviceMeshSize = 2096;
+#else
+  constexpr size_t expectedDeviceMeshSize = 1750;
+#endif
   EXPECT_NEAR(expectedDeviceMeshSize, sizeof(stk::mesh::DeviceMesh), tol);
 
   constexpr size_t expectedDeviceBucketSize = 264;
   EXPECT_NEAR(expectedDeviceBucketSize, sizeof(stk::mesh::DeviceBucket), tol);
+
+#ifdef STK_ENABLE_GPU
+  constexpr size_t expectedDeviceBucketRepoSize = 1032;
+#else
+  constexpr size_t expectedDeviceBucketRepoSize =  928;
+#endif
+  EXPECT_NEAR(expectedDeviceBucketRepoSize, sizeof(stk::mesh::impl::DeviceBucketRepository<stk::ngp::MemSpace>), tol);
+
+  constexpr size_t expectedMeshConnectivitySize = 100;
+  EXPECT_NEAR(expectedMeshConnectivitySize, sizeof(stk::mesh::impl::MeshConnectivity<stk::ngp::UVMDeviceSpace>), tol);
 }
 
 void add_elements(std::unique_ptr<stk::mesh::BulkData>& bulk)

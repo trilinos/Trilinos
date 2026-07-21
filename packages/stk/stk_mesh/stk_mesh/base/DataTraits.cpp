@@ -283,11 +283,19 @@ public:
 };
 
 template< typename T >
-class DataTraitsComplex : public DataTraitsCommon<T> {
+class DataTraitsStdComplex : public DataTraitsCommon<T> {
 public:
 
-  explicit DataTraitsComplex( const char * arg_name )
-    : DataTraitsCommon<T>( arg_name ) {}
+  explicit DataTraitsStdComplex(const char* arg_name)
+    : DataTraitsCommon<T>(arg_name) {}
+};
+
+template< typename T >
+class DataTraitsKokkosComplex : public DataTraitsCommon<T> {
+public:
+
+  explicit DataTraitsKokkosComplex(const char* arg_name)
+    : DataTraitsCommon<T>(arg_name) {}
 };
 
 template< typename T >
@@ -374,10 +382,15 @@ template<>      \
 const DataTraits & data_traits<T>()     \
 { static const DataTraitsNumeric<T> traits( #T ); return traits ; }
 
-#define DATA_TRAITS_COMPLEX( T )        \
+#define DATA_TRAITS_STD_COMPLEX( T )        \
 template<>      \
 const DataTraits & data_traits<T>()     \
-{ static const DataTraitsComplex<T> traits( #T ); return traits ; }
+{ static const DataTraitsStdComplex<T> traits( #T ); return traits ; }
+
+#define DATA_TRAITS_KOKKOS_COMPLEX( T )        \
+template<>      \
+const DataTraits & data_traits<T>()     \
+{ static const DataTraitsKokkosComplex<T> traits( #T ); return traits ; }
 
 #define DATA_TRAITS_INTEGRAL( T )        \
 template<>      \
@@ -407,8 +420,10 @@ DATA_TRAITS_INTEGRAL( unsigned long long )
 DATA_TRAITS_NUMERIC( float )
 DATA_TRAITS_NUMERIC( double )
 DATA_TRAITS_NUMERIC( long double )
-DATA_TRAITS_COMPLEX( std::complex<float> ) // TODO: Probably not right
-DATA_TRAITS_COMPLEX( std::complex<double> ) // TODO: Probably not right
+DATA_TRAITS_STD_COMPLEX( std::complex<float> )
+DATA_TRAITS_STD_COMPLEX( std::complex<double> )
+DATA_TRAITS_KOKKOS_COMPLEX( Kokkos::complex<float> )
+DATA_TRAITS_KOKKOS_COMPLEX( Kokkos::complex<double> )
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
@@ -495,6 +510,8 @@ DATA_TRAITS_POINTER( long double )
 DATA_TRAITS_POINTER( void )
 DATA_TRAITS_POINTER( std::complex<float> )
 DATA_TRAITS_POINTER( std::complex<double> )
+DATA_TRAITS_POINTER( Kokkos::complex<float> )
+DATA_TRAITS_POINTER( Kokkos::complex<double> )
 
 //----------------------------------------------------------------------
 

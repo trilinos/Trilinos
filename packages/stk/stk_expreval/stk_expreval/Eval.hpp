@@ -91,6 +91,10 @@ public:
 
   bool is_variable(const std::string& variableName) const;
 
+  bool is_dependent_variable(const std::string& variableName) const;
+
+  bool is_independent_variable(const std::string& variableName) const;
+
   bool is_scalar(const std::string& variableName) const;
 
   std::vector<std::string> get_variable_names() const;

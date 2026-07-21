@@ -39,7 +39,8 @@
 
 namespace stk {
 
-std::string format_memory_size(double size)
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after May 2026
+STK_DEPRECATED std::string format_memory_size(double size)
 {
   std::string result;
 
@@ -76,9 +77,10 @@ std::string format_memory_size(double size)
   }
 }
 
-std::string format_memory_size(MemorySize size) {
+STK_DEPRECATED std::string format_memory_size(MemorySize size) {
   return(format_memory_size((double)size));
 }
+#endif
 
 } // namespace stk
 

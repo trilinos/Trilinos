@@ -55,7 +55,7 @@ void do_device_test()
 {
   const int N = 5;
   int returnedVal = 0;
-  Kokkos::parallel_reduce(1, KOKKOS_LAMBDA(int i, int& localVal)
+  Kokkos::parallel_reduce(1, KOKKOS_LAMBDA(int, int& localVal)
   {
     localVal = stk::simd::get_simd_loop_size<float,FuncWithExecPolicy<ExeDev>>(N);
   }, returnedVal);

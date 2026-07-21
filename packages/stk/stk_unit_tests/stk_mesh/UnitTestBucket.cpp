@@ -348,7 +348,7 @@ TEST_F(BucketHex, changing_conn_on_bucket_for_face_to_element)
     test_nodes_and_permutation(bulk, elem, side, nodes);
 
     unsigned new_face_node_ids[] = { 5, 7, 8, 6 };
-    stk::mesh::EntityVector new_nodes(4);
+    std::array<stk::mesh::Entity,4> new_nodes;
     for (size_t i=0;i<new_nodes.size();++i)
     {
       new_nodes[i] = bulk.get_entity(stk::topology::NODE_RANK, new_face_node_ids[i]);
@@ -394,7 +394,8 @@ TEST_F(BucketHex, changing_conn_on_bucket_for_face_to_element)
     size_t sizeAfter = bulk.bucket(elem).memory_size_in_bytes();
     EXPECT_EQ(sizeBefore, sizeAfter);
 
-    test_nodes_and_permutation(bulk, elem, side, new_nodes);
+    stk::mesh::EntityVector nodesVec(new_nodes.begin(), new_nodes.end());
+    test_nodes_and_permutation(bulk, elem, side, nodesVec);
   }
 }
 
@@ -468,7 +469,7 @@ TEST_F(BucketHex, changing_conn_on_bucket_for_edge_to_element)
 }
 
 #ifdef STK_USE_DEVICE_MESH
-void do_nonmodifying_debug_check(const stk::mesh::BulkData & bulk, const stk::mesh::FieldBase & coordsField)
+void do_nonmodifying_debug_check(const stk::mesh::BulkData& bulk, const stk::mesh::FieldBase& /*coordsField*/)
 {
   const stk::mesh::BucketVector & buckets = bulk.buckets(stk::topology::NODE_RANK);
   ASSERT_EQ(buckets.size(), 1u);
@@ -488,7 +489,7 @@ size_t compute_node_bucket_memory(const stk::mesh::BulkData& bulk)
   return heapMemory;
 }
 
-void do_modifying_entity_creation(stk::mesh::BulkData & bulk, const stk::mesh::FieldBase & coordsField)
+void do_modifying_entity_creation(stk::mesh::BulkData& bulk, const stk::mesh::FieldBase& /*coordsField*/)
 {
   unsigned face_node_ids[] = { 5, 6, 8, 7 };
   stk::mesh::EntityVector nodes(4);

@@ -33,7 +33,7 @@
 //
 #include <gtest/gtest.h>
 #include <stk_util/util/string_utils.hpp>
-#include <stk_tools/block_extractor/ParseCsv.hpp>
+#include <stk_util/util/ParseCsv.hpp>
 
 namespace
 {
@@ -50,112 +50,112 @@ void compare_result(const std::vector<T> & result, const std::vector<T> & expect
 TEST(GetIdsFromStrings, empty)
 {
   std::vector<std::string> input = {};
-  std::vector<int> result = stk::tools::get_ids_from_strings(input);
+  std::vector<int> result = stk::util::get_ids_from_strings(input);
   compare_result(result, {});
 }
 
 TEST(GetIdsFromStrings, singleInteger)
 {
   std::vector<std::string> input = {"5"};
-  std::vector<int> result = stk::tools::get_ids_from_strings(input);
+  std::vector<int> result = stk::util::get_ids_from_strings(input);
   compare_result(result, {5});
 }
 
 TEST(GetIdsFromStrings, multipleIntegers)
 {
   std::vector<std::string> input = {"1", "2", "3", "5", "8"};
-  std::vector<int> result = stk::tools::get_ids_from_strings(input);
+  std::vector<int> result = stk::util::get_ids_from_strings(input);
   compare_result(result, {1, 2, 3, 5, 8});
 }
 
 TEST(GetIdsFromStrings, nonInteger)
 {
   std::vector<std::string> input = {"1", "block_2"};
-  EXPECT_THROW(stk::tools::get_ids_from_strings(input), std::runtime_error);
+  EXPECT_THROW(stk::util::get_ids_from_strings(input), std::runtime_error);
 }
 
 TEST(GetIdsFromStrings, singleRangeNonInteger)
 {
   std::vector<std::string> input = {"1:block_5"};
-  EXPECT_THROW(stk::tools::get_ids_from_strings(input), std::runtime_error);
+  EXPECT_THROW(stk::util::get_ids_from_strings(input), std::runtime_error);
 }
 
 TEST(GetIdsFromStrings, singleRangeTooManyFields)
 {
   std::vector<std::string> input = {"1:5:2:2"};
-  EXPECT_THROW(stk::tools::get_ids_from_strings(input), std::logic_error);
+  EXPECT_THROW(stk::util::get_ids_from_strings(input), std::logic_error);
 }
 
 TEST(GetIdsFromStrings, singleRangeOutOfOrder)
 {
   std::vector<std::string> input = {"5:1"};
-  EXPECT_THROW(stk::tools::get_ids_from_strings(input), std::logic_error);
+  EXPECT_THROW(stk::util::get_ids_from_strings(input), std::logic_error);
 }
 
 TEST(GetIdsFromStrings, singleRangeZeroLimit)
 {
   std::vector<std::string> input = {"0:5"};
-  EXPECT_THROW(stk::tools::get_ids_from_strings(input), std::logic_error);
+  EXPECT_THROW(stk::util::get_ids_from_strings(input), std::logic_error);
 }
 
 TEST(GetIdsFromStrings, singleRangeNegativeLimit)
 {
   std::vector<std::string> input = {"1:-5"};
-  EXPECT_THROW(stk::tools::get_ids_from_strings(input), std::logic_error);
+  EXPECT_THROW(stk::util::get_ids_from_strings(input), std::logic_error);
 }
 
 TEST(GetIdsFromStrings, singleRangeNegativeStride)
 {
   std::vector<std::string> input = {"1:5:-1"};
-  EXPECT_THROW(stk::tools::get_ids_from_strings(input), std::logic_error);
+  EXPECT_THROW(stk::util::get_ids_from_strings(input), std::logic_error);
 }
 
 TEST(GetIdsFromStrings, singleRangeNoStride)
 {
   std::vector<std::string> input = {"1:5"};
-  std::vector<int> result = stk::tools::get_ids_from_strings(input);
+  std::vector<int> result = stk::util::get_ids_from_strings(input);
   compare_result(result, {1, 2, 3, 4, 5});
 }
 
 TEST(GetIdsFromStrings, singleRangeStride1)
 {
   std::vector<std::string> input = {"1:5:1"};
-  std::vector<int> result = stk::tools::get_ids_from_strings(input);
+  std::vector<int> result = stk::util::get_ids_from_strings(input);
   compare_result(result, {1, 2, 3, 4, 5});
 }
 
 TEST(GetIdsFromStrings, singleRangeStride2)
 {
   std::vector<std::string> input = {"1:5:2"};
-  std::vector<int> result = stk::tools::get_ids_from_strings(input);
+  std::vector<int> result = stk::util::get_ids_from_strings(input);
   compare_result(result, {1, 3, 5});
 }
 
 TEST(GetIdsFromStrings, singleRangeStride3)
 {
   std::vector<std::string> input = {"1:5:3"};
-  std::vector<int> result = stk::tools::get_ids_from_strings(input);
+  std::vector<int> result = stk::util::get_ids_from_strings(input);
   compare_result(result, {1, 4});  // Not inclusive of range end
 }
 
 TEST(GetIdsFromStrings, singleRangeStrideTooBig)
 {
   std::vector<std::string> input = {"1:5:5"};
-  std::vector<int> result = stk::tools::get_ids_from_strings(input);
+  std::vector<int> result = stk::util::get_ids_from_strings(input);
   compare_result(result, {1});  // Only first value
 }
 
 TEST(GetIdsFromStrings, mixedIntsAndRanges)
 {
   std::vector<std::string> input = {"1", "10:14:2", "20"};
-  std::vector<int> result = stk::tools::get_ids_from_strings(input);
+  std::vector<int> result = stk::util::get_ids_from_strings(input);
   compare_result(result, {1, 10, 12, 14, 20});
 }
 
 TEST(GetIdsFromStrings, multipleRanges)
 {
   std::vector<std::string> input = {"1:5", "10:14:2"};
-  std::vector<int> result = stk::tools::get_ids_from_strings(input);
+  std::vector<int> result = stk::util::get_ids_from_strings(input);
   compare_result(result, {1, 2, 3, 4, 5, 10, 12, 14});
 }
 

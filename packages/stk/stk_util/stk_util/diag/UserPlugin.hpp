@@ -105,13 +105,8 @@ public:
     bool operator()(const NamePair &lhs, const NamePair &rhs) const {
       sierra::less_nocase<NamePair::second_type> second_less_nocase;
 
-#ifdef SIERRA_TYPE_INFO_BEFORE_EQUALITY_BUG
-      return (lhs.first->before(*rhs.first) && *lhs.first != *rhs.first)
-	|| (*lhs.first == *rhs.first && second_less_nocase(lhs.second, rhs.second));
-#else
       return lhs.first->before(*rhs.first)
 	|| (*lhs.first == *rhs.first && second_less_nocase(lhs.second, rhs.second));
-#endif
     }
   };
 

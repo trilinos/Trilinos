@@ -75,6 +75,7 @@ void GeneratedMeshToFileWithTransientFields::write_mesh_with_field(const std::ve
   broker.add_global(outputFileIndex, globalVariableName+"_int", Ioss::Field::INTEGER);
   int vectorLength = 3;
   broker.add_global(outputFileIndex, globalVariableName+"_real_vec", vectorLength, Ioss::Field::REAL);
+  write_mesh();
 
   for(unsigned step = 0; step < timeSteps.size(); step++)
   {

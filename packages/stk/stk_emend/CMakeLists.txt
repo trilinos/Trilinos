@@ -34,6 +34,8 @@
 
 STK_SUBPACKAGE(Emend)
 
+message("STKEmend")
+
 ADD_SUBDIRECTORY(stk_emend)
 
 STK_SUBPACKAGE_POSTPROCESS()

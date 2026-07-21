@@ -87,7 +87,6 @@ public:
   /** \brief  Construct a relation from a referenced entity and local identifier
    */
   Relation( Entity entity, EntityRank entityRank , RelationIdentifier identifier );
-  // Defined in BulkData.hpp to break circular dependency.
 
   attribute_type   attribute() const { return m_attribute; }
   void set_attribute(attribute_type attr) const  { m_attribute = attr; }

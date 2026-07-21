@@ -66,7 +66,6 @@ struct ProjectionData {
   const stk::mesh::BulkData& bulk;
   const std::shared_ptr<MasterElementProviderInterface> masterElemProvider;
   const std::vector<double>& evalPoint;
-  const stk::mesh::FieldBase& coordinateField;
   const SearchField projectedCoordinateField;
 
   mutable std::vector<spmd::EntityKeyPair> scratchKeySpace;
@@ -78,7 +77,6 @@ struct ProjectionData {
                  : bulk(bulk_),
                    masterElemProvider(masterElemProvider_),
                    evalPoint(targetCoordinates_),
-                   coordinateField(sourceCoordinateField_),
                    projectedCoordinateField(&sourceCoordinateField_)
                  {}
 
@@ -91,8 +89,30 @@ struct ProjectionData {
                  : bulk(bulk_),
                    masterElemProvider(masterElemProvider_),
                    evalPoint(targetCoordinates_),
-                   coordinateField(sourceCoordinateField_),
                    projectedCoordinateField(&sourceCoordinateField_, transformFunc_, defaultValue_)
+                 {}
+
+  ////////
+  ProjectionData(const stk::mesh::BulkData& bulk_,
+                 const std::shared_ptr<MasterElementProviderInterface> masterElemProvider_,
+                 const std::vector<double>& targetCoordinates_,
+                 const std::shared_ptr<stk::search::CachedFieldDataBase>& cachedFieldData_)
+                 : bulk(bulk_),
+                   masterElemProvider(masterElemProvider_),
+                   evalPoint(targetCoordinates_),
+                   projectedCoordinateField(cachedFieldData_)
+                 {}
+
+  ProjectionData(const stk::mesh::BulkData& bulk_,
+                 const std::shared_ptr<MasterElementProviderInterface> masterElemProvider_,
+                 const std::vector<double>& targetCoordinates_,
+                 const std::shared_ptr<stk::search::CachedFieldDataBase>& cachedFieldData_,
+                 double (*transformFunc_)(double),
+                 double defaultValue_)
+                 : bulk(bulk_),
+                   masterElemProvider(masterElemProvider_),
+                   evalPoint(targetCoordinates_),
+                   projectedCoordinateField(cachedFieldData_, transformFunc_, defaultValue_)
                  {}
 };
 

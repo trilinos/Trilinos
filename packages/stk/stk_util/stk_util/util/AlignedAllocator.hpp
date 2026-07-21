@@ -138,7 +138,7 @@ public:
 
   CUDAPinnedAndMappedAlignedAllocator() {}
 
-  CUDAPinnedAndMappedAlignedAllocator(const CUDAPinnedAndMappedAlignedAllocator&) {}
+  CUDAPinnedAndMappedAlignedAllocator(const CUDAPinnedAndMappedAlignedAllocator&) : BaseAlignedAllocator<T, Alignment>{}, std::allocator<T>{} {}
 
   template <typename U>
   CUDAPinnedAndMappedAlignedAllocator (const CUDAPinnedAndMappedAlignedAllocator<U, Alignment>&) {}

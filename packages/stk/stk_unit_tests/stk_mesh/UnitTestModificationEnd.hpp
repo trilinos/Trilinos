@@ -251,8 +251,7 @@ void makeSureEntityIsValidOnCommListAndBulkData(stk::unit_test_util::BulkDataTes
 void checkThatMeshIsParallelConsistent(stk::unit_test_util::BulkDataTester& stkMeshBulkData)
 {
   std::ostringstream msg ;
-  bool is_consistent = true;
-  is_consistent = stkMeshBulkData.my_comm_mesh_verify_parallel_consistency( msg );
+  bool is_consistent = stkMeshBulkData.my_comm_mesh_verify_parallel_consistency( msg );
   EXPECT_TRUE(is_consistent) << msg.str();
 }
 

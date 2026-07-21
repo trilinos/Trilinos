@@ -76,6 +76,9 @@ TEST( UnitTestRootTopology, newPartsWithTopologyAfterCommit )
 
   EXPECT_NO_THROW(uncommitted_metadata.declare_part_with_topology( std::string("a") , stk::topology::TRI_3 ));
   uncommitted_metadata.commit();
+  MPI_Comm comm = stk::parallel_machine_world();
+  EXPECT_NO_THROW(stk::mesh::verify_parallel_consistency(committed_metadata, comm));
+  EXPECT_NO_THROW(stk::mesh::verify_parallel_consistency(uncommitted_metadata, comm));
 }
 
 TEST(UnitTestMetaData, declare_ranked_part_without_spatial_dim)
@@ -387,21 +390,41 @@ TEST(UnitTestMetaData, ConsistentSerialDebugCheck)
 
 TEST(UnitTestMetaData, ConsistentParallelDebugCheck)
 {
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) return;
+  MPI_Comm comm = stk::parallel_machine_world();
+  if (stk::parallel_machine_size(comm) != 2) { GTEST_SKIP(); }
 
   const int spatial_dimension = 3;
-  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatial_dimension, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatial_dimension, comm);
   stk::mesh::BulkData& bulk = *bulkPtr;
   MetaData& meta = bulk.mesh_meta_data();
 
   meta.declare_part("part_1", stk::topology::NODE_RANK);
-  meta.declare_part("part_2", stk::topology::NODE_RANK);
+  auto& part2 = meta.declare_part("part_2", stk::topology::NODE_RANK);
 
   meta.declare_field<double>(stk::topology::NODE_RANK, "field_1");
   meta.declare_field<double>(stk::topology::ELEM_RANK, "field_1");
   meta.declare_field<double>(stk::topology::NODE_RANK, "field_2");
 
   EXPECT_NO_THROW(bulk.modification_begin());
+
+  EXPECT_NO_THROW(stk::mesh::verify_parallel_consistency(meta, comm));
+
+  if (stk::parallel_machine_rank(comm) == 0) {
+    part2.entity_membership_is_parallel_consistent(true);
+  }
+  else {
+    part2.entity_membership_is_parallel_consistent(false);
+  }
+
+  EXPECT_ANY_THROW(stk::mesh::verify_parallel_consistency(meta, comm));
+  part2.entity_membership_is_parallel_consistent(true);
+  EXPECT_NO_THROW(stk::mesh::verify_parallel_consistency(meta, comm));
+
+  if (stk::parallel_machine_rank(comm) == 0) {
+    meta.force_no_induce(part2);
+  }
+
+  EXPECT_ANY_THROW(stk::mesh::verify_parallel_consistency(meta, comm));
 }
 
 #define STK_EXPECT_THROW_MSG(runit, myProc, msgProc, goldMsg) \
@@ -473,7 +496,7 @@ TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadPartRank)
     meta.declare_part("part_1", stk::topology::ELEM_RANK);
   }
 
-  STK_EXPECT_THROW_MSG(bulk.modification_begin(), bulk.parallel_rank(), 1, "[p1] Part part_1 rank (ELEMENT_RANK) does not match Part part_1 rank (NODE_RANK) on root processor\n");
+  STK_EXPECT_THROW_MSG(bulk.modification_begin(), bulk.parallel_rank(), 1, "[p1] Part part_1 rank (ELEM_RANK) does not match Part part_1 rank (NODE_RANK) on root processor\n");
 }
 
 TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadPartTopology)
@@ -611,7 +634,7 @@ TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadFieldRank)
     meta.declare_field<double>(stk::topology::ELEM_RANK, "field_1");
   }
 
-  STK_EXPECT_THROW_MSG(bulk.modification_begin(), bulk.parallel_rank(), 1, "[p1] Field field_1 rank (ELEMENT_RANK) does not match Field field_1 rank (NODE_RANK) on root processor\n");
+  STK_EXPECT_THROW_MSG(bulk.modification_begin(), bulk.parallel_rank(), 1, "[p1] Field field_1 rank (ELEM_RANK) does not match Field field_1 rank (NODE_RANK) on root processor\n");
 }
 
 TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadFieldNumberOfStates)

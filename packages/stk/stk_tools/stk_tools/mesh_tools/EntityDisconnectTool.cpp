@@ -124,7 +124,7 @@ void EntityDisconnectTool::add_elements_adjacent_to(
   for (const auto& adjFace : faces) {
     const auto dcElems = mesh().get_connected_entities(adjFace, stk::topology::ELEMENT_RANK);
     for (auto e = 0U; e < dcElems.size(); ++e) {
-      m_adjacentElements.insert(dcElems[e]);
+      adjacentElements.insert(dcElems[e]);
     }
   }
 }

@@ -67,7 +67,7 @@ MasterElementExternalPointProjection::MasterElementExternalPointProjection(
     std::shared_ptr<MasterElementProviderInterface> masterElemProvider,
     const double parametricTol, const double geometricTol)
   : m_bulk(bulk)
-  , m_coords(coords)
+  , m_coordinateField(coords)
   , m_masterElemProvider(masterElemProvider)
   , m_parametricTol(parametricTol)
   , m_geometricTol(geometricTol)
@@ -93,7 +93,7 @@ void MasterElementExternalPointProjection::project_point_to_element_boundary(stk
   unsigned nDim = m_bulk.mesh_meta_data().spatial_dimension();
   std::vector<double> interpolatedLoc(nDim);
 
-  stk::search::ProjectionData data(m_bulk, m_masterElemProvider, tocoords, *m_coords);
+  stk::search::ProjectionData data(m_bulk, m_masterElemProvider, tocoords, *m_coordinateField);
 
   nearestDistance = stk::search::compute_parametric_distance(data, elem, parametricCoords, interpolatedLoc);
   if(nearestDistance <= (1 + m_parametricTol)) {
@@ -110,11 +110,23 @@ void MasterElementExternalPointProjection::project_point_to_element_boundary(stk
   }
 }
 
+void MasterElementExternalPointProjection::acquire_field_data()
+{
+  fill_cached_const_field_data(m_coordinateField, m_cachedCoordinateFieldData);
+  m_masterElemProvider->acquire_field_data();
+}
+
+void MasterElementExternalPointProjection::release_field_data()
+{
+  clear_cached_field_data(m_cachedCoordinateFieldData);
+  m_masterElemProvider->release_field_data();
+}
+
 MasterElementExternalPointTruncation::MasterElementExternalPointTruncation(
     stk::mesh::BulkData& bulk, const stk::mesh::FieldBase* coords,
     std::shared_ptr<MasterElementProviderInterface> masterElemProvider, const double geometricTol)
   : m_bulk(bulk)
-  , m_coords(coords)
+  , m_coordinateField(coords)
   , m_masterElemProvider(masterElemProvider)
   , m_geometricTol(geometricTol)
 {
@@ -136,12 +148,24 @@ void MasterElementExternalPointTruncation::truncate_point_to_element_boundary(st
                                                                               std::vector<double>& parametricCoords,
                                                                               double& nearestDistance) const
 {
-  stk::search::ProjectionData data(m_bulk, m_masterElemProvider, tocoords, *m_coords);
+  stk::search::ProjectionData data(m_bulk, m_masterElemProvider, tocoords, *m_coordinateField);
   stk::search::ProjectionResult result;
   stk::search::truncate_to_entity(data, elem, result);
 
   nearestDistance = result.geometricDistanceSquared;
   parametricCoords.swap(result.parametricCoords);
+}
+
+void MasterElementExternalPointTruncation::acquire_field_data()
+{
+  fill_cached_const_field_data(m_coordinateField, m_cachedCoordinateFieldData);
+  m_masterElemProvider->acquire_field_data();
+}
+
+void MasterElementExternalPointTruncation::release_field_data()
+{
+  clear_cached_field_data(m_cachedCoordinateFieldData);
+  m_masterElemProvider->release_field_data();
 }
 
 } // namespace search

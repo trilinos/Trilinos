@@ -48,7 +48,8 @@ class FieldDataBytes : public ConstFieldDataBytes<Space>
 {
 public:
   KOKKOS_FUNCTION FieldDataBytes();
-  FieldDataBytes(FieldDataBytes<stk::ngp::HostSpace>* hostFieldBytes, Layout dataLayout);
+  FieldDataBytes(FieldDataBytes<stk::ngp::HostSpace>* hostFieldBytes, Layout dataLayout,
+                 FieldDataCopyTracking* copyTracking);
   KOKKOS_FUNCTION virtual ~FieldDataBytes() override {}
 
   KOKKOS_DEFAULTED_FUNCTION FieldDataBytes(const FieldDataBytes& fieldData) = default;
@@ -85,8 +86,7 @@ class FieldDataBytes<stk::ngp::HostSpace> : public ConstFieldDataBytes<stk::ngp:
 {
 public:
   FieldDataBytes();
-  FieldDataBytes(EntityRank entityRank, Ordinal fieldOrdinal, const std::string& fieldName,
-                 const DataTraits& dataTraits, Layout dataLayout);
+  FieldDataBytes(EntityRank entityRank, Ordinal fieldOrdinal, const DataTraits& dataTraits, Layout dataLayout);
   KOKKOS_FUNCTION virtual ~FieldDataBytes() override {}
 
   FieldDataBytes(const FieldDataBytes& fieldData) = default;
@@ -138,8 +138,9 @@ FieldDataBytes<Space>::FieldDataBytes()
 
 //------------------------------------------------------------------------------
 template <typename Space>
-FieldDataBytes<Space>::FieldDataBytes(FieldDataBytes<stk::ngp::HostSpace>* hostFieldBytes, Layout dataLayout)
-  : ConstFieldDataBytes<Space>(hostFieldBytes, dataLayout)
+FieldDataBytes<Space>::FieldDataBytes(FieldDataBytes<stk::ngp::HostSpace>* hostFieldBytes, Layout dataLayout,
+                                      FieldDataCopyTracking* copyTracking)
+  : ConstFieldDataBytes<Space>(hostFieldBytes, dataLayout, copyTracking)
 {}
 
 //------------------------------------------------------------------------------
@@ -222,9 +223,8 @@ FieldDataBytes<stk::ngp::HostSpace>::FieldDataBytes()
 //------------------------------------------------------------------------------
 inline
 FieldDataBytes<stk::ngp::HostSpace>::FieldDataBytes(EntityRank entityRank, Ordinal fieldOrdinal,
-                                                    const std::string& fieldName, const DataTraits& dataTraits,
-                                                    Layout dataLayout)
-  : ConstFieldDataBytes<stk::ngp::HostSpace>(entityRank, fieldOrdinal, fieldName, dataTraits, dataLayout)
+                                                    const DataTraits& dataTraits, Layout dataLayout)
+  : ConstFieldDataBytes<stk::ngp::HostSpace>(entityRank, fieldOrdinal, dataTraits, dataLayout)
 {}
 
 //------------------------------------------------------------------------------

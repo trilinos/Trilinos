@@ -60,7 +60,7 @@ TYPED_TEST(SimdLoadStore, partial_load_store)
     f.store_part(simd, numValid);
 
     f.compare_until(numValid, [](int i) { return static_cast<ScalarType>(2 * i); });
-    f.compare_from(numValid, [](int i) { return static_cast<ScalarType>(-1.); });
+    f.compare_from(numValid, [](int) { return static_cast<ScalarType>(-1.); });
   }
 }
 
@@ -80,7 +80,7 @@ TYPED_TEST(SimdLoadStore, partial_load_store_with_offset)
     f.store_part_with_offset(simd, numValid);
 
     f.compare_until_with_offset(numValid, [](int i) { return static_cast<ScalarType>(2 * i); }, -1.);
-    f.compare_from_with_offset(numValid, [](int i) { return static_cast<ScalarType>(-1.); });
+    f.compare_from_with_offset(numValid, [](int) { return static_cast<ScalarType>(-1.); });
   }
 }
 
@@ -121,6 +121,6 @@ TYPED_TEST(SimdLoadStore, partial_array_load_store)
     f.store_array(simdArray, numValid);
 
     f.compare_until_array(numValid, [](int i) { return static_cast<ScalarType>(2*i); });
-    f.compare_from_array(numValid, [](int i) { return static_cast<ScalarType>(-1.); });
+    f.compare_from_array(numValid, [](int) { return static_cast<ScalarType>(-1.); });
   }
 }

@@ -51,6 +51,7 @@
 #include "stk_mesh/base/FieldBase.hpp"            // for FieldBase, field_data
 #include "stk_mesh/base/FieldRestriction.hpp"     // for FieldRestriction
 #include "stk_mesh/base/MetaData.hpp"             // for get_field_by_name
+#include "stk_search_util/CachedFieldData.hpp"
 #include "stk_topology/topology.hpp"              // for topology
 #include "stk_transfer/TransferTypes.hpp"
 #include "stk_transfer_util/RecoverField.hpp"           // for RecoverField, Recov...
@@ -69,9 +70,11 @@ namespace transfer {
 struct EntityInterpolationData {
   const stk::mesh::BulkData& sendBulk;
   const stk::mesh::FieldBase* sendField;
+  std::shared_ptr<stk::search::CachedFieldDataBase> cachedSendFieldData;
   const unsigned sendDataIndex;
   const unsigned recvDataIndex;
   const stk::mesh::FieldBase* sendNodalCoordField;
+  std::shared_ptr<stk::search::CachedFieldDataBase> cachedSendNodalCoordFieldData;
   stk::mesh::Entity sendEntity;
   const stk::mesh::Part* sendPart;
   const stk::mesh::Selector* sendSelector;
@@ -88,9 +91,35 @@ struct EntityInterpolationData {
                           double defaultValue_ = 0.0)
   : sendBulk(sendBulk_),
     sendField(sendField_),
+    cachedSendFieldData(stk::search::get_cached_const_field_data(sendField_)),
     sendDataIndex(sendDataIndex_),
     recvDataIndex(recvDataIndex_),
     sendNodalCoordField(sendNodalCoordField_),
+    cachedSendNodalCoordFieldData(stk::search::get_cached_const_field_data(sendNodalCoordField_)),
+    sendEntity(sendEntity_),
+    sendPart(sendPart_),
+    sendSelector(sendSelector_),
+    preTransform(preTransform_),
+    postTransform(postTransform_),
+    defaultValue(defaultValue_)
+  { }
+
+  EntityInterpolationData(const stk::mesh::BulkData& sendBulk_,
+                          const std::shared_ptr<stk::search::CachedFieldDataBase>& cachedSendFieldData_,
+                          const unsigned sendDataIndex_, const unsigned recvDataIndex_,
+                          const std::shared_ptr<stk::search::CachedFieldDataBase>& cachedSendNodalCoordFieldData_,
+                          stk::mesh::Entity sendEntity_,
+                          const stk::mesh::Part* sendPart_, const stk::mesh::Selector* sendSelector_,
+                          FieldTransform preTransform_ = [](double value) {return value;},
+                          FieldTransform postTransform_ = [](double value) {return value;},
+                          double defaultValue_ = 0.0)
+  : sendBulk(sendBulk_),
+    sendField(cachedSendFieldData_->m_field),
+    cachedSendFieldData(cachedSendFieldData_),
+    sendDataIndex(sendDataIndex_),
+    recvDataIndex(recvDataIndex_),
+    sendNodalCoordField(cachedSendNodalCoordFieldData_->m_field),
+    cachedSendNodalCoordFieldData(cachedSendNodalCoordFieldData_),
     sendEntity(sendEntity_),
     sendPart(sendPart_),
     sendSelector(sendSelector_),
@@ -114,7 +143,6 @@ bool least_squares_linear_interpolation(stk::transfer::Patch<PATCHTYPE>& patch,
   const stk::mesh::FieldBase* sendField = interpData.sendField;
   const unsigned sendDataIndex = interpData.sendDataIndex;
   const unsigned recvDataIndex = interpData.recvDataIndex;
-  const stk::mesh::FieldBase* sendCoordField = interpData.sendNodalCoordField;
 
   bool solvable = false;
 
@@ -122,9 +150,10 @@ bool least_squares_linear_interpolation(stk::transfer::Patch<PATCHTYPE>& patch,
   const stk::mesh::BulkData& bulk = patch.get_bulk_data();
   const std::vector<stk::mesh::Entity>& patchEntities = patch.get_patch_entities();
 
-  const std::vector<const stk::mesh::FieldBase*> sendFieldList(1, sendField);
+  const std::vector< std::shared_ptr<stk::search::CachedFieldDataBase> > sendFieldList(1, interpData.cachedSendFieldData);
   stk::transfer::EntityCentroidLinearRecoverField fieldInfo(stk::transfer::RecoverField::TRILINEAR, sendFieldList,
-                                                            *sendCoordField, 1, sendEntity, interpData.preTransform);
+                                                            interpData.cachedSendNodalCoordFieldData, 1, sendEntity,
+                                                            interpData.preTransform);
 
   const auto basisSize = (unsigned)stk::transfer::RecoverField::TRILINEAR;
   const unsigned totalLength = stk::mesh::field_scalars_per_entity(*sendField, sendEntity);
@@ -215,7 +244,6 @@ bool least_squares_quadratic_interpolation(stk::transfer::Patch<PATCHTYPE>& patc
   const stk::mesh::FieldBase* sendField = interpData.sendField;
   const unsigned sendDataIndex = interpData.sendDataIndex;
   const unsigned recvDataIndex = interpData.recvDataIndex;
-  const stk::mesh::FieldBase* sendCoordField = interpData.sendNodalCoordField;
 
   bool solvable = false;
 
@@ -223,9 +251,9 @@ bool least_squares_quadratic_interpolation(stk::transfer::Patch<PATCHTYPE>& patc
   const stk::mesh::BulkData& bulk = patch.get_bulk_data();
   const std::vector<stk::mesh::Entity>& patchEntities = patch.get_patch_entities();
 
-  const std::vector<const stk::mesh::FieldBase*> sendFieldList(1, sendField);
+  const std::vector< std::shared_ptr<stk::search::CachedFieldDataBase> > sendFieldList(1, interpData.cachedSendFieldData);
   stk::transfer::EntityCentroidQuadraticRecoverField fieldInfo(stk::transfer::RecoverField::TRIQUADRATIC, sendFieldList,
-                                                               *sendCoordField, 1, sendEntity, interpData.preTransform);
+                                                               interpData.cachedSendNodalCoordFieldData, 1, sendEntity, interpData.preTransform);
 
   const auto basisSize = (unsigned)stk::transfer::RecoverField::TRIQUADRATIC;
   const unsigned totalLength = stk::mesh::field_scalars_per_entity(*sendField, sendEntity);
@@ -314,7 +342,6 @@ bool least_squares_cubic_interpolation(stk::transfer::Patch<PATCHTYPE>& patch,
   const stk::mesh::FieldBase* sendField = interpData.sendField;
   const unsigned sendDataIndex = interpData.sendDataIndex;
   const unsigned recvDataIndex = interpData.recvDataIndex;
-  const stk::mesh::FieldBase* sendCoordField = interpData.sendNodalCoordField;
 
   bool solvable = false;
 
@@ -322,9 +349,9 @@ bool least_squares_cubic_interpolation(stk::transfer::Patch<PATCHTYPE>& patch,
   const stk::mesh::BulkData& bulk = patch.get_bulk_data();
   const std::vector<stk::mesh::Entity>& patchEntities = patch.get_patch_entities();
 
-  const std::vector<const stk::mesh::FieldBase*> sendFieldList(1, sendField);
+  const std::vector< std::shared_ptr<stk::search::CachedFieldDataBase> > sendFieldList(1, interpData.cachedSendFieldData);
   stk::transfer::EntityCentroidCubicRecoverField fieldInfo(stk::transfer::RecoverField::TRICUBIC, sendFieldList,
-                                                           *sendCoordField, 1, sendEntity, interpData.preTransform);
+                                                           interpData.cachedSendNodalCoordFieldData, 1, sendEntity, interpData.preTransform);
 
   const auto basisSize = (unsigned)stk::transfer::RecoverField::TRICUBIC;
   const unsigned totalLength = stk::mesh::field_scalars_per_entity(*sendField, sendEntity);

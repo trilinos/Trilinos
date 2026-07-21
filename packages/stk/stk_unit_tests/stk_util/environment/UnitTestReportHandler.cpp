@@ -91,6 +91,20 @@ TEST(UnitTestReportHandler, UnitTest)
   ASSERT_EQ((std::string("/smile/Test.cpp") == stk::source_relative_path("/smile/Test.cpp")), true);
 }
 
+TEST(UnitTestReportHandler, SourceLocationString)
+{
+  ASSERT_EQ(stk::source_location_string(nullptr, 1), std::string(""));
+  ASSERT_EQ(stk::source_location_string("/absolute/path/to/file.hpp", 0), std::string(""));
+
+  ASSERT_EQ(stk::source_location_string("/absolute/path/to/file.hpp", 10), std::string("file.hpp:10: "));
+  ASSERT_EQ(stk::source_location_string("/absolute/path/to/file.hpp", 10, ""), std::string("file.hpp:10"));
+
+  ASSERT_EQ(stk::source_location_string("relative/path/to/file.hpp", 11), std::string("file.hpp:11: "));
+  ASSERT_EQ(stk::source_location_string("./relative/path/to/file.hpp", 12), std::string("file.hpp:12: "));
+  ASSERT_EQ(stk::source_location_string("../relative/path/to/file.hpp", 13), std::string("file.hpp:13: "));
+  ASSERT_EQ(stk::source_location_string("file.hpp", 14), std::string("file.hpp:14: "));
+}
+
 namespace
 {
 template <typename T>

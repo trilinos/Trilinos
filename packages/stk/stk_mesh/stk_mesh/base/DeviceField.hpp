@@ -42,7 +42,6 @@
 #include "stk_mesh/base/FieldBase.hpp"
 #include "stk_mesh/base/FieldData.hpp"
 #include "stk_mesh/base/Types.hpp"
-#include "stk_mesh/base/NgpForEachEntity.hpp"
 #include "stk_mesh/base/NgpProfilingBlock.hpp"
 #include "stk_mesh/base/EntityFieldData.hpp"
 
@@ -143,7 +142,7 @@ public:
 
   void sync_to_host() override
   {
-    sync_to_host(stk::ngp::ExecSpace());
+    sync_to_host(get_execution_space());
   }
 
   void sync_to_host(const ExecSpace& execSpace) override
@@ -155,7 +154,7 @@ public:
         m_deviceFieldData.sync_to_host(get_execution_space(), m_hostField->host_data_layout());
       }
       else {
-        execSpace.fence();
+        get_execution_space().fence();
       }
       m_hostField->increment_num_syncs_to_host();
       m_hostField->clear_device_sync_state();
@@ -184,7 +183,7 @@ public:
         m_deviceFieldData.sync_to_device(get_execution_space(), m_hostField->host_data_layout());
       }
       else {
-        execSpace.fence();
+        get_execution_space().fence();
       }
       m_hostField->increment_num_syncs_to_device();
       m_hostField->clear_host_sync_state();
@@ -196,10 +195,6 @@ public:
     sync_to_device(execSpace);
   }
 
-  size_t synchronized_count() const override {
-    return m_deviceFieldData.field_data_synchronized_count();
-  }
-
   KOKKOS_FUNCTION
   unsigned get_component_stride(const FastMeshIndex& entityIndex) const
   {
@@ -207,7 +202,7 @@ public:
       return m_deviceFieldData.mesh().buckets(m_deviceFieldData.entity_rank())[entityIndex.bucket_id]->capacity();
     }
     else {
-      return m_deviceFieldData.m_deviceFieldMetaData(entityIndex.bucket_id).m_bucketCapacity;
+      return m_deviceFieldData.m_deviceFieldMetaData[entityIndex.bucket_id].m_bucketCapacity;
     }
     return 0;  // Keep Nvidia compiler happy about always having return value
   }
@@ -219,38 +214,38 @@ public:
       return m_deviceFieldData.mesh().buckets(m_deviceFieldData.entity_rank())[bucketId]->capacity();
     }
     else {
-      return m_deviceFieldData.m_deviceFieldMetaData(bucketId).m_bucketCapacity;
+      return m_deviceFieldData.m_deviceFieldMetaData[bucketId].m_bucketCapacity;
     }
     return 0;  // Keep Nvidia compiler happy about always having return value
   }
 
   KOKKOS_FUNCTION
   unsigned get_num_components_per_entity(const FastMeshIndex& entityIndex) const {
-    const DeviceFieldMetaData& fieldMetaData = m_deviceFieldData.m_deviceFieldMetaData(entityIndex.bucket_id);
+    const DeviceFieldMetaData& fieldMetaData = m_deviceFieldData.m_deviceFieldMetaData[entityIndex.bucket_id];
     return fieldMetaData.m_numComponentsPerEntity*fieldMetaData.m_numCopiesPerEntity;
   }
 
   KOKKOS_FUNCTION
   unsigned get_extent0_per_entity(const FastMeshIndex& entityIndex) const {
-    return m_deviceFieldData.m_deviceFieldMetaData(entityIndex.bucket_id).m_numComponentsPerEntity;
+    return m_deviceFieldData.m_deviceFieldMetaData[entityIndex.bucket_id].m_numComponentsPerEntity;
   }
 
   KOKKOS_FUNCTION
   unsigned get_extent1_per_entity(const FastMeshIndex& entityIndex) const {
-    return m_deviceFieldData.m_deviceFieldMetaData(entityIndex.bucket_id).m_numCopiesPerEntity;
+    return m_deviceFieldData.m_deviceFieldMetaData[entityIndex.bucket_id].m_numCopiesPerEntity;
   }
 
   KOKKOS_FUNCTION
   unsigned get_extent_per_entity(const FastMeshIndex& entityIndex, unsigned dimension) const {
     const unsigned bucketId = entityIndex.bucket_id;
     if (dimension == 0) {
-      return m_deviceFieldData.m_deviceFieldMetaData(bucketId).m_numComponentsPerEntity;
+      return m_deviceFieldData.m_deviceFieldMetaData[bucketId].m_numComponentsPerEntity;
     }
     else if (dimension == 1) {
-      return m_deviceFieldData.m_deviceFieldMetaData(entityIndex.bucket_id).m_numCopiesPerEntity;
+      return m_deviceFieldData.m_deviceFieldMetaData[entityIndex.bucket_id].m_numCopiesPerEntity;
     }
     else {
-      const unsigned numComponents = m_deviceFieldData.m_deviceFieldMetaData(bucketId).m_numComponentsPerEntity;
+      const unsigned numComponents = m_deviceFieldData.m_deviceFieldMetaData[bucketId].m_numComponentsPerEntity;
       return (numComponents != 0) ? 1 : 0;
     }
   }
@@ -267,21 +262,21 @@ public:
   KOKKOS_FUNCTION
   T& get(FastMeshIndex index, int component) const
   {
-    const DeviceFieldMetaData& fieldMetaData = m_deviceFieldData.m_deviceFieldMetaData(index.bucket_id);
+    const DeviceFieldMetaData& fieldMetaData = m_deviceFieldData.m_deviceFieldMetaData[index.bucket_id];
     return *(reinterpret_cast<T*>(fieldMetaData.m_data) + component*fieldMetaData.m_bucketCapacity + index.bucket_ord);
   }
 
   KOKKOS_FUNCTION
   T& operator()(const FastMeshIndex& index, int component) const
   {
-    const DeviceFieldMetaData& fieldMetaData = m_deviceFieldData.m_deviceFieldMetaData(index.bucket_id);
+    const DeviceFieldMetaData& fieldMetaData = m_deviceFieldData.m_deviceFieldMetaData[index.bucket_id];
     return *(reinterpret_cast<T*>(fieldMetaData.m_data) + component*fieldMetaData.m_bucketCapacity + index.bucket_ord);
   }
 
   KOKKOS_FUNCTION
   EntityFieldData<T> operator()(const FastMeshIndex& index) const
   {
-    const DeviceFieldMetaData& fieldMetaData = m_deviceFieldData.m_deviceFieldMetaData(index.bucket_id);
+    const DeviceFieldMetaData& fieldMetaData = m_deviceFieldData.m_deviceFieldMetaData[index.bucket_id];
     T* entityPtr = reinterpret_cast<T*>(fieldMetaData.m_data) + index.bucket_ord;
     return EntityFieldData<T>(entityPtr, fieldMetaData.m_numComponentsPerEntity, fieldMetaData.m_bucketCapacity);
   }
@@ -290,7 +285,8 @@ public:
   void set_all(const Mesh& /*ngpMesh*/, const T& value)
   {
     clear_sync_state();
-    impl::fill_field_with_value<T>(get_execution_space(), m_deviceFieldData.m_deviceFieldMetaData, value);
+    impl::fill_field_with_value<T>(get_execution_space(), m_deviceFieldData.m_deviceFieldMetaData,
+                                   m_deviceFieldData.m_numBuckets, value);
     modify_on_device();
   }
 

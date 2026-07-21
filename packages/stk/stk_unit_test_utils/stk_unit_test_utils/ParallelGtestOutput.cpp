@@ -58,21 +58,10 @@ protected:
 
     virtual void OnTestStart(const ::testing::TestInfo& test_info)
     {
-        if(mProcId == 0)
-        {
-#ifdef STK_BUILT_FOR_SIERRA
-            printf("*** Starting test %s.%s from %s:%d\n",
-                   test_info.test_case_name(),
-                   test_info.name(),
-                   get_filename_for_print(test_info.file()).c_str(),
-                   test_info.line());
-#else
-//older versions of gtest don't have TestInfo::file() nor TestInfo::line()
-            printf("*** Starting test %s.%s\n",
-                   test_info.test_case_name(),
-                   test_info.name());
-#endif
-        }
+      if (mProcId == 0) {
+        printf("*** Starting test %s.%s from %s:%d\n", test_info.test_case_name(), test_info.name(),
+            get_filename_for_print(test_info.file()).c_str(), test_info.line());
+      }
     }
 
     std::string test_result_string(const ::testing::TestPartResult & test_part_result) const
@@ -145,18 +134,11 @@ protected:
                 mNumFails++;
             }
             printf("%s.%s", test_info.test_case_name(), test_info.name());
-            if ( should_print_time() )
-            {
-#ifdef STK_BUILT_FOR_SIERRA
-                size_t millis = test_info.result() != nullptr ? test_info.result()->elapsed_time() : 0;
-#else
-                size_t millis = 0;
-#endif
-                printf(" (%s ms)\n", ::testing::internal::StreamableToString(millis).c_str());
-            }
-            else
-            {
-                printf("\n");
+            if (should_print_time()) {
+              size_t millis = test_info.result() != nullptr ? test_info.result()->elapsed_time() : 0;
+              printf(" (%s ms)\n", ::testing::internal::StreamableToString(millis).c_str());
+            } else {
+              printf("\n");
             }
             fflush(stdout);
         }

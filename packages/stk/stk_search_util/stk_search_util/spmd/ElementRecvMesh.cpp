@@ -63,7 +63,8 @@ ElementRecvMesh::ElementRecvMesh(stk::mesh::BulkData* recvBulk,
                                  const stk::mesh::PartVector& recvParts,
                                  const stk::ParallelMachine recvComm,
                                  std::shared_ptr<PointEvaluatorInterface> pointEvaluator,
-                                 double parametricTolerance, double geometricTolerance)
+                                 double parametricTolerance, double geometricTolerance,
+                                 std::shared_ptr<CoordTransformInterface> coordTransform)
   : m_bulk(recvBulk)
   , m_meta(recvBulk != nullptr ? &recvBulk->mesh_meta_data() : nullptr)
   , m_coordinateField(coordinateField)
@@ -74,6 +75,7 @@ ElementRecvMesh::ElementRecvMesh(stk::mesh::BulkData* recvBulk,
   , m_pointEvaluator(pointEvaluator)
   , m_parametricTolerance(parametricTolerance)
   , m_searchTolerance(geometricTolerance)
+  , m_coordTransform(coordTransform)
 {
   m_isInitialized = recvBulk != nullptr;
 }
@@ -85,7 +87,8 @@ ElementRecvMesh::ElementRecvMesh(stk::mesh::BulkData* recvBulk,
                                  const stk::mesh::Selector& activeSelector,
                                  const stk::ParallelMachine recvComm,
                                  std::shared_ptr<PointEvaluatorInterface> pointEvaluator,
-                                 double parametricTolerance, double geometricTolerance)
+                                 double parametricTolerance, double geometricTolerance,
+                                 std::shared_ptr<CoordTransformInterface> coordTransform)
   : m_bulk(recvBulk)
   , m_meta(recvBulk != nullptr ? &recvBulk->mesh_meta_data() : nullptr)
   , m_coordinateField(coordinateField)
@@ -96,6 +99,7 @@ ElementRecvMesh::ElementRecvMesh(stk::mesh::BulkData* recvBulk,
   , m_pointEvaluator(pointEvaluator)
   , m_parametricTolerance(parametricTolerance)
   , m_searchTolerance(geometricTolerance)
+  , m_coordTransform(coordTransform)
 {
   m_isInitialized = recvBulk != nullptr;
 }
@@ -127,7 +131,7 @@ void ElementRecvMesh::initialize(stk::mesh::BulkData* recvBulk)
 {
   m_bulk = recvBulk;
   m_meta = recvBulk != nullptr ? &recvBulk->mesh_meta_data() : nullptr;
-  m_isInitialized = recvBulk != nullptr;
+  m_isInitialized = m_bulk != nullptr;
 
   consistency_check();
 }
@@ -135,6 +139,8 @@ void ElementRecvMesh::initialize(stk::mesh::BulkData* recvBulk)
 void ElementRecvMesh::bounding_boxes(std::vector<BoundingBox>& v_box) const
 {
   STK_ThrowAssert(m_isInitialized);
+  STK_ThrowAssert(m_hasAcquiredFieldData);
+
   STK_ThrowAssertMsg((nullptr != m_bulk) && (nullptr != m_meta), "Meta and/or Bulk Data objects have not been set");
   const unsigned nDim = m_meta->spatial_dimension();
 
@@ -156,6 +162,7 @@ void ElementRecvMesh::bounding_boxes(std::vector<BoundingBox>& v_box) const
 
       for(size_t p = 0; p < numPoints; ++p) {
         m_pointEvaluator->coordinates(eKey, p, coords);
+        m_coordTransform->transform(eKey, coords);
 
         Point center;
         if(nDim == 2) {
@@ -180,10 +187,12 @@ void ElementRecvMesh::bounding_boxes(std::vector<BoundingBox>& v_box) const
 void ElementRecvMesh::coordinates(const EntityKey& k, std::vector<double>& coords) const
 {
   STK_ThrowAssert(m_isInitialized);
+  STK_ThrowAssert(m_hasAcquiredFieldData);
 
   size_t p = k.second;
 
   m_pointEvaluator->coordinates(k.first, p, coords);
+  m_coordTransform->transform(k.first, coords);
 }
 
 stk::mesh::EntityId ElementRecvMesh::id(const EntityKey& k) const
@@ -202,17 +211,19 @@ stk::mesh::Entity ElementRecvMesh::entity(const EntityKey& k) const
 double ElementRecvMesh::get_distance_from_nearest_node(const EntityKey& k, const std::vector<double>& toCoords) const
 {
   STK_ThrowAssert(m_isInitialized);
+  STK_ThrowAssert(m_hasAcquiredFieldData);
   const stk::mesh::Entity e = k.first;
-  return distance_from_nearest_entity_node(*m_bulk, e, m_coordinateField, toCoords);
+  return distance_from_nearest_entity_node(*m_bulk, e, m_cachedCoordinateFieldData, toCoords);
 }
 
 void ElementRecvMesh::centroid(const EntityKey& k, std::vector<double>& centroid) const
 {
   STK_ThrowAssert(m_isInitialized);
+  STK_ThrowAssert(m_hasAcquiredFieldData);
   stk::mesh::Entity elem = k.first;
   const unsigned nDim = m_coordinateField->mesh_meta_data().spatial_dimension();
   centroid.assign(nDim, 0.0);
-  determine_centroid(nDim, elem, *m_coordinateField, centroid.data());
+  determine_centroid(nDim, elem, m_cachedCoordinateFieldData, centroid.data());
 }
 
 void ElementRecvMesh::fill_entity_keys(const stk::mesh::EntityKeyVector& rangeEntities,
@@ -233,6 +244,26 @@ void ElementRecvMesh::fill_entity_keys(const stk::mesh::EntityKeyVector& rangeEn
       elementEntityKeys.emplace_back(spmdEntityKey, p);
     }
   }
+}
+
+void ElementRecvMesh::acquire_field_data()
+{
+  STK_ThrowAssert(m_isInitialized);
+
+  m_pointEvaluator->acquire_field_data();
+
+  fill_cached_const_field_data(m_coordinateField, m_cachedCoordinateFieldData);
+
+  m_hasAcquiredFieldData = true;
+}
+
+void ElementRecvMesh::release_field_data()
+{
+  m_pointEvaluator->release_field_data();
+
+  clear_cached_field_data(m_cachedCoordinateFieldData);
+
+  m_hasAcquiredFieldData = false;
 }
 
 } // namespace spmd

@@ -34,7 +34,6 @@
 #include "gtest/gtest.h"
 #include "stk_transfer_util/TransferMainIO.hpp"
 #include "stk_unit_test_utils/ioUtils.hpp"
-#include "stk_unit_test_utils/GeneratedMeshToFile.hpp"
 #include "stk_unit_test_utils/CommandLineArgs.hpp"
 #include <stk_util/parallel/OutputStreams.hpp>
 #include "stk_io/WriteMesh.hpp"
@@ -108,12 +107,14 @@ TEST(TransferMainIO, mockTransfer)
 
   stk::transfer_util::TransferMainIO io(comm, sendMesh, recvMesh);
   io.load_meshes();
+  io.load_send_fields_at_time(io.get_send_time_steps().back());
+  io.load_recv_fields_at_time(io.get_recv_time_steps().back());
 
   std::shared_ptr<stk::mesh::BulkData> recvBulk = io.get_recvBulkData();
   perform_mock_transfer(recvBulk, lastTimeStep, sendFieldScaleValue);
 
   std::string transferOutput = "transferredReceive.exo";
-  io.write_transfer_output({"field1_scalar", "field1_vector"}, transferOutput);
+  io.write_transfer_output(transferOutput);
 
   stk::unit_test_util::MeshFromFile transferredFieldData(comm);
   transferredFieldData.fill_from_parallel(transferOutput);
@@ -123,6 +124,45 @@ TEST(TransferMainIO, mockTransfer)
   unlink(sendMesh.c_str());
   unlink(recvMesh.c_str());
   unlink(transferOutput.c_str());
+}
+
+bool vec_double_equal(const std::vector<double>& v1, const std::vector<double>& v2)
+{
+  if (v1.size() != v2.size()) return false;
+  constexpr double tol = std::numeric_limits<double>::epsilon();
+  for(unsigned i=0; i<v1.size(); ++i) {
+    if (std::abs(v1[i] - v2[i]) > tol) {
+      return false;
+    }
+  }
+  return true;
+}
+
+TEST(TransferMainIO, parseTimeSteps)
+{
+  std::vector<double> timesAll = {1.0, 2.0, 3.0, 4.0, 5.0, 6.0};
+  std::vector<double> times = stk::transfer_util::get_times("ALL", timesAll);
+  EXPECT_TRUE(vec_double_equal(times, timesAll));
+
+  std::vector<double> timeLast = {6.0};
+  times = stk::transfer_util::get_times("LAST", timesAll);
+  EXPECT_TRUE(vec_double_equal(times, timeLast));
+
+  std::vector<double> timeFirst = {1.0};
+  times = stk::transfer_util::get_times("fIrSt", timesAll);
+  EXPECT_TRUE(vec_double_equal(times, timeFirst));
+
+  std::vector<double> timeStride2_1 = {1.0, 3.0, 5.0};
+  times = stk::transfer_util::get_times("1:6:2", timesAll);
+  EXPECT_TRUE(vec_double_equal(times, timeStride2_1));
+
+  std::vector<double> timeStride2_2 = {2.0, 4.0, 6.0};
+  times = stk::transfer_util::get_times("2:6:2", timesAll);
+  EXPECT_TRUE(vec_double_equal(times, timeStride2_2));
+
+  EXPECT_ANY_THROW(stk::transfer_util::get_times("foo", timesAll));
+  EXPECT_ANY_THROW(stk::transfer_util::get_times("1:4:-1", timesAll));
+  EXPECT_ANY_THROW(stk::transfer_util::get_times("3:2:1", timesAll));
 }
 
 }

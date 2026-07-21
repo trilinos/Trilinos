@@ -38,11 +38,11 @@
 #include <stk_util/parallel/CommBuffer.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/EntityKey.hpp>
-#include <stk_mesh/base/BulkData.hpp>
 #include <iosfwd>
 
 namespace stk {
 namespace mesh {
+class BulkData;
 namespace impl {
 
 void pack_entity_info(const BulkData& mesh,

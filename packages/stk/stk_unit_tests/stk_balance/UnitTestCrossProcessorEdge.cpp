@@ -27,13 +27,13 @@ bool are_edges_equal(const Edge &edge, const stk::balance::GraphEdge &graphEdge)
 
 class GraphCrossProc : public stk::unit_test_util::MeshFixture {};
 
-TEST_F(GraphCrossProc, checkEdgeWithAura)
+NGP_TEST_F(GraphCrossProc, checkEdgeWithAura)
 {
   setup_mesh("generated:1x1x4", stk::mesh::BulkData::AUTO_AURA);
   test_if_graph_has_cross_processor_edge(get_bulk());
 }
 
-TEST_F(GraphCrossProc, checkEdgeWithNoAura)
+NGP_TEST_F(GraphCrossProc, checkEdgeWithNoAura)
 {
   setup_mesh("generated:1x1x4", stk::mesh::BulkData::AUTO_AURA);
   test_if_graph_has_cross_processor_edge(get_bulk());

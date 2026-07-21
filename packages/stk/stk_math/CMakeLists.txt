@@ -1,6 +1,8 @@
 
 STK_SUBPACKAGE(Math)
 
+message("STKMath")
+
 ADD_SUBDIRECTORY(stk_math)
 
 STK_SUBPACKAGE_POSTPROCESS()

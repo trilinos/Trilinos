@@ -117,7 +117,7 @@ bool CommSparse::allocate_buffers()
   return false;
 }
 
-void CommSparse::allocate_buffers(const std::vector<int>& send_procs, const std::vector<int>& recv_procs)
+void CommSparse::allocate_buffers(const std::vector<int>& /*send_procs*/, const std::vector<int>& recv_procs)
 {
   allocate_buffers();
   m_num_recvs = recv_procs.size();

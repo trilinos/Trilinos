@@ -90,7 +90,7 @@ void disconnect_user_blocks_locally(stk::mesh::BulkData& bulk, const BlockPairVe
   disconnect_and_reconnect_blocks(bulk, sortedBlocksToDisconnect, blockPairsToReconnect, info);
 }
 
-void snip_hinges(stk::mesh::BulkData& bulk, impl::HingeNodeVector& preservedHingeNodes, const BlockPairVector& blocksToDisconnect, LinkInfo& info)
+void snip_hinges(stk::mesh::BulkData& bulk, HingeNodeVector& preservedHingeNodes, const BlockPairVector& blocksToDisconnect, LinkInfo& info)
 {
   stk::mesh::EntityVector affectedNodes = get_affected_nodes(bulk, blocksToDisconnect);
 
@@ -99,7 +99,7 @@ void snip_hinges(stk::mesh::BulkData& bulk, impl::HingeNodeVector& preservedHing
   info.snipTime = stk::wall_time();
 }
 
-void populate_hinge_node_list(stk::mesh::BulkData& bulk, const BlockPairVector& blocksToDisconnect, impl::HingeNodeVector& preservedHingeNodes)
+void populate_hinge_node_list(stk::mesh::BulkData& bulk, const BlockPairVector& blocksToDisconnect, HingeNodeVector& preservedHingeNodes)
 {
   stk::mesh::EntityVector commonNodes = get_affected_nodes(bulk, blocksToDisconnect);
   HingeNodeVector commonHingeNodes = impl::get_hinge_nodes(bulk, commonNodes);
@@ -150,7 +150,7 @@ void disconnect_user_blocks(stk::mesh::BulkData& bulk, const BlockPairVector& bl
   impl::LinkInfo info;
   info.preserveOrphans = (snipOption == PRESERVE_INITIAL_HINGES) ? true : false;
 
-  impl::HingeNodeVector preservedHingeNodes;
+  HingeNodeVector preservedHingeNodes;
   if(info.preserveOrphans) {
     impl::populate_hinge_node_list(bulk, blocksToDisconnect, preservedHingeNodes);
   }

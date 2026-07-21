@@ -38,6 +38,7 @@
 // #######################  Start Clang Header Tool Managed Headers ########################
 // clang-format off
 #include "stk_search/SearchInterface.hpp"  // for ProvideMasterElementInterface
+#include "stk_search_util/CachedFieldData.hpp"
 #include "stk_search_util/SearchField.hpp"
 #include "stk_search_util/spmd/EntityKeyPair.hpp"
 #include <stk_mesh/base/EntityKey.hpp>     // for EntityKey
@@ -79,9 +80,21 @@ private:
   SearchTopology() = delete;
 };
 
-using MasterElementProviderInterface =
+using MasterElementProviderInterfaceBase =
     ProvideMasterElementInterface<SearchTopology, spmd::EntityKeyPair, SearchField>;
 
+class MasterElementProviderInterface : public MasterElementProviderInterfaceBase {
+ public:
+  MasterElementProviderInterface() = default;
+  virtual ~MasterElementProviderInterface() = default;
+
+  virtual void acquire_field_data() {};
+  virtual void release_field_data() {};
+
+ protected:
+  MasterElementProviderInterface(const MasterElementProviderInterface&) = delete;
+  const MasterElementProviderInterface& operator()(const MasterElementProviderInterface&) = delete;
+};
 
 } // namespace stk
 } // namespace search
