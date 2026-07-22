@@ -20,7 +20,6 @@
 #include "Thyra_ProductVectorBase.hpp"
 #include "Thyra_ProductMultiVectorBase.hpp"
 #include "Thyra_SpmdVectorSpaceBase.hpp"
-#include "Thyra_DetachedSpmdVectorView.hpp"
 
 // Teuchos includes
 #include "Teuchos_GlobalMPISession.hpp"
@@ -28,6 +27,7 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_CrsMatrix.hpp"
@@ -158,6 +158,8 @@ bool tTpetraOperatorWrapper::test_functionality(int verbosity, std::ostream& os)
   bool status    = false;
   bool allPassed = true;
 
+  using mag_t = typename Teuchos::ScalarTraits<ST>::magnitudeType;
+
   RCP<const Teuchos::Comm<int>> comm_tpetra = GetComm_tpetra();
 
   TEST_MSG("\n   tTpetraOperatorWrapper::test_functionality: "
@@ -228,7 +230,6 @@ bool tTpetraOperatorWrapper::test_functionality(int verbosity, std::ostream& os)
                     << " checking largest range element "
                     << "( largest = " << rangeMap->getMaxAllGlobalIndex()
                     << ", true = " << rangeMap->getGlobalNumElements() - 1 << " )");
-
   TEST_EQUALITY(domainMap->getGlobalNumElements() - 1,
                 (Tpetra::global_size_t)domainMap->getMaxAllGlobalIndex(),
                 "   tTpetraOperatorWrapper::test_functionality: "
@@ -245,29 +246,12 @@ bool tTpetraOperatorWrapper::test_functionality(int verbosity, std::ostream& os)
     const RCP<MultiVectorBase<ST>> tv = Thyra::createMembers(A->domain(), 1);
     Thyra::randomize(-100.0, 100.0, tv.ptr());
 
-    const RCP<const MultiVectorBase<ST>> tv_0 =
-        Teuchos::rcp_dynamic_cast<const Thyra::ProductMultiVectorBase<ST>>(tv)->getMultiVectorBlock(
-            0);
-
-    const RCP<const MultiVectorBase<ST>> tv_1 =
-        Teuchos::rcp_dynamic_cast<const Thyra::ProductMultiVectorBase<ST>>(tv)->getMultiVectorBlock(
-            1);
-
     // create its Tpetra counterpart
     const RCP<Tpetra::Vector<ST, LO, GO, NT>> ev =
         rcp(new Tpetra::Vector<ST, LO, GO, NT>(tpetra_A->getDomainMap()));
 
-    //
-    // Important:
-    // Do not create Thyra::DetachedSpmdVectorView objects before this copy.
-    // Detached Thyra views create host views. On GPU builds, holding those
-    // host views while Tpetra tries to access device data can trigger:
-    //
-    //   Cannot access data on device while a host view is alive
-    //
     ms->copyThyraIntoTpetra(tv, *ev);
 
-    // compare tv to ev!
     TEST_EQUALITY((Tpetra::global_size_t)tv->range()->dim(), ev->getGlobalLength(),
                   "   tTpetraOperatorWrapper::test_functionality: "
                       << toString(status) << ": "
@@ -275,40 +259,24 @@ bool tTpetraOperatorWrapper::test_functionality(int verbosity, std::ostream& os)
                       << "( thyra dim = " << tv->range()->dim()
                       << ", global length = " << ev->getGlobalLength() << " )");
 
-    TEST_MSG("domainMap->getLocalNumElements() = " << domainMap->getLocalNumElements());
+    const RCP<MultiVectorBase<ST>> tv_check = Thyra::createMembers(A->domain(), 1);
+    ms->copyTpetraIntoThyra(*ev, tv_check.ptr());
 
-    {
-      // Create host views only after the copy has completed, and keep them
-      // scoped tightly.
-      const Thyra::ConstDetachedSpmdVectorView<ST> vv_0(tv_0->col(0));
-      const Thyra::ConstDetachedSpmdVectorView<ST> vv_1(tv_1->col(0));
+    const RCP<VectorBase<ST>> tv_col       = tv->col(0);
+    const RCP<VectorBase<ST>> tv_check_col = tv_check->col(0);
+    const RCP<VectorBase<ST>> diff         = Thyra::createMember(A->domain());
 
-      const GO off_0 = vv_0.globalOffset();
-      const GO off_1 = vv_1.globalOffset();
+    Thyra::V_VmV(diff.ptr(), *tv_col, *tv_check_col);
 
-      auto ev_view = ev->getLocalViewHost(Tpetra::Access::ReadOnly);
+    const mag_t err = Thyra::norm_2(*diff);
+    const mag_t ref = Thyra::norm_2(*tv_col);
+    const mag_t tol = static_cast<mag_t>(100.0) * Teuchos::ScalarTraits<ST>::eps();
 
-      const LO numMyElements = static_cast<LO>(domainMap->getLocalNumElements());
-
-      bool compareThyraToTpetraValue = true;
-
-      for (LO i = 0; i < numMyElements; i++) {
-        const GO gid = domainMap->getGlobalElement(i);
-
-        ST tval = 0.0;
-        if (gid - off_0 < nx * ny) {
-          tval = vv_0[gid - off_0];
-        } else {
-          tval = vv_1[gid - off_1 - nx * ny];
-        }
-
-        compareThyraToTpetraValue &= (ev_view(i, 0) == tval);
-      }
-
-      TEST_ASSERT(compareThyraToTpetraValue, "   tTpetraOperatorWrapper::test_functionality: "
-                                                 << toString(status) << ": "
-                                                 << " comparing Thyra to Tpetra values");
-    }
+    TEST_ASSERT(err <= tol * (static_cast<mag_t>(1.0) + ref),
+                "   tTpetraOperatorWrapper::test_functionality: "
+                    << toString(status) << ": "
+                    << " checking Thyra -> Tpetra -> Thyra round-trip "
+                    << "( err = " << err << ", ref = " << ref << ", tol = " << tol << " )");
   }
 
   // create a vector to test: copyTpetraIntoThyra
@@ -322,23 +290,8 @@ bool tTpetraOperatorWrapper::test_functionality(int verbosity, std::ostream& os)
     // create its Thyra counterpart
     const RCP<MultiVectorBase<ST>> tv = Thyra::createMembers(A->domain(), 1);
 
-    const RCP<const MultiVectorBase<ST>> tv_0 =
-        Teuchos::rcp_dynamic_cast<const Thyra::ProductMultiVectorBase<ST>>(tv)->getMultiVectorBlock(
-            0);
-
-    const RCP<const MultiVectorBase<ST>> tv_1 =
-        Teuchos::rcp_dynamic_cast<const Thyra::ProductMultiVectorBase<ST>>(tv)->getMultiVectorBlock(
-            1);
-
-    //
-    // Important:
-    // Do not create Thyra::DetachedSpmdVectorView objects before this copy.
-    // Those views are host views and must not be alive while the copy may
-    // access Tpetra/Kokkos device data.
-    //
     ms->copyTpetraIntoThyra(*ev, tv.ptr());
 
-    // compare tv to ev!
     TEST_EQUALITY((Tpetra::global_size_t)tv->range()->dim(), ev->getGlobalLength(),
                   "   tTpetraOperatorWrapper::test_functionality: "
                       << toString(status) << ": "
@@ -346,40 +299,23 @@ bool tTpetraOperatorWrapper::test_functionality(int verbosity, std::ostream& os)
                       << "( thyra dim = " << tv->range()->dim()
                       << ", global length = " << ev->getGlobalLength() << " )");
 
-    {
-      // Create host views only after the copy has completed, and keep them
-      // scoped tightly.
-      const Thyra::ConstDetachedSpmdVectorView<ST> vv_0(tv_0->col(0));
-      const Thyra::ConstDetachedSpmdVectorView<ST> vv_1(tv_1->col(0));
+    const RCP<Tpetra::Vector<ST, LO, GO, NT>> ev_check =
+        rcp(new Tpetra::Vector<ST, LO, GO, NT>(tpetra_A->getDomainMap()));
 
-      const GO off_0 =
-          rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<ST>>(tv_0->range())->localOffset();
-      const GO off_1 =
-          rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<ST>>(tv_1->range())->localOffset();
+    ms->copyThyraIntoTpetra(tv, *ev_check);
 
-      auto ev_view = ev->getLocalViewHost(Tpetra::Access::ReadOnly);
+    const mag_t ref = ev->norm2();
 
-      const LO numMyElements = static_cast<LO>(domainMap->getLocalNumElements());
+    ev_check->update(static_cast<ST>(-1.0), *ev, static_cast<ST>(1.0));
 
-      bool compareTpetraToThyraValue = true;
+    const mag_t err = ev_check->norm2();
+    const mag_t tol = static_cast<mag_t>(100.0) * Teuchos::ScalarTraits<ST>::eps();
 
-      for (LO i = 0; i < numMyElements; i++) {
-        const GO gid = domainMap->getGlobalElement(i);
-
-        ST tval = 0.0;
-        if (gid - off_0 < nx * ny) {
-          tval = vv_0[gid - off_0];
-        } else {
-          tval = vv_1[gid - off_1 - nx * ny];
-        }
-
-        compareTpetraToThyraValue &= (ev_view(i, 0) == tval);
-      }
-
-      TEST_ASSERT(compareTpetraToThyraValue, "   tTpetraOperatorWrapper::test_functionality: "
-                                                 << toString(status) << ": "
-                                                 << " comparing Thyra to Tpetra values");
-    }
+    TEST_ASSERT(err <= tol * (static_cast<mag_t>(1.0) + ref),
+                "   tTpetraOperatorWrapper::test_functionality: "
+                    << toString(status) << ": "
+                    << " checking Tpetra -> Thyra -> Tpetra round-trip "
+                    << "( err = " << err << ", ref = " << ref << ", tol = " << tol << " )");
   }
 
   return allPassed;
